@@ -29,6 +29,7 @@ import {
   useSidebar,
 } from "@/src/components/ui/sidebar";
 import Link from "next/link";
+import { ModeToggle } from "@/src/components/ui/mode-toggle";
 
 export function NavUser({
   user,
@@ -99,6 +100,9 @@ export function NavUser({
               <DropdownMenuItem>
                 <IconNotification />
                 Notifications
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <ModeToggle />
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

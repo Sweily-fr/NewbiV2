@@ -13,10 +13,12 @@ import {
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
+  IconRobot,
   IconReport,
   IconSearch,
   IconSettings,
   IconUsers,
+  IconHeart,
 } from "@tabler/icons-react";
 
 import { NavDocuments } from "@/src/components/nav-documents";
@@ -46,24 +48,24 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
+      title: "Automatisation",
+      url: "/dashboard/automatisation",
+      icon: IconRobot,
+    },
+    {
+      title: "Collaborateurs",
+      url: "/dashboard/collaborateurs",
+      icon: IconUsers,
     },
     {
       title: "Analytics",
-      url: "#",
+      url: "/dashboard/analytics",
       icon: IconChartBar,
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
+      title: "Favoris",
+      url: "/dashboard/favoris",
+      icon: IconHeart,
     },
   ],
   navClouds: [
@@ -126,24 +128,24 @@ const data = {
       icon: IconHelp,
     },
     {
-      title: "Recherche",
-      url: "/dashboard/search",
+      title: "Communauté",
+      url: "/dashboard/community",
       icon: IconSearch,
     },
   ],
   documents: [
     {
-      name: "Bibliotheque de données",
+      name: "Factures",
       url: "/dashboard/data-library",
       icon: IconDatabase,
     },
     {
-      name: "Rapports",
+      name: "Devis",
       url: "/dashboard/reports",
       icon: IconReport,
     },
     {
-      name: "Word Assistant",
+      name: "Dépenses",
       url: "/dashboard/word-assistant",
       icon: IconFileWord,
     },
