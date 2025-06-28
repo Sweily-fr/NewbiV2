@@ -15,7 +15,13 @@ export function ThemeProvider({
   ...props
 }) {
   const [theme, setTheme] = useState(
-    () => localStorage.getItem(storageKey) || defaultTheme
+    () => {
+      // Check if code is running in browser environment
+      if (typeof window !== "undefined") {
+        return localStorage.getItem(storageKey) || defaultTheme;
+      }
+      return defaultTheme;
+    }
   );
 
   useEffect(() => {
@@ -39,7 +45,9 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (theme) => {
-      localStorage.setItem(storageKey, theme);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(storageKey, theme);
+      }
       setTheme(theme);
     },
   };

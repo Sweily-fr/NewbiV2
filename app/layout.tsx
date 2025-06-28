@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/src/components/theme-provider";
+import { ApolloWrapper } from "@/src/components/providers/apollo-provider";
+import { Toaster } from "@/src/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,13 +27,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          {children}
-        </body>
-      </ThemeProvider>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <ApolloWrapper>
+          <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+            {children}
+          </ThemeProvider>
+        </ApolloWrapper>
+        <Toaster />
+      </body>
     </html>
   );
 }

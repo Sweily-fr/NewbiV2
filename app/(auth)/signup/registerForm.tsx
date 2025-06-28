@@ -1,9 +1,11 @@
+"use client";
+
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, FieldError } from "react-hook-form";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { signUp } from "@/src/lib/auth-client";
+import { registerUser } from "../../../src/lib/auth/api";
 
 const RegisterForm = () => {
   const {
@@ -17,11 +19,8 @@ const RegisterForm = () => {
   const onSubmit = async (formData: any) => {
     console.log(formData, "formData");
     try {
-      await signUp.email({
-        email: formData.email,
-        password: formData.password,
-      });
-    } catch (err) {
+      await registerUser(formData);
+    } catch (err: any) {
       setFormError("root", {
         type: "manual",
         message: err.message || "Erreur lors de l'inscription",
@@ -60,7 +59,9 @@ const RegisterForm = () => {
           })}
         />
         {errors.email && (
-          <p className="mt-2 text-sm text-red-500">{errors.email.message}</p>
+          <p className="mt-2 text-sm text-red-500">
+            {errors.email.message as React.ReactNode}
+          </p>
         )}
       </div>
       <div>
@@ -86,7 +87,9 @@ const RegisterForm = () => {
           })}
         />
         {errors.password && (
-          <p className="mt-2 text-sm text-red-500">{errors.password.message}</p>
+          <p className="mt-2 text-sm text-red-500">
+            {errors.password.message as React.ReactNode}
+          </p>
         )}
       </div>
       <Button

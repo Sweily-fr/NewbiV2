@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { useForm } from "react-hook-form";
 
@@ -5,6 +7,9 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
+import { loginUser } from "../../../src/lib/auth/api";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const LoginForm = () => {
   const {
@@ -14,16 +19,19 @@ const LoginForm = () => {
     setError: setFormError,
   } = useForm();
 
+  const router = useRouter();
+
   const onSubmit = async (formData: any) => {
     try {
       console.log(formData, "formData");
-      //   await loginUser(formData);
+      const res = await loginUser(formData);
+      if (res) {
+        router.push("/dashboard");
+        toast.success("Connexion reussie");
+      }
     } catch (err: any) {
-      setFormError("root", {
-        type: "manual",
-        message: err.message || "Erreur de connexion",
-      });
-      console.error(err);
+      console.error(err, "error");
+      toast.error(err.message || "Erreur de connexion");
     }
   };
 
@@ -36,15 +44,15 @@ const LoginForm = () => {
     >
       <div>
         <Label
-          htmlFor="email-login-04"
+          htmlFor="email"
           className="text-sm font-medium text-foreground dark:text-foreground"
         >
           Email
         </Label>
         <Input
           type="email"
-          id="email-login-04"
-          name="email-login-04"
+          id="email"
+          name="email"
           autoComplete="email"
           placeholder="ephraim@blocks.so"
           className="mt-2"
@@ -62,15 +70,15 @@ const LoginForm = () => {
       </div>
       <div>
         <Label
-          htmlFor="password-login-04"
+          htmlFor="password"
           className="text-sm font-medium text-foreground dark:text-foreground"
         >
           Mot de passe
         </Label>
         <Input
           type="password"
-          id="password-login-04"
-          name="password-login-04"
+          id="password"
+          name="password"
           autoComplete="password"
           placeholder="********"
           className="mt-2"
@@ -86,8 +94,12 @@ const LoginForm = () => {
           <p className="mt-2 text-sm text-red-500">{errors.password.message}</p>
         )}
       </div>
-      <Button type="submit" className="mt-4 w-full py-2 font-medium">
-        Se connecter
+      <Button
+        type="submit"
+        className="mt-4 w-full py-2 font-medium"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Connexion en cours..." : "Se connecter"}
       </Button>
     </form>
   );

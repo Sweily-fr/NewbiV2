@@ -34,11 +34,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/src/components/ui/sidebar";
+import { getCurrentUser } from "../lib/auth/api";
+import { useUser } from "../lib/auth/hooks";
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
+    name: "sofiane",
+    email: "sofiane@emtimet.com",
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
@@ -136,23 +138,25 @@ const data = {
   documents: [
     {
       name: "Factures",
-      url: "/dashboard/data-library",
+      url: "/dashboard/outils/factures",
       icon: IconDatabase,
     },
     {
       name: "Devis",
-      url: "/dashboard/reports",
+      url: "/dashboard/outils/devis",
       icon: IconReport,
     },
     {
       name: "Dépenses",
-      url: "/dashboard/word-assistant",
+      url: "/dashboard/outils/gestion-depenses",
       icon: IconFileWord,
     },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { session } = useUser();
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -176,7 +180,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={session?.user || data.user} />
       </SidebarFooter>
     </Sidebar>
   );

@@ -4,7 +4,7 @@ import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { useForm } from "react-hook-form";
 // import { User } from "../../hooks/useSession";
-// import { updateUserProfile } from "../../api/userApi";
+import { updateUserProfile } from "../../../src/lib/auth/api";
 import { useImageUpload } from "@/src/components/ui/image-upload";
 import {
   Avatar,
@@ -20,38 +20,54 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { ImagePlus } from "lucide-react";
+import { toast } from "sonner";
 
-export default function ProfileForm() {
+export default function ProfileForm({ user }: { user: any }) {
+  console.log(user?.email, "user");
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, dirtyFields },
     setError: setFormError,
-  } = useForm({
+  } = useForm<{
+    email: string;
+    name: string;
+    lastName: string;
+    phone: string;
+  }>({
     defaultValues: {
-      email: "",
-      firstName: "",
-      lastName: "",
-      phone: "",
+      email: user?.email || "",
+      name: user?.name || "",
+      lastName: user?.lastName || "",
+      phone: user?.phone || "",
     },
   });
 
   const onSubmit = async (formData: any) => {
     try {
-      const updateProfileData = {
-        name: formData.name,
-        lastName: formData.lastName,
-        phone: formData.phone,
-      };
-      //   await updateUserProfile(updateProfileData);
-    } catch (err) {
+      const changedFields: Record<string, any> = {};
+
+      Object.keys(dirtyFields).forEach((field) => {
+        if (field !== "email") {
+          changedFields[field] = formData[field];
+        }
+      });
+
+      if (Object.keys(changedFields).length > 0) {
+        const res = await updateUserProfile(changedFields);
+        if (res) {
+          toast("Profil mis à jour avec succès");
+        }
+      }
+    } catch (err: any) {
+      toast(err.message || "Erreur lors de la mise à jour du profil");
       setFormError("root", {
         type: "manual",
-        message: (err as string) || "Erreur lors de l'inscription",
+        message: err.message || "Erreur lors de la mise à jour du profil",
       });
-      console.error(err);
     }
   };
+
   const { previewUrl, fileInputRef, handleThumbnailClick, handleFileChange } =
     useImageUpload();
 
@@ -95,11 +111,11 @@ export default function ProfileForm() {
             </Label>
             <Input
               type="text"
-              id="firstName"
+              id="name"
               className="mt-2"
               placeholder="Prénom"
-              value={""}
-              {...register("firstName")}
+              defaultValue={user?.name}
+              {...register("name")}
             />
           </div>
           <div className="w-full">
@@ -114,7 +130,7 @@ export default function ProfileForm() {
               id="lastName"
               className="mt-2"
               placeholder="Nom"
-              value={""}
+              defaultValue={user?.lastName}
               {...register("lastName")}
             />
           </div>
@@ -133,7 +149,7 @@ export default function ProfileForm() {
               className="mt-2"
               placeholder="Adresse email"
               disabled
-              defaultValue={""}
+              defaultValue={user?.email}
             />
           </div>
           <div className="w-full">
@@ -148,7 +164,7 @@ export default function ProfileForm() {
               id="phone"
               className="mt-2"
               placeholder="xx xx xx xx xx"
-              value={""}
+              defaultValue={user?.phone}
               {...register("phone")}
             />
           </div>
