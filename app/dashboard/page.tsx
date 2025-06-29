@@ -1,5 +1,5 @@
 import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
-// import { ChartRadarDots } from "@/src/components/chart-radar-dots";
+import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 
 export default function Dashboard() {
   return (
@@ -8,10 +8,10 @@ export default function Dashboard() {
       <div className="w-full pl-6">
         <ChartAreaInteractive />
       </div>
-      {/* <div className="flex gap-4 w-full">
-        <ChartRadarDots />
-        <ChartRadarDots />
-      </div> */}
+      <div className="flex gap-4 w-full pl-6">
+        <ChartRadarGridCircle />
+        <ChartRadarGridCircle />
+      </div>
     </div>
   );
 }
