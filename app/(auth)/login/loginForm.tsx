@@ -27,11 +27,11 @@ const LoginForm = () => {
       const res = await loginUser(formData);
       if (res) {
         router.push("/dashboard");
-        toast.success("Connexion reussie");
+        toast("Connexion reussie");
       }
     } catch (err: any) {
       console.error(err, "error");
-      toast.error(err.message || "Erreur de connexion");
+      toast("identifiant ou mot de passe incorrecte");
     }
   };
 
@@ -84,10 +84,6 @@ const LoginForm = () => {
           className="mt-2"
           {...register("password", {
             required: "Mot de passe est requis",
-            minLength: {
-              value: 6,
-              message: "Le mot de passe doit contenir au moins 8 caractères",
-            },
           })}
         />
         {errors.password && (

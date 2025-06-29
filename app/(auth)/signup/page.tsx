@@ -121,7 +121,10 @@ export default function SignUpPage() {
           </div>
         </div>
         <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
-          <div className="flex p-6 items-center justify-center bg-red-500 w-full h-full rounded-lg"></div>
+          <div
+            className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center"
+            style={{ backgroundImage: "url('/backgroundLogin.png')" }}
+          ></div>
         </div>
       </div>
     </main>

@@ -120,19 +120,19 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Paramètres",
-      url: "/dashboard/settings",
-      icon: IconSettings,
+      title: "Communauté",
+      url: "/dashboard/community",
+      icon: IconUsers,
+    },
+    {
+      title: "Recherche",
+      url: "#",
+      icon: IconSearch,
     },
     {
       title: "Aide",
       url: "/dashboard/help",
       icon: IconHelp,
-    },
-    {
-      title: "Communauté",
-      url: "/dashboard/community",
-      icon: IconSearch,
     },
   ],
   documents: [

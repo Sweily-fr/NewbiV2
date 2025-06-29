@@ -6,6 +6,8 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { registerUser } from "../../../src/lib/auth/api";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const RegisterForm = () => {
   const {
@@ -16,16 +18,21 @@ const RegisterForm = () => {
     setError: setFormError,
   } = useForm();
 
+  const router = useRouter();
+
   const onSubmit = async (formData: any) => {
     console.log(formData, "formData");
     try {
       await registerUser(formData);
+      toast("Connexion reussie");
+      router.push("/login");
     } catch (err: any) {
       setFormError("root", {
         type: "manual",
         message: err.message || "Erreur lors de l'inscription",
       });
       console.error(err);
+      toast(err.message || "Erreur lors de l'inscription");
     }
   };
 

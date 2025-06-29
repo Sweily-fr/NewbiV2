@@ -5,6 +5,8 @@ import * as React from "react";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import LoginForm from "./loginForm";
+import { signInGoogle, signInGithub } from "@/src/lib/auth/api";
+import router from "next/router";
 // import { GitHubIcon, GoogleIcon } from "@/src/components/ui/Icons";
 
 const GitHubIcon = (props) => (
@@ -52,6 +54,26 @@ const Logo = ({ className }) => {
   );
 };
 
+const onSubmitGoogle = async () => {
+  try {
+    const data = await signInGoogle();
+    if (data) {
+      router.push("/dashboard");
+    }
+    console.log(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+const onSubmitGithub = async () => {
+  try {
+    const data = await signInGithub();
+    console.log(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 export default function LoginPage() {
   return (
     <main>
@@ -74,6 +96,7 @@ export default function LoginPage() {
               <Button
                 variant="outline"
                 className="flex-1 items-center justify-center space-x-2 py-2"
+                onClick={onSubmitGithub}
                 asChild
               >
                 <a href="#">
@@ -85,10 +108,11 @@ export default function LoginPage() {
               </Button>
               <Button
                 variant="outline"
-                className="mt-2 flex-1 items-center justify-center space-x-2 py-2 sm:mt-0"
+                className="mt-2 flex-1 items-center justify-center space-x-2 py-2 sm:mt-0 cursor-pointer"
+                onClick={onSubmitGoogle}
                 asChild
               >
-                <a href="#">
+                <a>
                   <GoogleIcon className="size-4" aria-hidden={true} />
                   <span className="text-sm font-medium">
                     Connexion avec Google
@@ -121,7 +145,10 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
-          <div className="flex p-6 items-center justify-center bg-red-500 w-full h-full rounded-lg"></div>
+          <div
+            className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center"
+            style={{ backgroundImage: "url('/backgroundLogin.png')" }}
+          ></div>
         </div>
       </div>
     </main>

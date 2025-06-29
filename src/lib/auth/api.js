@@ -107,16 +107,25 @@ export async function updateUserProfile(formData) {
 
 export const signInGoogle = async () => {
   try {
-    // Utiliser window.location.origin pour obtenir l'URL de base actuelle
-    const baseUrl = window.location.origin;
-
     const data = await authClient.signIn.social({
       provider: "google",
-      callbackURL: "http://localhost:5173/dashboard/setting", // URL vers laquelle rediriger après authentification réussie
+      callbackURL: "/dashboard",
     });
     return data;
   } catch (err) {
     console.error("Erreur lors de la connexion avec Google:", err);
+    throw err;
+  }
+};
+export const signInGithub = async () => {
+  try {
+    const data = await authClient.signIn.social({
+      provider: "github",
+      callbackURL: "/dashboard",
+    });
+    return data;
+  } catch (err) {
+    console.error("Erreur lors de la connexion avec Github:", err);
     throw err;
   }
 };
