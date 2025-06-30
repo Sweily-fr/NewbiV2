@@ -3,22 +3,17 @@ import React from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronRight, Menu, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { AnimatedGroup } from "@/src/components/ui/animated-group";
+import { AuroraText } from "../magicui/aurora-text";
+import { BentoGrid, BentoCard } from "../magicui/bento-grid";
 import { cn } from "@/src/lib/utils";
 
 const menuItems = [
   // { name: "Features", href: "#link" },
   { name: "Solution", href: "#link" },
   { name: "Tarifs", href: "#link" },
-  { name: "Ressources", href: "#link" },
+  { name: "Ressources", href: "/blog" },
 ];
-export default function Blog() {
-  return (
-    <>
-      <HeroHeader />
-      <h1>blog</h1>
-    </>
-  );
-}
 
 const HeroHeader = () => {
   const [menuState, setMenuState] = React.useState(false);
@@ -143,3 +138,5 @@ const Logo = ({ className }: { className?: string }) => {
     />
   );
 };
+
+export default HeroHeader;

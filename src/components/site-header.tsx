@@ -17,22 +17,12 @@ export function SiteHeader() {
 
   const generateBreadcrumbs = () => {
     if (!pathname) return null;
-    // Ignorer le premier slash
     const pathWithoutFirstSlash = pathname?.slice(1);
-
-    // Diviser le chemin en segments
     const segments = pathWithoutFirstSlash?.split("/");
-
-    // Créer les éléments du Breadcrumb
     return segments?.map((segment, index) => {
-      // Construire le chemin pour ce segment
       const href = "/" + segments?.slice(0, index + 1).join("/");
-
-      // Formater le texte du segment (première lettre en majuscule)
       const formattedSegment =
         segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
-
-      // Si c'est le dernier segment, c'est la page actuelle
       const isLastSegment = index === segments.length - 1;
 
       return (
@@ -62,7 +52,6 @@ export function SiteHeader() {
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
-        {/* <h1 className="text-base font-medium"></h1> */}
         <div className="ml-auto flex items-center gap-2">
           <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a
