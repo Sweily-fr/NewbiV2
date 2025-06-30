@@ -4,14 +4,14 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 
 // import { loginUser } from "../../api/userApi";
-import { Button } from "@/src/components/ui/button";
+import { SubmitButton } from "@/src/components/ui/submit-button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { signIn } from "../../../src/lib/auth-client";
+import { forgetPassword } from "../../../src/lib/auth-client";
 
-const LoginForm = () => {
+const ForgetPasswordForm = () => {
   const {
     register,
     handleSubmit,
@@ -22,15 +22,18 @@ const LoginForm = () => {
   const router = useRouter();
 
   const onSubmit = async (formData: any) => {
-    await signIn.email(formData, {
-      onSuccess: () => {
-        toast.success("Connexion reussie");
-        router.push("/dashboard");
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la connexion");
-      },
-    });
+    await forgetPassword(
+      { email: formData.email, redirectTo: "/auth/reset-password" },
+      {
+        onSuccess: () => {
+          toast.success("Un email vous a été envoyé");
+          router.push(`/auth/verify?email=${formData.email}`);
+        },
+        onError: (error) => {
+          toast.error("Erreur lors de la reinitialisation du mot de passe");
+        },
+      }
+    );
   };
 
   return (
@@ -66,37 +69,15 @@ const LoginForm = () => {
           <p className="mt-2 text-sm text-red-500">{errors.email.message}</p>
         )}
       </div>
-      <div>
-        <Label
-          htmlFor="password"
-          className="text-sm font-medium text-foreground dark:text-foreground"
-        >
-          Mot de passe
-        </Label>
-        <Input
-          type="password"
-          id="password"
-          name="password"
-          autoComplete="password"
-          placeholder="********"
-          className="mt-2"
-          {...register("password", {
-            required: "Mot de passe est requis",
-          })}
-        />
-        {errors.password && (
-          <p className="mt-2 text-sm text-red-500">{errors.password.message}</p>
-        )}
-      </div>
-      <Button
+      <SubmitButton
         type="submit"
         className="mt-4 w-full py-2 font-medium"
-        disabled={isSubmitting}
+        isLoading={isSubmitting}
       >
-        {isSubmitting ? "Connexion en cours..." : "Se connecter"}
-      </Button>
+        Envoyer le mot de passe
+      </SubmitButton>
     </form>
   );
 };
 
-export default LoginForm;
+export default ForgetPasswordForm;

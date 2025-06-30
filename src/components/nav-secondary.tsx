@@ -99,7 +99,16 @@ export function NavSecondary({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild>
-                <a href={item.url}>
+                <a 
+                  href={item.url} 
+                  onClick={(e) => {
+                    if (item.title === "Recherche") {
+                      e.preventDefault();
+                      // Déclencher l'événement personnalisé pour ouvrir la recherche
+                      window.dispatchEvent(new Event("open-search-command"));
+                    }
+                  }}
+                >
                   <item.icon />
                   <span>{item.title}</span>
                 </a>

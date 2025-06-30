@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
@@ -21,14 +21,17 @@ import {
 } from "@/src/components/ui/card";
 import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
+import { updateUser, useSession } from "../../../src/lib/auth-client";
 
 export default function ProfileForm({ user }: { user: any }) {
-  console.log(user?.email, "user");
+  const { data: session, isPending, error, refetch } = useSession();
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting, dirtyFields },
     setError: setFormError,
+    reset,
   } = useForm<{
     email: string;
     name: string;
@@ -36,37 +39,72 @@ export default function ProfileForm({ user }: { user: any }) {
     phone: string;
   }>({
     defaultValues: {
-      email: user?.email || "",
-      name: user?.name || "",
-      lastName: user?.lastName || "",
-      phone: user?.phone || "",
+      email: "",
+      name: "",
+      lastName: "",
+      phone: "",
     },
   });
 
-  const onSubmit = async (formData: any) => {
-    try {
-      const changedFields: Record<string, any> = {};
-
-      Object.keys(dirtyFields).forEach((field) => {
-        if (field !== "email") {
-          changedFields[field] = formData[field];
-        }
-      });
-
-      if (Object.keys(changedFields).length > 0) {
-        const res = await updateUserProfile(changedFields);
-        if (res) {
-          toast("Profil mis à jour avec succès");
-        }
-      }
-    } catch (err: any) {
-      toast(err.message || "Erreur lors de la mise à jour du profil");
-      setFormError("root", {
-        type: "manual",
-        message: err.message || "Erreur lors de la mise à jour du profil",
+  // Mettre à jour les valeurs du formulaire lorsque les données de session sont disponibles
+  useEffect(() => {
+    if (session?.user) {
+      reset({
+        email: session.user.email || "",
+        name: session.user.name || "",
+        lastName: session.user.lastName || "",
+        phone: session.user.phone || "",
       });
     }
+  }, [session, reset]);
+
+  const onSubmit = async (formData: any) => {
+    console.log({
+      name: formData.name,
+      lastName: formData.lastName,
+      phone: formData.phone,
+    });
+    await updateUser(
+      {
+        name: formData.name,
+        lastName: formData.lastName,
+        phone: formData.phone,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Profil mis à jour avec succès");
+        },
+        onError: (error) => {
+          toast.error("Erreur lors de la mise à jour du profil");
+        },
+      }
+    );
   };
+
+  // const onSubmit = async (formData: any) => {
+  //   try {
+  //     const changedFields: Record<string, any> = {};
+
+  //     Object.keys(dirtyFields).forEach((field) => {
+  //       if (field !== "email") {
+  //         changedFields[field] = formData[field];
+  //       }
+  //     });
+
+  //     if (Object.keys(changedFields).length > 0) {
+  //       const res = await updateUserProfile(changedFields);
+  //       if (res) {
+  //         toast("Profil mis à jour avec succès");
+  //       }
+  //     }
+  //   } catch (err: any) {
+  //     toast(err.message || "Erreur lors de la mise à jour du profil");
+  //     setFormError("root", {
+  //       type: "manual",
+  //       message: err.message || "Erreur lors de la mise à jour du profil",
+  //     });
+  //   }
+  // };
 
   const { previewUrl, fileInputRef, handleThumbnailClick, handleFileChange } =
     useImageUpload();

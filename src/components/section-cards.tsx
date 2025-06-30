@@ -5,12 +5,15 @@ import {
   IconMailForward,
   IconArticle,
   IconLayoutKanban,
-  IconBookmark,
 } from "@tabler/icons-react";
-import { Bookmark } from "lucide-react";
 import Link from "next/link";
-
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { cn } from "@/src/lib/utils";
 
 type CardItem = {
@@ -74,10 +77,27 @@ const cards: CardItem[] = [
   {
     title: "Transfert de fichiers",
     subtitle: "Transférez vos fichiers en quelques clics.",
-    icon: <IconBookmark size={22} />,
+    icon: <IconLayoutKanban size={22} />,
     bgColor: "bg-yellow-50",
     textColor: "text-yellow-500",
     href: "/dashboard/outils/transferts-fichiers",
+  },
+  {
+    title: "Mentions légales",
+    subtitle: "Créez et gérez vos mentions légales en quelques clics.",
+    icon: <IconLayoutKanban size={22} />,
+    bgColor: "bg-yellow-50",
+    textColor: "text-yellow-500",
+    href: "/dashboard/outils/mentions-legales",
+  },
+  {
+    title: "Politique de confidentialité",
+    subtitle:
+      "Créez et gérez vos politiques de confidentialité en quelques clics.",
+    icon: <IconLayoutKanban size={22} />,
+    bgColor: "bg-yellow-50",
+    textColor: "text-yellow-500",
+    href: "/dashboard/outils/politique-de-confidentialite",
   },
 ];
 interface SectionCardsProps {
@@ -88,7 +108,7 @@ export function SectionCards({ className }: SectionCardsProps) {
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3",
+        "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full",
         className
       )}
     >
@@ -96,27 +116,29 @@ export function SectionCards({ className }: SectionCardsProps) {
         <Link
           key={index}
           href={card.href || "#"}
-          className="no-underline h-[100px] block"
+          className="no-underline h-[100px] block w-full"
         >
-          <CardContent className="p-0 h-full">
+          <CardContent className="h-full w-full p-0">
             {/* Card Content */}
-            <div className="mx-5 my-4 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 p-4 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/40 transition h-full flex items-center">
-              <div className="flex items-start gap-3">
-                <div
-                  className={cn("p-2 rounded-md flex-shrink-0", card.bgColor)}
-                >
-                  <div className={card.textColor}>{card.icon}</div>
+            <Card className="hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 transition h-full w-full">
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <div
+                    className={cn("p-2 rounded-md flex-shrink-0", card.bgColor)}
+                  >
+                    <div className={card.textColor}>{card.icon}</div>
+                  </div>
+                  <div className="overflow-hidden flex flex-col gap-2">
+                    <CardTitle className="text-m font-semibold line-clamp-1">
+                      {card.title}
+                    </CardTitle>
+                    <CardDescription className="text-xs line-clamp-2">
+                      {card.subtitle}
+                    </CardDescription>
+                  </div>
                 </div>
-                <div className="overflow-hidden">
-                  <h4 className="text-sm font-semibold text-zinc-900 dark:text-white line-clamp-1">
-                    {card.title}
-                  </h4>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">
-                    {card.subtitle}
-                  </p>
-                </div>
-              </div>
-            </div>
+              </CardHeader>
+            </Card>
           </CardContent>
         </Link>
       ))}

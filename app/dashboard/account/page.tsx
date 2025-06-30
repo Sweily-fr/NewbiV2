@@ -9,9 +9,7 @@ export default function Account() {
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
-      <h1 className="text-2xl font-semibold pl-6 mb-6">
-        Informations personnelles
-      </h1>
+      <h1 className="text-2xl font-semibold mb-6">Informations personnelles</h1>
       <FormAccount user={session?.user} />
       <div className="flex flex-col py-4 md:py-6 p-6">
         <Separator />

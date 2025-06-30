@@ -4,7 +4,14 @@ import * as React from "react";
 
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
-import RegisterForm from "./registerForm";
+import LoginForm from "./loginForm";
+import { signInGoogle, signInGithub } from "@/src/lib/auth/api";
+import router from "next/router";
+import { signIn } from "../../../src/lib/auth-client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
 // import { GitHubIcon, GoogleIcon } from "@/src/components/ui/Icons";
 
 const GitHubIcon = (props) => (
@@ -52,28 +59,64 @@ const Logo = ({ className }) => {
   );
 };
 
-export default function SignUpPage() {
+// const onSubmitGoogle = async () => {
+//   try {
+//     const data = await signInGoogle();
+//     if (data) {
+//       router.push("/dashboard");
+//     }
+//     console.log(data);
+//   } catch (err) {
+//     console.error(err);
+//   }
+// };
+// const onSubmitGithub = async () => {
+//   try {
+//     const data = await signInGithub();
+//     console.log(data);
+//   } catch (err) {
+//     console.error(err);
+//   }
+// };
+
+const signInWithProvider = async (provider: string) => {
+  await signIn.social(
+    { provider, callbackURL: "/dashboard" },
+    {
+      onSuccess: () => {
+        toast.success(`Vous etes connecté avec ${provider}`);
+      },
+      onError: (error) => {
+        toast.error(`Erreur lors de la connexion avec ${provider}`);
+        throw error;
+      },
+    }
+  );
+};
+
+export default function LoginPage() {
   return (
     <main>
       <div className="flex h-screen">
-        <div className="w-1/2 flex items-center justify-center p-32">
-          <div className="sm:mx-auto sm:max-w-3xl w-full px-4">
+        <div className="w-1/2 flex items-center justify-center p-8">
+          <div className="mx-auto sm:max-w-md w-full">
             <h3 className="text-3xl font-semibold text-foreground dark:text-foreground">
-              Inscrivez-vous
+              Connectez-vous
             </h3>
             <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
-              Vous avez déjà un compte ?{" "}
+              Vous n'avez pas de compte ?{" "}
               <a
-                href="/login"
+                href="/auth/signup"
                 className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
               >
-                Se connecter
+                Inscription
               </a>
             </p>
-            <div className="mt-8 flex flex-col items-center space-y-2 sm:flex-row sm:space-x-4 sm:space-y-0">
+            <div className="mt-8 flex flex-row items-center flex-wrap gap-4 max-sm:flex-col">
               <Button
                 variant="outline"
-                className="flex-1 items-center justify-center space-x-2 py-2"
+                className="flex-1 items-center justify-center"
+                onClick={() => signInWithProvider("github")}
                 asChild
               >
                 <a href="#">
@@ -85,10 +128,11 @@ export default function SignUpPage() {
               </Button>
               <Button
                 variant="outline"
-                className="mt-2 flex-1 items-center justify-center space-x-2 py-2 sm:mt-0"
+                className="flex-1 items-center justify-center cursor-pointer"
+                onClick={() => signInWithProvider("google")}
                 asChild
               >
-                <a href="#">
+                <a>
                   <GoogleIcon className="size-4" aria-hidden={true} />
                   <span className="text-sm font-medium">
                     Connexion avec Google
@@ -108,15 +152,19 @@ export default function SignUpPage() {
               </div>
             </div>
 
-            <RegisterForm />
+            <LoginForm />
             <p className="mt-6 text-sm text-muted-foreground dark:text-muted-foreground">
               Mot de passe oublié?{" "}
-              <a
-                href="#"
-                className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
-              >
-                Réinitialiser mot de passe
-              </a>
+              <Link href="/auth/forget-password">
+                <>
+                  <a
+                    href="#"
+                    className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
+                  >
+                    Réinitialiser mot de passe
+                  </a>
+                </>
+              </Link>
             </p>
           </div>
         </div>

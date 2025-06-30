@@ -97,7 +97,7 @@ const HeroHeader = () => {
                   size="sm"
                   className={cn(isScrolled && "lg:hidden")}
                 >
-                  <Link href="/login">
+                  <Link href="/auth/login">
                     <span>Connexion</span>
                   </Link>
                 </Button>
@@ -106,7 +106,7 @@ const HeroHeader = () => {
                   size="sm"
                   className={cn(isScrolled && "lg:hidden")}
                 >
-                  <Link href="/signup">
+                  <Link href="/auth/signup">
                     <span>Inscription</span>
                   </Link>
                 </Button>
@@ -115,7 +115,7 @@ const HeroHeader = () => {
                   size="sm"
                   className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
                 >
-                  <Link href="/signup">
+                  <Link href="/auth/signup">
                     <span>Commencez</span>
                   </Link>
                 </Button>
