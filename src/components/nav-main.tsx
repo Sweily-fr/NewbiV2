@@ -33,7 +33,7 @@ export function NavMain({
               <SidebarMenuButton
                 tooltip="Apps"
                 className={cn(
-                  "bg-transparent w-full",
+                  "bg-transparent w-full cursor-pointer",
                   (pathname === "/dashboard/outils" ||
                     pathname?.startsWith("/dashboard/outils/")) &&
                     "bg-[#222] text-primary-foreground hover:bg-[#222]/90 hover:text-primary-foreground active:bg-[#222]/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
@@ -60,7 +60,7 @@ export function NavMain({
               <Link href={item.url} className="w-full">
                 <SidebarMenuButton
                   className={cn(
-                    "bg-transparent w-full",
+                    "bg-transparent w-full cursor-pointer",
                     (pathname === item.url ||
                       (item.url !== "/dashboard" &&
                         pathname?.startsWith(item.url + "/"))) &&

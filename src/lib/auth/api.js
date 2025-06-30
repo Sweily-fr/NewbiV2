@@ -1,3 +1,4 @@
+import { redirect } from "next/dist/server/api-utils";
 import { authClient } from "../auth-client";
 
 export async function loginUser(formData, rememberMe = false) {
@@ -104,6 +105,17 @@ export async function updateUserProfile(formData) {
     throw new Error(err.message || "Erreur lors de la mise à jour du profil");
   }
 }
+
+export const verifyEmail = async (email) => {
+  try {
+    await authClient.sendVerificationEmail({
+      email: email,
+      callbackURL: "/dashboard",
+    });
+  } catch (err) {
+    throw new Error(err.message || "Erreur lors de la vérification de l'email");
+  }
+};
 
 export const signInGoogle = async () => {
   try {

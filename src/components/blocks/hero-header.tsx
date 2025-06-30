@@ -1,15 +1,13 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronRight, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { AnimatedGroup } from "@/src/components/ui/animated-group";
-import { AuroraText } from "../magicui/aurora-text";
-import { BentoGrid, BentoCard } from "../magicui/bento-grid";
 import { cn } from "@/src/lib/utils";
+import { authClient } from "@/src/lib/auth-client";
+import { useUser } from "@/src/lib/auth/hooks";
 
 const menuItems = [
-  // { name: "Features", href: "#link" },
   { name: "Solution", href: "#link" },
   { name: "Tarifs", href: "#link" },
   { name: "Ressources", href: "/blog" },
@@ -18,6 +16,9 @@ const menuItems = [
 const HeroHeader = () => {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const session = useUser();
+
+  console.log(session, "session");
 
   React.useEffect(() => {
     const handleScroll = () => {

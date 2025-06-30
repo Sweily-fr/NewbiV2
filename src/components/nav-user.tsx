@@ -30,7 +30,7 @@ import {
 } from "@/src/components/ui/sidebar";
 import Link from "next/link";
 import { ModeToggle } from "@/src/components/ui/mode-toggle";
-import { logoutUser } from "../lib/auth/api";
+import { signOut } from "../lib/auth-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -49,16 +49,17 @@ export function NavUser({
   const router = useRouter();
 
   const handleLogout = async () => {
-    try {
-      const res = await logoutUser();
-      if (res) {
-        toast("Deconnexion reussie");
-        router.push("/");
-      }
-    } catch (err: any) {
-      console.error(err, "error");
-      toast.error(err.message || "Erreur de deconnexion");
-    }
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/");
+          toast.success("Deconnexion reussie");
+        },
+        onError: () => {
+          toast.error("Erreur lors de la deconnexion");
+        },
+      },
+    });
   };
 
   return (

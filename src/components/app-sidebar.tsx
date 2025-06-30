@@ -121,7 +121,7 @@ const data = {
   navSecondary: [
     {
       title: "Communauté",
-      url: "/dashboard/community",
+      url: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
       icon: IconUsers,
     },
     {
@@ -131,7 +131,7 @@ const data = {
     },
     {
       title: "Aide",
-      url: "/dashboard/help",
+      url: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
       icon: IconHelp,
     },
   ],

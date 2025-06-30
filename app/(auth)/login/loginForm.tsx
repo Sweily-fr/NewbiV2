@@ -7,9 +7,9 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { loginUser } from "../../../src/lib/auth/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { signIn } from "../../../src/lib/auth-client";
 
 const LoginForm = () => {
   const {
@@ -22,17 +22,15 @@ const LoginForm = () => {
   const router = useRouter();
 
   const onSubmit = async (formData: any) => {
-    try {
-      console.log(formData, "formData");
-      const res = await loginUser(formData);
-      if (res) {
+    await signIn.email(formData, {
+      onSuccess: () => {
+        toast.success("Connexion reussie");
         router.push("/dashboard");
-        toast("Connexion reussie");
-      }
-    } catch (err: any) {
-      console.error(err, "error");
-      toast("identifiant ou mot de passe incorrecte");
-    }
+      },
+      onError: (error) => {
+        toast.error("Erreur lors de la connexion");
+      },
+    });
   };
 
   return (

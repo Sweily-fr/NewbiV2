@@ -7,6 +7,10 @@ import { Separator } from "@/src/components/ui/separator";
 import LoginForm from "./loginForm";
 import { signInGoogle, signInGithub } from "@/src/lib/auth/api";
 import router from "next/router";
+import { signIn } from "../../../src/lib/auth-client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
 // import { GitHubIcon, GoogleIcon } from "@/src/components/ui/Icons";
 
 const GitHubIcon = (props) => (
@@ -54,24 +58,39 @@ const Logo = ({ className }) => {
   );
 };
 
-const onSubmitGoogle = async () => {
-  try {
-    const data = await signInGoogle();
-    if (data) {
-      router.push("/dashboard");
+// const onSubmitGoogle = async () => {
+//   try {
+//     const data = await signInGoogle();
+//     if (data) {
+//       router.push("/dashboard");
+//     }
+//     console.log(data);
+//   } catch (err) {
+//     console.error(err);
+//   }
+// };
+// const onSubmitGithub = async () => {
+//   try {
+//     const data = await signInGithub();
+//     console.log(data);
+//   } catch (err) {
+//     console.error(err);
+//   }
+// };
+
+const signInWithProvider = async (provider: string) => {
+  await signIn.social(
+    { provider, callbackURL: "/dashboard" },
+    {
+      onSuccess: () => {
+        toast.success(`Vous etes connecté avec ${provider}`);
+      },
+      onError: (error) => {
+        toast.error(`Erreur lors de la connexion avec ${provider}`);
+        throw error;
+      },
     }
-    console.log(data);
-  } catch (err) {
-    console.error(err);
-  }
-};
-const onSubmitGithub = async () => {
-  try {
-    const data = await signInGithub();
-    console.log(data);
-  } catch (err) {
-    console.error(err);
-  }
+  );
 };
 
 export default function LoginPage() {
@@ -96,7 +115,7 @@ export default function LoginPage() {
               <Button
                 variant="outline"
                 className="flex-1 items-center justify-center space-x-2 py-2"
-                onClick={onSubmitGithub}
+                onClick={() => signInWithProvider("github")}
                 asChild
               >
                 <a href="#">
@@ -109,7 +128,7 @@ export default function LoginPage() {
               <Button
                 variant="outline"
                 className="mt-2 flex-1 items-center justify-center space-x-2 py-2 sm:mt-0 cursor-pointer"
-                onClick={onSubmitGoogle}
+                onClick={() => signInWithProvider("google")}
                 asChild
               >
                 <a>

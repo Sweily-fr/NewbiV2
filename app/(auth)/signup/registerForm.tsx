@@ -5,7 +5,8 @@ import { useForm, FieldError } from "react-hook-form";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { registerUser } from "../../../src/lib/auth/api";
+import { registerUser, verifyEmail } from "../../../src/lib/auth/api";
+import { signUp } from "../../../src/lib/auth-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -22,18 +23,15 @@ const RegisterForm = () => {
 
   const onSubmit = async (formData: any) => {
     console.log(formData, "formData");
-    try {
-      await registerUser(formData);
-      toast("Connexion reussie");
-      router.push("/login");
-    } catch (err: any) {
-      setFormError("root", {
-        type: "manual",
-        message: err.message || "Erreur lors de l'inscription",
-      });
-      console.error(err);
-      toast(err.message || "Erreur lors de l'inscription");
-    }
+    await signUp.email(formData, {
+      onSuccess: () => {
+        toast.success("Inscription reussie");
+        router.push("/login");
+      },
+      onError: (error) => {
+        toast.error("Erreur lors de l'inscription");
+      },
+    });
   };
 
   return (
