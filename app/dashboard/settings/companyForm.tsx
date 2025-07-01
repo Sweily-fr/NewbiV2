@@ -3,6 +3,13 @@ import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { useForm } from "react-hook-form";
+import { useImageUpload } from "@/src/components/ui/image-upload";
+import { ImagePlus } from "lucide-react";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -10,25 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-// import { User } from "../../hooks/useSession";
-// import { updateUserProfile } from "../../api/userApi";
-import { useImageUpload } from "@/src/components/ui/image-upload";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/src/components/ui/avatar";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { ImagePlus } from "lucide-react";
 
-export default function ProfileForm() {
+export default function CompanyForm() {
   const {
     register,
     handleSubmit,
@@ -95,6 +85,22 @@ export default function ProfileForm() {
         <div className="flex justify-between gap-8 w-full">
           <div className="w-full">
             <Label
+              htmlFor="siteWeb"
+              className="text-sm font-medium text-foreground dark:text-foreground"
+            >
+              Nom de l'entreprise
+            </Label>
+            <Input
+              type="text"
+              id="nomEntreprise"
+              className="mt-2"
+              placeholder="nom de l'entreprise"
+              value={""}
+              {...register("nomEntreprise")}
+            />
+          </div>
+          <div className="w-full">
+            <Label
               htmlFor="name"
               className="text-sm font-medium text-foreground dark:text-foreground"
             >
@@ -108,24 +114,6 @@ export default function ProfileForm() {
                 <SelectItem value="1">Statut juridique 1</SelectItem>
                 <SelectItem value="2">Statut juridique 2</SelectItem>
                 <SelectItem value="3">Statut juridique 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-full">
-            <Label
-              htmlFor="name"
-              className="text-sm font-medium text-foreground dark:text-foreground"
-            >
-              Régime de TVA
-            </Label>
-            <Select>
-              <SelectTrigger className="mt-2 w-full">
-                <SelectValue placeholder="Select a status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Régime de TVA 1</SelectItem>
-                <SelectItem value="2">Régime de TVA 2</SelectItem>
-                <SelectItem value="3">Régime de TVA 3</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -180,121 +168,7 @@ export default function ProfileForm() {
               {...register("siteWeb")}
             />
           </div>
-          <div className="w-full">
-            <Label
-              htmlFor="numTVA"
-              className="text-sm font-medium text-foreground dark:text-foreground"
-            >
-              Numéro de TVA
-            </Label>
-            <Input
-              type="text"
-              id="numTVA"
-              className="mt-2"
-              placeholder="Numéro de TVA"
-              value={""}
-              {...register("numTVA")}
-            />
-          </div>
         </div>
-        <div className="flex justify-between gap-8 w-full">
-          <div className="w-full">
-            <Label
-              htmlFor="numSIRET"
-              className="text-sm font-medium text-foreground dark:text-foreground"
-            >
-              Numéro de SIRET
-            </Label>
-            <Input
-              type="text"
-              id="numSIRET"
-              className="mt-2"
-              placeholder="Numéro de SIRET"
-              value={""}
-              {...register("numSIRET")}
-            />
-          </div>
-          <div className="w-full">
-            <Label
-              htmlFor="capitalSocial"
-              className="text-sm font-medium text-foreground dark:text-foreground"
-            >
-              Capital social
-            </Label>
-            <Input
-              type="text"
-              id="capitalSocial"
-              className="mt-2"
-              placeholder="Capital social"
-              value={""}
-              {...register("capitalSocial")}
-            />
-          </div>
-        </div>
-        <div className="flex justify-between gap-8 w-full">
-          <div className="w-full">
-            <Label
-              htmlFor="villeImmatriculation"
-              className="text-sm font-medium text-foreground dark:text-foreground"
-            >
-              Ville d'immatriculation RCS
-            </Label>
-            <Input
-              type="text"
-              id="villeImmatriculation"
-              className="mt-2"
-              placeholder="Ville d'immatriculation RCS"
-              value={""}
-              {...register("villeImmatriculation")}
-            />
-          </div>
-          <div className="w-full">
-            <Label
-              htmlFor="name"
-              className="text-sm font-medium text-foreground dark:text-foreground"
-            >
-              Catégorie de transaction
-            </Label>
-            <Select>
-              <SelectTrigger className="mt-2 w-full">
-                <SelectValue placeholder="Select a status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Catégorie de transaction 1</SelectItem>
-                <SelectItem value="2">Catégorie de transaction 2</SelectItem>
-                <SelectItem value="3">Catégorie de transaction 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* <div>
-          <Label
-            htmlFor="newEmail"
-            className="text-sm font-medium text-foreground dark:text-foreground"
-          >
-            Nouvelle adresse email
-          </Label>
-          <Input
-            type="email"
-            id="newEmail"
-            placeholder="Nouvelle adresse email"
-            className="mt-2"
-            {...register("newEmail", {
-              required: "La nouvelle adresse email est requise",
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: "Adresse email invalide",
-              },
-            })}
-          />
-          {errors.newEmail && (
-            <p className="mt-2 text-sm text-red-500">
-              {errors.newEmail.message}
-            </p>
-          )}
-        </div> */}
-
         <div className="flex justify-between gap-4 h-full mt-4">
           <div>
             <Button
