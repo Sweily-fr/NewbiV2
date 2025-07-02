@@ -49,15 +49,17 @@ export default function Outils() {
             defaultValue="outline"
             className="w-full flex-col justify-start gap-6"
           >
-            <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-              <TabsTrigger value="outline">Toutes</TabsTrigger>
+            <TabsList className="bg-[#5B4FFF]/5 **:data-[slot=badge]:bg-[#5B4FFF]/10 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
+              <TabsTrigger value="outline">Tout</TabsTrigger>
               <TabsTrigger value="past-performance">
-                Brouillons <Badge variant="secondary">3</Badge>
+                Financier <Badge variant="secondary">3</Badge>
               </TabsTrigger>
               <TabsTrigger value="key-personnel">
-                À encaisser <Badge variant="secondary">2</Badge>
+                Marketing <Badge variant="secondary">2</Badge>
               </TabsTrigger>
-              <TabsTrigger value="focus-documents">Terminées</TabsTrigger>
+              <TabsTrigger value="focus-documents">
+                Automatisation <Badge variant="secondary">2</Badge>
+              </TabsTrigger>
             </TabsList>
           </Tabs>
           <Input className="w-1/2" placeholder="Rechercher..." />

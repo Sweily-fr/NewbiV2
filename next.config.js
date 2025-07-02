@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  swcMinify: true,
   reactStrictMode: true,
+  images: {
+    unoptimized: process.env.NODE_ENV === "development",
+  },
+  onDemandEntries: {
+    maxInactiveAge: 60 * 1000, // 1 minute
+    pagesBufferLength: 5,
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

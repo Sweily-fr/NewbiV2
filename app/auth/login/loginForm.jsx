@@ -3,8 +3,8 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
+import { SubmitButton } from "@/src/components/ui/submit-button";
+import { Input, InputPassword, InputEmail } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -22,7 +22,10 @@ const LoginForm = () => {
 
   const onSubmit = async (formData) => {
     await signIn.email(formData, {
-      onSuccess: () => {
+      onSuccess: (ctx) => {
+        const authToken = ctx.response.headers.get("set-auth-token"); // get the token from the response headers
+        // Store the token securely (e.g., in localStorage)
+        localStorage.setItem("bearer_token", authToken);
         toast.success("Connexion reussie");
         router.push("/dashboard");
       },
@@ -46,8 +49,7 @@ const LoginForm = () => {
         >
           Email
         </Label>
-        <Input
-          type="email"
+        <InputEmail
           id="email"
           name="email"
           autoComplete="email"
@@ -72,8 +74,7 @@ const LoginForm = () => {
         >
           Mot de passe
         </Label>
-        <Input
-          type="password"
+        <InputPassword
           id="password"
           name="password"
           autoComplete="password"
@@ -87,13 +88,13 @@ const LoginForm = () => {
           <p className="mt-2 text-sm text-red-500">{errors.password.message}</p>
         )}
       </div>
-      <Button
+      <SubmitButton
         type="submit"
-        className="mt-4 w-full py-2 font-medium cursor-pointer"
-        disabled={isSubmitting}
+        className="mt-4 w-full py-2 font-medium"
+        isLoading={isSubmitting}
       >
-        {isSubmitting ? "Connexion en cours..." : "Se connecter"}
-      </Button>
+        Se connecter
+      </SubmitButton>
     </form>
   );
 };

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { SubmitButton } from "@/src/components/ui/submit-button";
-import { Input } from "@/src/components/ui/input";
+import { InputEmail } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -48,8 +48,7 @@ const ForgetPasswordForm = () => {
         >
           Email
         </Label>
-        <Input
-          type="email"
+        <InputEmail
           id="email"
           name="email"
           autoComplete="email"

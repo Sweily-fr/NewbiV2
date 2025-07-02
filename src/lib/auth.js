@@ -2,9 +2,11 @@ import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { mongoDb } from "./mongodb";
 import { resend } from "./resend";
+// import { bearer } from "better-auth/plugins";
 
 export const auth = betterAuth({
   database: mongodbAdapter(mongoDb),
+  // plugins: [bearer()],
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url, token }, request) => {

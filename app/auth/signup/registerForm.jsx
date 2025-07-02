@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useForm, FieldError } from "react-hook-form";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
+import { SubmitButton } from "@/src/components/ui/submit-button";
+import { Input, InputPassword, InputEmail } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { registerUser, verifyEmail } from "../../../src/lib/auth/api";
 import { signUp } from "../../../src/lib/auth-client";
@@ -48,8 +48,7 @@ const RegisterForm = () => {
         >
           Email
         </Label>
-        <Input
-          type="email"
+        <InputEmail
           id="email"
           name="email"
           autoComplete="email"
@@ -74,8 +73,7 @@ const RegisterForm = () => {
         >
           Mot de passe
         </Label>
-        <Input
-          type="password"
+        <InputPassword
           id="password"
           name="password"
           autoComplete="password"
@@ -93,13 +91,13 @@ const RegisterForm = () => {
           <p className="mt-2 text-sm text-red-500">{errors.password.message}</p>
         )}
       </div>
-      <Button
+      <SubmitButton
         type="submit"
         className="mt-4 w-full py-2 font-medium"
-        disabled={isSubmitting}
+        isLoading={isSubmitting}
       >
-        {isSubmitting ? "Inscription en cours..." : "S'inscrire"}
-      </Button>
+        S'inscrire
+      </SubmitButton>
     </form>
   );
 };

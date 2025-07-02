@@ -3,44 +3,30 @@ import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
 import { toast } from "sonner";
 
-// Fonction pour récupérer un cookie par son nom
-function getCookie(name) {
-  if (typeof window === "undefined") return null;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-  return null;
-}
-
 const httpLink = new HttpLink({
   uri: "http://localhost:4000/graphql",
   credentials: "include", // Important pour better-auth (cookies)
 });
 
 const authLink = setContext((_, { headers }) => {
-  // Récupérer le token depuis les cookies Better Auth
-  const token = getCookie("better-auth.session_token");
-  
-  // Debug: afficher le token récupéré
-  console.log("🍪 Cookie token récupéré:", token ? "✅ Token trouvé" : "❌ Pas de token");
-  console.log("🔑 Token value:", token);
-  
-  // Debug: afficher tous les cookies disponibles
-  if (typeof window !== "undefined") {
-    console.log("🍪 Tous les cookies:", document.cookie);
+  // Récupérer le token depuis le localStorage
+  const token = localStorage.getItem("token");
+
+  // Vérifier si le token est expiré
+  if (token && isTokenExpired(token)) {
+    // Si le token est expiré, le supprimer
+    localStorage.removeItem("token");
+    // La déconnexion complète sera gérée par le contexte d'authentification
+    return { headers };
   }
 
   // Retourner les headers avec le token d'authentification
-  const finalHeaders = {
+  return {
     headers: {
       ...headers,
       authorization: token ? `Bearer ${token}` : "",
     },
   };
-  
-  console.log("📤 Headers envoyés:", finalHeaders.headers);
-  
-  return finalHeaders;
 });
 
 // console.log("token", authLink);
@@ -96,7 +82,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 });
 
 export const client = new ApolloClient({
-  link: from([errorLink, authLink, httpLink]),
+  link: from([errorLink, httpLink]),
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {
