@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { authClient } from "@/src/lib/auth-client";
@@ -17,8 +17,7 @@ const HeroHeader = () => {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const session = useUser();
-
-  console.log(session, "session");
+  console.log(session.session, "session");
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -91,34 +90,45 @@ const HeroHeader = () => {
                 </ul>
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className={cn(isScrolled && "lg:hidden")}
-                >
-                  <Link href="/auth/login">
-                    <span>Connexion</span>
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="sm"
-                  className={cn(isScrolled && "lg:hidden")}
-                >
-                  <Link href="/auth/signup">
-                    <span>Inscription</span>
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="sm"
-                  className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
-                >
-                  <Link href="/auth/signup">
-                    <span>Commencez</span>
-                  </Link>
-                </Button>
+                {session.session ? (
+                  <Button asChild size="sm" variant="default">
+                    <Link href="/dashboard" className="flex items-center gap-2">
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className={cn(isScrolled && "lg:hidden")}
+                    >
+                      <Link href="/auth/login">
+                        <span>Connexion</span>
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      size="sm"
+                      className={cn(isScrolled && "lg:hidden")}
+                    >
+                      <Link href="/auth/signup">
+                        <span>Inscription</span>
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      size="sm"
+                      className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
+                    >
+                      <Link href="/auth/signup">
+                        <span>Commencez</span>
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -128,7 +138,7 @@ const HeroHeader = () => {
   );
 };
 
-const Logo = ({ className }: { className?: string }) => {
+const Logo = ({ className }) => {
   return (
     <img
       src="http://localhost:3000/newbiLogo.png"

@@ -25,8 +25,8 @@ const RegisterForm = () => {
     console.log(formData, "formData");
     await signUp.email(formData, {
       onSuccess: () => {
-        toast.success("Inscription reussie");
-        router.push("/login");
+        toast.success("Vous avez reçu un email de verification");
+        // router.push("/auth/login");
       },
       onError: (error) => {
         toast.error("Erreur lors de l'inscription");

@@ -1,14 +1,9 @@
-import { MongoClient, Db } from "mongodb";
+import { MongoClient } from "mongodb";
 
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const dbName = "invoice-app";
 
-declare global {
-  var _mongoClient: MongoClient;
-  var _mongoDb: Db;
-}
-
-let client: MongoClient;
+let client;
 
 if (!global._mongoClient) {
   client = new MongoClient(uri);

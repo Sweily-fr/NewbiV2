@@ -93,7 +93,7 @@ export default function SignUpPage() {
                 </span>
               </div>
             </div>
-
+            
             <RegisterForm />
           </div>
         </div>

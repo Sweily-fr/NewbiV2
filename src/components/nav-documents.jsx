@@ -56,16 +56,16 @@ export function NavDocuments({ items }) {
               >
                 <DropdownMenuItem>
                   <IconFolder />
-                  <span>Open</span>
+                  <span>Ouvrir</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <IconShare3 />
-                  <span>Share</span>
+                  <span>Partager</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive">
                   <IconTrash />
-                  <span>Delete</span>
+                  <span>Supprimer</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

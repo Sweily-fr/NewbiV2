@@ -16,6 +16,19 @@ export const auth = betterAuth({
       });
     },
   },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url, token }) => {
+      await resend.emails.send({
+        to: user.email,
+        subject: "Veuillez vérifier votre adresse e-mail",
+        text: `Clique sur le lien suivant pour vérifier votre adresse e-mail: ${url}`,
+        from: "noreply@newbi.sweily.fr",
+      });
+    },
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 3600,
+  },
   user: {
     additionalFields: {
       name: {
@@ -143,12 +156,12 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as any,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as any,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     },
     github: {
-      clientId: process.env.GITHUB_CLIENT_ID as any,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as any,
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
     },
   },
 });
