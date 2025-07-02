@@ -12,6 +12,7 @@ import {
   BreadcrumbLink,
 } from "@/src/components/ui/breadcrumb";
 import { usePathname } from "next/navigation";
+import { ModeToggle } from "@/src/components/ui/mode-toggle";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -62,19 +63,20 @@ export function SiteHeader() {
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
+        <Breadcrumb>
+          <BreadcrumbList>{pathname !== "/" && breadcrumbs}</BreadcrumbList>
+        </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
+          <ModeToggle />
+          {/* <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a
               href="https://github.com/shadcn-ui/ui/tree/main/apps/v4/app/(examples)/dashboard"
               rel="noopener noreferrer"
               target="_blank"
               className="dark:text-foreground"
             ></a>
-          </Button>
+          </Button> */}
         </div>
-        <Breadcrumb>
-          <BreadcrumbList>{pathname !== "/" && breadcrumbs}</BreadcrumbList>
-        </Breadcrumb>
       </div>
     </header>
   );
