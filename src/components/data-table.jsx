@@ -45,7 +45,7 @@ import {
   Row,
   SortingState,
   useReactTable,
-  VisibilityState,
+  ColumnVisibility,
 } from "@tanstack/react-table";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 import { toast } from "sonner";
@@ -339,10 +339,9 @@ export function DataTable({ data: initialData }) {
   const [data, setData] = React.useState(() => initialData);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
-    React.useState < VisibilityState > {};
-  const [columnFilters, setColumnFilters] =
-    React.useState < ColumnFiltersState > [];
-  const [sorting, setSorting] = React.useState < SortingState > [];
+    React.useState({});
+  const [columnFilters, setColumnFilters] = React.useState([]);
+  const [sorting, setSorting] = React.useState([]);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,

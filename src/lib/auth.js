@@ -16,6 +16,19 @@ export const auth = betterAuth({
       });
     },
   },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url, token }) => {
+      await resend.emails.send({
+        to: user.email,
+        subject: "Veuillez vérifier votre adresse e-mail",
+        text: `Clique sur le lien suivant pour vérifier votre adresse e-mail: ${url}`,
+        from: "noreply@newbi.sweily.fr",
+      });
+    },
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 3600,
+  },
   user: {
     additionalFields: {
       name: {
