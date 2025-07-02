@@ -2,7 +2,7 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Plus, MoreVertical, Trash2, Edit } from 'lucide-react';
+import { ChevronDown, Plus, MoreVertical, Trash2, Edit } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/src/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/src/components/ui/dropdown-menu';
@@ -91,23 +91,37 @@ export default function Column({ column, tasks, onAddTask, onMoveTask }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <div className="flex items-center space-x-3">
+      <div className="flex items-center justify-between p-3 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <ChevronDown className="h-4 w-4 text-gray-500" />
           <div 
-            className="w-3 h-3 rounded-full flex-shrink-0"
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
             style={{ backgroundColor: color }}
           />
-          <h3 className="font-semibold text-gray-900 text-sm">{column.title}</h3>
-          <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-medium">
+          <h3 className="font-medium text-gray-900 text-sm">{column.title}</h3>
+          <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-medium">
             {tasks.length}
           </span>
         </div>
         
-        {(isHovered || isDeleting) && (
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            onClick={() => onAddTask(column.id)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              >
+                <MoreVertical className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -134,7 +148,7 @@ export default function Column({ column, tasks, onAddTask, onMoveTask }) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
+        </div>
       </div>
 
       <div className="flex-1 p-3 space-y-3 overflow-y-auto max-h-[calc(100vh-200px)] bg-gray-50">

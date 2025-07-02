@@ -2,13 +2,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-<<<<<<< HEAD
       "@/*": [
         "./*"
       ] // ← ESSENTIEL pour vos imports @/src/...
-=======
-      "@/*": ["./*"] // ← ESSENTIEL pour vos imports @/src/...
->>>>>>> dacb965ed2d1bf09bc7fd071306c4072fe04c1ef
     },
     "target": "ES2017",
     "lib": [
@@ -34,19 +30,6 @@
     ],
     "strictNullChecks": true
   },
-<<<<<<< HEAD
-  "include": [
-    "next-env.d.ts",
-    ".next/types/**/*.ts",
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
-}
-=======
   "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
 }
->>>>>>> dacb965ed2d1bf09bc7fd071306c4072fe04c1ef
