@@ -15,20 +15,21 @@ import { Label } from '@/src/components/ui/label';
 import { toast } from 'sonner';
 import { GET_BOARD, CREATE_COLUMN, UPDATE_COLUMN, DELETE_COLUMN } from '@/src/graphql/kanbanQueries';
 import { useColumnCollapse } from '@/src/hooks/useColumnCollapse';
+import { ColorPicker } from '@/src/components/ui/color-picker';
 
 export default function KanbanBoardPage({ params }) {
   const router = useRouter();
   const { id } = use(params);
-  
+
   // États pour les modals
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
   const [isEditColumnOpen, setIsEditColumnOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState(null);
   const [columnForm, setColumnForm] = useState({ title: '', color: '#3b82f6' });
-  
+
   // Hook pour gérer le collapse des colonnes
   const { isColumnCollapsed, toggleColumnCollapse, expandAll, collapsedColumnsCount } = useColumnCollapse(id);
-  
+
   const { data, loading, error, refetch } = useQuery(GET_BOARD, {
     variables: { id },
     errorPolicy: 'all'
@@ -71,7 +72,7 @@ export default function KanbanBoardPage({ params }) {
   });
 
   const board = data?.board;
-  
+
   // Fonctions de gestion des colonnes
   const handleCreateColumn = async () => {
     if (!columnForm.title.trim()) {
@@ -221,9 +222,9 @@ export default function KanbanBoardPage({ params }) {
             {/* Bouton pour déplier toutes les colonnes si certaines sont collapsées */}
             {collapsedColumnsCount > 0 && (
               <div className="mb-4 flex justify-end">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={expandAll}
                   className="text-xs"
                 >
@@ -231,151 +232,151 @@ export default function KanbanBoardPage({ params }) {
                 </Button>
               </div>
             )}
-            
+
             <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <div className="flex gap-6 flex-nowrap">
-              {board.columns.map((column) => {
-                const isCollapsed = isColumnCollapsed(column.id);
-                
-                return (
-                  <Card key={column.id} className={`h-fit transition-all duration-300 w-80 flex-shrink-0 ${isCollapsed ? 'h-20' : ''}`}>
-                    <CardHeader className="pb-0">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          {/* Bouton de collapse */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 hover:bg-gray-100 flex-shrink-0"
-                            onClick={() => toggleColumnCollapse(column.id)}
-                            title={isCollapsed ? 'Déplier la colonne' : 'Replier la colonne'}
-                          >
-                            {isCollapsed ? (
-                              <ChevronDown className="h-3 w-3" />
-                            ) : (
-                              <ChevronUp className="h-3 w-3" />
-                            )}
-                          </Button>
-                          
-                          <CardTitle className="text-lg flex items-center gap-2 min-w-0">
-                            <div 
-                              className="w-3 h-3 rounded-full flex-shrink-0" 
-                              style={{ backgroundColor: column.color || '#3b82f6' }}
-                            />
-                            <span className="truncate">{column.title}</span>
-                          </CardTitle>
-                        </div>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreVertical className="h-4 w-4" />
+                {board.columns.map((column) => {
+                  const isCollapsed = isColumnCollapsed(column.id);
+
+                  return (
+                    <Card key={column.id} className={`h-fit transition-all duration-300 w-80 flex-shrink-0 ${isCollapsed ? 'h-20' : ''}`}>
+                      <CardHeader className="pb-0">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            {/* Bouton de collapse */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 hover:bg-gray-100 flex-shrink-0"
+                              onClick={() => toggleColumnCollapse(column.id)}
+                              title={isCollapsed ? 'Déplier la colonne' : 'Replier la colonne'}
+                            >
+                              {isCollapsed ? (
+                                <ChevronDown className="h-3 w-3" />
+                              ) : (
+                                <ChevronUp className="h-3 w-3" />
+                              )}
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openEditModal(column)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Modifier
-                            </DropdownMenuItem>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Supprimer
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Supprimer la colonne</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Êtes-vous sûr de vouloir supprimer la colonne "{column.title}" ? 
-                                    Cette action supprimera également toutes les tâches qu'elle contient et ne peut pas être annulée.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={() => handleDeleteColumn(column.id)}
-                                    className="bg-red-600 hover:bg-red-700"
-                                    disabled={deleteLoading}
-                                  >
-                                    {deleteLoading ? (
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : null}
+
+                            <CardTitle className="text-lg flex items-center gap-2 min-w-0">
+                              <div
+                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: column.color || '#3b82f6' }}
+                              />
+                              <span className="truncate">{column.title}</span>
+                            </CardTitle>
+                          </div>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEditModal(column)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Trash2 className="mr-2 h-4 w-4" />
                                     Supprimer
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardHeader>
-                    
-                    <div className={`transition-all duration-300 overflow-hidden ${isCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
-                      <CardContent className="pt-4">
-                        <div className="space-y-3">
-                          {/* Tasks will be rendered here */}
-                          {board.tasks
-                            ?.filter(task => task.columnId === column.id)
-                            ?.map((task) => (
-                              <Card key={task.id} className="p-3 bg-white border shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                                <div className="space-y-2">
-                                  <h4 className="font-medium text-sm">{task.title}</h4>
-                                  {task.description && (
-                                    <p className="text-xs text-gray-600 line-clamp-2">{task.description}</p>
-                                  )}
-                                  {task.tags && task.tags.length > 0 && (
-                                    <div className="flex flex-wrap gap-1">
-                                      {task.tags.map((tag, index) => (
-                                        <span
-                                          key={index}
-                                          className="px-2 py-1 text-xs rounded-full"
-                                          style={{
-                                            backgroundColor: tag.bg || '#f3f4f6',
-                                            color: tag.text || '#374151',
-                                            border: `1px solid ${tag.border || '#d1d5db'}`
-                                          }}
-                                        >
-                                          {tag.name}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </Card>
-                            ))}
-                          
-                          {/* Add Task Button */}
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start text-gray-500 hover:text-gray-700 border-2 border-dashed border-gray-200 hover:border-gray-300"
-                          >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Ajouter une tâche
-                          </Button>
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Supprimer la colonne</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Êtes-vous sûr de vouloir supprimer la colonne "{column.title}" ?
+                                      Cette action supprimera également toutes les tâches qu'elle contient et ne peut pas être annulée.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteColumn(column.id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                      disabled={deleteLoading}
+                                    >
+                                      {deleteLoading ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      ) : null}
+                                      Supprimer
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
-                      </CardContent>
-                    </div>
-                  </Card>
-                );
-              })}
-              
-              {/* Add Column Button */}
-              <Card className="h-20 w-80 border-2 border-dashed border-gray-200 hover:border-gray-300 transition-colors">
-                <CardContent>
-                  <Button
-                    variant="ghost"
-                    className="w-full flex-row gap-2 text-gray-500 hover:text-gray-700"
-                    onClick={openAddModal}
-                  >
-                    <Plus className="h-8 w-8" />
-                    <span>Ajouter une colonne</span>
-                  </Button>
-                </CardContent>
-              </Card>
+                      </CardHeader>
+
+                      <div className={`transition-all duration-300 overflow-hidden ${isCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
+                        <CardContent className="pt-4">
+                          <div className="space-y-3">
+                            {/* Tasks will be rendered here */}
+                            {board.tasks
+                              ?.filter(task => task.columnId === column.id)
+                              ?.map((task) => (
+                                <Card key={task.id} className="p-3 bg-white border shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                                  <div className="space-y-2">
+                                    <h4 className="font-medium text-sm">{task.title}</h4>
+                                    {task.description && (
+                                      <p className="text-xs text-gray-600 line-clamp-2">{task.description}</p>
+                                    )}
+                                    {task.tags && task.tags.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {task.tags.map((tag, index) => (
+                                          <span
+                                            key={index}
+                                            className="px-2 py-1 text-xs rounded-full"
+                                            style={{
+                                              backgroundColor: tag.bg || '#f3f4f6',
+                                              color: tag.text || '#374151',
+                                              border: `1px solid ${tag.border || '#d1d5db'}`
+                                            }}
+                                          >
+                                            {tag.name}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </Card>
+                              ))}
+
+                            {/* Add Task Button */}
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start text-gray-500 hover:text-gray-700 border-2 border-dashed border-gray-200 hover:border-gray-300"
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Ajouter une tâche
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </div>
+                    </Card>
+                  );
+                })}
+
+                {/* Add Column Button */}
+                <Card className="h-20 w-80 border-2 border-dashed border-gray-200 hover:border-gray-300 transition-colors">
+                  <CardContent>
+                    <Button
+                      variant="ghost"
+                      className="w-full flex-row gap-2 text-gray-500 hover:text-gray-700"
+                      onClick={openAddModal}
+                    >
+                      <Plus className="h-8 w-8" />
+                      <span>Ajouter une colonne</span>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-          </div>
           </>
         ) : (
           <div className="text-center py-12">
@@ -397,7 +398,7 @@ export default function KanbanBoardPage({ params }) {
               Créez une nouvelle colonne pour organiser vos tâches.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-6 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="title" className="text-right">
                 Titre
@@ -410,19 +411,15 @@ export default function KanbanBoardPage({ params }) {
                 placeholder="Nom de la colonne"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="color" className="text-right">
+            <div className="grid grid-cols-4 gap-4">
+              <Label className="text-right pt-2">
                 Couleur
               </Label>
-              <div className="col-span-3 flex items-center gap-2">
-                <input
-                  type="color"
-                  id="color"
-                  value={columnForm.color}
-                  onChange={(e) => setColumnForm({ ...columnForm, color: e.target.value })}
-                  className="w-12 h-8 rounded border cursor-pointer"
+              <div className="col-span-3">
+                <ColorPicker
+                  color={columnForm.color}
+                  onChange={(color) => setColumnForm({ ...columnForm, color })}
                 />
-                <span className="text-sm text-gray-600">{columnForm.color}</span>
               </div>
             </div>
           </div>
@@ -449,7 +446,7 @@ export default function KanbanBoardPage({ params }) {
               Modifiez les informations de votre colonne.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-6 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-title" className="text-right">
                 Titre
@@ -462,19 +459,15 @@ export default function KanbanBoardPage({ params }) {
                 placeholder="Nom de la colonne"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-color" className="text-right">
+            <div className="grid grid-cols-4 gap-4">
+              <Label className="text-right pt-2">
                 Couleur
               </Label>
-              <div className="col-span-3 flex items-center gap-2">
-                <input
-                  type="color"
-                  id="edit-color"
-                  value={columnForm.color}
-                  onChange={(e) => setColumnForm({ ...columnForm, color: e.target.value })}
-                  className="w-12 h-8 rounded border cursor-pointer"
+              <div className="col-span-3">
+                <ColorPicker
+                  color={columnForm.color}
+                  onChange={(color) => setColumnForm({ ...columnForm, color })}
                 />
-                <span className="text-sm text-gray-600">{columnForm.color}</span>
               </div>
             </div>
           </div>
