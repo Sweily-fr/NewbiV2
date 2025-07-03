@@ -189,10 +189,10 @@ export default function KanbanPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-6 dark:bg-gray-900">
         <div className="text-center py-12">
-          <div className="text-red-500 mb-4">Erreur lors du chargement des tableaux</div>
-          <Button onClick={() => refetch()}>Réessayer</Button>
+          <div className="text-destructive mb-4 dark:text-gray-200">Erreur lors du chargement des tableaux</div>
+          <Button variant="default" onClick={() => refetch()}>Réessayer</Button>
         </div>
       </div>
     );
@@ -203,8 +203,8 @@ export default function KanbanPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tableaux Kanban</h1>
-          <p className="text-gray-600 mt-1">Gérez vos projets avec des tableaux Kanban</p>
+          <h1 className="text-3xl font-bold text-foreground">Tableaux Kanban</h1>
+          <p className="text-muted-foreground mt-1">Gérez vos projets avec des tableaux Kanban</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -221,9 +221,9 @@ export default function KanbanPage() {
           
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-black hover:bg-gray-800">
+              <Button variant="default">
                 <Plus className="mr-2 h-4 w-4" />
-                Nouveau tableau
+                <span>Nouveau tableau</span>
               </Button>
             </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
@@ -236,7 +236,7 @@ export default function KanbanPage() {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="title">Titre *</Label>
+                  <Label htmlFor="title" className="text-foreground">Titre *</Label>
                   <Input
                     id="title"
                     value={formData.title}
@@ -246,7 +246,7 @@ export default function KanbanPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="text-foreground">Description</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
@@ -357,12 +357,19 @@ export default function KanbanPage() {
                 </svg>
               </div>
               
-              <div className="text-gray-600 mb-6">
+              <div className="text-foreground mb-6">
                 <h3 className="text-lg font-semibold mb-2">Commencez votre organisation</h3>
-                <p className="text-sm text-gray-500">Créez votre premier tableau Kanban pour organiser vos tâches et projets</p>
+                <p className="text-sm text-muted-foreground">Créez votre premier tableau Kanban pour organiser vos tâches et projets</p>
               </div>
               
-              <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-black hover:bg-gray-800">
+              <Button 
+                onClick={() => {
+                  setSearchTerm('');
+                  setIsCreateDialogOpen(true);
+                }} 
+                variant="default" 
+                className="flex items-center gap-2"
+              >  
                 <Plus className="mr-2 h-4 w-4" />
                 Créer votre premier tableau
               </Button>
@@ -455,9 +462,9 @@ export default function KanbanPage() {
                 </svg>
               </div>
               
-              <div className="text-gray-600 mb-4">
+              <div className="text-foreground mb-4">
                 <h3 className="text-lg font-semibold mb-2">Aucun résultat trouvé</h3>
-                <p className="text-sm text-gray-500">Essayez avec des mots-clés différents ou créez un nouveau tableau</p>
+                <p className="text-sm text-muted-foreground">Essayez avec des mots-clés différents ou créez un nouveau tableau</p>
               </div>
               
               <Button 
@@ -465,8 +472,9 @@ export default function KanbanPage() {
                   setSearchTerm('');
                   setIsCreateDialogOpen(true);
                 }} 
-                className="bg-black hover:bg-gray-800"
-              >
+                variant="default" 
+                className="flex items-center gap-2"
+              >  
                 <Plus className="mr-2 h-4 w-4" />
                 Créer un nouveau tableau
               </Button>
@@ -477,37 +485,47 @@ export default function KanbanPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBoards.map((board) => (
             <Link key={board.id} href={`/dashboard/outils/kanban/${board.id}`}>
-              <Card className="h-48 hover:shadow-lg transition-all duration-200 cursor-pointer group relative border-l-4 border-l-blue-500">
+              <Card className="min-h-42 hover:shadow-lg transition-all duration-200 cursor-pointer group relative">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    <CardTitle className="text-lg font-semibold text-foreground">
                       {board.title}
                     </CardTitle>
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 hover:bg-blue-50"
-                        onClick={(e) => handleEditClick(board, e)}
+                        className="h-8 w-8 text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground rounded-full"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setBoardToEdit(board);
+                          setIsEditDialogOpen(true);
+                        }}
                       >
-                        <Edit className="h-4 w-4 text-blue-600" />
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 hover:bg-red-50"
-                        onClick={(e) => handleDeleteClick(board, e)}
+                        className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-full"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setBoardToDelete(board);
+                          setDeleteDialogOpen(true);
+                        }}
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                  <CardDescription className="line-clamp-2 text-sm text-gray-600">
+                  <CardDescription className="line-clamp-2 mt-3 text-sm text-muted-foreground">
                     {board.description || 'Aucune description'}
                   </CardDescription>
                 </CardHeader>
                 <CardFooter className="pt-0">
-                  <div className="flex items-center justify-between w-full text-xs text-gray-500">
+                  <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       <span>Créé le {formatDate(board.createdAt)}</span>
@@ -527,15 +545,15 @@ export default function KanbanPage() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <form onSubmit={handleUpdateBoard}>
-            <DialogHeader>
-              <DialogTitle>Modifier le tableau</DialogTitle>
-              <DialogDescription>
+            <DialogHeader className="border-b pb-4">
+              <DialogTitle className="text-foreground">Modifier le tableau</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
                 Modifiez les informations de votre tableau Kanban.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-title">Titre *</Label>
+                <Label htmlFor="edit-title" className="text-foreground">Titre *</Label>
                 <Input
                   id="edit-title"
                   value={formData.title}
@@ -545,7 +563,7 @@ export default function KanbanPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-description">Description</Label>
+                <Label htmlFor="edit-description" className="text-foreground">Description</Label>
                 <Textarea
                   id="edit-description"
                   value={formData.description}
@@ -579,20 +597,20 @@ export default function KanbanPage() {
         open={!!boardToDelete}
         onOpenChange={(open) => !open && setBoardToDelete(null)}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer le tableau</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer le tableau "{boardToDelete?.title}" ? 
+        <AlertDialogContent className="sm:max-w-[425px]">
+          <AlertDialogHeader className="border-b pb-4">
+            <AlertDialogTitle className="text-foreground">Supprimer le tableau</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Êtes-vous sûr de vouloir supprimer ce tableau ? 
               Cette action est irréversible et supprimera également toutes les colonnes et tâches associées.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleting}
-              className="bg-red-500 hover:bg-red-600"
             >
               {deleting ? (
                 <>
@@ -600,7 +618,7 @@ export default function KanbanPage() {
                   Suppression...
                 </>
               ) : (
-                'Supprimer'
+                'Supprimer définitivement'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
