@@ -6,7 +6,7 @@ import { SubmitButton } from "@/src/components/ui/submit-button";
 import { InputEmail } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import { forgetPassword } from "../../../src/lib/auth-client";
 
 const ForgetPasswordForm = () => {

@@ -7,7 +7,7 @@ import { Input, InputPassword, InputEmail } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { registerUser, verifyEmail } from "../../../src/lib/auth/api";
 import { signUp } from "../../../src/lib/auth-client";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 
 const RegisterForm = () => {
@@ -77,7 +77,7 @@ const RegisterForm = () => {
           id="password"
           name="password"
           autoComplete="password"
-          placeholder="********"
+          placeholder="Saisissez votre mot de passe"
           className="mt-2"
           {...register("password", {
             required: "Mot de passe est requis",

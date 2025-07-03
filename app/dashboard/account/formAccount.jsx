@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Label } from "@/src/components/ui/label";
-import { Input } from "@/src/components/ui/input";
+import { Input, InputEmail, InputPhone } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { useForm } from "react-hook-form";
 import { updateUserProfile } from "../../../src/lib/auth/api";
@@ -10,16 +10,8 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/src/components/ui/avatar";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
 import { ImagePlus } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import { updateUser, useSession } from "../../../src/lib/auth-client";
 
 export default function ProfileForm({ user }) {
@@ -150,7 +142,7 @@ export default function ProfileForm({ user }) {
             >
               Adresse email
             </Label>
-            <Input
+            <InputEmail
               type="email"
               id="email"
               className="mt-2"
@@ -166,7 +158,7 @@ export default function ProfileForm({ user }) {
             >
               Numéro de téléphone
             </Label>
-            <Input
+            <InputPhone
               type="tel"
               id="phone"
               className="mt-2"

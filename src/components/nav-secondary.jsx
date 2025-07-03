@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { Icon } from "@tabler/icons-react";
 
 import {
@@ -27,62 +29,76 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import Link from "next/link";
+
+// Composant pour le menu Paramètres avec dropdown
+function SettingsDropdownMenu() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <SidebarMenuItem key={"settings"}>
+      <SidebarMenuButton
+        className="mb-1 cursor-pointer"
+        onClick={() => setOpen(true)}
+      >
+        <IconSettings />
+        <span>Paramètres</span>
+      </SidebarMenuButton>
+
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <SidebarMenuAction
+            showOnHover
+            className="data-[state=open]:bg-accent rounded-sm"
+          >
+            <IconDots />
+            <span className="sr-only">Plus</span>
+          </SidebarMenuAction>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent
+          className="w-[200px] rounded-lg"
+          side="bottom"
+          align="start"
+        >
+          <DropdownMenuItem className="cursor-pointer" asChild>
+            <Link href={"/dashboard/settings"}>
+              <IconFolder />
+              <span>Paramètres entreprise</span>
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem className="cursor-pointer" asChild>
+            <Link href={"/dashboard/settings/integrations"}>
+              <IconShare3 />
+              <span>Integrations</span>
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            variant="destructive"
+            className="cursor-pointer"
+            asChild
+          >
+            <Link href={"/dashboard/settings/delete-account"}>
+              <IconTrash />
+              <span>Supprimer le compte</span>
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </SidebarMenuItem>
+  );
+}
 
 export function NavSecondary({ items, ...props }) {
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
-        {/* /// */}
+        {/* Menu Paramètres avec dropdown */}
         <SidebarMenu>
-          <SidebarMenuItem key={"settings"}>
-            <SidebarMenuButton asChild>
-              <a href={"#"}>
-                <IconSettings />
-                <span>Paramètres</span>
-              </a>
-            </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction
-                  showOnHover
-                  className="data-[state=open]:bg-accent rounded-sm"
-                >
-                  <IconDots />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[200px] rounded-lg"
-                side="bottom"
-                align="start"
-              >
-                <DropdownMenuItem className="cursor-pointer" asChild>
-                  <Link href={"/dashboard/settings"}>
-                    <IconFolder />
-                    <span>Paramètres entreprise</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" asChild>
-                  <Link href={"/dashboard/settings/integrations"}>
-                    <IconShare3 />
-                    <span>Integrations</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  className="cursor-pointer"
-                  asChild
-                >
-                  <Link href={"/dashboard/settings/delete-account"}>
-                    <IconTrash />
-                    <span>Supprimer le compte</span>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
+          <SettingsDropdownMenu />
         </SidebarMenu>
         {/* /// */}
         <SidebarMenu>

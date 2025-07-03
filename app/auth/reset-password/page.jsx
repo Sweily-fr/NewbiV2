@@ -8,7 +8,7 @@ import {
 import { Input } from "@/src/components/ui/input";
 import { SubmitButton } from "@/src/components/ui/submit-button";
 import { resetPassword } from "@/src/lib/auth-client";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 

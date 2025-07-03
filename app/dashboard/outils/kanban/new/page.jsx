@@ -1,20 +1,33 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { Button } from '@/src/components/ui/button';
-import { Input } from '@/src/components/ui/input';
-import { Textarea } from '@/src/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/src/components/ui/form';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card';
-import { useCreateBoard } from '@/src/hooks/useKanban';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "@/src/components/ui/sonner";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/src/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import { useCreateBoard } from "@/src/hooks/useKanban";
 
 const formSchema = z.object({
-  title: z.string().min(1, 'Le titre est requis'),
+  title: z.string().min(1, "Le titre est requis"),
   description: z.string().optional(),
 });
 
@@ -26,8 +39,8 @@ export default function NewBoardPage() {
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '',
-      description: '',
+      title: "",
+      description: "",
     },
   });
 
@@ -43,11 +56,11 @@ export default function NewBoardPage() {
         },
       });
 
-      toast.success('Tableau créé avec succès');
+      toast.success("Tableau créé avec succès");
       router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);
     } catch (error) {
-      console.error('Erreur lors de la création du tableau:', error);
-      toast.error('Une erreur est survenue lors de la création du tableau');
+      console.error("Erreur lors de la création du tableau:", error);
+      toast.error("Une erreur est survenue lors de la création du tableau");
     } finally {
       setIsSubmitting(false);
     }
@@ -58,7 +71,9 @@ export default function NewBoardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Nouveau tableau Kanban</CardTitle>
-          <CardDescription>Créez un nouveau tableau pour organiser vos tâches</CardDescription>
+          <CardDescription>
+            Créez un nouveau tableau pour organiser vos tâches
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -99,7 +114,7 @@ export default function NewBoardPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push('/dashboard/outils/kanban')}
+                  onClick={() => router.push("/dashboard/outils/kanban")}
                   disabled={isSubmitting}
                 >
                   Annuler
@@ -111,7 +126,7 @@ export default function NewBoardPage() {
                       Création...
                     </>
                   ) : (
-                    'Créer le tableau'
+                    "Créer le tableau"
                   )}
                 </Button>
               </div>

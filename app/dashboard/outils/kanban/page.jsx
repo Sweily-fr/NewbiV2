@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Plus, Trash2, Edit, Loader2 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/src/components/ui/card';
-import { toast } from 'sonner';
+import { toast } from "@/src/components/ui/sonner";
 import {
   AlertDialog,
   AlertDialogAction,

@@ -1,7 +1,7 @@
 "use client";
 import { DataTable } from "@/src/components/data-table";
 
-const data: any = [
+const data = [
   {
     id: 1,
     header: "F-202504-000004",

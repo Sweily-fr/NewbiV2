@@ -8,7 +8,7 @@ import LoginForm from "./loginForm";
 import { signInGoogle, signInGithub } from "@/src/lib/auth/api";
 import router from "next/router";
 import { signIn } from "../../../src/lib/auth-client";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 

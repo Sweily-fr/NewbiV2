@@ -48,7 +48,7 @@ import {
   ColumnVisibility,
 } from "@tanstack/react-table";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import { z } from "zod";
 
 import { useIsMobile } from "@/src/hooks/use-mobile";

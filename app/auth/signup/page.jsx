@@ -7,7 +7,7 @@ import { Separator } from "@/src/components/ui/separator";
 import { signIn } from "../../../src/lib/auth-client";
 import RegisterForm from "./registerForm";
 import Link from "next/link";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 const GitHubIcon = (props) => (
   <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
@@ -93,7 +93,7 @@ export default function SignUpPage() {
                 </span>
               </div>
             </div>
-            
+
             <RegisterForm />
           </div>
         </div>

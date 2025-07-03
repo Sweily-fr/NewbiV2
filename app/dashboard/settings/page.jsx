@@ -5,7 +5,7 @@ import { SettingsSidebar } from "@/src/components/settings-sidebar";
 import { Separator } from "@/src/components/ui/separator";
 import { Button } from "@/src/components/ui/button";
 import { updateUser, useSession } from "@/src/lib/auth-client";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Import des composants de section
 import CompanySection from "./components/CompanySection";
@@ -58,7 +58,7 @@ export default function Settings() {
       website: "",
       description: "",
       logo: "",
-      
+
       // Adresse
       address: {
         street: "",
@@ -66,14 +66,14 @@ export default function Settings() {
         postalCode: "",
         country: "France",
       },
-      
+
       // Informations bancaires
       bankDetails: {
         iban: "",
         bic: "",
         bankName: "",
       },
-      
+
       // Informations légales
       legal: {
         siret: "",
@@ -173,12 +173,12 @@ export default function Settings() {
   const currentTab = TABS_CONFIG[activeTab] || TABS_CONFIG.entreprise;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex gap-6 p-8">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex gap-6 px-6">
       <div className="w-64 pt-6">
         <SettingsSidebar activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
       <Separator orientation="vertical" className="h-full w-px bg-border" />
-      <div className="flex-1 pt-6">
+      <div className="flex-1 pt-6 px-2">
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>

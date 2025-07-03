@@ -31,7 +31,7 @@ import {
 import Link from "next/link";
 import { ModeToggle } from "@/src/components/ui/mode-toggle";
 import { signOut } from "../lib/auth-client";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 
 export function NavUser({ user }) {
@@ -99,16 +99,16 @@ export function NavUser({ user }) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <Link href="/dashboard/account">
-                <DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
                   <IconUserCircle />
                   Compte
                 </DropdownMenuItem>
               </Link>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
                 <IconCreditCard />
                 Facture
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
                 <IconNotification />
                 Notifications
               </DropdownMenuItem>
@@ -117,7 +117,11 @@ export function NavUser({ user }) {
               </DropdownMenuItem> */}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem
+              onClick={handleLogout}
+              variant="destructive"
+              className="cursor-pointer"
+            >
               <IconLogout />
               Se deconnecter
             </DropdownMenuItem>

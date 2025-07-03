@@ -7,7 +7,7 @@ import { SubmitButton } from "@/src/components/ui/submit-button";
 import { Input, InputPassword, InputEmail } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import { signIn } from "../../../src/lib/auth-client";
 
 const LoginForm = () => {
@@ -78,7 +78,7 @@ const LoginForm = () => {
           id="password"
           name="password"
           autoComplete="password"
-          placeholder="********"
+          placeholder="Saisissez votre mot de passe"
           className="mt-2"
           {...register("password", {
             required: "Mot de passe est requis",
