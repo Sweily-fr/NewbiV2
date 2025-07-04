@@ -166,30 +166,8 @@ export default function KanbanBoardPage({ params }) {
     collapsedColumnsCount,
   } = useColumnCollapse(id);
 
-  // Loading and error states
-  if (loading || columnsLoading || tasksLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-4 text-red-500">
-        Erreur lors du chargement du tableau: {error.message}
-      </div>
-    );
-  }
-
-  if (!board) {
-    return (
-      <div className="p-4 text-gray-500">
-        Aucun tableau trouvé. Veuillez réessayer plus tard.
-      </div>
-    );
-  }
+  // La gestion du chargement et des erreurs est gérée par les fichiers spéciaux Next.js
+  // loading.jsx et error.jsx dans ce même dossier
 
   return (
     <div className="w-full max-w-[100vw] px-6 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
