@@ -2,10 +2,16 @@ import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { mongoDb } from "./mongodb";
 import { resend } from "./resend";
+import { admin } from "better-auth/plugins";
 // import { bearer } from "better-auth/plugins";
 
 export const auth = betterAuth({
   database: mongodbAdapter(mongoDb),
+  plugins: [
+    admin({
+      adminUserIds: ["685ff0250e083b9a2987a0b9"],
+    }),
+  ],
   // plugins: [bearer()],
   emailAndPassword: {
     enabled: true,
@@ -48,6 +54,18 @@ export const auth = betterAuth({
         required: false,
         defaultValue: "",
       },
+      createdBy: {
+        type: "string",
+        required: false,
+        defaultValue: "",
+      },
+      // data: {
+      //   type: "object",
+      //   required: false,
+      //   defaultValue: {
+      //     createdBy: "",
+      //   },
+      // },
       // avatar: {
       //   type: "string",
       //   required: false,

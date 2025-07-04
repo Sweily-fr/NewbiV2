@@ -1,9 +1,7 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
-import { CheckIcon, CopyIcon, UserRoundPlusIcon } from "lucide-react";
+import { UserRoundPlusIcon } from "lucide-react";
 
-import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -14,56 +12,73 @@ import {
   DialogTrigger,
 } from "@/src/components/ui/dialog";
 import { Label } from "@/src/components/ui/label";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/components/ui/tooltip";
-import { InputEmail } from "@/src/components/ui/input";
+import { InputEmail, Input } from "@/src/components/ui/input";
+import { InputPassword } from "@/src/components/ui/input";
+import { useForm } from "react-hook-form";
+import { admin } from "../../../../src/lib/auth-client";
+import { toast } from "@/src/components/ui/sonner";
+import { useUser } from "../../../../src/lib/auth/hooks";
 
 export default function InviteMembers({ open, onOpenChange }) {
-  const id = useId();
-  const [emails, setEmails] = useState([
-    "mark@yourcompany.com",
-    "jane@yourcompany.com",
-    "",
-  ]);
-  const [copied, setCopied] = useState(false);
-  const inputRef = useRef(null);
-  const lastInputRef = useRef(null);
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+    setError: setFormError,
+  } = useForm();
+  const { session } = useUser();
+  console.log(session?.session.userId, "session");
 
-  const addEmail = () => {
-    setEmails([...emails, ""]);
+  const onSubmit = async (formData) => {
+    console.log({ ...formData, role: "user" }, "formData");
+    await admin.createUser(
+      {
+        ...formData,
+        role: "user",
+        createdBy: session?.session.userId,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Un nouveau collaborateur a été ajouté");
+          onOpenChange(false);
+        },
+        onError: (error) => {
+          toast.error("Erreur lors de l'inscription");
+        },
+      }
+    );
+  };
+  const users = async () => {
+    await admin.listUsers(
+      {
+        query: {
+          filterField: "createdBy",
+          filterValue: session?.session?.userId,
+        },
+        onSuccess: (users) => {
+          console.log(users, "users");
+          return users;
+        },
+      },
+      {
+        onError: (error) => {
+          console.log(error, "error");
+        },
+      }
+    );
   };
 
-  const handleEmailChange = (index, value) => {
-    const newEmails = [...emails];
-    newEmails[index] = value;
-    setEmails(newEmails);
-  };
-
-  const handleCopy = () => {
-    if (inputRef.current) {
-      navigator.clipboard.writeText(inputRef.current.value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    }
-  };
+  console.log(users(), "users");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" className="hidden">
-          Inviter des membres
+          Ajouter un collaborateur
         </Button>
       </DialogTrigger>
-      <DialogContent
-        onOpenAutoFocus={(e) => {
-          e.preventDefault();
-          lastInputRef.current?.focus();
-        }}
-      >
+      <DialogContent>
         <div className="flex flex-col gap-2">
           <div
             className="flex size-11 shrink-0 items-center justify-center rounded-full border"
@@ -80,88 +95,49 @@ export default function InviteMembers({ open, onOpenChange }) {
           </DialogHeader>
         </div>
 
-        <form className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-4">
             <div className="*:not-first:mt-2">
-              <Label>Inviter via email</Label>
+              <Label>Nom</Label>
               <div className="space-y-3">
-                {emails.map((email, index) => (
-                  <InputEmail
-                    key={index}
-                    id={`team-email-${index + 1}`}
-                    placeholder="hi@yourcompany.com"
-                    type="email"
-                    value={email}
-                    onChange={(e) => handleEmailChange(index, e.target.value)}
-                    ref={index === emails.length - 1 ? lastInputRef : undefined}
-                  />
-                ))}
+                <Input
+                  id="name"
+                  placeholder="Nom"
+                  type="text"
+                  value={watch("name")}
+                  {...register("name")}
+                />
               </div>
             </div>
-            <button
-              type="button"
-              onClick={addEmail}
-              className="text-sm underline hover:no-underline"
-            >
-              + Ajouter un autre
-            </button>
+            <div className="*:not-first:mt-2">
+              <Label>Email</Label>
+              <div className="space-y-3">
+                <InputEmail
+                  id="email"
+                  placeholder="hi@yourcompany.com"
+                  type="email"
+                  value={watch("email")}
+                  {...register("email")}
+                />
+              </div>
+            </div>
+            <div className="*:not-first:mt-2">
+              <Label>Mot de passe</Label>
+              <div className="space-y-3">
+                <InputPassword
+                  id="password"
+                  placeholder="Saisissez votre mot de passe"
+                  type="password"
+                  value={watch("password")}
+                  {...register("password")}
+                />
+              </div>
+            </div>
           </div>
-          <Button type="button" className="w-full">
-            Envoyer les invitations
+          <Button type="submit" className="w-full">
+            Ajouter
           </Button>
         </form>
-
-        {/* <hr className="my-1 border-t" /> */}
-
-        {/* <div className="*:not-first:mt-2">
-          <Label htmlFor={id}>Invite via magic link</Label>
-          <div className="relative">
-            <Input
-              ref={inputRef}
-              id={id}
-              className="pe-9"
-              type="text"
-              defaultValue="https://originui.com/refer/87689"
-              readOnly
-            />
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={handleCopy}
-                    className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed"
-                    aria-label={copied ? "Copied" : "Copy to clipboard"}
-                    disabled={copied}
-                  >
-                    <div
-                      className={cn(
-                        "transition-all",
-                        copied ? "scale-100 opacity-100" : "scale-0 opacity-0"
-                      )}
-                    >
-                      <CheckIcon
-                        className="stroke-emerald-500"
-                        size={16}
-                        aria-hidden="true"
-                      />
-                    </div>
-                    <div
-                      className={cn(
-                        "absolute transition-all",
-                        copied ? "scale-0 opacity-0" : "scale-100 opacity-100"
-                      )}
-                    >
-                      <CopyIcon size={16} aria-hidden="true" />
-                    </div>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="px-2 py-1 text-xs">
-                  Copy to clipboard
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div> */}
       </DialogContent>
     </Dialog>
   );

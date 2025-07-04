@@ -1,24 +1,39 @@
-import { Plus, Edit, Trash2, MoreVertical, ChevronUp, ChevronDown } from 'lucide-react';
-import { Button } from '@/src/components/ui/button';
-import { Badge } from '@/src/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/src/components/ui/dropdown-menu';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { DroppableColumn } from './DroppableColumn';
-import { TaskCard } from './TaskCard';
+import {
+  Plus,
+  Edit,
+  Trash2,
+  MoreVertical,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { DroppableColumn } from "./DroppableColumn";
+import { TaskCard } from "./TaskCard";
 
 /**
  * Composant pour une colonne avec ses tâches dans le tableau Kanban
  */
-export function KanbanColumn({ 
-  column, 
-  tasks, 
-  onAddTask, 
-  onEditTask, 
-  onDeleteTask, 
-  onEditColumn, 
-  onDeleteColumn, 
-  isCollapsed, 
-  onToggleCollapse 
+export function KanbanColumn({
+  column,
+  tasks,
+  onAddTask,
+  onEditTask,
+  onDeleteTask,
+  onEditColumn,
+  onDeleteColumn,
+  isCollapsed,
+  onToggleCollapse,
 }) {
   return (
     <DroppableColumn column={column}>
@@ -30,10 +45,14 @@ export function KanbanColumn({
             onClick={onToggleCollapse}
             className="h-6 w-6 p-0 mr-1"
           >
-            {isCollapsed ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
+            {isCollapsed ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronUp className="h-3 w-3" />
+            )}
           </Button>
-          <div 
-            className="w-3 h-3 rounded-full" 
+          <div
+            className="w-3 h-3 rounded-full"
             style={{ backgroundColor: column.color }}
           />
           <h3 className="font-semibold text-foreground">{column.title}</h3>
@@ -57,12 +76,15 @@ export function KanbanColumn({
                 <MoreVertical className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="start">
               <DropdownMenuItem onClick={() => onEditColumn(column)}>
                 <Edit className="mr-2 h-3 w-3" />
                 Modifier
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onDeleteColumn(column.id)} className="text-red-600">
+              <DropdownMenuItem
+                onClick={() => onDeleteColumn(column.id)}
+                variant="destructive"
+              >
                 <Trash2 className="mr-2 h-3 w-3" />
                 Supprimer
               </DropdownMenuItem>
@@ -73,7 +95,10 @@ export function KanbanColumn({
 
       {!isCollapsed && (
         <>
-          <SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext
+            items={tasks.map((task) => task.id)}
+            strategy={verticalListSortingStrategy}
+          >
             <div className="mt-2 space-y-2">
               {tasks.map((task) => (
                 <TaskCard
