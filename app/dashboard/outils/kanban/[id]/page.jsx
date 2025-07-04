@@ -1,41 +1,25 @@
 "use client";
 
-import { useState, use, useRef, useEffect } from "react";
-import { useQuery, useMutation } from "@apollo/client";
+import { use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Plus,
-  Settings,
   Loader2,
-  Edit,
-  Trash2,
-  MoreVertical,
-  ChevronUp,
-  ChevronDown,
-  Calendar,
-  Flag,
-  Tag,
-  CheckSquare,
-  GripVertical,
   Search,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
+
+// UI Components
 import { Button } from "@/src/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/src/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Input } from "@/src/components/ui/input";
+import { ScrollArea } from "@/src/components/ui/scroll-area";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
+import { Badge } from "@/src/components/ui/badge";
+import { ColorPicker } from "@/src/components/ui/color-picker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,7 +29,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
 import {
   DropdownMenu,
@@ -53,13 +36,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Textarea } from "@/src/components/ui/textarea";
-import { KanbanColumn } from "./components/KanbanColumn";
-import { ColumnModal } from "./components/ColumnModal";
-import { TaskModal } from "./components/TaskModal";
-import { TaskCard } from "./components/TaskCard";
 import {
   Select,
   SelectContent,
@@ -67,9 +43,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Badge } from "@/src/components/ui/badge";
-import { ColorPicker } from "@/src/components/ui/color-picker";
-import { toast } from "sonner";
+
+// Hooks
+import { useKanbanBoard } from "./hooks/useKanbanBoard";
+import { useKanbanColumns } from "./hooks/useKanbanColumns";
+import { useKanbanTasks } from "./hooks/useKanbanTasks";
+import { useKanbanDnD } from "./hooks/useKanbanDnD";
+import { useKanbanSearch } from "./hooks/useKanbanSearch";
+import { useColumnCollapse } from "./hooks/useColumnCollapse";
+
+// Components
+import { KanbanColumn } from "./components/KanbanColumn";
+import { TaskModal } from "./components/TaskModal";
+import { ColumnModal } from "./components/ColumnModal";
+import { DeleteConfirmation } from "./components/DeleteConfirmation";
+import { TaskCard } from "./components/TaskCard";
 import {
   GET_BOARD,
   CREATE_COLUMN,
@@ -80,7 +68,6 @@ import {
   DELETE_TASK,
   MOVE_TASK,
 } from "@/src/graphql/kanbanQueries";
-import { useColumnCollapse } from "@/src/hooks/useColumnCollapse";
 import {
   DndContext,
   DragOverlay,
@@ -104,39 +91,74 @@ export default function KanbanBoardPage({ params }) {
   const router = useRouter();
   const { id } = use(params);
 
-  // États pour les modals
-  const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
-  const [isEditColumnOpen, setIsEditColumnOpen] = useState(false);
-  const [isDeleteColumnDialogOpen, setIsDeleteColumnDialogOpen] =
-    useState(false);
-  const [columnToDelete, setColumnToDelete] = useState(null);
-  const [editingColumn, setEditingColumn] = useState(null);
-  const [columnForm, setColumnForm] = useState({ title: "", color: "#3b82f6" });
+  // Hooks
+  const { board, loading, error, refetch, getTasksByColumn } = useKanbanBoard(id);
+  
+  const {
+    isAddColumnOpen,
+    isEditColumnOpen,
+    isDeleteColumnDialogOpen,
+    columnToDelete,
+    editingColumn,
+    columnForm,
+    loading: columnsLoading,
+    createLoading,
+    updateLoading,
+    deleteLoading,
+    setIsAddColumnOpen,
+    setIsEditColumnOpen,
+    setIsDeleteColumnDialogOpen,
+    setColumnToDelete,
+    setEditingColumn,
+    setColumnForm,
+    handleColumnFormChange,
+    handleCreateColumn,
+    handleUpdateColumn,
+    handleDeleteColumn,
+    confirmDeleteColumn,
+    openEditModal,
+    openAddModal,
+  } = useKanbanColumns(id, refetch);
 
-  // États pour les modals de tâches
-  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
-  const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [selectedColumnId, setSelectedColumnId] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const initialTaskForm = {
-    title: "",
-    description: "",
-    status: "TODO",
-    priority: "medium", // Changed to lowercase to match backend expectations
-    dueDate: "",
-    tags: [],
-    checklist: [],
-    newTag: "",
-    newChecklistItem: "",
-  };
+  const {
+    taskForm,
+    editingTask,
+    selectedColumnId,
+    isAddTaskOpen,
+    isEditTaskOpen,
+    loading: tasksLoading,
+    createTaskLoading,
+    updateTaskLoading,
+    deleteTaskLoading,
+    setTaskForm,
+    setEditingTask,
+    setSelectedColumnId,
+    setIsAddTaskOpen,
+    setIsEditTaskOpen,
+    handleTaskFormChange,
+    handleCreateTask,
+    handleUpdateTask,
+    handleDeleteTask,
+    openAddTaskModal,
+    openEditTaskModal,
+    closeAddTaskModal,
+    closeEditTaskModal,
+    addTag,
+    removeTag,
+    addChecklistItem,
+    toggleChecklistItem,
+    removeChecklistItem,
+    moveTask,
+  } = useKanbanTasks(id, refetch);
 
-  const [taskForm, setTaskForm] = useState(initialTaskForm);
+  const { activeTask, sensors, handleDragStart, handleDragEnd } = useKanbanDnD(
+    moveTask,
+    getTasksByColumn,
+    id
+  );
 
-  // État pour le drag & drop
-  const [activeTask, setActiveTask] = useState(null);
-
-  // Hook pour gérer le collapse des colonnes
+  const { searchQuery, setSearchQuery, filterTasks } = useKanbanSearch();
+  
   const {
     isColumnCollapsed,
     toggleColumnCollapse,
@@ -144,633 +166,29 @@ export default function KanbanBoardPage({ params }) {
     collapsedColumnsCount,
   } = useColumnCollapse(id);
 
-  // Configuration des sensors pour le drag & drop
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 3,
-        delay: 100,
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  // Loading and error states
+  if (loading || columnsLoading || tasksLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
-  const { data, loading, error, refetch } = useQuery(GET_BOARD, {
-    variables: { id },
-    errorPolicy: "all",
-  });
-
-  // Mutations GraphQL pour les colonnes
-  const [createColumn, { loading: createLoading }] = useMutation(
-    CREATE_COLUMN,
-    {
-      refetchQueries: [{ query: GET_BOARD, variables: { id } }],
-      onCompleted: () => {
-        toast.success("Colonne créée avec succès");
-        setIsAddColumnOpen(false);
-        setColumnForm({ title: "", color: "#3b82f6" });
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la création de la colonne");
-      },
-    }
-  );
-
-  const [updateColumn, { loading: updateLoading }] = useMutation(
-    UPDATE_COLUMN,
-    {
-      refetchQueries: [{ query: GET_BOARD, variables: { id } }],
-      onCompleted: () => {
-        toast.success("Colonne modifiée avec succès");
-        setIsEditColumnOpen(false);
-        setEditingColumn(null);
-        setColumnForm({ title: "", color: "#3b82f6" });
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la modification de la colonne");
-      },
-    }
-  );
-
-  const [deleteColumn, { loading: deleteLoading }] = useMutation(
-    DELETE_COLUMN,
-    {
-      refetchQueries: [{ query: GET_BOARD, variables: { id } }],
-      onCompleted: () => {
-        toast.success("Colonne supprimée avec succès");
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la suppression de la colonne");
-      },
-    }
-  );
-
-  // Mutations GraphQL pour les tâches
-  const [createTask, { loading: createTaskLoading }] = useMutation(
-    CREATE_TASK,
-    {
-      refetchQueries: [{ query: GET_BOARD, variables: { id } }],
-      onCompleted: () => {
-        toast.success("Tâche créée avec succès");
-        setIsAddTaskOpen(false);
-        setTaskForm(initialTaskForm);
-        setSelectedColumnId(null);
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la création de la tâche");
-      },
-    }
-  );
-
-  const [updateTask, { loading: updateTaskLoading }] = useMutation(
-    UPDATE_TASK,
-    {
-      refetchQueries: [{ query: GET_BOARD, variables: { id } }],
-      onCompleted: () => {
-        toast.success("Tâche modifiée avec succès");
-        setIsEditTaskOpen(false);
-        setEditingTask(null);
-        setTaskForm(initialTaskForm);
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la modification de la tâche");
-      },
-    }
-  );
-
-  const [deleteTask, { loading: deleteTaskLoading }] = useMutation(
-    DELETE_TASK,
-    {
-      refetchQueries: [{ query: GET_BOARD, variables: { id } }],
-      onCompleted: () => {
-        toast.success("Tâche supprimée avec succès");
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la suppression de la tâche");
-      },
-    }
-  );
-
-  const [moveTask] = useMutation(MOVE_TASK, {
-    onCompleted: () => {
-      toast.success("Tâche déplacée avec succès");
-    },
-    onError: (error) => {
-      toast.error("Erreur lors du déplacement de la tâche");
-    },
-  });
-
-  const board = data?.board;
-
-  // Organiser les tâches par colonne
-  const getTasksByColumn = (columnId) => {
-    if (!board?.tasks) return [];
-    return board.tasks
-      .filter((task) => task.columnId === columnId)
-      .sort((a, b) => (a.position || 0) - (b.position || 0));
-  };
-
-  // Fonction pour filtrer les tâches selon la recherche
-  const filterTasks = (tasks = []) => {
-    if (!searchQuery?.trim()) return tasks;
-
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return tasks;
-
-    return tasks.filter((task) => {
-      if (!task) return false;
-
-      // Vérifier le titre et la description
-      if (
-        task.title?.toLowerCase().includes(query) ||
-        task.description?.toLowerCase().includes(query)
-      ) {
-        return true;
-      }
-
-      // Vérifier les tags
-      if (
-        Array.isArray(task.tags) &&
-        task.tags.some(
-          (tag) =>
-            tag?.name?.toLowerCase().includes(query) ||
-            tag?.color?.toLowerCase().includes(query)
-        )
-      ) {
-        return true;
-      }
-
-      // Vérifier la checklist
-      if (
-        Array.isArray(task.checklist) &&
-        task.checklist.some((item) => item?.text?.toLowerCase().includes(query))
-      ) {
-        return true;
-      }
-
-      // Vérifier la date d'échéance
-      try {
-        if (task.dueDate) {
-          const dueDate = new Date(task.dueDate);
-          if (!isNaN(dueDate.getTime())) {
-            const dateFormats = [
-              dueDate.toLocaleDateString("fr-FR"), // 03/07/2025
-              dueDate.toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              }), // 3 juillet 2025
-              dueDate.toLocaleDateString("en-US", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              }), // July 3, 2025
-              dueDate.toISOString().split("T")[0], // 2025-07-03
-            ];
-
-            if (
-              dateFormats.some((format) =>
-                format?.toLowerCase().includes(query)
-              )
-            ) {
-              return true;
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Erreur lors du traitement de la date:", e);
-      }
-
-      return false;
-    });
-  };
-
-  // Fonctions de gestion des colonnes
-  const handleCreateColumn = async () => {
-    if (!columnForm.title.trim()) {
-      toast.error("Le titre de la colonne est requis");
-      return;
-    }
-
-    try {
-      await createColumn({
-        variables: {
-          input: {
-            title: columnForm.title,
-            color: columnForm.color,
-            boardId: id,
-            order: board?.columns?.length || 0,
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Error creating column:", error);
-    }
-  };
-
-  const handleUpdateColumn = async () => {
-    if (!columnForm.title.trim()) {
-      toast.error("Le titre de la colonne est requis");
-      return;
-    }
-
-    try {
-      await updateColumn({
-        variables: {
-          input: {
-            id: editingColumn.id,
-            title: columnForm.title,
-            color: columnForm.color,
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Error updating column:", error);
-    }
-  };
-
-  const handleDeleteColumn = (column) => {
-    // Si column est un objet, on le stocke tel quel, sinon on crée un objet avec l'ID
-    const columnToStore = typeof column === 'object' ? column : { id: column };
-    setColumnToDelete(columnToStore);
-    setIsDeleteColumnDialogOpen(true);
-  };
-
-  const confirmDeleteColumn = async () => {
-    if (!columnToDelete) return;
-
-    try {
-      // S'assurer que l'ID est correctement formaté comme une chaîne
-      const columnId = columnToDelete.id.toString();
-      await deleteColumn({ 
-        variables: { 
-          id: columnId
-        } 
-      });
-      setIsDeleteColumnDialogOpen(false);
-      setColumnToDelete(null);
-    } catch (error) {
-      console.error("Error deleting column:", error);
-      toast.error("Erreur lors de la suppression de la colonne");
-    }
-  };
-
-  const openEditModal = (column) => {
-    setEditingColumn(column);
-    setColumnForm({ title: column.title, color: column.color });
-    setIsEditColumnOpen(true);
-  };
-
-  const openAddModal = () => {
-    setColumnForm({ title: "", color: "#3b82f6" });
-    setIsAddColumnOpen(true);
-  };
-
-  // Fonctions de gestion des tâches
-  const handleCreateTask = async () => {
-    if (!taskForm.title.trim()) {
-      toast.error("Le titre de la tâche est requis");
-      return;
-    }
-
-    try {
-      const columnTasks = getTasksByColumn(selectedColumnId);
-      await createTask({
-        variables: {
-          input: {
-            title: taskForm.title,
-            description: taskForm.description,
-            status: taskForm.status,
-            priority: taskForm.priority
-              ? taskForm.priority.toLowerCase()
-              : "medium",
-            dueDate: taskForm.dueDate || null,
-            columnId: selectedColumnId,
-            boardId: id,
-            position: columnTasks.length,
-            tags: taskForm.tags.map((tag) => ({
-              name: tag.name,
-              className: tag.className || "",
-              bg: tag.bg || "",
-              text: tag.text || "",
-              border: tag.border || "",
-            })),
-            checklist: taskForm.checklist.map((item) => ({
-              text: item.text,
-              completed: item.completed || false,
-            })),
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Error creating task:", error);
-      toast.error("Erreur lors de la création de la tâche");
-    }
-  };
-
-  const handleUpdateTask = async () => {
-    if (!taskForm.title.trim()) {
-      toast.error("Le titre de la tâche est requis");
-      return;
-    }
-
-    try {
-      await updateTask({
-        variables: {
-          input: {
-            id: editingTask.id,
-            title: taskForm.title,
-            description: taskForm.description,
-            status: taskForm.status,
-            priority: taskForm.priority
-              ? taskForm.priority.toLowerCase()
-              : "medium",
-            dueDate: taskForm.dueDate || null,
-            columnId: taskForm.columnId, // Ajout du columnId
-            tags: taskForm.tags.map((tag) => ({
-              name: tag.name,
-              className: tag.className || "",
-              bg: tag.bg || "",
-              text: tag.text || "",
-              border: tag.border || "",
-            })),
-            checklist: taskForm.checklist.map((item) => ({
-              id: item.id || undefined,
-              text: item.text,
-              completed: item.completed || false,
-            })),
-          },
-        },
-        // Mise à jour optimiste du cache pour un rendu instantané
-        optimisticResponse: {
-          updateTask: {
-            __typename: "Task",
-            id: editingTask.id,
-            title: taskForm.title,
-            description: taskForm.description,
-            status: taskForm.status,
-            priority: taskForm.priority
-              ? taskForm.priority.toLowerCase()
-              : "medium",
-            dueDate: taskForm.dueDate || null,
-            columnId: taskForm.columnId,
-            tags: taskForm.tags,
-            checklist: taskForm.checklist,
-            position: editingTask.position || 0,
-          },
-        },
-        update: (cache, { data }) => {
-          // Mise à jour du cache Apollo pour refléter le changement de colonne
-          const existingData = cache.readQuery({
-            query: GET_BOARD,
-            variables: { id },
-          });
-
-          if (existingData && data?.updateTask) {
-            const updatedTasks = existingData.board.tasks.map((task) =>
-              task.id === data.updateTask.id ? data.updateTask : task
-            );
-
-            cache.writeQuery({
-              query: GET_BOARD,
-              variables: { id },
-              data: {
-                ...existingData,
-                board: {
-                  ...existingData.board,
-                  tasks: updatedTasks,
-                },
-              },
-            });
-          }
-        },
-      });
-    } catch (error) {
-      console.error("Error updating task:", error);
-      toast.error("Erreur lors de la mise à jour de la tâche");
-    }
-  };
-
-  const handleDeleteTask = async (taskId) => {
-    try {
-      await deleteTask({ variables: { id: taskId } });
-    } catch (error) {
-      console.error("Error deleting task:", error);
-    }
-  };
-
-  const openAddTaskModal = (columnId) => {
-    setSelectedColumnId(columnId);
-    setTaskForm({
-      ...initialTaskForm, // Use all default values
-      status: "TODO",
-      priority: "medium", // Changed to lowercase to match backend expectations
-    });
-    setIsAddTaskOpen(true);
-  };
-
-  const openEditTaskModal = (task) => {
-    if (!task) return;
-
-    setEditingTask(task);
-    setTaskForm({
-      ...initialTaskForm, // Start with all default values
-      title: task?.title || "",
-      description: task?.description || "",
-      status: task?.status || "TODO",
-      priority: task?.priority ? task.priority.toLowerCase() : "medium", // Ensure lowercase priority
-      dueDate: task?.dueDate ? task.dueDate.split("T")[0] : "",
-      columnId: task?.columnId || "", // Ajout du columnId
-      tags: Array.isArray(task?.tags) ? task.tags : [],
-      checklist: Array.isArray(task?.checklist)
-        ? task.checklist.map((item) => ({
-            id: item?.id,
-            text: item?.text || "",
-            completed: Boolean(item?.completed),
-          }))
-        : [],
-    });
-    setIsEditTaskOpen(true);
-  };
-
-  // Gestion des tags
-  const addTag = () => {
-    if (
-      taskForm.newTag.trim() &&
-      !taskForm.tags.some((tag) => tag.name === taskForm.newTag)
-    ) {
-      const newTag = {
-        name: taskForm.newTag.trim(),
-        className: "",
-        bg: "bg-gray-100",
-        text: "text-gray-800",
-        border: "border-gray-300",
-      };
-      setTaskForm({
-        ...taskForm,
-        tags: [...taskForm.tags, newTag],
-        newTag: "",
-      });
-    }
-  };
-
-  const removeTag = (tagName) => {
-    setTaskForm({
-      ...taskForm,
-      tags: taskForm.tags.filter((tag) => tag.name !== tagName),
-    });
-  };
-
-  // Gestion de la checklist
-  const addChecklistItem = () => {
-    if (taskForm.newChecklistItem.trim()) {
-      setTaskForm({
-        ...taskForm,
-        checklist: [
-          ...taskForm.checklist,
-          { text: taskForm.newChecklistItem.trim(), completed: false },
-        ],
-        newChecklistItem: "",
-      });
-    }
-  };
-
-  const toggleChecklistItem = (index) => {
-    const updatedChecklist = [...taskForm.checklist];
-    updatedChecklist[index] = {
-      ...updatedChecklist[index],
-      completed: !updatedChecklist[index].completed,
-    };
-    setTaskForm({
-      ...taskForm,
-      checklist: updatedChecklist,
-    });
-  };
-
-  const removeChecklistItem = (index) => {
-    const updatedChecklist = [...taskForm.checklist];
-    updatedChecklist.splice(index, 1);
-    setTaskForm({
-      ...taskForm,
-      checklist: updatedChecklist,
-    });
-  };
-
-  // Fonctions de drag & drop
-  const handleDragStart = (event) => {
-    const { active } = event;
-    const task = board?.tasks?.find((t) => t.id === active.id);
-    setActiveTask(task);
-  };
-
-  const handleDragEnd = async (event) => {
-    const { active, over } = event;
-    setActiveTask(null);
-
-    if (!over) return;
-
-    const activeTask = board?.tasks?.find((t) => t.id === active.id);
-    if (!activeTask) return;
-
-    let newColumnId = activeTask.columnId;
-    let newPosition = activeTask.position || 0;
-
-    // Déterminer où on a droppé
-    if (over.data?.current?.type === "column") {
-      // Droppé sur une colonne
-      newColumnId = over.id;
-      const targetColumnTasks = getTasksByColumn(over.id);
-      newPosition = targetColumnTasks.length;
-    } else if (over.data?.current?.type === "task") {
-      // Droppé sur une autre tâche
-      const targetTask = over.data.current.task;
-      newColumnId = targetTask.columnId;
-      const targetColumnTasks = getTasksByColumn(targetTask.columnId);
-      const targetIndex = targetColumnTasks.findIndex(
-        (t) => t.id === targetTask.id
-      );
-
-      // Si on déplace dans la même colonne, ajuster la position
-      if (newColumnId === activeTask.columnId) {
-        const activeIndex = targetColumnTasks.findIndex(
-          (t) => t.id === activeTask.id
-        );
-        if (activeIndex < targetIndex) {
-          newPosition = targetIndex;
-        } else {
-          newPosition = targetIndex;
-        }
-      } else {
-        newPosition = targetIndex;
-      }
-    }
-
-    // Si la position ou la colonne a changé, faire la mutation avec mise à jour optimiste
-    if (
-      newColumnId !== activeTask.columnId ||
-      newPosition !== (activeTask.position || 0)
-    ) {
-      try {
-        await moveTask({
-          variables: {
-            id: activeTask.id,
-            columnId: newColumnId,
-            position: newPosition,
-          },
-          optimisticResponse: {
-            moveTask: {
-              __typename: "Task",
-              id: activeTask.id,
-              columnId: newColumnId,
-              position: newPosition,
-            },
-          },
-          update: (cache, { data }) => {
-            // Mise à jour du cache Apollo pour un rendu instantané
-            const existingData = cache.readQuery({
-              query: GET_BOARD,
-              variables: { id },
-            });
-
-            if (existingData && data?.moveTask) {
-              const updatedTasks = existingData.board.tasks.map((task) =>
-                task.id === data.moveTask.id
-                  ? {
-                      ...task,
-                      columnId: data.moveTask.columnId,
-                      position: data.moveTask.position,
-                    }
-                  : task
-              );
-
-              cache.writeQuery({
-                query: GET_BOARD,
-                variables: { id },
-                data: {
-                  ...existingData,
-                  board: {
-                    ...existingData.board,
-                    tasks: updatedTasks,
-                  },
-                },
-              });
-            }
-          },
-        });
-      } catch (error) {
-        console.error("Error moving task:", error);
-        toast.error("Erreur lors du déplacement de la tâche");
-        // En cas d'erreur, refetch pour restaurer l'état correct
-        refetch();
-      }
-    }
-  };
+  if (error) {
+    return (
+      <div className="p-4 text-red-500">
+        Erreur lors du chargement du tableau: {error.message}
+      </div>
+    );
+  }
 
   if (!board) {
-    return null;
+    return (
+      <div className="p-4 text-gray-500">
+        Aucun tableau trouvé. Veuillez réessayer plus tard.
+      </div>
+    );
   }
 
   return (
@@ -934,7 +352,7 @@ export default function KanbanBoardPage({ params }) {
       {/* Task Modals */}
       <TaskModal
         isOpen={isAddTaskOpen}
-        onClose={() => setIsAddTaskOpen(false)}
+        onClose={closeAddTaskModal}
         onSubmit={handleCreateTask}
         isLoading={createTaskLoading}
         isEditing={false}
@@ -950,7 +368,7 @@ export default function KanbanBoardPage({ params }) {
 
       <TaskModal
         isOpen={isEditTaskOpen}
-        onClose={() => setIsEditTaskOpen(false)}
+        onClose={closeEditTaskModal}
         onSubmit={handleUpdateTask}
         isLoading={updateTaskLoading}
         isEditing={true}
