@@ -169,6 +169,11 @@ export default function KanbanBoardPage({ params }) {
   // La gestion du chargement et des erreurs est gérée par les fichiers spéciaux Next.js
   // loading.jsx et error.jsx dans ce même dossier
 
+  // Vérifier que les données sont chargées
+  if (!board) {
+    return null; // Le composant loading.jsx s'affichera
+  }
+
   return (
     <div className="w-full max-w-[100vw] px-6 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {/* Header */}
