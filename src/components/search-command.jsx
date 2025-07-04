@@ -12,6 +12,14 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/src/components/ui/command";
+import {
+  LayoutDashboard,
+  User,
+  Settings,
+  FileText,
+  Receipt,
+  FileUp,
+} from "lucide-react";
 
 export function SearchCommand() {
   const [open, setOpen] = React.useState(false);
@@ -57,11 +65,13 @@ export function SearchCommand() {
           <CommandItem
             onSelect={() => runCommand(() => router.push("/dashboard"))}
           >
+            <LayoutDashboard className="mr-2 h-4 w-4" />
             <span>Dashboard</span>
           </CommandItem>
           <CommandItem
             onSelect={() => runCommand(() => router.push("/dashboard/account"))}
           >
+            <User className="mr-2 h-4 w-4" />
             <span>Mon compte</span>
           </CommandItem>
           <CommandItem
@@ -69,6 +79,7 @@ export function SearchCommand() {
               runCommand(() => router.push("/dashboard/settings"))
             }
           >
+            <Settings className="mr-2 h-4 w-4" />
             <span>Paramètres</span>
           </CommandItem>
         </CommandGroup>
@@ -79,6 +90,7 @@ export function SearchCommand() {
               runCommand(() => router.push("/dashboard/outils/factures"))
             }
           >
+            <Receipt className="mr-2 h-4 w-4" />
             <span>Factures</span>
           </CommandItem>
           <CommandItem
@@ -86,6 +98,7 @@ export function SearchCommand() {
               runCommand(() => router.push("/dashboard/outils/devis"))
             }
           >
+            <FileText className="mr-2 h-4 w-4" />
             <span>Devis</span>
           </CommandItem>
           <CommandItem
@@ -95,6 +108,7 @@ export function SearchCommand() {
               )
             }
           >
+            <FileUp className="mr-2 h-4 w-4" />
             <span>Transfert de fichiers</span>
           </CommandItem>
         </CommandGroup>
