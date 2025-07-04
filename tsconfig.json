@@ -30,6 +30,6 @@
     ],
     "strictNullChecks": true
   },
-  "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx", "src/components/ui/color-picker.jsx"],
+  "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx", "src/components/ui/color-picker.jsx", "src/components/ui/radio-group.jsx"],
   "exclude": ["node_modules"]
 }

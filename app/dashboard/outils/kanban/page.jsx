@@ -50,9 +50,9 @@ import {
   DELETE_BOARD,
 } from "@/src/graphql/kanbanQueries";
 import { useKanbanBoards } from "./hooks/useKanbanBoards";
-import { useRouter } from 'next/navigation';
-import { useQuery, useMutation } from '@apollo/client';
-import { KanbanBoardIllustration } from '@/src/components/kanban-board-illustration';
+import { useRouter } from "next/navigation";
+import { useQuery, useMutation } from "@apollo/client";
+import { KanbanBoardIllustration } from "@/src/components/kanban-board-illustration";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -71,14 +71,14 @@ export default function KanbanPage() {
     setIsEditDialogOpen,
     formData,
     setFormData,
-    
+
     // Data & Loading States
     boards,
     loading,
     creating,
     updating,
     deleting,
-    
+
     // Handlers
     handleCreateBoard,
     handleUpdateBoard,

@@ -20,9 +20,27 @@ import {
   isMultiDayEvent,
   useCurrentTimeIndicator,
   WeekCellsHeight,
-} from "@/components/event-calendar";
-import { EndHour, StartHour } from "@/components/event-calendar/constants";
+} from "./index";
+import { EndHour, StartHour } from "./constants";
 import { cn } from "@/src/lib/utils";
+
+// DayView props converted to JSDoc
+/**
+ * @param {Date} currentDate
+ * @param {Array} events
+ * @param {Function} onEventSelect
+ * @param {Function} onEventCreate
+ */
+
+// PositionedEvent converted to JSDoc
+/**
+ * @param {Object} event
+ * @param {number} top
+ * @param {number} height
+ * @param {number} left
+ * @param {number} width
+ * @param {number} zIndex
+ */
 
 export function DayView({ currentDate, events, onEventSelect, onEventCreate }) {
   const hours = useMemo(() => {

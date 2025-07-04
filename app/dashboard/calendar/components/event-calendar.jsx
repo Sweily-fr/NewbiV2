@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RiCalendarCheckLine } from "@remixicon/react";
+import { CalendarCheck2 } from "lucide-react";
 import {
   addDays,
   addMonths,
@@ -26,8 +26,6 @@ import {
   AgendaDaysToShow,
   AgendaView,
   CalendarDndProvider,
-  CalendarEvent,
-  CalendarView,
   DayView,
   EventDialog,
   EventGap,
@@ -35,16 +33,16 @@ import {
   MonthView,
   WeekCellsHeight,
   WeekView,
-} from "@/components/event-calendar";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+} from "./index";
+import { cn } from "@/src/lib/utils";
+import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/src/components/ui/dropdown-menu";
 
 export function EventCalendar({
   events = [],
@@ -52,7 +50,7 @@ export function EventCalendar({
   onEventUpdate,
   onEventDelete,
   className,
-  initialView = "month",
+  initialView = "mois",
 }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState(initialView);
@@ -75,13 +73,13 @@ export function EventCalendar({
 
       switch (e.key.toLowerCase()) {
         case "m":
-          setView("month");
+          setView("mois");
           break;
         case "w":
-          setView("week");
+          setView("semaine");
           break;
         case "d":
-          setView("day");
+          setView("jour");
           break;
         case "a":
           setView("agenda");
@@ -97,11 +95,11 @@ export function EventCalendar({
   }, [isEventDialogOpen]);
 
   const handlePrevious = () => {
-    if (view === "month") {
+    if (view === "mois") {
       setCurrentDate(subMonths(currentDate, 1));
-    } else if (view === "week") {
+    } else if (view === "semaine") {
       setCurrentDate(subWeeks(currentDate, 1));
-    } else if (view === "day") {
+    } else if (view === "jour") {
       setCurrentDate(addDays(currentDate, -1));
     } else if (view === "agenda") {
       // For agenda view, go back 30 days (a full month)
@@ -110,11 +108,11 @@ export function EventCalendar({
   };
 
   const handleNext = () => {
-    if (view === "month") {
+    if (view === "mois") {
       setCurrentDate(addMonths(currentDate, 1));
-    } else if (view === "week") {
+    } else if (view === "semaine") {
       setCurrentDate(addWeeks(currentDate, 1));
-    } else if (view === "day") {
+    } else if (view === "jour") {
       setCurrentDate(addDays(currentDate, 1));
     } else if (view === "agenda") {
       // For agenda view, go forward 30 days (a full month)
@@ -251,7 +249,7 @@ export function EventCalendar({
 
   return (
     <div
-      className="flex flex-col rounded-lg border has-data-[slot=month-view]:flex-1"
+      className="flex flex-col rounded-b-lg has-data-[slot=month-view]:flex-1"
       style={{
         "--event-height": `${EventHeight}px`,
         "--event-gap": `${EventGap}px`,
@@ -271,12 +269,12 @@ export function EventCalendar({
               className="max-[479px]:aspect-square max-[479px]:p-0!"
               onClick={handleToday}
             >
-              <RiCalendarCheckLine
+              <CalendarCheck2
                 className="min-[480px]:hidden"
                 size={16}
                 aria-hidden="true"
               />
-              <span className="max-[479px]:sr-only">Today</span>
+              <span className="max-[479px]:sr-only">Aujourd'hui</span>
             </Button>
             <div className="flex items-center sm:gap-2">
               <Button
@@ -320,14 +318,14 @@ export function EventCalendar({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-32">
-                <DropdownMenuItem onClick={() => setView("month")}>
-                  Month <DropdownMenuShortcut>M</DropdownMenuShortcut>
+                <DropdownMenuItem onClick={() => setView("mois")}>
+                  Mois <DropdownMenuShortcut>M</DropdownMenuShortcut>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setView("week")}>
-                  Week <DropdownMenuShortcut>W</DropdownMenuShortcut>
+                <DropdownMenuItem onClick={() => setView("semaine")}>
+                  Semaine <DropdownMenuShortcut>W</DropdownMenuShortcut>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setView("day")}>
-                  Day <DropdownMenuShortcut>D</DropdownMenuShortcut>
+                <DropdownMenuItem onClick={() => setView("jour")}>
+                  Jour <DropdownMenuShortcut>D</DropdownMenuShortcut>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setView("agenda")}>
                   Agenda <DropdownMenuShortcut>A</DropdownMenuShortcut>
@@ -347,13 +345,13 @@ export function EventCalendar({
                 size={16}
                 aria-hidden="true"
               />
-              <span className="max-sm:sr-only">New event</span>
+              <span className="max-sm:sr-only">Nouvel evenement</span>
             </Button>
           </div>
         </div>
 
         <div className="flex flex-1 flex-col">
-          {view === "month" && (
+          {view === "mois" && (
             <MonthView
               currentDate={currentDate}
               events={events}
@@ -361,7 +359,7 @@ export function EventCalendar({
               onEventCreate={handleEventCreate}
             />
           )}
-          {view === "week" && (
+          {view === "semaine" && (
             <WeekView
               currentDate={currentDate}
               events={events}
@@ -369,7 +367,7 @@ export function EventCalendar({
               onEventCreate={handleEventCreate}
             />
           )}
-          {view === "day" && (
+          {view === "jour" && (
             <DayView
               currentDate={currentDate}
               events={events}

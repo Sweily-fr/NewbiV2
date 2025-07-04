@@ -1,15 +1,29 @@
-"use client";
+"use client"
 
-import { useRef, useState } from "react";
-import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
-import { differenceInDays } from "date-fns";
+import { useRef, useState } from "react"
+import { useDraggable } from "@dnd-kit/core"
+import { CSS } from "@dnd-kit/utilities"
+import { differenceInDays } from "date-fns"
 
 import {
-  CalendarEvent,
+
   EventItem,
   useCalendarDnd,
-} from "@/components/event-calendar";
+} from "./index"
+
+// DraggableEvent props converted to JSDoc
+/**
+ * @param {Object} event
+ * @param {string} view
+ * @param {boolean} showTime
+ * @param {Function} onClick
+ * @param {number} height
+ * @param {boolean} isMultiDay
+ * @param {number} multiDayWidth
+ * @param {boolean} isFirstDay
+ * @param {boolean} isLastDay
+ * @param {boolean|string} aria-hidden
+ */
 
 export function DraggableEvent({
   event,
@@ -23,18 +37,15 @@ export function DraggableEvent({
   isLastDay = true,
   "aria-hidden": ariaHidden,
 }) {
-  const { activeId } = useCalendarDnd();
-  const elementRef = useRef(null);
-  const [dragHandlePosition, setDragHandlePosition] = useState({
-    x: null,
-    y: null,
-  });
+  const { activeId } = useCalendarDnd()
+  const elementRef = useRef(null)
+  const [dragHandlePosition, setDragHandlePosition] = useState(null)
 
   // Check if this is a multi-day event
-  const eventStart = new Date(event.start);
-  const eventEnd = new Date(event.end);
+  const eventStart = new Date(event.start)
+  const eventEnd = new Date(event.end)
   const isMultiDayEvent =
-    isMultiDay || event.allDay || differenceInDays(eventEnd, eventStart) >= 1;
+    isMultiDay || event.allDay || differenceInDays(eventEnd, eventStart) >= 1
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -49,18 +60,18 @@ export function DraggableEvent({
         isFirstDay,
         isLastDay,
       },
-    });
+    })
 
   // Handle mouse down to track where on the event the user clicked
   const handleMouseDown = (e) => {
     if (elementRef.current) {
-      const rect = elementRef.current.getBoundingClientRect();
+      const rect = elementRef.current.getBoundingClientRect()
       setDragHandlePosition({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
-      });
+      })
     }
-  };
+  }
 
   // Don't render if this event is being dragged
   if (isDragging || activeId === `${event.id}-${view}`) {
@@ -70,7 +81,7 @@ export function DraggableEvent({
         className="opacity-0"
         style={{ height: height || "auto" }}
       />
-    );
+    )
   }
 
   const style = transform
@@ -84,27 +95,27 @@ export function DraggableEvent({
         height: height || "auto",
         width:
           isMultiDayEvent && multiDayWidth ? `${multiDayWidth}%` : undefined,
-      };
+      }
 
   // Handle touch start to track where on the event the user touched
   const handleTouchStart = (e) => {
     if (elementRef.current) {
-      const rect = elementRef.current.getBoundingClientRect();
-      const touch = e.touches[0];
+      const rect = elementRef.current.getBoundingClientRect()
+      const touch = e.touches[0]
       if (touch) {
         setDragHandlePosition({
           x: touch.clientX - rect.left,
           y: touch.clientY - rect.top,
-        });
+        })
       }
     }
-  };
+  }
 
   return (
     <div
       ref={(node) => {
-        setNodeRef(node);
-        if (elementRef) elementRef.current = node;
+        setNodeRef(node)
+        if (elementRef) elementRef.current = node
       }}
       style={style}
       className="touch-none"
@@ -124,5 +135,5 @@ export function DraggableEvent({
         aria-hidden={ariaHidden}
       />
     </div>
-  );
+  )
 }

@@ -2,8 +2,18 @@
 
 import { useDroppable } from "@dnd-kit/core";
 
-import { useCalendarDnd } from "@/components/event-calendar";
+import { useCalendarDnd } from "./index";
 import { cn } from "@/src/lib/utils";
+
+// DroppableCell props converted to JSDoc
+/**
+ * @param {string} id
+ * @param {Date} date
+ * @param {number} time - For week/day views, represents hours (e.g., 9.25 for 9:15)
+ * @param {React.ReactNode} children
+ * @param {string} className
+ * @param {Function} onClick
+ */
 
 export function DroppableCell({
   id,

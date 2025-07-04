@@ -1,35 +1,46 @@
-"use client";
+"use client"
 
-import { useMemo } from "react";
-import { RiCalendarEventLine } from "@remixicon/react";
-import { addDays, format, isToday } from "date-fns";
+import { useMemo } from "react"
+import { RiCalendarEventLine } from "@remixicon/react"
+import { addDays, format, isToday } from "date-fns"
 
 import {
   AgendaDaysToShow,
-  CalendarEvent,
+
   EventItem,
   getAgendaEventsForDay,
-} from "@/components/event-calendar";
+} from "./index"
 
-export function AgendaView({ currentDate, events, onEventSelect }) {
+// AgendaView props converted to JSDoc
+/**
+ * @param {Date} currentDate
+ * @param {Array} events
+ * @param {Function} onEventSelect
+ */
+
+export function AgendaView({
+  currentDate,
+  events,
+  onEventSelect,
+}) {
   // Show events for the next days based on constant
   const days = useMemo(() => {
-    console.log("Agenda view updating with date:", currentDate.toISOString());
+    console.log("Agenda view updating with date:", currentDate.toISOString())
     return Array.from({ length: AgendaDaysToShow }, (_, i) =>
       addDays(new Date(currentDate), i)
-    );
-  }, [currentDate]);
+    )
+  }, [currentDate])
 
   const handleEventClick = (event, e) => {
-    e.stopPropagation();
-    console.log("Agenda view event clicked:", event);
-    onEventSelect(event);
-  };
+    e.stopPropagation()
+    console.log("Agenda view event clicked:", event)
+    onEventSelect(event)
+  }
 
   // Check if there are any days with events
   const hasEvents = days.some(
     (day) => getAgendaEventsForDay(events, day).length > 0
-  );
+  )
 
   return (
     <div className="border-border/70 border-t px-4">
@@ -46,9 +57,9 @@ export function AgendaView({ currentDate, events, onEventSelect }) {
         </div>
       ) : (
         days.map((day) => {
-          const dayEvents = getAgendaEventsForDay(events, day);
+          const dayEvents = getAgendaEventsForDay(events, day)
 
-          if (dayEvents.length === 0) return null;
+          if (dayEvents.length === 0) return null
 
           return (
             <div
@@ -67,14 +78,14 @@ export function AgendaView({ currentDate, events, onEventSelect }) {
                     key={event.id}
                     event={event}
                     view="agenda"
-                    onClick={handleEventClick(event, e)}
+                    onClick={(e) => handleEventClick(event, e)}
                   />
                 ))}
               </div>
             </div>
-          );
+          )
         })
       )}
     </div>
-  );
+  )
 }

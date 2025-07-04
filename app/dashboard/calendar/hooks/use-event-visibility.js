@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+
 /**
  * Hook for calculating event visibility based on container height
  * Uses ResizeObserver for efficient updates

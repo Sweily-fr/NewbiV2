@@ -1,16 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-// import type { DraggableAttributes } from "@dnd-kit/core"
-// import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities"
+// Types removed for JavaScript compatibility
 import { differenceInMinutes, format, getMinutes, isPast } from "date-fns";
 
-import {
-  getBorderRadiusClasses,
-  getEventColorClasses,
-  //   type CalendarEvent,
-} from "@/components/event-calendar";
-import { cn } from "@/lib/utils";
+import { getBorderRadiusClasses, getEventColorClasses } from "./index";
+import { cn } from "@/src/lib/utils";
 
 // Using date-fns format with custom formatting:
 // 'h' - hours (1-12)
@@ -19,6 +14,22 @@ import { cn } from "@/lib/utils";
 const formatTimeWithOptionalMinutes = (date) => {
   return format(date, getMinutes(date) === 0 ? "ha" : "h:mma").toLowerCase();
 };
+
+// EventWrapper props converted to JSDoc
+/**
+ * @param {Object} event
+ * @param {boolean} isFirstDay
+ * @param {boolean} isLastDay
+ * @param {boolean} isDragging
+ * @param {Function} onClick
+ * @param {string} className
+ * @param {React.ReactNode} children
+ * @param {Date} currentTime
+ * @param {Object} dndListeners
+ * @param {Object} dndAttributes
+ * @param {Function} onMouseDown
+ * @param {Function} onTouchStart
+ */
 
 // Shared wrapper component for event styling
 function EventWrapper({
@@ -65,6 +76,24 @@ function EventWrapper({
     </button>
   );
 }
+
+// EventItem props converted to JSDoc
+/**
+ * @param {Object} event
+ * @param {string} view
+ * @param {boolean} isDragging
+ * @param {Function} onClick
+ * @param {boolean} showTime
+ * @param {Date} currentTime
+ * @param {boolean} isFirstDay
+ * @param {boolean} isLastDay
+ * @param {React.ReactNode} children
+ * @param {string} className
+ * @param {Object} dndListeners
+ * @param {Object} dndAttributes
+ * @param {Function} onMouseDown
+ * @param {Function} onTouchStart
+ */
 
 export function EventItem({
   event,
