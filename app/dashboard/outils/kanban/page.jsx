@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation } from "@apollo/client";
 import Link from "next/link";
 import {
   Plus,
@@ -51,166 +49,44 @@ import {
   UPDATE_BOARD,
   DELETE_BOARD,
 } from "@/src/graphql/kanbanQueries";
+import { useKanbanBoards } from "./hooks/useKanbanBoards";
+import { useRouter } from 'next/navigation';
+import { useQuery, useMutation } from '@apollo/client';
+import { KanbanBoardIllustration } from '@/src/components/kanban-board-illustration';
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 export default function KanbanPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [boardToDelete, setBoardToDelete] = useState(null);
-  const [boardToEdit, setBoardToEdit] = useState(null);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({ title: "", description: "" });
-
-  // GraphQL queries and mutations
-  const { data, refetch } = useQuery(GET_BOARDS, {
-    errorPolicy: "all",
-  });
-
-  const [createBoard, { loading: creating }] = useMutation(CREATE_BOARD, {
-    onCompleted: () => {
-      toast.success("Tableau créé avec succès");
-      setIsCreateDialogOpen(false);
-      setFormData({ title: "", description: "" });
-      refetch();
-    },
-    onError: (error) => {
-      toast.error("Erreur lors de la création du tableau");
-      console.error("Create board error:", error);
-    },
-  });
-
-  const [updateBoard, { loading: updating }] = useMutation(UPDATE_BOARD, {
-    onCompleted: () => {
-      toast.success("Tableau modifié avec succès");
-      setIsEditDialogOpen(false);
-      setBoardToEdit(null);
-      setFormData({ title: "", description: "" });
-      refetch();
-    },
-    onError: (error) => {
-      toast.error("Erreur lors de la modification du tableau");
-      console.error("Update board error:", error);
-    },
-  });
-
-  const [deleteBoard, { loading: deleting }] = useMutation(DELETE_BOARD, {
-    onCompleted: (data) => {
-      toast.success("Tableau supprimé avec succès");
-      setBoardToDelete(null);
-    },
-    onError: (error) => {
-      toast.error(`Erreur lors de la suppression: ${error.message}`);
-      console.error("Delete board error:", error);
-      setBoardToDelete(null);
-    },
-    refetchQueries: [{ query: GET_BOARDS }],
-    awaitRefetchQueries: true,
-    update: (cache, { data }) => {
-      if (data?.deleteBoard && boardToDelete) {
-        try {
-          // Mettre à jour le cache Apollo pour supprimer le tableau
-          const existingBoards = cache.readQuery({ query: GET_BOARDS });
-          if (existingBoards) {
-            cache.writeQuery({
-              query: GET_BOARDS,
-              data: {
-                boards: existingBoards.boards.filter(
-                  (board) => board.id !== boardToDelete.id
-                ),
-              },
-            });
-          }
-        } catch (error) {
-          console.warn("Erreur lors de la mise à jour du cache:", error);
-          // refetchQueries s'occupera de la mise à jour
-        }
-      }
-    },
-  });
-
-  const boards = data?.boards || [];
-
-  // Filter boards based on search term
-  const filteredBoards = boards.filter(
-    (board) =>
-      board.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (board.description &&
-        board.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  const handleCreateBoard = async (e) => {
-    e.preventDefault();
-    if (!formData.title.trim()) {
-      toast.error("Le titre est requis");
-      return;
-    }
-
-    await createBoard({
-      variables: {
-        input: {
-          title: formData.title.trim(),
-          description: formData.description.trim() || null,
-        },
-      },
-    });
-  };
-
-  const handleUpdateBoard = async (e) => {
-    e.preventDefault();
-    if (!formData.title.trim()) {
-      toast.error("Le titre est requis");
-      return;
-    }
-
-    await updateBoard({
-      variables: {
-        input: {
-          id: boardToEdit.id,
-          title: formData.title.trim(),
-          description: formData.description.trim() || null,
-        },
-      },
-    });
-  };
-
-  const handleDeleteClick = (board, e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setBoardToDelete(board);
-  };
-
-  const handleEditClick = (board, e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setBoardToEdit(board);
-    setFormData({
-      title: board.title,
-      description: board.description || "",
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!boardToDelete) return;
-
-    try {
-      await deleteBoard({
-        variables: { id: boardToDelete.id },
-      });
-    } catch (error) {
-      console.error("Error in handleConfirmDelete:", error);
-      // L'erreur est déjà gérée par onError de la mutation
-    }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-
+  const {
+    // State
+    searchTerm,
+    setSearchTerm,
+    boardToDelete,
+    setBoardToDelete,
+    boardToEdit,
+    setBoardToEdit,
+    isCreateDialogOpen,
+    setIsCreateDialogOpen,
+    isEditDialogOpen,
+    setIsEditDialogOpen,
+    formData,
+    setFormData,
+    
+    // Data & Loading States
+    boards,
+    loading,
+    creating,
+    updating,
+    deleting,
+    
+    // Handlers
+    handleCreateBoard,
+    handleUpdateBoard,
+    handleDeleteClick,
+    handleEditClick,
+    handleConfirmDelete,
+    formatDate,
+  } = useKanbanBoards();
 
   return (
     <div className="w-full max-w-[100vw] mx-auto p-6">
@@ -297,8 +173,8 @@ export default function KanbanPage() {
                   >
                     Annuler
                   </Button>
-                  <Button type="submit" disabled={creating}>
-                    {creating ? (
+                  <Button type="submit" disabled={loading}>
+                    {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Création...
@@ -315,260 +191,13 @@ export default function KanbanPage() {
       </div>
 
       {/* Boards Grid */}
-      {filteredBoards.length === 0 ? (
+      {boards?.length === 0 ? (
         <div className="text-center py-12">
           {!searchTerm ? (
             <>
-              {/* Illustration SVG moderne */}
+              {/* Kanban Board Illustration */}
               <div className="mb-8 flex justify-center">
-                <svg
-                  width="240"
-                  height="180"
-                  viewBox="0 0 240 180"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <defs>
-                    {/* Gradients modernes */}
-                    <linearGradient
-                      id="boardGradient"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
-                      <stop offset="0%" stopColor="#ffffff" />
-                      <stop offset="100%" stopColor="#f8fafc" />
-                    </linearGradient>
-                    <linearGradient
-                      id="purpleGradient"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
-                      <stop offset="0%" stopColor="#6366f1" />
-                      <stop offset="100%" stopColor="#5b50ff" />
-                    </linearGradient>
-                    <linearGradient
-                      id="darkGradient"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
-                      <stop offset="0%" stopColor="#4b5563" />
-                      <stop offset="100%" stopColor="#374151" />
-                    </linearGradient>
-                    <filter
-                      id="shadow"
-                      x="-20%"
-                      y="-20%"
-                      width="140%"
-                      height="140%"
-                    >
-                      <feDropShadow
-                        dx="0"
-                        dy="4"
-                        stdDeviation="8"
-                        floodColor="#5b50ff"
-                        floodOpacity="0.1"
-                      />
-                    </filter>
-                    <filter
-                      id="cardShadow"
-                      x="-20%"
-                      y="-20%"
-                      width="140%"
-                      height="140%"
-                    >
-                      <feDropShadow
-                        dx="0"
-                        dy="2"
-                        stdDeviation="4"
-                        floodColor="#000000"
-                        floodOpacity="0.1"
-                      />
-                    </filter>
-                  </defs>
-
-                  {/* Floating elements background */}
-                  <circle
-                    cx="60"
-                    cy="30"
-                    r="4"
-                    fill="url(#purpleGradient)"
-                    opacity="0.2"
-                  />
-                  <circle
-                    cx="180"
-                    cy="25"
-                    r="3"
-                    fill="url(#darkGradient)"
-                    opacity="0.15"
-                  />
-                  <circle
-                    cx="200"
-                    cy="45"
-                    r="2"
-                    fill="url(#purpleGradient)"
-                    opacity="0.3"
-                  />
-
-                  {/* Main board with modern shadow */}
-                  <rect
-                    x="20"
-                    y="40"
-                    width="200"
-                    height="120"
-                    rx="16"
-                    fill="url(#boardGradient)"
-                    filter="url(#shadow)"
-                    stroke="#e2e8f0"
-                    strokeWidth="1"
-                  />
-
-                  {/* Column 1 - Modern purple */}
-                  <rect
-                    x="35"
-                    y="55"
-                    width="50"
-                    height="90"
-                    rx="12"
-                    fill="url(#purpleGradient)"
-                    fillOpacity="0.08"
-                    stroke="url(#purpleGradient)"
-                    strokeWidth="1"
-                  />
-                  <rect
-                    x="40"
-                    y="62"
-                    width="40"
-                    height="8"
-                    rx="4"
-                    fill="url(#purpleGradient)"
-                  />
-                  <rect
-                    x="40"
-                    y="76"
-                    width="40"
-                    height="24"
-                    rx="6"
-                    fill="white"
-                    filter="url(#cardShadow)"
-                  />
-                  <rect
-                    x="40"
-                    y="106"
-                    width="40"
-                    height="24"
-                    rx="6"
-                    fill="white"
-                    filter="url(#cardShadow)"
-                  />
-
-                  {/* Column 2 - Modern dark */}
-                  <rect
-                    x="95"
-                    y="55"
-                    width="50"
-                    height="90"
-                    rx="12"
-                    fill="#000000"
-                    fillOpacity="0.04"
-                    stroke="url(#darkGradient)"
-                    strokeWidth="1"
-                  />
-                  <rect
-                    x="100"
-                    y="62"
-                    width="40"
-                    height="8"
-                    rx="4"
-                    fill="url(#darkGradient)"
-                  />
-                  <rect
-                    x="100"
-                    y="76"
-                    width="40"
-                    height="24"
-                    rx="6"
-                    fill="white"
-                    filter="url(#cardShadow)"
-                  />
-
-                  {/* Column 3 - Modern purple */}
-                  <rect
-                    x="155"
-                    y="55"
-                    width="50"
-                    height="90"
-                    rx="12"
-                    fill="url(#purpleGradient)"
-                    fillOpacity="0.08"
-                    stroke="url(#purpleGradient)"
-                    strokeWidth="1"
-                  />
-                  <rect
-                    x="160"
-                    y="62"
-                    width="40"
-                    height="8"
-                    rx="4"
-                    fill="url(#purpleGradient)"
-                  />
-
-                  {/* Central floating plus icon */}
-                  <circle
-                    cx="120"
-                    cy="100"
-                    r="20"
-                    fill="url(#purpleGradient)"
-                    fillOpacity="0.1"
-                    filter="url(#shadow)"
-                  />
-                  <circle
-                    cx="120"
-                    cy="100"
-                    r="18"
-                    fill="none"
-                    stroke="url(#purpleGradient)"
-                    strokeWidth="2"
-                    strokeDasharray="4 4"
-                    opacity="0.6"
-                  >
-                    <animateTransform
-                      attributeName="transform"
-                      type="rotate"
-                      values="0 120 100;360 120 100"
-                      dur="8s"
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-                  <path
-                    d="M112 100h16M120 92v16"
-                    stroke="url(#purpleGradient)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Floating geometric shapes */}
-                  <path
-                    d="M45 35 L55 30 L50 40 Z"
-                    fill="url(#purpleGradient)"
-                    opacity="0.2"
-                  />
-                  <rect
-                    x="185"
-                    y="35"
-                    width="8"
-                    height="8"
-                    rx="2"
-                    fill="url(#darkGradient)"
-                    opacity="0.2"
-                    transform="rotate(45 189 39)"
-                  />
-                </svg>
+                <KanbanBoardIllustration className="w-[240px] h-[180px]" />
               </div>
 
               <div className="w-full flex flex-col items-center">
@@ -599,315 +228,7 @@ export default function KanbanPage() {
             <>
               {/* Illustration SVG moderne pour recherche vide */}
               <div className="mb-8 flex justify-center">
-                <svg
-                  width="220"
-                  height="160"
-                  viewBox="0 0 220 160"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <defs>
-                    {/* Gradients modernes pour recherche */}
-                    <linearGradient
-                      id="searchGradient"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
-                      <stop offset="0%" stopColor="#6366f1" />
-                      <stop offset="100%" stopColor="#5b50ff" />
-                    </linearGradient>
-                    <linearGradient
-                      id="emptyGradient"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
-                      <stop offset="0%" stopColor="#f8fafc" />
-                      <stop offset="100%" stopColor="#e2e8f0" />
-                    </linearGradient>
-                    <filter
-                      id="searchGlow"
-                      x="-50%"
-                      y="-50%"
-                      width="200%"
-                      height="200%"
-                    >
-                      <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-                      <feMerge>
-                        <feMergeNode in="coloredBlur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                    <filter
-                      id="floatShadow"
-                      x="-20%"
-                      y="-20%"
-                      width="140%"
-                      height="140%"
-                    >
-                      <feDropShadow
-                        dx="0"
-                        dy="2"
-                        stdDeviation="6"
-                        floodColor="#5b50ff"
-                        floodOpacity="0.15"
-                      />
-                    </filter>
-                  </defs>
-
-                  {/* Floating background elements */}
-                  <circle
-                    cx="40"
-                    cy="30"
-                    r="3"
-                    fill="url(#searchGradient)"
-                    opacity="0.2"
-                  >
-                    <animate
-                      attributeName="cy"
-                      values="30;25;30"
-                      dur="3s"
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-                  <circle
-                    cx="180"
-                    cy="35"
-                    r="2"
-                    fill="url(#searchGradient)"
-                    opacity="0.3"
-                  >
-                    <animate
-                      attributeName="cy"
-                      values="35;30;35"
-                      dur="4s"
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-                  <path
-                    d="M200 25 L205 20 L210 25 L205 30 Z"
-                    fill="url(#searchGradient)"
-                    opacity="0.15"
-                  >
-                    <animateTransform
-                      attributeName="transform"
-                      type="rotate"
-                      values="0 205 25;360 205 25"
-                      dur="6s"
-                      repeatCount="indefinite"
-                    />
-                  </path>
-
-                  {/* Modern magnifying glass */}
-                  <circle
-                    cx="80"
-                    cy="65"
-                    r="28"
-                    fill="none"
-                    stroke="url(#searchGradient)"
-                    strokeWidth="4"
-                    filter="url(#searchGlow)"
-                  />
-                  <circle
-                    cx="80"
-                    cy="65"
-                    r="22"
-                    fill="url(#searchGradient)"
-                    fillOpacity="0.05"
-                  />
-                  <path
-                    d="m102 87 18 18"
-                    stroke="url(#searchGradient)"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    filter="url(#searchGlow)"
-                  />
-
-                  {/* Animated search waves */}
-                  <g opacity="0.6">
-                    <circle
-                      cx="80"
-                      cy="65"
-                      r="35"
-                      fill="none"
-                      stroke="url(#searchGradient)"
-                      strokeWidth="1"
-                      opacity="0.4"
-                    >
-                      <animate
-                        attributeName="r"
-                        values="35;45;35"
-                        dur="2s"
-                        repeatCount="indefinite"
-                      />
-                      <animate
-                        attributeName="opacity"
-                        values="0.4;0;0.4"
-                        dur="2s"
-                        repeatCount="indefinite"
-                      />
-                    </circle>
-                    <circle
-                      cx="80"
-                      cy="65"
-                      r="40"
-                      fill="none"
-                      stroke="url(#searchGradient)"
-                      strokeWidth="1"
-                      opacity="0.2"
-                    >
-                      <animate
-                        attributeName="r"
-                        values="40;50;40"
-                        dur="2.5s"
-                        repeatCount="indefinite"
-                      />
-                      <animate
-                        attributeName="opacity"
-                        values="0.2;0;0.2"
-                        dur="2.5s"
-                        repeatCount="indefinite"
-                      />
-                    </circle>
-                  </g>
-
-                  {/* Question mark with glow */}
-                  <text
-                    x="80"
-                    y="72"
-                    fill="url(#searchGradient)"
-                    fontSize="18"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    filter="url(#searchGlow)"
-                  >
-                    ?
-                  </text>
-
-                  {/* Modern empty results */}
-                  <g opacity="0.25">
-                    <rect
-                      x="30"
-                      y="115"
-                      width="45"
-                      height="32"
-                      rx="8"
-                      fill="url(#emptyGradient)"
-                      stroke="#cbd5e1"
-                      strokeWidth="1"
-                    />
-                    <rect
-                      x="85"
-                      y="115"
-                      width="45"
-                      height="32"
-                      rx="8"
-                      fill="url(#emptyGradient)"
-                      stroke="#cbd5e1"
-                      strokeWidth="1"
-                    />
-                    <rect
-                      x="140"
-                      y="115"
-                      width="45"
-                      height="32"
-                      rx="8"
-                      fill="url(#emptyGradient)"
-                      stroke="#cbd5e1"
-                      strokeWidth="1"
-                    />
-
-                    {/* Modern cross lines with gradient */}
-                    <path
-                      d="M25 110 L80 152"
-                      stroke="url(#searchGradient)"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      opacity="0.6"
-                    />
-                    <path
-                      d="M80 110 L135 152"
-                      stroke="url(#searchGradient)"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      opacity="0.6"
-                    />
-                    <path
-                      d="M135 110 L190 152"
-                      stroke="url(#searchGradient)"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      opacity="0.6"
-                    />
-                  </g>
-
-                  {/* Floating geometric elements */}
-                  <rect
-                    x="150"
-                    y="45"
-                    width="6"
-                    height="6"
-                    rx="1"
-                    fill="url(#searchGradient)"
-                    opacity="0.3"
-                    transform="rotate(45 153 48)"
-                  >
-                    <animateTransform
-                      attributeName="transform"
-                      type="rotate"
-                      values="45 153 48;405 153 48"
-                      dur="8s"
-                      repeatCount="indefinite"
-                    />
-                  </rect>
-                  <circle
-                    cx="160"
-                    cy="75"
-                    r="2"
-                    fill="url(#searchGradient)"
-                    opacity="0.4"
-                  >
-                    <animate
-                      attributeName="r"
-                      values="2;3;2"
-                      dur="2s"
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-
-                  {/* Search beam effect */}
-                  <path
-                    d="M108 65 Q140 50 170 65"
-                    stroke="url(#searchGradient)"
-                    strokeWidth="1"
-                    fill="none"
-                    opacity="0.3"
-                  >
-                    <animate
-                      attributeName="opacity"
-                      values="0.3;0.6;0.3"
-                      dur="1.5s"
-                      repeatCount="indefinite"
-                    />
-                  </path>
-                  <path
-                    d="M108 70 Q140 85 170 70"
-                    stroke="url(#searchGradient)"
-                    strokeWidth="1"
-                    fill="none"
-                    opacity="0.2"
-                  >
-                    <animate
-                      attributeName="opacity"
-                      values="0.2;0.5;0.2"
-                      dur="2s"
-                      repeatCount="indefinite"
-                    />
-                  </path>
-                </svg>
+                <EmptySearchIllustration className="w-[220px] h-[160px]" />
               </div>
 
               <div className="text-foreground mb-4">
@@ -936,7 +257,7 @@ export default function KanbanPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBoards.map((board) => (
+          {boards.map((board) => (
             <Link key={board.id} href={`/dashboard/outils/kanban/${board.id}`}>
               <Card className="min-h-42 hover:shadow-lg transition-all duration-200 cursor-pointer group relative">
                 <CardHeader className="pb-3">
