@@ -44,7 +44,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/src/components/ui/dialog";
-import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
 import {
   GET_BOARDS,
@@ -62,7 +61,7 @@ export default function KanbanPage() {
   const [formData, setFormData] = useState({ title: "", description: "" });
 
   // GraphQL queries and mutations
-  const { data, loading, error, refetch } = useQuery(GET_BOARDS, {
+  const { data, refetch } = useQuery(GET_BOARDS, {
     errorPolicy: "all",
   });
 
@@ -211,23 +210,10 @@ export default function KanbanPage() {
     });
   };
 
-  if (error) {
-    return (
-      <div className="container mx-auto p-6 dark:bg-gray-900">
-        <div className="text-center py-12">
-          <div className="text-destructive mb-4 dark:text-gray-200">
-            Erreur lors du chargement des tableaux
-          </div>
-          <Button variant="default" onClick={() => refetch()}>
-            Réessayer
-          </Button>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="w-full max-w-[100vw] mx-auto p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
@@ -329,21 +315,7 @@ export default function KanbanPage() {
       </div>
 
       {/* Boards Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="h-48">
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-4 w-1/2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : filteredBoards.length === 0 ? (
+      {filteredBoards.length === 0 ? (
         <div className="text-center py-12">
           {!searchTerm ? (
             <>
@@ -599,27 +571,29 @@ export default function KanbanPage() {
                 </svg>
               </div>
 
-              <div className="text-foreground mb-6">
-                <h3 className="text-lg font-semibold mb-2">
-                  Commencez votre organisation
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Créez votre premier tableau Kanban pour organiser vos tâches
-                  et projets
-                </p>
-              </div>
+              <div className="w-full flex flex-col items-center">
+                <div className="text-foreground mb-6 text-center">
+                  <h3 className="text-lg font-semibold mb-2">
+                    Commencez votre organisation
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Créez votre premier tableau Kanban pour organiser vos tâches
+                    et projets
+                  </p>
+                </div>
 
-              <Button
-                onClick={() => {
-                  setSearchTerm("");
-                  setIsCreateDialogOpen(true);
-                }}
-                variant="default"
-                className="flex items-center gap-2"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Créer votre premier tableau
-              </Button>
+                <Button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setIsCreateDialogOpen(true);
+                  }}
+                  variant="default"
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Créer votre premier tableau
+                </Button>
+              </div>
             </>
           ) : (
             <>
@@ -975,12 +949,7 @@ export default function KanbanPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground rounded-full"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setBoardToEdit(board);
-                          setIsEditDialogOpen(true);
-                        }}
+                        onClick={(e) => handleEditClick(board, e)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -992,7 +961,6 @@ export default function KanbanPage() {
                           e.preventDefault();
                           e.stopPropagation();
                           setBoardToDelete(board);
-                          setDeleteDialogOpen(true);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -1108,7 +1076,7 @@ export default function KanbanPage() {
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
               disabled={deleting}
             >
               {deleting ? (

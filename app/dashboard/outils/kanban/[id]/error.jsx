@@ -16,13 +16,13 @@ export default function Error({ error, reset }) {
       <div className="w-full max-w-md space-y-4">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Une erreur est survenue</AlertTitle>
+          <AlertTitle>Erreur de chargement du tableau</AlertTitle>
           <AlertDescription>
-            {error.message || "Une erreur inattendue s'est produite. Veuillez réessayer."}
+            {error.message || "Une erreur est survenue lors du chargement du tableau. Veuillez réessayer."}
           </AlertDescription>
         </Alert>
         
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-4">
           <Button
             variant="outline"
             onClick={() => reset()}
@@ -30,6 +30,11 @@ export default function Error({ error, reset }) {
           >
             <RefreshCw className="h-4 w-4" />
             Réessayer
+          </Button>
+          <Button asChild variant="ghost">
+            <a href="/dashboard/outils/kanban">
+              Retour aux tableaux
+            </a>
           </Button>
         </div>
       </div>

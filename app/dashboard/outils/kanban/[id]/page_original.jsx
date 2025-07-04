@@ -10,23 +10,38 @@ import {
   Loader2,
   Edit,
   Trash2,
-  MoreVertical,
-  ChevronUp,
-  ChevronDown,
+  GripVertical,
   Calendar,
-  Flag,
+  User,
   Tag,
   CheckSquare,
-  GripVertical,
-  Search,
+  Loader2,
+  X,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +49,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/src/components/ui/dialog";
 import {
   AlertDialog,
@@ -45,41 +59,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Textarea } from "@/src/components/ui/textarea";
-import { KanbanColumn } from "./components/KanbanColumn";
-import { ColumnModal } from "./components/ColumnModal";
-import { TaskModal } from "./components/TaskModal";
-import { TaskCard } from "./components/TaskCard";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
 import { Badge } from "@/src/components/ui/badge";
-import { ColorPicker } from "@/src/components/ui/color-picker";
-import { toast } from "sonner";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import { Progress } from "@/src/components/ui/progress";
 import {
-  GET_BOARD,
-  CREATE_COLUMN,
-  UPDATE_COLUMN,
-  DELETE_COLUMN,
-  CREATE_TASK,
-  UPDATE_TASK,
-  DELETE_TASK,
-  MOVE_TASK,
-} from "@/src/graphql/kanbanQueries";
+  useKanbanBoard,
+  useKanbanColumns,
+  useKanbanTasks,
+  useKanbanDragDrop,
+  useKanbanColumnForm,
+  useKanbanTaskForm,
+} from "../hooks";
 import { useColumnCollapse } from "@/src/hooks/useColumnCollapse";
 import {
   DndContext,
@@ -104,48 +95,65 @@ export default function KanbanBoardPage({ params }) {
   const router = useRouter();
   const { id } = use(params);
 
-  // États pour les modals
-  const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
-  const [isEditColumnOpen, setIsEditColumnOpen] = useState(false);
-  const [isDeleteColumnDialogOpen, setIsDeleteColumnDialogOpen] =
-    useState(false);
-  const [columnToDelete, setColumnToDelete] = useState(null);
-  const [editingColumn, setEditingColumn] = useState(null);
-  const [columnForm, setColumnForm] = useState({ title: "", color: "#3b82f6" });
+  // Utilisation des hooks pour gérer les différentes fonctionnalités
+  const { board, loading, error } = useKanbanBoard(id);
 
-  // États pour les modals de tâches
-  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
-  const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [selectedColumnId, setSelectedColumnId] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const initialTaskForm = {
-    title: "",
-    description: "",
-    status: "TODO",
-    priority: "medium", // Changed to lowercase to match backend expectations
-    dueDate: "",
-    tags: [],
-    checklist: [],
-    newTag: "",
-    newChecklistItem: "",
-  };
-
-  const [taskForm, setTaskForm] = useState(initialTaskForm);
-
-  // État pour le drag & drop
-  const [activeTask, setActiveTask] = useState(null);
-
-  // Hook pour gérer le collapse des colonnes
   const {
-    isColumnCollapsed,
-    toggleColumnCollapse,
-    expandAll,
-    collapsedColumnsCount,
-  } = useColumnCollapse(id);
+    // États des modals de colonnes
+    isAddColumnOpen,
+    setIsAddColumnOpen,
+    isEditColumnOpen,
+    setIsEditColumnOpen,
+    isDeleteColumnOpen,
+    setIsDeleteColumnOpen,
+    selectedColumn,
+    // Actions sur les colonnes
+    creatingColumn,
+    updatingColumn,
+    deletingColumn,
+    handleCreateColumn,
+    handleUpdateColumn,
+    handleDeleteColumn,
+    handleEditColumnClick,
+    handleDeleteColumnClick,
+  } = useKanbanColumns(id);
+
+  const {
+    // États des modals de tâches
+    isAddTaskOpen,
+    setIsAddTaskOpen,
+    isEditTaskOpen,
+    setIsEditTaskOpen,
+    isDeleteTaskOpen,
+    setIsDeleteTaskOpen,
+    selectedTask,
+    // Actions sur les tâches
+    creatingTask,
+    updatingTask,
+    deletingTask,
+    handleCreateTask,
+    handleUpdateTask,
+    handleDeleteTask,
+    handleEditTaskClick,
+    handleDeleteTaskClick,
+    handleAddTaskClick,
+  } = useKanbanTasks(id);
+
+  const {
+    // Drag & Drop
+    activeId,
+    sensors,
+    handleDragStart,
+    handleDragEnd,
+    movingTask,
+  } = useKanbanDragDrop(id);
+
+  // Formulaires
+  const columnForm = useKanbanColumnForm();
+  const taskForm = useKanbanTaskForm();
 
   // Configuration des sensors pour le drag & drop
-  const sensors = useSensors(
+  const sensorsState = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 3,
@@ -158,7 +166,7 @@ export default function KanbanBoardPage({ params }) {
     })
   );
 
-  const { data, loading, error, refetch } = useQuery(GET_BOARD, {
+  const { data, loading: dataLoading, error: dataError, refetch } = useQuery(GET_BOARD, {
     variables: { id },
     errorPolicy: "all",
   });
@@ -170,8 +178,8 @@ export default function KanbanBoardPage({ params }) {
       refetchQueries: [{ query: GET_BOARD, variables: { id } }],
       onCompleted: () => {
         toast.success("Colonne créée avec succès");
-        setIsAddColumnOpen(false);
-        setColumnForm({ title: "", color: "#3b82f6" });
+        setIsAddColumnOpenState(false);
+        columnForm.reset();
       },
       onError: (error) => {
         toast.error("Erreur lors de la création de la colonne");
@@ -185,9 +193,9 @@ export default function KanbanBoardPage({ params }) {
       refetchQueries: [{ query: GET_BOARD, variables: { id } }],
       onCompleted: () => {
         toast.success("Colonne modifiée avec succès");
-        setIsEditColumnOpen(false);
+        setIsEditColumnOpenState(false);
         setEditingColumn(null);
-        setColumnForm({ title: "", color: "#3b82f6" });
+        columnForm.reset();
       },
       onError: (error) => {
         toast.error("Erreur lors de la modification de la colonne");
@@ -215,8 +223,8 @@ export default function KanbanBoardPage({ params }) {
       refetchQueries: [{ query: GET_BOARD, variables: { id } }],
       onCompleted: () => {
         toast.success("Tâche créée avec succès");
-        setIsAddTaskOpen(false);
-        setTaskForm(initialTaskForm);
+        setIsAddTaskOpenState(false);
+        setTaskFormState(initialTaskForm);
         setSelectedColumnId(null);
       },
       onError: (error) => {
@@ -231,9 +239,9 @@ export default function KanbanBoardPage({ params }) {
       refetchQueries: [{ query: GET_BOARD, variables: { id } }],
       onCompleted: () => {
         toast.success("Tâche modifiée avec succès");
-        setIsEditTaskOpen(false);
+        setIsEditTaskOpenState(false);
         setEditingTask(null);
-        setTaskForm(initialTaskForm);
+        setTaskFormState(initialTaskForm);
       },
       onError: (error) => {
         toast.error("Erreur lors de la modification de la tâche");

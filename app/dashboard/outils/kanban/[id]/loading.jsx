@@ -3,22 +3,19 @@ import { Skeleton } from "@/src/components/ui/skeleton"
 export default function Loading() {
   return (
     <div className="space-y-4 p-4">
-      {/* En-tête avec barre de recherche et bouton */}
+      {/* En-tête avec titre et bouton */}
       <div className="flex items-center justify-between">
         <Skeleton className="h-10 w-64" />
         <Skeleton className="h-10 w-40" />
       </div>
       
-      {/* Colonnes */}
+      {/* Contenu du tableau */}
       <div className="flex space-x-4 overflow-x-auto pb-4">
         {[1, 2, 3].map((i) => (
           <div key={i} className="w-80 flex-shrink-0 space-y-4">
             {/* En-tête de colonne */}
             <div className="flex items-center justify-between rounded-lg bg-card p-3">
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-16" />
-              </div>
+              <Skeleton className="h-6 w-32" />
               <Skeleton className="h-8 w-8 rounded-full" />
             </div>
             
