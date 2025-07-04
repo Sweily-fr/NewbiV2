@@ -7,14 +7,8 @@ import {
   InputEndAddOn,
 } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
-import { useImageUpload } from "@/src/components/ui/image-upload";
-import { ImagePlus } from "lucide-react";
 import { Separator } from "@/src/components/ui/separator";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/src/components/ui/avatar";
+import { CompanyLogoUpload } from "@/src/components/profile/CompanyLogoUpload";
 import {
   Card,
   CardContent,
@@ -29,18 +23,21 @@ export default function CompanySection({
   setValue,
   session,
 }) {
-  const { previewUrl, fileInputRef, handleThumbnailClick, handleFileChange } =
-    useImageUpload();
+  const [logoUrl, setLogoUrl] = React.useState(watch("logo") || null);
 
-  // Mettre à jour l'URL du logo
+  // Mettre à jour l'URL du logo dans le formulaire
+  const handleLogoChange = (imageUrl) => {
+    setLogoUrl(imageUrl);
+    setValue("logo", imageUrl);
+  };
+
+  // Initialiser avec la valeur existante
   useEffect(() => {
-    if (previewUrl) {
-      setValue("logo", previewUrl);
+    const currentLogo = watch("logo");
+    if (currentLogo && currentLogo !== logoUrl) {
+      setLogoUrl(currentLogo);
     }
-  }, [previewUrl, setValue]);
-
-  const profileImage =
-    previewUrl || watch("logo") || "https://github.com/shadcn.png";
+  }, [watch("logo"), logoUrl]);
 
   return (
     <div className="space-y-6">
@@ -51,31 +48,21 @@ export default function CompanySection({
         <Separator />
         <CardContent className="p-6 space-y-6">
           {/* Logo de l'entreprise */}
-          <div className="flex items-center gap-4">
-            <Avatar
-              className="h-20 w-20 cursor-pointer"
-              onClick={handleThumbnailClick}
-            >
-              <AvatarImage src={profileImage} alt="Logo de l'entreprise" />
-              <AvatarFallback>
-                <ImagePlus className="h-8 w-8 text-muted-foreground" />
-              </AvatarFallback>
-            </Avatar>
-            <div>
+          <div className="flex items-start gap-4">
+            <CompanyLogoUpload
+              currentImageUrl={logoUrl}
+              onImageChange={handleLogoChange}
+              showDescription={false}
+            />
+            <div className="flex-1">
               <Label className="text-sm font-medium">
                 Logo de l'entreprise
               </Label>
-              <p className="text-sm text-muted-foreground">
-                Cliquez sur l'avatar pour changer le logo
+              <p className="text-sm text-muted-foreground mt-1">
+                Glissez une image ou cliquez pour uploader le logo de votre entreprise.
+                Formats acceptés : JPG, PNG, GIF (max 5MB)
               </p>
             </div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="hidden"
-            />
           </div>
 
           {/* Nom de l'entreprise */}

@@ -56,12 +56,12 @@ export function NavDocuments({ items }) {
               >
                 <DropdownMenuItem>
                   <IconFolder />
-                  <span>Ouvrir</span>
+                  <span>Acceder</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                {/* <DropdownMenuItem>
                   <IconShare3 />
                   <span>Partager</span>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive">
                   <IconTrash />

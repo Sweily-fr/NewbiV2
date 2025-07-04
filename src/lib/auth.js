@@ -66,11 +66,11 @@ export const auth = betterAuth({
       //     createdBy: "",
       //   },
       // },
-      // avatar: {
-      //   type: "string",
-      //   required: false,
-      //   defaultValue: "",
-      // },
+      avatar: {
+        type: "string",
+        required: false,
+        defaultValue: "",
+      },
       company: {
         name: {
           type: "string",
