@@ -1,49 +1,5 @@
 "use client";
 
-<<<<<<< HEAD
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { toast } from "@/src/components/ui/sonner";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Textarea } from "@/src/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/src/components/ui/form";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { useCreateBoard } from "@/src/hooks/useKanban";
-
-const formSchema = z.object({
-  title: z.string().min(1, "Le titre est requis"),
-  description: z.string().optional(),
-});
-
-export default function NewBoardPage() {
-  const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createBoard } = useCreateBoard();
-
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-    },
-=======
 import { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { useRouter } from 'next/navigation';
@@ -61,7 +17,6 @@ export default function NewKanbanPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: ''
->>>>>>> joaquim/kanbantoolsv2
   });
 
   const [createBoard, { loading }] = useMutation(CREATE_BOARD, {
@@ -104,19 +59,8 @@ export default function NewKanbanPage() {
           }
         }
       });
-<<<<<<< HEAD
-
-      toast.success("Tableau créé avec succès");
-      router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);
-    } catch (error) {
-      console.error("Erreur lors de la création du tableau:", error);
-      toast.error("Une erreur est survenue lors de la création du tableau");
-    } finally {
-      setIsSubmitting(false);
-=======
     } catch (error) {
       // L'erreur est déjà gérée dans la mutation onError
->>>>>>> joaquim/kanbantoolsv2
     }
   };
 
@@ -148,15 +92,9 @@ export default function NewKanbanPage() {
       {/* Form */}
       <Card>
         <CardHeader>
-<<<<<<< HEAD
-          <CardTitle>Nouveau tableau Kanban</CardTitle>
-          <CardDescription>
-            Créez un nouveau tableau pour organiser vos tâches
-=======
           <CardTitle>Informations du tableau</CardTitle>
           <CardDescription>
             Remplissez les informations de base pour votre nouveau tableau Kanban.
->>>>>>> joaquim/kanbantoolsv2
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -193,30 +131,6 @@ export default function NewKanbanPage() {
               </p>
             </div>
 
-<<<<<<< HEAD
-              <div className="flex justify-end space-x-4 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push("/dashboard/outils/kanban")}
-                  disabled={isSubmitting}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Création...
-                    </>
-                  ) : (
-                    "Créer le tableau"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Form>
-=======
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
@@ -256,7 +170,6 @@ export default function NewKanbanPage() {
             <li>• 4 colonnes seront créées automatiquement : "À faire", "En cours", "En attente", "Terminées"</li>
             <li>• Vous pouvez modifier ces informations à tout moment</li>
           </ul>
->>>>>>> joaquim/kanbantoolsv2
         </CardContent>
       </Card>
     </div>
