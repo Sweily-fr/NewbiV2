@@ -149,7 +149,7 @@ export default function KanbanBoardPage({ params }) {
     toggleChecklistItem,
     removeChecklistItem,
     moveTask,
-  } = useKanbanTasks(id, refetch);
+  } = useKanbanTasks(id, board);
 
   const { activeTask, sensors, handleDragStart, handleDragEnd } = useKanbanDnD(
     moveTask,
@@ -261,11 +261,11 @@ export default function KanbanBoardPage({ params }) {
                   })}
 
                   {/* Add Column Button */}
-                  <Card className="w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors">
+                  <Card className="w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors shadow-none cursor-pointer">
                     <CardContent className="p-3">
                       <Button
                         variant="ghost"
-                        className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground"
+                        className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:bg-transparent cursor-pointer"
                         onClick={openAddModal}
                       >
                         <Plus className="h-5 w-5" />
