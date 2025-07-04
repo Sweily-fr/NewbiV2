@@ -12,7 +12,7 @@ import { InputLoader } from "@/src/components/ui/input";
 export default function Outils() {
   return (
     <div className="flex flex-col p-6 md:py-6">
-      <h1 className="text-2xl font-semibold mb-6">Apps</h1>
+      <h1 className="text-2xl font-semibold mb-6">Outils</h1>
       <div className="flex flex-col gap-10 w-full">
         <div className="flex items-center justify-between gap-4 w-full">
           <Tabs

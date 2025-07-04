@@ -19,6 +19,7 @@ import {
   IconSettings,
   IconUsers,
   IconHeart,
+  IconCalendar,
 } from "@tabler/icons-react";
 
 import { NavDocuments } from "@/src/components/nav-documents";
@@ -49,20 +50,25 @@ const data = {
       url: "/dashboard",
       icon: IconDashboard,
     },
+    // {
+    //   title: "Intégrations",
+    //   url: "/dashboard/automatisation",
+    //   icon: IconRobot,
+    // },
+    // {
+    //   title: "Collaborateurs",
+    //   url: "/dashboard/collaborateurs",
+    //   icon: IconUsers,
+    // },
+    // {
+    //   title: "Analytics",
+    //   url: "/dashboard/analytics",
+    //   icon: IconChartBar,
+    // },
     {
-      title: "Intégrations",
-      url: "/dashboard/automatisation",
-      icon: IconRobot,
-    },
-    {
-      title: "Collaborateurs",
-      url: "/dashboard/collaborateurs",
-      icon: IconUsers,
-    },
-    {
-      title: "Analytics",
-      url: "/dashboard/analytics",
-      icon: IconChartBar,
+      title: "Calendrier",
+      url: "/dashboard/calendar",
+      icon: IconCalendar,
     },
     {
       title: "Favoris",

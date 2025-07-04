@@ -17,9 +17,10 @@ import {
 import {
   IconDots,
   IconFolder,
-  IconShare3,
   IconTrash,
   IconSettings,
+  IconRobot,
+  IconUsers,
 } from "@tabler/icons-react";
 
 import {
@@ -68,9 +69,16 @@ function SettingsDropdownMenu() {
           </DropdownMenuItem>
 
           <DropdownMenuItem className="cursor-pointer" asChild>
-            <Link href={"/dashboard/settings/integrations"}>
-              <IconShare3 />
-              <span>Integrations</span>
+            <Link href={"/dashboard/collaborateurs"}>
+              <IconUsers />
+              <span>Collaborateurs</span>
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem className="cursor-pointer" asChild>
+            <Link href={"/dashboard/automatisation"}>
+              <IconRobot />
+              <span>Intégrations</span>
             </Link>
           </DropdownMenuItem>
 
