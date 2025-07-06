@@ -1,150 +1,143 @@
-"use client"
+"use client";
 
-import React, { useEffect, useState } from "react"
-import { AnimatePresence, motion } from "framer-motion"
-import { Check, ChevronDown } from "lucide-react"
+import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, ChevronDown } from "lucide-react";
 
-import { Button } from "@/src/components/ui/button"
-import { Input } from "@/src/components/ui/input"
-import { Label } from "@/src/components/ui/label"
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/src/components/ui/popover"
+} from "@/src/components/ui/popover";
 
 // Helper functions for color conversion
 const hslToHex = (h, s, l) => {
-  l /= 100
-  const a = (s * Math.min(l, 1 - l)) / 100
+  l /= 100;
+  const a = (s * Math.min(l, 1 - l)) / 100;
   const f = (n) => {
-    const k = (n + h / 30) % 12
-    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
     return Math.round(255 * color)
       .toString(16)
-      .padStart(2, "0")
-  }
-  return `#${f(0)}${f(8)}${f(4)}`
-}
+      .padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+};
 
 const hexToHsl = (hex) => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  if (!result) return [0, 0, 0]
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return [0, 0, 0];
 
-  let r = parseInt(result[1], 16) / 255
-  let g = parseInt(result[2], 16) / 255
-  let b = parseInt(result[3], 16) / 255
+  let r = parseInt(result[1], 16) / 255;
+  let g = parseInt(result[2], 16) / 255;
+  let b = parseInt(result[3], 16) / 255;
 
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  let h = 0
-  let s = 0
-  let l = (max + min) / 2
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  let l = (max + min) / 2;
 
   if (max !== min) {
-    const d = max - min
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
     switch (max) {
       case r:
-        h = (g - b) / d + (g < b ? 6 : 0)
-        break
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
       case g:
-        h = (b - r) / d + 2
-        break
+        h = (b - r) / d + 2;
+        break;
       case b:
-        h = (r - g) / d + 4
-        break
+        h = (r - g) / d + 4;
+        break;
     }
-    h /= 6
+    h /= 6;
   }
 
-  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)]
-}
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+};
 
 const normalizeColor = (color) => {
   if (color.startsWith("#")) {
-    return color.toUpperCase()
+    return color.toUpperCase();
   } else if (color.startsWith("hsl")) {
-    const [h, s, l] = color.match(/\d+(\.\d+)?/g)?.map(Number) || [0, 0, 0]
-    return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`
+    const [h, s, l] = color.match(/\d+(\.\d+)?/g)?.map(Number) || [0, 0, 0];
+    return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`;
   }
-  return color
-}
+  return color;
+};
 
 const trimColorString = (color, maxLength = 20) => {
-  if (color.length <= maxLength) return color
-  return `${color.slice(0, maxLength - 3)}...`
-}
+  if (color.length <= maxLength) return color;
+  return `${color.slice(0, maxLength - 3)}...`;
+};
 
-export function ColorPicker({
-  color,
-  onChange,
-}) {
-  const [hsl, setHsl] = useState([0, 0, 0])
-  const [colorInput, setColorInput] = useState(color)
-  const [isOpen, setIsOpen] = useState(false)
+export function ColorPicker({ color, onChange, className = "", align = "center", sideOffset = 0, sideOffsetVw }) {
+  const [hsl, setHsl] = useState([0, 0, 0]);
+  const [colorInput, setColorInput] = useState(color);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    handleColorChange(color)
-  }, [color])
+    handleColorChange(color);
+  }, [color]);
 
   const handleColorChange = (newColor) => {
-    const normalizedColor = normalizeColor(newColor)
-    setColorInput(normalizedColor)
+    const normalizedColor = normalizeColor(newColor);
+    setColorInput(normalizedColor);
 
-    let h, s, l
+    let h, s, l;
     if (normalizedColor.startsWith("#")) {
-      ;[h, s, l] = hexToHsl(normalizedColor)
+      [h, s, l] = hexToHsl(normalizedColor);
     } else {
-      ;[h, s, l] = normalizedColor.match(/\d+(\.\d+)?/g)?.map(Number) || [
+      [h, s, l] = normalizedColor.match(/\d+(\.\d+)?/g)?.map(Number) || [
         0, 0, 0,
-      ]
+      ];
     }
 
-    setHsl([h, s, l])
-    onChange(`hsl(${h.toFixed(1)}, ${s.toFixed(1)}%, ${l.toFixed(1)}%)`)
-  }
+    setHsl([h, s, l]);
+    onChange(`hsl(${h.toFixed(1)}, ${s.toFixed(1)}%, ${l.toFixed(1)}%)`);
+  };
 
   const handleHueChange = (hue) => {
-    const newHsl = [hue, hsl[1], hsl[2]]
-    setHsl(newHsl)
-    handleColorChange(`hsl(${newHsl[0]}, ${newHsl[1]}%, ${newHsl[2]}%)`)
-  }
+    const newHsl = [hue, hsl[1], hsl[2]];
+    setHsl(newHsl);
+    handleColorChange(`hsl(${newHsl[0]}, ${newHsl[1]}%, ${newHsl[2]}%)`);
+  };
 
-  const handleSaturationLightnessChange = (
-    event
-  ) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
-    const s = Math.round((x / rect.width) * 100)
-    const l = Math.round(100 - (y / rect.height) * 100)
-    const newHsl = [hsl[0], s, l]
-    setHsl(newHsl)
-    handleColorChange(`hsl(${newHsl[0]}, ${newHsl[1]}%, ${newHsl[2]}%)`)
-  }
+  const handleSaturationLightnessChange = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const s = Math.round((x / rect.width) * 100);
+    const l = Math.round(100 - (y / rect.height) * 100);
+    const newHsl = [hsl[0], s, l];
+    setHsl(newHsl);
+    handleColorChange(`hsl(${newHsl[0]}, ${newHsl[1]}%, ${newHsl[2]}%)`);
+  };
 
-  const handleColorInputChange = (
-    event
-  ) => {
-    let newColor = event.target.value.toUpperCase()
+  const handleColorInputChange = (event) => {
+    let newColor = event.target.value.toUpperCase();
     // N'autoriser que les caractères hexadécimaux et ajouter automatiquement le #
-    if (!newColor.startsWith('#')) {
-      newColor = '#' + newColor.replace(/[^0-9A-Fa-f]/g, '')
+    if (!newColor.startsWith("#")) {
+      newColor = "#" + newColor.replace(/[^0-9A-Fa-f]/g, "");
     } else {
-      newColor = '#' + newColor.slice(1).replace(/[^0-9A-Fa-f]/g, '')
+      newColor = "#" + newColor.slice(1).replace(/[^0-9A-Fa-f]/g, "");
     }
-    
+
     // Limiter à 6 caractères + le #
-    newColor = newColor.slice(0, 7)
-    
-    setColorInput(newColor)
-    
+    newColor = newColor.slice(0, 7);
+
+    setColorInput(newColor);
+
     // Valider et appliquer la couleur si c'est une couleur hexadécimale valide
     if (/^#[0-9A-Fa-f]{6}$/.test(newColor)) {
-      handleColorChange(newColor)
+      handleColorChange(newColor);
     }
-  }
+  };
 
   const colorPresets = [
     "#FF3B30",
@@ -159,32 +152,34 @@ export function ColorPicker({
     "#EFEFF4",
     "#E5E5EA",
     "#D1D1D6",
-  ]
+  ];
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="w-[200px] justify-start text-left font-normal"
+          className={`h-8 px-2 justify-start gap-2 ${className}`}
         >
           <div
-            className="w-4 h-4 rounded-full shadow-sm"
+            className="w-4 h-4 rounded border"
             style={{ backgroundColor: colorInput }}
           />
-          <span className="flex-grow">{colorInput.startsWith('#') ? colorInput : `${hslToHex(...hsl).toUpperCase()}`}</span>
-          <ChevronDown className="h-4 w-4 opacity-50" />
+          <span className="text-xs font-mono">
+            {colorInput.startsWith("#")
+              ? colorInput.slice(1)
+              : `${hslToHex(...hsl).toUpperCase()}`.slice(1)}
+          </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[240px] p-3">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.2 }}
-          className="space-y-3"
-        >
-          <motion.div
+      <PopoverContent 
+        className="w-[240px] p-3 rounded-lg" 
+        align={align} 
+        sideOffset={sideOffset}
+        style={sideOffsetVw ? { transform: `translateX(${sideOffsetVw}vw)` } : {}}
+      >
+        <div className="space-y-3">
+          <div
             className="w-full h-40 rounded-lg cursor-crosshair relative overflow-hidden"
             style={{
               background: `
@@ -195,18 +190,16 @@ export function ColorPicker({
             }}
             onClick={handleSaturationLightnessChange}
           >
-            <motion.div
+            <div
               className="w-4 h-4 rounded-full border-2 border-white absolute shadow-md"
               style={{
                 left: `${hsl[1]}%`,
                 top: `${100 - hsl[2]}%`,
                 backgroundColor: `hsl(${hsl[0]}, ${hsl[1]}%, ${hsl[2]}%)`,
               }}
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.9 }}
             />
-          </motion.div>
-          <motion.input
+          </div>
+          <input
             type="range"
             min="0"
             max="360"
@@ -219,8 +212,6 @@ export function ColorPicker({
                 hsl(180, 100%, 50%), hsl(240, 100%, 50%), hsl(300, 100%, 50%), hsl(360, 100%, 50%)
               )`,
             }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
           />
           <div className="flex items-center space-x-2">
             <Label htmlFor="color-input" className="sr-only">
@@ -229,47 +220,38 @@ export function ColorPicker({
             <Input
               id="color-input"
               type="text"
-              value={colorInput.startsWith('#') ? colorInput : `${hslToHex(...hsl)}`}
+              value={
+                colorInput.startsWith("#") ? colorInput : `${hslToHex(...hsl)}`
+              }
               onChange={handleColorInputChange}
               className="flex-grow bg-white border border-gray-300 rounded-md text-sm h-8 px-2 font-mono"
               placeholder="#RRGGBB"
             />
-            <motion.div
+            <div
               className="w-8 h-8 rounded-md shadow-sm"
               style={{ backgroundColor: colorInput }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
             />
           </div>
           <div className="grid grid-cols-6 gap-2">
-            <AnimatePresence>
-              {colorPresets.map((preset) => (
-                <motion.button
-                  key={preset}
-                  className="w-8 h-8 rounded-full relative"
-                  style={{ backgroundColor: preset }}
-                  onClick={() => handleColorChange(preset)}
-                  whileHover={{ scale: 1.2, zIndex: 1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  {colorInput === preset && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Check className="w-4 h-4 text-white absolute inset-0 m-auto" />
-                    </motion.div>
-                  )}
-                </motion.button>
-              ))}
-            </AnimatePresence>
+            {colorPresets.map((preset) => (
+              <button
+                key={preset}
+                className="w-8 h-8 rounded-full relative"
+                style={{ backgroundColor: preset }}
+                onClick={() => handleColorChange(preset)}
+              >
+                {colorInput === preset && (
+                  <div>
+                    <Check className="w-4 h-4 text-white absolute inset-0 m-auto" />
+                  </div>
+                )}
+              </button>
+            ))}
           </div>
-        </motion.div>
+        </div>
       </PopoverContent>
     </Popover>
-  )
+  );
 }
 
 export { ColorPicker };

@@ -30,6 +30,6 @@
     ],
     "strictNullChecks": true
   },
-  "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx", "src/components/ui/color-picker.jsx", "src/components/ui/radio-group.jsx"],
+  "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx", "src/components/ui/color-picker.jsx", "src/components/ui/radio-group.jsx", "app/dashboard/outils/signatures-mail/new/page.jsx", "src/components/ui/slider2.jsx", "src/components/ui/slider.jsx"],
   "exclude": ["node_modules"]
 }

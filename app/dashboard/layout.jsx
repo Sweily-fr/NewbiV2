@@ -1,10 +1,27 @@
+"use client";
+
 import React from "react";
+import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/src/components/app-sidebar";
+import { SignatureSidebar } from "@/src/components/signature-sidebar";
 import { SiteHeader } from "@/src/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/src/components/ui/sidebar";
 import { SearchCommand } from "@/src/components/search-command";
+import { SignatureProvider, useSignatureData } from "@/src/hooks/use-signature-data";
 
-export default function DashboardLayout({ children }) {
+// Composant interne qui utilise le contexte
+function DashboardContent({ children }) {
+  const pathname = usePathname();
+  const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
+  
+  // Utiliser les données de signature si on est sur la page de signature
+  let signatureContextData = null;
+  try {
+    signatureContextData = useSignatureData();
+  } catch {
+    // Pas de contexte disponible, c'est normal si on n'est pas sur la page de signature
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
@@ -16,7 +33,30 @@ export default function DashboardLayout({ children }) {
           </div>
         </div>
       </SidebarInset>
+      {isSignaturePage && signatureContextData && (
+        <SignatureSidebar 
+          signatureData={signatureContextData.signatureData}
+          updateSignatureData={signatureContextData.updateSignatureData}
+        />
+      )}
       <SearchCommand />
     </SidebarProvider>
   );
+}
+
+export default function DashboardLayout({ children }) {
+  const pathname = usePathname();
+  const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
+
+  // Si on est sur la page de signature, wrapper avec le provider
+  if (isSignaturePage) {
+    return (
+      <SignatureProvider>
+        <DashboardContent>{children}</DashboardContent>
+      </SignatureProvider>
+    );
+  }
+
+  // Sinon, rendu normal sans le provider
+  return <DashboardContent>{children}</DashboardContent>;
 }

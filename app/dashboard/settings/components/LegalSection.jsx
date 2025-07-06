@@ -20,8 +20,14 @@ import { FileText, Building, Euro } from "lucide-react";
 const LEGAL_FORMS = [
   { value: "SARL", label: "SARL - Société à Responsabilité Limitée" },
   { value: "SAS", label: "SAS - Société par Actions Simplifiée" },
-  { value: "SASU", label: "SASU - Société par Actions Simplifiée Unipersonnelle" },
-  { value: "EURL", label: "EURL - Entreprise Unipersonnelle à Responsabilité Limitée" },
+  {
+    value: "SASU",
+    label: "SASU - Société par Actions Simplifiée Unipersonnelle",
+  },
+  {
+    value: "EURL",
+    label: "EURL - Entreprise Unipersonnelle à Responsabilité Limitée",
+  },
   { value: "SA", label: "SA - Société Anonyme" },
   { value: "SNC", label: "SNC - Société en Nom Collectif" },
   { value: "Auto-entrepreneur", label: "Auto-entrepreneur / Micro-entreprise" },
@@ -62,7 +68,10 @@ export default function LegalSection({ register, errors, watch, setValue }) {
         <CardContent className="p-6 space-y-6">
           {/* Forme juridique */}
           <div className="space-y-2">
-            <Label htmlFor="legal.legalForm" className="flex items-center gap-2">
+            <Label
+              htmlFor="legal.legalForm"
+              className="flex items-center gap-2"
+            >
               <Building className="h-4 w-4" />
               Forme juridique *
             </Label>
@@ -82,7 +91,9 @@ export default function LegalSection({ register, errors, watch, setValue }) {
               </SelectContent>
             </Select>
             {errors.legal?.legalForm && (
-              <p className="text-sm text-red-500">{errors.legal.legalForm.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.legal.legalForm.message}
+              </p>
             )}
           </div>
 
@@ -96,12 +107,14 @@ export default function LegalSection({ register, errors, watch, setValue }) {
                 {...register("legal.siret", {
                   pattern: {
                     value: /^[0-9]{14}$/,
-                    message: "Le SIRET doit contenir 14 chiffres"
-                  }
+                    message: "Le SIRET doit contenir 14 chiffres",
+                  },
                 })}
               />
               {errors.legal?.siret && (
-                <p className="text-sm text-red-500">{errors.legal.siret.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.legal.siret.message}
+                </p>
               )}
             </div>
 
@@ -118,24 +131,31 @@ export default function LegalSection({ register, errors, watch, setValue }) {
           {/* Numéro de TVA et Capital social */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="legal.vatNumber">Numéro de TVA intracommunautaire</Label>
+              <Label htmlFor="legal.vatNumber">
+                Numéro de TVA intracommunautaire
+              </Label>
               <Input
                 id="legal.vatNumber"
                 placeholder="FR12345678901"
                 {...register("legal.vatNumber", {
                   pattern: {
                     value: /^[A-Z]{2}[0-9A-Z]+$/,
-                    message: "Format de TVA invalide"
-                  }
+                    message: "Format de TVA invalide",
+                  },
                 })}
               />
               {errors.legal?.vatNumber && (
-                <p className="text-sm text-red-500">{errors.legal.vatNumber.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.legal.vatNumber.message}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="legal.capital" className="flex items-center gap-2">
+              <Label
+                htmlFor="legal.capital"
+                className="flex items-center gap-2"
+              >
                 <Euro className="h-4 w-4" />
                 Capital social
               </Label>
@@ -199,8 +219,9 @@ export default function LegalSection({ register, errors, watch, setValue }) {
                   Informations légales
                 </h4>
                 <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                  Ces informations sont utilisées pour la génération automatique de vos mentions légales 
-                  et documents officiels. Assurez-vous qu'elles sont exactes et à jour.
+                  Ces informations sont utilisées pour la génération automatique
+                  de vos mentions légales et documents officiels. Assurez-vous
+                  qu'elles sont exactes et à jour.
                 </p>
               </div>
             </div>
