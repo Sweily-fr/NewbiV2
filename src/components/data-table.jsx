@@ -103,7 +103,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/src/components/ui/tabs";
-import { Link } from "lucide-react";
+import { redirect } from "next/navigation";
 
 export const schema = z.object({
   id: z.number(),
@@ -335,11 +335,10 @@ function DraggableRow({ row }) {
   );
 }
 
-export function DataTable({ data: initialData }) {
+export function DataTable({ data: initialData, textButton, link }) {
   const [data, setData] = React.useState(() => initialData);
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
-    React.useState({});
+  const [columnVisibility, setColumnVisibility] = React.useState({});
   const [columnFilters, setColumnFilters] = React.useState([]);
   const [sorting, setSorting] = React.useState([]);
   const [pagination, setPagination] = React.useState({
@@ -400,7 +399,7 @@ export function DataTable({ data: initialData }) {
         <Label htmlFor="view-selector" className="sr-only">
           View
         </Label>
-        <Select defaultValue="outline">
+        {/* <Select defaultValue="outline">
           <SelectTrigger
             className="flex w-fit @4xl/main:hidden"
             size="sm"
@@ -414,8 +413,8 @@ export function DataTable({ data: initialData }) {
             <SelectItem value="key-personnel">À encaisser</SelectItem>
             <SelectItem value="focus-documents">Terminées</SelectItem>
           </SelectContent>
-        </Select>
-        <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
+        </Select> */}
+        {/* <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
           <TabsTrigger value="outline">Toutes</TabsTrigger>
           <TabsTrigger value="past-performance">
             Brouillons <Badge variant="secondary">3</Badge>
@@ -424,8 +423,8 @@ export function DataTable({ data: initialData }) {
             À encaisser <Badge variant="secondary">2</Badge>
           </TabsTrigger>
           <TabsTrigger value="focus-documents">Terminées</TabsTrigger>
-        </TabsList>
-        <div className="flex items-center gap-2">
+        </TabsList> */}
+        <div className="flex justify-end w-full items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -459,12 +458,16 @@ export function DataTable({ data: initialData }) {
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          {/* <Link href="/dashboard/outils/factures/new"> */}
-          <Button variant="outline" size="sm">
+
+          <Button
+            variant="outline"
+            className="cursor-pointer"
+            size="sm"
+            onClick={() => redirect(link)}
+          >
             <IconPlus />
-            <span className="hidden lg:inline">Ajouter une facture</span>
+            <span className="hidden lg:inline">{textButton}</span>
           </Button>
-          {/* </Link> */}
         </div>
       </div>
       <TabsContent
@@ -525,12 +528,13 @@ export function DataTable({ data: initialData }) {
         <div className="flex items-center justify-between px-4">
           <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
+            {table.getFilteredRowModel().rows.length} colonne(s)
+            selectionnée(s).
           </div>
           <div className="flex w-full items-center gap-8 lg:w-fit">
             <div className="hidden items-center gap-2 lg:flex">
               <Label htmlFor="rows-per-page" className="text-sm font-medium">
-                Rows per page
+                Colonnes par page
               </Label>
               <Select
                 value={`${table.getState().pagination.pageSize}`}
@@ -553,7 +557,7 @@ export function DataTable({ data: initialData }) {
               </Select>
             </div>
             <div className="flex w-fit items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              Page {table.getState().pagination.pageIndex + 1} de{" "}
               {table.getPageCount()}
             </div>
             <div className="ml-auto flex items-center gap-2 lg:ml-0">
@@ -563,7 +567,7 @@ export function DataTable({ data: initialData }) {
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
               >
-                <span className="sr-only">Go to first page</span>
+                <span className="sr-only">Aller à la première page</span>
                 <IconChevronsLeft />
               </Button>
               <Button
@@ -573,7 +577,7 @@ export function DataTable({ data: initialData }) {
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
               >
-                <span className="sr-only">Go to previous page</span>
+                <span className="sr-only">Aller à la page précédente</span>
                 <IconChevronLeft />
               </Button>
               <Button
@@ -583,7 +587,7 @@ export function DataTable({ data: initialData }) {
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
               >
-                <span className="sr-only">Go to next page</span>
+                <span className="sr-only">Aller à la page suivante</span>
                 <IconChevronRight />
               </Button>
               <Button
@@ -593,7 +597,7 @@ export function DataTable({ data: initialData }) {
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 disabled={!table.getCanNextPage()}
               >
-                <span className="sr-only">Go to last page</span>
+                <span className="sr-only">Aller à la dernière page</span>
                 <IconChevronsRight />
               </Button>
             </div>
@@ -620,12 +624,12 @@ export function DataTable({ data: initialData }) {
 }
 
 const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
+  { month: "Janvier", desktop: 186, mobile: 80 },
+  { month: "Fevrier", desktop: 305, mobile: 200 },
+  { month: "Mars", desktop: 237, mobile: 120 },
+  { month: "Avril", desktop: 73, mobile: 190 },
+  { month: "Mai", desktop: 209, mobile: 130 },
+  { month: "Juin", desktop: 214, mobile: 140 },
 ];
 
 const chartConfig = {
@@ -653,7 +657,7 @@ function TableCellViewer({ item }) {
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.header}</DrawerTitle>
           <DrawerDescription>
-            Showing total visitors for the last 6 months
+            Affichage des visiteurs totaux sur les 6 derniers mois
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
@@ -702,13 +706,13 @@ function TableCellViewer({ item }) {
               <Separator />
               <div className="grid gap-2">
                 <div className="flex gap-2 leading-none font-medium">
-                  Trending up by 5.2% this month{" "}
+                  Augmentation de 5.2% ce mois-ci{" "}
                   <IconTrendingUp className="size-4" />
                 </div>
                 <div className="text-muted-foreground">
-                  Showing total visitors for the last 6 months. This is just
-                  some random text to test the layout. It spans multiple lines
-                  and should wrap around.
+                  Affichage des visiteurs totaux sur les 6 derniers mois. C'est
+                  juste du texte aléatoire pour tester le layout. Il s'étend sur
+                  plusieurs lignes et devrait s'ajuster.
                 </div>
               </div>
               <Separator />
@@ -716,7 +720,7 @@ function TableCellViewer({ item }) {
           )}
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
+              <Label htmlFor="header">En-tête</Label>
               <Input id="header" defaultValue={item.header} />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -747,7 +751,7 @@ function TableCellViewer({ item }) {
                 </Select>
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">Statut</Label>
                 <Select defaultValue={item.status}>
                   <SelectTrigger id="status" className="w-full">
                     <SelectValue placeholder="Select a status" />
@@ -762,16 +766,16 @@ function TableCellViewer({ item }) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="target">Target</Label>
+                <Label htmlFor="target">Cible</Label>
                 <Input id="target" defaultValue={item.target} />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">Limit</Label>
+                <Label htmlFor="limit">Limite</Label>
                 <Input id="limit" defaultValue={item.limit} />
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">Reviewer</Label>
+              <Label htmlFor="reviewer">Relecteur</Label>
               <Select defaultValue={item.reviewer}>
                 <SelectTrigger id="reviewer" className="w-full">
                   <SelectValue placeholder="Select a reviewer" />
@@ -788,9 +792,9 @@ function TableCellViewer({ item }) {
           </form>
         </div>
         <DrawerFooter>
-          <Button>Submit</Button>
+          <Button>Enregistrer</Button>
           <DrawerClose asChild>
-            <Button variant="outline">Done</Button>
+            <Button variant="outline">Annuler</Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

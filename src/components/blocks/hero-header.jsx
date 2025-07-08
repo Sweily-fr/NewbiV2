@@ -6,9 +6,64 @@ import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { authClient } from "@/src/lib/auth-client";
 import { useUser } from "@/src/lib/auth/hooks";
+import { Card } from "@/src/components/ui/card";
+import {
+  IconFileInvoice,
+  IconFileDescription,
+  IconMailForward,
+  IconLayoutKanban,
+  IconTransfer,
+} from "@tabler/icons-react";
 
 const menuItems = [
-  { name: "Solution", href: "#link" },
+  {
+    name: "Produits",
+    href: "#link",
+    hasDropdown: true,
+    dropdownItems: [
+      {
+        name: "Factures simplifiées",
+        description: "Automatisez et suivez facilement votre facturation.",
+        icon: <IconFileInvoice size={20} />,
+        bgColor: "bg-[#5B4FFF]",
+        textColor: "text-white",
+        href: "/produits/factures",
+      },
+      {
+        name: "Devis en un clic",
+        description: "Créez, envoyez et validez vos devis en toute simplicité.",
+        icon: <IconFileDescription size={20} />,
+        bgColor: "bg-[#f43f5e]",
+        textColor: "text-white",
+        href: "/produits/devis",
+      },
+      {
+        name: "Signatures rapides",
+        description:
+          "Faites signer vos documents en ligne en quelques secondes.",
+        icon: <IconMailForward size={20} />,
+        bgColor: "bg-[#38bdf8]",
+        textColor: "text-white",
+        href: "/produits/signatures",
+      },
+      {
+        name: "Tableaux Kanban",
+        description: "Organisez vos projets et suivez vos tâches visuellement.",
+        icon: <IconLayoutKanban size={20} />,
+        bgColor: "bg-[#5B4FFF]",
+        textColor: "text-white",
+        href: "/produits/kanban",
+      },
+      {
+        name: "Transferts sécurisés",
+        description: "Envoyez et recevez vos fichiers en toute sécurité.",
+        icon: <IconTransfer size={20} />,
+        bgColor: "bg-[#5B4FFF]",
+        textColor: "text-white",
+        href: "/produits/transfers",
+      },
+    ],
+  },
   { name: "Tarifs", href: "#link" },
   { name: "Ressources", href: "/blog" },
 ];
@@ -16,6 +71,8 @@ const menuItems = [
 const HeroHeader = () => {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const [activeDropdown, setActiveDropdown] = React.useState(null);
+  const [dropdownTimeout, setDropdownTimeout] = React.useState(null);
   const session = useUser();
   console.log(session.session, "session");
 
@@ -36,10 +93,10 @@ const HeroHeader = () => {
           className={cn(
             "mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12",
             isScrolled &&
-              "bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5"
+              "bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-4"
           )}
         >
-          <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
+          <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-3">
             <div className="flex w-full justify-between lg:w-auto">
               <Link
                 href="/"
@@ -62,13 +119,85 @@ const HeroHeader = () => {
             <div className="absolute inset-0 m-auto hidden size-fit lg:block">
               <ul className="flex gap-8 text-sm">
                 {menuItems.map((item, index) => (
-                  <li key={index}>
-                    <Link
-                      href={item.href}
-                      className="text-muted-foreground hover:text-accent-foreground block duration-150"
-                    >
-                      <span>{item.name}</span>
-                    </Link>
+                  <li
+                    key={index}
+                    className="relative"
+                    onMouseEnter={() => {
+                      if (item.hasDropdown) {
+                        if (dropdownTimeout) {
+                          clearTimeout(dropdownTimeout);
+                          setDropdownTimeout(null);
+                        }
+                        setActiveDropdown(index);
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      if (item.hasDropdown) {
+                        const timeout = setTimeout(() => {
+                          setActiveDropdown(null);
+                        }, 150);
+                        setDropdownTimeout(timeout);
+                      }
+                    }}
+                  >
+                    {item.hasDropdown ? (
+                      <button className="text-muted-foreground hover:text-accent-foreground block duration-150">
+                        <span>{item.name}</span>
+                      </button>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        className="text-muted-foreground hover:text-accent-foreground block duration-150"
+                      >
+                        <span>{item.name}</span>
+                      </Link>
+                    )}
+
+                    {/* Dropdown */}
+                    {item.hasDropdown && activeDropdown === index && (
+                      <Card
+                        className="absolute w-150 shadow-none top-full left-1/2 transform -translate-x-1/2 mt-10 p-3 z-50"
+                        onMouseEnter={() => {
+                          if (dropdownTimeout) {
+                            clearTimeout(dropdownTimeout);
+                            setDropdownTimeout(null);
+                          }
+                          setActiveDropdown(index);
+                        }}
+                        onMouseLeave={() => {
+                          const timeout = setTimeout(() => {
+                            setActiveDropdown(null);
+                          }, 150);
+                          setDropdownTimeout(timeout);
+                        }}
+                      >
+                        <div className="grid grid-cols-2 gap-3">
+                          {item.dropdownItems.map(
+                            (dropdownItem, dropdownIndex) => (
+                              <Link
+                                key={dropdownIndex}
+                                href={dropdownItem.href}
+                                className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 group"
+                              >
+                                <div
+                                  className={`w-10 h-10 ${dropdownItem.bgColor} rounded-lg flex items-center justify-center ${dropdownItem.textColor} text-lg flex-shrink-0 bg-opacity-30`}
+                                >
+                                  {dropdownItem.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-semibold text-gray-900 text-sm mb-1">
+                                    {dropdownItem.name}
+                                  </h3>
+                                  <p className="text-xs text-gray-500 leading-relaxed">
+                                    {dropdownItem.description}
+                                  </p>
+                                </div>
+                              </Link>
+                            )
+                          )}
+                        </div>
+                      </Card>
+                    )}
                   </li>
                 ))}
               </ul>

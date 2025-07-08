@@ -57,7 +57,11 @@ export default function SignaturesMail() {
       </h1>
 
       <div className="w-full">
-        <DataTable data={data} />
+        <DataTable
+          data={data}
+          textButton="Ajouter une signature"
+          link="/dashboard/outils/signatures-mail/new"
+        />
       </div>
     </div>
   );
