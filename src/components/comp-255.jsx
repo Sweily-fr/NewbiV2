@@ -18,6 +18,7 @@ export default function Component() {
     handleSliderChange,
   } = useSliderWithInput({ minValue, maxValue, initialValue })
 
+  
   return (
     <div className="*:not-first:mt-3">
       <Label>Slider with input</Label>

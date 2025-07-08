@@ -229,63 +229,144 @@ export const CHANGE_INVOICE_STATUS = gql`
 // ==================== HOOKS PERSONNALISÉS ====================
 
 import { useQuery, useMutation, useApolloClient } from '@apollo/client';
+import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 
-// Hook pour récupérer la liste des factures avec pagination et filtres
-export const useInvoices = (filters = {}) => {
-  const { data, loading, error, refetch, fetchMore } = useQuery(GET_INVOICES, {
-    variables: {
-      page: 1,
-      limit: 10,
-      ...filters
-    },
-    errorPolicy: 'all'
+// Hook optimisé pour récupérer la liste des factures
+export const useInvoices = () => {
+  // Configuration de la pagination
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 20, // Réduit la taille de la page initiale
   });
 
-  const loadMore = () => {
-    if (data?.invoices?.hasNextPage) {
+  // Configuration du tri et des filtres
+  const [sorting, setSorting] = useState([{ id: 'issueDate', desc: true }]);
+  const [filters, setFilters] = useState([]);
+
+  // Options de requête optimisées
+  const { data: invoicesData, loading, error, refetch, fetchMore } = useQuery(GET_INVOICES, {
+    variables: {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+      sortField: sorting[0]?.id,
+      sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
+      filters: filters.reduce((acc, { id, value }) => ({
+        ...acc,
+        [id]: value
+      }), {})
+    },
+    fetchPolicy: 'cache-and-network',
+    errorPolicy: 'all',
+    notifyOnNetworkStatusChange: true,
+  });
+
+  // Fonction pour charger plus de données
+  const loadMore = useCallback(() => {
+    if (!loading) {
       fetchMore({
         variables: {
-          page: Math.floor(data.invoices.invoices.length / (filters.limit || 10)) + 1
+          page: pagination.pageIndex + 1,
+          pageSize: pagination.pageSize,
+          sortBy: sorting[0]?.id || 'issueDate',
+          sortOrder: sorting[0]?.desc ? 'DESC' : 'ASC',
+          ...filters
         },
         updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult) return prev;
+          if (!fetchMoreResult?.invoices?.invoices?.length) return prev;
           return {
+            ...fetchMoreResult,
             invoices: {
               ...fetchMoreResult.invoices,
-              invoices: [...prev.invoices.invoices, ...fetchMoreResult.invoices.invoices]
+              invoices: [
+                ...(prev.invoices?.invoices || []),
+                ...(fetchMoreResult.invoices?.invoices || [])
+              ]
             }
           };
         }
+      }).then(() => {
+        setPagination(prev => ({
+          ...prev,
+          pageIndex: prev.pageIndex + 1
+        }));
       });
     }
-  };
+  }, [fetchMore, filters, loading, pagination.pageIndex, pagination.pageSize, sorting]);
 
-  return {
-    invoices: data?.invoices?.invoices || [],
-    totalCount: data?.invoices?.totalCount || 0,
-    hasNextPage: data?.invoices?.hasNextPage || false,
+  // Fonction de refetch optimisée
+  const optimizedRefetch = useCallback((variables) => {
+    return refetch({
+      ...variables,
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+    });
+  }, [pagination.pageIndex, pagination.pageSize, refetch]);
+
+  // Valeurs de retour optimisées
+  return useMemo(() => ({
+    invoices: invoicesData?.invoices?.invoices || [],
+    totalCount: invoicesData?.invoices?.totalCount || 0,
+    hasNextPage: invoicesData?.invoices?.hasNextPage || false,
     loading,
     error,
-    refetch,
-    loadMore
-  };
+    pagination: {
+      ...pagination,
+      pageCount: invoicesData?.invoices?.pagination?.totalPages || 1,
+      total: invoicesData?.invoices?.totalCount || 0,
+    },
+    sorting,
+    filters,
+    onSortingChange: setSorting,
+    onPaginationChange: setPagination,
+    onFiltersChange: setFilters,
+    loadMore,
+    refetch: optimizedRefetch,
+  }), [
+    invoicesData?.invoices?.invoices, 
+    invoicesData?.invoices?.totalCount, 
+    invoicesData?.invoices?.hasNextPage, 
+    invoicesData?.invoices?.pagination?.totalPages,
+    loading, 
+    error, 
+    pagination, 
+    sorting, 
+    filters, 
+    loadMore, 
+    optimizedRefetch
+  ]);
 };
 
 // Hook pour récupérer une facture spécifique
 export const useInvoice = (id) => {
-  return useQuery(GET_INVOICE, {
+  const { data: invoiceData, loading, error, refetch } = useQuery(GET_INVOICE, {
     variables: { id },
     skip: !id,
-    errorPolicy: 'all'
+    errorPolicy: 'all',
+    fetchPolicy: 'cache-and-network'
   });
+
+  return useMemo(() => ({
+    invoice: invoiceData?.invoice || null,
+    loading,
+    error,
+    refetch
+  }), [invoiceData?.invoice, loading, error, refetch]);
 };
 
 // Hook pour les statistiques des factures
 export const useInvoiceStats = () => {
-  return useQuery(GET_INVOICE_STATS, {
-    errorPolicy: 'all'
+  const { data: statsData, loading, error, refetch } = useQuery(GET_INVOICE_STATS, {
+    errorPolicy: 'all',
+    fetchPolicy: 'cache-and-network'
   });
+
+  return useMemo(() => ({
+    stats: statsData?.invoiceStats || {},
+    loading,
+    error,
+    refetch
+  }), [statsData?.invoiceStats, loading, error, refetch]);
 };
 
 // Hook pour récupérer le prochain numéro de facture
