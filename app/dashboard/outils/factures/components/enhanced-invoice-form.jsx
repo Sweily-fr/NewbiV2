@@ -22,7 +22,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import NotesAndFooterSection from "./invoices-form-sections/NotesAndFooterSection";
 import InvoiceInfoSection from "./invoices-form-sections/InvoiceInfoSection";
-import { ItemsSection } from "./invoices-form-sections/ItemsSection";
+import ItemsSection from "./invoices-form-sections/ItemsSection";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Calendar } from "@/src/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
