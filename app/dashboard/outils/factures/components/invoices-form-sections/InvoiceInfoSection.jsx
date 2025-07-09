@@ -1,16 +1,16 @@
 "use client";
 
-import { Clock, CalendarIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import { Button } from "@/src/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
-import { Calendar } from "@/src/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import { Calendar as CalendarIcon, Clock, Building } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Calendar } from "@/src/components/ui/calendar";
+import { Button } from "@/src/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
 
 const PAYMENT_TERMS_SUGGESTIONS = [
@@ -21,9 +21,9 @@ const PAYMENT_TERMS_SUGGESTIONS = [
   { value: 60, label: "60 jours" }
 ];
 
-export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
+export default function InvoiceInfoSection({ data, updateField, canEdit }) {
   return (
-    <Card className="shadow-none p-2 border-none">
+    <Card className="shadow-none p-2 border-none bg-transparent">
       <CardHeader className="p-0">
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
@@ -56,7 +56,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
         {/* Préfixe et numéro de facture */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="invoice-prefix" className="text-sm font-medium text-gray-900">
+            <Label htmlFor="invoice-prefix" className="text-sm font-medium">
               Préfixe de facture
             </Label>
             <div className="relative">
@@ -66,12 +66,12 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
                 onChange={(e) => updateField("prefix", e.target.value)}
                 placeholder="F-"
                 disabled={!canEdit}
-                className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
           </div>
           <div className="md:col-span-2 space-y-2">
-            <Label htmlFor="invoice-number" className="text-sm font-medium text-gray-900">
+            <Label htmlFor="invoice-number" className="text-sm font-medium">
               Numéro de facture
             </Label>
             <div className="relative">
@@ -81,7 +81,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
                 onChange={(e) => updateField("number", e.target.value)}
                 placeholder="202501-001"
                 disabled={!canEdit}
-                className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
           </div>
@@ -89,7 +89,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
 
         {/* Référence devis */}
         <div className="space-y-2">
-          <Label htmlFor="quote-reference" className="text-sm font-medium text-gray-900">
+          <Label htmlFor="quote-reference" className="text-sm font-medium">
             Référence devis
           </Label>
           <div className="relative">
@@ -99,7 +99,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
               onChange={(e) => updateField("quoteReference", e.target.value)}
               placeholder="DEV-2025-001"
               disabled={!canEdit}
-              className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <p className="text-xs text-gray-500">
@@ -111,7 +111,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-900">
+              <Label className="text-sm font-medium">
                 Date d'émission
               </Label>
               <Popover>
@@ -120,7 +120,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
                     variant="outline"
                     disabled={!canEdit}
                     className={cn(
-                      "w-full justify-start text-left font-normal h-10 rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+                      "w-full justify-start text-left font-normal h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
                       !data.issueDate && "text-muted-foreground"
                     )}
                   >
@@ -144,7 +144,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-900">
+              <Label className="text-sm font-medium">
                 Date d'exécution
               </Label>
               <Popover>
@@ -153,7 +153,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
                     variant="outline"
                     disabled={!canEdit}
                     className={cn(
-                      "w-full justify-start text-left font-normal h-10 rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+                      "w-full justify-start text-left font-normal h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
                       !data.executionDate && "text-muted-foreground"
                     )}
                   >
@@ -178,7 +178,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-900">
+            <Label className="text-sm font-medium">
               Date d'échéance
             </Label>
             <div className="grid grid-cols-2 gap-2 w-full">
@@ -188,7 +188,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
                     variant="outline"
                     disabled={!canEdit}
                     className={cn(
-                      "w-full justify-start text-left font-normal h-10 rounded-lg border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+                      "w-full justify-start text-left font-normal h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
                       !data.dueDate && "text-muted-foreground"
                     )}
                   >
@@ -220,7 +220,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
                 }}
                 disabled={!canEdit}
               >
-                <SelectTrigger className="h-10 rounded-lg border-gray-300 bg-white text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-full">
+                <SelectTrigger className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-full">
                   <SelectValue placeholder="+" />
                 </SelectTrigger>
                 <SelectContent>
@@ -232,7 +232,7 @@ export default function InvoiceDetailsSection({ data, updateField, canEdit }) {
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs">
               Utilisez le sélecteur "+" pour ajouter des jours automatiquement
             </p>
           </div>

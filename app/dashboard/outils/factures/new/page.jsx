@@ -1,12 +1,12 @@
 "use client";
 
 import { Suspense } from "react";
-import InvoiceEditor from "../components/invoice-editor";
+import ModernInvoiceEditor from "../components/modern-invoice-editor";
 
 export default function NewInvoicePage() {
   return (
     <Suspense fallback={<InvoiceEditorSkeleton />}>
-      <InvoiceEditor mode="create" />
+      <ModernInvoiceEditor mode="create" />
     </Suspense>
   );
 }

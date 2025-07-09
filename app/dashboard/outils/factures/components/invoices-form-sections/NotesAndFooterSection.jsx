@@ -2,15 +2,15 @@
 
 import { Tag, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
-import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 
 export default function NotesAndFooterSection({ data, updateField, updateNestedField, canEdit }) {
   return (
-    <Card className="shadow-none border-none p-2">
+    <Card className="shadow-none border-none p-2 bg-transparent">
       <CardHeader className="p-0">
         <CardTitle className="flex items-center gap-2">
           <Tag className="h-5 w-5" />
@@ -84,9 +84,9 @@ export default function NotesAndFooterSection({ data, updateField, updateNestedF
           </div>
 
           {data.showBankDetails && (
-            <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+            <div className="space-y-4 p-4 rounded-lg border">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-gray-900">Coordonnées bancaires</h4>
+                <h4 className="text-sm font-medium">Coordonnées bancaires</h4>
                 <Button
                   type="button"
                   variant="outline"
@@ -109,7 +109,7 @@ export default function NotesAndFooterSection({ data, updateField, updateNestedF
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="bank-iban" className="text-sm font-medium text-gray-900">
+                  <Label htmlFor="bank-iban" className="text-sm font-medium">
                     IBAN
                   </Label>
                   <Input
@@ -118,11 +118,11 @@ export default function NotesAndFooterSection({ data, updateField, updateNestedF
                     onChange={(e) => updateNestedField("bankDetails", "iban", e.target.value)}
                     placeholder="FR76 1234 5678 9012 3456 7890 123"
                     disabled={!canEdit}
-                    className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="h-10 rounded-lg text-sm w-full"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bank-bic" className="text-sm font-medium text-gray-900">
+                  <Label htmlFor="bank-bic" className="text-sm font-medium">
                     BIC/SWIFT
                   </Label>
                   <Input
@@ -131,12 +131,12 @@ export default function NotesAndFooterSection({ data, updateField, updateNestedF
                     onChange={(e) => updateNestedField("bankDetails", "bic", e.target.value)}
                     placeholder="BNPAFRPPXXX"
                     disabled={!canEdit}
-                    className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="h-10 rounded-lg text-sm w-full"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bank-name" className="text-sm font-medium text-gray-900">
+                <Label htmlFor="bank-name" className="text-sm font-medium">
                   Nom de la banque
                 </Label>
                 <Input
@@ -145,7 +145,7 @@ export default function NotesAndFooterSection({ data, updateField, updateNestedF
                   onChange={(e) => updateNestedField("bankDetails", "bankName", e.target.value)}
                   placeholder="BNP Paribas"
                   disabled={!canEdit}
-                  className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  className="h-10 rounded-lg text-sm w-full"
                 />
               </div>
             </div>

@@ -15,7 +15,7 @@ export default function InvoicesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -40,7 +40,7 @@ export default function InvoicesPage() {
 
 function InvoiceTableSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-6">
       <div className="flex items-center justify-between">
         <Skeleton className="h-10 w-[300px]" />
         <div className="flex gap-2">
