@@ -8,86 +8,92 @@ const HeroAnimation = () => {
   const svgRef = useRef(null);
 
   useEffect(() => {
-    // Animation des chemins lumineux
-    const animatePaths = () => {
-      if (!svgRef.current) {
-        console.log('SVG ref not found');
-        return;
-      }
-      
-      // Sélectionner tous les chemins avec stroke blanc (chemins lumineux)
-      const paths = svgRef.current.querySelectorAll('path[stroke="rgb(255,255,255)"]');
-      console.log('Found paths:', paths.length);
-      
+    // Créer l'effet de trait lumineux qui traverse les dash (comme Lottie)
+    const createLightTrailEffect = () => {
+      if (!svgRef.current) return;
+
+      // Sélectionner tous les chemins avec stroke blanc et dasharray
+      const paths = svgRef.current.querySelectorAll(
+        'path[stroke="rgb(255,255,255)"]'
+      );
+      console.log("Chemins lumineux trouvés:", paths.length);
+
       paths.forEach((path, index) => {
-        // Vérifier si le chemin a strokeDasharray (indique que c'est un chemin animé)
-        const dashArray = path.getAttribute('stroke-dasharray');
-        if (dashArray && dashArray.includes('4')) {
-          console.log('Animating path', index);
-          
-          // Animation de dashoffset pour créer un effet de tracé
-          const length = path.getTotalLength ? path.getTotalLength() : 1000;
-          
-          // Configurer le dash array et offset pour l'animation
-          path.style.strokeDasharray = `${length}`;
-          path.style.strokeDashoffset = `${length}`;
-          
-          // Animation avec délai basé sur l'index
+        const dashArray = path.getAttribute("stroke-dasharray");
+        if (dashArray && dashArray.includes("4")) {
+          // Obtenir la longueur du chemin
+          const pathLength = path.getTotalLength ? path.getTotalLength() : 1000;
+
+          // Configurer le chemin pour l'effet de trait lumineux
+          path.style.stroke = "rgb(99,102,241)";
+          path.style.strokeWidth = "2";
+          path.style.filter = "drop-shadow(0 0 6px rgba(99, 102, 241, 0.8))";
+
+          // Créer l'effet de trait lumineux avec stroke-dasharray animé
+          const dashLength = 20; // Longueur du trait lumineux
+          const gapLength = pathLength; // Espace entre les traits
+
+          path.style.strokeDasharray = `${dashLength} ${gapLength}`;
+          path.style.strokeDashoffset = `${pathLength + dashLength}`;
+
+          // Animation du trait lumineux qui traverse le chemin
+          const animateTrail = () => {
+            path.style.transition = "none";
+            path.style.strokeDashoffset = `${pathLength + dashLength}`;
+
+            // Petite pause puis démarrer l'animation
+            setTimeout(() => {
+              path.style.transition = "stroke-dashoffset 2s ease-in-out";
+              path.style.strokeDashoffset = `-${dashLength}`;
+            }, 50);
+          };
+
+          // Démarrer l'animation avec délai échelonné
           setTimeout(() => {
-            path.style.transition = `stroke-dashoffset 3s ease-in-out`;
-            path.style.strokeDashoffset = '0';
-          }, index * 500); // Délai plus long entre chaque chemin
+            animateTrail();
+
+            // Répéter l'animation en boucle
+            setInterval(animateTrail, 3000);
+          }, index * 400);
         }
       });
-      
-      // Animation en boucle
-      setTimeout(() => {
-        paths.forEach((path, index) => {
-          const dashArray = path.getAttribute('stroke-dasharray');
-          if (dashArray && dashArray.includes('4')) {
-            const length = path.getTotalLength ? path.getTotalLength() : 1000;
-            path.style.strokeDashoffset = `${length}`;
-            setTimeout(() => {
-              path.style.strokeDashoffset = '0';
-            }, index * 500);
-          }
-        });
-      }, 5000); // Relancer l'animation toutes les 5 secondes
     };
-    
-    // Lancer l'animation après un court délai pour s'assurer que le SVG est chargé
-    const timer = setTimeout(animatePaths, 500);
-    
+
+    // Démarrer l'effet après un délai
+    const timer = setTimeout(createLightTrailEffect, 500);
+
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className="hidden md:block relative w-full p-20">
-      <div className="absolute inset-0 flex flex-col items-center justify-center mt-35 z-10">
-        <h1 className="max-w-8xl text-center mx-auto text-balance font-semibold text-6xl md:text-7xl xl:text-[2.8rem] font-['Poppins'] leading-tight">
-          <span className="text-[#2E2E2E] block">Les outils SaaS pour</span>
-          <span className="bg-gradient-to-r from-[#5B4FFF] to-[#7A70FF] px-4 text-white rounded-xl inline-block my-4">
-            lancer votre business
+    <div className="hidden md:block relative w-full">
+      <div className="absolute inset-0 flex flex-col items-center justify-center mb-7 z-10">
+        <h1 className="max-w-8xl text-center mx-auto text-balance font-medium text-6xl md:text-7xl xl:text-[3.2rem] font-['Poppins'] leading-tight">
+          <span className="text-[#2E2E2E] block">Les outils SaaS</span>
+          <span className="text-[#2E2E2E] block">pour créer votre</span>
+          <span className="bg-gradient-to-r from-[#5B4FFF]/80 to-[#7A70FF]/80 px-4 text-white rounded-lg inline-block my-4">
+            business parfait
           </span>
-          <br />
-          <span className="text-[#2E2E2E]">en un </span>
-          <span className="text-[#5B4FFF] font-semibold">CLIC</span>
+          <span className="text-[#2E2E2E] block">
+            en un <span className="text-[#5B4FFF]/80 font-semibold">CLIC</span>
+          </span>
         </h1>
-        <div
+        {/* <div
           key={1}
-          className="bg-foreground/10 rounded-[14px] border p-0.5 mt-20"
+          className="bg-[#5B4FFF]/20 rounded-[10px] border p-0.5 mt-20"
         >
           <Button
             asChild
             size="lg"
-            className="rounded-xl px-5 text-sm cursor-pointer"
+            variant="outline"
+            className="px-5 text-sm text-[#5B4FFF]/70 cursor-pointer hover:text-[#5B4FFF]/80"
           >
             <span className="text-nowrap">Commencez gratuitement</span>
           </Button>
-        </div>
+        </div> */}
       </div>
       <div className="w-full flex justify-center">
-        <div ref={svgRef}>
+        <div ref={svgRef} className="w-full p-20">
           <MySVG />
         </div>
       </div>

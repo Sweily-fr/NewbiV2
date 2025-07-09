@@ -172,15 +172,22 @@ export function AppSidebar({ ...props }) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">NewBi.</span>
+              <a href="/dashboard">
+                <img
+                  src="http://localhost:3000/newbiLogo.png"
+                  alt="Logo newbi"
+                  //   className="absolute inset-x-0 top-56 -z-20 hidden lg:top-32 dark:block"
+                  width="70"
+                  height="70"
+                />
+                {/* <IconInnerShadowTop className="!size-5" />
+                <span className="text-base font-semibold">NewBi.</span> */}
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="mt-1">
         <NavMain items={data.navMain} />
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />

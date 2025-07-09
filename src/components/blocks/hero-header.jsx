@@ -68,7 +68,7 @@ const menuItems = [
   { name: "Ressources", href: "/blog" },
 ];
 
-const HeroHeader = () => {
+const HeroHeader = ({ className }) => {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [activeDropdown, setActiveDropdown] = React.useState(null);
@@ -84,19 +84,20 @@ const HeroHeader = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
   return (
-    <header>
+    <header className={className}>
       <nav
         data-state={menuState && "active"}
-        className="fixed z-20 w-full px-2 group"
+        className="fixed z-20 w-full px-2 py-4 group"
       >
         <div
           className={cn(
-            "mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12",
+            "mx-auto mt-4 bg-[#fff] rounded-2xl shadow-xs max-w-4xl px-2 transition-all duration-300 lg:px-3",
             isScrolled &&
-              "bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-4"
+              "mt-0 bg-background/50 backdrop-blur-lg border max-w-3xl"
+            // "bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-6"
           )}
         >
-          <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-3">
+          <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-2">
             <div className="flex w-full justify-between lg:w-auto">
               <Link
                 href="/"
@@ -232,7 +233,7 @@ const HeroHeader = () => {
                       asChild
                       variant="outline"
                       size="sm"
-                      className={cn(isScrolled && "lg:hidden")}
+                      // className={cn(isScrolled && "lg:hidden")}
                     >
                       <Link href="/auth/login">
                         <span>Connexion</span>
@@ -241,13 +242,13 @@ const HeroHeader = () => {
                     <Button
                       asChild
                       size="sm"
-                      className={cn(isScrolled && "lg:hidden")}
+                      // className={cn(isScrolled && "lg:hidden")}
                     >
                       <Link href="/auth/signup">
                         <span>Inscription</span>
                       </Link>
                     </Button>
-                    <Button
+                    {/* <Button
                       asChild
                       size="sm"
                       className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
@@ -255,7 +256,7 @@ const HeroHeader = () => {
                       <Link href="/auth/signup">
                         <span>Commencez</span>
                       </Link>
-                    </Button>
+                    </Button> */}
                   </>
                 )}
               </div>
@@ -273,8 +274,8 @@ const Logo = ({ className }) => {
       src="http://localhost:3000/newbiLogo.png"
       alt="Logo newbi"
       //   className="absolute inset-x-0 top-56 -z-20 hidden lg:top-32 dark:block"
-      width="120"
-      height="120"
+      width="100"
+      height="100"
     />
   );
 };

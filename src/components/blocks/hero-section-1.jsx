@@ -41,71 +41,41 @@ export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="h-[100vh] relative">
-          <div className="absolute inset-0 flex flex-col items-center justify-center mb-60">
+        <section className="h-[95vh] relative bg-gradient-to-t from-[#fce8e6] via-[#f8f9fc] to-[#f0f4ff] rounded-[15px] md:rounded-[20px] lg:rounded-[20px] shadow-xs mx-4 mt-4">
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
             <HeroAnimation />
           </div>
           {/* Logo Marquee - Positioned at bottom of screen */}
-          <div className="absolute bottom-0 left-0 right-0 w-full">
-            <div className="mx-auto max-w-6xl px-6 pb-4">
+          {/* <div className="absolute bottom-30 right-0 w-full">
+            <div className="mx-auto max-w-7xl pb-4">
               <div className="flex items-center justify-center">
-                <div className="flex flex-col pr-8 border-r-[#2E2E2E] border-r-[1px] gap-2">
-                  <p className="text-3xl font-semibold text-[#2E2E2E]">
-                    +1.000
+                <div className="flex flex-col pr-8 border-r-[#121115] w-[300px] border-r-[1px]">
+                  <p className="text-2xl font-semibold text-[#2E2E2E]">
+                    +1,500
                   </p>
-                  <p className="text-[14px] text-[#2E2E2E]">entreprises</p>
+                  <p className="text-[14px] font-medium text-[#2E2E2E]">
+                    entrepreneurs accompagnés
+                  </p>
                 </div>
                 <LogoMarquee
-                  logos={[
-                    <div key="logo1" className="h-8 w-32 flex items-center justify-center">
+                  logos={Array.from({ length: 5 }, (_, i) => (
+                    <div
+                      key={`logo${i + 1}`}
+                      className="h-8 w-24 flex items-center justify-center ml-30"
+                    >
                       <img
-                        src="/NewbiLogo.svg"
-                        alt="Newbi Logo"
-                        className="h-6 w-auto opacity-60 hover:opacity-100 transition-opacity"
+                        src={`/${i + 1}.png`}
+                        alt={`Logo partenaire ${i + 1}`}
+                        className="h-8 w-auto opacity-40 hover:opacity-70 transition-opacity filter grayscale"
                       />
-                    </div>,
-                    <div key="logo2" className="h-8 w-32 flex items-center justify-center">
-                      <img
-                        src="/NewbiLogo.svg"
-                        alt="Newbi Logo"
-                        className="h-6 w-auto opacity-60 hover:opacity-100 transition-opacity"
-                      />
-                    </div>,
-                    <div key="logo3" className="h-8 w-32 flex items-center justify-center">
-                      <img
-                        src="/NewbiLogo.svg"
-                        alt="Newbi Logo"
-                        className="h-6 w-auto opacity-60 hover:opacity-100 transition-opacity"
-                      />
-                    </div>,
-                    <div key="logo4" className="h-8 w-32 flex items-center justify-center">
-                      <img
-                        src="/NewbiLogo.svg"
-                        alt="Newbi Logo"
-                        className="h-6 w-auto opacity-60 hover:opacity-100 transition-opacity"
-                      />
-                    </div>,
-                    <div key="logo5" className="h-8 w-32 flex items-center justify-center">
-                      <img
-                        src="/NewbiLogo.svg"
-                        alt="Newbi Logo"
-                        className="h-6 w-auto opacity-60 hover:opacity-100 transition-opacity"
-                      />
-                    </div>,
-                    <div key="logo6" className="h-8 w-32 flex items-center justify-center">
-                      <img
-                        src="/NewbiLogo.svg"
-                        alt="Newbi Logo"
-                        className="h-6 w-auto opacity-60 hover:opacity-100 transition-opacity"
-                      />
-                    </div>,
-                  ]}
+                    </div>
+                  ))}
                   speed={30}
                   pauseOnHover={true}
                 />
               </div>
             </div>
-          </div>
+          </div> */}
         </section>
         <div
           aria-hidden
