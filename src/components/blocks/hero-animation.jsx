@@ -71,7 +71,7 @@ const HeroAnimation = () => {
         <h1 className="max-w-8xl text-center mx-auto text-balance font-medium text-6xl md:text-7xl xl:text-[3.2rem] font-['Poppins'] leading-tight">
           <span className="text-[#2E2E2E] block">Les outils SaaS</span>
           <span className="text-[#2E2E2E] block">pour créer votre</span>
-          <span className="bg-gradient-to-r from-[#5B4FFF]/80 to-[#7A70FF]/80 px-4 text-white rounded-lg inline-block my-4">
+          <span className="bg-gradient-to-r from-[#5B4FFF]/60 to-[#7A70FF]/60 px-4 text-white rounded-lg inline-block my-4">
             business parfait
           </span>
           <span className="text-[#2E2E2E] block">
