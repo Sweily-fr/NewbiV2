@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import InvoiceEditor from "../components/invoice-editor";
+import ModernInvoiceEditor from "../components/modern-invoice-editor";
 import { useRouter, useParams } from "next/navigation";
 import { useInvoice } from "@/src/graphql/invoiceQueries";
 
@@ -130,7 +130,7 @@ export default function InvoiceDetailsPage() {
 
       {/* Editor */}
       <Suspense fallback={<InvoiceEditorSkeleton />}>
-        <InvoiceEditor 
+        <ModernInvoiceEditor 
           mode={canEdit ? "edit" : "view"} 
           invoiceId={invoiceId}
           initialData={invoice}

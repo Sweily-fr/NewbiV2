@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
-import InvoiceForm from "./components/invoice-form";
+import EnhancedInvoiceForm from "./components/enhanced-invoice-form";
 import InvoicePreview from "./components/invoice-preview";
 import { toast } from "sonner";
 

@@ -47,7 +47,7 @@ export default function ModernInvoiceEditor({
         <div className="p-6 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden rounded-b-lg">
           <div className="max-w-2xl mx-auto flex flex-col w-full overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b">
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -97,8 +97,8 @@ export default function ModernInvoiceEditor({
         </div>
 
         {/* Right Panel - Preview */}
-        <div className="border-l border-gray-200 flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
-          <div className="flex-shrink-0 p-4 border-b border-gray-200">
+        <div className="border-l flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+          <div className="flex-shrink-0 p-4 border-b">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">
                 Aperçu de la facture

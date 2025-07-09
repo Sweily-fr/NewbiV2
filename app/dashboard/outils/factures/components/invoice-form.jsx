@@ -16,7 +16,7 @@ import {
 } from "@/src/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { useInvoiceEditor } from "../hooks/use-invoice-editor";
-import ClientSelector from "./client-selector";
+import ClientSelector from "./invoices-form-sections/client-selector";
 import ProductAutocomplete from "./product-autocomplete";
 import CompanyImport from "./company-import";
 import { Badge } from "@/src/components/ui/badge";

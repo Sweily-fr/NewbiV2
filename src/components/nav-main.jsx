@@ -28,7 +28,7 @@ export function NavMain({ items }) {
                   "bg-transparent w-full cursor-pointer",
                   (pathname === "/dashboard/outils" ||
                     pathname?.startsWith("/dashboard/outils/")) &&
-                    "bg-[#5B4FFF]/90 hover:bg-[#5B4FFF]/90 active:bg-[#5B4FFF]/90 min-w-8 duration-200 ease-linear"
+                    "bg-[#5B4FFF]/90 hover:bg-[#5B4FFF]/90 active:bg-[#5B4FFF]/90 text-white min-w-8 duration-200 ease-linear"
                 )}
                 //className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
               >
@@ -48,7 +48,7 @@ export function NavMain({ items }) {
                     (pathname === item.url ||
                       (item.url !== "/dashboard" &&
                         pathname?.startsWith(item.url + "/"))) &&
-                      "bg-[#5B4FFF]/90 hover:bg-[#5B4FFF]/90 active:bg-[#5B4FFF]/90 min-w-8 duration-200 ease-linear"
+                      "bg-[#5B4FFF]/90 hover:bg-[#5B4FFF]/90 active:bg-[#5B4FFF]/90 text-white min-w-8 duration-200 ease-linear"
                   )}
                   tooltip={item.title}
                 >

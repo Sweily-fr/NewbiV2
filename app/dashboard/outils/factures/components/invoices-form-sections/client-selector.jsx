@@ -201,7 +201,7 @@ export default function ClientSelector({
 
   return (
     <div className={cn("w-full", className)}>
-      <Card className="shadow-none border-none">
+      <Card className="shadow-none border-none bg-transparent">
         <Tabs 
           value={activeTab} 
           onValueChange={setActiveTab}
@@ -231,15 +231,15 @@ export default function ClientSelector({
                           variant="outline"
                           role="combobox"
                           aria-expanded={open}
-                          className="bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px] h-10 rounded-lg border-gray-300 text-sm"
+                          className="w-full justify-between px-3 font-normal h-10 rounded-lg text-sm"
                           disabled={disabled}
                         >
-                          <span className={cn("truncate", !selectedValue && "text-muted-foreground")}>
+                          <span className={cn("truncate")}>
                             {selectedValue || placeholder}
                           </span>
                           <ChevronDown
                             size={16}
-                            className="text-muted-foreground/80 shrink-0"
+                            className="shrink-0"
                             aria-hidden="true"
                           />
                         </Button>
@@ -258,13 +258,13 @@ export default function ClientSelector({
                             {loading ? (
                               <div className="p-3 text-center">
                                 <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                                <span className="text-sm text-muted-foreground ml-2">Recherche...</span>
+                                <span className="text-sm ml-2">Recherche...</span>
                               </div>
                             ) : (
                               <>
                                 <CommandEmpty>
                                   <div className="p-3 text-center">
-                                    <p className="text-sm text-muted-foreground mb-2">
+                                    <p className="text-sm mb-2">
                                       Aucun client trouvé{query && ` pour "${query}"`}
                                     </p>
                                     {query && (
@@ -301,7 +301,7 @@ export default function ClientSelector({
                                           <div className="font-medium truncate">
                                             {client.name}
                                           </div>
-                                          <div className="text-sm text-muted-foreground truncate">
+                                          <div className="text-sm truncate">
                                             {client.email}
                                           </div>
                                         </div>
@@ -333,7 +333,7 @@ export default function ClientSelector({
                             </div>
                             <div>
                               <div className="font-medium">{selectedClient.name}</div>
-                              <div className="text-sm text-muted-foreground">{selectedClient.email}</div>
+                              <div className="text-sm">{selectedClient.email}</div>
                             </div>
                             <Badge variant="outline" className="text-xs">
                               {CLIENT_TYPE_LABELS[selectedClient.type]}
@@ -363,7 +363,7 @@ export default function ClientSelector({
                 <div className="space-y-6">
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label htmlFor="client-type" className="text-sm font-medium text-gray-900">
+                      <Label htmlFor="client-type" className="text-sm font-medium">
                         Type de client
                       </Label>
                       <div className="w-full">
@@ -371,7 +371,7 @@ export default function ClientSelector({
                           value={newClientForm.type}
                           onValueChange={(value) => setNewClientForm(prev => ({ ...prev, type: value }))}
                         >
-                          <SelectTrigger className="w-full h-10 rounded-lg border-gray-300 bg-white text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                          <SelectTrigger className="w-full h-10 rounded-lg text-sm">
                             <SelectValue placeholder="Sélectionner le type" />
                           </SelectTrigger>
                           <SelectContent className="w-full">
@@ -384,7 +384,7 @@ export default function ClientSelector({
 
                     {newClientForm.type === 'COMPANY' ? (
                       <div className="space-y-2">
-                        <Label htmlFor="client-name" className="text-sm font-medium text-gray-900">
+                        <Label htmlFor="client-name" className="text-sm font-medium">
                           Nom de l'entreprise
                         </Label>
                         <div className="relative">
@@ -393,14 +393,14 @@ export default function ClientSelector({
                             value={newClientForm.name}
                             onChange={(e) => setNewClientForm(prev => ({ ...prev, name: e.target.value }))}
                             placeholder="Nom de l'entreprise"
-                            className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-full"
+                            className="h-10 rounded-lg text-sm w-full"
                           />
                         </div>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="client-firstname" className="text-sm font-medium text-gray-900">
+                          <Label htmlFor="client-firstname" className="text-sm font-medium">
                             Prénom
                           </Label>
                           <Input
@@ -412,11 +412,11 @@ export default function ClientSelector({
                               name: `${e.target.value} ${prev.lastName || ''}`.trim()
                             }))}
                             placeholder="Prénom"
-                            className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-full"
+                            className="h-10 rounded-lg text-sm w-full"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="client-lastname" className="text-sm font-medium text-gray-900">
+                          <Label htmlFor="client-lastname" className="text-sm font-medium">
                             Nom
                           </Label>
                           <Input
@@ -428,7 +428,7 @@ export default function ClientSelector({
                               name: `${prev.firstName || ''} ${e.target.value}`.trim()
                             }))}
                             placeholder="Nom"
-                            className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-full"
+                            className="h-10 rounded-lg text-sm w-full"
                           />
                         </div>
                       </div>
@@ -437,7 +437,7 @@ export default function ClientSelector({
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="client-email" className="text-sm font-medium text-gray-900">
+                      <Label htmlFor="client-email" className="text-sm font-medium">
                         Email
                       </Label>
                       <div className="relative">
@@ -447,13 +447,13 @@ export default function ClientSelector({
                           value={newClientForm.email}
                           onChange={(e) => setNewClientForm(prev => ({ ...prev, email: e.target.value }))}
                           placeholder="contact@exemple.com"
-                          className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                          className="h-10 rounded-lg text-sm w-full"
                         />
                       </div>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="client-phone" className="text-sm font-medium text-gray-900">
+                      <Label htmlFor="client-phone" className="text-sm font-medium">
                         Téléphone
                       </Label>
                       <div className="relative">
@@ -462,7 +462,7 @@ export default function ClientSelector({
                           value={newClientForm.phone}
                           onChange={(e) => setNewClientForm(prev => ({ ...prev, phone: e.target.value }))}
                           placeholder="01 23 45 67 89"
-                          className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                          className="h-10 rounded-lg text-sm w-full"
                         />
                       </div>
                     </div>
@@ -471,7 +471,7 @@ export default function ClientSelector({
                   {newClientForm.type === 'COMPANY' && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="client-siret" className="text-sm font-medium text-gray-900">
+                        <Label htmlFor="client-siret" className="text-sm font-medium">
                           SIRET
                         </Label>
                         <div className="relative">
@@ -480,7 +480,7 @@ export default function ClientSelector({
                             value={newClientForm.siret}
                             onChange={(e) => setNewClientForm(prev => ({ ...prev, siret: e.target.value }))}
                             placeholder="12345678901234"
-                            className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                            className="h-10 rounded-lg text-sm w-full"
                           />
                         </div>
                         <p className="text-xs text-gray-500">
@@ -488,7 +488,7 @@ export default function ClientSelector({
                         </p>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="client-vat" className="text-sm font-medium text-gray-900">
+                        <Label htmlFor="client-vat" className="text-sm font-medium">
                           N° TVA intracommunautaire (optionnel)
                         </Label>
                         <div className="relative">
@@ -497,7 +497,7 @@ export default function ClientSelector({
                             value={newClientForm.vatNumber || ''}
                             onChange={(e) => setNewClientForm(prev => ({ ...prev, vatNumber: e.target.value }))}
                             placeholder="FR12345678901"
-                            className="h-10 rounded-lg border-gray-300 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                            className="h-10 rounded-lg text-sm w-full"
                           />
                         </div>
                       </div>
@@ -507,13 +507,13 @@ export default function ClientSelector({
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="client-address" className="text-sm font-medium text-gray-900">
+                        <Label htmlFor="client-address" className="text-sm font-medium">
                           Adresse de facturation
                         </Label>
                       </div>
                       <div className="relative">
                         <div 
-                          className="h-10 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
+                          className="h-10 rounded-lg text-sm w-full"
                           style={{
                             lineHeight: '1.25rem',
                             minHeight: '2.5rem',
@@ -566,14 +566,14 @@ export default function ClientSelector({
                           }))}
                           className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <Label htmlFor="different-shipping-address" className="text-sm font-medium text-gray-900">
+                        <Label htmlFor="different-shipping-address" className="text-sm font-medium">
                           Utiliser une adresse de livraison différente
                         </Label>
                       </div>
 
                       {newClientForm.hasDifferentShippingAddress && (
                         <div className="space-y-2 pl-6 pt-2">
-                          <Label className="text-sm font-medium text-gray-900">
+                          <Label className="text-sm font-medium">
                             Adresse de livraison
                           </Label>
                           <div className="relative">
@@ -622,7 +622,7 @@ export default function ClientSelector({
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="client-notes" className="text-sm font-medium text-gray-900">
+                    <Label htmlFor="client-notes" className="text-sm font-medium">
                       Notes (optionnel)
                     </Label>
                     <Textarea
@@ -631,9 +631,9 @@ export default function ClientSelector({
                       onChange={(e) => setNewClientForm(prev => ({ ...prev, notes: e.target.value }))}
                       placeholder="Notes internes sur ce client..."
                       rows={2}
-                      className="rounded-lg border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none"
+                      className="rounded-lg px-3 py-2 text-sm resize-none"
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs">
                       Ces notes ne seront visibles que par vous
                     </p>
                   </div>
