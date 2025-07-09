@@ -2,7 +2,7 @@ import React from "react";
 
 const OutreachSection = () => {
   return (
-    <div className="mx-2 mt-30 rounded-[15px] md:rounded-[20px] lg:rounded-[20px] bg-gray-900 py-32">
+    <div className="mx-2 mt-20 rounded-[15px] md:rounded-[20px] lg:rounded-[20px] bg-gray-900 py-32">
       <div className="px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:max-w-7xl">
           <h2
@@ -13,7 +13,7 @@ const OutreachSection = () => {
           </h2>
           <h3
             data-dark="true"
-            className="mt-2 max-w-3xl text-4xl font-medium tracking-tighter text-pretty text-gray-950 data-dark:text-white sm:text-6xl"
+            className="mt-2 max-w-3xl text-2xl font-medium tracking-tighter text-pretty text-gray-950 data-dark:text-white sm:text-4xl"
           >
             Customer outreach has never been easier.
           </h3>
@@ -22,11 +22,11 @@ const OutreachSection = () => {
               data-dark="true"
               className="max-lg:rounded-t-4xl lg:col-span-4 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
             >
-              <div className="relative h-80 shrink-0">
-                <div className="h-80 bg-[url('/screenshots/networking.png')] bg-size-[851px_344px] bg-no-repeat"></div>
+              <div className="relative h-60 shrink-0">
+                <div className="h-60 bg-[url('/screenshots/networking.png')] bg-size-[851px_344px] bg-no-repeat"></div>
                 <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div>
               </div>
-              <div className="relative p-10">
+              <div className="relative p-6">
                 <h3
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
@@ -47,7 +47,7 @@ const OutreachSection = () => {
               data-dark="true"
               className="z-10 overflow-visible! lg:col-span-2 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
             >
-              <div className="relative h-80 shrink-0">
+              <div className="relative h-60 shrink-0">
                 <div
                   aria-hidden="true"
                   className="relative h-full overflow-hidden"
@@ -91,7 +91,7 @@ const OutreachSection = () => {
                   </div>
                 </div>
               </div>
-              <div className="relative p-10">
+              <div className="relative p-6">
                 <h3
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
@@ -111,11 +111,11 @@ const OutreachSection = () => {
               data-dark="true"
               className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
             >
-              <div className="relative h-80 shrink-0">
-                <div className="h-80 bg-[url('/screenshots/engagement.png')] bg-size-[851px_344px] bg-no-repeat"></div>
+              <div className="relative h-60 shrink-0">
+                <div className="h-60 bg-[url('/screenshots/engagement.png')] bg-size-[851px_344px] bg-no-repeat"></div>
                 <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div>
               </div>
-              <div className="relative p-10">
+              <div className="relative p-6">
                 <h3
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
@@ -129,6 +129,29 @@ const OutreachSection = () => {
                   RadiantAI automatically writes LinkedIn posts that relate
                   current events to B2B sales, helping you build a reputation as
                   a thought leader.
+                </p>
+              </div>
+            </div>
+            <div
+              data-dark="true"
+              className="lg:col-span-4 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
+            >
+              <div className="relative h-60 shrink-0">
+                <div className="h-60 bg-[url('/screenshots/analytics.png')] bg-size-[851px_344px] bg-no-repeat"></div>
+                <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div>
+              </div>
+              <div className="relative p-6">
+                <h3
+                  data-dark="true"
+                  className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
+                >
+                  Analytics
+                </h3>
+                <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 group-data-dark:text-white">
+                  Track your performance
+                </p>
+                <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 group-data-dark:text-gray-400">
+                  Comprehensive analytics dashboard helps you monitor engagement metrics and optimize your outreach strategy for maximum impact.
                 </p>
               </div>
             </div>

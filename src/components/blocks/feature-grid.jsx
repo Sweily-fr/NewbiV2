@@ -3,18 +3,18 @@ import Link from "next/link";
 
 export default function FeatureGrid() {
   return (
-    <section className="bg-white dark:bg-gray-900">
+    <section className="bg-[#FDFDFD] dark:bg-gray-900">
       <div className="container mx-auto px-4">
         <h2 className="max-w-3xl text-2xl font-medium tracking-tighter text-pretty text-gray-950 dark:text-white sm:text-4xl">
           Des outils puissants pour simplifier votre quotidien
         </h2>
         <div className="mt-6 grid grid-cols-1 gap-3 sm:mt-10 lg:grid-cols-6 lg:grid-rows-2">
           <div className="max-lg:rounded-t-4xl lg:col-span-3 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-72 shrink-0">
-              <div className="h-72 bg-[url(/profile.png)] bg-[length:auto_100%] bg-[position:left_-20px_top_0px] bg-no-repeat"></div>
+            <div className="relative h-60 shrink-0">
+              <div className="h-60 bg-[url(/profile.png)] bg-[length:auto_100%] bg-[position:left_-20px_top_0px] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
-            <div className="relative p-8">
+            <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
                 Facturation
               </h3>
@@ -30,11 +30,11 @@ export default function FeatureGrid() {
           </div>
 
           <div className="lg:col-span-3 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-72 shrink-0">
+            <div className="relative h-60 shrink-0">
               <div className="absolute inset-0 bg-[url(/competitors.png)] bg-[length:auto_100%] bg-[position:left_0px_top_0px] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
-            <div className="relative p-8">
+            <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
                 Devis
               </h3>
@@ -50,7 +50,7 @@ export default function FeatureGrid() {
           </div>
 
           <div className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-72 shrink-0">
+            <div className="relative h-60 shrink-0">
               <div
                 aria-hidden="true"
                 className="relative h-full overflow-hidden"
@@ -192,7 +192,7 @@ export default function FeatureGrid() {
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
-            <div className="relative p-8">
+            <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
                 Signature
               </h3>
@@ -208,11 +208,11 @@ export default function FeatureGrid() {
           </div>
 
           <div className="lg:col-span-2 group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-72 shrink-0">
+            <div className="relative h-60 shrink-0">
               <div className="absolute inset-0 bg-[url(/app.png)] bg-[length:auto_100%] bg-[position:left_-20px_top_0px] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
-            <div className="relative p-8">
+            <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
                 Organisation
               </h3>
@@ -227,11 +227,11 @@ export default function FeatureGrid() {
             </div>
           </div>
           <div className="lg:col-span-2 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-72 shrink-0">
+            <div className="relative h-60 shrink-0">
               <div className="absolute inset-0 bg-[url(/profile.png)] bg-[length:auto_100%] bg-[position:left_-20px_top_0px] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
-            <div className="relative p-8">
+            <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
                 Partage
               </h3>
