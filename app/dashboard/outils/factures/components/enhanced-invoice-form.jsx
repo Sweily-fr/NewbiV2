@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useId } from "react";
+import { useFormContext, useFieldArray } from "react-hook-form";
 import { Plus, Trash2, Calculator, Building, Percent, Clock, Tag, Search, Zap, Package, CheckIcon, ChevronDownIcon, Download } from "lucide-react";
 import { useQuery } from '@apollo/client';
 import { GET_PRODUCTS } from '@/src/graphql/productQueries';
+
 import { Button } from "@/src/components/ui/button";
 import {
   Timeline,
@@ -23,6 +25,7 @@ import { Separator } from "@/src/components/ui/separator";
 import NotesAndFooterSection from "./invoices-form-sections/NotesAndFooterSection";
 import InvoiceInfoSection from "./invoices-form-sections/InvoiceInfoSection";
 import ItemsSection from "./invoices-form-sections/ItemsSection";
+import DiscountsAndTotalsSection from "./invoices-form-sections/DiscountsAndTotalsSection";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Calendar } from "@/src/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
@@ -177,64 +180,62 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
 }
 
 export default function EnhancedInvoiceForm({ 
-  data, 
-  onChange, 
   onSave, 
   onSubmit, 
   loading, 
   saving, 
   readOnly, 
-  errors 
+  errors
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
-
   const canEdit = !readOnly && !loading;
+  
+  // Utiliser react-hook-form context
+  const { watch, setValue, getValues, formState: { errors: formErrors } } = useFormContext();
+  const { fields: items, append, remove, update } = useFieldArray({
+    name: "items"
+  });
+  
+  // Watch les données du formulaire
+  const data = watch();
 
-  // Initialiser discountType par défaut si pas défini
-  useEffect(() => {
-    if (!data.discountType) {
-      updateField("discountType", "percentage");
-    }
-  }, []);
+  // Calculer les totaux
+  const subtotalHT = data.items?.reduce((sum, item) => {
+    const itemTotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
+    const itemDiscount = item.discountType === 'FIXED' 
+      ? (parseFloat(item.discount) || 0)
+      : itemTotal * ((parseFloat(item.discount) || 0) / 100);
+    return sum + (itemTotal - itemDiscount);
+  }, 0) || 0;
 
-  // Calculs automatiques
-  const calculateTotals = useCallback(() => {
-    const subtotal = data.items.reduce((sum, item) => sum + (item.total || 0), 0);
-    const discountAmount = data.discountType === "percentage" 
-      ? (subtotal * (data.discount || 0)) / 100
-      : (data.discount || 0);
-    const totalHT = subtotal - discountAmount;
-    const totalVAT = data.items.reduce((sum, item) => {
-      const itemTotal = item.total || 0;
-      const itemDiscount = data.discountType === "percentage" 
-        ? (itemTotal * (data.discount || 0)) / 100
-        : (itemTotal / subtotal) * (data.discount || 0);
-      const itemTotalAfterDiscount = itemTotal - itemDiscount;
-      return sum + (itemTotalAfterDiscount * (item.taxRate || 0)) / 100;
-    }, 0);
-    const totalTTC = totalHT + totalVAT;
+  const globalDiscount = data.discountType === 'FIXED' 
+    ? (parseFloat(data.discount) || 0)
+    : subtotalHT * ((parseFloat(data.discount) || 0) / 100);
 
-    return { subtotal, discountAmount, totalHT, totalVAT, totalTTC };
-  }, [data.items, data.discount, data.discountType]);
-
-  const totals = calculateTotals();
+  const totalHT = subtotalHT - globalDiscount;
+  const totalTVA = data.items?.reduce((sum, item) => {
+    const itemTotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
+    const itemDiscount = item.discountType === 'FIXED' 
+      ? (parseFloat(item.discount) || 0)
+      : itemTotal * ((parseFloat(item.discount) || 0) / 100);
+    const itemTotalAfterDiscount = itemTotal - itemDiscount;
+    return sum + (itemTotalAfterDiscount * ((parseFloat(item.taxRate) || 0) / 100));
+  }, 0) || 0;
+  
+  const adjustedTotalTVA = totalTVA * (totalHT / subtotalHT);
+  const totalTTC = totalHT + adjustedTotalTVA;
 
   const updateField = (field, value) => {
     if (!canEdit) return;
-    onChange(prev => ({ ...prev, [field]: value }));
+    setValue(field, value, { shouldDirty: true });
   };
 
   const updateNestedField = (parent, field, value) => {
     if (!canEdit) return;
-    onChange(prev => ({
-      ...prev,
-      [parent]: {
-        ...prev[parent],
-        [field]: value,
-      },
-    }));
+    const currentParent = getValues(parent) || {};
+    setValue(`${parent}.${field}`, value, { shouldDirty: true });
   };
 
   const addItem = (template = null) => {
@@ -243,71 +244,45 @@ export default function EnhancedInvoiceForm({
       description: "",
       quantity: 1,
       unitPrice: 0,
-      vatRate: 20,
+      taxRate: 20,
       unit: "pièce",
       discount: 0,
-      discountType: "percentage",
+      discountType: "PERCENTAGE",
       details: "",
-      vatExemptionText: "",
-      total: 0,
+      vatExemptionText: ""
     };
-    onChange(prev => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
+    append(newItem);
   };
 
   const updateItem = (index, field, value) => {
     if (!canEdit) return;
-    onChange(prev => {
-      const newItems = [...prev.items];
-      newItems[index] = {
-        ...newItems[index],
-        [field]: value,
-      };
-      
-      // Recalcul automatique du total avec remise individuelle
-      if (field === "quantity" || field === "unitPrice" || field === "discount" || field === "discountType") {
-        const quantity = field === "quantity" ? value : (newItems[index].quantity || 0);
-        const unitPrice = field === "unitPrice" ? value : (newItems[index].unitPrice || 0);
-        const discount = field === "discount" ? value : (newItems[index].discount || 0);
-        const discountType = field === "discountType" ? value : (newItems[index].discountType || "percentage");
-        
-        // Calcul du sous-total avant remise
-        const subtotal = quantity * unitPrice;
-        
-        // Calcul de la remise
-        let discountAmount = 0;
-        if (discount > 0) {
-          if (discountType === "percentage") {
-            discountAmount = subtotal * (discount / 100);
-          } else {
-            discountAmount = discount;
-          }
-        }
-        
-        // Total après remise
-        newItems[index].total = Math.max(0, subtotal - discountAmount);
-      }
-      
-      return { ...prev, items: newItems };
-    });
+    setValue(`items.${index}.${field}`, value, { shouldDirty: true });
+    
+    // Recalculer le total de l'article si nécessaire
+    if (field === 'quantity' || field === 'unitPrice' || field === 'discount' || field === 'discountType') {
+      const currentItems = getValues('items');
+      const item = currentItems[index];
+      const subtotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
+      const discountAmount = item.discountType === 'FIXED' 
+        ? (parseFloat(item.discount) || 0)
+        : subtotal * ((parseFloat(item.discount) || 0) / 100);
+      setValue(`items.${index}.total`, subtotal - discountAmount, { shouldDirty: true });
+    }
   };
 
   const removeItem = (index) => {
     if (!canEdit) return;
-    onChange(prev => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index),
-    }));
+    remove(index);
   };
 
   const applyTemplate = (template) => {
     if (!canEdit) return;
-    onChange(prev => ({
-      ...prev,
-      items: [...prev.items, ...template.items.map(item => ({ ...item, total: item.quantity * item.unitPrice }))]
+    const currentItems = getValues('items') || [];
+    const newItems = template.items.map(item => ({ 
+      ...item, 
+      total: item.quantity * item.unitPrice 
     }));
+    setValue('items', [...currentItems, ...newItems], { shouldDirty: true });
     toast.success(`Template "${template.name}" appliqué`);
   };
 
@@ -350,16 +325,18 @@ export default function EnhancedInvoiceForm({
 
   const handleSaveDraft = () => {
     // Sauvegarder en tant que brouillon
-    const draftData = { ...data, status: 'DRAFT' };
-    onChange(draftData);
-    onSave();
+    setValue('status', 'DRAFT', { shouldDirty: true });
+    if (onSave) {
+      onSave();
+    }
   };
 
   const handleCreateInvoice = () => {
     // Créer la facture finale
-    const finalData = { ...data, status: 'PENDING' };
-    onChange(finalData);
-    onSubmit();
+    setValue('status', 'PENDING', { shouldDirty: true });
+    if (onSubmit) {
+      onSubmit();
+    }
   };
 
   const isStep1Valid = () => {
@@ -381,8 +358,6 @@ export default function EnhancedInvoiceForm({
           <>
             {/* Section 1: Informations de la facture */}
             <InvoiceInfoSection 
-              data={data} 
-              updateField={updateField} 
               canEdit={canEdit} 
             />
             <Separator />
@@ -398,7 +373,7 @@ export default function EnhancedInvoiceForm({
               <CardContent className="p-0">
                 <ClientSelector
                   selectedClient={data.client}
-                  onClientSelect={(client) => updateField("client", client)}
+                  onSelect={(client) => updateField("client", client)}
                   disabled={!canEdit}
                 />
               </CardContent>
@@ -407,9 +382,6 @@ export default function EnhancedInvoiceForm({
 
             {/* Section 4: Notes et bas de page */}
             <NotesAndFooterSection 
-              data={data} 
-              updateField={updateField} 
-              updateNestedField={updateNestedField} 
               canEdit={canEdit} 
             />
           </>
@@ -420,10 +392,6 @@ export default function EnhancedInvoiceForm({
           <>
             {/* Section 1: Articles et produits */}
             <ItemsSection 
-              items={data.items}
-              addItem={addItem}
-              removeItem={removeItem}
-              updateItem={updateItem}
               formatCurrency={formatCurrency}
               canEdit={canEdit}
               ProductSearchCombobox={ProductSearchCombobox}
@@ -432,136 +400,9 @@ export default function EnhancedInvoiceForm({
             <Separator className="my-8" />
 
             {/* Section 2: Remises et totaux */}
-            <Card className="shadow-none border-none bg-transparent p-4 overflow-visible">
-              <CardHeader className="p-0">
-                <CardTitle className="flex items-center gap-2">
-                  <Percent className="h-5 w-5" />
-                  Remises et totaux
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6 p-0">
-                {/* Configuration de la remise */}
-                <div className="flex gap-4">
-                  {/* Type de remise - 50% de la largeur */}
-                  <div className="w-1/2 space-y-2">
-                    <Label className="text-sm font-medium">
-                      Type de remise
-                    </Label>
-                    <Select
-                      value={data.discountType || "percentage"}
-                      onValueChange={(value) => updateField("discountType", value)}
-                      disabled={!canEdit}
-                    >
-                      <SelectTrigger className="h-10 rounded-lg px-3 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="percentage">Pourcentage (%)</SelectItem>
-                        <SelectItem value="fixed">Montant fixe (€)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Valeur de la remise - 50% de la largeur */}
-                  <div className="w-1/2 space-y-2">
-                    <Label htmlFor="discount-value" className="text-sm font-medium">
-                      Valeur de la remise
-                    </Label>
-                    <Input
-                      id="discount-value"
-                      type="number"
-                      value={data.discount || 0}
-                      onChange={(e) => updateField("discount", parseFloat(e.target.value) || 0)}
-                      min="0"
-                      step="0.01"
-                      disabled={!canEdit}
-                      placeholder={data.discountType === "percentage" ? "Ex: 10" : "Ex: 100"}
-                      className="h-10 rounded-lg text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Champs personnalisés */}
-                <div className="space-y-4">
-                  <Label className="text-sm font-medium">
-                    Champs personnalisés
-                  </Label>
-                  {data.customFields && data.customFields.length > 0 ? (
-                    <div className="space-y-3">
-                      {data.customFields.map((field, index) => (
-                        <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 rounded-lg">
-                          <div className="space-y-2">
-                            <Label className="text-sm font-medium">
-                              Nom du champ
-                            </Label>
-                            <Input
-                              value={field.name || ""}
-                              onChange={(e) => {
-                                const newFields = [...(data.customFields || [])];
-                                newFields[index] = { ...newFields[index], name: e.target.value };
-                                updateField("customFields", newFields);
-                              }}
-                              placeholder="Ex: Référence projet"
-                              disabled={!canEdit}
-                              className="h-10 rounded-lg text-sm"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-sm font-medium">
-                              Valeur
-                            </Label>
-                            <div className="flex gap-2">
-                              <Input
-                                value={field.value || ""}
-                                onChange={(e) => {
-                                  const newFields = [...(data.customFields || [])];
-                                  newFields[index] = { ...newFields[index], value: e.target.value };
-                                  updateField("customFields", newFields);
-                                }}
-                                placeholder="Ex: PROJ-2024-001"
-                                disabled={!canEdit}
-                                className="h-10 rounded-lg text-sm"
-                              />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const newFields = data.customFields.filter((_, i) => i !== index);
-                                  updateField("customFields", newFields);
-                                }}
-                                disabled={!canEdit}
-                                className="h-10 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-sm">Aucun champ personnalisé ajouté</p>
-                    </div>
-                  )}
-                  
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const newFields = [...(data.customFields || []), { name: "", value: "" }];
-                      updateField("customFields", newFields);
-                    }}
-                    disabled={!canEdit}
-                    className="w-full h-10"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Ajouter un champ personnalisé
-                  </Button>
-                </div>
-
-
-              </CardContent>
-            </Card>
+            <DiscountsAndTotalsSection 
+              canEdit={canEdit} 
+            />
           </>
         )}
 
@@ -614,7 +455,7 @@ export default function EnhancedInvoiceForm({
                     disabled={!isStep2Valid() || !canEdit || saving}
                     className="px-6"
                   >
-                    Créer la facture
+                    {saving ? "Création..." : "Créer la facture"}
                   </Button>
                 </>
               )}

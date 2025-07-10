@@ -5,14 +5,8 @@ import { Slot } from "radix-ui"
 
 import { cn } from "@/src/lib/utils"
 
-// Types
-type TimelineContextValue = {
-  activeStep: number
-  setActiveStep: (step: number) => void
-}
-
 // Context
-const TimelineContext = React.createContext<TimelineContextValue | undefined>(
+const TimelineContext = (
   undefined
 )
 
@@ -25,11 +19,14 @@ const useTimeline = () => {
 }
 
 // Components
-interface TimelineProps extends React.HTMLAttributes<HTMLDivElement> {
-  defaultValue?: number
-  value?: number
-  onValueChange?: (value: number) => void
-  orientation?: "horizontal" | "vertical"
+function TimelineProps({
+  defaultValue = 1,
+  value,
+  onValueChange,
+  orientation = "vertical",
+  className,
+  ...props
+}) {
 }
 
 function Timeline({
@@ -39,11 +36,11 @@ function Timeline({
   orientation = "vertical",
   className,
   ...props
-}: TimelineProps) {
+}) {
   const [activeStep, setInternalStep] = React.useState(defaultValue)
 
   const setActiveStep = React.useCallback(
-    (step: number) => {
+    (step) => {
       if (value === undefined) {
         setInternalStep(step)
       }
@@ -75,7 +72,7 @@ function Timeline({
 function TimelineContent({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}) {
   return (
     <div
       data-slot="timeline-content"
@@ -86,15 +83,11 @@ function TimelineContent({
 }
 
 // TimelineDate
-interface TimelineDateProps extends React.HTMLAttributes<HTMLTimeElement> {
-  asChild?: boolean
-}
-
 function TimelineDate({
   asChild = false,
   className,
   ...props
-}: TimelineDateProps) {
+}) {
   const Comp = asChild ? Slot.Root : "time"
 
   return (
@@ -113,23 +106,19 @@ function TimelineDate({
 function TimelineHeader({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}) {
   return (
     <div data-slot="timeline-header" className={cn(className)} {...props} />
   )
 }
 
 // TimelineIndicator
-interface TimelineIndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
-  asChild?: boolean
-}
-
 function TimelineIndicator({
   asChild = false,
   className,
   children,
   ...props
-}: TimelineIndicatorProps) {
+}) {
   return (
     <div
       data-slot="timeline-indicator"
@@ -146,11 +135,7 @@ function TimelineIndicator({
 }
 
 // TimelineItem
-interface TimelineItemProps extends React.HTMLAttributes<HTMLDivElement> {
-  step: number
-}
-
-function TimelineItem({ step, className, ...props }: TimelineItemProps) {
+function TimelineItem({ step, className, ...props }) {
   const { activeStep } = useTimeline()
 
   return (
@@ -170,7 +155,7 @@ function TimelineItem({ step, className, ...props }: TimelineItemProps) {
 function TimelineSeparator({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}) {
   return (
     <div
       data-slot="timeline-separator"
@@ -188,7 +173,7 @@ function TimelineSeparator({
 function TimelineTitle({
   className,
   ...props
-}: React.HTMLAttributes<HTMLHeadingElement>) {
+}) {
   return (
     <h3
       data-slot="timeline-title"

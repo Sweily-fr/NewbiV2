@@ -1,5 +1,6 @@
 "use client";
 
+import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Package, Plus, Trash2, Percent } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
@@ -11,14 +12,33 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 // Utilisation du composant ProductSearchCombobox défini dans enhanced-invoice-form.jsx
 
 export default function ItemsSection({ 
-  items, 
-  addItem, 
-  removeItem, 
-  updateItem, 
   formatCurrency, 
   canEdit,
   ProductSearchCombobox 
 }) {
+  const { watch, setValue, register, formState: { errors } } = useFormContext();
+  const { fields: items, append, remove } = useFieldArray({ name: "items" });
+  
+  const addItem = (productData = {}) => {
+    append({
+      description: productData.description || "",
+      details: productData.details || "",
+      quantity: productData.quantity || 1,
+      unitPrice: productData.unitPrice || 0,
+      vatRate: productData.vatRate || 20,
+      unit: productData.unit || "pièce",
+      discount: productData.discount || 0,
+      discountType: productData.discountType || "percentage",
+      vatExemptionText: productData.vatExemptionText || "",
+      total: (productData.quantity || 1) * (productData.unitPrice || 0)
+    });
+  };
+  
+  const removeItem = (index) => {
+    remove(index);
+  };
+  
+
   return (
     <Card className="shadow-none border-none bg-transparent">
       <CardHeader className="p-0">
@@ -62,8 +82,8 @@ export default function ItemsSection({
                 value={`item-${index}`}
                 className="rounded-lg px-4 py-1 overflow-visible border last:border-b-1"
               >
-                <AccordionTrigger className="justify-between gap-3 py-3 text-[15px] leading-6 hover:no-underline focus-visible:ring-0">
-                  <div className="flex items-center gap-3 flex-1">
+                <div className="flex items-center gap-3 py-3">
+                  <AccordionTrigger className="flex-1 justify-between gap-3 text-[15px] leading-6 hover:no-underline focus-visible:ring-0 [&[data-state=open]>svg]:rotate-180">
                     <div className="flex-1 text-left">
                       <div className="font-medium">
                         {item.description || `Article ${index + 1}`}
@@ -72,22 +92,17 @@ export default function ItemsSection({
                         {item.quantity || 1} × {formatCurrency(item.unitPrice || 0)} = {formatCurrency(item.total || 0)}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeItem(index);
-                        }}
-                        disabled={!canEdit}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </AccordionTrigger>
+                  </AccordionTrigger>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeItem(index)}
+                    disabled={!canEdit}
+                    className="h-8 w-8 p-0 shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
                 <AccordionContent className="pb-6 pt-2 px-2 overflow-visible">
                   <div className="space-y-4 pt-2">
                     {/* Description */}
@@ -95,14 +110,32 @@ export default function ItemsSection({
                       <Label htmlFor={`item-description-${index}`} className="text-sm font-medium">
                         Description de l'article
                       </Label>
-                      <Input
-                        id={`item-description-${index}`}
-                        value={item.description || ""}
-                        onChange={(e) => updateItem(index, "description", e.target.value)}
-                        placeholder="Décrivez votre produit ou service"
-                        disabled={!canEdit}
-                        className="h-10 rounded-lg text-sm w-full"
-                      />
+                      <div className="space-y-1">
+                        <Input
+                          id={`item-description-${index}`}
+                          {...register(`items.${index}.description`, {
+                            required: 'La description est requise',
+                            minLength: {
+                              value: 2,
+                              message: 'La description doit contenir au moins 2 caractères'
+                            },
+                            maxLength: {
+                              value: 255,
+                              message: 'La description ne doit pas dépasser 255 caractères'
+                            }
+                          })}
+                          placeholder="Décrivez votre produit ou service"
+                          disabled={!canEdit}
+                          className={`h-10 rounded-lg text-sm w-full ${
+                            errors?.items?.[index]?.description ? 'border-red-500' : ''
+                          }`}
+                        />
+                        {errors?.items?.[index]?.description && (
+                          <p className="text-xs text-red-500">
+                            {errors.items[index].description.message}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Détails supplémentaires */}
@@ -112,8 +145,7 @@ export default function ItemsSection({
                       </Label>
                       <Textarea
                         id={`item-details-${index}`}
-                        value={item.details || ""}
-                        onChange={(e) => updateItem(index, "details", e.target.value)}
+                        {...register(`items.${index}.details`)}
                         placeholder="Informations complémentaires sur l'article"
                         disabled={!canEdit}
                         rows={2}
@@ -127,42 +159,68 @@ export default function ItemsSection({
                         <Label htmlFor={`item-quantity-${index}`} className="text-sm font-medium">
                           Quantité
                         </Label>
-                        <Input
-                          id={`item-quantity-${index}`}
-                          type="number"
-                          value={item.quantity || 1}
-                          onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
-                          min="0"
-                          step="0.01"
-                          disabled={!canEdit}
-                          className="h-10 rounded-lg text-sm w-full"
-                        />
+                        <div className="space-y-1">
+                          <Input
+                            id={`item-quantity-${index}`}
+                            type="number"
+                            {...register(`items.${index}.quantity`, { 
+                              valueAsNumber: true,
+                              required: 'La quantité est requise',
+                              min: {
+                                value: 0.01,
+                                message: 'La quantité doit être supérieure à 0'
+                              },
+                              onChange: (e) => {
+                                const quantity = parseFloat(e.target.value) || 0;
+                                const unitPrice = watch(`items.${index}.unitPrice`) || 0;
+                                setValue(`items.${index}.total`, quantity * unitPrice, { shouldDirty: true });
+                              }
+                            })}
+                            min="0"
+                            step="0.01"
+                            disabled={!canEdit}
+                            className={`h-10 rounded-lg text-sm w-full ${
+                              errors?.items?.[index]?.quantity ? 'border-red-500' : ''
+                            }`}
+                          />
+                          {errors?.items?.[index]?.quantity && (
+                            <p className="text-xs text-red-500">
+                              {errors.items[index].quantity.message}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">
                           Unité
                         </Label>
-                        <Select
-                          value={item.unit || "pièce"}
-                          onValueChange={(value) => updateItem(index, "unit", value)}
-                          disabled={!canEdit}
-                        >
-                          <SelectTrigger className="h-10 rounded-lg px-3 text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pièce">Pièce</SelectItem>
-                            <SelectItem value="heure">Heure</SelectItem>
-                            <SelectItem value="jour">Jour</SelectItem>
-                            <SelectItem value="mois">Mois</SelectItem>
-                            <SelectItem value="kg">Kilogramme</SelectItem>
-                            <SelectItem value="m">Mètre</SelectItem>
-                            <SelectItem value="m²">Mètre carré</SelectItem>
-                            <SelectItem value="m³">Mètre cube</SelectItem>
-                            <SelectItem value="litre">Litre</SelectItem>
-                            <SelectItem value="forfait">Forfait</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Controller
+                          name={`items.${index}.unit`}
+                          defaultValue="pièce"
+                          render={({ field }) => (
+                            <Select
+                              value={field.value || "pièce"}
+                              onValueChange={field.onChange}
+                              disabled={!canEdit}
+                            >
+                              <SelectTrigger className="h-10 rounded-lg px-3 text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pièce">Pièce</SelectItem>
+                                <SelectItem value="heure">Heure</SelectItem>
+                                <SelectItem value="jour">Jour</SelectItem>
+                                <SelectItem value="mois">Mois</SelectItem>
+                                <SelectItem value="kg">Kilogramme</SelectItem>
+                                <SelectItem value="m">Mètre</SelectItem>
+                                <SelectItem value="m²">Mètre carré</SelectItem>
+                                <SelectItem value="m³">Mètre cube</SelectItem>
+                                <SelectItem value="litre">Litre</SelectItem>
+                                <SelectItem value="forfait">Forfait</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
                       </div>
                     </div>
 
@@ -172,36 +230,62 @@ export default function ItemsSection({
                         <Label htmlFor={`item-price-${index}`} className="text-sm font-medium">
                           Prix unitaire (€)
                         </Label>
-                        <Input
-                          id={`item-price-${index}`}
-                          type="number"
-                          value={item.unitPrice || 0}
-                          onChange={(e) => updateItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
-                          min="0"
-                          step="0.01"
-                          disabled={!canEdit}
-                          className="h-10 rounded-lg text-sm w-full"
-                        />
+                        <div className="space-y-1">
+                          <Input
+                            id={`item-price-${index}`}
+                            type="number"
+                            {...register(`items.${index}.unitPrice`, { 
+                              valueAsNumber: true,
+                              required: 'Le prix est requis',
+                              min: {
+                                value: 0,
+                                message: 'Le prix doit être positif ou nul'
+                              },
+                              onChange: (e) => {
+                                const unitPrice = parseFloat(e.target.value) || 0;
+                                const quantity = watch(`items.${index}.quantity`) || 1;
+                                setValue(`items.${index}.total`, quantity * unitPrice, { shouldDirty: true });
+                              }
+                            })}
+                            min="0"
+                            step="0.01"
+                            disabled={!canEdit}
+                            className={`h-10 rounded-lg text-sm w-full ${
+                              errors?.items?.[index]?.unitPrice ? 'border-red-500' : ''
+                            }`}
+                          />
+                          {errors?.items?.[index]?.unitPrice && (
+                            <p className="text-xs text-red-500">
+                              {errors.items[index].unitPrice.message}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">
                           Taux de TVA
                         </Label>
-                        <Select
-                          value={item.vatRate?.toString() || "20"}
-                          onValueChange={(value) => updateItem(index, "vatRate", parseFloat(value))}
-                          disabled={!canEdit}
-                        >
-                          <SelectTrigger className="h-10 rounded-lg px-3 text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">0% - Exonéré</SelectItem>
-                            <SelectItem value="5.5">5,5% - Taux réduit</SelectItem>
-                            <SelectItem value="10">10% - Taux intermédiaire</SelectItem>
-                            <SelectItem value="20">20% - Taux normal</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Controller
+                          name={`items.${index}.vatRate`}
+                          defaultValue={20}
+                          render={({ field }) => (
+                            <Select
+                              value={field.value?.toString() || "20"}
+                              onValueChange={(value) => field.onChange(parseFloat(value))}
+                              disabled={!canEdit}
+                            >
+                              <SelectTrigger className="h-10 rounded-lg px-3 text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="0">0% - Exonéré</SelectItem>
+                                <SelectItem value="5.5">5,5% - Taux réduit</SelectItem>
+                                <SelectItem value="10">10% - Taux intermédiaire</SelectItem>
+                                <SelectItem value="20">20% - Taux normal</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
                       </div>
                     </div>
 
@@ -211,20 +295,19 @@ export default function ItemsSection({
                         Total HT
                       </Label>
                       <div className="h-10 rounded-lg px-3 flex items-center text-sm font-medium">
-                        {formatCurrency(item.total || 0)}
+                        {formatCurrency(watch(`items.${index}.total`) || 0)}
                       </div>
                     </div>
 
                     {/* Texte d'exonération TVA (affiché seulement si TVA = 0%) */}
-                    {item.vatRate === 0 && (
+                    {watch(`items.${index}.vatRate`) === 0 && (
                       <div className="space-y-2">
                         <Label htmlFor={`item-vat-exemption-${index}`} className="text-sm font-medium">
                           Texte d'exonération de TVA
                         </Label>
                         <Input
                           id={`item-vat-exemption-${index}`}
-                          value={item.vatExemptionText || ""}
-                          onChange={(e) => updateItem(index, "vatExemptionText", e.target.value)}
+                          {...register(`items.${index}.vatExemptionText`)}
                           placeholder="Ex: TVA non applicable, art. 293 B du CGI"
                           disabled={!canEdit}
                           className="h-10 rounded-lg px-3 text-sm"
@@ -245,35 +328,65 @@ export default function ItemsSection({
                           <Label className="text-sm font-medium">
                             Type de remise
                           </Label>
-                          <Select
-                            value={item.discountType || "percentage"}
-                            onValueChange={(value) => updateItem(index, "discountType", value)}
-                            disabled={!canEdit}
-                          >
-                            <SelectTrigger className="w-full h-10 rounded-lg px-3 text-sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="percentage">Pourcentage (%)</SelectItem>
-                              <SelectItem value="fixed">Montant fixe (€)</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Controller
+                            name={`items.${index}.discountType`}
+                            defaultValue="percentage"
+                            render={({ field }) => (
+                              <Select
+                                value={field.value || "percentage"}
+                                onValueChange={field.onChange}
+                                disabled={!canEdit}
+                              >
+                                <SelectTrigger className="w-full h-10 rounded-lg px-3 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="percentage">Pourcentage (%)</SelectItem>
+                                  <SelectItem value="fixed">Montant fixe (€)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor={`item-discount-${index}`} className="text-sm font-medium">
-                            {item.discountType === "percentage" ? "Pourcentage (%)" : "Montant (€)"}
+                            {watch(`items.${index}.discountType`) === "percentage" ? "Pourcentage (%)" : "Montant (€)"}
                           </Label>
-                          <Input
-                            id={`item-discount-${index}`}
-                            type="number"
-                            value={item.discount || 0}
-                            onChange={(e) => updateItem(index, "discount", parseFloat(e.target.value) || 0)}
-                            min="0"
-                            max={item.discountType === "percentage" ? "100" : undefined}
-                            step="0.01"
-                            disabled={!canEdit}
-                            className="w-full h-10 rounded-lg text-sm"
-                          />
+                          <div className="space-y-1">
+                            <Input
+                              id={`item-discount-${index}`}
+                              type="number"
+                              {...register(`items.${index}.discount`, { 
+                                valueAsNumber: true,
+                                min: {
+                                  value: 0,
+                                  message: 'La remise doit être positive ou nulle'
+                                },
+                                max: {
+                                  value: watch(`items.${index}.discountType`) === "percentage" ? 100 : undefined,
+                                  message: 'La remise ne peut pas dépasser 100%'
+                                },
+                                validate: (value) => {
+                                  if (watch(`items.${index}.discountType`) === "percentage" && value > 100) {
+                                    return 'La remise ne peut pas dépasser 100%';
+                                  }
+                                  return true;
+                                }
+                              })}
+                              min="0"
+                              max={watch(`items.${index}.discountType`) === "percentage" ? "100" : undefined}
+                              step="0.01"
+                              disabled={!canEdit}
+                              className={`w-full h-10 rounded-lg text-sm ${
+                                errors?.items?.[index]?.discount ? 'border-red-500' : ''
+                              }`}
+                            />
+                            {errors?.items?.[index]?.discount && (
+                              <p className="text-xs text-red-500">
+                                {errors.items[index].discount.message}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
