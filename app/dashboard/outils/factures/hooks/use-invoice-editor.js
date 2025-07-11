@@ -245,7 +245,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
       const dataToTransform = {
         ...currentFormData,
         status: "PENDING", // Change status to pending when submitting
-        isDownPayment: currentFormData.isDownPayment || currentFormData.isDepositInvoice || false, // Correction du mapping
+        isDeposit: currentFormData.isDepositInvoice || false, // Mapping correct vers le champ backend
       };
       
       console.log('📝 Données avant transformation:', dataToTransform);
@@ -346,7 +346,7 @@ function getInitialFormData(mode, initialData, session) {
     termsAndConditions: "",
     customFields: [],
     paymentMethod: null,
-    isDownPayment: false,
+    isDepositInvoice: false,
     purchaseOrderNumber: "",
     showBankDetails: false,
     bankDetails: {
@@ -460,7 +460,7 @@ function transformInvoiceToFormData(invoice) {
     customFields: invoice.customFields || [],
     // Champs qui n'existent pas dans le schéma GraphQL - utiliser des valeurs par défaut
     paymentMethod: null,
-    isDownPayment: false,
+    isDepositInvoice: invoice.isDeposit || false, // Mapper isDeposit vers isDepositInvoice pour le formulaire
     purchaseOrderNumber: invoice.purchaseOrderNumber || "",
     // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: !!(invoice.companyInfo?.bankDetails && 
