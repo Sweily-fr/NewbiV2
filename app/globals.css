@@ -1,6 +1,11 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+/* Police Poppins supprimée du global et déplacée dans le layout spécifique */
 @import "tailwindcss";
 @import "tw-animate-css";
+
+/* Classe pour utiliser la police Poppins uniquement dans les composants qui en ont besoin */
+.font-poppins {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+}
 
 /* Custom scrollbar styles */
 .scrollbar-auto-hide {

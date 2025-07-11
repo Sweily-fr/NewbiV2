@@ -132,15 +132,15 @@ const TestimonialsSection = () => {
   );
 
   return (
-    <section className="py-20 bg-white dark:bg-gray-900">
+    <section className="py-20 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="text-center mb-16">
-          <h2 className="max-w-3xl text-2xl font-medium tracking-tighter text-pretty text-gray-950 dark:text-white sm:text-4xl">
-            Découvrez Newbi
+          <h2 className="text-2xl sm:text-4xl font-medium text-gray-900 mb-4">
+            Vos retours font notre force
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-            Une suite de produits SaaS réalisée par des passionnés pour
-            révolutionner votre équipe commerciale
+          <p className="text-md text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+            Découvrez comment nos utilisateurs transforment leur quotidien grâce
+            à notre solution.
           </p>
         </div>
 

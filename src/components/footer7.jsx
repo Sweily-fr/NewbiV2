@@ -59,7 +59,7 @@ const Footer7 = ({
   legalLinks = defaultLegalLinks,
 }) => {
   return (
-    <div className="px-2 py-2 lg:px-2 bg-gradient-to-t from-[#fce8e6] via-[#f8f9fc] to-[#f0f4ff]">
+    <div className="px-2 py-2 lg:px-2 bg-gradient-to-t from-[#fbd7d3] via-[#f6f7fc] to-[#cad8f7]">
       <div className="mx-auto w-full lg:px-8 rounded-[15px] md:rounded-[18px] lg:rounded-[18px] bg-white/50">
         <div className="relative pt-20 pb-16 text-center sm:py-24">
           <hgroup>
@@ -77,11 +77,11 @@ const Footer7 = ({
           </p>
           <div className="mt-6">
             <Button variant="default" asChild>
-              <a href="#">Commencez gratuitement</a>
+              <a href="/auth/login">Commencez gratuitement</a>
             </Button>
           </div>
         </div>
-        <div className="pb-16">
+        <div className="pb-6">
           <div className="group/row relative isolate pt-[calc(--spacing(2)+1px)] last:pb-[calc(--spacing(2)+1px)]">
             <div
               aria-hidden="true"
@@ -90,54 +90,84 @@ const Footer7 = ({
               <div className="absolute inset-x-0 top-0 border-t border-black/5"></div>
               <div className="absolute inset-x-0 top-2 border-t border-black/5"></div>
             </div>
-            <div className="grid grid-cols-2 gap-y-10 pb-6 lg:grid-cols-6 lg:gap-8">
+            <div className="grid grid-cols-2 gap-y-10 pt-6 pb-6 lg:grid-cols-6 lg:gap-8">
               <div className="col-span-2 flex">
-                <div className="pt-6 lg:pb-6 group/item relative">
+                <div className="lg:pb-6 group/item relative">
+                  <img
+                    src="/newbiLogo.png"
+                    alt="logo"
+                    width="100"
+                    height="100"
+                  />
                   {/* SVG elements can be added here */}
                 </div>
               </div>
               <div>
                 <h3 className="text-sm/6 font-medium text-gray-950/50">
-                  Product
+                  Produits
                 </h3>
                 <ul className="mt-6 space-y-4 text-sm/6">
                   <li>
                     <a
-                      className="font-medium text-gray-950 hover:text-gray-700"
+                      className="font-regular text-gray-950 hover:text-gray-700"
                       href="#"
                     >
-                      Features
+                      Facturation
                     </a>
                   </li>
                   <li>
                     <a
-                      className="font-medium text-gray-950 hover:text-gray-700"
+                      className="font-regular text-gray-950 hover:text-gray-700"
                       href="#"
                     >
-                      Pricing
+                      Devis
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="#"
+                    >
+                      Transferts fichiers
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="#"
+                    >
+                      Tous nos outils
                     </a>
                   </li>
                 </ul>
               </div>
               <div>
                 <h3 className="text-sm/6 font-medium text-gray-950/50">
-                  Company
+                  Ressources
                 </h3>
                 <ul className="mt-6 space-y-4 text-sm/6">
                   <li>
                     <a
-                      className="font-medium text-gray-950 hover:text-gray-700"
+                      className="font-regular text-gray-950 hover:text-gray-700"
                       href="#"
                     >
-                      Careers
+                      Blog
                     </a>
                   </li>
                   <li>
                     <a
-                      className="font-medium text-gray-950 hover:text-gray-700"
+                      className="font-regular text-gray-950 hover:text-gray-700"
                       href="#"
                     >
-                      Blog
+                      FAQ
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="#"
+                    >
+                      Tarifs
                     </a>
                   </li>
                 </ul>
@@ -149,10 +179,10 @@ const Footer7 = ({
                 <ul className="mt-6 space-y-4 text-sm/6">
                   <li>
                     <a
-                      className="font-medium text-gray-950 hover:text-gray-700"
+                      className="font-regular text-gray-950 hover:text-gray-700"
                       href="#"
                     >
-                      Help Center
+                      Communauté
                     </a>
                   </li>
                 </ul>
@@ -164,18 +194,34 @@ const Footer7 = ({
                 <ul className="mt-6 space-y-4 text-sm/6">
                   <li>
                     <a
-                      className="font-medium text-gray-950 hover:text-gray-700"
+                      className="font-regular text-gray-950 hover:text-gray-700"
                       href="#"
                     >
-                      Terms of Service
+                      Mentions légales
                     </a>
                   </li>
                   <li>
                     <a
-                      className="font-medium text-gray-950 hover:text-gray-700"
+                      className="font-regular text-gray-950 hover:text-gray-700"
                       href="#"
                     >
-                      Privacy Policy
+                      Politique de confidentialité
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="#"
+                    >
+                      CGV
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="#"
+                    >
+                      Cookies
                     </a>
                   </li>
                 </ul>
@@ -194,7 +240,7 @@ const Footer7 = ({
           <div>
             <div className="py-3 group/item relative">
               <div className="text-sm/6 text-gray-950">
-                © 2025 Radiant Inc.
+                Sweily — Made with ❤️ in France • © {new Date().getFullYear()}
               </div>
             </div>
           </div>
