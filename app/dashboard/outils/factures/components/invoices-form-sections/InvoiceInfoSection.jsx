@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Calendar as CalendarIcon, Clock, Building } from "lucide-react";
 import { format } from "date-fns";
@@ -13,6 +14,8 @@ import { Label } from "@/src/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
+import { generateInvoicePrefix, parseInvoicePrefix, formatInvoicePrefix, getCurrentMonthYear } from "@/src/utils/invoiceUtils";
+import { useInvoiceNumber } from "../../hooks/use-invoice-number";
 
 const PAYMENT_TERMS_SUGGESTIONS = [
   { value: 0, label: "Paiement à réception" },
@@ -23,9 +26,101 @@ const PAYMENT_TERMS_SUGGESTIONS = [
 ];
 
 export default function InvoiceInfoSection({ canEdit }) {
-  const { watch, setValue, register, formState: { errors } } = useFormContext();
+  const { watch, setValue, register, formState: { errors }, trigger } = useFormContext();
   const data = watch();
   
+  // Get the next invoice number and validation function
+  const { nextInvoiceNumber, validateInvoiceNumber, isLoading: isLoadingInvoiceNumber, getFormattedNextNumber, hasExistingInvoices } = useInvoiceNumber();
+  
+  // Set default invoice number when nextInvoiceNumber is available
+  React.useEffect(() => {
+    console.log('=== InvoiceInfoSection useEffect ===');
+    console.log('nextInvoiceNumber:', nextInvoiceNumber);
+    console.log('data.number:', data.number);
+    console.log('isLoadingInvoiceNumber:', isLoadingInvoiceNumber);
+    console.log('hasExistingInvoices():', hasExistingInvoices());
+    
+    if (!isLoadingInvoiceNumber && nextInvoiceNumber) {
+      const formattedNumber = getFormattedNextNumber();
+      console.log('getFormattedNextNumber():', formattedNumber);
+      
+      if (hasExistingInvoices()) {
+        // Case 1: Existing invoices - force sequential number
+        console.log('Existing invoices found - forcing sequential number');
+        if (data.number !== formattedNumber) {
+          console.log('Setting sequential invoice number to:', formattedNumber);
+          setValue('number', formattedNumber, { shouldValidate: true });
+        }
+      } else {
+        // Case 2: No existing invoices - suggest 000001 but allow free choice
+        console.log('No existing invoices - suggesting default but allowing free choice');
+        if (!data.number || data.number === '' || data.number === '1') {
+          console.log('Setting default starting invoice number to: 000001');
+          setValue('number', '000001', { shouldValidate: true });
+        }
+        // If user has already entered a number, don't override it
+      }
+      
+      // Set default due date to today + 30 days for new invoices
+      if (!data.dueDate) {
+        const today = new Date();
+        const dueDate = new Date(today);
+        dueDate.setDate(today.getDate() + 30);
+        setValue('dueDate', dueDate.toISOString().split('T')[0], { shouldValidate: true });
+      }
+    }
+  }, [nextInvoiceNumber, isLoadingInvoiceNumber, data.number, data.dueDate, setValue, getFormattedNextNumber, hasExistingInvoices]);
+
+  // Handle prefix changes with auto-fill for MM and AAAA
+  const handlePrefixChange = (e) => {
+    const value = e.target.value;
+    const cursorPosition = e.target.selectionStart;
+
+    // Auto-fill MM (month)
+    if (value.includes('MM')) {
+      const { month } = getCurrentMonthYear();
+      const newValue = value.replace('MM', month);
+      setValue("prefix", newValue, { shouldValidate: true });
+      // Position cursor after the inserted month
+      const newPosition = cursorPosition + month.length - 2;
+      setTimeout(() => {
+        e.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+      return;
+    }
+
+    // Auto-fill AAAA (year)
+    if (value.includes('AAAA')) {
+      const { year } = getCurrentMonthYear();
+      const newValue = value.replace('AAAA', year);
+      setValue("prefix", newValue, { shouldValidate: true });
+      // Position cursor after the inserted year
+      const newPosition = cursorPosition + year.length - 4;
+      setTimeout(() => {
+        e.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+      return;
+    }
+
+    // Default behavior
+    setValue("prefix", value, { shouldValidate: true });
+  };
+
+  // Set default prefix on component mount if not already set
+  React.useEffect(() => {
+    if (!data.prefix) {
+      setValue("prefix", generateInvoicePrefix(), { shouldValidate: true });
+    }
+  }, [data.prefix, setValue]);
+
+  // Set default issue date to today if not already set
+  React.useEffect(() => {
+    if (!data.issueDate) {
+      const today = new Date().toISOString().split('T')[0];
+      setValue("issueDate", today, { shouldValidate: true });
+    }
+  }, [data.issueDate, setValue]);
+
   // Fonction pour valider la date d'échéance
   const validateDueDate = (value) => {
     if (!value) return true; // Optionnel
@@ -33,7 +128,7 @@ export default function InvoiceInfoSection({ canEdit }) {
     const issueDate = new Date(data.issueDate);
     return dueDate >= issueDate || "La date d'échéance doit être postérieure à la date d'émission";
   };
-  
+
   // Fonction pour valider la date d'exécution
   const validateExecutionDate = (value) => {
     if (!value) return true; // Optionnel
@@ -79,27 +174,31 @@ export default function InvoiceInfoSection({ canEdit }) {
               Préfixe de facture
             </Label>
             <div className="space-y-1">
-              <Input
-                id="invoice-prefix"
-                {...register("prefix", {
-                  maxLength: {
-                    value: 10,
-                    message: "Le préfixe ne doit pas dépasser 10 caractères"
-                  }
-                })}
-                defaultValue={data.prefix || "F-"}
-                placeholder="F-"
-                disabled={!canEdit}
-                className={`h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${
-                  errors?.prefix ? 'border-red-500' : ''
-                }`}
-              />
+              <div className="relative">
+                <Input
+                  id="invoice-prefix"
+                  {...register("prefix", {
+                    maxLength: {
+                      value: 20,
+                      message: "Le préfixe ne doit pas dépasser 20 caractères"
+                    }
+                  })}
+                  value={data.prefix || ""}
+                  onChange={handlePrefixChange}
+                  placeholder="F-MMYYYY"
+                  disabled={!canEdit}
+                  className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
               {errors?.prefix && (
                 <p className="text-xs text-red-500">
                   {errors.prefix.message}
                 </p>
               )}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+            Astuce : Tapez <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">MM</span> pour le mois ou <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">AAAA</span> pour l'année
+          </p>
           </div>
           <div className="md:col-span-2 space-y-2">
             <Label htmlFor="invoice-number" className="text-sm font-medium">
@@ -110,25 +209,51 @@ export default function InvoiceInfoSection({ canEdit }) {
                 id="invoice-number"
                 {...register("number", {
                   required: "Le numéro de facture est requis",
-                  pattern: {
-                    value: /^[A-Za-z0-9-]+$/,
-                    message: "Format de numéro invalide (utilisez des lettres, chiffres et tirets)"
+                  validate: {
+                    isNumeric: (value) => {
+                      if (!/^\d+$/.test(value)) {
+                        return "Le numéro doit contenir uniquement des chiffres";
+                      }
+                      return true;
+                    },
+                    isValidSequence: (value) => {
+                      if (isLoadingInvoiceNumber) return true; // Skip validation while loading
+                      const result = validateInvoiceNumber(parseInt(value, 10));
+                      return result.isValid || result.message;
+                    }
                   },
                   minLength: {
-                    value: 3,
-                    message: "Le numéro doit contenir au moins 3 caractères"
+                    value: 1,
+                    message: "Le numéro est requis"
+                  },
+                  maxLength: {
+                    value: 6,
+                    message: "Le numéro ne peut pas dépasser 6 chiffres"
                   }
                 })}
-                defaultValue={data.number || ""}
-                placeholder="202501-001"
-                disabled={!canEdit}
+                defaultValue={data.number || (nextInvoiceNumber ? String(nextInvoiceNumber) : "")}
+                placeholder={nextInvoiceNumber ? String(nextInvoiceNumber).padStart(6, '0') : "000001"}
+                disabled={!canEdit || isLoadingInvoiceNumber}
+                onBlur={(e) => {
+                  // Format with leading zeros when leaving the field
+                  if (e.target.value) {
+                    const num = e.target.value.padStart(6, '0');
+                    setValue('number', num, { shouldValidate: true });
+                  }
+                }}
                 className={`h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${
                   errors?.number ? 'border-red-500' : ''
                 }`}
               />
-              {errors?.number && (
+              {errors?.number ? (
                 <p className="text-xs text-red-500">
                   {errors.number.message}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {isLoadingInvoiceNumber 
+                    ? "Chargement du prochain numéro..." 
+                    : `Prochain numéro suggéré: ${nextInvoiceNumber ? String(nextInvoiceNumber).padStart(6, '0') : '000001'} (numérotation séquentielle)`}
                 </p>
               )}
             </div>
@@ -165,49 +290,21 @@ export default function InvoiceInfoSection({ canEdit }) {
               <input
                 type="hidden"
                 {...register("issueDate", {
-                  required: "La date d'émission est requise",
-                  validate: {
-                    notInFuture: (value) => {
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
-                      const selectedDate = new Date(value);
-                      return selectedDate <= today || "La date ne peut pas être dans le futur";
-                    }
-                  }
+                  required: false // On ne veut plus de message d'erreur
                 })}
               />
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={!canEdit}
-                    className={cn(
-                      "w-full justify-start text-left font-normal h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-                      !data.issueDate && "text-muted-foreground",
-                      errors?.issueDate && "border-red-500"
-                    )}
-                    type="button"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {data.issueDate ? (
-                      format(new Date(data.issueDate), "PPP", { locale: fr })
-                    ) : (
-                      <span>Choisir une date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={data.issueDate ? new Date(data.issueDate) : undefined}
-                    onSelect={(date) => {
-                      setValue("issueDate", date?.toISOString().split('T')[0], { shouldDirty: true, shouldValidate: true });
-                    }}
-                    initialFocus
-                    locale={fr}
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="relative">
+                <Input
+                  value={data.issueDate ? format(new Date(data.issueDate), "PPP", { locale: fr }) : ""}
+                  disabled={true}
+                  className="h-10 rounded-lg px-3 text-sm bg-gray-50 cursor-not-allowed"
+                  placeholder="Date automatique"
+                />
+                <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                La date d'émission est automatiquement définie lors de la création de la facture
+              </p>
               {errors?.issueDate && (
                 <p className="text-xs text-red-500">
                   {errors.issueDate.message}
@@ -316,9 +413,10 @@ export default function InvoiceInfoSection({ canEdit }) {
                   setValue("dueDate", dueDate.toISOString().split('T')[0], { shouldDirty: true });
                 }}
                 disabled={!canEdit}
+                defaultValue="30"
               >
                 <SelectTrigger className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-full">
-                  <SelectValue placeholder="+" />
+                  <SelectValue placeholder="30 jours" />
                 </SelectTrigger>
                 <SelectContent>
                   {PAYMENT_TERMS_SUGGESTIONS.map((term) => (

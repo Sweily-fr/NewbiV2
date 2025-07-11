@@ -281,6 +281,47 @@ export default function InvoicePreview({ data = {}, className = '', enablePDF = 
           </p>
         </div>
 
+        {/* Coordonnées bancaires (si activées) */}
+        {data.showBankDetails && data.companyInfo?.bankDetails?.iban && (
+          <div style={{ 
+            marginTop: '24px', 
+            paddingTop: '16px',
+            borderTop: '1px solid #ddd',
+            fontSize: '9px',
+            color: '#666'
+          }}>
+            <h4 style={{ 
+              fontSize: '10px', 
+              fontWeight: 'bold', 
+              color: '#000',
+              marginBottom: '8px',
+              textAlign: 'left'
+            }}>
+              Coordonnées bancaires
+            </h4>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr 1fr',
+              gap: '16px',
+              fontSize: '9px',
+              lineHeight: '1.3'
+            }}>
+              <div>
+                <strong>IBAN:</strong><br />
+                <span style={{ fontFamily: 'monospace' }}>{data.companyInfo.bankDetails.iban}</span>
+              </div>
+              <div>
+                <strong>BIC/SWIFT:</strong><br />
+                <span style={{ fontFamily: 'monospace' }}>{data.companyInfo.bankDetails.bic}</span>
+              </div>
+              <div>
+                <strong>Banque:</strong><br />
+                {data.companyInfo.bankDetails.bankName}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div style={{ 
           marginTop: '32px', 

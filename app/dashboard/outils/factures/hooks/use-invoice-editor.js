@@ -162,6 +162,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     try {
       setSaving(true);
       console.log('📝 Données avant transformation (handleSave):', currentFormData);
+      // Pas de changement de statut dans handleSave, donc pas besoin du statut précédent
       const input = transformFormDataToInput(currentFormData);
       console.log('🔄 Input transformé pour GraphQL (handleSave):', input);
 
@@ -193,7 +194,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     } finally {
       setSaving(false);
     }
-  }, [mode, getValues, trigger, createInvoice, updateInvoice, invoiceId, router, reset]);
+  }, [mode, invoiceId, createInvoice, updateInvoice, getValues, trigger, router, setSaving, formState.errors, reset]);
 
   // Submit handler (validate and send)
   const handleSubmit = useCallback(async () => {
@@ -216,7 +217,9 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
       };
       
       console.log('📝 Données avant transformation:', dataToTransform);
-      const input = transformFormDataToInput(dataToTransform);
+      // Passer le statut précédent pour gérer automatiquement la date d'émission
+      const previousStatus = mode === "edit" ? existingInvoice?.status : "DRAFT";
+      const input = transformFormDataToInput(dataToTransform, previousStatus);
       console.log('🔄 Input transformé pour GraphQL:', input);
 
       if (mode === "create") {
@@ -246,7 +249,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     } finally {
       setSaving(false);
     }
-  }, [mode, getValues, trigger, createInvoice, updateInvoice, invoiceId, router]);
+  }, [mode, getValues, trigger, createInvoice, updateInvoice, invoiceId, router, existingInvoice?.status, formState.errors]);
 
   return {
     form,
@@ -294,11 +297,16 @@ function getInitialFormData(mode, initialData, session) {
     }
   };
 
+  // Créer une date pour demain
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowFormatted = tomorrow.toISOString().split('T')[0];
+
   const defaultData = {
     prefix: "",
     number: "",
     issueDate: new Date().toISOString().split('T')[0],
-    executionDate: null,
+    executionDate: tomorrowFormatted,
     dueDate: null,
     status: "DRAFT",
     client: null,
@@ -370,7 +378,7 @@ function transformInvoiceToFormData(invoice) {
   };
 }
 
-function transformFormDataToInput(formData) {
+function transformFormDataToInput(formData, previousStatus = null) {
   // Nettoyer le client en supprimant les métadonnées GraphQL
   const cleanClient = formData.client ? {
     id: formData.client.id,
@@ -415,10 +423,18 @@ function transformFormDataToInput(formData) {
       : null
   } : null;
 
+  // Gérer automatiquement la date d'émission lors du passage DRAFT -> PENDING
+  let issueDate = formData.issueDate;
+  if (previousStatus === "DRAFT" && formData.status === "PENDING") {
+    // Mettre à jour la date d'émission à la date actuelle
+    issueDate = new Date().toISOString().split('T')[0];
+    console.log('📅 Date d\'émission mise à jour automatiquement lors du passage DRAFT -> PENDING:', issueDate);
+  }
+
   return {
     prefix: formData.prefix || "",
     number: formData.number || "",
-    issueDate: formData.issueDate,
+    issueDate: issueDate,
     executionDate: formData.executionDate,
     dueDate: formData.dueDate,
     status: formData.status || "DRAFT",

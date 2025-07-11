@@ -83,7 +83,7 @@ export default function ModernInvoiceEditor({
             </div>
 
             {/* Enhanced Form */}
-            <div className="flex-1 overflow-y-auto p-2 -mr-2">
+            <div className="flex-1 min-h-0 p-2 -mr-2">
               <FormProvider {...form}>
                 <EnhancedInvoiceForm
                   onSave={handleSave}

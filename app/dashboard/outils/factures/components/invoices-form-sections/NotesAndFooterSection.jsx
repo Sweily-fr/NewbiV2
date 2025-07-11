@@ -1,13 +1,16 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import { Tag, Download } from "lucide-react";
+import { Tag, Download, Settings, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Separator } from "@/src/components/ui/separator";
+import { Alert, AlertDescription } from "@/src/components/ui/alert";
+import Link from "next/link";
 
 // Fonction de validation de l'IBAN
 const validateIBAN = (value) => {
@@ -115,132 +118,90 @@ export default function NotesAndFooterSection({ canEdit }) {
           </div>
         </div>
 
+        {/* Séparateur avec titre de section */}
+        <div className="relative my-10">
+          <Separator />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="bg-background px-3 text-sm font-medium text-muted-foreground">
+              Coordonnées bancaires
+            </span>
+          </div>
+        </div>
+
         {/* Coordonnées bancaires */}
         <div className="space-y-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <Checkbox
               id="show-bank-details"
               checked={data.showBankDetails || false}
-              onCheckedChange={(checked) => setValue("showBankDetails", checked, { shouldDirty: true })}
+              onCheckedChange={(checked) => {
+                setValue("showBankDetails", checked, { shouldDirty: true });
+                
+                // Import automatique des coordonnées bancaires lors du check
+                if (checked && data.companyInfo?.bankDetails) {
+                  setValue("bankDetails.iban", data.companyInfo.bankDetails.iban || "", { shouldDirty: true });
+                  setValue("bankDetails.bic", data.companyInfo.bankDetails.bic || "", { shouldDirty: true });
+                  setValue("bankDetails.bankName", data.companyInfo.bankDetails.bankName || "", { shouldDirty: true });
+                }
+              }}
               disabled={!canEdit}
-              className="h-5 w-5 rounded-md border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             />
-            <div className="grid gap-1.5 leading-none">
-              <Label
-                htmlFor="show-bank-details"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Afficher les coordonnées bancaires
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Cochez pour inclure vos coordonnées bancaires dans la facture
-              </p>
-            </div>
+            <Label htmlFor="show-bank-details" className="text-sm font-medium">
+              Afficher les coordonnées bancaires
+            </Label>
           </div>
+          <p className="text-xs text-muted-foreground ml-6">
+            Cochez cette case pour afficher vos coordonnées bancaires sur la facture
+          </p>
 
-          {data.showBankDetails && (
-            <div className="space-y-4 p-4 rounded-lg border">
+          {/* Message informatif si aucune coordonnée bancaire configurée */}
+          {data.showBankDetails && !data.companyInfo?.bankDetails?.iban && (
+            <div className="ml-6">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="flex items-center justify-between">
+                  <span>
+                    Aucune coordonnée bancaire configurée dans votre profil.
+                  </span>
+                  <Link href="/dashboard/parametres/profil" className="ml-2">
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Settings className="h-4 w-4" />
+                      Configurer
+                    </Button>
+                  </Link>
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+
+          {/* Affichage des coordonnées importées (lecture seule) */}
+          {data.showBankDetails && data.companyInfo?.bankDetails?.iban && (
+            <div className="ml-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">Coordonnées bancaires</h4>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Importer les coordonnées bancaires depuis les données utilisateur
-                    if (data.companyInfo?.bankDetails) {
-                      setValue("bankDetails.iban", data.companyInfo.bankDetails.iban || "", { shouldDirty: true });
-                      setValue("bankDetails.bic", data.companyInfo.bankDetails.bic || "", { shouldDirty: true });
-                      setValue("bankDetails.bankName", data.companyInfo.bankDetails.bankName || "", { shouldDirty: true });
-                    }
-                  }}
-                  disabled={!canEdit}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Importer mes coordonnées
-                </Button>
+                <h4 className="text-sm font-medium text-green-700 dark:text-green-400">
+                  ✓ Coordonnées bancaires importées
+                </h4>
+                <Link href="/dashboard/parametres/profil">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Settings className="h-4 w-4" />
+                    Modifier
+                  </Button>
+                </Link>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bank-iban" className="text-sm font-medium">
-                    IBAN
-                  </Label>
-                  <div className="space-y-1">
-                    <Input
-                      id="bank-iban"
-                      {...register("bankDetails.iban", {
-                        validate: validateIBAN,
-                        required: data.showBankDetails ? "L'IBAN est requis lorsque les coordonnées bancaires sont affichées" : false
-                      })}
-                      defaultValue={data.bankDetails?.iban || ""}
-                      placeholder="FR76 1234 5678 9012 3456 7890 123"
-                      disabled={!canEdit}
-                      className={`h-10 rounded-lg text-sm w-full ${
-                        errors?.bankDetails?.iban ? 'border-red-500' : ''
-                      }`}
-                    />
-                    {errors?.bankDetails?.iban && (
-                      <p className="text-xs text-red-500">
-                        {errors.bankDetails.iban.message}
-                      </p>
-                    )}
-                  </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-xs text-muted-foreground">IBAN</Label>
+                  <p className="font-mono text-sm">{data.companyInfo.bankDetails.iban}</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bank-bic" className="text-sm font-medium">
-                    BIC/SWIFT
-                  </Label>
-                  <div className="space-y-1">
-                    <Input
-                      id="bank-bic"
-                      {...register("bankDetails.bic", {
-                        validate: validateBIC,
-                        required: data.showBankDetails ? "Le BIC/SWIFT est requis lorsque les coordonnées bancaires sont affichées" : false
-                      })}
-                      defaultValue={data.bankDetails?.bic || ""}
-                      placeholder="BNPAFRPPXXX"
-                      disabled={!canEdit}
-                      className={`h-10 rounded-lg text-sm w-full ${
-                        errors?.bankDetails?.bic ? 'border-red-500' : ''
-                      }`}
-                    />
-                    {errors?.bankDetails?.bic && (
-                      <p className="text-xs text-red-500">
-                        {errors.bankDetails.bic.message}
-                      </p>
-                    )}
-                  </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">BIC/SWIFT</Label>
+                  <p className="font-mono text-sm">{data.companyInfo.bankDetails.bic}</p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="bank-name" className="text-sm font-medium">
-                  Nom de la banque
-                </Label>
-                <div className="space-y-1">
-                  <Input
-                    id="bank-name"
-                    {...register("bankDetails.bankName", {
-                      required: data.showBankDetails ? "Le nom de la banque est requis lorsque les coordonnées bancaires sont affichées" : false,
-                      maxLength: {
-                        value: 100,
-                        message: "Le nom de la banque ne doit pas dépasser 100 caractères"
-                      }
-                    })}
-                    defaultValue={data.bankDetails?.bankName || ""}
-                    placeholder="BNP Paribas"
-                    disabled={!canEdit}
-                    className={`h-10 rounded-lg text-sm w-full ${
-                      errors?.bankDetails?.bankName ? 'border-red-500' : ''
-                    }`}
-                  />
-                  {errors?.bankDetails?.bankName && (
-                    <p className="text-xs text-red-500">
-                      {errors.bankDetails.bankName.message}
-                    </p>
-                  )}
-                </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Nom de la banque</Label>
+                <p className="text-sm">{data.companyInfo.bankDetails.bankName}</p>
               </div>
             </div>
           )}
