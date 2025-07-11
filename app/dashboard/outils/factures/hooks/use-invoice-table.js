@@ -69,12 +69,8 @@ export function useInvoiceTable({ data = [], onRefetch }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   
-  // Memoize deleteInvoice to prevent recreation
-  const { mutate: deleteInvoice } = useDeleteInvoice({
-    onSettled: () => {
-      onRefetch?.();
-    }
-  });
+  // Hook pour la suppression de factures
+  const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
 
   // Define columns
   const columns = useMemo(
@@ -432,18 +428,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       const batch = draftInvoices.slice(i, i + BATCH_SIZE);
       try {
         await Promise.all(
-          batch.map(invoice => 
-            deleteInvoice({ 
-              variables: { id: invoice.id },
-              // Optimistic update
-              optimisticResponse: {
-                deleteInvoice: { id: invoice.id, __typename: 'Invoice' }
-              },
-              update: (cache) => {
-                cache.evict({ id: `Invoice:${invoice.id}` });
-              }
-            })
-          )
+          batch.map(invoice => deleteInvoice(invoice.id))
         );
       } catch (error) {
         console.error("Error deleting batch:", error);
@@ -453,6 +438,11 @@ export function useInvoiceTable({ data = [], onRefetch }) {
     
     toast.success(`${draftInvoices.length} facture(s) supprimée(s)`);
     table.resetRowSelection();
+    
+    // Actualiser la liste des factures
+    if (onRefetch) {
+      onRefetch();
+    }
   };
 
   return {
@@ -463,5 +453,6 @@ export function useInvoiceTable({ data = [], onRefetch }) {
     setStatusFilter,
     selectedRows,
     handleDeleteSelected,
+    isDeleting,
   };
 }

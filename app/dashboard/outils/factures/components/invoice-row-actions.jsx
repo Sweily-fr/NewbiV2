@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
-import { useMarkInvoiceAsPaid, useChangeInvoiceStatus, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
+import { useMarkInvoiceAsPaid, useChangeInvoiceStatus, useDeleteInvoice, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
 import { toast } from "sonner";
 import InvoiceSidebar from "./invoice-sidebar";
 
@@ -21,6 +21,7 @@ export default function InvoiceRowActions({ row, onRefetch }) {
   const invoice = row.original;
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
+  const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
 
   const handleView = () => {
     setIsSidebarOpen(true);
@@ -31,8 +32,13 @@ export default function InvoiceRowActions({ row, onRefetch }) {
   };
 
   const handleDelete = async () => {
-    // Implémenter la suppression si nécessaire
-    console.log("Supprimer la facture", invoice.id);
+    try {
+      await deleteInvoice(invoice.id);
+      toast.success('Facture supprimée avec succès');
+      if (onRefetch) onRefetch();
+    } catch (error) {
+      toast.error('Erreur lors de la suppression de la facture');
+    }
   };
 
   const handleCreateInvoice = async () => {
@@ -66,7 +72,7 @@ export default function InvoiceRowActions({ row, onRefetch }) {
     }
   };
 
-  const isLoading = markingAsPaid || changingStatus;
+  const isLoading = markingAsPaid || changingStatus || isDeleting;
 
   return (
     <>
@@ -95,7 +101,6 @@ export default function InvoiceRowActions({ row, onRefetch }) {
               <DropdownMenuSeparator />
             )}
             
-            {/* Actions selon le statut */}
             {invoice.status === INVOICE_STATUS.DRAFT && (
               <DropdownMenuItem 
                 onClick={handleCreateInvoice}
