@@ -1,40 +1,63 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ArrowRightIcon } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import HeroAnimation from "./hero-animation";
 
 export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="h-[98vh] flex flex-col justify-center bg-gradient-to-t from-[#fce8e6] via-[#f8f9fc] to-[#f0f4ff] rounded-[15px] md:rounded-[18px] lg:rounded-[18px] shadow-xs mx-2 mt-2">
-          <HeroAnimation />
-          <div className="flex justify-center mt-20 gap-4">
-            <div className="bg-[#fff]/1 rounded-[10px] border p-0.5">
-              <Button
-                asChild
-                size="lg"
-                variant="default"
-                className="px-5 text-sm cursor-pointer"
-              >
-                <a href="/auth/login" className="text-nowrap">
-                  Commencez gratuitement
-                </a>
-              </Button>
+        <section className="h-[120vh] flex flex-col bg-[#f0f4ff] rounded-[15px] md:rounded-[18px] lg:rounded-[18px] shadow-xs mx-2 mt-2 pt-50">
+          <div className="flex-1 flex flex-col items-center justify-center relative w-full px-4 md:px-8">
+            <div className="flex flex-col items-center justify-center z-10 gap-6 max-w-4xl text-center">
+              <h1 className="max-w-4xl text-center mx-auto text-balance font-medium font-Poppins text-2@xl md:text-7xl xl:text-[2.7rem] font-['Poppins'] leading-tight">
+                L’outil de <span className="text-[#5B4FFF]">facturation</span>{" "}
+                qui génère vraiment des{" "}
+                <span className="text-[#5B4FFF]">paiements</span>
+              </h1>
+              <span className="text-[#2E2E2E] max-w-xl text-center block">
+                Automatisez, relancez et encaissez plus vite : simplifiez votre
+                gestion, boostez votre trésorerie.
+              </span>
+              <div className="flex justify-center gap-4 mt-2">
+                <div className="bg-[#fff]/1 rounded-[10px] border p-0.5">
+                  <Button size="lg" variant="default" className="group">
+                    <>
+                      <a href="/auth/login" className="text-nowrap">
+                        Essayer
+                      </a>
+                      <ArrowRightIcon
+                        className="-me-1 opacity-60 transition-transform group-hover:translate-x-0.5"
+                        size={16}
+                        aria-hidden="true"
+                      />
+                    </>
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div className="bg-[#fff]/1 rounded-[10px] border p-0.5">
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="px-5 text-sm cursor-pointer"
-              >
-                <a href="#pricing" className="text-nowrap">
-                  Tarifs
-                </a>
-              </Button>
+          </div>
+          <div className="relative -mr-56 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
+            <div
+              aria-hidden
+              className="bg-gradient-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
+            />
+            <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
+              <img
+                className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
+                src="https://tailark.com//_next/image?url=%2Fmail2.png&w=3840&q=75"
+                alt="app screen"
+                width="2700"
+                height="1440"
+              />
+              <img
+                className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
+                src="https://tailark.com/_next/image?url=%2Fmail2-light.png&w=3840&q=75"
+                alt="app screen"
+                width="2700"
+                height="1440"
+              />
             </div>
           </div>
         </section>

@@ -1,140 +1,34 @@
 import React from "react";
-import { Button } from "@/src/components/ui/button";
 import HeroHeader from "@/src/components/blocks/hero-header";
 import { Footer7 } from "@/src/components/footer7";
-import { AuroraText } from "@/src/components/magicui/aurora-text";
-import Link from "next/link";
-import { LogoMarquee } from "@/src/components/ui/logo-marquee";
-import { AnimatedGroup } from "@/src/components/ui/animated-group";
-import Image from "next/image";
-import {
-  BellIcon,
-  CalendarIcon,
-  FileTextIcon,
-  GlobeIcon,
-  InputIcon,
-} from "@radix-ui/react-icons";
-import { Sparkles } from "lucide-react";
-import DisplayCards from "@/src/components/ui/display-cards";
-
-import { BentoCard, BentoGrid } from "@/src/components/ui/bento-grid";
-
-const defaultCards = [
-  {
-    icon: <Sparkles className="size-4 text-blue-300" />,
-    title: "Featured",
-    description: "Discover amazing content",
-    date: "Just now",
-    iconClassName: "text-blue-500",
-    titleClassName: "text-blue-500",
-    className:
-      "[grid-area:stack] hover:-translate-y-10 before:absolute before:w-[100%] before:outline-1 before:rounded-xl before:outline-border before:h-[100%] before:content-[''] before:bg-blend-overlay before:bg-background/50 grayscale-[100%] hover:before:opacity-0 before:transition-opacity before:duration-700 hover:grayscale-0 before:left-0 before:top-0",
-  },
-  {
-    icon: <Sparkles className="size-4 text-blue-300" />,
-    title: "Popular",
-    description: "Trending this week",
-    date: "2 days ago",
-    iconClassName: "text-blue-500",
-    titleClassName: "text-blue-500",
-    className:
-      "[grid-area:stack] translate-x-12 translate-y-10 hover:-translate-y-1 before:absolute before:w-[100%] before:outline-1 before:rounded-xl before:outline-border before:h-[100%] before:content-[''] before:bg-blend-overlay before:bg-background/50 grayscale-[100%] hover:before:opacity-0 before:transition-opacity before:duration-700 hover:grayscale-0 before:left-0 before:top-0",
-  },
-  {
-    icon: <Sparkles className="size-4 text-blue-300" />,
-    title: "New",
-    description: "Latest updates and features",
-    date: "Today",
-    iconClassName: "text-blue-500",
-    titleClassName: "text-blue-500",
-    className:
-      "[grid-area:stack] translate-x-24 translate-y-20 hover:translate-y-10",
-  },
-];
-
-const features = [
-  {
-    Icon: FileTextIcon,
-    name: "Création ultra-rapide et sur-mesure",
-    description:
-      "Élaborez des factures personnalisées en quelques clics, adaptées à votre image et à chaque client.",
-    href: "/",
-    cta: "En savoir plus",
-    background: <img className="absolute -right-20 -top-20 opacity-60" />,
-    className: "lg:row-start-1 lg:row-end-4 lg:col-start-2 lg:col-end-3",
-  },
-  {
-    Icon: InputIcon,
-    name: "Envois automatisés",
-    description:
-      "Expédiez vos factures directement par email, sans effort, dès qu’elles sont prêtes.",
-    href: "/",
-    cta: "En savoir plus",
-    background: <img className="absolute -right-20 -top-20 opacity-60" />,
-    className: "lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3",
-  },
-  {
-    Icon: GlobeIcon,
-    name: "Suivi des statuts en temps réel",
-    description:
-      "Sachez à tout moment si vos factures ont été envoyées, consultées, payées ou sont en attente.",
-    href: "/",
-    cta: "En savoir plus",
-    background: <img className="absolute -right-20 -top-20 opacity-60" />,
-    className: "lg:col-start-1 lg:col-end-2 lg:row-start-3 lg:row-end-4",
-  },
-  {
-    Icon: CalendarIcon,
-    name: "Relances automatiques",
-    description:
-      "Programmez des rappels pour vos clients. Notre outil envoie automatiquement des relances en cas de retard de paiement.",
-    href: "/",
-    cta: "En savoir plus",
-    background: <img className="absolute -right-20 -top-20 opacity-60" />,
-    className: "lg:col-start-3 lg:col-end-3 lg:row-start-1 lg:row-end-2",
-  },
-  {
-    Icon: BellIcon,
-    name: "Notifications",
-    description:
-      "Get notified when someone shares a file or mentions you in a comment.",
-    href: "/",
-    cta: "En savoir plus",
-    background: <img className="absolute -right-20 -top-20 opacity-60" />,
-    className: "lg:col-start-3 lg:col-end-3 lg:row-start-2 lg:row-end-4",
-  },
-];
-
-const transitionVariants = {
-  item: {
-    hidden: {
-      opacity: 0,
-      filter: "blur(12px)",
-      y: 12,
-    },
-    visible: {
-      opacity: 1,
-      filter: "blur(0px)",
-      y: 0,
-      transition: {
-        type: "spring",
-        bounce: 0.3,
-        duration: 1.5,
-      },
-    },
-  },
-};
+import { HeroSection } from "./section/hero-section";
+import SectionAvantages from "./section/section-avantages";
+import { Poppins } from "next/font/google";
+import WorkflowIntegration from "./section/workflow-integration";
+import FAQ from "./section/faq";
+import TestimonialsSection from "./section/testimonial";
+// Configuration de Poppins uniquement pour les landing pages
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-poppins",
+  display: "swap",
+});
 
 export default function FacturesPage() {
   return (
-    <>
+    <div className={`${poppins.variable} font-poppins`}>
       <HeroHeader />
-      <main className="pt-20">
+      <main>
         {/* Hero Section */}
-        <section className="min-h-screen py-20 flex flex-col justify-between">
+        <HeroSection />
+        <SectionAvantages />
+        <WorkflowIntegration />
+        <TestimonialsSection />
+        <FAQ />
+        {/* <section className="min-h-screen py-20 flex flex-col justify-between">
           <div className="mx-auto max-w-6xl px-6 lg:px-12">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Left Column - Text Content */}
               <div className="space-y-8">
                 <h1 className="mt-8 max-w-8xl mx-auto text-balance font-semibold text-6xl md:text-7xl lg:mt-16 xl:text-[3.5rem]">
                   Des{" "}
@@ -166,7 +60,6 @@ export default function FacturesPage() {
             </div>
           </div>
 
-          {/* Logo Marquee - Positioned at bottom of screen */}
           <div className="mt-auto pt-16">
             <div className="mx-auto max-w-6xl px-6 lg:px-12">
               <div className="flex flex-col items-center justify-center">
@@ -266,8 +159,8 @@ export default function FacturesPage() {
               </div>
             </div>
           </div>
-        </section>
-        <section>
+        </section> */}
+        {/* <section>
           <AnimatedGroup
             variants={{
               container: {
@@ -348,7 +241,6 @@ export default function FacturesPage() {
           </div>
         </section>
 
-        {/* Transition courbe parabolique vers section blanche */}
         <div className="bg-[#5B4FFF]">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -363,7 +255,6 @@ export default function FacturesPage() {
           </svg>
         </div>
 
-        {/* Section blanche avec contenu */}
         <section className="bg-white py-10">
           <div className="mx-auto max-w-6xl px-6 lg:px-12">
             <div className="flex flex-col items-center justify-center text-center space-y-8">
@@ -391,7 +282,6 @@ export default function FacturesPage() {
           </div>
         </section>
 
-        {/* Section CTA avec fond sombre */}
         <section className="bg-[#222026] py-20 mx-20 rounded-2xl">
           <div className="mx-auto max-w-6xl px-6 lg:px-12">
             <div className="flex items-center justify-center text-center space-y-8">
@@ -420,9 +310,9 @@ export default function FacturesPage() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
       </main>
       <Footer7 />
-    </>
+    </div>
   );
 }

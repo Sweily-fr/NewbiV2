@@ -5,6 +5,7 @@ import BusinessAgility from "./section/business-agility";
 import TestimonialsSection from "./section/testimonial";
 import Freelance from "./section/freelance";
 import PricingSection from "./section/pricing-section";
+import FAQ from "./section/faq";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
       <Freelance />
       <TestimonialsSection />
       <PricingSection />
+      <FAQ />
     </div>
   );
 }

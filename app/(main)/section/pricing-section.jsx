@@ -11,7 +11,7 @@ import {
 export default function PricingSection() {
   const [billingCycle, setBillingCycle] = useState("monthly");
   return (
-    <section className="py-16">
+    <section className="py-16" id="pricing">
       <div className="text-center mb-12">
         <h2 className="text-2xl sm:text-4xl font-medium text-gray-900 mb-4">
           Prix adaptés à tous
