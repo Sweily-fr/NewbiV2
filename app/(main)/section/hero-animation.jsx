@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Button } from "@/src/components/ui/button";
 import MySVG from "./hero-svg";
 
 const HeroAnimation = () => {
@@ -67,17 +66,23 @@ const HeroAnimation = () => {
 
   return (
     <div className="hidden md:block relative w-full">
-      <div className="absolute inset-0 flex flex-col items-center justify-center mb-7 z-10">
+      <div className="absolute inset-0 flex flex-col items-center justify-center mt-6 z-10">
         <h1 className="max-w-8xl text-center mx-auto text-balance font-medium text-6xl md:text-7xl xl:text-[3.2rem] font-['Poppins'] leading-tight">
           <span className="text-[#2E2E2E] block">Les outils SaaS</span>
           <span className="text-[#2E2E2E] block">pour créer votre</span>
-          <span className="bg-gradient-to-r from-[#5B4FFF]/90 to-[#7A70FF]/90 px-4 text-white rounded-lg inline-block my-4">
+          {/* <span className="bg-gradient-to-r from-[#5B4FFF]/90 to-[#7A70FF]/90 px-4 text-white rounded-lg inline-block my-4">
+            business parfait
+          </span> */}
+          <span className="bg-gradient-to-r from-[#171717] to-[#171717]/90 px-4 text-white rounded-lg inline-block my-4">
             business parfait
           </span>
           <span className="text-[#2E2E2E] block">
-            en un <span className="text-[#5B4FFF]/80 font-semibold">CLIC</span>
+            en un <span className="text-[#2E2E2E] font-semibold">CLIC</span>
           </span>
         </h1>
+        <span className="text-[#2E2E2E] block mt-6">
+          Créez votre business parfait en quelques clics
+        </span>
         {/* <div
           key={1}
           className="bg-[#5B4FFF]/20 rounded-[10px] border p-0.5 mt-20"

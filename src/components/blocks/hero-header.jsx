@@ -25,7 +25,7 @@ const menuItems = [
         name: "Factures simplifiées",
         description: "Automatisez et suivez facilement votre facturation.",
         icon: <IconFileInvoice size={20} />,
-        bgColor: "bg-[#5B4FFF]",
+        bgColor: "bg-[#5B4FFF]/90",
         textColor: "text-white",
         href: "/produits/factures",
       },
@@ -33,7 +33,7 @@ const menuItems = [
         name: "Devis en un clic",
         description: "Créez, envoyez et validez vos devis en toute simplicité.",
         icon: <IconFileDescription size={20} />,
-        bgColor: "bg-[#f43f5e]",
+        bgColor: "bg-[#FEB865]/90",
         textColor: "text-white",
         href: "/produits/devis",
       },
@@ -42,7 +42,7 @@ const menuItems = [
         description:
           "Faites signer vos documents en ligne en quelques secondes.",
         icon: <IconMailForward size={20} />,
-        bgColor: "bg-[#38bdf8]",
+        bgColor: "bg-[#FF4D4D]/90",
         textColor: "text-white",
         href: "/produits/signatures",
       },
@@ -50,7 +50,7 @@ const menuItems = [
         name: "Tableaux Kanban",
         description: "Organisez vos projets et suivez vos tâches visuellement.",
         icon: <IconLayoutKanban size={20} />,
-        bgColor: "bg-[#5B4FFF]",
+        bgColor: "bg-[#4D5F78]/90",
         textColor: "text-white",
         href: "/produits/kanban",
       },
@@ -58,7 +58,7 @@ const menuItems = [
         name: "Transferts sécurisés",
         description: "Envoyez et recevez vos fichiers en toute sécurité.",
         icon: <IconTransfer size={20} />,
-        bgColor: "bg-[#5B4FFF]",
+        bgColor: "bg-[#37A1D6]/90",
         textColor: "text-white",
         href: "/produits/transfers",
       },
@@ -186,7 +186,7 @@ const HeroHeader = ({ className }) => {
                                   {dropdownItem.icon}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h3 className="font-semibold text-gray-900 text-sm mb-1">
+                                  <h3 className="text-[#171717] text-sm mb-1">
                                     {dropdownItem.name}
                                   </h3>
                                   <p className="text-xs text-gray-500 leading-relaxed">
