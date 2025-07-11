@@ -8,6 +8,7 @@ export const INVOICE_FRAGMENT = gql`
     number
     prefix
     purchaseOrderNumber
+    isDeposit
     status
     issueDate
     executionDate
@@ -172,8 +173,8 @@ export const GET_INVOICE_STATS = gql`
 `;
 
 export const GET_NEXT_INVOICE_NUMBER = gql`
-  query GetNextInvoiceNumber($prefix: String) {
-    nextInvoiceNumber(prefix: $prefix)
+  query GetNextInvoiceNumber($prefix: String, $isDraft: Boolean) {
+    nextInvoiceNumber(prefix: $prefix, isDraft: $isDraft)
   }
 `;
 
@@ -371,10 +372,15 @@ export const useInvoiceStats = () => {
 };
 
 // Hook pour récupérer le prochain numéro de facture
-export const useNextInvoiceNumber = (prefix) => {
+export const useNextInvoiceNumber = (prefix, options = {}) => {
+  const { isDraft = false, skip = false } = options;
+  
   return useQuery(GET_NEXT_INVOICE_NUMBER, {
-    variables: { prefix },
-    skip: !prefix,
+    variables: { 
+      prefix,
+      isDraft
+    },
+    skip: skip,
     errorPolicy: 'all'
   });
 };
