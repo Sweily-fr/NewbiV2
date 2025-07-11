@@ -439,7 +439,7 @@ export default function EnhancedInvoiceForm({
                   disabled={!isStep1Valid() || !canEdit}
                   className="px-6"
                 >
-                  Étape suivante
+                  Suivant
                 </Button>
               )}
               
@@ -450,7 +450,7 @@ export default function EnhancedInvoiceForm({
                     onClick={handlePreviousStep}
                     disabled={!canEdit}
                   >
-                    Étape précédente
+                    Précédent
                   </Button>
                   <Button
                     onClick={handleCreateInvoice}
