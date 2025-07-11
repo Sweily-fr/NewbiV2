@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useId } from "react";
-import { Search, User, Plus, Building, Mail, Phone, Loader2, ChevronDown, X, CheckIcon } from "lucide-react";
+import { Search, User, Plus, Building, Mail, Phone, Loader2, ChevronDown, X, CheckIcon, ExternalLink } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
@@ -34,6 +34,9 @@ import {
   CLIENT_TYPE_LABELS
 } from '@/src/graphql/clientQueries';
 
+// Import API Gouv utilities
+import { searchCompanies, convertCompanyToClient } from '@/src/utils/api-gouv';
+
 export default function ClientSelector({ 
   onSelect, 
   selectedClient,
@@ -47,6 +50,13 @@ export default function ClientSelector({
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState("");
+  
+  // États pour l'API Gouv Data
+  const [companyQuery, setCompanyQuery] = useState("");
+  const [debouncedCompanyQuery, setDebouncedCompanyQuery] = useState("");
+  const [companies, setCompanies] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
   const defaultAddress = {
     street: "",
     postalCode: "",
@@ -93,6 +103,39 @@ export default function ClientSelector({
 
     return () => clearTimeout(timer);
   }, [query]);
+
+  // Debounce company search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCompanyQuery(companyQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [companyQuery]);
+
+  // Recherche d'entreprises via API Gouv Data
+  useEffect(() => {
+    if (!debouncedCompanyQuery || debouncedCompanyQuery.length < 2) {
+      setCompanies([]);
+      return;
+    }
+
+    const searchApiGouv = async () => {
+      setLoadingCompanies(true);
+      try {
+        const results = await searchCompanies(debouncedCompanyQuery, 8);
+        setCompanies(results);
+      } catch (error) {
+        console.error('Erreur recherche API Gouv:', error);
+        toast.error('Erreur lors de la recherche d\'entreprises');
+        setCompanies([]);
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+
+    searchApiGouv();
+  }, [debouncedCompanyQuery]);
 
   // Use GraphQL hooks
   const { clients, loading } = useClients({
@@ -310,16 +353,68 @@ export default function ClientSelector({
   };
 
   const handleSwitchToNewClient = () => {
+    console.log('🔄 ClientSelector - Basculement vers nouveau client');
     setActiveTab("new");
-    // Pré-remplir le nom avec le terme de recherche
-    if (query.trim()) {
-      setNewClientForm(prev => ({
-        ...prev,
-        name: query.trim()
-      }));
-    }
+    setOpen(false);
     setQuery("");
-    setOpen(false); // Fermer le popover
+    setSelectedValue("");
+    setShowManualForm(false); // Masquer le formulaire manuel par défaut
+    setCompanyQuery(""); // Reset de la recherche entreprise
+    setCompanies([]);
+    
+    // Focus sur le champ de recherche d'entreprise
+    setTimeout(() => {
+      const searchInput = document.querySelector('#company-search');
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }, 100);
+  };
+
+  // Fonction pour sélectionner une entreprise de l'API Gouv
+  const handleCompanySelect = (company) => {
+    console.log('🏢 Sélection entreprise API Gouv:', company);
+    
+    try {
+      // Convertir l'entreprise en format client
+      const clientData = convertCompanyToClient(company);
+      
+      // Remplir le formulaire avec les données de l'entreprise
+      setNewClientForm(clientData);
+      
+      // Afficher le formulaire manuel pré-rempli
+      setShowManualForm(true);
+      
+      // Notification de succès
+      toast.success(`Entreprise "${company.name}" importée avec succès`);
+      
+      // Focus sur le champ email (à compléter manuellement)
+      setTimeout(() => {
+        const emailInput = document.querySelector('#client-email');
+        if (emailInput) {
+          emailInput.focus();
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'import de l\'entreprise:', error);
+      toast.error('Erreur lors de l\'import de l\'entreprise');
+    }
+  };
+
+  // Fonction pour afficher le formulaire manuel
+  const handleShowManualForm = () => {
+    setShowManualForm(true);
+    setCompanyQuery("");
+    setCompanies([]);
+    
+    // Focus sur le premier champ du formulaire
+    setTimeout(() => {
+      const firstInput = document.querySelector('#client-type');
+      if (firstInput) {
+        firstInput.focus();
+      }
+    }, 100);
   };
 
   return (
@@ -483,7 +578,110 @@ export default function ClientSelector({
               </TabsContent>
               
               <TabsContent value="new" className="m-0">
-                <form onSubmit={handleNewClientSubmit} className="space-y-6">
+                {!showManualForm ? (
+                  // Interface de recherche d'entreprises API Gouv Data
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="company-search" className="text-sm font-medium flex items-center gap-2">
+                          <Building className="h-4 w-4" />
+                          Rechercher une entreprise
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="company-search"
+                            value={companyQuery}
+                            onChange={(e) => setCompanyQuery(e.target.value)}
+                            placeholder="Nom d'entreprise, SIRET, SIREN..."
+                            className="h-10 rounded-lg text-sm w-full pl-10"
+                            disabled={disabled}
+                          />
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Recherchez une entreprise française via la base de données officielle
+                        </p>
+                      </div>
+
+                      {/* Résultats de recherche */}
+                      {loadingCompanies && (
+                        <div className="flex items-center justify-center p-8">
+                          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                          <span className="text-sm">Recherche en cours...</span>
+                        </div>
+                      )}
+
+                      {companies.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Entreprises trouvées</Label>
+                          <div className="space-y-2 max-h-80 overflow-y-auto">
+                            {companies.map((company) => (
+                              <div
+                                key={company.id}
+                                className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                                onClick={() => handleCompanySelect(company)}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Building className="h-4 w-4 text-primary flex-shrink-0" />
+                                      <h4 className="font-medium text-sm truncate">{company.name}</h4>
+                                      {company.status === 'A' && (
+                                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                          Active
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-muted-foreground">
+                                        <strong>SIRET:</strong> {company.siret}
+                                      </p>
+                                      {company.address && (
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          <strong>Adresse:</strong> {company.address}, {company.postalCode} {company.city}
+                                        </p>
+                                      )}
+                                      {company.activityLabel && (
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          <strong>Activité:</strong> {company.activityLabel}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {companyQuery && !loadingCompanies && companies.length === 0 && (
+                        <div className="text-center p-8 text-muted-foreground">
+                          <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Aucune entreprise trouvée pour "{companyQuery}"</p>
+                          <p className="text-xs mt-1">Essayez avec un nom d'entreprise ou un SIRET</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bouton pour créer manuellement */}
+                    <div className="pt-4 border-t">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleShowManualForm}
+                        className="w-full h-10 text-sm"
+                        disabled={disabled}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Créer un client manuellement
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // Formulaire manuel (affiché après sélection d'entreprise ou clic sur "Créer manuellement")
+                  <form onSubmit={handleNewClientSubmit} className="space-y-6">
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <Label htmlFor="client-type" className="text-sm font-medium">
@@ -506,18 +704,55 @@ export default function ClientSelector({
                     </div>
 
                     {newClientForm.type === 'COMPANY' ? (
-                      <div className="space-y-2">
-                        <Label htmlFor="client-name" className="text-sm font-medium">
-                          Nom de l'entreprise
-                        </Label>
+                      <div className="space-y-4">
+                        {/* Bouton pour rechercher une entreprise */}
+                        <div className="flex justify-center">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setShowManualForm(false);
+                              setCompanyQuery('');
+                              setCompanies([]);
+                              // Focus sur le champ de recherche après un court délai
+                              setTimeout(() => {
+                                const searchInput = document.getElementById('company-search');
+                                if (searchInput) {
+                                  searchInput.focus();
+                                }
+                              }, 100);
+                            }}
+                            className="h-10 text-sm"
+                            disabled={disabled}
+                          >
+                            <Search className="h-4 w-4 mr-2" />
+                            Rechercher une entreprise
+                          </Button>
+                        </div>
+                        
+                        {/* Séparateur */}
                         <div className="relative">
-                          <Input
-                            id="client-name"
-                            value={newClientForm.name}
-                            onChange={(e) => setNewClientForm(prev => ({ ...prev, name: e.target.value }))}
-                            placeholder="Nom de l'entreprise"
-                            className="h-10 rounded-lg text-sm w-full"
-                          />
+                          <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                          </div>
+                          <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">ou saisir manuellement</span>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="client-name" className="text-sm font-medium">
+                            Nom de l'entreprise
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="client-name"
+                              value={newClientForm.name}
+                              onChange={(e) => setNewClientForm(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="Nom de l'entreprise"
+                              className="h-10 rounded-lg text-sm w-full"
+                            />
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -903,6 +1138,7 @@ export default function ClientSelector({
                     </Button>
                   </div>
                 </form>
+                )}
               </TabsContent>
             </CardContent>
           </Tabs>
