@@ -363,7 +363,7 @@ export default function InvoiceInfoSection({ canEdit }) {
                     mode="single"
                     selected={data.executionDate ? new Date(data.executionDate) : undefined}
                     onSelect={(date) => {
-                      setValue("executionDate", date?.toISOString().split('T')[0], { shouldDirty: true, shouldValidate: true });
+                      setValue("executionDate", format(date, 'yyyy-MM-dd'), { shouldDirty: true, shouldValidate: true });
                     }}
                     initialFocus
                     locale={fr}
@@ -420,7 +420,7 @@ export default function InvoiceInfoSection({ canEdit }) {
                     mode="single"
                     selected={data.dueDate ? new Date(data.dueDate) : undefined}
                     onSelect={(date) => {
-                      const dateStr = date?.toISOString().split('T')[0];
+                      const dateStr = format(date, 'yyyy-MM-dd');
                       setValue("dueDate", dateStr, { shouldDirty: true, shouldValidate: true });
                     }}
                     initialFocus
