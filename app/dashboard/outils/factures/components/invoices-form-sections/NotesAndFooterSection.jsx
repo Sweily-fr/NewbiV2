@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
+import { useEffect } from "react";
 import { Tag, Download, Settings, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
@@ -31,6 +32,28 @@ const validateBIC = (value) => {
 export default function NotesAndFooterSection({ canEdit }) {
   const { watch, setValue, register, formState: { errors } } = useFormContext();
   const data = watch();
+  
+  // Import automatique des coordonnées bancaires lors du chargement initial
+  useEffect(() => {
+    // Si showBankDetails est true et qu'il n'y a pas encore de données dans bankDetails
+    // mais qu'il y a des données dans companyInfo.bankDetails (facture existante) ou userBankDetails (utilisateur actuel), les importer
+    if (data.showBankDetails && 
+        (!data.bankDetails?.iban && !data.bankDetails?.bic && !data.bankDetails?.bankName)) {
+      
+      // Priorité aux données de la facture existante, sinon utiliser celles de l'utilisateur actuel
+      const sourceData = (data.companyInfo?.bankDetails && 
+                         (data.companyInfo.bankDetails.iban || data.companyInfo.bankDetails.bic || data.companyInfo.bankDetails.bankName)) 
+                        ? data.companyInfo.bankDetails 
+                        : data.userBankDetails;
+      
+      if (sourceData && (sourceData.iban || sourceData.bic || sourceData.bankName)) {
+        console.log('🏦 Import automatique des coordonnées bancaires lors du chargement:', sourceData);
+        setValue("bankDetails.iban", sourceData.iban || "", { shouldDirty: true });
+        setValue("bankDetails.bic", sourceData.bic || "", { shouldDirty: true });
+        setValue("bankDetails.bankName", sourceData.bankName || "", { shouldDirty: true });
+      }
+    }
+  }, [data.showBankDetails, data.companyInfo?.bankDetails, data.userBankDetails, data.bankDetails, setValue]);
   return (
     <Card className="shadow-none border-none p-2 bg-transparent">
       <CardHeader className="p-0">
@@ -138,10 +161,19 @@ export default function NotesAndFooterSection({ canEdit }) {
                 setValue("showBankDetails", checked, { shouldDirty: true });
                 
                 // Import automatique des coordonnées bancaires lors du check
-                if (checked && data.companyInfo?.bankDetails) {
-                  setValue("bankDetails.iban", data.companyInfo.bankDetails.iban || "", { shouldDirty: true });
-                  setValue("bankDetails.bic", data.companyInfo.bankDetails.bic || "", { shouldDirty: true });
-                  setValue("bankDetails.bankName", data.companyInfo.bankDetails.bankName || "", { shouldDirty: true });
+                if (checked) {
+                  // Priorité aux données de la facture existante, sinon utiliser celles de l'utilisateur actuel
+                  const sourceData = (data.companyInfo?.bankDetails && 
+                                     (data.companyInfo.bankDetails.iban || data.companyInfo.bankDetails.bic || data.companyInfo.bankDetails.bankName)) 
+                                    ? data.companyInfo.bankDetails 
+                                    : data.userBankDetails;
+                  
+                  if (sourceData && (sourceData.iban || sourceData.bic || sourceData.bankName)) {
+                    console.log('🏦 Import manuel des coordonnées bancaires:', sourceData);
+                    setValue("bankDetails.iban", sourceData.iban || "", { shouldDirty: true });
+                    setValue("bankDetails.bic", sourceData.bic || "", { shouldDirty: true });
+                    setValue("bankDetails.bankName", sourceData.bankName || "", { shouldDirty: true });
+                  }
                 }
               }}
               disabled={!canEdit}
@@ -154,33 +186,16 @@ export default function NotesAndFooterSection({ canEdit }) {
             Cochez cette case pour afficher vos coordonnées bancaires sur la facture
           </p>
 
-          {/* Message informatif si aucune coordonnée bancaire configurée */}
-          {data.showBankDetails && !data.companyInfo?.bankDetails?.iban && (
-            <div className="ml-6">
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="flex items-center justify-between">
-                  <span>
-                    Aucune coordonnée bancaire configurée dans votre profil.
-                  </span>
-                  <Link href="/dashboard/parametres/profil" className="ml-2">
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Settings className="h-4 w-4" />
-                      Configurer
-                    </Button>
-                  </Link>
-                </AlertDescription>
-              </Alert>
-            </div>
-          )}
-
           {/* Affichage des coordonnées importées (lecture seule) */}
-          {data.showBankDetails && data.companyInfo?.bankDetails?.iban && (
-            <div className="ml-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-3">
+          {data.showBankDetails && (data.bankDetails?.iban || data.bankDetails?.bic || data.bankDetails?.bankName) && (
+            <div className="ml-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-green-700 dark:text-green-400">
-                  ✓ Coordonnées bancaires importées
-                </h4>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-green-500 rounded-full" />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Coordonnées bancaires configurées
+                  </span>
+                </div>
                 <Link href="/dashboard/parametres/profil">
                   <Button variant="outline" size="sm" className="gap-2">
                     <Settings className="h-4 w-4" />
@@ -189,19 +204,25 @@ export default function NotesAndFooterSection({ canEdit }) {
                 </Link>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <Label className="text-xs text-muted-foreground">IBAN</Label>
-                  <p className="font-mono text-sm">{data.companyInfo.bankDetails.iban}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">IBAN</Label>
+                  <div className="p-3 bg-muted/50 rounded-md border">
+                    <p className="font-mono text-sm">{data.bankDetails?.iban || 'Non renseigné'}</p>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">BIC/SWIFT</Label>
-                  <p className="font-mono text-sm">{data.companyInfo.bankDetails.bic}</p>
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">BIC/SWIFT</Label>
+                  <div className="p-3 bg-muted/50 rounded-md border">
+                    <p className="font-mono text-sm">{data.bankDetails?.bic || 'Non renseigné'}</p>
+                  </div>
                 </div>
               </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Nom de la banque</Label>
-                <p className="text-sm">{data.companyInfo.bankDetails.bankName}</p>
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Nom de la banque</Label>
+                <div className="p-3 bg-muted/50 rounded-md border">
+                  <p className="text-sm">{data.bankDetails?.bankName || 'Non renseigné'}</p>
+                </div>
               </div>
             </div>
           )}

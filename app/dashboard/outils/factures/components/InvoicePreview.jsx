@@ -43,7 +43,7 @@ export default function InvoicePreview({ data = {}, className = '', enablePDF = 
         ref={previewRef} 
         className="w-full max-w-4xl mx-auto bg-white text-black"
         style={{ 
-          padding: '40px', 
+          padding: '20px', 
           fontSize: '11px', 
           lineHeight: '1.4',
           fontFamily: 'Arial, sans-serif'

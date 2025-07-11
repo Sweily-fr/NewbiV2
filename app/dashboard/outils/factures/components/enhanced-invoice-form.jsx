@@ -355,8 +355,8 @@ export default function EnhancedInvoiceForm({
   return (
     <div className="flex flex-col h-full w-full">
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto pr-2 scrollbar-auto-hide">
-        <div className="space-y-6 pb-6">
+      <div className="flex-1 overflow-y-auto pr-2 scrollbar-auto-hide min-h-0">
+        <div className="space-y-6 pb-20">
         {/* Étape 1: Détails de la facture */}
         {currentStep === 1 && (
           <>

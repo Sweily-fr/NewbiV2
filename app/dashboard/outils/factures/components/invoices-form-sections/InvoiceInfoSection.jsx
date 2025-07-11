@@ -295,7 +295,17 @@ export default function InvoiceInfoSection({ canEdit }) {
               />
               <div className="relative">
                 <Input
-                  value={data.issueDate ? format(new Date(data.issueDate), "PPP", { locale: fr }) : ""}
+                  value={(() => {
+                    if (!data.issueDate) return "";
+                    try {
+                      const date = new Date(data.issueDate);
+                      if (isNaN(date.getTime())) return "";
+                      return format(date, "PPP", { locale: fr });
+                    } catch (error) {
+                      console.warn('Erreur de formatage de date:', data.issueDate, error);
+                      return "";
+                    }
+                  })()}
                   disabled={true}
                   className="h-10 rounded-lg px-3 text-sm bg-gray-50 cursor-not-allowed"
                   placeholder="Date automatique"
@@ -334,9 +344,16 @@ export default function InvoiceInfoSection({ canEdit }) {
                     type="button"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {data.executionDate ? (
-                      format(new Date(data.executionDate), "PPP", { locale: fr })
-                    ) : (
+                    {data.executionDate ? (() => {
+                      try {
+                        const date = new Date(data.executionDate);
+                        if (isNaN(date.getTime())) return <span>Date invalide</span>;
+                        return format(date, "PPP", { locale: fr });
+                      } catch (error) {
+                        console.warn('Erreur de formatage de date executionDate:', data.executionDate, error);
+                        return <span>Date invalide</span>;
+                      }
+                    })() : (
                       <span>Choisir une date</span>
                     )}
                   </Button>
@@ -384,9 +401,16 @@ export default function InvoiceInfoSection({ canEdit }) {
                     type="button"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {data.dueDate ? (
-                      format(new Date(data.dueDate), "PPP", { locale: fr })
-                    ) : (
+                    {data.dueDate ? (() => {
+                      try {
+                        const date = new Date(data.dueDate);
+                        if (isNaN(date.getTime())) return <span>Date invalide</span>;
+                        return format(date, "PPP", { locale: fr });
+                      } catch (error) {
+                        console.warn('Erreur de formatage de date dueDate:', data.dueDate, error);
+                        return <span>Date invalide</span>;
+                      }
+                    })() : (
                       <span>Choisir une date</span>
                     )}
                   </Button>

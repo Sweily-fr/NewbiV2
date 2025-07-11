@@ -43,11 +43,11 @@ export default function ModernInvoiceEditor({
   };
 
   return (
-    <div className="h-auto overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
         {/* Left Panel - Enhanced Form */}
-        <div className="p-6 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden rounded-b-lg">
-          <div className="max-w-2xl mx-auto flex flex-col w-full overflow-hidden">
+        <div className="p-6 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
+          <div className="max-w-2xl mx-auto flex flex-col w-full h-full overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between mb-6 pb-4 border-b">
               <div className="flex items-center gap-2">
