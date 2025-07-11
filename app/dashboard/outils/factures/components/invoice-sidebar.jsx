@@ -315,10 +315,6 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
               <Send className="h-4 w-4 mr-2" />
               Envoyer
             </Button>
-            <Button variant="ghost" size="sm" className="flex-1">
-              <Copy className="h-4 w-4 mr-2" />
-              Dupliquer
-            </Button>
           </div>
         </div>
       </div>
