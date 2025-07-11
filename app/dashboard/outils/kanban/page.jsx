@@ -121,7 +121,7 @@ export default function KanbanPage() {
                 <span>Nouveau tableau</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] p-6">
               <form onSubmit={handleCreateBoard}>
                 <DialogHeader>
                   <DialogTitle>Créer un nouveau tableau</DialogTitle>
