@@ -1,5 +1,6 @@
 "use client";
 
+import { useFormContext } from "react-hook-form";
 import { Calendar as CalendarIcon, Clock, Building } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -21,7 +22,25 @@ const PAYMENT_TERMS_SUGGESTIONS = [
   { value: 60, label: "60 jours" }
 ];
 
-export default function InvoiceInfoSection({ data, updateField, canEdit }) {
+export default function InvoiceInfoSection({ canEdit }) {
+  const { watch, setValue, register, formState: { errors } } = useFormContext();
+  const data = watch();
+  
+  // Fonction pour valider la date d'échéance
+  const validateDueDate = (value) => {
+    if (!value) return true; // Optionnel
+    const dueDate = new Date(value);
+    const issueDate = new Date(data.issueDate);
+    return dueDate >= issueDate || "La date d'échéance doit être postérieure à la date d'émission";
+  };
+  
+  // Fonction pour valider la date d'exécution
+  const validateExecutionDate = (value) => {
+    if (!value) return true; // Optionnel
+    const executionDate = new Date(value);
+    const issueDate = new Date(data.issueDate);
+    return executionDate >= issueDate || "La date d'exécution doit être postérieure ou égale à la date d'émission";
+  };
   return (
     <Card className="shadow-none p-2 border-none bg-transparent">
       <CardHeader className="p-0">
@@ -36,7 +55,7 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
           <Checkbox
             id="deposit-invoice"
             checked={data.isDepositInvoice || false}
-            onCheckedChange={(checked) => updateField("isDepositInvoice", checked)}
+            onCheckedChange={(checked) => setValue("isDepositInvoice", checked, { shouldDirty: true })}
             disabled={!canEdit}
             className="h-5 w-5 rounded-md border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           />
@@ -59,30 +78,59 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
             <Label htmlFor="invoice-prefix" className="text-sm font-medium">
               Préfixe de facture
             </Label>
-            <div className="relative">
+            <div className="space-y-1">
               <Input
                 id="invoice-prefix"
-                value={data.prefix || "F-"}
-                onChange={(e) => updateField("prefix", e.target.value)}
+                {...register("prefix", {
+                  maxLength: {
+                    value: 10,
+                    message: "Le préfixe ne doit pas dépasser 10 caractères"
+                  }
+                })}
+                defaultValue={data.prefix || "F-"}
                 placeholder="F-"
                 disabled={!canEdit}
-                className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className={`h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${
+                  errors?.prefix ? 'border-red-500' : ''
+                }`}
               />
+              {errors?.prefix && (
+                <p className="text-xs text-red-500">
+                  {errors.prefix.message}
+                </p>
+              )}
             </div>
           </div>
           <div className="md:col-span-2 space-y-2">
             <Label htmlFor="invoice-number" className="text-sm font-medium">
               Numéro de facture
             </Label>
-            <div className="relative">
+            <div className="space-y-1">
               <Input
                 id="invoice-number"
-                value={data.number || ""}
-                onChange={(e) => updateField("number", e.target.value)}
+                {...register("number", {
+                  required: "Le numéro de facture est requis",
+                  pattern: {
+                    value: /^[A-Za-z0-9-]+$/,
+                    message: "Format de numéro invalide (utilisez des lettres, chiffres et tirets)"
+                  },
+                  minLength: {
+                    value: 3,
+                    message: "Le numéro doit contenir au moins 3 caractères"
+                  }
+                })}
+                defaultValue={data.number || ""}
                 placeholder="202501-001"
                 disabled={!canEdit}
-                className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className={`h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${
+                  errors?.number ? 'border-red-500' : ''
+                }`}
               />
+              {errors?.number && (
+                <p className="text-xs text-red-500">
+                  {errors.number.message}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -96,7 +144,7 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
             <Input
               id="quote-reference"
               value={data.quoteReference || ""}
-              onChange={(e) => updateField("quoteReference", e.target.value)}
+              onChange={(e) => setValue("quoteReference", e.target.value, { shouldDirty: true })}
               placeholder="DEV-2025-001"
               disabled={!canEdit}
               className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
@@ -112,8 +160,22 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium">
-                Date d'émission
+                Date d'émission <span className="text-red-500">*</span>
               </Label>
+              <input
+                type="hidden"
+                {...register("issueDate", {
+                  required: "La date d'émission est requise",
+                  validate: {
+                    notInFuture: (value) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const selectedDate = new Date(value);
+                      return selectedDate <= today || "La date ne peut pas être dans le futur";
+                    }
+                  }
+                })}
+              />
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -121,8 +183,10 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
                     disabled={!canEdit}
                     className={cn(
                       "w-full justify-start text-left font-normal h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-                      !data.issueDate && "text-muted-foreground"
+                      !data.issueDate && "text-muted-foreground",
+                      errors?.issueDate && "border-red-500"
                     )}
+                    type="button"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {data.issueDate ? (
@@ -136,17 +200,30 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
                   <Calendar
                     mode="single"
                     selected={data.issueDate ? new Date(data.issueDate) : undefined}
-                    onSelect={(date) => updateField("issueDate", date?.toISOString().split('T')[0])}
+                    onSelect={(date) => {
+                      setValue("issueDate", date?.toISOString().split('T')[0], { shouldDirty: true, shouldValidate: true });
+                    }}
                     initialFocus
                     locale={fr}
                   />
                 </PopoverContent>
               </Popover>
+              {errors?.issueDate && (
+                <p className="text-xs text-red-500">
+                  {errors.issueDate.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium">
                 Date d'exécution
               </Label>
+              <input
+                type="hidden"
+                {...register("executionDate", {
+                  validate: validateExecutionDate
+                })}
+              />
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -154,8 +231,10 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
                     disabled={!canEdit}
                     className={cn(
                       "w-full justify-start text-left font-normal h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-                      !data.executionDate && "text-muted-foreground"
+                      !data.executionDate && "text-muted-foreground",
+                      errors?.executionDate && "border-red-500"
                     )}
+                    type="button"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {data.executionDate ? (
@@ -169,12 +248,19 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
                   <Calendar
                     mode="single"
                     selected={data.executionDate ? new Date(data.executionDate) : undefined}
-                    onSelect={(date) => updateField("executionDate", date?.toISOString().split('T')[0])}
+                    onSelect={(date) => {
+                      setValue("executionDate", date?.toISOString().split('T')[0], { shouldDirty: true, shouldValidate: true });
+                    }}
                     initialFocus
                     locale={fr}
                   />
                 </PopoverContent>
               </Popover>
+              {errors?.executionDate && (
+                <p className="text-xs text-red-500">
+                  {errors.executionDate.message}
+                </p>
+              )}
             </div>
           </div>
           <div className="space-y-2">
@@ -182,6 +268,12 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
               Date d'échéance
             </Label>
             <div className="grid grid-cols-2 gap-2 w-full">
+              <input
+                type="hidden"
+                {...register("dueDate", {
+                  validate: validateDueDate
+                })}
+              />
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -189,8 +281,10 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
                     disabled={!canEdit}
                     className={cn(
                       "w-full justify-start text-left font-normal h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-                      !data.dueDate && "text-muted-foreground"
+                      !data.dueDate && "text-muted-foreground",
+                      errors?.dueDate && "border-red-500"
                     )}
+                    type="button"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {data.dueDate ? (
@@ -204,7 +298,10 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
                   <Calendar
                     mode="single"
                     selected={data.dueDate ? new Date(data.dueDate) : undefined}
-                    onSelect={(date) => updateField("dueDate", date?.toISOString().split('T')[0])}
+                    onSelect={(date) => {
+                      const dateStr = date?.toISOString().split('T')[0];
+                      setValue("dueDate", dateStr, { shouldDirty: true, shouldValidate: true });
+                    }}
                     initialFocus
                     locale={fr}
                   />
@@ -216,7 +313,7 @@ export default function InvoiceInfoSection({ data, updateField, canEdit }) {
                   const issueDate = new Date(data.issueDate || new Date());
                   const dueDate = new Date(issueDate);
                   dueDate.setDate(dueDate.getDate() + days);
-                  updateField("dueDate", dueDate.toISOString().split('T')[0]);
+                  setValue("dueDate", dueDate.toISOString().split('T')[0], { shouldDirty: true });
                 }}
                 disabled={!canEdit}
               >

@@ -167,13 +167,20 @@ export function useInvoiceTable({ data = [], onRefetch }) {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="h-auto p-0 font-semibold"
           >
-            Date d'émission
+            Date d&apos;émission
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
         cell: ({ row }) => {
           const date = row.getValue("issueDate");
-          return date ? new Date(date).toLocaleDateString("fr-FR") : "-";
+          if (!date) return "-";
+          try {
+            const parsedDate = new Date(date);
+            if (isNaN(parsedDate.getTime())) return "-";
+            return parsedDate.toLocaleDateString("fr-FR");
+          } catch {
+            return "-";
+          }
         },
         size: 120,
       },
@@ -193,20 +200,26 @@ export function useInvoiceTable({ data = [], onRefetch }) {
           const date = row.getValue("dueDate");
           if (!date) return "-";
           
-          const dueDate = new Date(date);
-          const today = new Date();
-          const isOverdue = dueDate < today && row.original.status === "PENDING";
-          
-          return (
-            <div className={cn(
-              isOverdue && "text-destructive font-medium"
-            )}>
-              {dueDate.toLocaleDateString("fr-FR")}
-              {isOverdue && (
-                <div className="text-xs">En retard</div>
-              )}
-            </div>
-          );
+          try {
+            const dueDate = new Date(date);
+            if (isNaN(dueDate.getTime())) return "-";
+            
+            const today = new Date();
+            const isOverdue = dueDate < today && row.original.status === "PENDING";
+            
+            return (
+              <div className={cn(
+                isOverdue && "text-destructive font-medium"
+              )}>
+                {dueDate.toLocaleDateString("fr-FR")}
+                {isOverdue && (
+                  <div className="text-xs">En retard</div>
+                )}
+              </div>
+            );
+          } catch {
+            return "-";
+          }
         },
         size: 120,
       },
@@ -228,7 +241,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
         filterFn: statusFilterFn,
       },
       {
-        accessorKey: "totalAmount",
+        accessorKey: "finalTotalTTC",
         header: ({ column }) => (
           <Button
             variant="ghost"
@@ -240,15 +253,16 @@ export function useInvoiceTable({ data = [], onRefetch }) {
           </Button>
         ),
         cell: ({ row }) => {
-          const amount = row.getValue("totalAmount");
-          return amount ? (
+          const amount = row.getValue("finalTotalTTC");
+          if (!amount || isNaN(amount)) return "-";
+          return (
             <div className="font-medium">
               {new Intl.NumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
             </div>
-          ) : "-";
+          );
         },
         size: 120,
       },

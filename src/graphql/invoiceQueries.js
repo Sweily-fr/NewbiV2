@@ -95,8 +95,10 @@ export const INVOICE_FRAGMENT = gql`
     createdBy {
       id
       email
-      firstName
-      lastName
+      profile {
+        firstName
+        lastName
+      }
     }
   }
 `;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { FormProvider } from "react-hook-form";
 import { ArrowLeft, FileText, Send, Download, CreditCard } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -17,6 +18,7 @@ export default function ModernInvoiceEditor({
 }) {
   const router = useRouter();
   const {
+    form,
     formData,
     setFormData,
     loading,
@@ -82,16 +84,15 @@ export default function ModernInvoiceEditor({
 
             {/* Enhanced Form */}
             <div className="flex-1 overflow-y-auto p-2 -mr-2">
-              <EnhancedInvoiceForm
-                data={formData}
-                onChange={setFormData}
-                onSave={handleSave}
-                onSubmit={handleSubmit}
-                loading={loading}
-                saving={saving}
-                readOnly={isReadOnly}
-                errors={errors}
-              />
+              <FormProvider {...form}>
+                <EnhancedInvoiceForm
+                  onSave={handleSave}
+                  onSubmit={handleSubmit}
+                  loading={loading}
+                  saving={saving}
+                  readOnly={isReadOnly}
+                />
+              </FormProvider>
             </div>
           </div>
         </div>

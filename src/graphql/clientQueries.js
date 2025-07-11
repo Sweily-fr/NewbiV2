@@ -47,14 +47,14 @@ export const GET_CLIENTS = gql`
   query GetClients($page: Int, $limit: Int, $search: String) {
     clients(page: $page, limit: $limit, search: $search) {
       items {
-        ...ClientListFragment
+        ...ClientFragment
       }
       totalItems
       currentPage
       totalPages
     }
   }
-  ${CLIENT_LIST_FRAGMENT}
+  ${CLIENT_FRAGMENT}
 `;
 
 export const GET_CLIENT = gql`
@@ -69,7 +69,7 @@ export const GET_CLIENT = gql`
 // ==================== MUTATIONS ====================
 
 export const CREATE_CLIENT = gql`
-  mutation CreateClient($input: CreateClientInput!) {
+  mutation CreateClient($input: ClientInput!) {
     createClient(input: $input) {
       ...ClientFragment
     }
