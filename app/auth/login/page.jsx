@@ -85,39 +85,33 @@ export default function LoginPage() {
             </h3>
             <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
               Vous n'avez pas de compte ?{" "}
-              <a
+              <Link
                 href="/auth/signup"
                 className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
               >
                 Inscription
-              </a>
+              </Link>
             </p>
             <div className="mt-8 flex flex-row items-center flex-wrap gap-4 max-sm:flex-col">
               <Button
                 variant="outline"
                 className="flex-1 items-center justify-center"
                 onClick={() => signInWithProvider("github")}
-                asChild
               >
-                <a href="#">
-                  <GitHubIcon className="size-5" aria-hidden={true} />
-                  <span className="text-sm font-medium">
-                    Connexion avec GitHub
-                  </span>
-                </a>
+                <GitHubIcon className="size-5" aria-hidden={true} />
+                <span className="text-sm font-medium">
+                  Connexion avec GitHub
+                </span>
               </Button>
               <Button
                 variant="outline"
                 className="flex-1 items-center justify-center cursor-pointer"
                 onClick={() => signInWithProvider("google")}
-                asChild
               >
-                <a>
-                  <GoogleIcon className="size-4" aria-hidden={true} />
-                  <span className="text-sm font-medium">
-                    Connexion avec Google
-                  </span>
-                </a>
+                <GoogleIcon className="size-4" aria-hidden={true} />
+                <span className="text-sm font-medium">
+                  Connexion avec Google
+                </span>
               </Button>
             </div>
 
@@ -135,15 +129,11 @@ export default function LoginPage() {
             <LoginForm />
             <p className="mt-6 text-sm text-muted-foreground dark:text-muted-foreground">
               Mot de passe oublié?{" "}
-              <Link href="/auth/forget-password">
-                <>
-                  <a
-                    href="#"
-                    className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
-                  >
-                    Réinitialiser mot de passe
-                  </a>
-                </>
+              <Link 
+                href="/auth/forget-password"
+                className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
+              >
+                Réinitialiser mot de passe
               </Link>
             </p>
           </div>

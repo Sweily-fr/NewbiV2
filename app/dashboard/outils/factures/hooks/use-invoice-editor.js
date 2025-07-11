@@ -22,9 +22,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
   const { session } = useUser();
   
   // GraphQL hooks
-  const { data: existingInvoice, loading: loadingInvoice } = useInvoice(invoiceId, {
-    skip: !invoiceId || mode === "create",
-  });
+  const { invoice: existingInvoice, loading: loadingInvoice } = useInvoice(invoiceId);
   
   const { data: nextNumberData } = useNextInvoiceNumber(
     null, // On passe null comme préfixe pour utiliser la valeur par défaut
@@ -50,11 +48,39 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
 
   // Initialize form data when invoice loads
   useEffect(() => {
+    console.log('🔄 useEffect - Chargement des données de facture existante');
+    console.log('📋 existingInvoice:', existingInvoice);
+    console.log('🎯 mode:', mode);
+    
     if (existingInvoice && mode !== "create") {
+      console.log('✅ Conditions remplies - Transformation et reset du formulaire');
       const invoiceData = transformInvoiceToFormData(existingInvoice);
+      console.log('📝 Données avant reset:', invoiceData);
+      console.log('🔍 CLIENT dans les données:', invoiceData.client);
+      console.log('🔍 ITEMS dans les données:', invoiceData.items);
+      console.log('🔍 Nombre d\'articles:', invoiceData.items?.length || 0);
+      
       reset(invoiceData);
+      console.log('🎉 Reset du formulaire effectué');
+      
+      // Vérifier les données après reset
+      setTimeout(() => {
+        const currentFormData = getValues();
+        console.log('🔍 Données après reset:', currentFormData);
+        console.log('🔍 CLIENT après reset:', currentFormData.client);
+        console.log('🔍 ITEMS après reset:', currentFormData.items);
+        console.log('🔍 DATES après reset:');
+        console.log('  - issueDate:', currentFormData.issueDate);
+        console.log('  - executionDate:', currentFormData.executionDate);
+        console.log('  - dueDate:', currentFormData.dueDate);
+      }, 100);
+    } else {
+      console.log('❌ Conditions non remplies pour le chargement:', {
+        hasExistingInvoice: !!existingInvoice,
+        isNotCreateMode: mode !== "create"
+      });
     }
-  }, [existingInvoice, mode, reset]);
+  }, [existingInvoice, mode, reset, getValues]);
 
   // Set next invoice number for new invoices
   useEffect(() => {
@@ -97,6 +123,19 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     }
   }, [mode, session, setValue]);
 
+  // Stocker les coordonnées bancaires de l'utilisateur actuel (disponible en création et édition)
+  useEffect(() => {
+    if (session?.user?.company?.bankDetails) {
+      const userBankDetails = {
+        iban: session.user.company.bankDetails.iban || "",
+        bic: session.user.company.bankDetails.bic || "",
+        bankName: session.user.company.bankDetails.bankName || ""
+      };
+      setValue('userBankDetails', userBankDetails);
+      console.log('🏦 Coordonnées bancaires utilisateur disponibles:', userBankDetails);
+    }
+  }, [session, setValue]);
+
   // Auto-save handler (défini avant son utilisation)
   const handleAutoSave = useCallback(async () => {
     if (mode !== "edit" || !invoiceId || formData.status !== "DRAFT") {
@@ -107,12 +146,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
       setSaving(true);
       const input = transformFormDataToInput(formData);
       
-      await updateInvoice({
-        variables: {
-          id: invoiceId,
-          input,
-        },
-      });
+      await updateInvoice(invoiceId, input);
 
       setOriginalData({ ...formData });
       setIsDirty(false);
@@ -162,6 +196,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     try {
       setSaving(true);
       console.log('📝 Données avant transformation (handleSave):', currentFormData);
+      // Pas de changement de statut dans handleSave, donc pas besoin du statut précédent
       const input = transformFormDataToInput(currentFormData);
       console.log('🔄 Input transformé pour GraphQL (handleSave):', input);
 
@@ -174,16 +209,14 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
         router.push('/dashboard/outils/factures');
         return true;
       } else {
-        await updateInvoice({
-          variables: {
-            id: invoiceId,
-            input,
-          },
-        });
+        await updateInvoice(invoiceId, input);
         
         // Reset form with current data to mark as clean
         reset(currentFormData);
         toast.success("Facture sauvegardée");
+        
+        // Rediriger vers la liste des factures après sauvegarde réussie en mode édition
+        router.push('/dashboard/outils/factures');
         return true;
       }
     } catch (error) {
@@ -193,7 +226,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     } finally {
       setSaving(false);
     }
-  }, [mode, getValues, trigger, createInvoice, updateInvoice, invoiceId, router, reset]);
+  }, [mode, invoiceId, createInvoice, updateInvoice, getValues, trigger, router, setSaving, formState.errors, reset]);
 
   // Submit handler (validate and send)
   const handleSubmit = useCallback(async () => {
@@ -216,7 +249,9 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
       };
       
       console.log('📝 Données avant transformation:', dataToTransform);
-      const input = transformFormDataToInput(dataToTransform);
+      // Passer le statut précédent pour gérer automatiquement la date d'émission
+      const previousStatus = mode === "edit" ? existingInvoice?.status : "DRAFT";
+      const input = transformFormDataToInput(dataToTransform, previousStatus);
       console.log('🔄 Input transformé pour GraphQL:', input);
 
       if (mode === "create") {
@@ -228,12 +263,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
         router.push('/dashboard/outils/factures');
         return true;
       } else {
-        await updateInvoice({
-          variables: {
-            id: invoiceId,
-            input,
-          },
-        });
+        await updateInvoice(invoiceId, input);
         
         toast.success("Facture validée");
         router.push(`/dashboard/outils/factures/${invoiceId}`);
@@ -246,7 +276,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     } finally {
       setSaving(false);
     }
-  }, [mode, getValues, trigger, createInvoice, updateInvoice, invoiceId, router]);
+  }, [mode, getValues, trigger, createInvoice, updateInvoice, invoiceId, router, existingInvoice?.status, formState.errors]);
 
   return {
     form,
@@ -294,11 +324,16 @@ function getInitialFormData(mode, initialData, session) {
     }
   };
 
+  // Créer une date pour demain
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowFormatted = tomorrow.toISOString().split('T')[0];
+
   const defaultData = {
     prefix: "",
     number: "",
     issueDate: new Date().toISOString().split('T')[0],
-    executionDate: null,
+    executionDate: tomorrowFormatted,
     dueDate: null,
     status: "DRAFT",
     client: null,
@@ -318,6 +353,11 @@ function getInitialFormData(mode, initialData, session) {
       iban: "",
       bic: "",
       bankName: ""
+    },
+    userBankDetails: {
+      iban: "",
+      bic: "",
+      bankName: ""
     }
   };
 
@@ -329,15 +369,75 @@ function getInitialFormData(mode, initialData, session) {
 }
 
 function transformInvoiceToFormData(invoice) {
-  return {
+  console.log('🔍 DEBUG - Données de facture reçues pour transformation:', invoice);
+  
+  // Debug spécifique pour les dates
+  console.log('📅 DATES DEBUG:');
+  console.log('  - issueDate brute:', invoice.issueDate, 'type:', typeof invoice.issueDate);
+  console.log('  - executionDate brute:', invoice.executionDate, 'type:', typeof invoice.executionDate);
+  console.log('  - dueDate brute:', invoice.dueDate, 'type:', typeof invoice.dueDate);
+  
+  // Fonction helper pour transformer les dates
+  const transformDate = (dateValue, fieldName) => {
+    if (!dateValue) return null;
+    
+    try {
+      // Si c'est déjà une string au format YYYY-MM-DD, on la garde
+      if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        console.log(`  ✅ ${fieldName} déjà au bon format:`, dateValue);
+        return dateValue;
+      }
+      
+      // Si c'est un timestamp en millisecondes (string de chiffres)
+      if (typeof dateValue === 'string' && /^\d+$/.test(dateValue)) {
+        const timestamp = parseInt(dateValue, 10);
+        const date = new Date(timestamp);
+        if (!isNaN(date.getTime())) {
+          const formatted = date.toISOString().split('T')[0];
+          console.log(`  🔄 ${fieldName} timestamp transformé:`, dateValue, '→', formatted);
+          return formatted;
+        }
+      }
+      
+      // Sinon, on essaie de la convertir normalement
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) {
+        console.warn(`  ⚠️ ${fieldName} invalide:`, dateValue);
+        return null;
+      }
+      
+      const formatted = date.toISOString().split('T')[0];
+      console.log(`  🔄 ${fieldName} transformée:`, dateValue, '→', formatted);
+      return formatted;
+    } catch (error) {
+      console.error(`  ❌ Erreur transformation ${fieldName}:`, error);
+      return null;
+    }
+  };
+  
+  const transformedData = {
     prefix: invoice.prefix || "",
     number: invoice.number || "",
-    issueDate: invoice.issueDate || new Date().toISOString().split('T')[0],
-    executionDate: invoice.executionDate || null,
-    dueDate: invoice.dueDate || null,
+    issueDate: transformDate(invoice.issueDate, 'issueDate') || new Date().toISOString().split('T')[0],
+    executionDate: transformDate(invoice.executionDate, 'executionDate'),
+    dueDate: transformDate(invoice.dueDate, 'dueDate'),
     status: invoice.status || "DRAFT",
-    client: invoice.client || null, // ✅ AJOUT DU CLIENT
-    companyInfo: invoice.companyInfo || {
+    client: invoice.client || null,
+    companyInfo: invoice.companyInfo ? {
+      name: invoice.companyInfo.name || "",
+      address: invoice.companyInfo.address ? 
+        `${invoice.companyInfo.address.street || ""}, ${invoice.companyInfo.address.city || ""}, ${invoice.companyInfo.address.postalCode || ""}, ${invoice.companyInfo.address.country || ""}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim() : "",
+      email: invoice.companyInfo.email || "",
+      phone: invoice.companyInfo.phone || "",
+      siret: invoice.companyInfo.siret || "",
+      vatNumber: invoice.companyInfo.vatNumber || "",
+      website: invoice.companyInfo.website || "",
+      bankDetails: invoice.companyInfo.bankDetails || {
+        iban: "",
+        bic: "",
+        bankName: ""
+      }
+    } : {
       name: "",
       address: "",
       email: "",
@@ -351,26 +451,44 @@ function transformInvoiceToFormData(invoice) {
         bankName: ""
       }
     },
-    items: invoice.items || [], // ✅ AJOUT DES ARTICLES
+    items: invoice.items || [],
     discount: invoice.discount || 0,
     discountType: invoice.discountType || "PERCENTAGE",
     headerNotes: invoice.headerNotes || "",
     footerNotes: invoice.footerNotes || "",
     termsAndConditions: invoice.termsAndConditions || "",
     customFields: invoice.customFields || [],
-    paymentMethod: invoice.paymentMethod || null,
-    isDownPayment: invoice.isDownPayment || false,
+    // Champs qui n'existent pas dans le schéma GraphQL - utiliser des valeurs par défaut
+    paymentMethod: null,
+    isDownPayment: false,
     purchaseOrderNumber: invoice.purchaseOrderNumber || "",
-    showBankDetails: invoice.showBankDetails || false,
-    bankDetails: invoice.bankDetails || {
+    // Récupérer les données bancaires si elles existent dans la facture
+    showBankDetails: !!(invoice.companyInfo?.bankDetails && 
+                       (invoice.companyInfo.bankDetails.iban || 
+                        invoice.companyInfo.bankDetails.bic || 
+                        invoice.companyInfo.bankDetails.bankName)),
+    bankDetails: invoice.companyInfo?.bankDetails ? {
+      iban: invoice.companyInfo.bankDetails.iban || "",
+      bic: invoice.companyInfo.bankDetails.bic || "",
+      bankName: invoice.companyInfo.bankDetails.bankName || ""
+    } : {
+      iban: "",
+      bic: "",
+      bankName: ""
+    },
+    userBankDetails: {
       iban: "",
       bic: "",
       bankName: ""
     }
   };
+  
+  console.log('🔍 DEBUG - Données transformées pour le formulaire:', transformedData);
+  console.log('🔍 DEBUG - executionDate dans transformedData:', transformedData.executionDate);
+  return transformedData;
 }
 
-function transformFormDataToInput(formData) {
+function transformFormDataToInput(formData, previousStatus = null) {
   // Nettoyer le client en supprimant les métadonnées GraphQL
   const cleanClient = formData.client ? {
     id: formData.client.id,
@@ -409,18 +527,42 @@ function transformFormDataToInput(formData) {
       ? parseAddressString(formData.companyInfo.address)
       : formData.companyInfo.address,
     // Inclure bankDetails seulement si showBankDetails est true et qu'ils sont remplis
-    bankDetails: (formData.showBankDetails && formData.companyInfo.bankDetails && 
-                 (formData.companyInfo.bankDetails.iban || formData.companyInfo.bankDetails.bic || formData.companyInfo.bankDetails.bankName)) 
-      ? formData.companyInfo.bankDetails 
-      : null
+    bankDetails: formData.showBankDetails ? (
+      // Priorité aux données du formulaire (formData.bankDetails) si elles existent
+      (formData.bankDetails && (formData.bankDetails.iban || formData.bankDetails.bic || formData.bankDetails.bankName)) 
+        ? formData.bankDetails
+        // Sinon, utiliser les données de l'entreprise
+        : (formData.companyInfo.bankDetails && (formData.companyInfo.bankDetails.iban || formData.companyInfo.bankDetails.bic || formData.companyInfo.bankDetails.bankName))
+          ? formData.companyInfo.bankDetails
+          : null
+    ) : null
   } : null;
+
+  // Gérer automatiquement la date d'émission lors du passage DRAFT -> PENDING
+  let issueDate = formData.issueDate;
+  if (previousStatus === "DRAFT" && formData.status === "PENDING") {
+    // Mettre à jour la date d'émission à la date actuelle
+    issueDate = new Date().toISOString().split('T')[0];
+    console.log('📅 Date d\'émission mise à jour automatiquement lors du passage DRAFT -> PENDING:', issueDate);
+  }
+
+  // Helper pour s'assurer qu'on n'envoie jamais null pour les dates obligatoires
+  const ensureValidDate = (dateValue, fieldName, fallbackDate = null) => {
+    if (!dateValue) {
+      // Si pas de fallback, utiliser la date d'émission
+      const fallback = fallbackDate || issueDate;
+      console.log(`⚠️ ${fieldName} est null/undefined, utilisation de la date de fallback:`, fallback);
+      return fallback;
+    }
+    return dateValue;
+  };
 
   return {
     prefix: formData.prefix || "",
     number: formData.number || "",
-    issueDate: formData.issueDate,
-    executionDate: formData.executionDate,
-    dueDate: formData.dueDate,
+    issueDate: issueDate,
+    executionDate: ensureValidDate(formData.executionDate, 'executionDate'),
+    dueDate: ensureValidDate(formData.dueDate, 'dueDate'),
     status: formData.status || "DRAFT",
     client: cleanClient,
     companyInfo: cleanCompanyInfo,
@@ -440,7 +582,10 @@ function transformFormDataToInput(formData) {
     headerNotes: formData.headerNotes || "",
     footerNotes: formData.footerNotes || "",
     termsAndConditions: formData.termsAndConditions || "",
-    customFields: formData.customFields || [],
+    customFields: formData.customFields?.map(field => ({
+      key: field.key,
+      value: field.value
+    })) || [],
     purchaseOrderNumber: formData.purchaseOrderNumber || ""
   };
 }

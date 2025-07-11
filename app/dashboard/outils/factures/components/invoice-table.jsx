@@ -134,7 +134,7 @@ export default function InvoiceTable() {
             placeholder="Rechercher des factures..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
-            className="max-w-sm"
+            className="w-80"
           />
           
           {/* Status Filter */}
