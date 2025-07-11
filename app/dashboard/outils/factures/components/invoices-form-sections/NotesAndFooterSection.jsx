@@ -1,13 +1,17 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import { Tag, Download } from "lucide-react";
+import { useEffect } from "react";
+import { Tag, Download, Settings, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Separator } from "@/src/components/ui/separator";
+import { Alert, AlertDescription } from "@/src/components/ui/alert";
+import Link from "next/link";
 
 // Fonction de validation de l'IBAN
 const validateIBAN = (value) => {
@@ -28,6 +32,28 @@ const validateBIC = (value) => {
 export default function NotesAndFooterSection({ canEdit }) {
   const { watch, setValue, register, formState: { errors } } = useFormContext();
   const data = watch();
+  
+  // Import automatique des coordonnées bancaires lors du chargement initial
+  useEffect(() => {
+    // Si showBankDetails est true et qu'il n'y a pas encore de données dans bankDetails
+    // mais qu'il y a des données dans companyInfo.bankDetails (facture existante) ou userBankDetails (utilisateur actuel), les importer
+    if (data.showBankDetails && 
+        (!data.bankDetails?.iban && !data.bankDetails?.bic && !data.bankDetails?.bankName)) {
+      
+      // Priorité aux données de la facture existante, sinon utiliser celles de l'utilisateur actuel
+      const sourceData = (data.companyInfo?.bankDetails && 
+                         (data.companyInfo.bankDetails.iban || data.companyInfo.bankDetails.bic || data.companyInfo.bankDetails.bankName)) 
+                        ? data.companyInfo.bankDetails 
+                        : data.userBankDetails;
+      
+      if (sourceData && (sourceData.iban || sourceData.bic || sourceData.bankName)) {
+        console.log('🏦 Import automatique des coordonnées bancaires lors du chargement:', sourceData);
+        setValue("bankDetails.iban", sourceData.iban || "", { shouldDirty: true });
+        setValue("bankDetails.bic", sourceData.bic || "", { shouldDirty: true });
+        setValue("bankDetails.bankName", sourceData.bankName || "", { shouldDirty: true });
+      }
+    }
+  }, [data.showBankDetails, data.companyInfo?.bankDetails, data.userBankDetails, data.bankDetails, setValue]);
   return (
     <Card className="shadow-none border-none p-2 bg-transparent">
       <CardHeader className="p-0">
@@ -115,131 +141,87 @@ export default function NotesAndFooterSection({ canEdit }) {
           </div>
         </div>
 
+        {/* Séparateur avec titre de section */}
+        <div className="relative my-10">
+          <Separator />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="bg-background px-3 text-sm font-medium text-muted-foreground">
+              Coordonnées bancaires
+            </span>
+          </div>
+        </div>
+
         {/* Coordonnées bancaires */}
         <div className="space-y-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <Checkbox
               id="show-bank-details"
               checked={data.showBankDetails || false}
-              onCheckedChange={(checked) => setValue("showBankDetails", checked, { shouldDirty: true })}
+              onCheckedChange={(checked) => {
+                setValue("showBankDetails", checked, { shouldDirty: true });
+                
+                // Import automatique des coordonnées bancaires lors du check
+                if (checked) {
+                  // Priorité aux données de la facture existante, sinon utiliser celles de l'utilisateur actuel
+                  const sourceData = (data.companyInfo?.bankDetails && 
+                                     (data.companyInfo.bankDetails.iban || data.companyInfo.bankDetails.bic || data.companyInfo.bankDetails.bankName)) 
+                                    ? data.companyInfo.bankDetails 
+                                    : data.userBankDetails;
+                  
+                  if (sourceData && (sourceData.iban || sourceData.bic || sourceData.bankName)) {
+                    console.log('🏦 Import manuel des coordonnées bancaires:', sourceData);
+                    setValue("bankDetails.iban", sourceData.iban || "", { shouldDirty: true });
+                    setValue("bankDetails.bic", sourceData.bic || "", { shouldDirty: true });
+                    setValue("bankDetails.bankName", sourceData.bankName || "", { shouldDirty: true });
+                  }
+                }
+              }}
               disabled={!canEdit}
-              className="h-5 w-5 rounded-md border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             />
-            <div className="grid gap-1.5 leading-none">
-              <Label
-                htmlFor="show-bank-details"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Afficher les coordonnées bancaires
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Cochez pour inclure vos coordonnées bancaires dans la facture
-              </p>
-            </div>
+            <Label htmlFor="show-bank-details" className="text-sm font-medium">
+              Afficher les coordonnées bancaires
+            </Label>
           </div>
+          <p className="text-xs text-muted-foreground ml-6">
+            Cochez cette case pour afficher vos coordonnées bancaires sur la facture
+          </p>
 
-          {data.showBankDetails && (
-            <div className="space-y-4 p-4 rounded-lg border">
+          {/* Affichage des coordonnées importées (lecture seule) */}
+          {data.showBankDetails && (data.bankDetails?.iban || data.bankDetails?.bic || data.bankDetails?.bankName) && (
+            <div className="ml-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">Coordonnées bancaires</h4>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Importer les coordonnées bancaires depuis les données utilisateur
-                    if (data.companyInfo?.bankDetails) {
-                      setValue("bankDetails.iban", data.companyInfo.bankDetails.iban || "", { shouldDirty: true });
-                      setValue("bankDetails.bic", data.companyInfo.bankDetails.bic || "", { shouldDirty: true });
-                      setValue("bankDetails.bankName", data.companyInfo.bankDetails.bankName || "", { shouldDirty: true });
-                    }
-                  }}
-                  disabled={!canEdit}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Importer mes coordonnées
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-green-500 rounded-full" />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Coordonnées bancaires configurées
+                  </span>
+                </div>
+                <Link href="/dashboard/parametres/profil">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Settings className="h-4 w-4" />
+                    Modifier
+                  </Button>
+                </Link>
               </div>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bank-iban" className="text-sm font-medium">
-                    IBAN
-                  </Label>
-                  <div className="space-y-1">
-                    <Input
-                      id="bank-iban"
-                      {...register("bankDetails.iban", {
-                        validate: validateIBAN,
-                        required: data.showBankDetails ? "L'IBAN est requis lorsque les coordonnées bancaires sont affichées" : false
-                      })}
-                      defaultValue={data.bankDetails?.iban || ""}
-                      placeholder="FR76 1234 5678 9012 3456 7890 123"
-                      disabled={!canEdit}
-                      className={`h-10 rounded-lg text-sm w-full ${
-                        errors?.bankDetails?.iban ? 'border-red-500' : ''
-                      }`}
-                    />
-                    {errors?.bankDetails?.iban && (
-                      <p className="text-xs text-red-500">
-                        {errors.bankDetails.iban.message}
-                      </p>
-                    )}
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">IBAN</Label>
+                  <div className="p-3 bg-muted/50 rounded-md border">
+                    <p className="font-mono text-sm">{data.bankDetails?.iban || 'Non renseigné'}</p>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bank-bic" className="text-sm font-medium">
-                    BIC/SWIFT
-                  </Label>
-                  <div className="space-y-1">
-                    <Input
-                      id="bank-bic"
-                      {...register("bankDetails.bic", {
-                        validate: validateBIC,
-                        required: data.showBankDetails ? "Le BIC/SWIFT est requis lorsque les coordonnées bancaires sont affichées" : false
-                      })}
-                      defaultValue={data.bankDetails?.bic || ""}
-                      placeholder="BNPAFRPPXXX"
-                      disabled={!canEdit}
-                      className={`h-10 rounded-lg text-sm w-full ${
-                        errors?.bankDetails?.bic ? 'border-red-500' : ''
-                      }`}
-                    />
-                    {errors?.bankDetails?.bic && (
-                      <p className="text-xs text-red-500">
-                        {errors.bankDetails.bic.message}
-                      </p>
-                    )}
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">BIC/SWIFT</Label>
+                  <div className="p-3 bg-muted/50 rounded-md border">
+                    <p className="font-mono text-sm">{data.bankDetails?.bic || 'Non renseigné'}</p>
                   </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="bank-name" className="text-sm font-medium">
-                  Nom de la banque
-                </Label>
-                <div className="space-y-1">
-                  <Input
-                    id="bank-name"
-                    {...register("bankDetails.bankName", {
-                      required: data.showBankDetails ? "Le nom de la banque est requis lorsque les coordonnées bancaires sont affichées" : false,
-                      maxLength: {
-                        value: 100,
-                        message: "Le nom de la banque ne doit pas dépasser 100 caractères"
-                      }
-                    })}
-                    defaultValue={data.bankDetails?.bankName || ""}
-                    placeholder="BNP Paribas"
-                    disabled={!canEdit}
-                    className={`h-10 rounded-lg text-sm w-full ${
-                      errors?.bankDetails?.bankName ? 'border-red-500' : ''
-                    }`}
-                  />
-                  {errors?.bankDetails?.bankName && (
-                    <p className="text-xs text-red-500">
-                      {errors.bankDetails.bankName.message}
-                    </p>
-                  )}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Nom de la banque</Label>
+                <div className="p-3 bg-muted/50 rounded-md border">
+                  <p className="text-sm">{data.bankDetails?.bankName || 'Non renseigné'}</p>
                 </div>
               </div>
             </div>

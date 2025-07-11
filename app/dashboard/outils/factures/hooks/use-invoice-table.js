@@ -69,12 +69,8 @@ export function useInvoiceTable({ data = [], onRefetch }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   
-  // Memoize deleteInvoice to prevent recreation
-  const { mutate: deleteInvoice } = useDeleteInvoice({
-    onSettled: () => {
-      onRefetch?.();
-    }
-  });
+  // Hook pour la suppression de factures
+  const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
 
   // Define columns
   const columns = useMemo(
@@ -105,14 +101,13 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       {
         accessorKey: "number",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <div
+            className="flex items-center cursor-pointer font-semibold"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-semibold"
           >
             Numéro
             <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </div>
         ),
         cell: ({ row }) => {
           const invoice = row.original;
@@ -131,14 +126,13 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       {
         accessorKey: "client.name",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <div
+            className="flex items-center cursor-pointer font-semibold"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-semibold"
           >
             Client
             <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </div>
         ),
         cell: ({ row }) => {
           const client = row.original.client;
@@ -162,23 +156,66 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       {
         accessorKey: "issueDate",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <div
+            className="flex items-center cursor-pointer font-semibold"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-semibold"
           >
-            Date d&apos;émission
+            Date d'émission
             <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </div>
         ),
         cell: ({ row }) => {
-          const date = row.getValue("issueDate");
-          if (!date) return "-";
+          const dateFromGetter = row.getValue("issueDate");
+          const dateFromOriginal = row.original.issueDate;
+          const date = dateFromGetter || dateFromOriginal;
+          
+          // Debug logging
+          console.log('DEBUG issueDate:', {
+            dateFromGetter,
+            dateFromOriginal,
+            finalDate: date,
+            rowOriginal: row.original,
+            allKeys: Object.keys(row.original)
+          });
+          
+          if (!date) {
+            console.log('Aucune date d\'émission trouvée pour:', row.original);
+            return "-";
+          }
+          
           try {
-            const parsedDate = new Date(date);
-            if (isNaN(parsedDate.getTime())) return "-";
-            return parsedDate.toLocaleDateString("fr-FR");
-          } catch {
+            // Gérer différents formats de date
+            let parsedDate;
+            if (typeof date === 'string') {
+              // Vérifier si c'est un timestamp en millisecondes (string de chiffres)
+              if (/^\d+$/.test(date)) {
+                // Convertir le timestamp string en number puis en Date
+                parsedDate = new Date(parseInt(date, 10));
+              } else {
+                // Sinon, essayer de parser comme date normale
+                parsedDate = new Date(date);
+              }
+            } else if (typeof date === 'number') {
+              // Si c'est déjà un timestamp number
+              parsedDate = new Date(date);
+            } else if (date instanceof Date) {
+              // Si c'est déjà un objet Date
+              parsedDate = date;
+            } else {
+              console.log('Format de date non reconnu:', typeof date, date);
+              return "-";
+            }
+            
+            if (isNaN(parsedDate.getTime())) {
+              console.log('Date invalide après parsing:', date, parsedDate);
+              return "-";
+            }
+            
+            const formattedDate = parsedDate.toLocaleDateString("fr-FR");
+            console.log('Date formatée avec succès:', date, '->', formattedDate);
+            return formattedDate;
+          } catch (error) {
+            console.warn('Erreur parsing date d\'émission:', date, error);
             return "-";
           }
         },
@@ -187,37 +224,78 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       {
         accessorKey: "dueDate",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <div
+            className="flex items-center cursor-pointer font-semibold"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-semibold"
           >
             Échéance
             <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </div>
         ),
         cell: ({ row }) => {
-          const date = row.getValue("dueDate");
-          if (!date) return "-";
+          const dateFromGetter = row.getValue("dueDate");
+          const dateFromOriginal = row.original.dueDate;
+          const date = dateFromGetter || dateFromOriginal;
+          
+          // Debug logging
+          console.log('DEBUG dueDate:', {
+            dateFromGetter,
+            dateFromOriginal,
+            finalDate: date,
+            rowOriginal: row.original
+          });
+          
+          if (!date) {
+            console.log('Aucune date d\'échéance trouvée pour:', row.original);
+            return "-";
+          }
           
           try {
-            const dueDate = new Date(date);
-            if (isNaN(dueDate.getTime())) return "-";
+            // Gérer différents formats de date
+            let dueDate;
+            if (typeof date === 'string') {
+              // Vérifier si c'est un timestamp en millisecondes (string de chiffres)
+              if (/^\d+$/.test(date)) {
+                // Convertir le timestamp string en number puis en Date
+                dueDate = new Date(parseInt(date, 10));
+              } else {
+                // Sinon, essayer de parser comme date normale
+                dueDate = new Date(date);
+              }
+            } else if (typeof date === 'number') {
+              // Si c'est déjà un timestamp number
+              dueDate = new Date(date);
+            } else if (date instanceof Date) {
+              // Si c'est déjà un objet Date
+              dueDate = date;
+            } else {
+              console.log('Format de date d\'échéance non reconnu:', typeof date, date);
+              return "-";
+            }
+            
+            if (isNaN(dueDate.getTime())) {
+              console.log('Date d\'échéance invalide après parsing:', date, dueDate);
+              return "-";
+            }
             
             const today = new Date();
             const isOverdue = dueDate < today && row.original.status === "PENDING";
+            
+            const formattedDate = dueDate.toLocaleDateString("fr-FR");
+            console.log('Date d\'échéance formatée avec succès:', date, '->', formattedDate);
             
             return (
               <div className={cn(
                 isOverdue && "text-destructive font-medium"
               )}>
-                {dueDate.toLocaleDateString("fr-FR")}
+                {formattedDate}
                 {isOverdue && (
                   <div className="text-xs">En retard</div>
                 )}
               </div>
             );
-          } catch {
+          } catch (error) {
+            console.warn('Erreur parsing date d\'échéance:', date, error);
             return "-";
           }
         },
@@ -225,11 +303,19 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       },
       {
         accessorKey: "status",
-        header: "Statut",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-semibold"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Statut
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        ),
         cell: ({ row }) => {
           const status = row.getValue("status");
           const label = INVOICE_STATUS_LABELS[status] || status;
-          const colorClass = INVOICE_STATUS_COLORS[status] || "bg-gray-100 text-gray-800";
+          const colorClass = INVOICE_STATUS_COLORS[status] || "";
           
           return (
             <Badge className={cn("font-medium", colorClass)}>
@@ -268,23 +354,25 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       },
       {
         id: "actions",
-        header: () => <div className="text-right">Actions</div>,
-        cell: ({ row }) => <InvoiceRowActions row={row} />,
+        header: () => (
+          <div className="text-right">Actions</div>
+        ),
+        cell: ({ row }) => <InvoiceRowActions row={row} onRefetch={onRefetch} />,
         size: 60,
         enableHiding: false,
       },
     ],
-    [] // Pas de dépendances pour éviter les re-créations inutiles
+    [onRefetch] // Inclure onRefetch dans les dépendances
   );
 
   // Create table instance with optimized settings
   const table = useReactTable({
     data,
     columns,
-    // Enable manual pagination and filtering on server-side if needed
-    manualPagination: true,
-    manualFiltering: true,
-    manualSorting: true,
+    // Enable client-side filtering and sorting
+    manualPagination: false,
+    manualFiltering: false,
+    manualSorting: false,
     
     // Core models
     getCoreRowModel: getCoreRowModel(),
@@ -340,18 +428,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       const batch = draftInvoices.slice(i, i + BATCH_SIZE);
       try {
         await Promise.all(
-          batch.map(invoice => 
-            deleteInvoice({ 
-              variables: { id: invoice.id },
-              // Optimistic update
-              optimisticResponse: {
-                deleteInvoice: { id: invoice.id, __typename: 'Invoice' }
-              },
-              update: (cache) => {
-                cache.evict({ id: `Invoice:${invoice.id}` });
-              }
-            })
-          )
+          batch.map(invoice => deleteInvoice(invoice.id))
         );
       } catch (error) {
         console.error("Error deleting batch:", error);
@@ -361,6 +438,11 @@ export function useInvoiceTable({ data = [], onRefetch }) {
     
     toast.success(`${draftInvoices.length} facture(s) supprimée(s)`);
     table.resetRowSelection();
+    
+    // Actualiser la liste des factures
+    if (onRefetch) {
+      onRefetch();
+    }
   };
 
   return {
@@ -371,5 +453,6 @@ export function useInvoiceTable({ data = [], onRefetch }) {
     setStatusFilter,
     selectedRows,
     handleDeleteSelected,
+    isDeleting,
   };
 }

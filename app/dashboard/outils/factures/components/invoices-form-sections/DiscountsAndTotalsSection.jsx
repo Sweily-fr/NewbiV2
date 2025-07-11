@@ -3,10 +3,11 @@
 import { useFormContext } from "react-hook-form";
 import { Percent, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Card, CardContent } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
+import { Separator } from "@/src/components/ui/separator";
 
 // Fonction de validation pour la valeur de remise
 const validateDiscount = (value, { discountType }) => {
@@ -16,7 +17,7 @@ const validateDiscount = (value, { discountType }) => {
   if (value < 0) {
     return "La remise ne peut pas être négative";
   }
-  if (discountType === 'percentage' && value > 100) {
+  if (discountType === 'PERCENTAGE' && value > 100) {
     return "La remise ne peut pas dépasser 100%";
   }
   return true;
@@ -29,13 +30,15 @@ export default function DiscountsAndTotalsSection({
   const data = watch();
   return (
     <Card className="shadow-none border-none bg-transparent p-4 overflow-visible">
-      <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2">
-          <Percent className="h-5 w-5" />
-          Remises et totaux
-        </CardTitle>
-      </CardHeader>
       <CardContent className="space-y-6 p-0">
+        <div className="flex items-center gap-2 my-8">
+          <Separator className="flex-1" />
+          <div className="flex items-center gap-2 px-3 text-sm font-medium text-muted-foreground">
+            <Percent className="h-4 w-4" />
+            Remises et totaux
+          </div>
+          <Separator className="flex-1" />
+        </div>
         {/* Configuration de la remise */}
         <div className="flex gap-4">
           {/* Type de remise - 50% de la largeur */}
@@ -45,7 +48,7 @@ export default function DiscountsAndTotalsSection({
             </Label>
             <div className="space-y-1">
               <Select
-                value={data.discountType || "percentage"}
+                value={data.discountType || "PERCENTAGE"}
                 onValueChange={(value) => {
                   setValue("discountType", value, { shouldDirty: true });
                   // Réinitialiser la valeur de la remise lors du changement de type
@@ -55,14 +58,14 @@ export default function DiscountsAndTotalsSection({
                 }}
                 disabled={!canEdit}
               >
-                <SelectTrigger className={`h-10 rounded-lg px-3 text-sm ${
+                <SelectTrigger className={`h-10 rounded-lg px-3 w-full text-sm ${
                   errors?.discountType ? 'border-red-500' : ''
                 }`}>
-                  <SelectValue />
+                  <SelectValue placeholder="Pourcentage" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="percentage">Pourcentage (%)</SelectItem>
-                  <SelectItem value="fixed">Montant fixe (€)</SelectItem>
+                  <SelectItem value="PERCENTAGE">Pourcentage (%)</SelectItem>
+                  <SelectItem value="FIXED">Montant fixe (€)</SelectItem>
                 </SelectContent>
               </Select>
               {errors?.discountType && (
@@ -88,7 +91,7 @@ export default function DiscountsAndTotalsSection({
                     value: 0,
                     message: "La remise ne peut pas être négative"
                   },
-                  max: data.discountType === 'percentage' ? {
+                  max: data.discountType === 'PERCENTAGE' ? {
                     value: 100,
                     message: "La remise ne peut pas dépasser 100%"
                   } : undefined,
@@ -99,7 +102,7 @@ export default function DiscountsAndTotalsSection({
                 min="0"
                 step="0.01"
                 disabled={!canEdit || !data.discountType}
-                placeholder={data.discountType === "percentage" ? "Ex: 10" : "Ex: 100"}
+                placeholder={data.discountType === "PERCENTAGE" ? "Ex: 10" : "Ex: 100"}
                 className={`h-10 rounded-lg text-sm ${
                   errors?.discount ? 'border-red-500' : ''
                 }`}
@@ -189,7 +192,7 @@ export default function DiscountsAndTotalsSection({
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-sm">Aucun champ personnalisé ajouté</p>
+              <p className="text-sm text-gray-500">Aucun champ personnalisé ajouté</p>
             </div>
           )}
           

@@ -8,7 +8,6 @@ export const INVOICE_FRAGMENT = gql`
     number
     prefix
     purchaseOrderNumber
-    isDeposit
     status
     issueDate
     executionDate

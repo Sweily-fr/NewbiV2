@@ -52,7 +52,7 @@ import CompanyImport, { QuickCompanyImport } from "./company-import";
 import { toast } from "sonner";
 
 // Composant de recherche de produits basé sur Origin UI
-function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit...", disabled = false }) {
+function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit...", disabled = false, className = "" }) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
@@ -109,7 +109,10 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className="bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px] h-10"
+          className={cn(
+            "bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px] h-10",
+            className
+          )}
         >
           <span className={cn("truncate text-left", "text-muted-foreground")}>
             {placeholder}
@@ -350,9 +353,10 @@ export default function EnhancedInvoiceForm({
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 w-full relative">
+    <div className="flex flex-col h-full w-full">
       {/* Form Content */}
-      <div className="space-y-6 pb-24 overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500 transition-colors duration-200">
+      <div className="flex-1 overflow-y-auto pr-2 scrollbar-auto-hide min-h-0">
+        <div className="space-y-6 pb-20">
         {/* Étape 1: Détails de la facture */}
         {currentStep === 1 && (
           <>
@@ -397,15 +401,13 @@ export default function EnhancedInvoiceForm({
               ProductSearchCombobox={ProductSearchCombobox}
             />
 
-            <Separator className="my-8" />
-
             {/* Section 2: Remises et totaux */}
             <DiscountsAndTotalsSection 
               canEdit={canEdit} 
             />
           </>
         )}
-
+        </div>
       </div>
 
       {/* Footer avec boutons d'action - Positionné en dehors du flux normal */}
@@ -437,7 +439,7 @@ export default function EnhancedInvoiceForm({
                   disabled={!isStep1Valid() || !canEdit}
                   className="px-6"
                 >
-                  Étape suivante
+                  Suivant
                 </Button>
               )}
               
@@ -448,7 +450,7 @@ export default function EnhancedInvoiceForm({
                     onClick={handlePreviousStep}
                     disabled={!canEdit}
                   >
-                    Étape précédente
+                    Précédent
                   </Button>
                   <Button
                     onClick={handleCreateInvoice}
