@@ -140,7 +140,7 @@ export function SectionCards({ className }) {
                   </div>
 
                   <div className="space-y-3">
-                    <CardTitle>{card.title}</CardTitle>
+                    <CardTitle className="text-regular">{card.title}</CardTitle>
                     <CardDescription className="text-sm">
                       {card.subtitle}
                     </CardDescription>

@@ -8,17 +8,18 @@ export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="h-[120vh] flex flex-col bg-[#f0f4ff]/70 rounded-[15px] md:rounded-[18px] lg:rounded-[18px] shadow-xs mx-2 mt-2 pt-50">
+        <section className="h-[120vh] flex flex-col bg-[#4D5F78]/5 rounded-[15px] md:rounded-[18px] lg:rounded-[18px] shadow-xs mx-2 mt-2 pt-50">
           <div className="flex-1 flex flex-col items-center justify-center relative w-full px-4 md:px-8">
-            <div className="flex flex-col items-center justify-center z-10 gap-6 max-w-4xl text-center">
-              <h1 className="max-w-4xl text-center mx-auto text-balance font-medium font-Poppins text-2@xl md:text-7xl xl:text-[2.7rem] font-['Poppins'] leading-tight">
-                L’outil de <span className="text-[#5B4FFF]">facturation</span>{" "}
-                qui génère vraiment des{" "}
-                <span className="text-[#5B4FFF]">paiements</span>
+            <div className="flex flex-col items-center justify-center z-10 gap-6 max-w-6xl text-center">
+              <h1 className="max-w-6xl text-center mx-auto text-balance font-medium font-Poppins text-2@xl md:text-7xl xl:text-[2.7rem] font-['Poppins'] leading-tight">
+                Le tableau <span className="text-[#4D5F78]">Kanban</span> qui
+                structure vraiment votre{" "}
+                <span className="text-[#4D5F78]">organisation</span>
               </h1>
-              <span className="text-[#2E2E2E] max-w-xl text-center block">
-                Automatisez, relancez et encaissez plus vite : simplifiez votre
-                gestion, boostez votre trésorerie.
+              <span className="text-[#2E2E2E] max-w-2xl text-center block">
+                Gérez vos tâches, vos projets et vos équipes avec simplicité.
+                Visualisez votre progression, collaborez efficacement et boostez
+                votre productivité grâce à newbi.
               </span>
               <div className="flex justify-center gap-4 mt-2">
                 <div className="bg-[#fff]/1 rounded-[10px] border p-0.5">
