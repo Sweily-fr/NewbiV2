@@ -64,7 +64,7 @@ const menuItems = [
       },
     ],
   },
-  { name: "Tarifs", href: "#link" },
+  { name: "Tarifs", href: "#pricing" },
   { name: "Ressources", href: "/blog" },
 ];
 
