@@ -53,7 +53,7 @@ export default function QuoteRowActions({ row, onRefetch }) {
 
   const handleAccept = async () => {
     try {
-      await changeStatus(quote.id, QUOTE_STATUS.ACCEPTED);
+      await changeStatus(quote.id, QUOTE_STATUS.COMPLETED);
       toast.success('Devis accepté');
       if (onRefetch) onRefetch();
     } catch (error) {
@@ -63,7 +63,7 @@ export default function QuoteRowActions({ row, onRefetch }) {
 
   const handleReject = async () => {
     try {
-      await changeStatus(quote.id, QUOTE_STATUS.REJECTED);
+      await changeStatus(quote.id, QUOTE_STATUS.CANCELED);
       toast.success('Devis rejeté');
       if (onRefetch) onRefetch();
     } catch (error) {
@@ -110,7 +110,7 @@ export default function QuoteRowActions({ row, onRefetch }) {
             )}
             
             {/* Séparateur seulement s'il y a des actions de statut après les actions de base */}
-            {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING || quote.status === QUOTE_STATUS.ACCEPTED) && (
+            {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING || quote.status === QUOTE_STATUS.COMPLETED) && (
               <DropdownMenuSeparator />
             )}
             
@@ -143,7 +143,7 @@ export default function QuoteRowActions({ row, onRefetch }) {
               </>
             )}
 
-            {quote.status === QUOTE_STATUS.ACCEPTED && (
+            {quote.status === QUOTE_STATUS.COMPLETED && (
               <DropdownMenuItem 
                 onClick={handleConvertToInvoice}
                 disabled={isLoading}

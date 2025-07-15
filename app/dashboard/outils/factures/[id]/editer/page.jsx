@@ -22,7 +22,6 @@ export default function EditInvoicePage({ params }) {
     </CompanyInfoGuard>
   );
 }
-}
 
 function InvoiceEditorSkeleton() {
   return (

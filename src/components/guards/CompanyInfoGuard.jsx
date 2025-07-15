@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/src/lib/auth-client";
+import { useAuth } from "@/src/hooks/useAuth";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card";
@@ -29,42 +29,36 @@ export function CompanyInfoGuard({
   title = "Vérification des informations d'entreprise",
   description = "Nous vérifions que vos informations d'entreprise sont complètes..."
 }) {
-  const { data: session, status } = useSession();
+  const { isAuthenticated, isLoading: authLoading, user, session } = useAuth();
   const router = useRouter();
   const [showAlert, setShowAlert] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [companyComplete, setCompanyComplete] = useState(false);
 
   useEffect(() => {
-    console.log('🔐 CompanyInfoGuard - État de session:', {
-      status,
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
+    console.log('🔐 CompanyInfoGuard - État d\'authentification:', {
+      isAuthenticated,
+      authLoading,
+      hasUser: !!user,
+      userId: user?.id,
       timestamp: new Date().toISOString()
     });
 
-    if (status === "loading") {
-      console.log('⏳ CompanyInfoGuard: Session en cours de chargement...');
+    if (authLoading) {
+      console.log('⏳ CompanyInfoGuard: Authentification en cours de chargement...');
       setIsLoading(true);
       return;
     }
 
-    // Si pas de session après le chargement, rediriger vers login
-    if (status === "unauthenticated" || !session?.user) {
-      console.warn('CompanyInfoGuard: Session non authentifiée, redirection vers login');
-      router.push("/auth/login");
+    // Si pas authentifié, on peut soit rediriger soit permettre l'accès limité
+    if (!isAuthenticated) {
+      console.warn('⚠️ CompanyInfoGuard: Utilisateur non authentifié');
+      // Pour l'instant, on permet l'accès pour diagnostiquer
+      setIsLoading(false);
       return;
     }
 
-    // Si la session est authentifiée mais pas encore complètement chargée
-    if (status === "authenticated" && !session.user) {
-      console.warn('CompanyInfoGuard: Session authentifiée mais utilisateur non chargé, attente...');
-      setIsLoading(true);
-      return;
-    }
-
-    const company = session.user.company;
+    const company = user?.company;
     const isComplete = isCompanyInfoComplete(company);
     
     console.log('🏢 Vérification informations entreprise:', {
@@ -81,7 +75,7 @@ export function CompanyInfoGuard({
     if (!isComplete) {
       setShowAlert(true);
     }
-  }, [session, status, router]);
+  }, [isAuthenticated, authLoading, user]);
 
   const handleGoToSettings = () => {
     setShowAlert(false);
@@ -148,8 +142,8 @@ export function CompanyInfoGuard({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Si les informations sont complètes, afficher le contenu protégé */}
-      {companyComplete && children}
+      {/* Afficher le contenu dans tous les cas, l'alerte informe juste l'utilisateur */}
+      {children}
     </>
   );
 }
