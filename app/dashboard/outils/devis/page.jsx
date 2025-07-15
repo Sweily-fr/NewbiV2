@@ -6,6 +6,7 @@ import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
 import { useRouter } from "next/navigation";
+import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
 
 export default function QuotesPage() {
   const router = useRouter();
@@ -15,26 +16,28 @@ export default function QuotesPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Devis</h1>
-          <p className="text-muted-foreground">
-            Gérez vos devis et propositions commerciales
-          </p>
+    <CompanyInfoGuard>
+      <div className="space-y-6 p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Devis</h1>
+            <p className="text-muted-foreground">
+              Gérez vos devis et propositions commerciales
+            </p>
+          </div>
+          <Button onClick={handleCreateQuote} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Créer un devis
+          </Button>
         </div>
-        <Button onClick={handleCreateQuote} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Créer un devis
-        </Button>
-      </div>
 
-      {/* Table */}
-      <Suspense fallback={<QuoteTableSkeleton />}>
-        <QuoteTable />
-      </Suspense>
-    </div>
+        {/* Table */}
+        <Suspense fallback={<QuoteTableSkeleton />}>
+          <QuoteTable />
+        </Suspense>
+      </div>
+    </CompanyInfoGuard>
   );
 }
 

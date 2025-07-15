@@ -3,21 +3,25 @@
 import { Suspense } from "react";
 import { use } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
 import ModernInvoiceEditor from "../../components/modern-invoice-editor";
 
 export default function EditInvoicePage({ params }) {
   const { id } = use(params);
 
   return (
-    <div className="h-auto flex flex-col">
-      <Suspense fallback={<InvoiceEditorSkeleton />}>
-        <ModernInvoiceEditor 
-          mode="edit" 
-          invoiceId={id}
-        />
-      </Suspense>
-    </div>
+    <CompanyInfoGuard>
+      <div className="h-auto flex flex-col">
+        <Suspense fallback={<InvoiceEditorSkeleton />}>
+          <ModernInvoiceEditor 
+            mode="edit" 
+            invoiceId={id}
+          />
+        </Suspense>
+      </div>
+    </CompanyInfoGuard>
   );
+}
 }
 
 function InvoiceEditorSkeleton() {

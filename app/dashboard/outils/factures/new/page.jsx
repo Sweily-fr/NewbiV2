@@ -2,12 +2,15 @@
 
 import { Suspense } from "react";
 import ModernInvoiceEditor from "../components/modern-invoice-editor";
+import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
 
 export default function NewInvoicePage() {
   return (
-    <Suspense fallback={<InvoiceEditorSkeleton />}>
-      <ModernInvoiceEditor mode="create" />
-    </Suspense>
+    <CompanyInfoGuard>
+      <Suspense fallback={<InvoiceEditorSkeleton />}>
+        <ModernInvoiceEditor mode="create" />
+      </Suspense>
+    </CompanyInfoGuard>
   );
 }
 

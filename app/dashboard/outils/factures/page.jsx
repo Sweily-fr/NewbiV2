@@ -6,6 +6,7 @@ import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
 import { useRouter } from "next/navigation";
+import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
 
 export default function InvoicesPage() {
   const router = useRouter();
@@ -15,26 +16,28 @@ export default function InvoicesPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Factures</h1>
-          <p className="text-muted-foreground">
-            Gérez vos factures, devis et documents commerciaux
-          </p>
+    <CompanyInfoGuard>
+      <div className="space-y-6 p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Factures</h1>
+            <p className="text-muted-foreground">
+              Gérez vos factures, devis et documents commerciaux
+            </p>
+          </div>
+          <Button onClick={handleCreateInvoice} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Créer une facture
+          </Button>
         </div>
-        <Button onClick={handleCreateInvoice} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Créer une facture
-        </Button>
-      </div>
 
-      {/* Table */}
-      <Suspense fallback={<InvoiceTableSkeleton />}>
-        <InvoiceTable />
-      </Suspense>
-    </div>
+        {/* Table */}
+        <Suspense fallback={<InvoiceTableSkeleton />}>
+          <InvoiceTable />
+        </Suspense>
+      </div>
+    </CompanyInfoGuard>
   );
 }
 

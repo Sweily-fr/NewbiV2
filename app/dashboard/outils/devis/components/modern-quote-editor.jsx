@@ -23,11 +23,12 @@ export default function ModernQuoteEditor({
     setFormData,
     loading,
     saving,
-    handleSave,
-    handleSubmit,
+    onSave,
+    onSubmit,
     handleAutoSave,
     isDirty,
     errors,
+    nextQuoteNumber,
   } = useQuoteEditor({
     mode,
     quoteId,
@@ -91,10 +92,11 @@ export default function ModernQuoteEditor({
                   formData={formData}
                   loading={loading}
                   saving={saving}
-                  onSave={handleSave}
-                  onSubmit={handleSubmit}
+                  onSave={onSave}
+                  onSubmit={onSubmit}
                   setFormData={setFormData}
                   canEdit={!isReadOnly}
+                  nextQuoteNumber={nextQuoteNumber}
                 />
               </FormProvider>
             </div>

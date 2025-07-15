@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
@@ -13,6 +13,15 @@ import { Label } from "@/src/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
+import { 
+  generateQuotePrefix, 
+  parseQuotePrefix, 
+  formatQuotePrefix, 
+  getCurrentMonthYear,
+  validateQuoteNumber,
+  formatQuoteNumber,
+  getQuoteDisplayNumber
+} from "@/src/utils/quoteUtils";
 
 const VALIDITY_PERIOD_SUGGESTIONS = [
   { value: 15, label: "15 jours" },
@@ -22,12 +31,49 @@ const VALIDITY_PERIOD_SUGGESTIONS = [
   { value: 90, label: "90 jours" }
 ];
 
-export default function QuoteInfoSection({ canEdit }) {
+export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = null }) {
   const { watch, setValue, register, formState: { errors }, trigger } = useFormContext();
   const data = watch();
 
-  // Set default dates
-  React.useEffect(() => {
+  // Handle prefix changes with auto-fill for MM and AAAA
+  const handlePrefixChange = (e) => {
+    const { value } = e.target;
+    const cursorPosition = e.target.selectionStart;
+    
+    // Check if user is typing MM or AAAA
+    if (value.includes('MM')) {
+      const { month } = getCurrentMonthYear();
+      const newValue = value.replace('MM', month);
+      setValue("prefix", newValue, { shouldValidate: true });
+      // Move cursor after the inserted month
+      setTimeout(() => {
+        e.target.setSelectionRange(cursorPosition + month.length - 2, cursorPosition + month.length - 2);
+      }, 0);
+      return;
+    }
+    
+    if (value.includes('AAAA')) {
+      const { year } = getCurrentMonthYear();
+      const newValue = value.replace('AAAA', year);
+      setValue("prefix", newValue, { shouldValidate: true });
+      // Move cursor after the inserted year
+      setTimeout(() => {
+        e.target.setSelectionRange(cursorPosition + year.length - 4, cursorPosition + year.length - 4);
+      }, 0);
+      return;
+    }
+    
+    // For normal typing, just update the value
+    setValue("prefix", value, { shouldValidate: true });
+  };
+
+  // Set default prefix and dates on component mount
+  useEffect(() => {
+    // Set default prefix if not already set
+    if (!data.prefix) {
+      setValue("prefix", generateQuotePrefix(), { shouldValidate: true });
+    }
+    
     // Set default issue date to today
     if (!data.issueDate) {
       const today = new Date();
@@ -41,7 +87,7 @@ export default function QuoteInfoSection({ canEdit }) {
       validUntil.setDate(today.getDate() + 30);
       setValue('validUntil', validUntil.toISOString().split('T')[0], { shouldValidate: true });
     }
-  }, [data.issueDate, data.validUntil, setValue]);
+  }, [data.prefix, data.issueDate, data.validUntil, setValue]);
 
   const validateValidUntil = (value) => {
     if (!value) return "La date de validité est requise";
@@ -79,16 +125,40 @@ export default function QuoteInfoSection({ canEdit }) {
                 <Input
                   id="quote-prefix"
                   {...register("prefix", {
+                    required: "Le préfixe est requis",
                     maxLength: {
                       value: 20,
                       message: "Le préfixe ne doit pas dépasser 20 caractères"
+                    },
+                    pattern: {
+                      value: /^D-\d{6}$/,
+                      message: "Format attendu : D-MMAAAA (ex: D-022025)"
                     }
                   })}
                   value={data.prefix || ""}
-                  onChange={(e) => setValue("prefix", e.target.value, { shouldDirty: true })}
-                  placeholder="D-MMYYYY"
+                  onChange={handlePrefixChange}
+                  onFocus={(e) => {
+                    // Show placeholder with current date as an example
+                    if (!e.target.value) {
+                      const { month, year } = getCurrentMonthYear();
+                      e.target.placeholder = `D-${month}${year}`;
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Format the prefix if it's not empty
+                    if (e.target.value) {
+                      const parsed = parseQuotePrefix(e.target.value);
+                      if (parsed) {
+                        setValue("prefix", formatQuotePrefix(parsed.month, parsed.year), { shouldValidate: true });
+                      }
+                    }
+                  }}
+                  placeholder="D-MMAAAA"
                   disabled={!canEdit}
-                  className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  className={cn(
+                    "h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+                    errors?.prefix && "border-red-500"
+                  )}
                 />
               </div>
               {errors?.prefix && (
@@ -111,20 +181,12 @@ export default function QuoteInfoSection({ canEdit }) {
                 {...register("number", {
                   required: "Le numéro de devis est requis",
                   validate: {
-                    isNumeric: (value) => {
-                      if (!/^\d+$/.test(value)) {
-                        return "Le numéro doit contenir uniquement des chiffres";
+                    isValid: (value) => {
+                      if (!validateQuoteNumber(value)) {
+                        return "Le numéro doit contenir entre 1 et 6 chiffres uniquement";
                       }
                       return true;
                     }
-                  },
-                  minLength: {
-                    value: 1,
-                    message: "Le numéro est requis"
-                  },
-                  maxLength: {
-                    value: 6,
-                    message: "Le numéro ne peut pas dépasser 6 chiffres"
                   }
                 })}
                 defaultValue={data.number || ""}
@@ -132,9 +194,9 @@ export default function QuoteInfoSection({ canEdit }) {
                 disabled={!canEdit}
                 onBlur={(e) => {
                   // Format with leading zeros when leaving the field
-                  if (e.target.value) {
-                    const num = e.target.value.padStart(6, '0');
-                    setValue('number', num, { shouldValidate: true });
+                  if (e.target.value && validateQuoteNumber(e.target.value)) {
+                    const formattedNum = formatQuoteNumber(e.target.value);
+                    setValue('number', formattedNum, { shouldValidate: true });
                   }
                 }}
                 className={`h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${
@@ -147,7 +209,11 @@ export default function QuoteInfoSection({ canEdit }) {
                 </p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Prochain numéro suggéré: 000001 (numérotation séquentielle)
+                  {nextQuoteNumber ? (
+                    `Prochain numéro suggéré: ${nextQuoteNumber.number} (${nextQuoteNumber.prefix})`
+                  ) : (
+                    "Numérotation séquentielle automatique"
+                  )}
                 </p>
               )}
             </div>
@@ -175,7 +241,7 @@ export default function QuoteInfoSection({ canEdit }) {
         </div>
 
         {/* Dates */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium">
               Date d'émission *
@@ -307,8 +373,8 @@ export default function QuoteInfoSection({ canEdit }) {
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-xs">
-              Utilisez le sélecteur "+" pour ajouter des jours automatiquement
+            <p className="text-xs text-muted-foreground">
+              Utilisez le sélecteur pour ajouter des jours automatiquement
             </p>
           </div>
         </div>

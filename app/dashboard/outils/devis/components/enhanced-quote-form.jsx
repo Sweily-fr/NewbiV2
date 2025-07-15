@@ -175,7 +175,8 @@ export default function EnhancedQuoteForm({
   loading, 
   saving, 
   readOnly, 
-  errors
+  errors,
+  nextQuoteNumber
 }) {
   const { watch, setValue, getValues, control } = useFormContext();
   const data = watch();
@@ -278,7 +279,8 @@ export default function EnhancedQuoteForm({
           <>
             {/* Section 1: Informations du devis */}
             <QuoteInfoSection 
-              canEdit={canEdit} 
+              canEdit={canEdit}
+              nextQuoteNumber={nextQuoteNumber}
             />
             <Separator />
 
