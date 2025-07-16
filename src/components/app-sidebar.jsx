@@ -70,10 +70,20 @@ const data = {
       url: "/dashboard/calendar",
       icon: IconCalendar,
     },
+    // {
+    //   title: "Favoris",
+    //   url: "/dashboard/favoris",
+    //   icon: IconHeart,
+    // },
     {
-      title: "Favoris",
-      url: "/dashboard/favoris",
-      icon: IconHeart,
+      title: "Clients",
+      url: "/dashboard/clients",
+      icon: IconUsers,
+    },
+    {
+      title: "Catalogue",
+      url: "/dashboard/catalogue",
+      icon: IconFileWord,
     },
   ],
   navClouds: [

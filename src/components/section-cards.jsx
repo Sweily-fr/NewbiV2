@@ -63,10 +63,10 @@ const cards = [
     status: "available",
   },
   {
-    title: "Dépenses",
-    subtitle: "Créez et gérez vos dépenses.",
-    icon: <IconReceipt size={20} />,
-    href: "/dashboard/outils/gestion-depenses",
+    title: "KANBAN",
+    subtitle: "Créez et gérez vos tâches.",
+    icon: <IconLayoutKanban size={20} />,
+    href: "/dashboard/outils/kanban",
     status: "available",
   },
   {
@@ -77,20 +77,6 @@ const cards = [
     status: "available",
   },
   {
-    title: "Article SEO",
-    subtitle: "Créez et gérez vos articles SEO.",
-    icon: <IconArticle size={20} />,
-    href: "/dashboard/outils/optimiseur-seo-blog",
-    status: "available",
-  },
-  {
-    title: "KANBAN",
-    subtitle: "Créez et gérez vos tâches.",
-    icon: <IconLayoutKanban size={20} />,
-    href: "/dashboard/outils/kanban",
-    status: "available",
-  },
-  {
     title: "Transfert de fichiers",
     subtitle: "Transférez vos fichiers.",
     icon: <IconTransfer size={20} />,
@@ -98,19 +84,33 @@ const cards = [
     status: "available",
   },
   {
-    title: "Mentions légales",
-    subtitle: "Créez et gérez vos mentions légales.",
-    icon: <IconShieldLock size={20} />,
-    href: "/dashboard/outils/mentions-legales",
+    title: "Dépenses",
+    subtitle: "Créez et gérez vos dépenses.",
+    icon: <IconReceipt size={20} />,
+    href: "/dashboard/outils/gestion-depenses",
     status: "available",
   },
-  {
-    title: "Politique de confidentialité",
-    subtitle: "Créez et gérez vos politiques.",
-    icon: <IconLock size={20} />,
-    href: "/dashboard/outils/politique-de-confidentialite",
-    status: "available",
-  },
+  // {
+  //   title: "Article SEO",
+  //   subtitle: "Créez et gérez vos articles SEO.",
+  //   icon: <IconArticle size={20} />,
+  //   href: "/dashboard/outils/optimiseur-seo-blog",
+  //   status: "available",
+  // },
+  // {
+  //   title: "Mentions légales",
+  //   subtitle: "Créez et gérez vos mentions légales.",
+  //   icon: <IconShieldLock size={20} />,
+  //   href: "/dashboard/outils/mentions-legales",
+  //   status: "available",
+  // },
+  // {
+  //   title: "Politique de confidentialité",
+  //   subtitle: "Créez et gérez vos politiques.",
+  //   icon: <IconLock size={20} />,
+  //   href: "/dashboard/outils/politique-de-confidentialite",
+  //   status: "available",
+  // },
 ];
 
 export function SectionCards({ className }) {
@@ -133,14 +133,14 @@ export function SectionCards({ className }) {
               <div className="flex flex-col p-2 flex-1 justify-between">
                 <div className="space-y-4">
                   <div
-                    className="p-3 rounded-lg w-9 h-9 flex items-center justify-center"
-                    style={{ backgroundColor: getIconColor(card.title) }}
+                    className="p-3 rounded-md w-9 h-9 flex items-center justify-center bg-[#5B4FFF]/80"
+                    // style={{ backgroundColor: getIconColor(card.title) }}
                   >
                     <p className="text-white">{card.icon}</p>
                   </div>
 
                   <div className="space-y-3">
-                    <CardTitle className="text-regular">{card.title}</CardTitle>
+                    <CardTitle className="text-medium">{card.title}</CardTitle>
                     <CardDescription className="text-sm">
                       {card.subtitle}
                     </CardDescription>

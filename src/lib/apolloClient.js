@@ -1,9 +1,23 @@
-import { ApolloClient, InMemoryCache, HttpLink, from } from "@apollo/client";
+import { ApolloClient, InMemoryCache, from } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
+import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
 import { toast } from "sonner";
 
-const httpLink = new HttpLink({
+// Fonction pour vérifier si un token JWT est expiré
+const isTokenExpired = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const currentTime = Date.now() / 1000;
+    return payload.exp < currentTime;
+  } catch (error) {
+    // Si on ne peut pas décoder le token, on considère qu'il est expiré
+    return true;
+  }
+};
+
+// Configuration Upload Link avec support des uploads de fichiers
+const uploadLink = createUploadLink({
   uri: "http://localhost:4000/graphql",
   credentials: "include", // Important pour better-auth (cookies)
 });
@@ -82,7 +96,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 });
 
 export const client = new ApolloClient({
-  link: from([errorLink, httpLink]),
+  link: from([authLink, errorLink, uploadLink]),
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {

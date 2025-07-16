@@ -19,8 +19,8 @@ export default function InvoicesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Factures</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl font-medium mb-2">Factures</h1>
+          <p className="text-muted-foreground text-sm">
             Gérez vos factures, devis et documents commerciaux
           </p>
         </div>

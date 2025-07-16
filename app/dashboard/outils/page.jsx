@@ -32,12 +32,12 @@ export default function Outils() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <div className="flex-shrink-0">
+          {/* <div className="flex-shrink-0">
             <InputLoader
               placeholder="Rechercher des outils"
               className="w-[300px]"
             />
-          </div>
+          </div> */}
         </div>
         <SectionCards />
       </div>

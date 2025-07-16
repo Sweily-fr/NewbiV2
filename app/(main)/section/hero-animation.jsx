@@ -77,7 +77,7 @@ const HeroAnimation = () => {
             business parfait
           </span>
           <span className="text-[#2E2E2E] block">
-            en un <span className="text-[#2E2E2E] font-semibold">CLIC</span>
+            en un <span className="text-[#2E2E2E] font-bold">CLIC</span>
           </span>
         </h1>
         <span className="text-[#2E2E2E] block mt-6">

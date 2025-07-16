@@ -11,10 +11,10 @@ import InvoicePreview from "./InvoicePreview";
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
 import { toast } from "sonner";
 
-export default function ModernInvoiceEditor({ 
-  mode = "create", 
-  invoiceId = null, 
-  initialData = null 
+export default function ModernInvoiceEditor({
+  mode = "create",
+  invoiceId = null,
+  initialData = null,
 }) {
   const router = useRouter();
   const {
@@ -60,22 +60,28 @@ export default function ModernInvoiceEditor({
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div>
-                  <h1 className="text-xl font-bold">
+                  <h1 className="text-xl font-medium">
                     {isCreating && "Nouvelle facture"}
                     {isEditing && "Modifier la facture"}
                     {isReadOnly && "Détails de la facture"}
                   </h1>
                   {isDirty && !isReadOnly && (
-                    <p className="text-sm">
-                      {saving ? "Sauvegarde en cours..." : "Modifications non sauvegardées"}
+                    <p className="text-sm text-muted-foreground">
+                      {saving
+                        ? "Sauvegarde en cours..."
+                        : "Modifications non sauvegardées"}
                     </p>
                   )}
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 {formData.status && (
-                  <Badge variant={formData.status === 'DRAFT' ? 'secondary' : 'default'}>
+                  <Badge
+                    variant={
+                      formData.status === "DRAFT" ? "secondary" : "default"
+                    }
+                  >
                     {formData.status}
                   </Badge>
                 )}
@@ -101,10 +107,8 @@ export default function ModernInvoiceEditor({
         <div className="border-l flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
           <div className="flex-shrink-0 p-4 border-b">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                Aperçu de la facture
-              </h2>
-              
+              <h2 className="text-lg font-semibold">Aperçu de la facture</h2>
+
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" className="gap-2">
                   <Download className="h-4 w-4" />
@@ -121,7 +125,7 @@ export default function ModernInvoiceEditor({
               </div>
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto p-4 h-[calc(100vh-64px)]">
             <InvoicePreview data={formData} />
           </div>
