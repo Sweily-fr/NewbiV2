@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
 import ModernQuoteEditor from "../../components/modern-quote-editor";
 
 export default function EditQuotePage() {
@@ -8,9 +9,11 @@ export default function EditQuotePage() {
   const quoteId = params.id;
 
   return (
-    <ModernQuoteEditor 
-      mode="edit" 
-      quoteId={quoteId}
-    />
+    <CompanyInfoGuard>
+      <ModernQuoteEditor 
+        mode="edit" 
+        quoteId={quoteId}
+      />
+    </CompanyInfoGuard>
   );
 }

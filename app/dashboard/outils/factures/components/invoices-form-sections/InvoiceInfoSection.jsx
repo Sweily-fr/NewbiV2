@@ -262,15 +262,15 @@ export default function InvoiceInfoSection({ canEdit }) {
 
         {/* Référence devis */}
         <div className="space-y-2">
-          <Label htmlFor="quote-reference" className="text-sm font-medium">
+          <Label htmlFor="purchase-order-number" className="text-sm font-medium">
             Référence devis
           </Label>
           <div className="relative">
             <Input
-              id="quote-reference"
-              value={data.quoteReference || ""}
-              onChange={(e) => setValue("quoteReference", e.target.value, { shouldDirty: true })}
-              placeholder="DEV-2025-001"
+              id="purchase-order-number"
+              value={data.purchaseOrderNumber || ""}
+              onChange={(e) => setValue("purchaseOrderNumber", e.target.value, { shouldDirty: true })}
+              placeholder="D-202501-001"
               disabled={!canEdit}
               className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
             />

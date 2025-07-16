@@ -228,6 +228,44 @@ export const CHANGE_INVOICE_STATUS = gql`
   ${INVOICE_FRAGMENT}
 `;
 
+export const CREATE_LINKED_INVOICE = gql`
+  mutation CreateLinkedInvoice(
+    $quoteId: ID!
+    $amount: Float!
+    $isDeposit: Boolean!
+  ) {
+    createLinkedInvoice(
+      quoteId: $quoteId
+      amount: $amount
+      isDeposit: $isDeposit
+    ) {
+      invoice {
+        id
+        number
+        status
+        finalTotalTTC
+        isDeposit
+      }
+      quote {
+        id
+        linkedInvoices {
+          id
+          number
+          status
+          finalTotalTTC
+          isDeposit
+        }
+      }
+    }
+  }
+`;
+
+export const DELETE_LINKED_INVOICE = gql`
+  mutation DeleteLinkedInvoice($id: ID!) {
+    deleteLinkedInvoice(id: $id)
+  }
+`;
+
 // ==================== HOOKS PERSONNALISÉS ====================
 
 import { useQuery, useMutation, useApolloClient } from '@apollo/client';
@@ -583,6 +621,110 @@ export const useChangeInvoiceStatus = () => {
   };
 
   return { changeStatus, loading };
+};
+
+// Hook pour créer une facture liée à un devis
+export const useCreateLinkedInvoice = () => {
+  const client = useApolloClient();
+  
+  const [createLinkedInvoiceMutation, { loading }] = useMutation(CREATE_LINKED_INVOICE, {
+    onCompleted: (data) => {
+      const invoiceNumber = data.createLinkedInvoice.invoice.number;
+      const isDeposit = data.createLinkedInvoice.invoice.isDeposit;
+      const message = isDeposit 
+        ? `Facture d'acompte ${invoiceNumber} créée avec succès`
+        : `Facture ${invoiceNumber} créée avec succès`;
+      toast.success(message);
+      
+      // Invalider les caches pour rafraîchir les données
+      client.refetchQueries({
+        include: [GET_INVOICES, GET_INVOICE_STATS]
+      });
+      
+      // Invalider aussi les requêtes de devis (import nécessaire)
+      client.refetchQueries({
+        include: ['GetQuotes', 'GetQuote']
+      });
+    },
+    onError: (error) => {
+      console.error('Erreur lors de la création de la facture liée:', error);
+      toast.error(error.message || 'Erreur lors de la création de la facture liée');
+    }
+  });
+
+  const createLinkedInvoice = async (quoteId, amount, isDeposit) => {
+    console.log('Hook createLinkedInvoice appelé avec:', { quoteId, amount, isDeposit });
+    try {
+      console.log('Exécution de la mutation GraphQL...');
+      const result = await createLinkedInvoiceMutation({
+        variables: { 
+          quoteId, 
+          amount, 
+          isDeposit 
+        }
+      });
+      console.log('Résultat de la mutation GraphQL:', result);
+      return result.data.createLinkedInvoice;
+    } catch (error) {
+      console.error('Erreur dans la mutation GraphQL:', error);
+      
+      // Gestion spécifique des erreurs d'informations d'entreprise
+      if (error.graphQLErrors && error.graphQLErrors.some(e => e.extensions?.exception?.code === 'COMPANY_INFO_INCOMPLETE')) {
+        toast.error('Informations d\'entreprise incomplètes', {
+          description: 'Veuillez compléter les informations de votre entreprise dans les paramètres avant de créer une facture.'
+        });
+      } else {
+        toast.error('Erreur lors de la création de la facture liée', {
+          description: error.message || 'Une erreur inattendue s\'est produite'
+        });
+      }
+      
+      throw error;
+    }
+  };
+
+  return { createLinkedInvoice, loading };
+};
+
+// Hook pour supprimer une facture liée
+export const useDeleteLinkedInvoice = () => {
+  const [deleteLinkedInvoiceMutation, { loading }] = useMutation(DELETE_LINKED_INVOICE, {
+    onCompleted: () => {
+      toast.success('Facture liée supprimée avec succès');
+    },
+    onError: (error) => {
+      console.error('Erreur lors de la suppression de la facture liée:', error);
+      toast.error('Erreur lors de la suppression de la facture liée', {
+        description: error.message || 'Une erreur inattendue s\'est produite'
+      });
+    },
+    // Mettre à jour le cache Apollo
+    update: (cache, { data }) => {
+      if (data?.deleteLinkedInvoice) {
+        // Invalider les caches liés aux factures et devis
+        cache.evict({ fieldName: 'invoices' });
+        cache.evict({ fieldName: 'quotes' });
+        cache.gc();
+      }
+    }
+  });
+
+  const deleteLinkedInvoice = async (invoiceId) => {
+    console.log('Hook deleteLinkedInvoice appelé avec:', { invoiceId });
+    try {
+      console.log('Exécution de la mutation GraphQL...');
+      const result = await deleteLinkedInvoiceMutation({
+        variables: { id: invoiceId }
+      });
+      console.log('Résultat de la mutation GraphQL:', result);
+      return result.data.deleteLinkedInvoice;
+    } catch (error) {
+      console.error('Erreur dans la mutation GraphQL:', error);
+      throw error;
+    }
+  };
+
+  return { deleteLinkedInvoice, loading };
 };
 
 // ==================== CONSTANTES ====================

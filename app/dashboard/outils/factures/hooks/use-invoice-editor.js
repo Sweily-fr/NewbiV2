@@ -495,7 +495,12 @@ function transformFormDataToInput(formData, previousStatus = null) {
   // Nettoyer le client en supprimant les métadonnées GraphQL
   const cleanClient = formData.client ? {
     id: formData.client.id,
-    name: formData.client.name,
+    // Générer automatiquement le champ name requis s'il n'existe pas
+    name: formData.client.name || (
+      formData.client.type === 'COMPANY' 
+        ? (formData.client.companyName || 'Entreprise')
+        : `${formData.client.firstName || ''} ${formData.client.lastName || ''}`.trim() || 'Client'
+    ),
     email: formData.client.email,
     type: formData.client.type,
     firstName: formData.client.firstName,

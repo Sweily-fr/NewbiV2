@@ -1,21 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { X, Eye, Pencil, Trash2, CheckCircle, FileText, XCircle, Download, Send, Copy, Clock, Building, Tag, Package, Percent, FileCheck } from "lucide-react";
+import { 
+  X, 
+  FileText, 
+  Building, 
+  Clock, 
+  Package, 
+  Percent, 
+  Eye, 
+  Pencil, 
+  CheckCircle, 
+  XCircle, 
+  FileCheck, 
+  Download, 
+  Send,
+  Mail
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
 import { useRouter } from "next/navigation";
 import { useChangeQuoteStatus, useQuote, useConvertQuoteToInvoice, QUOTE_STATUS, QUOTE_STATUS_LABELS, QUOTE_STATUS_COLORS } from "@/src/graphql/quoteQueries";
+import { useCreateLinkedInvoice } from "@/src/graphql/invoiceQueries";
 import { toast } from "sonner";
 import QuotePreview from "./QuotePreview";
+import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
+import LinkedInvoicesList from "./linked-invoices-list";
 
 export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onRefetch }) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
+  const { createLinkedInvoice, loading: creatingLinkedInvoice } = useCreateLinkedInvoice();
   
   // Récupérer les données complètes du devis
   const { quote: fullQuote, loading: loadingFullQuote, error: quoteError } = useQuote(initialQuote?.id);
@@ -25,35 +44,49 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
   // Utiliser les données complètes si disponibles, sinon les données initiales
   const quote = fullQuote || initialQuote;
   
+  // Debug: Vérifier si les données complètes sont récupérées
+  console.log("Loading full quote:", loadingFullQuote);
+  console.log("Quote error:", quoteError);
+  console.log("Full quote:", fullQuote);
+  console.log("Final quote used:", quote);
+  console.log("Client address:", quote.client?.address);
+  console.log("Client address type:", typeof quote.client?.address);
+  console.log("Client address keys:", quote.client?.address ? Object.keys(quote.client.address) : "No address");
+  console.log("Items:", quote.items);
+  console.log("Financial details:", {
+    totalHT: quote.totalHT,
+    finalTotalHT: quote.finalTotalHT,
+    totalVAT: quote.totalVAT,
+    finalTotalTTC: quote.finalTotalTTC
+  });
+  
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
     }).format(amount || 0);
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Non définie';
+    if (!dateString) return "Non définie";
     
     let date;
-    // Gérer les timestamps en millisecondes (string ou number)
-    if (typeof dateString === 'string' && /^\d+$/.test(dateString)) {
-      date = new Date(parseInt(dateString, 10));
-    } else if (typeof dateString === 'number') {
+    // Gérer différents formats de date
+    if (typeof dateString === "string" && /^\d+$/.test(dateString)) {
+      date = new Date(parseInt(dateString));
+    } else if (typeof dateString === "number") {
       date = new Date(dateString);
     } else {
       date = new Date(dateString);
     }
     
     if (isNaN(date.getTime())) {
-      console.warn('Date invalide:', dateString);
-      return 'Date invalide';
+      console.warn("Date invalide:", dateString);
+      return "Date invalide";
     }
     
-    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-    return date.toLocaleDateString('fr-FR', options);
+    const options = { day: "2-digit", month: "2-digit", year: "numeric" };
+    return date.toLocaleDateString("fr-FR", options);
   };
 
   const isValidUntilExpired = () => {
@@ -76,200 +109,319 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
   const handleSendQuote = async () => {
     try {
       await changeStatus(quote.id, QUOTE_STATUS.PENDING);
-      toast.success('Devis envoyé avec succès');
+      toast.success("Devis envoyé avec succès");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error('Erreur lors de l\'envoi du devis');
+      toast.error("Erreur lors de l'envoi du devis");
     }
   };
 
   const handleAccept = async () => {
     try {
-      await changeStatus(quote.id, QUOTE_STATUS.ACCEPTED);
-      toast.success('Devis accepté');
+      await changeStatus(quote.id, QUOTE_STATUS.COMPLETED);
+      toast.success("Devis accepté");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error('Erreur lors de l\'acceptation du devis');
+      toast.error("Erreur lors de l'acceptation du devis");
     }
   };
 
   const handleReject = async () => {
     try {
-      await changeStatus(quote.id, QUOTE_STATUS.REJECTED);
-      toast.success('Devis rejeté');
+      await changeStatus(quote.id, QUOTE_STATUS.CANCELED);
+      toast.success("Devis rejeté");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error('Erreur lors du rejet du devis');
+      toast.error("Erreur lors du rejet du devis");
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      await changeStatus(quote.id, QUOTE_STATUS.CANCELED);
+      toast.success("Devis annulé");
+      if (onRefetch) onRefetch();
+    } catch (error) {
+      toast.error("Erreur lors de l'annulation du devis");
     }
   };
 
   const handleConvertToInvoice = async () => {
     try {
       const result = await convertToInvoice(quote.id);
-      toast.success('Devis converti en facture avec succès');
-      if (onRefetch) onRefetch();
-      // Optionnel: rediriger vers la facture créée
-      if (result?.data?.convertQuoteToInvoice?.id) {
-        router.push(`/dashboard/outils/factures/${result.data.convertQuoteToInvoice.id}`);
+      toast.success("Devis converti en facture avec succès");
+      if (result?.id) {
+        router.push(`/dashboard/outils/factures/${result.id}`);
+      } else {
+        router.push("/dashboard/outils/factures");
       }
-      onClose();
+      if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error('Erreur lors de la conversion en facture');
+      toast.error("Erreur lors de la conversion en facture");
     }
   };
 
-  const isLoading = changingStatus || converting;
+  const handleCreateLinkedInvoice = async ({ quoteId, amount, isDeposit }) => {
+    console.log('handleCreateLinkedInvoice appelé avec:', { quoteId, amount, isDeposit });
+    try {
+      console.log('Appel du hook createLinkedInvoice...');
+      const result = await createLinkedInvoice(quoteId, amount, isDeposit);
+      console.log('Résultat de createLinkedInvoice:', result);
+      if (onRefetch) onRefetch();
+      return result;
+    } catch (error) {
+      console.error('Erreur lors de la création de la facture liée:', error);
+      throw error;
+    }
+  };
+
+  const isLoading = changingStatus || converting || creatingLinkedInvoice;
+
+  // Transformer les données pour le composant QuotePreview
+  const transformQuoteForPreview = (quoteData) => {
+    if (!quoteData) return null;
+    
+    // Construire l'adresse client comme une chaîne
+    let clientAddress = "";
+    if (quoteData.client?.address) {
+      const addr = quoteData.client.address;
+      const parts = [];
+      if (addr.street) parts.push(addr.street);
+      if (addr.postalCode || addr.city) {
+        const cityLine = [addr.postalCode, addr.city].filter(Boolean).join(" ");
+        if (cityLine) parts.push(cityLine);
+      }
+      if (addr.country) parts.push(addr.country);
+      clientAddress = parts.join("\n");
+    }
+    
+    return {
+      quoteNumber: quoteData.number || "Brouillon",
+      issueDate: quoteData.issueDate,
+      validityDate: quoteData.validUntil,
+      status: quoteData.status,
+      companyInfo: {
+        name: "Votre Entreprise", // À remplacer par les vraies données d'entreprise
+        address: "",
+        email: "",
+        phone: "",
+        siret: ""
+      },
+      clientInfo: {
+        name: quoteData.client?.name || "Client",
+        address: clientAddress,
+        email: quoteData.client?.email || "",
+        phone: quoteData.client?.phone || ""
+      },
+      items: quoteData.items || [],
+      notes: {
+        footer: quoteData.notes || "",
+        terms: quoteData.terms || "",
+        showBankDetails: false,
+        bankDetails: ""
+      },
+      discount: {
+        type: quoteData.discountType || "PERCENTAGE",
+        value: quoteData.discountAmount || 0
+      },
+      customFields: []
+    };
+  };
 
   return (
     <>
-      <div className={`fixed inset-y-0 right-0 z-50 w-96 bg-background border-l transform transition-transform duration-300 ease-in-out ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
+      <div className={`fixed inset-y-0 right-0 z-50 w-96 bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
+        isOpen ? "translate-x-0" : "translate-x-full"
       }`}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div>
-            <h2 className="text-lg font-semibold">
-              {quote.number || 'Brouillon'}
-            </h2>
-            <Badge className={`mt-1 ${QUOTE_STATUS_COLORS[quote.status] || ''}`}>
-              {QUOTE_STATUS_LABELS[quote.status] || quote.status}
-            </Badge>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Client Info */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Building className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-medium">Client</h3>
-            </div>
-            {quote.client ? (
-              <div className="space-y-2">
-                <div>
-                  <p className="font-medium">{quote.client.name}</p>
-                  {quote.client.email && (
-                    <p className="text-sm text-muted-foreground">{quote.client.email}</p>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-lg">
+                  Devis {quote.number || "Brouillon"}
+                </h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge 
+                    variant={QUOTE_STATUS_COLORS[quote.status] || "secondary"}
+                    className="text-xs"
+                  >
+                    {QUOTE_STATUS_LABELS[quote.status] || quote.status}
+                  </Badge>
+                  {isValidUntilExpired() && (
+                    <Badge variant="destructive" className="text-xs">
+                      Expiré
+                    </Badge>
                   )}
                 </div>
-                {quote.client.address && (
-                  <div className="text-sm text-muted-foreground">
-                    <p>{quote.client.address.street}</p>
-                    <p>{quote.client.address.postalCode} {quote.client.address.city}</p>
-                    {quote.client.address.country && <p>{quote.client.address.country}</p>}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Client Info */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-medium">Client</h3>
+              </div>
+              {quote.client ? (
+                <div className="space-y-2">
+                  <div>
+                    <p className="font-medium">{quote.client.name}</p>
+                    {quote.client.email && (
+                      <p className="text-sm text-muted-foreground">{quote.client.email}</p>
+                    )}
                   </div>
+                  {quote.client.address && (
+                    <div className="text-sm text-muted-foreground">
+                      {quote.client.address.street && <p>{quote.client.address.street}</p>}
+                      {(quote.client.address.postalCode || quote.client.address.city) && (
+                        <p>
+                          {quote.client.address.postalCode && quote.client.address.postalCode}
+                          {quote.client.address.postalCode && quote.client.address.city && " "}
+                          {quote.client.address.city && quote.client.address.city}
+                        </p>
+                      )}
+                      {quote.client.address.country && <p>{quote.client.address.country}</p>}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">Aucun client sélectionné</p>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Dates */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-medium">Dates</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Date d'émission</span>
+                  <span>{formatDate(quote.issueDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Valide jusqu'au</span>
+                  <span className={isValidUntilExpired() ? "text-red-600 font-medium" : ""}>
+                    {formatDate(quote.validUntil)}
+                    {isValidUntilExpired() && (
+                      <span className="text-xs block text-red-500">Expiré</span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Articles */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-medium">Articles</h3>
+              </div>
+              <div className="space-y-2">
+                {quote.items && quote.items.length > 0 ? (
+                  quote.items.map((item, index) => (
+                    <div key={index} className="text-sm">
+                      <div className="font-medium">{item.description || "Article sans description"}</div>
+                      <div className="text-muted-foreground">
+                        {item.quantity || 0} × {formatCurrency(item.unitPrice || 0)}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">Aucun article</p>
                 )}
               </div>
-            ) : (
-              <p className="text-muted-foreground">Aucun client sélectionné</p>
+            </div>
+
+            <Separator />
+
+            {/* Totals */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Percent className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-medium">Totaux</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Sous-total HT</span>
+                  <span>{formatCurrency(quote.totalHT || 0)}</span>
+                </div>
+                {quote.discountAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Remise</span>
+                    <span>-{formatCurrency(quote.discountAmount || 0)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total HT</span>
+                  <span>{formatCurrency(quote.finalTotalHT || quote.totalHT || 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">TVA</span>
+                  <span>{formatCurrency(quote.totalVAT || 0)}</span>
+                </div>
+                <div className="flex justify-between font-medium">
+                  <span>Total TTC</span>
+                  <span>{formatCurrency(quote.finalTotalTTC || quote.totalTTC || 0)}</span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Preview Thumbnail */}
+            <div className="space-y-3">
+              <h3 className="font-medium">Aperçu</h3>
+              <div 
+                className="border w-[200px] rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setIsPreviewOpen(true)}
+              >
+                <div className="aspect-[3/4] bg-white border rounded shadow-sm flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Eye className="h-8 w-8 mx-auto mb-2" />
+                    <p className="text-xs">Cliquer pour voir l'aperçu</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Liste des factures liées */}
+            {quote.status === QUOTE_STATUS.COMPLETED && (
+              <div className="space-y-3">
+                <LinkedInvoicesList 
+                  quote={quote} 
+                  onInvoiceDeleted={() => {
+                    // Rafraîchir les données du devis
+                    if (onRefetch) {
+                      onRefetch();
+                    }
+                  }}
+                  onCreateLinkedInvoice={handleCreateLinkedInvoice}
+                  isLoading={isLoading}
+                />
+              </div>
             )}
           </div>
-
-          <Separator />
-
-          {/* Dates */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-medium">Dates</h3>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Date d'émission</span>
-                <span>{formatDate(quote.issueDate)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Valide jusqu'au</span>
-                <span className={isValidUntilExpired() ? "text-red-600 font-medium" : ""}>
-                  {formatDate(quote.validUntil)}
-                  {isValidUntilExpired() && (
-                    <span className="text-xs block text-red-500">Expiré</span>
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Articles */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-medium">Articles</h3>
-            </div>
-            <div className="space-y-2">
-              {quote.items && quote.items.length > 0 ? (
-                quote.items.map((item, index) => (
-                  <div key={index} className="text-sm">
-                    <div className="font-medium">{item.description}</div>
-                    <div className="text-muted-foreground">
-                      {item.quantity} × {formatCurrency(item.unitPrice)}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-muted-foreground">Aucun article</p>
-              )}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Totals */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Percent className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-medium">Totaux</h3>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Sous-total HT</span>
-                <span>{formatCurrency(quote.totalHT || 0)}</span>
-              </div>
-              {quote.discountAmount > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Remise</span>
-                  <span>-{formatCurrency(quote.discountAmount || 0)}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total HT</span>
-                <span>{formatCurrency(quote.finalTotalHT || quote.totalHT || 0)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">TVA</span>
-                <span>{formatCurrency(quote.totalVAT || 0)}</span>
-              </div>
-              <div className="flex justify-between font-medium">
-                <span>Total TTC</span>
-                <span>{formatCurrency(quote.finalTotalTTC || quote.totalTTC || 0)}</span>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Preview Thumbnail */}
-          <div className="space-y-3">
-            <h3 className="font-medium">Aperçu</h3>
-            <div 
-              className="border w-[200px] rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => setIsPreviewOpen(true)}
-            >
-              <div className="aspect-[3/4] bg-white border rounded shadow-sm flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <Eye className="h-8 w-8 mx-auto mb-2" />
-                  <p className="text-xs">Cliquer pour voir l'aperçu</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Action Buttons */}
         <div className="border-t p-6 space-y-3">
@@ -304,7 +456,7 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
               disabled={isLoading}
               className="w-full"
             >
-              <FileText className="h-4 w-4 mr-2" />
+              <Send className="h-4 w-4 mr-2" />
               Envoyer le devis
             </Button>
           )}
@@ -328,18 +480,71 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
                 <XCircle className="h-4 w-4 mr-2" />
                 Rejeter le devis
               </Button>
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isLoading}
+                className="w-full"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Annuler le devis
+              </Button>
             </div>
           )}
 
-          {quote.status === QUOTE_STATUS.ACCEPTED && (
-            <Button
-              onClick={handleConvertToInvoice}
-              disabled={isLoading}
-              className="w-full"
-            >
-              <FileCheck className="h-4 w-4 mr-2" />
-              Convertir en facture
-            </Button>
+          {(() => {
+            console.log('Vérification statut devis:', {
+              currentStatus: quote.status,
+              expectedStatus: QUOTE_STATUS.COMPLETED,
+              isCompleted: quote.status === QUOTE_STATUS.COMPLETED,
+              allStatuses: QUOTE_STATUS,
+              hasLinkedInvoices: quote.linkedInvoices && quote.linkedInvoices.length > 0,
+              linkedInvoicesCount: quote.linkedInvoices?.length || 0
+            });
+            return quote.status === QUOTE_STATUS.COMPLETED;
+          })() && (
+            <div className="space-y-3">
+              {/* Boutons de création de factures liées */}
+              <div className="space-y-2">
+                {/* Afficher le popover seulement s'il y a moins de 2 factures liées */}
+                {(!quote.linkedInvoices || quote.linkedInvoices.length < 2) && (
+                  <CreateLinkedInvoicePopover
+                    quote={quote}
+                    onCreateLinkedInvoice={handleCreateLinkedInvoice}
+                    isLoading={isLoading}
+                  />
+                )}
+                
+                {/* Bouton pour créer la facture finale quand il y a exactement 2 factures liées */}
+                {quote.linkedInvoices && quote.linkedInvoices.length === 2 && (() => {
+                  const totalInvoiced = quote.linkedInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
+                  const remainingAmount = (quote.finalTotalTTC || 0) - totalInvoiced;
+                  return remainingAmount > 0 && (
+                    <Button
+                      onClick={() => handleCreateLinkedInvoice({ quoteId: quote.id, amount: remainingAmount, isDeposit: false })}
+                      disabled={isLoading}
+                      className="w-full"
+                    >
+                      <FileCheck className="h-4 w-4 mr-2" />
+                      Créer la facture finale ({formatCurrency(remainingAmount)})
+                    </Button>
+                  );
+                })()}
+              </div>
+              
+              {/* Bouton de conversion complète - séparé et en dessous */}
+              {(!quote.linkedInvoices || quote.linkedInvoices.length === 0) && (
+                <Button
+                  variant="outline"
+                  onClick={handleConvertToInvoice}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  <FileCheck className="h-4 w-4 mr-2" />
+                  Conversion complète
+                </Button>
+              )}
+            </div>
           )}
 
           {/* Additional Actions */}
@@ -349,10 +554,11 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
               PDF
             </Button>
             <Button variant="ghost" size="sm" className="flex-1">
-              <Send className="h-4 w-4 mr-2" />
-              Envoyer
+              <Mail className="h-4 w-4 mr-2" />
+              Email
             </Button>
           </div>
+        </div>
         </div>
       </div>
 
@@ -360,10 +566,10 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
           <DialogHeader>
-            <DialogTitle className="pl-6 pt-6">Aperçu du devis {quote.number || 'Brouillon'}</DialogTitle>
+            <DialogTitle className="pl-6 pt-6">Aperçu du devis {quote.number || "Brouillon"}</DialogTitle>
           </DialogHeader>
           <div className="mt-0">
-            <QuotePreview data={quote} enablePDF={false} />
+            <QuotePreview data={transformQuoteForPreview(quote)} enablePDF={false} />
           </div>
         </DialogContent>
       </Dialog>

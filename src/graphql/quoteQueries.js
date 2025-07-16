@@ -104,6 +104,8 @@ export const QUOTE_FRAGMENT = gql`
       id
       number
       status
+      finalTotalTTC
+      isDeposit
     }
   }
 `;
@@ -245,6 +247,7 @@ export const CONVERT_QUOTE_TO_INVOICE = gql`
     ) {
       id
       number
+      purchaseOrderNumber
       status
       finalTotalTTC
     }
@@ -571,9 +574,8 @@ export const useConvertQuoteToInvoice = () => {
 export const QUOTE_STATUS = {
   DRAFT: 'DRAFT',
   PENDING: 'PENDING',
-  ACCEPTED: 'ACCEPTED',
-  REJECTED: 'REJECTED',
-  EXPIRED: 'EXPIRED'
+  COMPLETED: 'COMPLETED',
+  CANCELED: 'CANCELED'
 };
 
 export const DISCOUNT_TYPE = {
@@ -590,9 +592,8 @@ export const CLIENT_TYPE = {
 export const QUOTE_STATUS_LABELS = {
   [QUOTE_STATUS.DRAFT]: 'Brouillon',
   [QUOTE_STATUS.PENDING]: 'En attente',
-  [QUOTE_STATUS.ACCEPTED]: 'Accepté',
-  [QUOTE_STATUS.REJECTED]: 'Refusé',
-  [QUOTE_STATUS.EXPIRED]: 'Expiré'
+  [QUOTE_STATUS.COMPLETED]: 'Accepté',
+  [QUOTE_STATUS.CANCELED]: 'Annulé'
 };
 
 export const DISCOUNT_TYPE_LABELS = {
@@ -609,7 +610,6 @@ export const CLIENT_TYPE_LABELS = {
 export const QUOTE_STATUS_COLORS = {
   [QUOTE_STATUS.DRAFT]: 'bg-gray-100 text-gray-800 border-gray-200',
   [QUOTE_STATUS.PENDING]: 'bg-blue-100 text-blue-800 border-blue-200',
-  [QUOTE_STATUS.ACCEPTED]: 'bg-green-100 text-green-800 border-green-200',
-  [QUOTE_STATUS.REJECTED]: 'bg-red-100 text-red-800 border-red-200',
-  [QUOTE_STATUS.EXPIRED]: 'bg-orange-100 text-orange-800 border-orange-200'
+  [QUOTE_STATUS.COMPLETED]: 'bg-green-100 text-green-800 border-green-200',
+  [QUOTE_STATUS.CANCELED]: 'bg-red-100 text-red-800 border-red-200'
 };

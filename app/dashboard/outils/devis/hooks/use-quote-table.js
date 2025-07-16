@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   getCoreRowModel,
   getFilteredRowModel,
@@ -18,6 +18,7 @@ import {
   QUOTE_STATUS_COLORS,
   useDeleteQuote 
 } from "@/src/graphql/quoteQueries";
+import { formatDate, isDateExpired } from "../utils/date-utils";
 import QuoteRowActions from "../components/quote-row-actions";
 import { toast } from "sonner";
 
@@ -101,12 +102,14 @@ export function useQuoteTable({ data = [], onRefetch }) {
       {
         accessorKey: "number",
         header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-semibold"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Numéro
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+          <div className="flex items-center font-semibold px-0 py-2">
+            <div
+              className="flex items-center cursor-pointer"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+              Numéro
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </div>
           </div>
         ),
         cell: ({ row }) => {
@@ -126,12 +129,14 @@ export function useQuoteTable({ data = [], onRefetch }) {
       {
         accessorKey: "client.name",
         header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-semibold"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Client
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+          <div className="flex items-center font-semibold px-0 py-2">
+            <div
+              className="flex items-center cursor-pointer"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+              Client
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </div>
           </div>
         ),
         cell: ({ row }) => {
@@ -153,53 +158,93 @@ export function useQuoteTable({ data = [], onRefetch }) {
       {
         accessorKey: "issueDate",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-semibold"
-          >
-            Date d'émission
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="flex items-center font-semibold px-0 py-2">
+            <div
+              className="flex items-center cursor-pointer"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+              Date d&apos;émission
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </div>
+          </div>
         ),
         cell: ({ row }) => {
-          const date = row.getValue("issueDate");
-          if (!date) return "-";
-          return new Date(date).toLocaleDateString("fr-FR");
+          const dateString = row.getValue("issueDate");
+          return formatDate(dateString);
         },
         size: 120,
       },
       {
         accessorKey: "validUntil",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-semibold"
-          >
-            Valide jusqu'au
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="flex items-center font-semibold px-0 py-2">
+            <div
+              className="flex items-center cursor-pointer"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+              Valide jusqu&apos;au
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </div>
+          </div>
         ),
         cell: ({ row }) => {
-          const date = row.getValue("validUntil");
-          if (!date) return "-";
+          const dateValue = row.original.validUntil; // Accéder directement à la valeur originale
+          const quoteId = row.original.id;
+          const quoteNumber = row.original.number;
           
-          const validDate = new Date(date);
-          const today = new Date();
-          const isExpired = validDate < today;
+          // Si la valeur est manquante, retourner un indicateur visuel
+          if (dateValue === null || dateValue === undefined || dateValue === '') {
+            console.log(`[QUOTE ${quoteNumber || quoteId}] Champ validUntil manquant ou vide`);
+            return (
+              <div className="text-muted-foreground text-sm">
+                Non définie
+              </div>
+            );
+          }
           
-          return (
-            <div className={cn(
-              "font-medium",
-              isExpired && "text-red-600"
-            )}>
-              {validDate.toLocaleDateString("fr-FR")}
-              {isExpired && (
-                <div className="text-xs text-red-500">Expiré</div>
-              )}
-            </div>
-          );
+          try {
+            // Utiliser la fonction formatDate pour gérer tous les formats de date
+            const formattedDate = formatDate(dateValue);
+            
+            // Si formatDate retourne "-", la date est invalide
+            if (formattedDate === "-") {
+              throw new Error(`Format de date non supporté: ${dateValue} (${typeof dateValue})`);
+            }
+            
+            // Vérifier si la date est expirée
+            const isExpired = isDateExpired(dateValue);
+            
+            return (
+              <div className={cn(
+                "font-medium",
+                isExpired && "text-red-600"
+              )}>
+                {formattedDate}
+                {isExpired && (
+                  <div className="text-xs text-red-500">Expiré</div>
+                )}
+              </div>
+            );
+          } catch (error) {
+            console.error(`[QUOTE ${quoteNumber || quoteId}] Erreur lors du formatage de la date:`, {
+              error: error.message,
+              value: dateValue,
+              type: typeof dateValue,
+              isString: typeof dateValue === 'string',
+              isNumber: typeof dateValue === 'number',
+              isDate: dateValue instanceof Date,
+              timestamp: typeof dateValue === 'number' || /^\d+$/.test(dateValue) 
+                ? parseInt(dateValue, 10) 
+                : 'N/A'
+            });
+            
+            return (
+              <div className="text-amber-600 text-sm">
+                Format invalide
+                <div className="text-xs">ID: {quoteNumber || quoteId}</div>
+              </div>
+            );
+          }
         },
         size: 130,
       },
@@ -267,6 +312,59 @@ export function useQuoteTable({ data = [], onRefetch }) {
     ],
     [onRefetch] // Inclure onRefetch dans les dépendances
   );
+
+  // Log des données pour débogage
+  useEffect(() => {
+    if (data && data.length > 0) {
+      console.log('=== DÉBOGAGE DONNÉES DEVIS ===');
+      console.log('Nombre de devis:', data.length);
+      
+      // Afficher les 3 premiers devis pour inspection
+      const sampleQuotes = data.slice(0, 3);
+      
+      sampleQuotes.forEach((quote, index) => {
+        console.log(`\n=== Devis #${index + 1} ===`);
+        console.log('ID:', quote.id);
+        console.log('Numéro:', quote.number);
+        console.log('Date émission:', quote.issueDate, 'Type:', typeof quote.issueDate);
+        console.log('Valid until:', quote.validUntil, 'Type:', typeof quote.validUntil);
+        
+        // Tester la conversion de la date
+        if (quote.validUntil) {
+          try {
+            let date;
+            
+            // Gérer les différents formats de date
+            if (typeof quote.validUntil === 'number' || /^\d+$/.test(quote.validUntil)) {
+              date = new Date(parseInt(quote.validUntil, 10));
+            } else {
+              date = new Date(quote.validUntil);
+            }
+            
+            const isValid = !isNaN(date.getTime());
+            
+            console.log('Conversion date:', {
+              isValid: isValid,
+              timestamp: isValid ? date.getTime() : 'Invalid',
+              localString: isValid ? date.toLocaleString('fr-FR') : 'Invalid',
+              isoString: isValid ? date.toISOString() : 'Invalid'
+            });
+          } catch (error) {
+            console.log('Erreur lors de la conversion de date:', error.message, 'Valeur:', quote.validUntil);
+          }
+        }
+      });
+      
+      // Vérifier si validUntil existe dans les clés
+      const firstQuote = data[0];
+      if (firstQuote) {
+        console.log('\n=== STRUCTURE DU PREMIER DEVIS ===');
+        console.log('Clés disponibles:', Object.keys(firstQuote));
+        console.log('validUntil existe:', 'validUntil' in firstQuote);
+        console.log('validUntil valeur:', firstQuote.validUntil);
+      }
+    }
+  }, [data]);
 
   // Create table instance with optimized settings
   const table = useReactTable({
