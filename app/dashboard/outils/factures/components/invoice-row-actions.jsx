@@ -11,14 +11,20 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
-import { useMarkInvoiceAsPaid, useChangeInvoiceStatus, useDeleteInvoice, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
+import { useMarkInvoiceAsPaid, useChangeInvoiceStatus, useDeleteInvoice, useInvoice, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
 import { toast } from "sonner";
 import InvoiceSidebar from "./invoice-sidebar";
+
+
 
 export default function InvoiceRowActions({ row, onRefetch }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const invoice = row.original;
+  
+  // Récupération de la facture complète avec tous ses détails
+  const { invoice: fullInvoice, loading: loadingFullInvoice } = useInvoice(invoice.id);
+  
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
   const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
@@ -72,11 +78,15 @@ export default function InvoiceRowActions({ row, onRefetch }) {
     }
   };
 
+
+
   const isLoading = markingAsPaid || changingStatus || isDeleting;
 
   return (
     <>
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-1">
+
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 p-0" disabled={isLoading}>
@@ -154,6 +164,8 @@ export default function InvoiceRowActions({ row, onRefetch }) {
         onClose={() => setIsSidebarOpen(false)}
         onRefetch={onRefetch}
       />
+      
+
     </>
   );
 }

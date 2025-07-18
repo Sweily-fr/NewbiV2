@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FormProvider } from "react-hook-form";
-import { ArrowLeft, FileText, Send, Download, CreditCard } from "lucide-react";
+import { ArrowLeft, FileText, Send, CreditCard } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useRouter } from "next/navigation";
@@ -110,10 +110,6 @@ export default function ModernInvoiceEditor({
               <h2 className="text-lg font-semibold">Aperçu de la facture</h2>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="h-4 w-4" />
-                  PDF
-                </Button>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Send className="h-4 w-4" />
                   Email

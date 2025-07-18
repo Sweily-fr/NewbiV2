@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { ArrowLeft, Download, Send, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Send, MoreHorizontal } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
@@ -26,10 +26,7 @@ export default function InvoiceDetailsPage() {
     router.push("/dashboard/outils/factures");
   };
 
-  const handleDownloadPDF = () => {
-    // TODO: Implement PDF download
-    console.log("Download PDF for invoice:", invoiceId);
-  };
+
 
   const handleSendEmail = () => {
     // TODO: Implement email sending
@@ -81,14 +78,7 @@ export default function InvoiceDetailsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleDownloadPDF}
-            className="gap-2"
-          >
-            <Download className="h-4 w-4" />
-            PDF
-          </Button>
+
           
           {!isDraft && (
             <Button

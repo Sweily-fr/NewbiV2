@@ -27,6 +27,7 @@ export const INVOICE_FRAGMENT = gql`
     finalTotalTTC
     discountAmount
     stripeInvoiceId
+    showBankDetails
     createdAt
     updatedAt
     client {
@@ -245,6 +246,11 @@ export const CREATE_LINKED_INVOICE = gql`
         status
         finalTotalTTC
         isDeposit
+        companyInfo {
+          name
+          siret
+          vatNumber
+        }
       }
       quote {
         id
@@ -254,6 +260,10 @@ export const CREATE_LINKED_INVOICE = gql`
           status
           finalTotalTTC
           isDeposit
+          companyInfo {
+            siret
+            vatNumber
+          }
         }
       }
     }
@@ -664,6 +674,26 @@ export const useCreateLinkedInvoice = () => {
         }
       });
       console.log('Résultat de la mutation GraphQL:', result);
+      
+      // Vérifier que les informations SIRET et TVA sont bien présentes dans la réponse
+      const invoice = result.data?.createLinkedInvoice?.invoice;
+      if (invoice) {
+        const siret = invoice.companyInfo?.siret;
+        const vatNumber = invoice.companyInfo?.vatNumber;
+        
+        console.log('Informations légales dans la facture créée:', { 
+          siret: siret || 'Non renseigné', 
+          vatNumber: vatNumber || 'Non renseigné' 
+        });
+        
+        // Si les informations légales sont manquantes, afficher un avertissement
+        if (!siret || !vatNumber) {
+          toast.warning('Informations légales incomplètes', {
+            description: 'Certaines informations légales (SIRET ou TVA) sont manquantes dans la facture. Vérifiez vos paramètres d\'entreprise.'
+          });
+        }
+      }
+      
       return result.data.createLinkedInvoice;
     } catch (error) {
       console.error('Erreur dans la mutation GraphQL:', error);
@@ -671,7 +701,7 @@ export const useCreateLinkedInvoice = () => {
       // Gestion spécifique des erreurs d'informations d'entreprise
       if (error.graphQLErrors && error.graphQLErrors.some(e => e.extensions?.exception?.code === 'COMPANY_INFO_INCOMPLETE')) {
         toast.error('Informations d\'entreprise incomplètes', {
-          description: 'Veuillez compléter les informations de votre entreprise dans les paramètres avant de créer une facture.'
+          description: 'Veuillez compléter les informations légales de votre entreprise (SIRET, TVA) dans les paramètres avant de créer une facture.'
         });
       } else {
         toast.error('Erreur lors de la création de la facture liée', {

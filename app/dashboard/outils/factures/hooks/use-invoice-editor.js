@@ -107,7 +107,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
       const autoFilledCompanyInfo = {
         name: userCompany?.name || "",
         address: userCompany?.address ? 
-          `${userCompany.address.street || ""}, ${userCompany.address.city || ""}, ${userCompany.address.zipCode || ""}, ${userCompany.address.country || ""}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim() : "",
+          `${userCompany.address.street || ""}, ${userCompany.address.city || ""}, ${userCompany.address.postalCode || ""}, ${userCompany.address.country || ""}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim() : "",
         email: userCompany?.email || "",
         phone: userCompany?.phone || "",
         siret: userCompany?.legal?.siret || userCompany?.siret || "",
@@ -314,7 +314,7 @@ function getInitialFormData(mode, initialData, session) {
   const autoFilledCompanyInfo = {
     name: userCompany?.name || "",
     address: userCompany?.address ? 
-      `${userCompany.address.street || ""}, ${userCompany.address.city || ""}, ${userCompany.address.zipCode || ""}, ${userCompany.address.country || ""}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim() : "",
+      `${userCompany.address.street || ""}, ${userCompany.address.city || ""}, ${userCompany.address.postalCode || ""}, ${userCompany.address.country || ""}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim() : "",
     email: userCompany?.email || "",
     phone: userCompany?.phone || "",
     siret: userCompany?.legal?.siret || userCompany?.siret || "",
@@ -418,6 +418,8 @@ function transformInvoiceToFormData(invoice) {
     }
   };
   
+
+  
   const transformedData = {
     prefix: invoice.prefix || "",
     number: invoice.number || "",
@@ -460,16 +462,16 @@ function transformInvoiceToFormData(invoice) {
     headerNotes: invoice.headerNotes || "",
     footerNotes: invoice.footerNotes || "",
     termsAndConditions: invoice.termsAndConditions || "",
-    customFields: invoice.customFields || [],
+    customFields: invoice.customFields?.map(field => ({
+      name: field.key,
+      value: field.value
+    })) || [],
     // Champs qui n'existent pas dans le schéma GraphQL - utiliser des valeurs par défaut
     paymentMethod: null,
     isDepositInvoice: invoice.isDeposit || false, // Mapper isDeposit vers isDepositInvoice pour le formulaire
     purchaseOrderNumber: invoice.purchaseOrderNumber || "",
     // Récupérer les données bancaires si elles existent dans la facture
-    showBankDetails: !!(invoice.companyInfo?.bankDetails && 
-                       (invoice.companyInfo.bankDetails.iban || 
-                        invoice.companyInfo.bankDetails.bic || 
-                        invoice.companyInfo.bankDetails.bankName)),
+    showBankDetails: invoice.showBankDetails || false,
     bankDetails: invoice.companyInfo?.bankDetails ? {
       iban: invoice.companyInfo.bankDetails.iban || "",
       bic: invoice.companyInfo.bankDetails.bic || "",
@@ -565,9 +567,38 @@ function transformFormDataToInput(formData, previousStatus = null) {
     return dateValue;
   };
 
+  // Préparer showBankDetails et bankDetails
+  const shouldShowBankDetails = formData.showBankDetails || false;
+  let bankDetailsForInvoice = null;
+  
+  if (shouldShowBankDetails) {
+    // Utiliser les bankDetails du formulaire s'ils existent, sinon utiliser ceux de companyInfo
+    const sourceBankDetails = formData.bankDetails || (formData.companyInfo?.bankDetails || null);
+    
+    // S'assurer que bankDetails a la structure attendue
+    if (sourceBankDetails) {
+      bankDetailsForInvoice = {
+        iban: sourceBankDetails.iban || "",
+        bic: sourceBankDetails.bic || "",
+        bankName: sourceBankDetails.bankName || ""
+      };
+    }
+  }
+
+  // Gérer la numérotation automatique lors de la transition DRAFT -> PENDING
+  let numberToSend = formData.number || "";
+  let prefixToSend = formData.prefix || "";
+  
+  // Si on passe de DRAFT à PENDING, ne pas envoyer le numéro pour permettre la génération automatique
+  if (previousStatus === "DRAFT" && formData.status === "PENDING") {
+    console.log('🔄 Transition DRAFT->PENDING détectée - Le numéro sera généré automatiquement par le backend');
+    numberToSend = undefined; // Ne pas envoyer le numéro
+    prefixToSend = undefined; // Ne pas envoyer le préfixe
+  }
+
   return {
-    prefix: formData.prefix || "",
-    number: formData.number || "",
+    ...(prefixToSend !== undefined && { prefix: prefixToSend }),
+    ...(numberToSend !== undefined && { number: numberToSend }),
     issueDate: issueDate,
     executionDate: ensureValidDate(formData.executionDate, 'executionDate'),
     dueDate: ensureValidDate(formData.dueDate, 'dueDate'),
@@ -591,11 +622,13 @@ function transformFormDataToInput(formData, previousStatus = null) {
     footerNotes: formData.footerNotes || "",
     termsAndConditions: formData.termsAndConditions || "",
     customFields: formData.customFields?.map(field => ({
-      key: field.key,
+      key: field.name || field.key,
       value: field.value
     })) || [],
     purchaseOrderNumber: formData.purchaseOrderNumber || "",
-    isDeposit: formData.isDepositInvoice || false // Mapping correct vers le champ backend
+    isDeposit: formData.isDepositInvoice || false, // Mapping correct vers le champ backend
+    showBankDetails: shouldShowBankDetails,
+    bankDetails: bankDetailsForInvoice
   };
 }
 
@@ -605,14 +638,23 @@ function parseAddressString(addressString) {
     return null;
   }
   
-  // Format attendu: "229 rue Saint-Honoré, Paris, France"
-  const parts = addressString.split(',').map(part => part.trim());
+  // Format attendu: "rue, ville, codePostal, pays" ou "rue, ville, pays"
+  const parts = addressString.split(',').map(part => part.trim()).filter(part => part.length > 0);
   
-  if (parts.length >= 3) {
+  if (parts.length >= 4) {
+    // Format complet: rue, ville, codePostal, pays
     return {
       street: parts[0],
       city: parts[1],
-      postalCode: "", // Pas d'info dans le format actuel
+      postalCode: parts[2],
+      country: parts[3]
+    };
+  } else if (parts.length >= 3) {
+    // Format sans code postal: rue, ville, pays
+    return {
+      street: parts[0],
+      city: parts[1],
+      postalCode: "",
       country: parts[2]
     };
   }

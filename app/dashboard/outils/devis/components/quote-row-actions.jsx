@@ -15,6 +15,7 @@ import { useChangeQuoteStatus, useDeleteQuote, useConvertQuoteToInvoice, QUOTE_S
 import { toast } from "sonner";
 import QuoteSidebar from "./quote-sidebar";
 
+
 export default function QuoteRowActions({ row, onRefetch }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
@@ -87,9 +88,19 @@ export default function QuoteRowActions({ row, onRefetch }) {
 
   const isLoading = changingStatus || isDeleting || converting;
 
+  // Logique pour déterminer quelles actions sont disponibles
+  const hasStatusActions = (
+    (quote.status === QUOTE_STATUS.DRAFT) || // Envoyer le devis
+    (quote.status === QUOTE_STATUS.PENDING) || // Accepter/Rejeter
+    (quote.status === QUOTE_STATUS.COMPLETED && (!quote.linkedInvoices || quote.linkedInvoices.length === 0)) // Convertir en facture
+  );
+  
+  const hasDeleteAction = quote.status === QUOTE_STATUS.DRAFT;
+
   return (
     <>
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-1">
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 p-0" disabled={isLoading}>
@@ -109,8 +120,8 @@ export default function QuoteRowActions({ row, onRefetch }) {
               </DropdownMenuItem>
             )}
             
-            {/* Séparateur seulement s'il y a des actions de statut après les actions de base */}
-            {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING || quote.status === QUOTE_STATUS.COMPLETED) && (
+            {/* Séparateur entre les actions de base et les actions de statut */}
+            {hasStatusActions && (
               <DropdownMenuSeparator />
             )}
             
@@ -143,7 +154,7 @@ export default function QuoteRowActions({ row, onRefetch }) {
               </>
             )}
 
-            {quote.status === QUOTE_STATUS.COMPLETED && (
+            {quote.status === QUOTE_STATUS.COMPLETED && (!quote.linkedInvoices || quote.linkedInvoices.length === 0) && (
               <DropdownMenuItem 
                 onClick={handleConvertToInvoice}
                 disabled={isLoading}
@@ -153,18 +164,19 @@ export default function QuoteRowActions({ row, onRefetch }) {
               </DropdownMenuItem>
             )}
             
-            {/* Séparateur seulement s'il y a l'action supprimer (devis brouillon uniquement) */}
-            {quote.status === QUOTE_STATUS.DRAFT && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={handleDelete}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4 text-red-600" />
-                  Supprimer
-                </DropdownMenuItem>
-              </>
+            {/* Séparateur avant l'action de suppression */}
+            {hasDeleteAction && hasStatusActions && (
+              <DropdownMenuSeparator />
+            )}
+            
+            {hasDeleteAction && (
+              <DropdownMenuItem 
+                onClick={handleDelete}
+                className="text-red-600 focus:text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                Supprimer
+              </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -177,6 +189,8 @@ export default function QuoteRowActions({ row, onRefetch }) {
         onClose={() => setIsSidebarOpen(false)}
         onRefetch={onRefetch}
       />
+      
+
     </>
   );
 }

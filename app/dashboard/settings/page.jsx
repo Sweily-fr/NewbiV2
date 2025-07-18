@@ -90,8 +90,24 @@ export default function Settings() {
   // Fonction pour mettre à jour les informations
   const onSubmit = async (formData) => {
     try {
+      // Transformer les données pour aplatir la structure legal
+      const transformedData = {
+        ...formData,
+        // Aplatir les champs legal directement dans company
+        siret: formData.legal?.siret || "",
+        vatNumber: formData.legal?.vatNumber || "",
+        rcs: formData.legal?.rcs || "",
+        companyStatus: formData.legal?.legalForm || "",
+        capitalSocial: formData.legal?.capital || "",
+      };
+      
+      // Supprimer l'objet legal car les champs sont maintenant aplatis
+      delete transformedData.legal;
+      
+      console.log('🔄 Données transformées pour le backend:', transformedData);
+      
       await updateUser(
-        { company: formData },
+        { company: transformedData },
         {
           onSuccess: () => {
             toast.success("Informations mises à jour avec succès");
@@ -131,15 +147,13 @@ export default function Settings() {
           bic: company.bankDetails?.bic || "",
           bankName: company.bankDetails?.bankName || "",
         },
-        legal: {
-          siret: company.legal?.siret || "",
-          vatNumber: company.legal?.vatNumber || "",
-          rcs: company.legal?.rcs || "",
-          legalForm: company.legal?.legalForm || "",
-          capital: company.legal?.capital || "",
+          siret: company.siret || "",
+          vatNumber: company.vatNumber || "",
+          rcs: company.rcs || "",
+          legalForm: company.companyStatus || "",
+          capital: company.capitalSocial || "",
           regime: company.legal?.regime || "",
           category: company.legal?.category || "",
-        },
       });
     }
   }, [session, reset]);

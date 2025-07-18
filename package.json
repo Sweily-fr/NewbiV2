@@ -49,8 +49,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.0",
     "graphql-upload-minimal": "^1.6.1",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.1",
+
     "lottie-web": "^5.13.0",
     "lucide-react": "^0.523.0",
     "mongodb": "^6.17.0",

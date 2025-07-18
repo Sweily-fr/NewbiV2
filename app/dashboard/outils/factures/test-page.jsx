@@ -135,7 +135,6 @@ export default function InvoiceTestPage() {
           <CardContent>
             <InvoicePreview 
               data={invoiceData} 
-              enablePDF={true}
               className="w-full"
             />
           </CardContent>
