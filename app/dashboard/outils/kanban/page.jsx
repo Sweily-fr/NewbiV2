@@ -94,7 +94,7 @@ export default function KanbanPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-xl font-medium mb-2">Tableaux Kanban</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-sm">
             Gérez vos projets avec des tableaux Kanban
           </p>
         </div>

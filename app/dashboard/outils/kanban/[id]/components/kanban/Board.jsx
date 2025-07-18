@@ -229,9 +229,9 @@ const Board = () => {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <h1 className="text-2xl font-bold">Tableau Kanban</h1>
+              <h1 className="text-xl font-semibold">Tableau Kanban</h1>
             </div>
-            <p className="text-muted-foreground ml-10">
+            <p className="text-muted-foreground text-sm ml-10">
               Gérez vos tâches efficacement
             </p>
           </div>

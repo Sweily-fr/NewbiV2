@@ -54,6 +54,8 @@ const cards = [
     icon: <IconFileInvoice size={20} />,
     href: "/dashboard/outils/factures",
     status: "available",
+    bgIconColor: "#8681FF",
+    Image: "/images/utils/Factures.svg",
   },
   {
     title: "Devis",
@@ -61,6 +63,8 @@ const cards = [
     icon: <IconFileDescription size={20} />,
     href: "/dashboard/outils/devis",
     status: "available",
+    bgIconColor: "#FFC782",
+    Image: "/images/utils/Devis.svg",
   },
   {
     title: "KANBAN",
@@ -68,6 +72,8 @@ const cards = [
     icon: <IconLayoutKanban size={20} />,
     href: "/dashboard/outils/kanban",
     status: "available",
+    bgIconColor: "#FF7D65",
+    Image: "/images/utils/Kanban.svg",
   },
   {
     title: "Signatures de mail",
@@ -75,6 +81,8 @@ const cards = [
     icon: <IconMailForward size={20} />,
     href: "/dashboard/outils/signatures-mail",
     status: "available",
+    bgIconColor: "#8BA6FF",
+    Image: "/images/utils/Signature de mail.svg",
   },
   {
     title: "Transfert de fichiers",
@@ -82,6 +90,8 @@ const cards = [
     icon: <IconTransfer size={20} />,
     href: "/dashboard/outils/transferts-fichiers",
     status: "available",
+    bgIconColor: "#FF9F65",
+    Image: "/images/utils/Transfert.svg",
   },
   {
     title: "Dépenses",
@@ -89,6 +99,8 @@ const cards = [
     icon: <IconReceipt size={20} />,
     href: "/dashboard/outils/gestion-depenses",
     status: "available",
+    bgIconColor: "#5B4FFF",
+    Image: "/images/utils/gestion-depenses.png",
   },
   // {
   //   title: "Article SEO",
@@ -133,14 +145,17 @@ export function SectionCards({ className }) {
               <div className="flex flex-col p-2 flex-1 justify-between">
                 <div className="space-y-4">
                   <div
-                    className="p-3 rounded-md w-9 h-9 flex items-center justify-center bg-[#5B4FFF]/80"
+                    className={cn(
+                      "p-3 rounded-md w-9 h-9 flex items-center justify-center",
+                      `bg-[${card.bgIconColor}]`
+                    )}
                     // style={{ backgroundColor: getIconColor(card.title) }}
                   >
                     <p className="text-white">{card.icon}</p>
                   </div>
 
                   <div className="space-y-3">
-                    <CardTitle className="text-medium">{card.title}</CardTitle>
+                    <CardTitle className="text-regular">{card.title}</CardTitle>
                     <CardDescription className="text-sm">
                       {card.subtitle}
                     </CardDescription>
@@ -160,7 +175,12 @@ export function SectionCards({ className }) {
               </div>
 
               {/* Partie droite avec la visualisation - coins arrondis */}
-              <div className="w-1/2 bg-[#5B4FFF]/4 rounded-xl m-1 p-6 flex flex-col justify-center space-y-4">
+              <div
+                className={`w-1/2 rounded-xl m-1 p-6 flex flex-col justify-center space-y-4 bg-[#5B4FFF]/4 bg-center bg-no-repeat bg-contain bg-blend-soft-light ${card.Image ? "" : "bg-none"}`}
+                style={{
+                  backgroundImage: card.Image ? `url(${card.Image})` : "none",
+                }}
+              >
                 {/* {card.title === "Article SEO" ? (
                   <>
                     <div className="bg-white rounded-lg p-3 flex items-center border border-slate-200 shadow-sm">

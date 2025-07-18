@@ -43,7 +43,7 @@ export function KanbanColumn({
             variant="ghost"
             size="sm"
             onClick={onToggleCollapse}
-            className="h-6 w-6 p-0 mr-1"
+            className="h-4 w-4 p-0 mr-1"
           >
             {isCollapsed ? (
               <ChevronDown className="h-3 w-3" />
@@ -52,10 +52,10 @@ export function KanbanColumn({
             )}
           </Button>
           <div
-            className="w-3 h-3 rounded-full"
+            className="w-[2px] h-4"
             style={{ backgroundColor: column.color }}
           />
-          <h3 className="font-semibold text-foreground">{column.title}</h3>
+          <h3 className="font-medium text-foreground">{column.title}</h3>
           <Badge variant="secondary" className="text-xs">
             {tasks.length}
           </Badge>
@@ -65,7 +65,7 @@ export function KanbanColumn({
             variant="ghost"
             size="sm"
             onClick={() => onAddTask(column.id)}
-            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+            className="h-6 w-6 p-0 text-muted-foreground cursor-pointer"
             title="Ajouter une tâche"
           >
             <Plus className="h-3 w-3" />
@@ -120,7 +120,7 @@ export function KanbanColumn({
             variant="ghost"
             size="sm"
             onClick={() => onAddTask(column.id)}
-            className="w-full border-dashed border-2 border-border hover:border-foreground/30 text-muted-foreground hover:bg-accent/50"
+            className="w-full cursor-pointer border-dashed border-2 border-border hover:border-foreground/30 text-muted-foreground hover:bg-accent/50"
           >
             <Plus className="mr-2 h-4 w-4" />
             Ajouter une tâche

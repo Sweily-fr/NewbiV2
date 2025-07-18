@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
+import { MapPin } from "lucide-react";
 
 const COUNTRIES = [
   { value: "France", label: "France" },
@@ -29,12 +30,16 @@ export default function AddressSection({ register, errors, watch, setValue }) {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Adresse de l'entreprise</CardTitle>
+      <Card className="border-0 shadow-sm backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <MapPin className="h-5 w-5 text-blue-600" />
+            </div>
+            Adresse de l'entreprise
+          </CardTitle>
         </CardHeader>
-        <Separator />
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="space-y-6">
           {/* Adresse complète */}
           <div className="space-y-2">
             <Label htmlFor="address.street">Adresse *</Label>

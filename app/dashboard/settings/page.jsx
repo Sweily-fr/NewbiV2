@@ -179,10 +179,10 @@ export default function Settings() {
       </div>
       <Separator orientation="vertical" className="h-full w-px bg-border" />
       <div className="flex-1 pt-6 px-2">
-        <div className="mb-6">
+        <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold mb-2">
+              <h1 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
                 {currentTab.title}
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -193,7 +193,7 @@ export default function Settings() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="py-2 font-medium"
+                className="py-2 font-medium shadow-sm"
               >
                 {isSubmitting ? "Mise à jour..." : "Sauvegarder"}
               </Button>
@@ -201,7 +201,7 @@ export default function Settings() {
           </div>
           <Separator className="mt-6" />
         </div>
-        {renderActiveSection()}
+        <div className="pb-12">{renderActiveSection()}</div>
       </div>
     </form>
   );

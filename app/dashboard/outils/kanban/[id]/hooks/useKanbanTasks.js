@@ -1,7 +1,13 @@
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { useMutation } from '@apollo/client';
-import { GET_BOARD, CREATE_TASK, UPDATE_TASK, DELETE_TASK, MOVE_TASK } from '@/src/graphql/kanbanQueries';
+import { useState } from "react";
+import { toast } from "@/src/components/ui/sonner";
+import { useMutation } from "@apollo/client";
+import {
+  GET_BOARD,
+  CREATE_TASK,
+  UPDATE_TASK,
+  DELETE_TASK,
+  MOVE_TASK,
+} from "@/src/graphql/kanbanQueries";
 
 export const useKanbanTasks = (boardId, board) => {
   const initialTaskForm = {
@@ -23,41 +29,50 @@ export const useKanbanTasks = (boardId, board) => {
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
 
   // Task mutations
-  const [createTask, { loading: createTaskLoading }] = useMutation(CREATE_TASK, {
-    refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
-    onCompleted: () => {
-      toast.success("Tâche créée avec succès");
-      setTaskForm(initialTaskForm);
-      setSelectedColumnId(null);
-      setIsAddTaskOpen(false); // Close the add task modal after successful creation
-    },
-    onError: () => {
-      toast.error("Erreur lors de la création de la tâche");
-    },
-  });
+  const [createTask, { loading: createTaskLoading }] = useMutation(
+    CREATE_TASK,
+    {
+      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
+      onCompleted: () => {
+        toast.success("Tâche créée avec succès");
+        setTaskForm(initialTaskForm);
+        setSelectedColumnId(null);
+        setIsAddTaskOpen(false); // Close the add task modal after successful creation
+      },
+      onError: () => {
+        toast.error("Erreur lors de la création de la tâche");
+      },
+    }
+  );
 
-  const [updateTask, { loading: updateTaskLoading }] = useMutation(UPDATE_TASK, {
-    refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
-    onCompleted: () => {
-      toast.success("Tâche modifiée avec succès");
-      setTaskForm(initialTaskForm);
-      setEditingTask(null);
-      setIsEditTaskOpen(false); // Close the edit modal after successful update
-    },
-    onError: () => {
-      toast.error("Erreur lors de la modification de la tâche");
-    },
-  });
+  const [updateTask, { loading: updateTaskLoading }] = useMutation(
+    UPDATE_TASK,
+    {
+      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
+      onCompleted: () => {
+        toast.success("Tâche modifiée avec succès");
+        setTaskForm(initialTaskForm);
+        setEditingTask(null);
+        setIsEditTaskOpen(false); // Close the edit modal after successful update
+      },
+      onError: () => {
+        toast.error("Erreur lors de la modification de la tâche");
+      },
+    }
+  );
 
-  const [deleteTask, { loading: deleteTaskLoading }] = useMutation(DELETE_TASK, {
-    refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
-    onCompleted: () => {
-      toast.success("Tâche supprimée avec succès");
-    },
-    onError: () => {
-      toast.error("Erreur lors de la suppression de la tâche");
-    },
-  });
+  const [deleteTask, { loading: deleteTaskLoading }] = useMutation(
+    DELETE_TASK,
+    {
+      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
+      onCompleted: () => {
+        toast.success("Tâche supprimée avec succès");
+      },
+      onError: () => {
+        toast.error("Erreur lors de la suppression de la tâche");
+      },
+    }
+  );
 
   const [moveTask] = useMutation(MOVE_TASK, {
     onCompleted: () => {
@@ -70,41 +85,61 @@ export const useKanbanTasks = (boardId, board) => {
 
   // Task form handlers
   const handleTaskFormChange = (field, value) => {
-    setTaskForm(prev => ({
+    setTaskForm((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
-    // Tag color palette with Tailwind classes
+  // Tag color palette with Tailwind classes
   const tagColorPalette = [
-    { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' },
-    { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
-    { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
-    { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300' },
-    { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
-    { bg: 'bg-pink-100', text: 'text-pink-800', border: 'border-pink-300' },
-    { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-300' },
-    { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300' },
-    { bg: 'bg-teal-100', text: 'text-teal-800', border: 'border-teal-300' },
-    { bg: 'bg-cyan-100', text: 'text-cyan-800', border: 'border-cyan-300' },
+    { bg: "bg-red-100", text: "text-red-800", border: "border-red-300" },
+    { bg: "bg-blue-100", text: "text-blue-800", border: "border-blue-300" },
+    { bg: "bg-green-100", text: "text-green-800", border: "border-green-300" },
+    {
+      bg: "bg-yellow-100",
+      text: "text-yellow-800",
+      border: "border-yellow-300",
+    },
+    {
+      bg: "bg-purple-100",
+      text: "text-purple-800",
+      border: "border-purple-300",
+    },
+    { bg: "bg-pink-100", text: "text-pink-800", border: "border-pink-300" },
+    {
+      bg: "bg-indigo-100",
+      text: "text-indigo-800",
+      border: "border-indigo-300",
+    },
+    {
+      bg: "bg-orange-100",
+      text: "text-orange-800",
+      border: "border-orange-300",
+    },
+    { bg: "bg-teal-100", text: "text-teal-800", border: "border-teal-300" },
+    { bg: "bg-cyan-100", text: "text-cyan-800", border: "border-cyan-300" },
   ];
 
   // Get all existing tags from the board
   const getAllBoardTags = (boardData) => {
     if (!boardData?.tasks) return [];
-    return boardData.tasks.flatMap(task => task.tags || []);
+    return boardData.tasks.flatMap((task) => task.tags || []);
   };
 
   // Find next available color for a new tag
   const getNextAvailableColor = (existingTags) => {
-    const usedColors = new Set(existingTags.map(tag => tag.bg));
-    const availableColor = tagColorPalette.find(color => !usedColors.has(color.bg));
-    return availableColor || {
-      bg: 'bg-gray-100',
-      text: 'text-gray-800',
-      border: 'border-gray-300'
-    };
+    const usedColors = new Set(existingTags.map((tag) => tag.bg));
+    const availableColor = tagColorPalette.find(
+      (color) => !usedColors.has(color.bg)
+    );
+    return (
+      availableColor || {
+        bg: "bg-gray-100",
+        text: "text-gray-800",
+        border: "border-gray-300",
+      }
+    );
   };
 
   // Tag handlers
@@ -113,22 +148,26 @@ export const useKanbanTasks = (boardId, board) => {
     if (!newTagName) return;
 
     // Check if tag already exists in the current task
-    if (taskForm.tags.some(tag => tag.name.toLowerCase() === newTagName.toLowerCase())) {
-      toast.error('Ce tag existe déjà dans cette tâche');
+    if (
+      taskForm.tags.some(
+        (tag) => tag.name.toLowerCase() === newTagName.toLowerCase()
+      )
+    ) {
+      toast.error("Ce tag existe déjà dans cette tâche");
       return;
     }
 
     // Get all tags from the board if available
     const boardTags = board ? getAllBoardTags(board) : [];
-    
+
     // Check if tag exists in the board with different casing
-    const existingTag = boardTags.find(tag => 
-      tag.name.toLowerCase() === newTagName.toLowerCase()
+    const existingTag = boardTags.find(
+      (tag) => tag.name.toLowerCase() === newTagName.toLowerCase()
     );
 
     if (existingTag) {
       // If tag exists with different casing, use the existing tag's properties
-      setTaskForm(prev => ({
+      setTaskForm((prev) => ({
         ...prev,
         tags: [...prev.tags, { ...existingTag }],
         newTag: "",
@@ -138,7 +177,7 @@ export const useKanbanTasks = (boardId, board) => {
 
     // If it's a new tag, find the next available color
     const newColor = getNextAvailableColor(boardTags);
-    
+
     const newTag = {
       name: newTagName,
       className: "",
@@ -147,7 +186,7 @@ export const useKanbanTasks = (boardId, board) => {
       border: newColor.border,
     };
 
-    setTaskForm(prev => ({
+    setTaskForm((prev) => ({
       ...prev,
       tags: [...prev.tags, newTag],
       newTag: "",
@@ -155,7 +194,7 @@ export const useKanbanTasks = (boardId, board) => {
   };
 
   const removeTag = (tagName) => {
-    setTaskForm(prev => ({
+    setTaskForm((prev) => ({
       ...prev,
       tags: prev.tags.filter((tag) => tag.name !== tagName),
     }));
@@ -164,7 +203,7 @@ export const useKanbanTasks = (boardId, board) => {
   // Checklist handlers
   const addChecklistItem = () => {
     if (taskForm.newChecklistItem.trim()) {
-      setTaskForm(prev => ({
+      setTaskForm((prev) => ({
         ...prev,
         checklist: [
           ...prev.checklist,
@@ -181,7 +220,7 @@ export const useKanbanTasks = (boardId, board) => {
       ...updatedChecklist[index],
       completed: !updatedChecklist[index].completed,
     };
-    setTaskForm(prev => ({
+    setTaskForm((prev) => ({
       ...prev,
       checklist: updatedChecklist,
     }));
@@ -190,7 +229,7 @@ export const useKanbanTasks = (boardId, board) => {
   const removeChecklistItem = (index) => {
     const updatedChecklist = [...taskForm.checklist];
     updatedChecklist.splice(index, 1);
-    setTaskForm(prev => ({
+    setTaskForm((prev) => ({
       ...prev,
       checklist: updatedChecklist,
     }));
@@ -217,23 +256,24 @@ export const useKanbanTasks = (boardId, board) => {
     // Validate tags before submission
     const allBoardTags = board ? getAllBoardTags(board) : [];
     const tagNames = new Set();
-    
+
     for (const tag of taskForm.tags) {
       const normalizedTagName = tag.name.toLowerCase();
-      
+
       // Check for duplicate tags in the current task
       if (tagNames.has(normalizedTagName)) {
         toast.error(`Le tag "${tag.name}" est en double dans cette tâche`);
         return;
       }
       tagNames.add(normalizedTagName);
-      
+
       // Check if tag exists in the board with different casing
-      const existingTag = allBoardTags.find(t => 
-        t.name.toLowerCase() === normalizedTagName && 
-        (t.bg !== tag.bg || t.text !== tag.text || t.border !== tag.border)
+      const existingTag = allBoardTags.find(
+        (t) =>
+          t.name.toLowerCase() === normalizedTagName &&
+          (t.bg !== tag.bg || t.text !== tag.text || t.border !== tag.border)
       );
-      
+
       if (existingTag) {
         // Update the tag to use the existing tag's properties
         tag.bg = existingTag.bg;
@@ -323,13 +363,13 @@ export const useKanbanTasks = (boardId, board) => {
     });
     setIsAddTaskOpen(true);
   };
-  
+
   const closeAddTaskModal = () => {
     setIsAddTaskOpen(false);
     setTaskForm(initialTaskForm);
     setEditingTask(null);
   };
-  
+
   const closeEditTaskModal = () => {
     setIsEditTaskOpen(false);
     setEditingTask(null);
@@ -368,14 +408,14 @@ export const useKanbanTasks = (boardId, board) => {
     isAddTaskOpen,
     isEditTaskOpen,
     loading: createTaskLoading || updateTaskLoading || deleteTaskLoading,
-    
+
     // Setters
     setTaskForm,
     setEditingTask,
     setSelectedColumnId,
     setIsAddTaskOpen,
     setIsEditTaskOpen,
-    
+
     // Handlers
     handleTaskFormChange,
     handleCreateTask,

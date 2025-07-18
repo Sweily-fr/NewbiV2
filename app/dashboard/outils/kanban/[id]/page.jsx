@@ -2,18 +2,17 @@
 
 import { use, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Plus,
-  Loader2,
-  Search,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, Plus, Loader2, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 // UI Components
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Label } from "@/src/components/ui/label";
@@ -92,8 +91,9 @@ export default function KanbanBoardPage({ params }) {
   const { id } = use(params);
 
   // Hooks
-  const { board, loading, error, refetch, getTasksByColumn } = useKanbanBoard(id);
-  
+  const { board, loading, error, refetch, getTasksByColumn } =
+    useKanbanBoard(id);
+
   const {
     isAddColumnOpen,
     isEditColumnOpen,
@@ -158,7 +158,7 @@ export default function KanbanBoardPage({ params }) {
   );
 
   const { searchQuery, setSearchQuery, filterTasks } = useKanbanSearch();
-  
+
   const {
     isColumnCollapsed,
     toggleColumnCollapse,
@@ -175,54 +175,56 @@ export default function KanbanBoardPage({ params }) {
   }
 
   return (
-    <div className="w-full max-w-[100vw] px-6 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="w-full max-w-[100vw] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {/* Header */}
-      <div className="mx-auto pt-4">
+      <div className="mx-auto pt-6 px-6">
         <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/dashboard/outils/kanban")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-semibold">{board.title}</h1>
-            <p className="text-muted-foreground">{board.description}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          {collapsedColumnsCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={expandAll}
-              className="text-xs whitespace-nowrap"
+          <div className="flex items-center gap-4">
+            {/* <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/dashboard/outils/kanban")}
             >
-              Déplier toutes ({collapsedColumnsCount})
-            </Button>
-          )}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Rechercher des tâches (titre, description, tags, dates...)"
-              className="pl-10 w-full"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+              <ArrowLeft className="h-4 w-4" />
+            </Button> */}
+            <div>
+              <h1 className="text-xl font-medium mb-2">{board.title}</h1>
+              <p className="text-muted-foreground text-sm">
+                {board.description}
+              </p>
+            </div>
           </div>
-          <Button size="sm" variant="default" onClick={openAddModal}>
-            <Plus className="mr-2 h-4 w-4" />
-            Ajouter une colonne
-          </Button>
+          <div className="flex items-center gap-4">
+            {collapsedColumnsCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={expandAll}
+                className="text-xs whitespace-nowrap"
+              >
+                Déplier toutes ({collapsedColumnsCount})
+              </Button>
+            )}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Rechercher des tâches (titre, description, tags, dates...)"
+                className="pl-10 w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button variant="default" onClick={openAddModal}>
+              <Plus className="mr-2 h-4 w-4" />
+              Ajouter une colonne
+            </Button>
+          </div>
         </div>
-      </div>
       </div>
 
       {/* Board Content */}
-      <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="w-full overflow-x-auto px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -231,84 +233,88 @@ export default function KanbanBoardPage({ params }) {
           modifiers={[]}
         >
           <div className="min-h-[600px] w-max min-w-full">
-          {board.columns && board.columns.length > 0 ? (
-            <>
-              {/* Espace réservé pour maintenir la hauteur */}
-              <div className="h-5 mb-4"></div>
+            {board.columns && board.columns.length > 0 ? (
+              <>
+                {/* Espace réservé pour maintenir la hauteur */}
+                <div className="h-5 mb-4"></div>
 
-              <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <div className="flex gap-6 flex-nowrap items-start">
-                  {board.columns.map((column) => {
-                    const columnTasks = filterTasks(
-                      getTasksByColumn(column.id)
-                    );
-                    const isCollapsed = isColumnCollapsed(column.id);
+                <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  <div className="flex gap-6 flex-nowrap items-start">
+                    {board.columns.map((column) => {
+                      const columnTasks = filterTasks(
+                        getTasksByColumn(column.id)
+                      );
+                      const isCollapsed = isColumnCollapsed(column.id);
 
-                    return (
-                      <KanbanColumn
-                        key={column.id}
-                        column={column}
-                        tasks={columnTasks}
-                        onAddTask={openAddTaskModal}
-                        onEditTask={openEditTaskModal}
-                        onDeleteTask={handleDeleteTask}
-                        onEditColumn={openEditModal}
-                        onDeleteColumn={(column) => handleDeleteColumn(column)}
-                        isCollapsed={isCollapsed}
-                        onToggleCollapse={() => toggleColumnCollapse(column.id)}
-                      />
-                    );
-                  })}
+                      return (
+                        <KanbanColumn
+                          key={column.id}
+                          column={column}
+                          tasks={columnTasks}
+                          onAddTask={openAddTaskModal}
+                          onEditTask={openEditTaskModal}
+                          onDeleteTask={handleDeleteTask}
+                          onEditColumn={openEditModal}
+                          onDeleteColumn={(column) =>
+                            handleDeleteColumn(column)
+                          }
+                          isCollapsed={isCollapsed}
+                          onToggleCollapse={() =>
+                            toggleColumnCollapse(column.id)
+                          }
+                        />
+                      );
+                    })}
 
-                  {/* Add Column Button */}
-                  <Card className="w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors shadow-none cursor-pointer">
-                    <CardContent className="p-3">
-                      <Button
-                        variant="ghost"
-                        className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:bg-transparent cursor-pointer"
-                        onClick={openAddModal}
-                      >
-                        <Plus className="h-5 w-5" />
-                        <span className="text-sm font-medium">
-                          Ajouter une colonne
-                        </span>
-                      </Button>
-                    </CardContent>
-                  </Card>
+                    {/* Add Column Button */}
+                    <Card className="w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors shadow-none cursor-pointer">
+                      <CardContent className="p-3">
+                        <Button
+                          variant="ghost"
+                          className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:bg-transparent cursor-pointer"
+                          onClick={openAddModal}
+                        >
+                          <Plus className="h-5 w-5" />
+                          <span className="text-sm font-medium">
+                            Ajouter une colonne
+                          </span>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-muted-foreground mb-4">
+                  Ce tableau ne contient aucune colonne
+                </div>
+                <Button variant="default" onClick={openAddModal}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Créer votre première colonne
+                </Button>
               </div>
-            </>
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-muted-foreground mb-4">
-                Ce tableau ne contient aucune colonne
-              </div>
-              <Button variant="default" onClick={openAddModal}>
-                <Plus className="mr-2 h-4 w-4" />
-                Créer votre première colonne
-              </Button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        <DragOverlay
-          adjustScale={false}
-          dropAnimation={{
-            duration: 300,
-            easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)"
-          }}
-        >
-          {activeTask ? (
-            <div className="transform rotate-3 scale-105 shadow-2xl">
-              <TaskCard
-                task={activeTask}
-                onEdit={() => {}}
-                onDelete={() => {}}
-              />
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+          <DragOverlay
+            adjustScale={false}
+            dropAnimation={{
+              duration: 300,
+              easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+            }}
+          >
+            {activeTask ? (
+              <div className="transform rotate-3 scale-105 shadow-2xl">
+                <TaskCard
+                  task={activeTask}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </div>
 
       {/* Column Modals */}

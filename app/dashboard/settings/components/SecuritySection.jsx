@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
@@ -18,16 +18,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { 
-  Shield, 
-  Key, 
-  Smartphone, 
-  Github, 
+import {
+  Shield,
+  Key,
+  Smartphone,
+  Github,
   Mail,
   CheckCircle,
   XCircle,
-  Settings
+  Settings,
+  CreditCard,
+  ExternalLink,
 } from "lucide-react";
+import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 
 export default function SecuritySection({ session }) {
   const [isOAuthDialogOpen, setIsOAuthDialogOpen] = useState(false);
@@ -41,11 +44,26 @@ export default function SecuritySection({ session }) {
     google: false,
   });
 
+  // Hook Stripe Connect avec GraphQL
+  const {
+    isConnected: stripeConnected,
+    canReceivePayments,
+    accountStatus,
+    isLoading: isStripeLoading,
+    error: stripeError,
+    stripeAccount,
+    connectStripe,
+    disconnectStripe,
+    openStripeDashboard,
+    refetchStatus,
+    clearError,
+  } = useStripeConnect(session?.user?.id);
+
   const handleOAuthConnect = (provider) => {
     // Ici vous implémenteriez la logique de connexion OAuth
-    setOauthConnections(prev => ({
+    setOauthConnections((prev) => ({
       ...prev,
-      [provider]: !prev[provider]
+      [provider]: !prev[provider],
     }));
   };
 
@@ -59,125 +77,305 @@ export default function SecuritySection({ session }) {
     console.log("Envoi du code de vérification à:", phoneNumber);
   };
 
+  // Gérer les erreurs Stripe
+  useEffect(() => {
+    if (stripeError) {
+      console.error("Erreur Stripe:", stripeError);
+      // Ici vous pourriez afficher une notification d'erreur
+    }
+  }, [stripeError]);
+
+  // Gérer les paramètres de retour de Stripe
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stripeSuccess = urlParams.get("stripe_success");
+    const stripeRefresh = urlParams.get("stripe_refresh");
+
+    if (stripeSuccess === "true") {
+      // Rafraîchir les données Stripe pour mettre à jour le statut
+      refetchStatus();
+      // Nettoyer l'URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Ici vous pourriez afficher une notification de succès
+    } else if (stripeRefresh === "true") {
+      // L'utilisateur a rafraîchi ou annulé le processus
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [refetchStatus]);
+
+  const handleStripeConnect = async () => {
+    if (session?.user?.email) {
+      await connectStripe(session.user.email);
+    }
+  };
+
+  const handleStripeDisconnect = async () => {
+    await disconnectStripe();
+  };
+
   return (
     <div className="space-y-6">
       {/* Mot de passe */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Mot de passe
-          </CardTitle>
-        </CardHeader>
-        <Separator />
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Changer le mot de passe</h4>
-              <p className="text-sm text-muted-foreground">
-                Dernière modification il y a 3 mois
-              </p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border-0 shadow-sm backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <Key className="h-5 w-5 text-blue-600" />
+              </div>
+              Mot de passe
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">{session?.user?.email}</p>
+              <p className="text-xs text-muted-foreground">Compte principal</p>
             </div>
-            <Button variant="outline">
-              Modifier
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex items-center justify-between pt-2">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Sécurité du mot de passe</p>
+                <p className="text-xs text-muted-foreground">
+                  Dernière modification il y a 3 mois
+                </p>
+              </div>
+              <Button variant="outline" size="sm">
+                Modifier
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Stripe Connect */}
+        <Card className="border-0 shadow-sm backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <CreditCard className="h-5 w-5 text-blue-600" />
+              </div>
+              Stripe Connect
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Stripe Connect
+                    </p>
+                    {stripeConnected && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-green-600 font-medium">
+                          {canReceivePayments
+                            ? "Actif"
+                            : "Configuration requise"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {stripeConnected
+                      ? canReceivePayments
+                        ? "Recevez des paiements pour vos transferts de fichiers"
+                        : "Finalisation de la configuration requise"
+                      : "Connectez votre compte pour recevoir des paiements"}
+                  </p>
+                  {stripeAccount && (
+                    <div className="mt-1">
+                      {accountStatus !== "active" && (
+                        <p className="text-xs text-amber-600">
+                          Statut:{" "}
+                          {accountStatus === "pending"
+                            ? "En attente de vérification"
+                            : "Action requise"}
+                        </p>
+                      )}
+                      {stripeAccount && !stripeAccount.isOnboarded && (
+                        <p className="text-xs text-amber-600 mt-1">
+                          ⚠️ Configuration incomplète - Certaines actions sont requises pour activer votre compte
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {stripeConnected && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs font-medium text-green-600">
+                      Actif
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
 
-      {/* Authentification à deux facteurs */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Authentification à deux facteurs
+            <div className="flex gap-2 pt-2">
+              {stripeConnected ? (
+                <>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      if (stripeAccount && !stripeAccount.isOnboarded) {
+                        if (confirm("Votre compte Stripe nécessite une configuration supplémentaire. Continuer vers le tableau de bord Stripe pour compléter la configuration ?")) {
+                          openStripeDashboard();
+                        }
+                      } else {
+                        openStripeDashboard();
+                      }
+                    }}
+                    className="flex-1"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Tableau de bord
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStripeDisconnect}
+                    disabled={isStripeLoading}
+                    // className="border-red-400 text-red-600"
+                  >
+                    {isStripeLoading ? "..." : "Déconnecter"}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleStripeConnect}
+                  disabled={isStripeLoading || !session?.user?.id}
+                  size="sm"
+                  className="bg-[#635BFF] hover:bg-[#5A54E5] text-white flex-1 disabled:opacity-50"
+                >
+                  {isStripeLoading ? "Connexion..." : "Connecter Stripe"}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Authentification */}
+      <Card className="border-0 shadow-sm backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Shield className="h-5 w-5 text-blue-600" />
+            </div>
+            Authentification
           </CardTitle>
         </CardHeader>
-        <Separator />
-        <CardContent className="p-6 space-y-4">
-          {/* OAuth Providers */}
+        <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Connexions OAuth</h4>
-              <p className="text-sm text-muted-foreground">
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium">Connexions OAuth</h4>
+              <p className="text-xs text-muted-foreground">
                 Connectez vos comptes sociaux pour une connexion rapide
               </p>
             </div>
-            <Dialog open={isOAuthDialogOpen} onOpenChange={setIsOAuthDialogOpen}>
+            <Dialog
+              open={isOAuthDialogOpen}
+              onOpenChange={setIsOAuthDialogOpen}
+            >
               <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" size="sm">
                   <Settings className="h-4 w-4 mr-2" />
-                  Configurer
+                  Gérer
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>Configuration OAuth</DialogTitle>
-                  <DialogDescription>
-                    Connectez ou déconnectez vos comptes sociaux
+                  <DialogTitle className="text-xl font-semibold">
+                    Configuration OAuth
+                  </DialogTitle>
+                  <DialogDescription className="text-gray-600">
+                    Gérez vos connexions aux services externes
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4">
-                  {/* GitHub */}
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Github className="h-5 w-5" />
+                <div className="space-y-4 mt-6">
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-white">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-gray-50 rounded-lg">
+                        <Github className="h-5 w-5 text-gray-700" />
+                      </div>
                       <div>
-                        <p className="font-medium">GitHub</p>
-                        <p className="text-sm text-muted-foreground">
-                          Connectez votre compte GitHub
+                        <p className="font-medium text-gray-900">GitHub</p>
+                        <p className="text-sm text-gray-500">
+                          Connexion avec votre compte GitHub
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       {oauthConnections.github ? (
-                        <Badge variant="success" className="flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Connecté
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-xs font-medium text-green-600">
+                            Connecté
+                          </span>
+                        </div>
                       ) : (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          <XCircle className="h-3 w-3" />
-                          Non connecté
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                          <span className="text-xs font-medium text-gray-500">
+                            Non connecté
+                          </span>
+                        </div>
                       )}
                       <Button
                         size="sm"
-                        variant={oauthConnections.github ? "destructive" : "default"}
+                        variant={
+                          oauthConnections.github ? "outline" : "destructive"
+                        }
                         onClick={() => handleOAuthConnect("github")}
+                        className={
+                          oauthConnections.github
+                            ? "text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                            : "bg-gray-900 hover:bg-gray-800 text-white"
+                        }
                       >
                         {oauthConnections.github ? "Déconnecter" : "Connecter"}
                       </Button>
                     </div>
                   </div>
 
-                  {/* Google */}
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5" />
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-white">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-red-50 rounded-lg">
+                        <Mail className="h-5 w-5 text-red-600" />
+                      </div>
                       <div>
-                        <p className="font-medium">Google</p>
-                        <p className="text-sm text-muted-foreground">
-                          Connectez votre compte Google
+                        <p className="font-medium text-gray-900">Google</p>
+                        <p className="text-sm text-gray-500">
+                          Connexion avec votre compte Google
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       {oauthConnections.google ? (
-                        <Badge variant="success" className="flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Connecté
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-xs font-medium text-green-600">
+                            Connecté
+                          </span>
+                        </div>
                       ) : (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          <XCircle className="h-3 w-3" />
-                          Non connecté
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                          <span className="text-xs font-medium text-gray-500">
+                            Non connecté
+                          </span>
+                        </div>
                       )}
                       <Button
                         size="sm"
-                        variant={oauthConnections.google ? "destructive" : "default"}
+                        variant={
+                          oauthConnections.google ? "outline" : "destructive"
+                        }
                         onClick={() => handleOAuthConnect("google")}
+                        className={
+                          oauthConnections.google
+                            ? "text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                            : "bg-red-600 hover:bg-red-700 text-white"
+                        }
                       >
                         {oauthConnections.google ? "Déconnecter" : "Connecter"}
                       </Button>
@@ -188,71 +386,89 @@ export default function SecuritySection({ session }) {
             </Dialog>
           </div>
 
-          <Separator />
+          <Separator className="my-6" />
 
-          {/* Numéro de téléphone de récupération */}
           <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Numéro de téléphone de récupération</h4>
-              <p className="text-sm text-muted-foreground">
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium">
+                Numéro de téléphone de récupération
+              </h4>
+              <p className="text-xs text-muted-foreground">
                 Utilisé pour la récupération de compte
               </p>
             </div>
-            <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
+            <Dialog
+              open={isPhoneDialogOpen}
+              onOpenChange={setIsPhoneDialogOpen}
+            >
               <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" size="sm">
                   <Smartphone className="h-4 w-4 mr-2" />
                   Configurer
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>Numéro de téléphone de récupération</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-xl font-semibold">
+                    Numéro de téléphone
+                  </DialogTitle>
+                  <DialogDescription className="text-gray-600">
                     Ajoutez un numéro de téléphone pour sécuriser votre compte
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4">
+                <div className="space-y-6 mt-6">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Numéro de téléphone</Label>
+                    <Label
+                      htmlFor="phone"
+                      className="text-sm font-medium text-gray-900"
+                    >
+                      Numéro de téléphone
+                    </Label>
                     <Input
                       id="phone"
+                      type="tel"
                       placeholder="+33 6 12 34 56 78"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
-                  
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={handleSendVerificationCode}
-                    >
-                      Envoyer le code
-                    </Button>
-                  </div>
+
+                  <Button
+                    variant="outline"
+                    className="w-full bg-white hover:bg-gray-50 border-gray-200"
+                    onClick={handleSendVerificationCode}
+                  >
+                    Envoyer le code de vérification
+                  </Button>
 
                   <div className="space-y-2">
-                    <Label htmlFor="verification-code">Code de vérification</Label>
+                    <Label
+                      htmlFor="verification-code"
+                      className="text-sm font-medium text-gray-900"
+                    >
+                      Code de vérification
+                    </Label>
                     <Input
                       id="verification-code"
                       placeholder="123456"
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
+                      className="border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button 
+                  <div className="flex gap-3">
+                    <Button
                       className="flex-1"
                       onClick={handlePhoneVerification}
                     >
                       Vérifier
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={handleSendVerificationCode}
+                      className="bg-white hover:bg-gray-50 border-gray-200"
                     >
                       Renvoyer
                     </Button>
@@ -260,39 +476,6 @@ export default function SecuritySection({ session }) {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Sessions actives */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sessions actives</CardTitle>
-        </CardHeader>
-        <Separator />
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">Session actuelle</p>
-                <p className="text-sm text-muted-foreground">
-                  Chrome sur macOS • Paris, France
-                </p>
-              </div>
-              <Badge variant="success">Actuelle</Badge>
-            </div>
-            
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">iPhone Safari</p>
-                <p className="text-sm text-muted-foreground">
-                  Il y a 2 heures • Paris, France
-                </p>
-              </div>
-              <Button variant="outline" size="sm">
-                Révoquer
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>

@@ -57,15 +57,16 @@ export default function LegalSection({ register, errors, watch, setValue }) {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+      <Card className="border-0 shadow-sm backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <FileText className="h-5 w-5 text-blue-600" />
+            </div>
             Informations légales
           </CardTitle>
         </CardHeader>
-        <Separator />
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="space-y-6">
           {/* Forme juridique */}
           <div className="space-y-2">
             <Label
@@ -209,10 +210,10 @@ export default function LegalSection({ register, errors, watch, setValue }) {
           </div>
 
           {/* Information légale */}
-          <div className="bg-amber-50 dark:bg-amber-950 p-4 rounded-lg">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 p-4 rounded-xl shadow-sm">
             <div className="flex items-start gap-3">
-              <div className="bg-amber-100 dark:bg-amber-900 p-2 rounded-full">
-                <FileText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <div className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-sm">
+                <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
                 <h4 className="font-medium text-amber-900 dark:text-amber-100">

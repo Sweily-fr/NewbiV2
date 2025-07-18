@@ -316,7 +316,7 @@ export default function FeatureGrid({ className }) {
 
           <div className="lg:col-span-2 group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative h-60 shrink-0">
-              <div className="absolute inset-0 bg-[url(/images/lp-home/app.png)] bg-[length:auto_250%] bg-[position:left_5px_top_-80px] bg-no-repeat"></div>
+              <div className="absolute inset-0 bg-[url(/images/lp-home/app.png)] bg-[length:auto_150%] bg-[position:left_-5px_top_0px] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
             <div className="relative p-6">

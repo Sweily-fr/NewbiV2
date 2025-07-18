@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
+import { Building, Mail, Phone, Globe, FileText } from "lucide-react";
 
 export default function CompanySection({
   register,
@@ -41,14 +42,18 @@ export default function CompanySection({
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Informations générales</CardTitle>
+      <Card className="border-0 shadow-sm backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Building className="h-5 w-5 text-blue-600" />
+            </div>
+            Informations générales
+          </CardTitle>
         </CardHeader>
-        <Separator />
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="space-y-6">
           {/* Logo de l'entreprise */}
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-4 p-4 bg-gray-100/50 rounded-xl">
             <CompanyLogoUpload
               currentImageUrl={logoUrl}
               onImageChange={handleLogoChange}
@@ -59,8 +64,8 @@ export default function CompanySection({
                 Logo de l'entreprise
               </Label>
               <p className="text-sm text-muted-foreground mt-1">
-                Glissez une image ou cliquez pour uploader le logo de votre entreprise.
-                Formats acceptés : JPG, PNG, GIF (max 5MB)
+                Glissez une image ou cliquez pour uploader le logo de votre
+                entreprise. Formats acceptés : JPG, PNG, GIF (max 5MB)
               </p>
             </div>
           </div>
@@ -68,7 +73,10 @@ export default function CompanySection({
           {/* Nom de l'entreprise */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nom de l'entreprise *</Label>
+              <Label htmlFor="name" className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-gray-500" />
+                Nom de l'entreprise *
+              </Label>
               <Input
                 id="name"
                 placeholder="Nom de votre entreprise"
@@ -80,7 +88,10 @@ export default function CompanySection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email professionnel *</Label>
+              <Label htmlFor="email" className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-gray-500" />
+                Email professionnel *
+              </Label>
               <InputEmail
                 id="email"
                 type="email"
@@ -102,7 +113,10 @@ export default function CompanySection({
           {/* Téléphone et site web */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
+              <Label htmlFor="phone" className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-gray-500" />
+                Téléphone
+              </Label>
               <InputPhone
                 id="phone"
                 placeholder="+33 1 23 45 67 89"
@@ -111,7 +125,10 @@ export default function CompanySection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="website">Site web</Label>
+              <Label htmlFor="website" className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-gray-500" />
+                Site web
+              </Label>
               <InputEndAddOn
                 id="website"
                 placeholder="https://www.entreprise.com"
@@ -122,7 +139,10 @@ export default function CompanySection({
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description de l'entreprise</Label>
+            <Label htmlFor="description" className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-gray-500" />
+              Description de l'entreprise
+            </Label>
             <Textarea
               id="description"
               placeholder="Décrivez votre entreprise..."

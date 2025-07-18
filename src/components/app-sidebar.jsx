@@ -187,8 +187,8 @@ export function AppSidebar({ ...props }) {
                   src="http://localhost:3000/newbiLogo.png"
                   alt="Logo newbi"
                   //   className="absolute inset-x-0 top-56 -z-20 hidden lg:top-32 dark:block"
-                  width="70"
-                  height="70"
+                  width="80"
+                  height="80"
                 />
                 {/* <IconInnerShadowTop className="!size-5" />
                 <span className="text-base font-semibold">NewBi.</span> */}

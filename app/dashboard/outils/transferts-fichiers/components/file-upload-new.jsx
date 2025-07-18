@@ -2,6 +2,9 @@
 
 import React, { useState, useRef } from "react";
 import { useFileTransfer } from "../hooks/useFileTransfer";
+import { useStripeConnect } from "@/src/hooks/useStripeConnect";
+import { useUser } from "@/src/lib/auth/hooks";
+import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
 import {
   AlertCircleIcon,
   FileArchiveIcon,
@@ -85,6 +88,14 @@ export default function FileUploadNew() {
   const maxSize = 10 * 1024 * 1024 * 1024; // 10GB
   const maxFiles = 10;
 
+  // Hooks
+  const { user } = useUser();
+  const {
+    isConnected: stripeConnected,
+    canReceivePayments,
+    isLoading: stripeLoading
+  } = useStripeConnect(user?.id);
+
   // Use the file transfer hook
   const {
     selectedFiles,
@@ -101,6 +112,7 @@ export default function FileUploadNew() {
 
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState([]);
+  const [showStripeOnboarding, setShowStripeOnboarding] = useState(false);
   const fileInputRef = useRef(null);
 
   const validateFile = (file) => {
@@ -360,16 +372,31 @@ export default function FileUploadNew() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label className="text-sm">Activer le paiement</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">Demander un paiement</Label>
+                  {!stripeConnected && (
+                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
+                      Stripe requis
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Les utilisateurs devront payer pour accéder aux fichiers
+                  {stripeConnected 
+                    ? "Exiger un paiement avant le téléchargement"
+                    : "Connectez Stripe Connect pour activer les paiements"
+                  }
                 </p>
               </div>
               <Switch
                 checked={transferOptions.requirePayment}
-                onCheckedChange={(checked) =>
-                  handleOptionChange("requirePayment", checked)
-                }
+                onCheckedChange={(checked) => {
+                  if (checked && !stripeConnected) {
+                    setShowStripeOnboarding(true);
+                    return;
+                  }
+                  handleOptionChange("requirePayment", checked);
+                }}
+                disabled={!stripeConnected && transferOptions.requirePayment}
               />
             </div>
 
@@ -411,6 +438,24 @@ export default function FileUploadNew() {
                     </Select>
                   </div>
                 </div>
+                {stripeConnected && !canReceivePayments && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-700 font-medium">
+                      ⚠️ Configuration Stripe incomplète
+                    </p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      Finalisez votre configuration Stripe pour recevoir des paiements.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowStripeOnboarding(true)}
+                      className="mt-2 text-xs h-7 bg-amber-100 hover:bg-amber-200 border-amber-300"
+                    >
+                      Finaliser la configuration
+                    </Button>
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Le paiement sera traité via Stripe. Une commission de 2.9% +
                   0.30€ s'applique.
@@ -486,6 +531,18 @@ export default function FileUploadNew() {
           </div>
         </div>
       )}
+      
+      {/* Modal Stripe Connect Onboarding */}
+      <StripeConnectOnboarding
+        isOpen={showStripeOnboarding}
+        onClose={() => setShowStripeOnboarding(false)}
+        userId={user?.id}
+        userEmail={user?.email}
+        onSuccess={() => {
+          setShowStripeOnboarding(false);
+          // Optionnel: afficher une notification de succès
+        }}
+      />
     </div>
   );
 }
