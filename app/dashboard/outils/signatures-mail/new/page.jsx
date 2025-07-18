@@ -5,7 +5,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Copy, Monitor, Smartphone } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
@@ -22,11 +22,77 @@ import {
 // Aperçu de l'email avec édition inline
 const EmailPreview = ({ signatureData }) => {
   const { updateSignatureData } = useSignatureData();
+  const [isCopying, setIsCopying] = useState(false);
 
-  const handleCopySignature = () => {
-    // Génération du HTML de la signature sous forme de tableau
-    const generateSignatureHTML = () => {
+  const handleCopySignature = async () => {
+    console.log('🚀 Début de la copie de signature');
+    console.log('📋 Données signature:', {
+      photo: signatureData.photo ? 'Présente' : 'Absente',
+      companyLogo: signatureData.companyLogo ? 'Présent' : 'Absent',
+      firstName: signatureData.firstName,
+      lastName: signatureData.lastName
+    });
+    setIsCopying(true);
+    
+    try {
+      // Génération du HTML de la signature sous forme de tableau
+    // Fonction pour convertir une image en base64 si nécessaire
+    const getImageSrc = async (imageUrl) => {
+      if (!imageUrl) {
+        console.log('getImageSrc: Pas d\'URL fournie');
+        return '';
+      }
+      
+      console.log('🖼️ Image à traiter:', imageUrl.substring(0, 50) + '...');
+      
+      // Si c'est déjà une data URL (base64), la retourner telle quelle
+      if (imageUrl.startsWith('data:')) {
+        console.log('✅ Déjà en base64');
+        return imageUrl;
+      }
+      
+      // Si c'est déjà une URL publique (http/https), la retourner telle quelle
+      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        console.log('🌐 URL publique, pas de conversion');
+        return imageUrl;
+      }
+      
+      // Si c'est une blob URL ou autre, essayer de la convertir en base64
+      try {
+        console.log('🔄 Conversion blob → base64...');
+        const response = await fetch(imageUrl);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        console.log('📦 Blob:', blob.size, 'bytes,', blob.type);
+        
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            console.log('✅ Conversion réussie!');
+            resolve(reader.result);
+          };
+          reader.onerror = () => {
+            console.error('❌ Erreur FileReader');
+            reject(reader.error);
+          };
+          reader.readAsDataURL(blob);
+        });
+      } catch (error) {
+        console.error('❌ Erreur conversion:', error.message);
+        return ''; // Retourner une chaîne vide en cas d'erreur
+      }
+    };
+
+    const generateSignatureHTML = async () => {
       const primaryColor = signatureData.primaryColor || '#2563eb';
+      
+      // Convertir les images en base64 si nécessaire
+      const photoSrc = await getImageSrc(signatureData.photo);
+      const logoSrc = await getImageSrc(signatureData.companyLogo);
       
       let contactRows = '';
       
@@ -75,14 +141,14 @@ const EmailPreview = ({ signatureData }) => {
           </tr>`;
       }
       
-      const logoSection = signatureData.companyLogo ? `
+      const logoSection = logoSrc ? `
         <tr>
           <td style="padding-top: 12px;">
             <table cellpadding="0" cellspacing="0" border="0">
               <tbody>
                 <tr>
                   <td style="vertical-align: middle; padding-right: 12px;">
-                    <img src="${signatureData.companyLogo}" alt="Logo" style="max-height: 40px; max-width: 120px;" />
+                    <img src="${logoSrc}" alt="Logo" style="max-height: 40px; max-width: 120px;" />
                   </td>
                   <td style="vertical-align: middle; color: #2563eb; font-weight: bold; font-size: 14px;">
                     ${signatureData.companyName || ''}
@@ -93,11 +159,19 @@ const EmailPreview = ({ signatureData }) => {
           </td>
         </tr>` : '';
       
+      // Afficher le nom d'entreprise soit avec le logo, soit seul
+      const companyNameRow = !logoSrc && signatureData.companyName ? `
+            <tr>
+              <td style="padding-bottom: 8px; color: #6b7280; font-size: 14px;">
+                ${signatureData.companyName}
+              </td>
+            </tr>` : '';
+      
       return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.4;">
   <tbody>
     <tr>
       <td style="vertical-align: top; padding-right: 16px;">
-        ${signatureData.photo ? `<img src="${signatureData.photo}" alt="Photo" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;" />` : ''}
+        ${photoSrc ? `<img src="${photoSrc}" alt="Photo" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;" />` : ''}
       </td>
       <td style="vertical-align: top;">
         <table cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
@@ -111,12 +185,7 @@ const EmailPreview = ({ signatureData }) => {
               <td style="padding-bottom: 2px; color: #6b7280; font-size: 14px;">
                 ${signatureData.position || ''}
               </td>
-            </tr>
-            <tr>
-              <td style="padding-bottom: 8px; color: #6b7280; font-size: 14px;">
-                ${signatureData.companyName || ''}
-              </td>
-            </tr>${contactRows}${logoSection}
+            </tr>${companyNameRow}${contactRows}${logoSection}
           </tbody>
         </table>
       </td>
@@ -125,10 +194,9 @@ const EmailPreview = ({ signatureData }) => {
 </table>`;
     };
     
-    const htmlSignature = generateSignatureHTML();
-    
     // Copie dans le presse-papiers avec HTML rendu (visuel direct)
     const copyAsRichText = async () => {
+      const htmlSignature = await generateSignatureHTML();
       try {
         // Créer un élément temporaire pour rendre le HTML
         const tempDiv = document.createElement('div');
@@ -174,7 +242,14 @@ const EmailPreview = ({ signatureData }) => {
       }
     };
     
-    copyAsRichText();
+      await copyAsRichText();
+      console.log('✅ Copie terminée avec succès');
+    } catch (error) {
+      console.error('❌ Erreur lors de la copie:', error);
+      toast.error('Erreur lors de la copie de la signature');
+    } finally {
+      setIsCopying(false);
+    }
   };
 
   // Fonctions de validation
@@ -204,11 +279,11 @@ const EmailPreview = ({ signatureData }) => {
 
   // Gestionnaires de changement
   const handleFieldChange = (field, value) => {
-    updateSignatureData({ [field]: value });
+    updateSignatureData(field, value);
   };
 
   const handleImageChange = (field, imageUrl) => {
-    updateSignatureData({ [field]: imageUrl });
+    updateSignatureData(field, imageUrl);
   };
 
   return (
@@ -226,10 +301,11 @@ const EmailPreview = ({ signatureData }) => {
           size="sm"
           variant="secondary"
           onClick={handleCopySignature}
+          disabled={isCopying}
           className="text-xs"
         >
           <Copy className="w-3 h-3 mr-1" />
-          Copier la signature
+          {isCopying ? 'Copie en cours...' : 'Copier la signature'}
         </Button>
       </div>
 
@@ -315,22 +391,24 @@ const EmailPreview = ({ signatureData }) => {
                         </td>
                       </tr>
                       
-                      {/* Entreprise */}
-                      <tr>
-                        <td style={{ 
-                          paddingBottom: '8px',
-                          color: '#6b7280',
-                          fontSize: '14px'
-                        }}>
-                          <InlineEdit
-                            value={signatureData.companyName}
-                            onChange={(value) => handleFieldChange("companyName", value)}
-                            placeholder="Nom de l'entreprise"
-                            displayClassName="text-gray-600 text-sm"
-                            inputClassName="text-gray-600 text-sm border-0 shadow-none p-1 h-auto"
-                          />
-                        </td>
-                      </tr>
+                      {/* Entreprise - n'afficher que s'il n'y a pas de logo */}
+                      {!signatureData.companyLogo && (
+                        <tr>
+                          <td style={{ 
+                            paddingBottom: '8px',
+                            color: '#6b7280',
+                            fontSize: '14px'
+                          }}>
+                            <InlineEdit
+                              value={signatureData.companyName}
+                              onChange={(value) => handleFieldChange("companyName", value)}
+                              placeholder="Nom de l'entreprise"
+                              displayClassName="text-gray-600 text-sm"
+                              inputClassName="text-gray-600 text-sm border-0 shadow-none p-1 h-auto"
+                            />
+                          </td>
+                        </tr>
+                      )}
                       
                       {/* Informations de contact */}
                       {signatureData.showPhoneIcon && (
@@ -436,10 +514,10 @@ const EmailPreview = ({ signatureData }) => {
                       {/* Logo entreprise */}
                       <tr>
                         <td style={{ paddingTop: '12px' }}>
-                          <table cellPadding="0" cellSpacing="0" border="0">
+                          <table cellPadding="0" cellSpacing="0" border="0" style={{ width: '100%' }}>
                             <tbody>
                               <tr>
-                                <td style={{ verticalAlign: 'middle', paddingRight: '12px' }}>
+                                <td style={{ verticalAlign: 'middle', paddingRight: '12px', width: 'auto' }}>
                                   <ImageDropZone
                                     currentImage={signatureData.companyLogo}
                                     onImageChange={(imageUrl) =>
@@ -450,24 +528,23 @@ const EmailPreview = ({ signatureData }) => {
                                     type="logo"
                                   />
                                 </td>
-                                {signatureData.companyLogo && (
-                                  <td style={{ 
-                                    verticalAlign: 'middle',
-                                    color: '#2563eb',
-                                    fontWeight: 'bold',
-                                    fontSize: '14px'
-                                  }}>
-                                    <InlineEdit
-                                      value={signatureData.companyName}
-                                      onChange={(value) =>
-                                        handleFieldChange("companyName", value)
-                                      }
-                                      placeholder="Nom entreprise"
-                                      displayClassName="text-blue-600 font-semibold text-sm"
-                                      inputClassName="text-blue-600 font-semibold text-sm border-0 shadow-none p-1 h-auto"
-                                    />
-                                  </td>
-                                )}
+                                <td style={{ 
+                                  verticalAlign: 'middle',
+                                  color: signatureData.companyLogo ? '#2563eb' : '#6b7280',
+                                  fontWeight: signatureData.companyLogo ? 'bold' : 'normal',
+                                  fontSize: '14px',
+                                  width: '100%'
+                                }}>
+                                  <InlineEdit
+                                    value={signatureData.companyName}
+                                    onChange={(value) =>
+                                      handleFieldChange("companyName", value)
+                                    }
+                                    placeholder="Nom entreprise"
+                                    displayClassName={signatureData.companyLogo ? "text-blue-600 font-semibold text-sm" : "text-gray-600 text-sm"}
+                                    inputClassName={signatureData.companyLogo ? "text-blue-600 font-semibold text-sm border-0 shadow-none p-1 h-auto" : "text-gray-600 text-sm border-0 shadow-none p-1 h-auto"}
+                                  />
+                                </td>
                               </tr>
                             </tbody>
                           </table>
