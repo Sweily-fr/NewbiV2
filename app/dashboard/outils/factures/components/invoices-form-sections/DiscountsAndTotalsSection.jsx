@@ -118,9 +118,14 @@ export default function DiscountsAndTotalsSection({
 
         {/* Champs personnalisés */}
         <div className="space-y-4">
-          <Label className="text-sm font-medium">
-            Champs personnalisés
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">
+              Champs personnalisés
+            </Label>
+            <span className="text-xs text-muted-foreground">
+              Informations supplémentaires à afficher sur la facture
+            </span>
+          </div>
           {data.customFields && data.customFields.length > 0 ? (
             <div className="space-y-3">
               {data.customFields.map((field, index) => (

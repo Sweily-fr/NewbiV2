@@ -14,7 +14,6 @@ import {
   XCircle, 
   FileCheck, 
   Send,
-  Mail,
   Download
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -187,7 +186,7 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
 
   return (
     <>
-      <div className={`fixed inset-y-0 right-0 z-50 w-96 bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
+      <div className={`fixed inset-y-0 right-0 z-50 w-[600px] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}>
         <div className="flex flex-col h-full">
@@ -216,14 +215,32 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
                 </div>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Bouton PDF - masqué pour les brouillons */}
+              {quote.status !== QUOTE_STATUS.DRAFT && (
+                <UniversalPDFGenerator
+                  data={quote}
+                  type="quote"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    title="Télécharger en PDF"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Télécharger le PDF
+                  </Button>
+                </UniversalPDFGenerator>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Content */}
@@ -432,7 +449,7 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
           )}
 
           {quote.status === QUOTE_STATUS.PENDING && (
-            <div className="space-y-2">
+            <div className="flex flex-col space-y-2">
               <Button
                 onClick={handleAccept}
                 disabled={isLoading}
@@ -440,15 +457,6 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Accepter le devis
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleReject}
-                disabled={isLoading}
-                className="w-full"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Rejeter le devis
               </Button>
               <Button
                 variant="outline"
@@ -517,14 +525,7 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
             </div>
           )}
 
-          {/* Additional Actions */}
-          <div className="flex gap-2 pt-2">
 
-            <Button variant="ghost" size="sm" className="flex-1">
-              <Mail className="h-4 w-4 mr-2" />
-              Email
-            </Button>
-          </div>
         </div>
         </div>
       </div>

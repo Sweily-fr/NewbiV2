@@ -107,35 +107,6 @@ export default function DiscountsAndTotalsSection({
 
         <Separator />
 
-        {/* Boutons de remises rapides */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">
-            Remises rapides
-          </Label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {[5, 10, 15, 20].map((percentage) => (
-              <Button
-                key={percentage}
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setValue("discountType", "PERCENTAGE", { shouldDirty: true });
-                  setValue("discount", percentage, { shouldDirty: true });
-                }}
-                disabled={!canEdit}
-                className="h-9 text-sm"
-              >
-                -{percentage}%
-              </Button>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Cliquez sur un bouton pour appliquer rapidement une remise en pourcentage
-          </p>
-        </div>
-
-        <Separator />
-
         {/* Champs personnalisés */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">

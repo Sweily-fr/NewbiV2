@@ -526,18 +526,7 @@ export default function ItemsSection({
                       </div>
                     </div>
 
-                    {/* Total HT */}
-                    <div className="mt-8">
-                      <Separator className="my-4" />
-                      <div className="flex flex-col items-center space-y-2">
-                        <Label className="text-sm font-medium">
-                          Total HT
-                        </Label>
-                        <div className="h-10 rounded-lg flex items-center justify-center text-lg font-semibold">
-                          {formatCurrency(watch(`items.${index}.total`) || 0)}
-                        </div>
-                      </div>
-                    </div>
+
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -552,6 +541,27 @@ export default function ItemsSection({
             <Package className="h-16 w-16 mx-auto mb-4 opacity-30" />
             <h3 className="text-lg font-medium mb-2">Aucun article ajouté</h3>
             <p className="text-sm mb-4">Commencez par ajouter un article à votre facture</p>
+          </div>
+        )}
+
+        {/* Total HT des articles */}
+        {items.length > 0 && (
+          <div className="border-t pt-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Total HT des articles :</span>
+              <span className="text-lg font-semibold">
+                {formatCurrency(
+                  watchedItems.reduce((sum, item, index) => {
+                    const quantity = item?.quantity || 1;
+                    const unitPrice = item?.unitPrice || 0;
+                    const discount = item?.discount || 0;
+                    const discountType = item?.discountType || 'percentage';
+                    
+                    return sum + calculateItemTotal(quantity, unitPrice, discount, discountType);
+                  }, 0)
+                )}
+              </span>
+            </div>
           </div>
         )}
 
