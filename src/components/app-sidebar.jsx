@@ -172,6 +172,44 @@ const data = {
 
 export function AppSidebar({ ...props }) {
   const { session } = useUser();
+  const [theme, setTheme] = React.useState("light");
+
+  // Effet pour détecter le thème depuis localStorage au chargement du composant
+  React.useEffect(() => {
+    // Vérifier si on est côté client (browser)
+    if (typeof window !== "undefined") {
+      // Récupérer le thème depuis localStorage ou utiliser "light" par défaut
+      const storedTheme = localStorage.getItem("vite-ui-theme") || "light";
+      setTheme(storedTheme);
+
+      // Écouter les changements de thème
+      const handleStorageChange = () => {
+        const updatedTheme = localStorage.getItem("vite-ui-theme") || "light";
+        setTheme(updatedTheme);
+      };
+
+      // Ajouter un écouteur pour les changements de localStorage
+      window.addEventListener("storage", handleStorageChange);
+
+      // Écouter également les changements de classe sur l'élément html pour détecter les changements de thème
+      const observer = new MutationObserver(() => {
+        const isDark = document.documentElement.classList.contains("dark");
+        setTheme(isDark ? "dark" : "light");
+        localStorage.setItem("vite-ui-theme", isDark ? "dark" : "light");
+      });
+
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+
+      // Nettoyage
+      return () => {
+        window.removeEventListener("storage", handleStorageChange);
+        observer.disconnect();
+      };
+    }
+  }, []);
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -183,13 +221,21 @@ export function AppSidebar({ ...props }) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="/dashboard">
-                <img
-                  src="http://localhost:3000/newbiLogo.png"
-                  alt="Logo newbi"
-                  //   className="absolute inset-x-0 top-56 -z-20 hidden lg:top-32 dark:block"
-                  width="80"
-                  height="80"
-                />
+                {theme === "dark" ? (
+                  <img
+                    src="http://localhost:3000/Logo + texte_blanc.svg"
+                    alt="Logo newbi (version sombre)"
+                    width="100"
+                    height="100"
+                  />
+                ) : (
+                  <img
+                    src="http://localhost:3000/Logo + texte.svg"
+                    alt="Logo newbi (version claire)"
+                    width="100"
+                    height="100"
+                  />
+                )}
                 {/* <IconInnerShadowTop className="!size-5" />
                 <span className="text-base font-semibold">NewBi.</span> */}
               </a>
