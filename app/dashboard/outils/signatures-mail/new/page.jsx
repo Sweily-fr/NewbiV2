@@ -24,8 +24,157 @@ const EmailPreview = ({ signatureData }) => {
   const { updateSignatureData } = useSignatureData();
 
   const handleCopySignature = () => {
-    // Logique de copie de la signature
-    toast.success("Signature copiée !");
+    // Génération du HTML de la signature sous forme de tableau
+    const generateSignatureHTML = () => {
+      const primaryColor = signatureData.primaryColor || '#2563eb';
+      
+      let contactRows = '';
+      
+      if (signatureData.showPhoneIcon && signatureData.phone) {
+        contactRows += `
+          <tr>
+            <td style="padding-bottom: 2px; color: #6b7280; font-size: 12px;">
+              📞 ${signatureData.phone}
+            </td>
+          </tr>`;
+      }
+      
+      if (signatureData.showMobileIcon && signatureData.mobile) {
+        contactRows += `
+          <tr>
+            <td style="padding-bottom: 2px; color: #6b7280; font-size: 12px;">
+              📱 ${signatureData.mobile}
+            </td>
+          </tr>`;
+      }
+      
+      if (signatureData.showEmailIcon && signatureData.email) {
+        contactRows += `
+          <tr>
+            <td style="padding-bottom: 2px; color: #6b7280; font-size: 12px;">
+              ✉️ ${signatureData.email}
+            </td>
+          </tr>`;
+      }
+      
+      if (signatureData.showWebsiteIcon && signatureData.website) {
+        contactRows += `
+          <tr>
+            <td style="padding-bottom: 2px; color: #6b7280; font-size: 12px;">
+              🌐 ${signatureData.website}
+            </td>
+          </tr>`;
+      }
+      
+      if (signatureData.showAddressIcon && signatureData.address) {
+        contactRows += `
+          <tr>
+            <td style="padding-bottom: 8px; color: #6b7280; font-size: 12px;">
+              📍 ${signatureData.address}
+            </td>
+          </tr>`;
+      }
+      
+      const logoSection = signatureData.companyLogo ? `
+        <tr>
+          <td style="padding-top: 12px;">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tbody>
+                <tr>
+                  <td style="vertical-align: middle; padding-right: 12px;">
+                    <img src="${signatureData.companyLogo}" alt="Logo" style="max-height: 40px; max-width: 120px;" />
+                  </td>
+                  <td style="vertical-align: middle; color: #2563eb; font-weight: bold; font-size: 14px;">
+                    ${signatureData.companyName || ''}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>` : '';
+      
+      return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.4;">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top; padding-right: 16px;">
+        ${signatureData.photo ? `<img src="${signatureData.photo}" alt="Photo" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;" />` : ''}
+      </td>
+      <td style="vertical-align: top;">
+        <table cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+          <tbody>
+            <tr>
+              <td style="padding-bottom: 4px; color: ${primaryColor}; font-weight: bold; font-size: 16px;">
+                ${signatureData.firstName || ''} ${signatureData.lastName || ''}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-bottom: 2px; color: #6b7280; font-size: 14px;">
+                ${signatureData.position || ''}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-bottom: 8px; color: #6b7280; font-size: 14px;">
+                ${signatureData.companyName || ''}
+              </td>
+            </tr>${contactRows}${logoSection}
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </tbody>
+</table>`;
+    };
+    
+    const htmlSignature = generateSignatureHTML();
+    
+    // Copie dans le presse-papiers avec HTML rendu (visuel direct)
+    const copyAsRichText = async () => {
+      try {
+        // Créer un élément temporaire pour rendre le HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlSignature;
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        document.body.appendChild(tempDiv);
+        
+        // Sélectionner le contenu rendu
+        const range = document.createRange();
+        range.selectNodeContents(tempDiv);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        // Copier avec le formatage
+        const successful = document.execCommand('copy');
+        
+        // Nettoyer
+        document.body.removeChild(tempDiv);
+        selection.removeAllRanges();
+        
+        if (successful) {
+          toast.success("Signature copiée avec le visuel !");
+        } else {
+          throw new Error('Échec de la copie');
+        }
+      } catch (error) {
+        // Fallback vers l'API moderne du clipboard
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'text/html': new Blob([htmlSignature], { type: 'text/html' }),
+              'text/plain': new Blob([htmlSignature.replace(/<[^>]*>/g, '')], { type: 'text/plain' })
+            })
+          ]);
+          toast.success("Signature copiée avec le visuel !");
+        } catch (fallbackError) {
+          // Dernier recours : copie du HTML brut
+          await navigator.clipboard.writeText(htmlSignature);
+          toast.success("Signature HTML copiée (collage manuel requis) !");
+        }
+      }
+    };
+    
+    copyAsRichText();
   };
 
   // Fonctions de validation
@@ -101,162 +250,235 @@ const EmailPreview = ({ signatureData }) => {
         </div>
 
         <div className="border-t pt-4 mt-4">
-          {/* Signature générée avec édition inline */}
-          <div className="flex items-start gap-4">
-            {/* Photo de profil avec upload */}
-            <div className="flex-shrink-0">
-              <ImageDropZone
-                currentImage={signatureData.photo}
-                onImageChange={(imageUrl) =>
-                  handleImageChange("photo", imageUrl)
-                }
-                placeholder="Photo de profil"
-                size="md"
-                type="profile"
-                className="mb-2"
-              />
-            </div>
-
-            <div className="space-y-1 flex-1">
-              {/* Nom et prénom */}
-              <div
-                className="flex items-center gap-2 font-semibold"
-                style={{ color: signatureData.primaryColor || "#2563eb" }}
-              >
-                <InlineEdit
-                  value={signatureData.firstName}
-                  onChange={(value) => handleFieldChange("firstName", value)}
-                  placeholder="Prénom"
-                  displayClassName="font-semibold"
-                  inputClassName="font-semibold border-0 shadow-none p-1 h-auto"
-                />
-                <InlineEdit
-                  value={signatureData.lastName}
-                  onChange={(value) => handleFieldChange("lastName", value)}
-                  placeholder="Nom"
-                  displayClassName="font-semibold"
-                  inputClassName="font-semibold border-0 shadow-none p-1 h-auto"
-                />
-              </div>
-
-              {/* Poste */}
-              <div className="text-gray-600 text-sm">
-                <InlineEdit
-                  value={signatureData.position}
-                  onChange={(value) => handleFieldChange("position", value)}
-                  placeholder="Votre poste"
-                  displayClassName="text-gray-600 text-sm"
-                  inputClassName="text-gray-600 text-sm border-0 shadow-none p-1 h-auto"
-                />
-              </div>
-
-              {/* Entreprise */}
-              <div className="text-gray-600 text-sm">
-                <InlineEdit
-                  value={signatureData.companyName}
-                  onChange={(value) => handleFieldChange("companyName", value)}
-                  placeholder="Nom de l'entreprise"
-                  displayClassName="text-gray-600 text-sm"
-                  inputClassName="text-gray-600 text-sm border-0 shadow-none p-1 h-auto"
-                />
-              </div>
-
-              {/* Informations de contact */}
-              <div className="space-y-1 text-xs text-gray-600 mt-2">
-                {signatureData.showPhoneIcon && (
-                  <div className="flex items-center gap-1">
-                    <span>📞</span>
-                    <InlineEdit
-                      value={signatureData.phone}
-                      onChange={(value) => handleFieldChange("phone", value)}
-                      placeholder="Numéro de téléphone"
-                      validation={validatePhone}
-                      displayClassName="text-xs text-gray-600"
-                      inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
-                    />
-                  </div>
-                )}
-                {signatureData.showMobileIcon && (
-                  <div className="flex items-center gap-1">
-                    <span>📱</span>
-                    <InlineEdit
-                      value={signatureData.mobile}
-                      onChange={(value) => handleFieldChange("mobile", value)}
-                      placeholder="Numéro de mobile"
-                      validation={validatePhone}
-                      displayClassName="text-xs text-gray-600"
-                      inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
-                    />
-                  </div>
-                )}
-                {signatureData.showEmailIcon && (
-                  <div className="flex items-center gap-1">
-                    <span>✉️</span>
-                    <InlineEdit
-                      value={signatureData.email}
-                      onChange={(value) => handleFieldChange("email", value)}
-                      placeholder="adresse@email.com"
-                      validation={validateEmail}
-                      displayClassName="text-xs text-gray-600"
-                      inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
-                    />
-                  </div>
-                )}
-                {signatureData.showWebsiteIcon && (
-                  <div className="flex items-center gap-1">
-                    <span>🌐</span>
-                    <InlineEdit
-                      value={signatureData.website}
-                      onChange={(value) => handleFieldChange("website", value)}
-                      placeholder="www.monsite.com"
-                      validation={validateUrl}
-                      displayClassName="text-xs text-gray-600"
-                      inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
-                    />
-                  </div>
-                )}
-                {signatureData.showAddressIcon && (
-                  <div className="flex items-start gap-1">
-                    <span className="mt-0.5">📍</span>
-                    <InlineEdit
-                      value={signatureData.address}
-                      onChange={(value) => handleFieldChange("address", value)}
-                      placeholder="Adresse complète"
-                      multiline={true}
-                      displayClassName="text-xs text-gray-600"
-                      inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 min-h-[2rem] resize-none"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Logo entreprise */}
-              <div className="mt-3 flex items-center gap-3">
-                <ImageDropZone
-                  currentImage={signatureData.companyLogo}
-                  onImageChange={(imageUrl) =>
-                    handleImageChange("companyLogo", imageUrl)
-                  }
-                  placeholder="Logo entreprise"
-                  size="sm"
-                  type="logo"
-                />
-                {signatureData.companyLogo && (
-                  <div className="text-blue-600 font-semibold text-sm">
-                    <InlineEdit
-                      value={signatureData.companyName}
-                      onChange={(value) =>
-                        handleFieldChange("companyName", value)
-                      }
-                      placeholder="Nom entreprise"
-                      displayClassName="text-blue-600 font-semibold text-sm"
-                      inputClassName="text-blue-600 font-semibold text-sm border-0 shadow-none p-1 h-auto"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          {/* Signature générée avec tableau HTML pour meilleure compatibilité email */}
+          <table cellPadding="0" cellSpacing="0" border="0" style={{ fontFamily: 'Arial, sans-serif', fontSize: '14px', lineHeight: '1.4' }}>
+            <tbody>
+              <tr>
+                {/* Photo de profil */}
+                <td style={{ verticalAlign: 'top', paddingRight: '16px' }}>
+                  <ImageDropZone
+                    currentImage={signatureData.photo}
+                    onImageChange={(imageUrl) =>
+                      handleImageChange("photo", imageUrl)
+                    }
+                    placeholder="Photo de profil"
+                    size="md"
+                    type="profile"
+                    className="mb-2"
+                  />
+                </td>
+                
+                {/* Informations principales */}
+                <td style={{ verticalAlign: 'top' }}>
+                  <table cellPadding="0" cellSpacing="0" border="0" style={{ width: '100%' }}>
+                    <tbody>
+                      {/* Nom et prénom */}
+                      <tr>
+                        <td style={{ 
+                          paddingBottom: '4px',
+                          color: signatureData.primaryColor || '#2563eb',
+                          fontWeight: 'bold',
+                          fontSize: '16px'
+                        }}>
+                          <InlineEdit
+                            value={signatureData.firstName}
+                            onChange={(value) => handleFieldChange("firstName", value)}
+                            placeholder="Prénom"
+                            displayClassName="font-semibold"
+                            inputClassName="font-semibold border-0 shadow-none p-1 h-auto"
+                          />
+                          {' '}
+                          <InlineEdit
+                            value={signatureData.lastName}
+                            onChange={(value) => handleFieldChange("lastName", value)}
+                            placeholder="Nom"
+                            displayClassName="font-semibold"
+                            inputClassName="font-semibold border-0 shadow-none p-1 h-auto"
+                          />
+                        </td>
+                      </tr>
+                      
+                      {/* Poste */}
+                      <tr>
+                        <td style={{ 
+                          paddingBottom: '2px',
+                          color: '#6b7280',
+                          fontSize: '14px'
+                        }}>
+                          <InlineEdit
+                            value={signatureData.position}
+                            onChange={(value) => handleFieldChange("position", value)}
+                            placeholder="Votre poste"
+                            displayClassName="text-gray-600 text-sm"
+                            inputClassName="text-gray-600 text-sm border-0 shadow-none p-1 h-auto"
+                          />
+                        </td>
+                      </tr>
+                      
+                      {/* Entreprise */}
+                      <tr>
+                        <td style={{ 
+                          paddingBottom: '8px',
+                          color: '#6b7280',
+                          fontSize: '14px'
+                        }}>
+                          <InlineEdit
+                            value={signatureData.companyName}
+                            onChange={(value) => handleFieldChange("companyName", value)}
+                            placeholder="Nom de l'entreprise"
+                            displayClassName="text-gray-600 text-sm"
+                            inputClassName="text-gray-600 text-sm border-0 shadow-none p-1 h-auto"
+                          />
+                        </td>
+                      </tr>
+                      
+                      {/* Informations de contact */}
+                      {signatureData.showPhoneIcon && (
+                        <tr>
+                          <td style={{ 
+                            paddingBottom: '2px',
+                            color: '#6b7280',
+                            fontSize: '12px'
+                          }}>
+                            <span style={{ marginRight: '4px' }}>📞</span>
+                            <InlineEdit
+                              value={signatureData.phone}
+                              onChange={(value) => handleFieldChange("phone", value)}
+                              placeholder="Numéro de téléphone"
+                              validation={validatePhone}
+                              displayClassName="text-xs text-gray-600"
+                              inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                            />
+                          </td>
+                        </tr>
+                      )}
+                      
+                      {signatureData.showMobileIcon && (
+                        <tr>
+                          <td style={{ 
+                            paddingBottom: '2px',
+                            color: '#6b7280',
+                            fontSize: '12px'
+                          }}>
+                            <span style={{ marginRight: '4px' }}>📱</span>
+                            <InlineEdit
+                              value={signatureData.mobile}
+                              onChange={(value) => handleFieldChange("mobile", value)}
+                              placeholder="Numéro de mobile"
+                              validation={validatePhone}
+                              displayClassName="text-xs text-gray-600"
+                              inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                            />
+                          </td>
+                        </tr>
+                      )}
+                      
+                      {signatureData.showEmailIcon && (
+                        <tr>
+                          <td style={{ 
+                            paddingBottom: '2px',
+                            color: '#6b7280',
+                            fontSize: '12px'
+                          }}>
+                            <span style={{ marginRight: '4px' }}>✉️</span>
+                            <InlineEdit
+                              value={signatureData.email}
+                              onChange={(value) => handleFieldChange("email", value)}
+                              placeholder="adresse@email.com"
+                              validation={validateEmail}
+                              displayClassName="text-xs text-gray-600"
+                              inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                            />
+                          </td>
+                        </tr>
+                      )}
+                      
+                      {signatureData.showWebsiteIcon && (
+                        <tr>
+                          <td style={{ 
+                            paddingBottom: '2px',
+                            color: '#6b7280',
+                            fontSize: '12px'
+                          }}>
+                            <span style={{ marginRight: '4px' }}>🌐</span>
+                            <InlineEdit
+                              value={signatureData.website}
+                              onChange={(value) => handleFieldChange("website", value)}
+                              placeholder="www.monsite.com"
+                              validation={validateUrl}
+                              displayClassName="text-xs text-gray-600"
+                              inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                            />
+                          </td>
+                        </tr>
+                      )}
+                      
+                      {signatureData.showAddressIcon && (
+                        <tr>
+                          <td style={{ 
+                            paddingBottom: '8px',
+                            color: '#6b7280',
+                            fontSize: '12px'
+                          }}>
+                            <span style={{ marginRight: '4px', verticalAlign: 'top' }}>📍</span>
+                            <InlineEdit
+                              value={signatureData.address}
+                              onChange={(value) => handleFieldChange("address", value)}
+                              placeholder="Adresse complète"
+                              multiline={true}
+                              displayClassName="text-xs text-gray-600"
+                              inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 min-h-[2rem] resize-none"
+                            />
+                          </td>
+                        </tr>
+                      )}
+                      
+                      {/* Logo entreprise */}
+                      <tr>
+                        <td style={{ paddingTop: '12px' }}>
+                          <table cellPadding="0" cellSpacing="0" border="0">
+                            <tbody>
+                              <tr>
+                                <td style={{ verticalAlign: 'middle', paddingRight: '12px' }}>
+                                  <ImageDropZone
+                                    currentImage={signatureData.companyLogo}
+                                    onImageChange={(imageUrl) =>
+                                      handleImageChange("companyLogo", imageUrl)
+                                    }
+                                    placeholder="Logo entreprise"
+                                    size="sm"
+                                    type="logo"
+                                  />
+                                </td>
+                                {signatureData.companyLogo && (
+                                  <td style={{ 
+                                    verticalAlign: 'middle',
+                                    color: '#2563eb',
+                                    fontWeight: 'bold',
+                                    fontSize: '14px'
+                                  }}>
+                                    <InlineEdit
+                                      value={signatureData.companyName}
+                                      onChange={(value) =>
+                                        handleFieldChange("companyName", value)
+                                      }
+                                      placeholder="Nom entreprise"
+                                      displayClassName="text-blue-600 font-semibold text-sm"
+                                      inputClassName="text-blue-600 font-semibold text-sm border-0 shadow-none p-1 h-auto"
+                                    />
+                                  </td>
+                                )}
+                              </tr>
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
