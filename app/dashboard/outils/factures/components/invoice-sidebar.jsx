@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Eye, Pencil, Trash2, CheckCircle, FileText, XCircle, Download, Send, Copy, Clock, Building, Tag, Package, Percent } from "lucide-react";
+import { X, Eye, Pencil, Trash2, CheckCircle, FileText, XCircle, Download, Loader2, Clock, Building, Tag, Package, Percent } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
@@ -9,10 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/componen
 import { useRouter } from "next/navigation";
 import { useMarkInvoiceAsPaid, useChangeInvoiceStatus, useInvoice, INVOICE_STATUS, INVOICE_STATUS_LABELS, INVOICE_STATUS_COLORS } from "@/src/graphql/invoiceQueries";
 import { toast } from "sonner";
-import InvoicePreview from "./InvoicePreview";
+import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
 
-export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoice }) {
+export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoice, onRefetch }) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
   const router = useRouter();
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
@@ -26,17 +28,12 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
   const invoice = fullInvoice || initialInvoice;
   
   // Debug: Vérifier si les données complètes sont récupérées
-  console.log('Loading full invoice:', loadingFullInvoice);
-  console.log('Invoice error:', invoiceError);
-  console.log('Full invoice:', fullInvoice);
-  console.log('Final invoice used:', invoice);
-  console.log('Client address:', invoice.client?.address);
-  console.log('Financial details:', {
-    totalHT: invoice.totalHT,
-    finalTotalHT: invoice.finalTotalHT,
-    totalVAT: invoice.totalVAT,
-    finalTotalTTC: invoice.finalTotalTTC
-  });
+  if (loadingFullInvoice) {
+    console.log('Loading full invoice...');
+  }
+  if (invoiceError) {
+    console.log('Invoice error:', invoiceError);
+  }
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -129,14 +126,33 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-lg font-semibold">Détails de la facture</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-8 w-8"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Bouton PDF - masqué pour les brouillons */}
+            {invoice.status !== INVOICE_STATUS.DRAFT && (
+              <UniversalPDFGenerator
+                data={invoice}
+                type="invoice"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3"
+                  title="Télécharger en PDF"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Télécharger en PDF
+                </Button>
+              </UniversalPDFGenerator>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Content */}
@@ -188,17 +204,20 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
             <h3 className="font-medium">Client</h3>
             <div className="text-sm space-y-1">
               <div className="font-medium">
-                {invoice.client?.type === 'COMPANY' ? invoice.client?.name : 
-                 `${invoice.client?.firstName || ''} ${invoice.client?.lastName || ''}`.trim() || invoice.client?.name}
+                {invoice.client?.type === 'COMPANY' ? String(invoice.client?.name || '') : 
+                 `${String(invoice.client?.firstName || '')} ${String(invoice.client?.lastName || '')}`.trim() || String(invoice.client?.name || '')}
               </div>
-              <div className="text-muted-foreground">{invoice.client?.email}</div>
+              <div className="text-muted-foreground">{String(invoice.client?.email || '')}</div>
               {invoice.client?.address && (
                 <div className="text-muted-foreground text-xs">
                   {invoice.client.address.street && (
-                    <>{invoice.client.address.street}<br /></>
+                    <>{String(invoice.client.address.street)}<br /></>
                   )}
                   {(invoice.client.address.postalCode || invoice.client.address.city) && (
-                    <>{invoice.client.address.postalCode} {invoice.client.address.city}</>
+                    <>{String(invoice.client.address.postalCode || '')} {String(invoice.client.address.city || '')}</>
+                  )}
+                  {invoice.client.address.country && (
+                    <><br />{String(invoice.client.address.country)}</>
                   )}
                 </div>
               )}
@@ -258,6 +277,25 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
               <Eye className="h-4 w-4 mr-2" />
               Voir
             </Button>
+            
+            {/* Bouton PDF avec UniversalPDFGenerator - masqué pour les brouillons */}
+            {invoice.status !== INVOICE_STATUS.DRAFT && (
+              <UniversalPDFGenerator
+                data={invoice}
+                type="invoice"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  title="Télécharger en PDF"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+              </UniversalPDFGenerator>
+            )}
+            
             {invoice.status === INVOICE_STATUS.DRAFT && (
               <Button
                 variant="outline"
@@ -284,7 +322,7 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
           )}
 
           {invoice.status === INVOICE_STATUS.PENDING && (
-            <div className="space-y-2">
+            <div className="flex flex-col space-y-2">
               <Button
                 onClick={handleMarkAsPaid}
                 disabled={isLoading}
@@ -304,18 +342,6 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
               </Button>
             </div>
           )}
-
-          {/* Additional Actions */}
-          <div className="flex gap-2 pt-2">
-            <Button variant="ghost" size="sm" className="flex-1">
-              <Download className="h-4 w-4 mr-2" />
-              PDF
-            </Button>
-            <Button variant="ghost" size="sm" className="flex-1">
-              <Send className="h-4 w-4 mr-2" />
-              Envoyer
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -326,7 +352,7 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
             <DialogTitle className="pl-6 pt-6">Aperçu de la facture {invoice.number || 'Brouillon'}</DialogTitle>
           </DialogHeader>
           <div className="mt-0">
-            <InvoicePreview data={invoice} enablePDF={false} />
+            <UniversalPreviewPDF data={invoice} type="invoice" />
           </div>
         </DialogContent>
       </Dialog>

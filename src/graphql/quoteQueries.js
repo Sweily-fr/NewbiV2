@@ -130,6 +130,12 @@ export const QUOTE_LIST_FRAGMENT = gql`
       id
       number
     }
+    linkedInvoices {
+      id
+      number
+      status
+      finalTotalTTC
+    }
   }
 `;
 
@@ -371,7 +377,7 @@ export const useCreateQuote = () => {
   const client = useApolloClient();
   
   const [createQuoteMutation, { loading }] = useMutation(CREATE_QUOTE, {
-    onCompleted: (data) => {
+    onCompleted: () => {
       toast.success('Devis créé avec succès');
       // Invalider le cache des listes
       client.refetchQueries({

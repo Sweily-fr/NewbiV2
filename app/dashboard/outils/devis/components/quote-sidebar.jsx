@@ -13,9 +13,9 @@ import {
   CheckCircle, 
   XCircle, 
   FileCheck, 
-  Download, 
   Send,
-  Mail
+  Mail,
+  Download
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -25,9 +25,12 @@ import { useRouter } from "next/navigation";
 import { useChangeQuoteStatus, useQuote, useConvertQuoteToInvoice, QUOTE_STATUS, QUOTE_STATUS_LABELS, QUOTE_STATUS_COLORS } from "@/src/graphql/quoteQueries";
 import { useCreateLinkedInvoice } from "@/src/graphql/invoiceQueries";
 import { toast } from "sonner";
-import QuotePreview from "./QuotePreview";
+import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
+
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 import LinkedInvoicesList from "./linked-invoices-list";
+
 
 export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onRefetch }) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -35,6 +38,7 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
   const { createLinkedInvoice, loading: creatingLinkedInvoice } = useCreateLinkedInvoice();
+
   
   // Récupérer les données complètes du devis
   const { quote: fullQuote, loading: loadingFullQuote, error: quoteError } = useQuote(initialQuote?.id);
@@ -116,6 +120,8 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
     }
   };
 
+
+
   const handleAccept = async () => {
     try {
       await changeStatus(quote.id, QUOTE_STATUS.COMPLETED);
@@ -177,56 +183,7 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
 
   const isLoading = changingStatus || converting || creatingLinkedInvoice;
 
-  // Transformer les données pour le composant QuotePreview
-  const transformQuoteForPreview = (quoteData) => {
-    if (!quoteData) return null;
-    
-    // Construire l'adresse client comme une chaîne
-    let clientAddress = "";
-    if (quoteData.client?.address) {
-      const addr = quoteData.client.address;
-      const parts = [];
-      if (addr.street) parts.push(addr.street);
-      if (addr.postalCode || addr.city) {
-        const cityLine = [addr.postalCode, addr.city].filter(Boolean).join(" ");
-        if (cityLine) parts.push(cityLine);
-      }
-      if (addr.country) parts.push(addr.country);
-      clientAddress = parts.join("\n");
-    }
-    
-    return {
-      quoteNumber: quoteData.number || "Brouillon",
-      issueDate: quoteData.issueDate,
-      validityDate: quoteData.validUntil,
-      status: quoteData.status,
-      companyInfo: {
-        name: "Votre Entreprise", // À remplacer par les vraies données d'entreprise
-        address: "",
-        email: "",
-        phone: "",
-        siret: ""
-      },
-      clientInfo: {
-        name: quoteData.client?.name || "Client",
-        address: clientAddress,
-        email: quoteData.client?.email || "",
-        phone: quoteData.client?.phone || ""
-      },
-      items: quoteData.items || [],
-      notes: {
-        footer: quoteData.notes || "",
-        terms: quoteData.terms || "",
-        showBankDetails: false,
-        bankDetails: ""
-      },
-      discount: {
-        type: quoteData.discountType || "PERCENTAGE",
-        value: quoteData.discountAmount || 0
-      },
-      customFields: []
-    };
-  };
+
 
   return (
     <>
@@ -410,12 +367,6 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
               <div className="space-y-3">
                 <LinkedInvoicesList 
                   quote={quote} 
-                  onInvoiceDeleted={() => {
-                    // Rafraîchir les données du devis
-                    if (onRefetch) {
-                      onRefetch();
-                    }
-                  }}
                   onCreateLinkedInvoice={handleCreateLinkedInvoice}
                   isLoading={isLoading}
                 />
@@ -436,6 +387,25 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
               <Eye className="h-4 w-4 mr-2" />
               Voir
             </Button>
+            
+            {/* Bouton PDF avec UniversalPDFGenerator - masqué pour les brouillons */}
+            {quote.status !== QUOTE_STATUS.DRAFT && (
+              <UniversalPDFGenerator
+                data={quote}
+                type="quote"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  title="Télécharger en PDF"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+              </UniversalPDFGenerator>
+            )}
+            
             {quote.status === QUOTE_STATUS.DRAFT && (
               <Button
                 variant="outline"
@@ -549,10 +519,7 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
 
           {/* Additional Actions */}
           <div className="flex gap-2 pt-2">
-            <Button variant="ghost" size="sm" className="flex-1">
-              <Download className="h-4 w-4 mr-2" />
-              PDF
-            </Button>
+
             <Button variant="ghost" size="sm" className="flex-1">
               <Mail className="h-4 w-4 mr-2" />
               Email
@@ -562,6 +529,8 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
         </div>
       </div>
 
+
+
       {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
@@ -569,7 +538,10 @@ export default function QuoteSidebar({ isOpen, onClose, quote: initialQuote, onR
             <DialogTitle className="pl-6 pt-6">Aperçu du devis {quote.number || "Brouillon"}</DialogTitle>
           </DialogHeader>
           <div className="mt-0">
-            <QuotePreview data={transformQuoteForPreview(quote)} enablePDF={false} />
+            <UniversalPreviewPDF 
+              data={quote} 
+              type="quote"
+            />
           </div>
         </DialogContent>
       </Dialog>

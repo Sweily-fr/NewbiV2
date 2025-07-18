@@ -204,7 +204,7 @@ export default function NotesAndFooterSection({ canEdit }) {
                 </Link>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div className="space-y-1">
                   <Label className="text-sm font-medium">IBAN</Label>
                   <div className="p-3 bg-muted/50 rounded-md border">
