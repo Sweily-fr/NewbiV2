@@ -96,11 +96,7 @@ export default function DiscountsAndTotalsSection({
                   {errors.discount.message}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                {data.discountType === 'PERCENTAGE' 
-                  ? "Pourcentage de remise appliqué sur le total HT" 
-                  : "Montant fixe déduit du total HT"}
-              </p>
+
             </div>
           </div>
         </div>

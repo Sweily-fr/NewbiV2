@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -12,11 +12,11 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useUser } from "@/src/lib/auth/hooks";
 
-const AUTOSAVE_DELAY = 30000; // 30 seconds
+// const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
 export function useQuoteEditor({ mode, quoteId, initialData }) {
   const router = useRouter();
-  const autosaveTimeoutRef = useRef(null);
+  // const autosaveTimeoutRef = useRef(null); // DISABLED - Auto-save removed
   
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
@@ -41,8 +41,8 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     mode: 'onChange'
   });
   
-  const { watch, setValue, getValues, formState, reset } = form;
-  const { isDirty } = formState;
+  const { watch, setValue, getValues, reset } = form;
+  // const { isDirty } = formState; // DISABLED - Auto-save removed
   
   const [saving, setSaving] = useState(false);
   
@@ -118,10 +118,16 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         }
       }
       
-      // Gérer les coordonnées bancaires
+      // Gérer les coordonnées bancaires (nettoyer les métadonnées GraphQL)
       if (userCompany.bankDetails) {
-        setValue('userBankDetails', userCompany.bankDetails);
-        console.log('🏦 Coordonnées bancaires utilisateur définies:', userCompany.bankDetails);
+        const cleanBankDetails = {
+          iban: userCompany.bankDetails.iban || "",
+          bic: userCompany.bankDetails.bic || "",
+          bankName: userCompany.bankDetails.bankName || ""
+          // Suppression explicite de __typename et autres métadonnées GraphQL
+        };
+        setValue('userBankDetails', cleanBankDetails);
+        console.log('🏦 Coordonnées bancaires utilisateur définies (nettoyées):', cleanBankDetails);
       }
     }
   }, [mode, session, setValue]);
@@ -155,7 +161,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     
     console.log('✅ Validation Step 1 réussie');
     return true;
-  }, [getValues]);
+  }, [getValues, session?.user?.company?.name]);
 
   const validateStep2 = useCallback(() => {
     const data = getValues();
@@ -216,7 +222,12 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         result = await updateQuote(quoteId, input);
         
         if (!isAutoSave) {
+          console.log('🎯 Redirection après mise à jour de brouillon - isAutoSave:', isAutoSave);
           toast.success("Brouillon sauvegardé");
+          console.log('🚀 Redirection vers /dashboard/outils/devis');
+          router.push('/dashboard/outils/devis');
+        } else {
+          console.log('⏸️ Pas de redirection (auto-sauvegarde)');
         }
       }
       
@@ -228,34 +239,34 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     } finally {
       setSaving(false);
     }
-  }, [mode, quoteId, existingQuote, getValues, createQuote, updateQuote, router]);
+  }, [mode, quoteId, existingQuote, getValues, createQuote, updateQuote, router, session]);
 
-  // Auto-save functionality
-  const scheduleAutoSave = useCallback(() => {
-    if (autosaveTimeoutRef.current) {
-      clearTimeout(autosaveTimeoutRef.current);
-    }
-    
-    autosaveTimeoutRef.current = setTimeout(() => {
-      if (isDirty && formData.status === "DRAFT") {
-        console.log('💾 Auto-sauvegarde déclenchée');
-        handleSave(true);
-      }
-    }, AUTOSAVE_DELAY);
-  }, [isDirty, formData.status, handleSave]);
+  // Auto-save functionality - DISABLED
+  // const scheduleAutoSave = useCallback(() => {
+  //   if (autosaveTimeoutRef.current) {
+  //     clearTimeout(autosaveTimeoutRef.current);
+  //   }
+  //   
+  //   autosaveTimeoutRef.current = setTimeout(() => {
+  //     if (isDirty && formData.status === "DRAFT") {
+  //       console.log('💾 Auto-sauvegarde déclenchée');
+  //       handleSave(true);
+  //     }
+  //   }, AUTOSAVE_DELAY);
+  // }, [isDirty, formData.status, handleSave]);
 
-  // Schedule auto-save when form data changes
-  useEffect(() => {
-    if (mode !== "create" && isDirty) {
-      scheduleAutoSave();
-    }
-    
-    return () => {
-      if (autosaveTimeoutRef.current) {
-        clearTimeout(autosaveTimeoutRef.current);
-      }
-    };
-  }, [formData, isDirty, mode, scheduleAutoSave]);
+  // Schedule auto-save when form data changes - DISABLED
+  // useEffect(() => {
+  //   if (mode !== "create" && isDirty) {
+  //     scheduleAutoSave();
+  //   }
+  //   
+  //   return () => {
+  //     if (autosaveTimeoutRef.current) {
+  //       clearTimeout(autosaveTimeoutRef.current);
+  //     }
+  //   };
+  // }, [formData, isDirty, mode, scheduleAutoSave]);
 
   // Submit function (for final quote creation)
   const handleSubmit = useCallback(async (formDataOverride) => {
@@ -302,16 +313,16 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     } finally {
       setSaving(false);
     }
-  }, [mode, quoteId, existingQuote, getValues, validateStep1, validateStep2, createQuote, updateQuote, router, session]);
+  }, [existingQuote, getValues, validateStep1, validateStep2, createQuote, updateQuote, router, session]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (autosaveTimeoutRef.current) {
-        clearTimeout(autosaveTimeoutRef.current);
-      }
-    };
-  }, []);
+  // Cleanup on unmount - DISABLED (auto-save removed)
+  // useEffect(() => {
+  //   return () => {
+  //     if (autosaveTimeoutRef.current) {
+  //       clearTimeout(autosaveTimeoutRef.current);
+  //     }
+  //   };
+  // }, []);
 
   // Helper function to set form data programmatically
   const setFormData = useCallback((newData) => {
@@ -421,11 +432,22 @@ function getInitialFormData(mode, initialData, session) {
         : userCompany.address 
           ? `${userCompany.address.street || ''}, ${userCompany.address.city || ''}, ${userCompany.address.country || ''}`.replace(/^,\s*|,\s*$/g, '')
           : "",
-      bankDetails: userCompany.bankDetails || null
+      // Nettoyer les métadonnées GraphQL des coordonnées bancaires
+      bankDetails: userCompany.bankDetails ? {
+        iban: userCompany.bankDetails.iban || "",
+        bic: userCompany.bankDetails.bic || "",
+        bankName: userCompany.bankDetails.bankName || ""
+        // Suppression explicite de __typename et autres métadonnées GraphQL
+      } : null
     };
     
     if (userCompany.bankDetails) {
-      baseData.userBankDetails = userCompany.bankDetails;
+      baseData.userBankDetails = {
+        iban: userCompany.bankDetails.iban || "",
+        bic: userCompany.bankDetails.bic || "",
+        bankName: userCompany.bankDetails.bankName || ""
+        // Suppression explicite de __typename et autres métadonnées GraphQL
+      };
     }
   }
 
@@ -537,13 +559,24 @@ function transformQuoteToFormData(quote) {
     showBankDetails: !!(quote.companyInfo?.bankDetails && 
       (quote.companyInfo.bankDetails.iban || quote.companyInfo.bankDetails.bic || quote.companyInfo.bankDetails.bankName)),
     
-    bankDetails: quote.companyInfo?.bankDetails || {
+    // Nettoyer les métadonnées GraphQL des coordonnées bancaires
+    bankDetails: quote.companyInfo?.bankDetails ? {
+      iban: quote.companyInfo.bankDetails.iban || "",
+      bic: quote.companyInfo.bankDetails.bic || "",
+      bankName: quote.companyInfo.bankDetails.bankName || ""
+      // Suppression explicite de __typename et autres métadonnées GraphQL
+    } : {
       iban: "",
       bic: "",
       bankName: ""
     },
     
-    userBankDetails: quote.companyInfo?.bankDetails || null,
+    userBankDetails: quote.companyInfo?.bankDetails ? {
+      iban: quote.companyInfo.bankDetails.iban || "",
+      bic: quote.companyInfo.bankDetails.bic || "",
+      bankName: quote.companyInfo.bankDetails.bankName || ""
+      // Suppression explicite de __typename et autres métadonnées GraphQL
+    } : null,
   };
 }
 
@@ -617,9 +650,17 @@ function transformFormDataToInput(formData, previousStatus = null, session = nul
     },
     bankDetails: formData.showBankDetails ? (
       (formData.bankDetails && (formData.bankDetails.iban || formData.bankDetails.bic || formData.bankDetails.bankName)) 
-        ? formData.bankDetails
+        ? {
+            iban: formData.bankDetails.iban || "",
+            bic: formData.bankDetails.bic || "",
+            bankName: formData.bankDetails.bankName || ""
+          }
         : (companyInfo?.bankDetails && (companyInfo.bankDetails.iban || companyInfo.bankDetails.bic || companyInfo.bankDetails.bankName))
-          ? companyInfo.bankDetails
+          ? {
+              iban: companyInfo.bankDetails.iban || "",
+              bic: companyInfo.bankDetails.bic || "",
+              bankName: companyInfo.bankDetails.bankName || ""
+            }
           : null
     ) : null
   };
@@ -629,20 +670,26 @@ function transformFormDataToInput(formData, previousStatus = null, session = nul
     issueDate = new Date().toISOString().split('T')[0];
     console.log('📅 Date d\'émission mise à jour automatiquement lors du passage DRAFT -> PENDING:', issueDate);
   }
+  
+  // S'assurer qu'on a toujours une date d'émission valide
+  if (!issueDate) {
+    issueDate = new Date().toISOString().split('T')[0];
+    console.log('⚠️ Date d\'émission manquante, utilisation de la date actuelle:', issueDate);
+  }
 
   const ensureValidDate = (dateValue, fieldName, fallbackDate = null) => {
     if (!dateValue) {
       const fallback = fallbackDate || issueDate;
       console.log(`⚠️ ${fieldName} est null/undefined, utilisation de la date de fallback:`, fallback);
-      return fallback;
+      return new Date(fallback);
     }
-    return dateValue;
+    return new Date(dateValue);
   };
 
   return {
     prefix: formData.prefix || "",
     number: formData.number || "",
-    issueDate: issueDate,
+    issueDate: new Date(issueDate),
     validUntil: ensureValidDate(formData.validUntil, 'validUntil'),
     status: formData.status || "DRAFT",
     client: cleanClient,

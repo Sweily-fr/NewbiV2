@@ -137,22 +137,6 @@ export default function NotesAndFooterSection({ canEdit }) {
         <Separator />
 
         {/* Section signature */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm font-medium">
-              Signature et acceptation
-            </span>
-          </div>
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Le devis comprendra automatiquement des espaces de signature pour le client et le prestataire, 
-              ainsi qu'une mention d'acceptation du devis.
-            </AlertDescription>
-          </Alert>
-        </div>
-
-        <Separator />
 
         {/* Coordonnées bancaires */}
         <div>
@@ -205,7 +189,7 @@ export default function NotesAndFooterSection({ canEdit }) {
                     Coordonnées bancaires configurées
                   </span>
                 </div>
-                <Link href="/dashboard/parametres/profil">
+                <Link href="/dashboard/settings">
                   <Button variant="outline" size="sm" className="gap-2">
                     <Settings className="h-4 w-4" />
                     Modifier

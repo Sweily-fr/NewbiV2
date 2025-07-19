@@ -58,7 +58,7 @@ export default function ItemsSection({
       details: productData.details || "",
       quantity: quantity,
       unitPrice: unitPrice,
-      unit: productData.unit || "pièce",
+      unit: productData.unit || "unités",
       vatRate: productData.vatRate || 20,
       discount: discount,
       discountType: discountType,
@@ -281,10 +281,10 @@ export default function ItemsSection({
                         </Label>
                         <Controller
                           name={`items.${index}.unit`}
-                          defaultValue="pièce"
+                          defaultValue="unité"
                           render={({ field }) => (
                             <Select
-                              value={field.value || "pièce"}
+                              value={field.value || "unité"}
                               onValueChange={field.onChange}
                               disabled={!canEdit}
                             >
@@ -292,6 +292,7 @@ export default function ItemsSection({
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="unité">Unité</SelectItem>
                                 <SelectItem value="pièce">Pièce</SelectItem>
                                 <SelectItem value="heure">Heure</SelectItem>
                                 <SelectItem value="jour">Jour</SelectItem>

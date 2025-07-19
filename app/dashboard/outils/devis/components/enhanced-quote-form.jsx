@@ -87,7 +87,7 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
         unitPrice: selectedProduct.price,
         taxRate: selectedProduct.vatRate || 20,
         productId: selectedProduct.value,
-        unit: selectedProduct.unit || 'unité'
+        unit: selectedProduct.unit || 'unité(s)'
       });
     }
     setValue("");

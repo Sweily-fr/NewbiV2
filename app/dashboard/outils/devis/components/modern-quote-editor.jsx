@@ -7,7 +7,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useQuoteEditor } from "../hooks/use-quote-editor";
-import QuotePreview from "./QuotePreview";
+import UniversalPreviewPDF from '@/src/components/pdf/UniversalPreviewPDF';
 import EnhancedQuoteForm from "./enhanced-quote-form";
 import { toast } from "sonner";
 
@@ -110,22 +110,11 @@ export default function ModernQuoteEditor({
               <h2 className="text-lg font-semibold">
                 Aperçu du devis
               </h2>
-              
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Send className="h-4 w-4" />
-                  Email
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Copy className="h-4 w-4" />
-                  Dupliquer
-                </Button>
-              </div>
             </div>
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 h-[calc(100vh-64px)]">
-            <QuotePreview data={formData} />
+            <UniversalPreviewPDF data={formData} type="quote" />
           </div>
         </div>
       </div>

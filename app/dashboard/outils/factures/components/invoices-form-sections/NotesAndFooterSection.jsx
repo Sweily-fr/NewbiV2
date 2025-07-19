@@ -196,7 +196,7 @@ export default function NotesAndFooterSection({ canEdit }) {
                     Coordonnées bancaires configurées
                   </span>
                 </div>
-                <Link href="/dashboard/parametres/profil">
+                <Link href="/dashboard/settings">
                   <Button variant="outline" size="sm" className="gap-2">
                     <Settings className="h-4 w-4" />
                     Modifier

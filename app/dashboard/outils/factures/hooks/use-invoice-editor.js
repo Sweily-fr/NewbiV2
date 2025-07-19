@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -12,11 +12,11 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { useUser } from "@/src/lib/auth/hooks";
 
-const AUTOSAVE_DELAY = 30000; // 30 seconds
+// const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
 export function useInvoiceEditor({ mode, invoiceId, initialData }) {
   const router = useRouter();
-  const autosaveTimeoutRef = useRef(null);
+  // const autosaveTimeoutRef = useRef(null); // DISABLED - Auto-save removed
   
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
@@ -41,7 +41,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     mode: 'onChange'
   });
   
-  const { handleSubmit: rhfHandleSubmit, watch, setValue, getValues, formState, reset, trigger } = form;
+  const { watch, setValue, getValues, formState, reset, trigger } = form;
   const { isDirty, errors } = formState;
   
   const [saving, setSaving] = useState(false);
@@ -129,58 +129,61 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
   // Stocker les coordonnées bancaires de l'utilisateur actuel (disponible en création et édition)
   useEffect(() => {
     if (session?.user?.company?.bankDetails) {
+      // Nettoyer les métadonnées GraphQL comme __typename
+      const sourceBankDetails = session.user.company.bankDetails;
       const userBankDetails = {
-        iban: session.user.company.bankDetails.iban || "",
-        bic: session.user.company.bankDetails.bic || "",
-        bankName: session.user.company.bankDetails.bankName || ""
+        iban: sourceBankDetails.iban || "",
+        bic: sourceBankDetails.bic || "",
+        bankName: sourceBankDetails.bankName || ""
+        // Suppression explicite de __typename et autres métadonnées GraphQL
       };
       setValue('userBankDetails', userBankDetails);
-      console.log('🏦 Coordonnées bancaires utilisateur disponibles:', userBankDetails);
+      console.log('🏦 Coordonnées bancaires utilisateur disponibles (nettoyées):', userBankDetails);
     }
   }, [session, setValue]);
 
-  // Auto-save handler (défini avant son utilisation)
-  const handleAutoSave = useCallback(async () => {
-    if (mode !== "edit" || !invoiceId || formData.status !== "DRAFT") {
-      return;
-    }
+  // Auto-save handler - DISABLED
+  // const handleAutoSave = useCallback(async () => {
+  //   if (mode !== "edit" || !invoiceId || formData.status !== "DRAFT") {
+  //     return;
+  //   }
 
-    try {
-      setSaving(true);
-      const input = transformFormDataToInput(formData);
+  //   try {
+  //     setSaving(true);
+  //     const input = transformFormDataToInput(formData);
       
-      await updateInvoice(invoiceId, input);
+  //     await updateInvoice(invoiceId, input);
 
-      setOriginalData({ ...formData });
-      setIsDirty(false);
-    } catch (error) {
-      console.error("Auto-save failed:", error);
-      toast.error("Erreur lors de la sauvegarde automatique");
-    } finally {
-      setSaving(false);
-    }
-  }, [mode, invoiceId, formData, updateInvoice]);
+  //     setOriginalData({ ...formData });
+  //     setIsDirty(false);
+  //   } catch (error) {
+  //     console.error("Auto-save failed:", error);
+  //     toast.error("Erreur lors de la sauvegarde automatique");
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // }, [mode, invoiceId, formData, updateInvoice]);
 
   // Track changes is now handled by react-hook-form's isDirty
 
-  // Auto-save for drafts
-  useEffect(() => {
-    if (isDirty && mode === "edit" && formData.status === "DRAFT") {
-      if (autosaveTimeoutRef.current) {
-        clearTimeout(autosaveTimeoutRef.current);
-      }
+  // Auto-save for drafts - DISABLED
+  // useEffect(() => {
+  //   if (isDirty && mode === "edit" && formData.status === "DRAFT") {
+  //     if (autosaveTimeoutRef.current) {
+  //       clearTimeout(autosaveTimeoutRef.current);
+  //     }
       
-      autosaveTimeoutRef.current = setTimeout(() => {
-        handleAutoSave();
-      }, AUTOSAVE_DELAY);
-    }
+  //     autosaveTimeoutRef.current = setTimeout(() => {
+  //       handleAutoSave();
+  //     }, AUTOSAVE_DELAY);
+  //   }
 
-    return () => {
-      if (autosaveTimeoutRef.current) {
-        clearTimeout(autosaveTimeoutRef.current);
-      }
-    };
-  }, [isDirty, mode, formData.status, handleAutoSave]);
+  //   return () => {
+  //     if (autosaveTimeoutRef.current) {
+  //       clearTimeout(autosaveTimeoutRef.current);
+  //     }
+  //   };
+  // }, [isDirty, mode, formData.status, handleAutoSave]);
 
   // Form data updater using react-hook-form
 
@@ -301,7 +304,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     saving: saving || creating || updating,
     handleSave,
     handleSubmit,
-    handleAutoSave,
+    // handleAutoSave, // DISABLED
     isDirty,
     errors,
   };
@@ -437,7 +440,13 @@ function transformInvoiceToFormData(invoice) {
       siret: invoice.companyInfo.siret || "",
       vatNumber: invoice.companyInfo.vatNumber || "",
       website: invoice.companyInfo.website || "",
-      bankDetails: invoice.companyInfo.bankDetails || {
+      // Nettoyer les métadonnées GraphQL des coordonnées bancaires
+      bankDetails: invoice.companyInfo.bankDetails ? {
+        iban: invoice.companyInfo.bankDetails.iban || "",
+        bic: invoice.companyInfo.bankDetails.bic || "",
+        bankName: invoice.companyInfo.bankDetails.bankName || ""
+        // Suppression explicite de __typename et autres métadonnées GraphQL
+      } : {
         iban: "",
         bic: "",
         bankName: ""
@@ -540,10 +549,18 @@ function transformFormDataToInput(formData, previousStatus = null) {
     bankDetails: formData.showBankDetails ? (
       // Priorité aux données du formulaire (formData.bankDetails) si elles existent
       (formData.bankDetails && (formData.bankDetails.iban || formData.bankDetails.bic || formData.bankDetails.bankName)) 
-        ? formData.bankDetails
-        // Sinon, utiliser les données de l'entreprise
+        ? {
+            iban: formData.bankDetails.iban || "",
+            bic: formData.bankDetails.bic || "",
+            bankName: formData.bankDetails.bankName || ""
+          }
+        // Sinon, utiliser les données de l'entreprise (nettoyées)
         : (formData.companyInfo.bankDetails && (formData.companyInfo.bankDetails.iban || formData.companyInfo.bankDetails.bic || formData.companyInfo.bankDetails.bankName))
-          ? formData.companyInfo.bankDetails
+          ? {
+              iban: formData.companyInfo.bankDetails.iban || "",
+              bic: formData.companyInfo.bankDetails.bic || "",
+              bankName: formData.companyInfo.bankDetails.bankName || ""
+            }
           : null
     ) : null
   } : null;
@@ -575,12 +592,13 @@ function transformFormDataToInput(formData, previousStatus = null) {
     // Utiliser les bankDetails du formulaire s'ils existent, sinon utiliser ceux de companyInfo
     const sourceBankDetails = formData.bankDetails || (formData.companyInfo?.bankDetails || null);
     
-    // S'assurer que bankDetails a la structure attendue
+    // S'assurer que bankDetails a la structure attendue et nettoyer les métadonnées GraphQL
     if (sourceBankDetails) {
       bankDetailsForInvoice = {
         iban: sourceBankDetails.iban || "",
         bic: sourceBankDetails.bic || "",
         bankName: sourceBankDetails.bankName || ""
+        // Suppression explicite de __typename et autres métadonnées GraphQL
       };
     }
   }

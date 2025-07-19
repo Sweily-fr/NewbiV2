@@ -7,7 +7,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useInvoiceEditor } from "../hooks/use-invoice-editor";
-import InvoicePreview from "./InvoicePreview";
+import UniversalPreviewPDF from '@/src/components/pdf/UniversalPreviewPDF';
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
 import { toast } from "sonner";
 
@@ -108,22 +108,11 @@ export default function ModernInvoiceEditor({
           <div className="flex-shrink-0 p-4 border-b">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Aperçu de la facture</h2>
-
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Send className="h-4 w-4" />
-                  Email
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  Paiement
-                </Button>
-              </div>
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 h-[calc(100vh-64px)]">
-            <InvoicePreview data={formData} />
+            <UniversalPreviewPDF data={formData} type="invoice" />
           </div>
         </div>
       </div>
