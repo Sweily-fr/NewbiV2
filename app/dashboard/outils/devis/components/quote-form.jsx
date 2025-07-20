@@ -2,9 +2,23 @@
 
 import { useState, useEffect, useCallback, useId } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
-import { Plus, Trash2, Calculator, Building, Percent, Clock, Tag, Search, Zap, Package, CheckIcon, ChevronDownIcon, Download } from "lucide-react";
-import { useQuery } from '@apollo/client';
-import { GET_PRODUCTS } from '@/src/graphql/productQueries';
+import {
+  Plus,
+  Trash2,
+  Calculator,
+  Building,
+  Percent,
+  Clock,
+  Tag,
+  Search,
+  Zap,
+  Package,
+  CheckIcon,
+  ChevronDownIcon,
+  Download,
+} from "lucide-react";
+import { useQuery } from "@apollo/client";
+import { GET_PRODUCTS } from "@/src/graphql/productQueries";
 
 import { Button } from "@/src/components/ui/button";
 import {
@@ -13,18 +27,33 @@ import {
   TimelineItem,
   TimelineIndicator,
   TimelineSeparator,
-  TimelineTitle
+  TimelineTitle,
 } from "@/src/components/ui/timeline";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Calendar } from "@/src/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import {
   Accordion,
   AccordionContent,
@@ -44,37 +73,45 @@ import { fr } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import ClientSelector from "../../../factures/components/invoices-form-sections/client-selector";
-import CompanyImport, { QuickCompanyImport } from "../../../factures/components/company-import";
+import CompanyImport, {
+  QuickCompanyImport,
+} from "../../../factures/components/company-import";
 import { toast } from "sonner";
 
 // Composant de recherche de produits
-function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit...", disabled = false, className = "" }) {
+function ProductSearchCombobox({
+  onSelect,
+  placeholder = "Rechercher un produit...",
+  disabled = false,
+  className = "",
+}) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   const { data, loading, error } = useQuery(GET_PRODUCTS, {
     variables: {
       search: searchTerm || undefined,
-      limit: 20
+      limit: 20,
     },
-    fetchPolicy: 'cache-and-network'
+    fetchPolicy: "cache-and-network",
   });
-  
-  const products = data?.products?.products?.map(product => ({
-    value: product.id,
-    label: product.name,
-    description: product.description,
-    price: product.unitPrice,
-    vatRate: product.vatRate,
-    unit: product.unit,
-    category: product.category,
-    reference: product.reference
-  })) || [];
+
+  const products =
+    data?.products?.products?.map((product) => ({
+      value: product.id,
+      label: product.name,
+      description: product.description,
+      price: product.unitPrice,
+      vatRate: product.vatRate,
+      unit: product.unit,
+      category: product.category,
+      reference: product.reference,
+    })) || [];
 
   const handleSelect = (currentValue) => {
-    const selectedProduct = products.find(p => p.value === currentValue);
+    const selectedProduct = products.find((p) => p.value === currentValue);
     if (selectedProduct && onSelect) {
       onSelect({
         description: selectedProduct.label,
@@ -82,7 +119,7 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
         unitPrice: selectedProduct.price,
         taxRate: selectedProduct.vatRate || 20,
         productId: selectedProduct.value,
-        unit: selectedProduct.unit || 'unité'
+        unit: selectedProduct.unit || "unité",
       });
     }
     setValue("");
@@ -117,14 +154,12 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="start">
         <Command>
-          <CommandInput 
-            placeholder="Rechercher un produit..." 
+          <CommandInput
+            placeholder="Rechercher un produit..."
             onValueChange={handleSearchChange}
           />
           <CommandList>
-            {loading && (
-              <CommandEmpty>Recherche en cours...</CommandEmpty>
-            )}
+            {loading && <CommandEmpty>Recherche en cours...</CommandEmpty>}
             {!loading && products.length === 0 && (
               <CommandEmpty>Aucun produit trouvé.</CommandEmpty>
             )}
@@ -138,10 +173,12 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
                     className="flex flex-col items-start gap-1 p-3"
                   >
                     <div className="flex items-center gap-2 w-full">
-                      <CheckIcon className={cn(
-                        "h-4 w-4",
-                        value === product.value ? "opacity-100" : "opacity-0"
-                      )} />
+                      <CheckIcon
+                        className={cn(
+                          "h-4 w-4",
+                          value === product.value ? "opacity-100" : "opacity-0"
+                        )}
+                      />
                       <div className="flex-1">
                         <div className="font-medium">{product.label}</div>
                         {product.description && (
@@ -150,7 +187,10 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
                           </div>
                         )}
                         <div className="text-sm text-muted-foreground">
-                          {product.price ? `${product.price}€` : 'Prix non défini'} • TVA {product.vatRate || 20}%
+                          {product.price
+                            ? `${product.price}€`
+                            : "Prix non défini"}{" "}
+                          • TVA {product.vatRate || 20}%
                         </div>
                       </div>
                     </div>
@@ -165,69 +205,96 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
   );
 }
 
-export default function QuoteForm({ 
-  onSave, 
-  onSubmit, 
-  loading, 
-  saving, 
-  readOnly, 
-  errors
+export default function QuoteForm({
+  onSave,
+  onSubmit,
+  loading,
+  saving,
+  readOnly,
+  errors,
 }) {
   const { watch, setValue, getValues } = useFormContext();
-  const { fields: items, append, remove, update } = useFieldArray({ name: "items" });
+  const {
+    fields: items,
+    append,
+    remove,
+    update,
+  } = useFieldArray({ name: "items" });
   const [currentStep, setCurrentStep] = useState(1);
-  
+
   const data = watch();
   const canEdit = !readOnly && !loading;
 
-  const updateField = useCallback((field, value) => {
-    setValue(field, value, { shouldValidate: true, shouldDirty: true });
-  }, [setValue]);
+  const updateField = useCallback(
+    (field, value) => {
+      setValue(field, value, { shouldValidate: true, shouldDirty: true });
+    },
+    [setValue]
+  );
 
-  const updateNestedField = useCallback((parent, field, value) => {
-    const currentData = getValues(parent) || {};
-    setValue(`${parent}.${field}`, value, { shouldValidate: true, shouldDirty: true });
-  }, [setValue, getValues]);
+  const updateNestedField = useCallback(
+    (parent, field, value) => {
+      const currentData = getValues(parent) || {};
+      setValue(`${parent}.${field}`, value, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    },
+    [setValue, getValues]
+  );
 
-  const addItem = useCallback((template = null) => {
-    const newItem = template || {
-      description: "",
-      details: "",
-      quantity: 1,
-      unit: "unité",
-      unitPrice: 0,
-      taxRate: 20,
-      discountRate: 0,
-      taxExemptionText: ""
-    };
-    append(newItem);
-  }, [append]);
+  const addItem = useCallback(
+    (template = null) => {
+      const newItem = template || {
+        description: "",
+        details: "",
+        quantity: 1,
+        unit: "unité",
+        unitPrice: 0,
+        taxRate: 20,
+        discountRate: 0,
+        taxExemptionText: "",
+      };
+      append(newItem);
+    },
+    [append]
+  );
 
-  const updateItem = useCallback((index, field, value) => {
-    const currentItem = items[index];
-    const updatedItem = { ...currentItem, [field]: value };
-    
-    if (field === 'quantity' || field === 'unitPrice' || field === 'discountRate') {
-      const quantity = parseFloat(updatedItem.quantity) || 0;
-      const unitPrice = parseFloat(updatedItem.unitPrice) || 0;
-      const discountRate = parseFloat(updatedItem.discountRate) || 0;
-      
-      const subtotal = quantity * unitPrice;
-      const discountAmount = subtotal * (discountRate / 100);
-      updatedItem.total = subtotal - discountAmount;
-    }
-    
-    update(index, updatedItem);
-  }, [items, update]);
+  const updateItem = useCallback(
+    (index, field, value) => {
+      const currentItem = items[index];
+      const updatedItem = { ...currentItem, [field]: value };
 
-  const removeItem = useCallback((index) => {
-    remove(index);
-  }, [remove]);
+      if (
+        field === "quantity" ||
+        field === "unitPrice" ||
+        field === "discountRate"
+      ) {
+        const quantity = parseFloat(updatedItem.quantity) || 0;
+        const unitPrice = parseFloat(updatedItem.unitPrice) || 0;
+        const discountRate = parseFloat(updatedItem.discountRate) || 0;
+
+        const subtotal = quantity * unitPrice;
+        const discountAmount = subtotal * (discountRate / 100);
+        updatedItem.total = subtotal - discountAmount;
+      }
+
+      update(index, updatedItem);
+    },
+    [items, update]
+  );
+
+  const removeItem = useCallback(
+    (index) => {
+      remove(index);
+    },
+    [remove]
+  );
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
     }).format(amount || 0);
   };
 
@@ -260,7 +327,13 @@ export default function QuoteForm({
   };
 
   const isStep2Valid = () => {
-    return data.items && data.items.length > 0 && data.items.every(item => item.description && item.quantity && item.unitPrice);
+    return (
+      data.items &&
+      data.items.length > 0 &&
+      data.items.every(
+        (item) => item.description && item.quantity && item.unitPrice
+      )
+    );
   };
 
   return (
@@ -270,19 +343,41 @@ export default function QuoteForm({
         <Timeline>
           <TimelineHeader>
             <TimelineItem>
-              <TimelineIndicator className={currentStep >= 1 ? "bg-primary text-primary-foreground" : "bg-muted"}>
+              <TimelineIndicator
+                className={
+                  currentStep >= 1
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                }
+              >
                 1
               </TimelineIndicator>
-              <TimelineSeparator className={currentStep > 1 ? "bg-primary" : "bg-muted"} />
-              <TimelineTitle className={currentStep >= 1 ? "text-foreground" : "text-muted-foreground"}>
+              <TimelineSeparator
+                className={currentStep > 1 ? "bg-primary" : "bg-muted"}
+              />
+              <TimelineTitle
+                className={
+                  currentStep >= 1 ? "text-foreground" : "text-muted-foreground"
+                }
+              >
                 Détails du devis
               </TimelineTitle>
             </TimelineItem>
             <TimelineItem>
-              <TimelineIndicator className={currentStep >= 2 ? "bg-primary text-primary-foreground" : "bg-muted"}>
+              <TimelineIndicator
+                className={
+                  currentStep >= 2
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                }
+              >
                 2
               </TimelineIndicator>
-              <TimelineTitle className={currentStep >= 2 ? "text-foreground" : "text-muted-foreground"}>
+              <TimelineTitle
+                className={
+                  currentStep >= 2 ? "text-foreground" : "text-muted-foreground"
+                }
+              >
                 Produits et services
               </TimelineTitle>
             </TimelineItem>
@@ -331,7 +426,9 @@ export default function QuoteForm({
                       <Input
                         id="quoteReference"
                         value={data.quoteReference || ""}
-                        onChange={(e) => updateField("quoteReference", e.target.value)}
+                        onChange={(e) =>
+                          updateField("quoteReference", e.target.value)
+                        }
                         disabled={!canEdit}
                         placeholder="Référence optionnelle"
                       />
@@ -352,14 +449,24 @@ export default function QuoteForm({
                             disabled={!canEdit}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {data.issueDate ? format(new Date(data.issueDate), "PPP", { locale: fr }) : "Sélectionner une date"}
+                            {data.issueDate
+                              ? format(new Date(data.issueDate), "PPP", {
+                                  locale: fr,
+                                })
+                              : "Sélectionner une date"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={data.issueDate ? new Date(data.issueDate) : undefined}
-                            onSelect={(date) => updateField("issueDate", date?.toISOString())}
+                            selected={
+                              data.issueDate
+                                ? new Date(data.issueDate)
+                                : undefined
+                            }
+                            onSelect={(date) =>
+                              updateField("issueDate", date?.toISOString())
+                            }
                             initialFocus
                           />
                         </PopoverContent>
@@ -379,14 +486,24 @@ export default function QuoteForm({
                             disabled={!canEdit}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {data.validUntil ? format(new Date(data.validUntil), "PPP", { locale: fr }) : "Sélectionner une date"}
+                            {data.validUntil
+                              ? format(new Date(data.validUntil), "PPP", {
+                                  locale: fr,
+                                })
+                              : "Sélectionner une date"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={data.validUntil ? new Date(data.validUntil) : undefined}
-                            onSelect={(date) => updateField("validUntil", date?.toISOString())}
+                            selected={
+                              data.validUntil
+                                ? new Date(data.validUntil)
+                                : undefined
+                            }
+                            onSelect={(date) =>
+                              updateField("validUntil", date?.toISOString())
+                            }
                             initialFocus
                           />
                         </PopoverContent>
@@ -429,7 +546,9 @@ export default function QuoteForm({
                     <Textarea
                       id="headerNotes"
                       value={data.headerNotes || ""}
-                      onChange={(e) => updateField("headerNotes", e.target.value)}
+                      onChange={(e) =>
+                        updateField("headerNotes", e.target.value)
+                      }
                       disabled={!canEdit}
                       placeholder="Notes affichées en haut du devis..."
                       rows={3}
@@ -440,7 +559,9 @@ export default function QuoteForm({
                     <Textarea
                       id="footerNotes"
                       value={data.footerNotes || ""}
-                      onChange={(e) => updateField("footerNotes", e.target.value)}
+                      onChange={(e) =>
+                        updateField("footerNotes", e.target.value)
+                      }
                       disabled={!canEdit}
                       placeholder="Conditions particulières, modalités de paiement..."
                       rows={3}
@@ -471,7 +592,7 @@ export default function QuoteForm({
                       <ProductSearchCombobox
                         onSelect={addItem}
                         disabled={!canEdit}
-                        className="w-64"
+                        className="w-84"
                       />
                       <Button
                         type="button"
@@ -480,7 +601,7 @@ export default function QuoteForm({
                         onClick={() => addItem()}
                         disabled={!canEdit}
                       >
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus />
                         Ajouter
                       </Button>
                     </div>
@@ -490,12 +611,18 @@ export default function QuoteForm({
                     <div className="text-center py-8 text-muted-foreground">
                       <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>Aucun article ajouté</p>
-                      <p className="text-sm">Commencez par ajouter un produit ou service</p>
+                      <p className="text-sm">
+                        Commencez par ajouter un produit ou service
+                      </p>
                     </div>
                   ) : (
                     <Accordion type="multiple" className="space-y-2">
                       {items.map((item, index) => (
-                        <AccordionItem key={item.id || index} value={`item-${index}`} className="border rounded-lg">
+                        <AccordionItem
+                          key={item.id || index}
+                          value={`item-${index}`}
+                          className="border rounded-lg"
+                        >
                           <AccordionTrigger className="px-4 py-3 hover:no-underline">
                             <div className="flex items-center justify-between w-full mr-4">
                               <div className="text-left">
@@ -503,7 +630,11 @@ export default function QuoteForm({
                                   {item.description || `Article ${index + 1}`}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  {item.quantity || 1} × {formatCurrency(item.unitPrice || 0)} = {formatCurrency((item.quantity || 1) * (item.unitPrice || 0))}
+                                  {item.quantity || 1} ×{" "}
+                                  {formatCurrency(item.unitPrice || 0)} ={" "}
+                                  {formatCurrency(
+                                    (item.quantity || 1) * (item.unitPrice || 0)
+                                  )}
                                 </div>
                               </div>
                               <Button
@@ -527,7 +658,13 @@ export default function QuoteForm({
                                 <Label>Description *</Label>
                                 <Input
                                   value={item.description || ""}
-                                  onChange={(e) => updateItem(index, "description", e.target.value)}
+                                  onChange={(e) =>
+                                    updateItem(
+                                      index,
+                                      "description",
+                                      e.target.value
+                                    )
+                                  }
                                   disabled={!canEdit}
                                   placeholder="Description du produit/service"
                                 />
@@ -536,7 +673,9 @@ export default function QuoteForm({
                                 <Label>Détails</Label>
                                 <Input
                                   value={item.details || ""}
-                                  onChange={(e) => updateItem(index, "details", e.target.value)}
+                                  onChange={(e) =>
+                                    updateItem(index, "details", e.target.value)
+                                  }
                                   disabled={!canEdit}
                                   placeholder="Détails supplémentaires"
                                 />
@@ -546,7 +685,13 @@ export default function QuoteForm({
                                 <Input
                                   type="number"
                                   value={item.quantity || ""}
-                                  onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
+                                  onChange={(e) =>
+                                    updateItem(
+                                      index,
+                                      "quantity",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
                                   disabled={!canEdit}
                                   min="0"
                                   step="0.01"
@@ -556,7 +701,9 @@ export default function QuoteForm({
                                 <Label>Unité</Label>
                                 <Input
                                   value={item.unit || ""}
-                                  onChange={(e) => updateItem(index, "unit", e.target.value)}
+                                  onChange={(e) =>
+                                    updateItem(index, "unit", e.target.value)
+                                  }
                                   disabled={!canEdit}
                                   placeholder="unité"
                                 />
@@ -566,7 +713,13 @@ export default function QuoteForm({
                                 <Input
                                   type="number"
                                   value={item.unitPrice || ""}
-                                  onChange={(e) => updateItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                                  onChange={(e) =>
+                                    updateItem(
+                                      index,
+                                      "unitPrice",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
                                   disabled={!canEdit}
                                   min="0"
                                   step="0.01"
@@ -576,14 +729,22 @@ export default function QuoteForm({
                                 <Label>Taux TVA (%)</Label>
                                 <Select
                                   value={item.taxRate?.toString() || "20"}
-                                  onValueChange={(value) => updateItem(index, "taxRate", parseFloat(value))}
+                                  onValueChange={(value) =>
+                                    updateItem(
+                                      index,
+                                      "taxRate",
+                                      parseFloat(value)
+                                    )
+                                  }
                                   disabled={!canEdit}
                                 >
                                   <SelectTrigger>
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="0">0% (Exonéré)</SelectItem>
+                                    <SelectItem value="0">
+                                      0% (Exonéré)
+                                    </SelectItem>
                                     <SelectItem value="5.5">5,5%</SelectItem>
                                     <SelectItem value="10">10%</SelectItem>
                                     <SelectItem value="20">20%</SelectItem>
@@ -615,7 +776,7 @@ export default function QuoteForm({
               >
                 Annuler
               </Button>
-              
+
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
@@ -635,7 +796,7 @@ export default function QuoteForm({
                   Suivant
                 </Button>
               )}
-              
+
               {currentStep === 2 && (
                 <>
                   <Button

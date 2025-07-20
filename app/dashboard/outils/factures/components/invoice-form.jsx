@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Building, User, Calendar, CreditCard } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Building,
+  User,
+  Calendar,
+  CreditCard,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -14,17 +21,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { useInvoiceEditor } from "../hooks/use-invoice-editor";
 import ClientSelector from "./invoices-form-sections/client-selector";
 import ProductAutocomplete from "./product-autocomplete";
 import CompanyImport from "./company-import";
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
-import { 
-  PAYMENT_METHOD_LABELS, 
+import {
+  PAYMENT_METHOD_LABELS,
   DISCOUNT_TYPE_LABELS,
-  INVOICE_STATUS_LABELS 
+  INVOICE_STATUS_LABELS,
 } from "@/src/graphql/invoiceQueries";
 
 export default function InvoiceForm({
@@ -41,12 +53,12 @@ export default function InvoiceForm({
 
   const updateField = (field, value) => {
     if (readOnly) return;
-    onChange(prev => ({ ...prev, [field]: value }));
+    onChange((prev) => ({ ...prev, [field]: value }));
   };
 
   const updateNestedField = (parent, field, value) => {
     if (readOnly) return;
-    onChange(prev => ({
+    onChange((prev) => ({
       ...prev,
       [parent]: {
         ...prev[parent],
@@ -57,7 +69,7 @@ export default function InvoiceForm({
 
   const addItem = () => {
     if (readOnly) return;
-    onChange(prev => ({
+    onChange((prev) => ({
       ...prev,
       items: [
         ...prev.items,
@@ -74,27 +86,29 @@ export default function InvoiceForm({
 
   const updateItem = (index, field, value) => {
     if (readOnly) return;
-    onChange(prev => {
+    onChange((prev) => {
       const newItems = [...prev.items];
       newItems[index] = {
         ...newItems[index],
         [field]: value,
       };
-      
+
       // Recalculate total for this item
       if (field === "quantity" || field === "unitPrice") {
-        const quantity = field === "quantity" ? value : newItems[index].quantity;
-        const unitPrice = field === "unitPrice" ? value : newItems[index].unitPrice;
+        const quantity =
+          field === "quantity" ? value : newItems[index].quantity;
+        const unitPrice =
+          field === "unitPrice" ? value : newItems[index].unitPrice;
         newItems[index].total = quantity * unitPrice;
       }
-      
+
       return { ...prev, items: newItems };
     });
   };
 
   const removeItem = (index) => {
     if (readOnly) return;
-    onChange(prev => ({
+    onChange((prev) => ({
       ...prev,
       items: prev.items.filter((_, i) => i !== index),
     }));
@@ -109,20 +123,23 @@ export default function InvoiceForm({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Badge variant={isDraft ? "secondary" : "default"}>
-            {data.isDownPayment ? "Facture d'acompte" : 
-             isDraft ? "Proformat" : "Facture"}
+            {data.isDownPayment
+              ? "Facture d'acompte"
+              : isDraft
+                ? "Proformat"
+                : "Facture"}
           </Badge>
-          <Badge variant="outline">
-            {INVOICE_STATUS_LABELS[data.status]}
-          </Badge>
+          <Badge variant="outline">{INVOICE_STATUS_LABELS[data.status]}</Badge>
         </div>
-        
+
         {canEdit && (
           <div className="flex items-center space-x-2">
             <Checkbox
               id="isDownPayment"
               checked={data.isDownPayment}
-              onCheckedChange={(checked) => updateField("isDownPayment", checked)}
+              onCheckedChange={(checked) =>
+                updateField("isDownPayment", checked)
+              }
             />
             <Label htmlFor="isDownPayment">Facture d'acompte</Label>
           </div>
@@ -152,7 +169,7 @@ export default function InvoiceForm({
                 <p className="text-sm text-destructive">{errors.prefix}</p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="number">Numéro</Label>
               <Input
@@ -184,18 +201,20 @@ export default function InvoiceForm({
                 <p className="text-sm text-destructive">{errors.issueDate}</p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="executionDate">Date d'exécution</Label>
               <Input
                 id="executionDate"
                 type="date"
                 value={data.executionDate || ""}
-                onChange={(e) => updateField("executionDate", e.target.value || null)}
+                onChange={(e) =>
+                  updateField("executionDate", e.target.value || null)
+                }
                 disabled={!canEdit}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="dueDate">Date d'échéance</Label>
               <Input
@@ -217,7 +236,9 @@ export default function InvoiceForm({
             <Input
               id="purchaseOrderNumber"
               value={data.purchaseOrderNumber}
-              onChange={(e) => updateField("purchaseOrderNumber", e.target.value)}
+              onChange={(e) =>
+                updateField("purchaseOrderNumber", e.target.value)
+              }
               disabled={!canEdit}
               placeholder="Optionnel"
             />
@@ -237,14 +258,19 @@ export default function InvoiceForm({
           <ClientSelector
             selectedClient={data.client}
             onSelect={(client) => {
-              updateField("client", client ? {
-                name: client.name,
-                email: client.email,
-                phone: client.phone,
-                address: client.address,
-                siret: client.siret,
-                vatNumber: client.vatNumber,
-              } : null);
+              updateField(
+                "client",
+                client
+                  ? {
+                      name: client.name,
+                      email: client.email,
+                      phone: client.phone,
+                      address: client.address,
+                      siret: client.siret,
+                      vatNumber: client.vatNumber,
+                    }
+                  : null
+              );
             }}
             placeholder="Rechercher ou sélectionner un client..."
           />
@@ -287,7 +313,11 @@ export default function InvoiceForm({
                         {index === data.items.length - 1 ? (
                           <ProductAutocomplete
                             onSelect={(product) => {
-                              updateItem(index, "description", product.description);
+                              updateItem(
+                                index,
+                                "description",
+                                product.description
+                              );
                               updateItem(index, "quantity", product.quantity);
                               updateItem(index, "unitPrice", product.unitPrice);
                               updateItem(index, "taxRate", product.taxRate);
@@ -299,24 +329,35 @@ export default function InvoiceForm({
                         ) : (
                           <Input
                             value={item.description}
-                            onChange={(e) => updateItem(index, "description", e.target.value)}
+                            onChange={(e) =>
+                              updateItem(index, "description", e.target.value)
+                            }
                             placeholder="Description du produit/service"
                             disabled={!canEdit}
                           />
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="md:col-span-2 space-y-2">
                       <Label>Quantité</Label>
                       <Input
                         type="number"
                         value={item.quantity}
-                        onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          updateItem(
+                            index,
+                            "quantity",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
                         disabled={!canEdit}
                         min="0"
                         step="0.01"
-                        className={cn(errors[`item_${index}_quantity`] && "border-destructive")}
+                        className={cn(
+                          errors[`item_${index}_quantity`] &&
+                            "border-destructive"
+                        )}
                       />
                       {errors[`item_${index}_quantity`] && (
                         <p className="text-xs text-destructive">
@@ -324,17 +365,26 @@ export default function InvoiceForm({
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="md:col-span-2 space-y-2">
                       <Label>Prix unitaire</Label>
                       <Input
                         type="number"
                         value={item.unitPrice}
-                        onChange={(e) => updateItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          updateItem(
+                            index,
+                            "unitPrice",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
                         disabled={!canEdit}
                         min="0"
                         step="0.01"
-                        className={cn(errors[`item_${index}_unitPrice`] && "border-destructive")}
+                        className={cn(
+                          errors[`item_${index}_unitPrice`] &&
+                            "border-destructive"
+                        )}
                       />
                       {errors[`item_${index}_unitPrice`] && (
                         <p className="text-xs text-destructive">
@@ -342,20 +392,26 @@ export default function InvoiceForm({
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="md:col-span-2 space-y-2">
                       <Label>TVA (%)</Label>
                       <Input
                         type="number"
                         value={item.taxRate}
-                        onChange={(e) => updateItem(index, "taxRate", parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          updateItem(
+                            index,
+                            "taxRate",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
                         disabled={!canEdit}
                         min="0"
                         max="100"
                         step="0.01"
                       />
                     </div>
-                    
+
                     <div className="md:col-span-1">
                       {canEdit && (
                         <Button
@@ -369,10 +425,11 @@ export default function InvoiceForm({
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="mt-2 text-right">
                     <p className="text-sm text-muted-foreground">
-                      Total: {new Intl.NumberFormat("fr-FR", {
+                      Total:{" "}
+                      {new Intl.NumberFormat("fr-FR", {
                         style: "currency",
                         currency: "EUR",
                       }).format(item.total || 0)}
@@ -401,13 +458,15 @@ export default function InvoiceForm({
                 id="discount"
                 type="number"
                 value={data.discount}
-                onChange={(e) => updateField("discount", parseFloat(e.target.value) || 0)}
+                onChange={(e) =>
+                  updateField("discount", parseFloat(e.target.value) || 0)
+                }
                 disabled={!canEdit}
                 min="0"
                 step="0.01"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="discountType">Type de remise</Label>
               <Select
@@ -419,31 +478,37 @@ export default function InvoiceForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(DISCOUNT_TYPE_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
+                  {Object.entries(DISCOUNT_TYPE_LABELS).map(
+                    ([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    )
+                  )}
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="paymentMethod">Méthode de paiement</Label>
               <Select
                 value={data.paymentMethod || ""}
-                onValueChange={(value) => updateField("paymentMethod", value || null)}
+                onValueChange={(value) =>
+                  updateField("paymentMethod", value || null)
+                }
                 disabled={!canEdit}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
+                  {Object.entries(PAYMENT_METHOD_LABELS).map(
+                    ([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    )
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -467,7 +532,7 @@ export default function InvoiceForm({
               placeholder="Notes qui apparaîtront en haut de la facture"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="footerNotes">Notes de pied de page</Label>
             <Textarea
@@ -478,13 +543,15 @@ export default function InvoiceForm({
               placeholder="Notes qui apparaîtront en bas de la facture"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="termsAndConditions">Conditions générales</Label>
             <Textarea
               id="termsAndConditions"
               value={data.termsAndConditions}
-              onChange={(e) => updateField("termsAndConditions", e.target.value)}
+              onChange={(e) =>
+                updateField("termsAndConditions", e.target.value)
+              }
               disabled={!canEdit}
               placeholder="Conditions générales de vente"
             />
@@ -495,18 +562,11 @@ export default function InvoiceForm({
       {/* Actions */}
       {canEdit && (
         <div className="flex items-center justify-end gap-4 pt-6 border-t">
-          <Button
-            variant="outline"
-            onClick={onSave}
-            disabled={saving}
-          >
+          <Button variant="outline" onClick={onSave} disabled={saving}>
             {saving ? "Sauvegarde..." : "Sauvegarder"}
           </Button>
-          
-          <Button
-            onClick={onSubmit}
-            disabled={saving}
-          >
+
+          <Button onClick={onSubmit} disabled={saving}>
             {saving ? "Validation..." : "Valider la facture"}
           </Button>
         </div>

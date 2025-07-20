@@ -137,7 +137,26 @@ const chartConfig = {
   },
 };
 
-export function ChartAreaInteractive() {
+export function ChartAreaInteractive({
+  width,
+  height = "250px",
+  title = "Total Visitors",
+  description = "Total for the last 3 months",
+  shortDescription = "Last 3 months",
+  data = chartData,
+  config = chartConfig,
+  showTimeRange = true,
+  showTooltip = true,
+  showGradient = true,
+  showDesktop = true,
+  showMobile = true,
+  singleCurve = false,
+  hideMobileCurve = false,
+  className = "",
+  aspectRatio = "auto",
+  ...props
+}) {
+  const chartId = React.useId();
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
 
@@ -147,7 +166,7 @@ export function ChartAreaInteractive() {
     }
   }, [isMobile]);
 
-  const filteredData = chartData.filter((item) => {
+  const filteredData = data.filter((item) => {
     const date = new Date(item.date);
     const referenceDate = new Date("2024-06-30");
     let daysToSubtract = 90;
@@ -162,65 +181,88 @@ export function ChartAreaInteractive() {
   });
 
   return (
-    <Card className="@container/card">
+    <Card
+      className={`@container/card ${className}`}
+      style={{ width }}
+      {...props}
+    >
       <CardHeader>
-        <CardTitle>Total Visitors</CardTitle>
+        <CardTitle>{title}</CardTitle>
         <CardDescription>
-          <span className="hidden @[540px]/card:block">
-            Total for the last 3 months
-          </span>
-          <span className="@[540px]/card:hidden">Last 3 months</span>
+          <span className="hidden @[540px]/card:block">{description}</span>
+          <span className="@[540px]/card:hidden">{shortDescription}</span>
         </CardDescription>
-        <CardAction>
-          <ToggleGroup
-            type="single"
-            value={timeRange}
-            onValueChange={setTimeRange}
-            variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
-          >
-            <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
-            <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
-            <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
-          </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
-              size="sm"
-              aria-label="Select a value"
+        {showTimeRange && (
+          <CardAction>
+            <ToggleGroup
+              type="single"
+              value={timeRange}
+              onValueChange={setTimeRange}
+              variant="outline"
+              className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
             >
-              <SelectValue placeholder="Last 3 months" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">
-                Last 3 months
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                Last 30 days
-              </SelectItem>
-              <SelectItem value="7d" className="rounded-lg">
-                Last 7 days
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </CardAction>
+              <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
+              <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
+              <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
+            </ToggleGroup>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger
+                className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+                size="sm"
+                aria-label="Select a value"
+              >
+                <SelectValue placeholder="Last 3 months" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="90d" className="rounded-lg">
+                  Last 3 months
+                </SelectItem>
+                <SelectItem value="30d" className="rounded-lg">
+                  Last 30 days
+                </SelectItem>
+                <SelectItem value="7d" className="rounded-lg">
+                  Last 7 days
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </CardAction>
+        )}
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
+          config={config}
+          className={`aspect-${aspectRatio} w-full`}
+          style={{ height }}
         >
           <AreaChart data={filteredData}>
-            <defs>
-              <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#5B4FFF" stopOpacity={1.0} />
-                <stop offset="95%" stopColor="#5B4FFF" stopOpacity={0.1} />
-              </linearGradient>
-              <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#a44fff" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#a44fff" stopOpacity={0.1} />
-              </linearGradient>
-            </defs>
+            {showGradient && (
+              <defs>
+                <linearGradient id={`fillDesktop-${chartId}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor={config.desktop?.color || "#5B4FFF"}
+                    stopOpacity={1.0}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor={config.desktop?.color || "#5B4FFF"}
+                    stopOpacity={0.1}
+                  />
+                </linearGradient>
+                <linearGradient id={`fillMobile-${chartId}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor={config.mobile?.color || "#a44fff"}
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor={config.mobile?.color || "#a44fff"}
+                    stopOpacity={0.1}
+                  />
+                </linearGradient>
+              </defs>
+            )}
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="date"
@@ -236,35 +278,67 @@ export function ChartAreaInteractive() {
                 });
               }}
             />
-            <ChartTooltip
-              cursor={false}
-              defaultIndex={isMobile ? -1 : 10}
-              content={
-                <ChartTooltipContent
-                  labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    });
-                  }}
-                  indicator="dot"
-                />
-              }
-            />
-            <Area
-              dataKey="mobile"
-              type="natural"
-              fill="url(#fillMobile)"
-              stroke="#a44fff"
-              stackId="a"
-            />
-            <Area
-              dataKey="desktop"
-              type="natural"
-              fill="url(#fillDesktop)"
-              stroke="#5B4FFF"
-              stackId="a"
-            />
+            {showTooltip && (
+              <ChartTooltip
+                cursor={false}
+                defaultIndex={isMobile ? -1 : 10}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => {
+                      return new Date(value).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      });
+                    }}
+                    indicator="none"
+                    className="min-w-[200px]"
+                  />
+                }
+              />
+            )}
+            {singleCurve ? (
+              <Area
+                dataKey="desktop"
+                type="natural"
+                fill={
+                  showGradient
+                    ? `url(#fillDesktop-${chartId})`
+                    : config.desktop?.color || "#5B4FFF"
+                }
+                stroke={config.desktop?.color || "#5B4FFF"}
+                stackId="a"
+              />
+            ) : (
+              <>
+                {showMobile && (
+                  <Area
+                    dataKey="mobile"
+                    type="natural"
+                    fill={hideMobileCurve ? "transparent" : (
+                      showGradient
+                        ? `url(#fillMobile-${chartId})`
+                        : config.mobile?.color || "#a44fff"
+                    )}
+                    stroke={hideMobileCurve ? "transparent" : (config.mobile?.color || "#a44fff")}
+                    strokeWidth={hideMobileCurve ? 0 : undefined}
+                    stackId="a"
+                  />
+                )}
+                {showDesktop && (
+                  <Area
+                    dataKey="desktop"
+                    type="natural"
+                    fill={
+                      showGradient
+                        ? `url(#fillDesktop-${chartId})`
+                        : config.desktop?.color || "#5B4FFF"
+                    }
+                    stroke={config.desktop?.color || "#5B4FFF"}
+                    stackId="a"
+                  />
+                )}
+              </>
+            )}
           </AreaChart>
         </ChartContainer>
       </CardContent>

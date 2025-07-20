@@ -82,7 +82,7 @@ const cards = [
     href: "/dashboard/outils/signatures-mail",
     status: "available",
     bgIconColor: "#8BA6FF",
-    Image: "/images/utils/Signature de mail.svg",
+    Image: "/images/utils/Signature.svg",
   },
   {
     title: "Transfert de fichiers",
@@ -176,9 +176,14 @@ export function SectionCards({ className }) {
 
               {/* Partie droite avec la visualisation - coins arrondis */}
               <div
-                className={`w-1/2 rounded-xl m-1 p-6 flex flex-col justify-center space-y-4 bg-[#5B4FFF]/4 bg-center bg-no-repeat bg-contain bg-blend-soft-light ${card.Image ? "" : "bg-none"}`}
+                className={`w-1/2 rounded-xl m-1 p-2 flex flex-col justify-center space-y-4 bg-[#5B4FFF]/4 bg-center bg-no-repeat bg-50% bg-blend-soft-light ${card.Image ? "" : "bg-none"}`}
                 style={{
                   backgroundImage: card.Image ? `url(${card.Image})` : "none",
+                  backgroundSize: "80%",
+                  backgroundPosition: "center center",
+                  backgroundRepeat: "no-repeat",
+                  opacity: 0.7,
+                  objectFit: "cover",
                 }}
               >
                 {/* {card.title === "Article SEO" ? (

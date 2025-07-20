@@ -51,11 +51,17 @@ const data = [
 
 export default function SignaturesMail() {
   return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
-      <h1 className="text-2xl font-semibold pl-6 mb-6">
-        Gestion des Signatures Mail
-      </h1>
-
+    <div className="space-y-6">
+      <div className="flex items-center justify-between p-6">
+        <div>
+          <h1 className="text-xl font-medium mb-2">
+            Gestion des Signatures Mail
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Gérez vos signatures mail et suivez les modifications
+          </p>
+        </div>
+      </div>
       <div className="w-full">
         <DataTable
           data={data}

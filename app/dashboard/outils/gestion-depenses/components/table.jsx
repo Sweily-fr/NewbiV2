@@ -87,14 +87,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
-// Le composant est exporté par défaut, pas en named export
-import { useClients, useDeleteClient } from "@/src/hooks/useClients";
 import { toast } from "@/src/components/ui/sonner";
-import ClientsModal from "./clients-modal";
+import { TransactionDetailDrawer } from "./transaction-detail-drawer";
+import { AddTransactionDrawer } from "./add-transaction-drawer";
+import { Plus } from "lucide-react";
+import {
+  FileTextIcon,
+  ImageIcon,
+  CreditCardIcon,
+  BanknoteIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+} from "lucide-react";
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableRowContent =
-    `${row.original.name} ${row.original.email} ${row.original.firstName || ""} ${row.original.lastName || ""}`.toLowerCase();
+    `${row.original.description} ${row.original.category} ${row.original.paymentMethod} ${row.original.amount}`.toLowerCase();
   const searchTerm = (filterValue ?? "").toLowerCase();
   return searchableRowContent.includes(searchTerm);
 };
@@ -119,128 +127,261 @@ const columns = [
       />
     ),
     cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
+      <div onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      </div>
     ),
     size: 28,
     enableSorting: false,
     enableHiding: false,
   },
   {
-    header: "Nom",
-    accessorKey: "name",
+    header: "Date",
+    accessorKey: "date",
     cell: ({ row }) => {
-      const client = row.original;
-      const displayName =
-        client.type === "INDIVIDUAL" && (client.firstName || client.lastName)
-          ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
-          : client.name;
-      return <div className="font-medium">{displayName}</div>;
+      const date = new Date(row.getValue("date"));
+      return (
+        <div className="font-medium">{date.toLocaleDateString("fr-FR")}</div>
+      );
     },
-    size: 200,
-    filterFn: multiColumnFilterFn,
+    size: 120,
     enableHiding: false,
-  },
-  {
-    header: "Email",
-    accessorKey: "email",
-    size: 220,
   },
   {
     header: "Type",
     accessorKey: "type",
-    cell: ({ row }) => (
-      <Badge
-        className={cn(
-          "bg-blue-100 border-blue-300 text-blue-800",
-          row.getValue("type") === "COMPANY" &&
-            "bg-purple-100 border-purple-300 text-purple-800"
-        )}
-      >
-        {row.getValue("type") === "INDIVIDUAL" ? "Particulier" : "Entreprise"}
-      </Badge>
-    ),
-    size: 120,
+    cell: ({ row }) => {
+      const type = row.getValue("type");
+      return (
+        <Badge
+          className={cn(
+            "flex items-center gap-1 w-fit",
+            type === "INCOME"
+              ? "bg-green-100 border-green-300 text-green-800"
+              : "bg-red-100 border-red-300 text-red-800"
+          )}
+        >
+          {type === "INCOME" ? (
+            <>
+              <ArrowUpIcon size={12} /> Entrée
+            </>
+          ) : (
+            <>
+              <ArrowDownIcon size={12} /> Sortie
+            </>
+          )}
+        </Badge>
+      );
+    },
+    size: 100,
     filterFn: typeFilterFn,
   },
   {
-    header: "Adresse",
-    accessorKey: "address",
+    header: "Catégorie",
+    accessorKey: "category",
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue("category")}</div>
+    ),
+    size: 140,
+  },
+  {
+    header: "Montant",
+    accessorKey: "amount",
     cell: ({ row }) => {
-      const address = row.original.address;
-      if (!address || (!address.city && !address.country)) return "-";
+      const amount = row.getValue("amount");
+      const type = row.getValue("type");
       return (
-        <div className="text-sm">
-          {address.city && <div>{address.city}</div>}
-          {address.country && (
-            <div className="text-muted-foreground">{address.country}</div>
+        <div
+          className={cn(
+            "font-medium text-left",
+            type === "INCOME" ? "text-green-600" : "text-red-600"
           )}
+        >
+          {type === "INCOME" ? "+" : "-"}
+          {amount.toFixed(2)} €
+        </div>
+      );
+    },
+    size: 120,
+  },
+  {
+    header: "Description",
+    accessorKey: "description",
+    cell: ({ row }) => (
+      <div
+        className="max-w-[200px] truncate"
+        title={row.getValue("description")}
+      >
+        {row.getValue("description")}
+      </div>
+    ),
+    size: 200,
+    filterFn: multiColumnFilterFn,
+  },
+  {
+    header: "Moyen de paiement",
+    accessorKey: "paymentMethod",
+    cell: ({ row }) => {
+      const method = row.getValue("paymentMethod");
+      const getIcon = () => {
+        switch (method) {
+          case "CARD":
+            return <CreditCardIcon size={14} />;
+          case "CASH":
+            return <BanknoteIcon size={14} />;
+          case "TRANSFER":
+            return <FileTextIcon size={14} />;
+          default:
+            return <CreditCardIcon size={14} />;
+        }
+      };
+
+      const getLabel = () => {
+        switch (method) {
+          case "CARD":
+            return "Carte";
+          case "CASH":
+            return "Espèces";
+          case "TRANSFER":
+            return "Virement";
+          case "CHECK":
+            return "Chèque";
+          default:
+            return method;
+        }
+      };
+
+      return (
+        <div className="flex items-center gap-2">
+          {getIcon()}
+          <span className="text-sm">{getLabel()}</span>
         </div>
       );
     },
     size: 150,
   },
   {
-    header: "SIRET",
-    accessorKey: "siret",
+    header: "Justificatif",
+    accessorKey: "attachment",
     cell: ({ row }) => {
-      const siret = row.getValue("siret");
-      return siret ? <span className="font-mono text-sm">{siret}</span> : "-";
+      const attachment = row.getValue("attachment");
+      return attachment ? (
+        <div className="flex items-center gap-1 text-blue-600">
+          <ImageIcon size={14} />
+          <span className="text-xs">Oui</span>
+        </div>
+      ) : (
+        <span className="text-muted-foreground text-xs">Non</span>
+      );
     },
-    size: 140,
+    size: 100,
   },
   {
     id: "actions",
     header: () => <span className="sr-only">Actions</span>,
     cell: ({ row, table }) => {
-      const handleEditClient = table.options.meta?.handleEditClient;
-      return <RowActions row={row} onEdit={handleEditClient} />;
+      return (
+        <div onClick={(e) => e.stopPropagation()}>
+          <RowActions row={row} onEdit={table.options.meta?.onEdit} />
+        </div>
+      );
     },
     size: 60,
     enableHiding: false,
   },
 ];
 
-export default function TableClients({ handleAddUser }) {
+// Données d'exemple pour les transactions
+const sampleTransactions = [
+  {
+    id: 1,
+    date: "2024-01-15",
+    type: "INCOME",
+    category: "Salaire",
+    amount: 3500.0,
+    description: "Salaire mensuel janvier",
+    paymentMethod: "TRANSFER",
+    attachment: true,
+  },
+  {
+    id: 2,
+    date: "2024-01-16",
+    type: "EXPENSE",
+    category: "Alimentation",
+    amount: 85.5,
+    description: "Courses supermarché",
+    paymentMethod: "CARD",
+    attachment: false,
+  },
+  {
+    id: 3,
+    date: "2024-01-17",
+    type: "EXPENSE",
+    category: "Transport",
+    amount: 45.2,
+    description: "Plein d'essence",
+    paymentMethod: "CARD",
+    attachment: true,
+  },
+  {
+    id: 4,
+    date: "2024-01-18",
+    type: "INCOME",
+    category: "Freelance",
+    amount: 750.0,
+    description: "Mission développement web",
+    paymentMethod: "TRANSFER",
+    attachment: true,
+  },
+  {
+    id: 5,
+    date: "2024-01-19",
+    type: "EXPENSE",
+    category: "Logement",
+    amount: 1200.0,
+    description: "Loyer mensuel",
+    paymentMethod: "TRANSFER",
+    attachment: false,
+  },
+];
+
+export default function TransactionTable() {
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
-  const [columnVisibility, setColumnVisibility] = useState({});
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
   const inputRef = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [editingClient, setEditingClient] = useState(null);
+  const [editingTransaction, setEditingTransaction] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
+  const [isAddTransactionDrawerOpen, setIsAddTransactionDrawerOpen] =
+    useState(false);
 
-  // Utilisation du hook pour récupérer les clients
-  const {
-    clients,
-    totalItems,
-    currentPage,
-    totalPages,
-    loading,
-    error,
-    refetch,
-  } = useClients(pagination.pageIndex + 1, pagination.pageSize, globalFilter);
-
-  const { deleteClient } = useDeleteClient();
+  // Utilisation des données d'exemple (à remplacer par un hook GraphQL plus tard)
+  const transactions = sampleTransactions;
+  const totalItems = transactions.length;
+  const loading = false;
+  const error = null;
 
   const [sorting, setSorting] = useState([
     {
-      id: "name",
-      desc: false,
+      id: "date",
+      desc: true,
     },
   ]);
 
   // Effet pour gérer la recherche globale
   useEffect(() => {
     const timer = setTimeout(() => {
-      // La recherche est gérée par le hook useClients
+      // La recherche sera gérée localement pour l'instant
     }, 300);
     return () => clearTimeout(timer);
   }, [globalFilter]);
@@ -248,63 +389,95 @@ export default function TableClients({ handleAddUser }) {
   const handleDeleteRows = async () => {
     const selectedRows = table.getSelectedRowModel().rows;
     try {
-      await Promise.all(
-        selectedRows.map((row) => deleteClient(row.original.id))
+      // Simulation de suppression (à remplacer par une mutation GraphQL)
+      console.log(
+        "Suppression des transactions:",
+        selectedRows.map((row) => row.original.id)
       );
       table.resetRowSelection();
-      await refetch();
+      toast.success(`${selectedRows.length} transaction(s) supprimée(s)`);
     } catch (error) {
-      console.error("Error deleting clients:", error);
+      console.error("Error deleting transactions:", error);
+      toast.error("Erreur lors de la suppression");
     }
   };
 
   const handleRefresh = async () => {
     try {
-      await refetch();
+      // Simulation de rafraîchissement
       toast.success("Données actualisées");
     } catch (error) {
       toast.error("Erreur lors de l'actualisation");
-      console.error("Error refreshing clients:", error);
+      console.error("Error refreshing transactions:", error);
     }
   };
 
-  const handleEditClient = (client) => {
-    setEditingClient(client);
+  const handleEditTransaction = (transaction) => {
+    setEditingTransaction(transaction);
     setIsEditModalOpen(true);
+  };
+
+  const handleViewTransaction = (transaction) => {
+    setSelectedTransaction(transaction);
+    setIsDetailDrawerOpen(true);
+  };
+
+  const handleCloseDetailDrawer = () => {
+    setIsDetailDrawerOpen(false);
+    setSelectedTransaction(null);
+  };
+
+  const handleEditFromDrawer = (transaction) => {
+    setIsDetailDrawerOpen(false);
+    handleEditTransaction(transaction);
+  };
+
+  const handleDeleteFromDrawer = (transaction) => {
+    setIsDetailDrawerOpen(false);
+    // Simulation de suppression
+    toast.success("Transaction supprimée");
   };
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
-    setEditingClient(null);
+    setEditingTransaction(null);
   };
 
-  const handleSaveClient = async (updatedClient) => {
-    await refetch();
+  const handleAddTransaction = (transaction) => {
+    setIsAddTransactionDrawerOpen(false);
+    // Simulation d'ajout (à remplacer par une mutation GraphQL)
+    toast.success("Transaction ajoutée");
+  };
+
+  const handleSaveTransaction = async (updatedTransaction) => {
+    // Simulation de sauvegarde (à remplacer par une mutation GraphQL)
+    console.log("Sauvegarde de la transaction:", updatedTransaction);
     handleCloseEditModal();
+    toast.success("Transaction mise à jour");
   };
 
   const table = useReactTable({
-    data: clients,
+    data: transactions,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     enableSortingRemoval: false,
-    manualPagination: true,
-    pageCount: totalPages,
+    manualPagination: false,
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     state: {
       sorting,
       pagination,
       columnFilters,
-      columnVisibility,
+      globalFilter,
     },
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: multiColumnFilterFn,
     meta: {
-      handleEditClient,
+      onEdit: handleEditTransaction,
     },
   });
 
@@ -354,23 +527,21 @@ export default function TableClients({ handleAddUser }) {
       {/* Filters */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          {/* Filter by name or email */}
+          {/* Filter by description, category, amount */}
           <div className="relative">
             <Input
-              id={`${id}-input`}
               ref={inputRef}
               className={cn(
                 "peer min-w-60 ps-9",
-                Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
+                Boolean(globalFilter) && "pe-9"
               )}
               value={globalFilter}
               onChange={(e) => {
                 setGlobalFilter(e.target.value);
-                table.getColumn("name")?.setFilterValue(e.target.value);
               }}
-              placeholder="Filtrer par nom ou email..."
+              placeholder="Rechercher par description, catégorie, montant..."
               type="text"
-              aria-label="Filter by name or email"
+              aria-label="Filter transactions"
             />
             <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
               <ListFilterIcon size={16} aria-hidden="true" />
@@ -381,7 +552,6 @@ export default function TableClients({ handleAddUser }) {
                 aria-label="Clear filter"
                 onClick={() => {
                   setGlobalFilter("");
-                  table.getColumn("name")?.setFilterValue("");
                   if (inputRef.current) {
                     inputRef.current.focus();
                   }
@@ -423,11 +593,8 @@ export default function TableClients({ handleAddUser }) {
                           handleTypeChange(checked, value)
                         }
                       />
-                      <Label
-                        htmlFor={`${id}-${i}`}
-                        className="flex grow justify-between gap-2 font-normal"
-                      >
-                        {value}{" "}
+                      <Label className="flex grow justify-between gap-2 font-normal">
+                        {value === "INCOME" ? "Entrées" : "Sorties"}{" "}
                         <span className="text-muted-foreground ms-2 text-xs">
                           {typeCounts.get(value)}
                         </span>
@@ -484,7 +651,7 @@ export default function TableClients({ handleAddUser }) {
                     size={16}
                     aria-hidden="true"
                   />
-                  Delete
+                  Supprimer
                   <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
                     {table.getSelectedRowModel().rows.length}
                   </span>
@@ -500,39 +667,37 @@ export default function TableClients({ handleAddUser }) {
                   </div>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
-                      Are you absolutely sure?
+                      Êtes-vous absolument sûr ?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete{" "}
-                      {table.getSelectedRowModel().rows.length} selected{" "}
-                      {table.getSelectedRowModel().rows.length === 1
-                        ? "row"
-                        : "rows"}
-                      .
+                      Cette action ne peut pas être annulée. Cela supprimera
+                      définitivement {table.getSelectedRowModel().rows.length}{" "}
+                      transaction
+                      {table.getSelectedRowModel().rows.length > 1
+                        ? "s"
+                        : ""}{" "}
+                      sélectionnée
+                      {table.getSelectedRowModel().rows.length > 1 ? "s" : ""}.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                 </div>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
                   <AlertDialogAction onClick={handleDeleteRows}>
-                    Delete
+                    Supprimer
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           )}
-          {/* Add user button */}
+          {/* Add transaction button */}
           <Button
             className="ml-auto cursor-pointer"
             variant="outline"
-            onClick={handleAddUser}
+            onClick={() => setIsAddTransactionDrawerOpen(true)}
           >
-            <PlusIcon
-              className="-ms-1 opacity-60"
-              size={16}
-              aria-hidden="true"
-            />
-            Ajouter un client
+            <Plus className="-ms-1 opacity-60" size={16} aria-hidden="true" />
+            Ajouter une transaction
           </Button>
         </div>
       </div>
@@ -608,6 +773,8 @@ export default function TableClients({ handleAddUser }) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleViewTransaction(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="last:py-0">
@@ -626,7 +793,7 @@ export default function TableClients({ handleAddUser }) {
                   className="h-24 text-center text-red-500"
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <span>Erreur lors du chargement des clients</span>
+                    <span>Erreur lors du chargement des transactions</span>
                     <button
                       onClick={handleRefresh}
                       className="text-blue-600 hover:text-blue-800 underline"
@@ -642,7 +809,7 @@ export default function TableClients({ handleAddUser }) {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Aucun client trouvé.
+                  Aucune transaction trouvée.
                 </TableCell>
               </TableRow>
             )}
@@ -655,7 +822,7 @@ export default function TableClients({ handleAddUser }) {
         {/* Results per page */}
         <div className="flex items-center gap-3">
           <Label htmlFor={id} className="max-sm:sr-only">
-            Rows per page
+            Lignes par page
           </Label>
           <Select
             value={table.getState().pagination.pageSize.toString()}
@@ -753,35 +920,50 @@ export default function TableClients({ handleAddUser }) {
         </div>
       </div>
 
-      {/* Modal d'édition */}
-      <ClientsModal
-        client={editingClient}
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        onSave={handleSaveClient}
+      {/* Transaction Detail Drawer */}
+      <TransactionDetailDrawer
+        transaction={selectedTransaction}
+        open={isDetailDrawerOpen}
+        onOpenChange={handleCloseDetailDrawer}
+        onEdit={handleEditFromDrawer}
+        onDelete={handleDeleteFromDrawer}
+      />
+
+      {/* Add Transaction Drawer */}
+      <AddTransactionDrawer
+        open={isAddTransactionDrawerOpen}
+        onOpenChange={setIsAddTransactionDrawerOpen}
+        onSubmit={handleAddTransaction}
       />
     </div>
   );
 }
 
 function RowActions({ row, onEdit }) {
-  const client = row.original;
+  const transaction = row.original;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const { deleteClient } = useDeleteClient();
 
   const handleEdit = () => {
     if (onEdit) {
-      onEdit(client);
+      onEdit(transaction);
     }
   };
 
   const handleDelete = async () => {
     try {
-      await deleteClient(client.id);
+      // Simulation de suppression (à remplacer par une mutation GraphQL)
+      console.log("Suppression de la transaction:", transaction.id);
       setShowDeleteDialog(false);
+      toast.success("Transaction supprimée");
     } catch (error) {
-      console.error("Error deleting client:", error);
+      console.error("Error deleting transaction:", error);
+      toast.error("Erreur lors de la suppression");
     }
+  };
+
+  const handleCopyDescription = () => {
+    navigator.clipboard.writeText(transaction.description);
+    toast.success("Description copiée dans le presse-papier");
   };
 
   return (
@@ -792,7 +974,7 @@ function RowActions({ row, onEdit }) {
             size="icon"
             variant="ghost"
             className="shadow-none"
-            aria-label="Actions du client"
+            aria-label="Actions de la transaction"
           >
             <EllipsisIcon size={16} aria-hidden="true" />
           </Button>
@@ -804,12 +986,18 @@ function RowActions({ row, onEdit }) {
             <span>Modifier</span>
             <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => navigator.clipboard.writeText(client.email)}
-          >
-            <span>Copier email</span>
+          <DropdownMenuItem onClick={handleCopyDescription}>
+            <span>Copier description</span>
             <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
           </DropdownMenuItem>
+          {transaction.attachment && (
+            <DropdownMenuItem
+              onClick={() => console.log("Voir justificatif", transaction.id)}
+            >
+              <span>Voir justificatif</span>
+              <DropdownMenuShortcut>⌘V</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem

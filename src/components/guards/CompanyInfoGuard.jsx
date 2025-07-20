@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/hooks/useAuth";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,12 +28,12 @@ import { Building2, AlertCircle, Settings } from "lucide-react";
  * Composant de protection qui vérifie si les informations d'entreprise sont complètes
  * avant d'autoriser l'accès aux fonctionnalités de facturation/devis
  */
-export function CompanyInfoGuard({ 
-  children, 
+export function CompanyInfoGuard({
+  children,
   redirectPath = "/dashboard/settings",
   loadingComponent = null,
   title = "Vérification des informations d'entreprise",
-  description = "Nous vérifions que vos informations d'entreprise sont complètes..."
+  description = "Nous vérifions que vos informations d'entreprise sont complètes...",
 }) {
   const { isAuthenticated, isLoading: authLoading, user, session } = useAuth();
   const router = useRouter();
@@ -36,23 +42,25 @@ export function CompanyInfoGuard({
   const [companyComplete, setCompanyComplete] = useState(false);
 
   useEffect(() => {
-    console.log('🔐 CompanyInfoGuard - État d\'authentification:', {
+    console.log("🔐 CompanyInfoGuard - État d'authentification:", {
       isAuthenticated,
       authLoading,
       hasUser: !!user,
       userId: user?.id,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     if (authLoading) {
-      console.log('⏳ CompanyInfoGuard: Authentification en cours de chargement...');
+      console.log(
+        "⏳ CompanyInfoGuard: Authentification en cours de chargement..."
+      );
       setIsLoading(true);
       return;
     }
 
     // Si pas authentifié, on peut soit rediriger soit permettre l'accès limité
     if (!isAuthenticated) {
-      console.warn('⚠️ CompanyInfoGuard: Utilisateur non authentifié');
+      console.warn("⚠️ CompanyInfoGuard: Utilisateur non authentifié");
       // Pour l'instant, on permet l'accès pour diagnostiquer
       setIsLoading(false);
       return;
@@ -60,13 +68,13 @@ export function CompanyInfoGuard({
 
     const company = user?.company;
     const isComplete = isCompanyInfoComplete(company);
-    
-    console.log('🏢 Vérification informations entreprise:', {
+
+    console.log("🏢 Vérification informations entreprise:", {
       hasCompany: !!company,
       name: company?.name,
       email: company?.email,
       address: company?.address,
-      isComplete
+      isComplete,
     });
 
     setCompanyComplete(isComplete);
@@ -88,22 +96,24 @@ export function CompanyInfoGuard({
   };
 
   if (isLoading) {
-    return loadingComponent || (
-      <div className="space-y-6 p-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <CardTitle>{title}</CardTitle>
-              <CardDescription>{description}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardContent>
-          </Card>
+    return (
+      loadingComponent || (
+        <div className="space-y-6 p-6">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Card className="w-full max-w-md">
+              <CardHeader className="text-center">
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      )
     );
   }
 
@@ -119,10 +129,13 @@ export function CompanyInfoGuard({
               </div>
             </div>
             <AlertDialogDescription className="mt-4">
-              Pour utiliser les outils de facturation et de devis, vous devez d'abord compléter les informations de votre entreprise.
+              Pour utiliser les outils de facturation et de devis, vous devez
+              d'abord compléter les informations de votre entreprise.
             </AlertDialogDescription>
             <div className="mt-4">
-              <p className="text-sm font-medium text-gray-900 mb-2">Informations requises :</p>
+              <p className="text-sm font-medium text-gray-900 mb-2">
+                Informations requises :
+              </p>
               <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
                 <li>Nom de l'entreprise</li>
                 <li>Email de contact</li>

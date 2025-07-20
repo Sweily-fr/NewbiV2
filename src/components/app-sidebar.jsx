@@ -81,8 +81,8 @@ const data = {
       icon: IconUsers,
     },
     {
-      title: "Catalogue",
-      url: "/dashboard/catalogue",
+      title: "Catalogues",
+      url: "/dashboard/catalogues",
       icon: IconFileWord,
     },
   ],

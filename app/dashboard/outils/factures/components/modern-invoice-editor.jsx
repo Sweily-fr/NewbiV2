@@ -7,7 +7,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useInvoiceEditor } from "../hooks/use-invoice-editor";
-import UniversalPreviewPDF from '@/src/components/pdf/UniversalPreviewPDF';
+import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
 import { toast } from "sonner";
 
@@ -51,14 +51,14 @@ export default function ModernInvoiceEditor({
             {/* Header */}
             <div className="flex items-center justify-between mb-6 pb-4 border-b">
               <div className="flex items-center gap-2">
-                <Button
+                {/* <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleBack}
                   className="gap-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                </Button>
+                </Button> */}
                 <div>
                   <h1 className="text-xl font-medium">
                     {isCreating && "Nouvelle facture"}
@@ -89,7 +89,7 @@ export default function ModernInvoiceEditor({
             </div>
 
             {/* Enhanced Form */}
-            <div className="flex-1 min-h-0 p-2 -mr-2">
+            <div className="flex-1 min-h-0 mr-2">
               <FormProvider {...form}>
                 <EnhancedInvoiceForm
                   onSave={handleSave}
@@ -107,7 +107,7 @@ export default function ModernInvoiceEditor({
         <div className="border-l flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
           <div className="flex-shrink-0 p-4 border-b">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Aperçu de la facture</h2>
+              <h2 className="text-lg font-medium">Aperçu de la facture</h2>
             </div>
           </div>
 

@@ -532,7 +532,7 @@ export default function TableClients({ handleAddUser }) {
               size={16}
               aria-hidden="true"
             />
-            Ajouter un client
+            Ajouter un produit
           </Button>
         </div>
       </div>
