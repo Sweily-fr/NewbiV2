@@ -18,7 +18,7 @@ export function useImageUpload({ onUpload = () => {} } = {}) {
         const url = URL.createObjectURL(file);
         setPreviewUrl(url);
         previewRef.current = url;
-        onUpload(url);
+        onUpload(url, file); // Passer l'URL et l'objet File
       }
     },
     [onUpload]
