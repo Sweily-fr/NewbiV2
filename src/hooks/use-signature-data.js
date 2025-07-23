@@ -34,6 +34,11 @@ export function SignatureProvider({ children }) {
     website: "https://www.newbi.fr",
     address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
     primaryColor: "#2563eb",
+    // Images Cloudflare
+    photo: null, // URL de la photo de profil
+    photoKey: null, // Clé Cloudflare de la photo de profil
+    logo: null, // URL du logo d'entreprise
+    logoKey: null, // Clé Cloudflare du logo d'entreprise
   });
 
   const updateSignatureData = (key, value) => {
@@ -59,6 +64,11 @@ export function SignatureProvider({ children }) {
       website: "https://www.newbi.fr",
       address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
       primaryColor: "#2563eb",
+      // Images Cloudflare
+      photo: null,
+      photoKey: null,
+      logo: null,
+      logoKey: null,
     });
   };
 

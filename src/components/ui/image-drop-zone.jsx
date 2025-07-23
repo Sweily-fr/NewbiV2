@@ -3,7 +3,7 @@
 import React, { useState, useRef } from "react";
 import { Upload, X, User, Building } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { useImageUpload } from "@/src/components/ui/image-upload";
+
 
 /**
  * Composant de zone de drop pour l'upload d'images
@@ -24,11 +24,8 @@ export function ImageDropZone({
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
-  const { previewUrl, handleFileChange, handleRemove } = useImageUpload({
-    onUpload: (url) => {
-      onImageChange?.(url);
-    },
-  });
+  // État local pour la preview temporaire (seulement pendant l'upload)
+  const [localPreview, setLocalPreview] = useState(null);
 
   const sizeClasses = {
     sm: "w-12 h-12",
@@ -94,7 +91,7 @@ export function ImageDropZone({
     reader.readAsDataURL(file);
   };
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -106,7 +103,22 @@ export function ImageDropZone({
 
     setError("");
     setIsLoading(true);
-    handleFileChange(e);
+    
+    // Créer une preview locale temporaire
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreview(previewUrl);
+    
+    // Appeler la fonction d'upload
+    try {
+      await onImageChange?.(file);
+      // Nettoyer la preview locale après upload réussi
+      URL.revokeObjectURL(previewUrl);
+      setLocalPreview(null);
+    } catch (error) {
+      // En cas d'erreur, garder la preview locale
+      console.error('Erreur upload:', error);
+    }
+    
     setIsLoading(false);
   };
 
@@ -116,12 +128,36 @@ export function ImageDropZone({
 
   const handleRemoveImage = (e) => {
     e.stopPropagation();
+    
+    // Nettoyer la preview locale si elle existe
+    if (localPreview) {
+      URL.revokeObjectURL(localPreview);
+      setLocalPreview(null);
+    }
+    
+    // Supprimer l'image
     onImageChange?.(null);
-    handleRemove();
     setError("");
   };
 
-  const displayImage = currentImage || previewUrl;
+  // Logique d'affichage des images :
+  // 1. Si currentImage existe (URL Cloudflare), l'utiliser en priorité
+  // 2. Sinon, utiliser localPreview (preview locale temporaire pendant upload)
+  const displayImage = currentImage || localPreview;
+  
+  // Vérifier si l'image est une URL Cloudflare R2
+  const isCloudflareUrl = displayImage && 
+    (typeof displayImage === 'string') && 
+    (displayImage.startsWith('http') || displayImage.startsWith('https'));
+  
+  // Nettoyer la preview locale quand le composant se démonte
+  React.useEffect(() => {
+    return () => {
+      if (localPreview) {
+        URL.revokeObjectURL(localPreview);
+      }
+    };
+  }, [localPreview]);
   const IconComponent = type === "profile" ? User : Building;
 
   return (
@@ -160,7 +196,17 @@ export function ImageDropZone({
             <img
               src={displayImage}
               alt="Preview"
-              className="w-full h-full object-cover rounded-lg"
+              className={`w-full h-full ${isCloudflareUrl ? 'object-contain' : 'object-cover'} rounded-lg`}
+              onError={(e) => {
+                console.error('Erreur de chargement de l\'image:', displayImage);
+                // Éviter la boucle infinie en masquant l'image défaillante
+                e.target.style.display = 'none';
+                // Afficher un message d'erreur à la place
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'flex items-center justify-center w-full h-full bg-gray-100 rounded-lg';
+                errorDiv.innerHTML = '<span class="text-gray-400 text-xs">Image non disponible</span>';
+                e.target.parentNode.appendChild(errorDiv);
+              }}
             />
             <Button
               size="sm"

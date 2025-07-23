@@ -20,6 +20,9 @@ const isTokenExpired = (token) => {
 const uploadLink = createUploadLink({
   uri: "http://localhost:4000/graphql",
   credentials: "include", // Important pour better-auth (cookies)
+  headers: {
+    "Apollo-Require-Preflight": "true",
+  },
 });
 
 const authLink = setContext((_, { headers }) => {
@@ -95,7 +98,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
   }
 });
 
-export const client = new ApolloClient({
+export const apolloClient = new ApolloClient({
   link: from([authLink, errorLink, uploadLink]),
   cache: new InMemoryCache(),
   defaultOptions: {
