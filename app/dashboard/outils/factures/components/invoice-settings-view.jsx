@@ -16,6 +16,7 @@ import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { Button } from "@/src/components/ui/button";
+import { ColorPicker } from "@/src/components/ui/color-picker";
 
 // Fonction de validation de l'IBAN
 const validateIBAN = (value) => {
@@ -95,12 +96,11 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
     <div className="h-full flex flex-col">
       {/* Contenu scrollable */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto space-y-6 pl-2 pr-2">
+        <div className="max-w-2xl mx-auto pl-2 pr-2">
           {/* Notes et bas de page */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Tag className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Notes et bas de page
               </CardTitle>
             </CardHeader>
@@ -185,15 +185,20 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
+          {/* Coordonnées bancaires */}
+          <Card className="shadow-none border-none bg-transparent">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
+                Coordonnées bancaires
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
               {/* Séparateur avec titre de section */}
-              <div className="relative my-10">
+              <div className="relative">
                 <Separator />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bg-background px-3 text-sm font-medium text-muted-foreground">
-                    Coordonnées bancaires
-                  </span>
-                </div>
               </div>
 
               {/* Afficher les coordonnées bancaires */}
@@ -343,6 +348,65 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
                   </Alert>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Section Apparence */}
+          <Card className="shadow-none border-none bg-transparent">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
+                Apparence
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              {/* Couleurs côte à côte */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Couleur du texte */}
+                <div className="space-y-2">
+                  <Label htmlFor="text-color">Couleur du texte</Label>
+                  <ColorPicker
+                    className="w-full"
+                    color={data.appearance?.textColor || "#000000"}
+                    onChange={(color) => {
+                      setValue("appearance.textColor", color, {
+                        shouldDirty: true,
+                      });
+                    }}
+                  />
+                </div>
+
+                {/* Couleur des titres du header */}
+                <div className="space-y-2">
+                  <Label htmlFor="header-text-color">
+                    Couleur des titres du tableau
+                  </Label>
+                  <ColorPicker
+                    className="w-full"
+                    color={data.appearance?.headerTextColor || "#000000"}
+                    onChange={(color) => {
+                      setValue("appearance.headerTextColor", color, {
+                        shouldDirty: true,
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Couleur de fond du header */}
+              <div className="space-y-2">
+                <Label htmlFor="header-bg-color">
+                  Couleur de fond du tableau
+                </Label>
+                <ColorPicker
+                  className="w-full"
+                  color={data.appearance?.headerBgColor || "#f8f9fa"}
+                  onChange={(color) => {
+                    setValue("appearance.headerBgColor", color, {
+                      shouldDirty: true,
+                    });
+                  }}
+                />
+              </div>
             </CardContent>
           </Card>
         </div>

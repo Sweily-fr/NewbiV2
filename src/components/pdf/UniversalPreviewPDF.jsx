@@ -15,6 +15,21 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
 
   const isInvoice = type === "invoice";
 
+  // Couleurs d'apparence avec valeurs par défaut
+  const appearance = {
+    textColor: data.appearance?.textColor || "#000000",
+    headerTextColor: data.appearance?.headerTextColor || "#000000",
+    headerBgColor: data.appearance?.headerBgColor || "#f8f9fa",
+  };
+
+  // Fonction utilitaire pour convertir hex en rgba avec opacité
+  const hexToRgba = (hex, opacity) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
   // Formatage des devises - identique au PDF
   const formatCurrency = (amount) => {
     if (!amount && amount !== 0) return "0,00 €";
@@ -75,7 +90,10 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
   };
 
   return (
-    <div className="w-full bg-white shadow-lg relative min-h-[900px] p-6">
+    <div
+      className="w-full bg-white shadow-lg relative min-h-[900px] p-6"
+      style={{ color: appearance.textColor }}
+    >
       {/* CONTENU PRINCIPAL */}
       <div className="p-6 text-xs">
         {/* HEADER */}
@@ -196,18 +214,35 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
         <div className="mb-6">
           <table className="w-full border-collapse text-xs">
             <thead>
-              <tr className="bg-[#1d1d1b] text-white">
-                <th className="p-2 text-left text-[10px] font-medium">
+              <tr style={{ backgroundColor: appearance.headerBgColor }}>
+                <th
+                  className="p-2 text-left text-[10px] font-medium"
+                  style={{ color: appearance.headerTextColor }}
+                >
                   Description
                 </th>
-                <th className="p-2 text-center text-[10px] font-medium">Qté</th>
-                <th className="p-2 text-center text-[10px] font-medium">
+                <th
+                  className="p-2 text-center text-[10px] font-medium"
+                  style={{ color: appearance.headerTextColor }}
+                >
+                  Qté
+                </th>
+                <th
+                  className="p-2 text-center text-[10px] font-medium"
+                  style={{ color: appearance.headerTextColor }}
+                >
                   Prix unitaire
                 </th>
-                <th className="p-2 text-center text-[10px] font-medium">
+                <th
+                  className="p-2 text-center text-[10px] font-medium"
+                  style={{ color: appearance.headerTextColor }}
+                >
                   TVA (%)
                 </th>
-                <th className="p-2 text-right text-[10px] font-medium">
+                <th
+                  className="p-2 text-right text-[10px] font-medium"
+                  style={{ color: appearance.headerTextColor }}
+                >
                   Total HT
                 </th>
               </tr>
