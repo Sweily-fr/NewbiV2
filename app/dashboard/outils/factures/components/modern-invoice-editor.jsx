@@ -2,13 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { FormProvider } from "react-hook-form";
-import { ArrowLeft, FileText, Send, CreditCard } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  Send,
+  CreditCard,
+  Settings,
+  X,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useInvoiceEditor } from "../hooks/use-invoice-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
+import InvoiceSettingsView from "./invoice-settings-view";
 import { toast } from "sonner";
 
 export default function ModernInvoiceEditor({
@@ -17,6 +25,7 @@ export default function ModernInvoiceEditor({
   initialData = null,
 }) {
   const router = useRouter();
+  const [showSettings, setShowSettings] = useState(false);
   const {
     form,
     formData,
@@ -42,14 +51,22 @@ export default function ModernInvoiceEditor({
     router.push("/dashboard/outils/factures");
   };
 
+  const handleSettingsClick = () => {
+    setShowSettings(!showSettings);
+  };
+
+  const handleCloseSettings = () => {
+    setShowSettings(false);
+  };
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full">
         {/* Left Panel - Enhanced Form */}
-        <div className="p-6 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
+        <div className="pl-6 pt-6 pr-6 pb-4 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
           <div className="max-w-2xl mx-auto flex flex-col w-full h-full overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b">
+            <div className="flex items-center justify-between mb-6 pb-6 border-b">
               <div className="flex items-center gap-2">
                 {/* <Button
                   variant="ghost"
@@ -60,12 +77,18 @@ export default function ModernInvoiceEditor({
                   <ArrowLeft className="h-4 w-4" />
                 </Button> */}
                 <div>
-                  <h1 className="text-xl font-medium">
-                    {isCreating && "Nouvelle facture"}
-                    {isEditing && "Modifier la facture"}
-                    {isReadOnly && "Détails de la facture"}
+                  <h1 className="text-2xl font-medium mb-1">
+                    {showSettings ? (
+                      "Paramètres de la facture"
+                    ) : (
+                      <>
+                        {isCreating && "Nouvelle facture"}
+                        {isEditing && "Modifier la facture"}
+                        {isReadOnly && "Détails de la facture"}
+                      </>
+                    )}
                   </h1>
-                  {isDirty && !isReadOnly && (
+                  {!showSettings && isDirty && !isReadOnly && (
                     <p className="text-sm text-muted-foreground">
                       {saving
                         ? "Sauvegarde en cours..."
@@ -75,8 +98,28 @@ export default function ModernInvoiceEditor({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {formData.status && (
+              <div className="flex items-center gap-6">
+                {!showSettings && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSettingsClick}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                )}
+                {showSettings && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCloseSettings}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                )}
+                {/* {formData.status && (
                   <Badge
                     variant={
                       formData.status === "DRAFT" ? "secondary" : "default"
@@ -84,20 +127,28 @@ export default function ModernInvoiceEditor({
                   >
                     {formData.status}
                   </Badge>
-                )}
+                )} */}
               </div>
             </div>
 
-            {/* Enhanced Form */}
+            {/* Enhanced Form ou Settings View */}
             <div className="flex-1 min-h-0 mr-2">
               <FormProvider {...form}>
-                <EnhancedInvoiceForm
-                  onSave={handleSave}
-                  onSubmit={handleSubmit}
-                  loading={loading}
-                  saving={saving}
-                  readOnly={isReadOnly}
-                />
+                {showSettings ? (
+                  <InvoiceSettingsView
+                    canEdit={!isReadOnly}
+                    onCancel={handleCloseSettings}
+                    onSave={handleSave}
+                  />
+                ) : (
+                  <EnhancedInvoiceForm
+                    onSave={handleSave}
+                    onSubmit={handleSubmit}
+                    loading={loading}
+                    canEdit={!isReadOnly}
+                    mode={mode}
+                  />
+                )}
               </FormProvider>
             </div>
           </div>
@@ -105,13 +156,13 @@ export default function ModernInvoiceEditor({
 
         {/* Right Panel - Preview */}
         <div className="border-l flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
-          <div className="flex-shrink-0 p-4 border-b">
+          {/* <div className="flex-shrink-0 p-4 border-b">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">Aperçu de la facture</h2>
             </div>
-          </div>
+          </div> */}
 
-          <div className="flex-1 overflow-y-auto p-4 h-[calc(100vh-64px)]">
+          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-[calc(100vh-64px)]">
             <UniversalPreviewPDF data={formData} type="invoice" />
           </div>
         </div>

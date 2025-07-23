@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import { Calendar as CalendarIcon, Clock, Building } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Building, Info } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar } from "@/src/components/ui/calendar";
@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { Checkbox } from "@/src/components/ui/checkbox";
+import { Switch } from "@/src/components/ui/switch";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import {
@@ -21,6 +21,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -189,15 +195,15 @@ export default function InvoiceInfoSection({ canEdit }) {
   return (
     <Card className="shadow-none p-2 border-none bg-transparent">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+          {/* <Clock className="h-5 w-5" /> */}
           Informations de la facture
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-0">
         {/* Facture d'acompte */}
         <div className="flex items-center space-x-3">
-          <Checkbox
+          <Switch
             id="deposit-invoice"
             checked={data.isDepositInvoice || false}
             onCheckedChange={(checked) =>
@@ -205,25 +211,34 @@ export default function InvoiceInfoSection({ canEdit }) {
             }
             disabled={!canEdit}
           />
-          <div className="grid gap-1.5 leading-none">
-            <Label
-              htmlFor="deposit-invoice"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Facture d'acompte
+          <div className="space-y-0.5">
+            <Label htmlFor="deposit-invoice" className="text-sm font-medium">
+              Il s'agit d'une facture d'acompte
             </Label>
-            <p className="text-xs text-muted-foreground">
-              Cochez si cette facture correspond à un acompte
-            </p>
           </div>
         </div>
 
         {/* Préfixe et numéro de facture */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="invoice-prefix" className="text-sm font-medium">
-              Préfixe de facture
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="invoice-prefix" className="text-sm font-medium">
+                Préfixe de facture
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="w-64">
+                    <p>
+                      Tapez <span className="font-mono">MM</span> pour le mois
+                      ou <span className="font-mono">AAAA</span> pour l'année
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="space-y-1">
               <div className="relative">
                 <Input
@@ -244,22 +259,25 @@ export default function InvoiceInfoSection({ canEdit }) {
                 <p className="text-xs text-red-500">{errors.prefix.message}</p>
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Astuce : Tapez{" "}
-              <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">
-                MM
-              </span>{" "}
-              pour le mois ou{" "}
-              <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">
-                AAAA
-              </span>{" "}
-              pour l'année
-            </p>
           </div>
           <div className="md:col-span-2 space-y-2">
-            <Label htmlFor="invoice-number" className="text-sm font-medium">
-              Numéro de facture
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="invoice-number" className="text-sm font-medium">
+                Numéro de facture
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="w-64">
+                    <p>
+                      Numéro unique généré automatiquement pour cette facture
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="space-y-1">
               <Input
                 id="invoice-number"
@@ -309,11 +327,12 @@ export default function InvoiceInfoSection({ canEdit }) {
               {errors?.number ? (
                 <p className="text-xs text-red-500">{errors.number.message}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  {isLoadingInvoiceNumber
-                    ? "Chargement du prochain numéro..."
-                    : `Prochain numéro suggéré: ${nextInvoiceNumber ? String(nextInvoiceNumber).padStart(6, "0") : "000001"} (numérotation séquentielle)`}
-                </p>
+                <></>
+                // <p className="text-xs text-muted-foreground">
+                //   {isLoadingInvoiceNumber
+                //     ? "Chargement du prochain numéro..."
+                //     : `Prochain numéro suggéré: ${nextInvoiceNumber ? String(nextInvoiceNumber).padStart(6, "0") : "000001"} (numérotation séquentielle)`}
+                // </p>
               )}
             </div>
           </div>
@@ -321,12 +340,24 @@ export default function InvoiceInfoSection({ canEdit }) {
 
         {/* Référence devis */}
         <div className="space-y-2">
-          <Label
-            htmlFor="purchase-order-number"
-            className="text-sm font-medium"
-          >
-            Référence devis
-          </Label>
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="purchase-order-number"
+              className="text-sm font-medium"
+            >
+              Référence devis
+            </Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="w-64">
+                  <p>Référence du devis associé à cette facture (optionnel)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="relative">
             <Input
               id="purchase-order-number"
@@ -340,18 +371,30 @@ export default function InvoiceInfoSection({ canEdit }) {
               disabled={!canEdit}
             />
           </div>
-          <p className="text-xs text-gray-500">
-            Référence du devis associé à cette facture (optionnel)
-          </p>
         </div>
 
         {/* Dates */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                Date d'émission <span className="text-red-500">*</span>
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">
+                  Date d'émission <span className="text-red-500">*</span>
+                </Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="w-64">
+                      <p>
+                        La date d'émission est automatiquement définie lors de
+                        la création de la facture
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <input
                 type="hidden"
                 {...register("issueDate", {
@@ -380,10 +423,6 @@ export default function InvoiceInfoSection({ canEdit }) {
                 />
                 <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
-              <p className="text-xs text-muted-foreground">
-                La date d'émission est automatiquement définie lors de la
-                création de la facture
-              </p>
               {errors?.issueDate && (
                 <p className="text-xs text-red-500">
                   {errors.issueDate.message}
@@ -459,7 +498,19 @@ export default function InvoiceInfoSection({ canEdit }) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Date d'échéance</Label>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium">Date d'échéance</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="w-64">
+                    <p>Date limite de paiement de la facture</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="grid grid-cols-2 gap-2 w-full">
               <input
                 type="hidden"

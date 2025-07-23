@@ -477,7 +477,7 @@ export default function ClientSelector({
             </TabsList>
           </CardHeader>
 
-          <CardContent className="space-y-6 p-0">
+          <CardContent className="p-0">
             <TabsContent value="existing" className="m-0">
               <div className="space-y-4">
                 <div className="space-y-3">

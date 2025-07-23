@@ -94,8 +94,8 @@ export default function ItemsSection({
   return (
     <Card className="border-0 shadow-none bg-transparent">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+          {/* <Package className="h-5 w-5" /> */}
           Articles et produits
         </CardTitle>
       </CardHeader>

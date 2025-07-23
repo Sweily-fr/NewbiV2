@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
-import { Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Info } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar } from "@/src/components/ui/calendar";
@@ -12,6 +12,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/src/components/ui/tooltip";
 import { cn } from "@/src/lib/utils";
 import { 
   generateQuotePrefix, 
@@ -108,8 +109,8 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
   return (
     <Card className="shadow-none p-2 border-none bg-transparent">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+          {/* <Clock className="h-5 w-5" /> */}
           Informations du devis
         </CardTitle>
       </CardHeader>
@@ -117,9 +118,23 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
         {/* Préfixe et numéro de devis */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="quote-prefix" className="text-sm font-medium">
-              Préfixe de devis
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="quote-prefix" className="text-sm font-medium">
+                Préfixe de devis
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="w-64">
+                    <p className="w-full">
+                      Astuce : Tapez <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">MM</span> pour le mois ou <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">AAAA</span> pour l'année
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="space-y-1">
               <div className="relative">
                 <Input
@@ -155,10 +170,6 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
                   }}
                   placeholder="D-MMAAAA"
                   disabled={!canEdit}
-                  className={cn(
-                    "h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-                    errors?.prefix && "border-red-500"
-                  )}
                 />
               </div>
               {errors?.prefix && (
@@ -167,14 +178,25 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
                 </p>
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Astuce : Tapez <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">MM</span> pour le mois ou <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">AAAA</span> pour l'année
-            </p>
           </div>
           <div className="md:col-span-2 space-y-2">
-            <Label htmlFor="quote-number" className="text-sm font-medium">
-              Numéro de devis
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="quote-number" className="text-sm font-medium">
+                Numéro de devis
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="w-64">
+                    <p className="w-full">
+                      Numéro séquentiel du devis. Il sera automatiquement formaté avec des zéros en préfixe (ex: 000001).
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="space-y-1">
               <Input
                 id="quote-number"
@@ -199,21 +221,10 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
                     setValue('number', formattedNum, { shouldValidate: true });
                   }
                 }}
-                className={`h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${
-                  errors?.number ? 'border-red-500' : ''
-                }`}
               />
-              {errors?.number ? (
+              {errors?.number && (
                 <p className="text-xs text-red-500">
                   {errors.number.message}
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  {nextQuoteNumber ? (
-                    `Prochain numéro suggéré: ${nextQuoteNumber.number} (${nextQuoteNumber.prefix})`
-                  ) : (
-                    "Numérotation séquentielle automatique"
-                  )}
                 </p>
               )}
             </div>
@@ -222,9 +233,23 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
 
         {/* Référence projet */}
         <div className="space-y-2">
-          <Label htmlFor="project-reference" className="text-sm font-medium">
-            Référence projet
-          </Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="project-reference" className="text-sm font-medium">
+              Référence projet
+            </Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="w-64">
+                  <p className="w-full">
+                    Référence du projet associé à ce devis (optionnel). Utile pour le suivi et l'organisation.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="relative">
             <Input
               id="project-reference"
@@ -232,20 +257,30 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
               onChange={(e) => setValue("projectReference", e.target.value, { shouldDirty: true })}
               placeholder="PROJ-2025-001"
               disabled={!canEdit}
-              className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
-          <p className="text-xs text-gray-500">
-            Référence du projet associé à ce devis (optionnel)
-          </p>
         </div>
 
         {/* Dates */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-sm font-medium">
-              Date d'émission *
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium">
+                Date d'émission *
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="w-64">
+                    <p className="w-full">
+                      Date à laquelle le devis est émis. Par défaut, c'est la date d'aujourd'hui.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <input
               type="hidden"
               {...register("issueDate", {
@@ -258,9 +293,8 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
                   variant="outline"
                   disabled={!canEdit}
                   className={cn(
-                    "w-full justify-start text-left font-normal h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-                    !data.issueDate && "text-muted-foreground",
-                    errors?.issueDate && "border-red-500"
+                    "w-full justify-start text-left font-normal",
+                    !data.issueDate && "text-muted-foreground"
                   )}
                   type="button"
                 >
@@ -299,9 +333,23 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium">
-              Valide jusqu'au *
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium">
+                Valide jusqu'au *
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="w-64">
+                    <p className="w-full">
+                      Date limite de validité du devis. Après cette date, le devis ne sera plus valable.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="grid grid-cols-2 gap-2 w-full">
               <input
                 type="hidden"
@@ -316,9 +364,8 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
                     variant="outline"
                     disabled={!canEdit}
                     className={cn(
-                      "w-full justify-start text-left font-normal h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-                      !data.validUntil && "text-muted-foreground",
-                      errors?.validUntil && "border-red-500"
+                      "w-full justify-start text-left font-normal",
+                      !data.validUntil && "text-muted-foreground"
                     )}
                     type="button"
                   >
@@ -361,7 +408,7 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
                 disabled={!canEdit}
                 defaultValue="30"
               >
-                <SelectTrigger className="h-10 rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-full">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="30 jours" />
                 </SelectTrigger>
                 <SelectContent>

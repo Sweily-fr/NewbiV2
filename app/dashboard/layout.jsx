@@ -14,6 +14,10 @@ function DashboardContent({ children }) {
   const pathname = usePathname();
   const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
   
+  // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
+  const isToolPage = pathname.includes("/dashboard/outils/") && 
+    (pathname.includes("/new") || pathname.includes("/edit") || pathname.includes("/view"));
+  
   // Utiliser les données de signature si on est sur la page de signature
   let signatureContextData = null;
   try {
@@ -23,7 +27,7 @@ function DashboardContent({ children }) {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={!isToolPage}>
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />

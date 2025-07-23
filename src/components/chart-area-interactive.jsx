@@ -187,9 +187,11 @@ export function ChartAreaInteractive({
       {...props}
     >
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="text-base font-medium">{title}</CardTitle>
         <CardDescription>
-          <span className="hidden @[540px]/card:block">{description}</span>
+          <span className="hidden @[540px]/card:block text-lg text-[#202020]">
+            {description}
+          </span>
           <span className="@[540px]/card:hidden">{shortDescription}</span>
         </CardDescription>
         {showTimeRange && (
@@ -201,27 +203,27 @@ export function ChartAreaInteractive({
               variant="outline"
               className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
             >
-              <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
-              <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
-              <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
+              <ToggleGroupItem value="90d">Derniers 3 mois</ToggleGroupItem>
+              <ToggleGroupItem value="30d">Derniers 30 jours</ToggleGroupItem>
+              <ToggleGroupItem value="7d">Derniers 7 jours</ToggleGroupItem>
             </ToggleGroup>
             <Select value={timeRange} onValueChange={setTimeRange}>
               <SelectTrigger
-                className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+                className="flex text-xs border-none shadow-none w-35 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
                 size="sm"
                 aria-label="Select a value"
               >
-                <SelectValue placeholder="Last 3 months" />
+                <SelectValue placeholder="Derniers 3 mois" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="90d" className="rounded-lg">
-                  Last 3 months
+                  Derniers 3 mois
                 </SelectItem>
                 <SelectItem value="30d" className="rounded-lg">
-                  Last 30 days
+                  Derniers 30 jours
                 </SelectItem>
                 <SelectItem value="7d" className="rounded-lg">
-                  Last 7 days
+                  Derniers 7 jours
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -237,7 +239,13 @@ export function ChartAreaInteractive({
           <AreaChart data={filteredData}>
             {showGradient && (
               <defs>
-                <linearGradient id={`fillDesktop-${chartId}`} x1="0" y1="0" x2="0" y2="1">
+                <linearGradient
+                  id={`fillDesktop-${chartId}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
                   <stop
                     offset="5%"
                     stopColor={config.desktop?.color || "#5B4FFF"}
@@ -249,7 +257,13 @@ export function ChartAreaInteractive({
                     stopOpacity={0.1}
                   />
                 </linearGradient>
-                <linearGradient id={`fillMobile-${chartId}`} x1="0" y1="0" x2="0" y2="1">
+                <linearGradient
+                  id={`fillMobile-${chartId}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
                   <stop
                     offset="5%"
                     stopColor={config.mobile?.color || "#a44fff"}
@@ -314,12 +328,18 @@ export function ChartAreaInteractive({
                   <Area
                     dataKey="mobile"
                     type="natural"
-                    fill={hideMobileCurve ? "transparent" : (
-                      showGradient
-                        ? `url(#fillMobile-${chartId})`
+                    fill={
+                      hideMobileCurve
+                        ? "transparent"
+                        : showGradient
+                          ? `url(#fillMobile-${chartId})`
+                          : config.mobile?.color || "#a44fff"
+                    }
+                    stroke={
+                      hideMobileCurve
+                        ? "transparent"
                         : config.mobile?.color || "#a44fff"
-                    )}
-                    stroke={hideMobileCurve ? "transparent" : (config.mobile?.color || "#a44fff")}
+                    }
                     strokeWidth={hideMobileCurve ? 0 : undefined}
                     stackId="a"
                   />

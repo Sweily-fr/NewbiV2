@@ -17,10 +17,9 @@ export default function ClientSelectorSection({ canEdit }) {
 
   return (
     <Card className="shadow-none border-none p-2 bg-transparent">
-      <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2">
-          <Building className="h-5 w-5" />
-          Client
+      <CardHeader className="p-0 pb-2">
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+          Sélection d'un client
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">

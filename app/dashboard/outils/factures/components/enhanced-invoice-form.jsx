@@ -2,9 +2,23 @@
 
 import { useState, useEffect, useCallback, useId } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
-import { Plus, Trash2, Calculator, Building, Percent, Clock, Tag, Search, Zap, Package, CheckIcon, ChevronDownIcon, Download } from "lucide-react";
-import { useQuery } from '@apollo/client';
-import { GET_PRODUCTS } from '@/src/graphql/productQueries';
+import {
+  Plus,
+  Trash2,
+  Calculator,
+  Building,
+  Percent,
+  Clock,
+  Tag,
+  Search,
+  Zap,
+  Package,
+  CheckIcon,
+  ChevronDownIcon,
+  Download,
+} from "lucide-react";
+import { useQuery } from "@apollo/client";
+import { GET_PRODUCTS } from "@/src/graphql/productQueries";
 
 import { Button } from "@/src/components/ui/button";
 import {
@@ -13,22 +27,37 @@ import {
   TimelineItem,
   TimelineIndicator,
   TimelineSeparator,
-  TimelineTitle
+  TimelineTitle,
 } from "@/src/components/ui/timeline";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
-import NotesAndFooterSection from "./invoices-form-sections/NotesAndFooterSection";
+
 import InvoiceInfoSection from "./invoices-form-sections/InvoiceInfoSection";
 import ItemsSection from "./invoices-form-sections/ItemsSection";
 import DiscountsAndTotalsSection from "./invoices-form-sections/DiscountsAndTotalsSection";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Calendar } from "@/src/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import {
   Accordion,
   AccordionContent,
@@ -52,35 +81,41 @@ import CompanyImport, { QuickCompanyImport } from "./company-import";
 import { toast } from "sonner";
 
 // Composant de recherche de produits basé sur Origin UI
-function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit...", disabled = false, className = "" }) {
+function ProductSearchCombobox({
+  onSelect,
+  placeholder = "Rechercher un produit...",
+  disabled = false,
+  className = "",
+}) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   // Requête GraphQL pour récupérer les produits
   const { data, loading, error } = useQuery(GET_PRODUCTS, {
     variables: {
       search: searchTerm || undefined,
-      limit: 20
+      limit: 20,
     },
-    fetchPolicy: 'cache-and-network'
+    fetchPolicy: "cache-and-network",
   });
-  
+
   // Transformation des données pour le composant
-  const products = data?.products?.products?.map(product => ({
-    value: product.id,
-    label: product.name,
-    description: product.description,
-    price: product.unitPrice,
-    vatRate: product.vatRate,
-    unit: product.unit,
-    category: product.category,
-    reference: product.reference
-  })) || [];
+  const products =
+    data?.products?.products?.map((product) => ({
+      value: product.id,
+      label: product.name,
+      description: product.description,
+      price: product.unitPrice,
+      vatRate: product.vatRate,
+      unit: product.unit,
+      category: product.category,
+      reference: product.reference,
+    })) || [];
 
   const handleSelect = (currentValue) => {
-    const selectedProduct = products.find(p => p.value === currentValue);
+    const selectedProduct = products.find((p) => p.value === currentValue);
     if (selectedProduct && onSelect) {
       onSelect({
         description: selectedProduct.label,
@@ -88,7 +123,7 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
         unitPrice: selectedProduct.price,
         taxRate: selectedProduct.vatRate || 20,
         productId: selectedProduct.value,
-        unit: selectedProduct.unit || 'unité'
+        unit: selectedProduct.unit || "unité",
       });
     }
     setValue("");
@@ -129,19 +164,23 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
         align="start"
       >
         <Command>
-          <CommandInput 
-            placeholder="Rechercher un produit..." 
+          <CommandInput
+            placeholder="Rechercher un produit..."
             onValueChange={handleSearchChange}
           />
           <CommandList>
             {loading ? (
               <div className="flex items-center justify-center p-4">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-sm text-muted-foreground">Recherche en cours...</span>
+                <span className="ml-2 text-sm text-muted-foreground">
+                  Recherche en cours...
+                </span>
               </div>
             ) : error ? (
               <div className="p-4 text-center text-red-600">
-                <span className="text-sm">Erreur lors du chargement des produits</span>
+                <span className="text-sm">
+                  Erreur lors du chargement des produits
+                </span>
               </div>
             ) : products.length === 0 ? (
               <CommandEmpty>Aucun produit trouvé.</CommandEmpty>
@@ -168,8 +207,12 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
                       )}
                     </div>
                     <div className="flex flex-col items-end text-right">
-                      <span className="text-sm font-medium">{product.price}€</span>
-                      <span className="text-xs text-muted-foreground">/{product.unit}</span>
+                      <span className="text-sm font-medium">
+                        {product.price}€
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        /{product.unit}
+                      </span>
                     </div>
                   </CommandItem>
                 ))}
@@ -182,51 +225,70 @@ function ProductSearchCombobox({ onSelect, placeholder = "Rechercher un produit.
   );
 }
 
-export default function EnhancedInvoiceForm({ 
-  onSave, 
-  onSubmit, 
-  loading, 
-  saving, 
-  readOnly, 
-  errors
+export default function EnhancedInvoiceForm({
+  onSave,
+  onSubmit,
+  loading,
+  saving,
+  readOnly,
+  errors,
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const canEdit = !readOnly && !loading;
-  
+
   // Utiliser react-hook-form context
-  const { watch, setValue, getValues, formState: { errors: formErrors } } = useFormContext();
-  const { fields: items, append, remove, update } = useFieldArray({
-    name: "items"
+  const {
+    watch,
+    setValue,
+    getValues,
+    formState: { errors: formErrors },
+  } = useFormContext();
+  const {
+    fields: items,
+    append,
+    remove,
+    update,
+  } = useFieldArray({
+    name: "items",
   });
-  
+
   // Watch les données du formulaire
   const data = watch();
 
   // Calculer les totaux
-  const subtotalHT = data.items?.reduce((sum, item) => {
-    const itemTotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
-    const itemDiscount = item.discountType === 'FIXED' 
-      ? (parseFloat(item.discount) || 0)
-      : itemTotal * ((parseFloat(item.discount) || 0) / 100);
-    return sum + (itemTotal - itemDiscount);
-  }, 0) || 0;
+  const subtotalHT =
+    data.items?.reduce((sum, item) => {
+      const itemTotal =
+        (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
+      const itemDiscount =
+        item.discountType === "FIXED"
+          ? parseFloat(item.discount) || 0
+          : itemTotal * ((parseFloat(item.discount) || 0) / 100);
+      return sum + (itemTotal - itemDiscount);
+    }, 0) || 0;
 
-  const globalDiscount = data.discountType === 'FIXED' 
-    ? (parseFloat(data.discount) || 0)
-    : subtotalHT * ((parseFloat(data.discount) || 0) / 100);
+  const globalDiscount =
+    data.discountType === "FIXED"
+      ? parseFloat(data.discount) || 0
+      : subtotalHT * ((parseFloat(data.discount) || 0) / 100);
 
   const totalHT = subtotalHT - globalDiscount;
-  const totalTVA = data.items?.reduce((sum, item) => {
-    const itemTotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
-    const itemDiscount = item.discountType === 'FIXED' 
-      ? (parseFloat(item.discount) || 0)
-      : itemTotal * ((parseFloat(item.discount) || 0) / 100);
-    const itemTotalAfterDiscount = itemTotal - itemDiscount;
-    return sum + (itemTotalAfterDiscount * ((parseFloat(item.taxRate) || 0) / 100));
-  }, 0) || 0;
-  
+  const totalTVA =
+    data.items?.reduce((sum, item) => {
+      const itemTotal =
+        (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
+      const itemDiscount =
+        item.discountType === "FIXED"
+          ? parseFloat(item.discount) || 0
+          : itemTotal * ((parseFloat(item.discount) || 0) / 100);
+      const itemTotalAfterDiscount = itemTotal - itemDiscount;
+      return (
+        sum + itemTotalAfterDiscount * ((parseFloat(item.taxRate) || 0) / 100)
+      );
+    }, 0) || 0;
+
   const adjustedTotalTVA = totalTVA * (totalHT / subtotalHT);
   const totalTTC = totalHT + adjustedTotalTVA;
 
@@ -252,7 +314,7 @@ export default function EnhancedInvoiceForm({
       discount: 0,
       discountType: "PERCENTAGE",
       details: "",
-      vatExemptionText: ""
+      vatExemptionText: "",
     };
     append(newItem);
   };
@@ -260,16 +322,25 @@ export default function EnhancedInvoiceForm({
   const updateItem = (index, field, value) => {
     if (!canEdit) return;
     setValue(`items.${index}.${field}`, value, { shouldDirty: true });
-    
+
     // Recalculer le total de l'article si nécessaire
-    if (field === 'quantity' || field === 'unitPrice' || field === 'discount' || field === 'discountType') {
-      const currentItems = getValues('items');
+    if (
+      field === "quantity" ||
+      field === "unitPrice" ||
+      field === "discount" ||
+      field === "discountType"
+    ) {
+      const currentItems = getValues("items");
       const item = currentItems[index];
-      const subtotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
-      const discountAmount = item.discountType === 'FIXED' 
-        ? (parseFloat(item.discount) || 0)
-        : subtotal * ((parseFloat(item.discount) || 0) / 100);
-      setValue(`items.${index}.total`, subtotal - discountAmount, { shouldDirty: true });
+      const subtotal =
+        (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
+      const discountAmount =
+        item.discountType === "FIXED"
+          ? parseFloat(item.discount) || 0
+          : subtotal * ((parseFloat(item.discount) || 0) / 100);
+      setValue(`items.${index}.total`, subtotal - discountAmount, {
+        shouldDirty: true,
+      });
     }
   };
 
@@ -280,12 +351,12 @@ export default function EnhancedInvoiceForm({
 
   const applyTemplate = (template) => {
     if (!canEdit) return;
-    const currentItems = getValues('items') || [];
-    const newItems = template.items.map(item => ({ 
-      ...item, 
-      total: item.quantity * item.unitPrice 
+    const currentItems = getValues("items") || [];
+    const newItems = template.items.map((item) => ({
+      ...item,
+      total: item.quantity * item.unitPrice,
     }));
-    setValue('items', [...currentItems, ...newItems], { shouldDirty: true });
+    setValue("items", [...currentItems, ...newItems], { shouldDirty: true });
     toast.success(`Template "${template.name}" appliqué`);
   };
 
@@ -328,7 +399,7 @@ export default function EnhancedInvoiceForm({
 
   const handleSaveDraft = () => {
     // Sauvegarder en tant que brouillon
-    setValue('status', 'DRAFT', { shouldDirty: true });
+    setValue("status", "DRAFT", { shouldDirty: true });
     if (onSave) {
       onSave();
     }
@@ -336,7 +407,7 @@ export default function EnhancedInvoiceForm({
 
   const handleCreateInvoice = () => {
     // Créer la facture finale
-    setValue('status', 'PENDING', { shouldDirty: true });
+    setValue("status", "PENDING", { shouldDirty: true });
     if (onSubmit) {
       onSubmit();
     }
@@ -349,64 +420,58 @@ export default function EnhancedInvoiceForm({
   };
 
   const isStep2Valid = () => {
-    return data.items && data.items.length > 0 && data.items.every(item => item.description && item.quantity && item.unitPrice);
+    return (
+      data.items &&
+      data.items.length > 0 &&
+      data.items.every(
+        (item) => item.description && item.quantity && item.unitPrice
+      )
+    );
   };
 
   return (
     <div className="flex flex-col h-full w-full">
       {/* Form Content */}
       <div className="flex-1 overflow-y-auto pr-2 scrollbar-auto-hide min-h-0">
-        <div className="space-y-6 pb-20">
-        {/* Étape 1: Détails de la facture */}
-        {currentStep === 1 && (
-          <>
-            {/* Section 1: Informations de la facture */}
-            <InvoiceInfoSection 
-              canEdit={canEdit} 
-            />
-            <Separator />
+        <div className="space-y-6">
+          {/* Étape 1: Détails de la facture */}
+          {currentStep === 1 && (
+            <>
+              {/* Section 1: Informations de la facture */}
+              <InvoiceInfoSection canEdit={canEdit} />
+              <Separator />
 
-            {/* Section 2: Sélection d'un client */}
-            <Card className="shadow-none border-none p-2 bg-transparent">
-              <CardHeader className="p-0">
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  Sélection d'un client
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
+              {/* Section 2: Sélection d'un client */}
+              <Card className="shadow-none border-none pt-2 pr-2 pl-2 bg-transparent">
+                <CardHeader className="p-0">
+                  <CardTitle className="flex items-center gap-2 font-medium text-lg">
+                    Sélection d'un client
+                  </CardTitle>
+                </CardHeader>
                 <ClientSelector
                   selectedClient={data.client}
                   onSelect={(client) => updateField("client", client)}
                   disabled={!canEdit}
+                  className="p-0"
                 />
-              </CardContent>
-            </Card>
-            <Separator />
+              </Card>
+            </>
+          )}
 
-            {/* Section 4: Notes et bas de page */}
-            <NotesAndFooterSection 
-              canEdit={canEdit} 
-            />
-          </>
-        )}
+          {/* Étape 2: Produits et services */}
+          {currentStep === 2 && (
+            <>
+              {/* Section 1: Articles et produits */}
+              <ItemsSection
+                formatCurrency={formatCurrency}
+                canEdit={canEdit}
+                ProductSearchCombobox={ProductSearchCombobox}
+              />
 
-        {/* Étape 2: Produits et services */}
-        {currentStep === 2 && (
-          <>
-            {/* Section 1: Articles et produits */}
-            <ItemsSection 
-              formatCurrency={formatCurrency}
-              canEdit={canEdit}
-              ProductSearchCombobox={ProductSearchCombobox}
-            />
-
-            {/* Section 2: Remises et totaux */}
-            <DiscountsAndTotalsSection 
-              canEdit={canEdit} 
-            />
-          </>
-        )}
+              {/* Section 2: Remises et totaux */}
+              <DiscountsAndTotalsSection canEdit={canEdit} />
+            </>
+          )}
         </div>
       </div>
 
@@ -422,7 +487,7 @@ export default function EnhancedInvoiceForm({
               >
                 Annuler
               </Button>
-              
+
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
@@ -442,7 +507,7 @@ export default function EnhancedInvoiceForm({
                   Suivant
                 </Button>
               )}
-              
+
               {currentStep === 2 && (
                 <>
                   <Button

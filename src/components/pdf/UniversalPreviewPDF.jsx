@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
-const UniversalPreviewPDF = ({ data, type = 'invoice' }) => {
+const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
   if (!data) {
     return (
       <div className="p-8 bg-white rounded-lg shadow-sm border">
@@ -13,314 +13,332 @@ const UniversalPreviewPDF = ({ data, type = 'invoice' }) => {
     );
   }
 
-  const isInvoice = type === 'invoice';
+  const isInvoice = type === "invoice";
 
   // Formatage des devises - identique au PDF
   const formatCurrency = (amount) => {
-    if (!amount && amount !== 0) return '0,00 €';
-    
+    if (!amount && amount !== 0) return "0,00 €";
+
     const num = parseFloat(amount);
-    if (isNaN(num)) return '0,00 €';
-    
+    if (isNaN(num)) return "0,00 €";
+
     // Formatage manuel pour correspondre exactement au PDF
-    const formatted = num.toFixed(2).replace('.', ',');
-    const parts = formatted.split(',');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    
-    return parts.join(',') + ' €';
+    const formatted = num.toFixed(2).replace(".", ",");
+    const parts = formatted.split(",");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+
+    return parts.join(",") + " €";
   };
 
   // Formatage des dates - identique au PDF
   const formatDate = (dateInput) => {
-    if (!dateInput) return '';
-    
+    if (!dateInput) return "";
+
     let date;
-    if (typeof dateInput === 'number') {
+    if (typeof dateInput === "number") {
       date = new Date(dateInput);
-    } else if (typeof dateInput === 'string' && /^\d+$/.test(dateInput)) {
+    } else if (typeof dateInput === "string" && /^\d+$/.test(dateInput)) {
       date = new Date(parseInt(dateInput, 10));
     } else {
       date = new Date(dateInput);
     }
-    
-    if (isNaN(date.getTime())) return '';
-    
-    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-    return date.toLocaleDateString('fr-FR', options);
+
+    if (isNaN(date.getTime())) return "";
+
+    const options = { day: "2-digit", month: "2-digit", year: "numeric" };
+    return date.toLocaleDateString("fr-FR", options);
   };
 
   // Formatage des adresses - identique au PDF
   const formatAddress = (address) => {
-    if (address && typeof address === 'object') {
+    if (address && typeof address === "object") {
       const parts = [];
       if (address.street) parts.push(address.street);
       if (address.postalCode && address.city) {
         parts.push(`${address.postalCode} ${address.city}`);
       }
       if (address.country) parts.push(address.country);
-      return parts.join('\n');
+      return parts.join("\n");
     }
-    return '';
+    return "";
   };
 
   // Déterminer le titre du document comme dans le PDF
   const getDocumentTitle = () => {
     if (data.isDepositInvoice) {
-      return 'FACTURE D\'ACOMPTE';
+      return "Facture d'acompte";
     }
-    if (data.status === 'DRAFT') {
-      return isInvoice ? 'FACTURE PROFORMA' : 'DEVIS PROFORMA';
+    if (data.status === "DRAFT") {
+      return isInvoice ? "Facture" : "Devis";
     }
-    return isInvoice ? 'FACTURE' : 'DEVIS';
+    return isInvoice ? "Facture" : "Devis";
   };
 
   return (
-    <div className="w-full bg-white shadow-lg border relative" style={{ minHeight: '1123px', height: 'auto' }}>
+    <div className="w-full bg-white shadow-lg relative min-h-[900px] p-6">
       {/* CONTENU PRINCIPAL */}
-      <div className="p-4 text-xs space-y-4 transform scale-90 origin-top-left" style={{ fontSize: '10px', lineHeight: '1.2', width: '111%', paddingBottom: '120px' }}>
-          
-          {/* HEADER */}
-          <div className="flex justify-between items-start">
-            <div className="font-bold text-base">
-              {data.companyInfo?.name || 'Votre Entreprise'}
-            </div>
-            <div className="text-right">
-              <div className="font-bold text-lg mb-2">
-                {getDocumentTitle()}
-              </div>
-              <div className="text-xs space-y-1">
-                <div>N° {data.number || 'DRAFT-' + Math.random().toString(36).substr(2, 9)}</div>
-                <div>Date d'émission: {formatDate(data.issueDate || data.date) || formatDate(new Date())}</div>
-                {isInvoice ? (
-                  <div>Date d'échéance: {formatDate(data.dueDate) || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}</div>
-                ) : (
-                  <div>Valide jusqu'au: {formatDate(data.validUntil) || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}</div>
-                )}
-                {data.executionDate && (
-                  <div>Date d'exécution: {formatDate(data.executionDate)}</div>
-                )}
-                {data.purchaseOrderNumber && (
-                  <div>Référence devis: {data.purchaseOrderNumber}</div>
-                )}
-              </div>
+      <div className="p-6 text-xs">
+        {/* HEADER */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="text-3xl font-semibold dark:text-[#0A0A0A]">
+            {getDocumentTitle()}
+          </div>
+          <div className="text-right">
+            <div className="text-sm font-bold text-blue-600 dark:text-[#0A0A0A]">
+              {data.companyInfo?.name || ""}
             </div>
           </div>
-          
-          {/* INFORMATIONS ENTREPRISE ET CLIENT */}
-          {/* Déterminer le nombre de colonnes selon la présence d'adresse de livraison différente */}
-          {(() => {
-            const hasShippingAddress = data.client?.hasDifferentShippingAddress && data.client?.shippingAddress;
-            const gridCols = hasShippingAddress ? 'grid-cols-3' : 'grid-cols-2';
-            
-            return (
-              <div className={`grid ${gridCols} gap-6`}>
-                {/* Informations entreprise */}
-                <div>
-                  <div className="font-bold text-xs mb-2">DE:</div>
-                  <div className="space-y-1">
-                    <div className="font-bold">{data.companyInfo?.name || 'Votre Entreprise'}</div>
-                    {data.companyInfo?.address && (
-                      <div className="whitespace-pre-line text-xs text-gray-600">{formatAddress(data.companyInfo.address)}</div>
-                    )}
-                    {data.companyInfo?.email && <div className="text-xs text-gray-600">{data.companyInfo.email}</div>}
-                    {data.companyInfo?.phone && <div className="text-xs text-gray-600">{data.companyInfo.phone}</div>}
-                    {data.companyInfo?.siret && <div className="text-xs text-gray-600">SIRET: {data.companyInfo.siret}</div>}
-                    {data.companyInfo?.vatNumber && <div className="text-xs text-gray-600">TVA: {data.companyInfo.vatNumber}</div>}
-                  </div>
-                </div>
+        </div>
 
-                {/* Informations client */}
-                <div>
-                  <div className="font-bold text-xs mb-2">À:</div>
-                  <div className="space-y-1">
-                    <div className="font-bold">{data.client?.name || `${data.client?.firstName || ''} ${data.client?.lastName || ''}`.trim() || 'Client'}</div>
-                    {data.client?.address && (
-                      <div className="whitespace-pre-line text-xs text-gray-600">{formatAddress(data.client.address)}</div>
-                    )}
-                    {data.client?.email && <div className="text-xs text-gray-600">{data.client.email}</div>}
-                    {data.client?.phone && <div className="text-xs text-gray-600">{data.client.phone}</div>}
-                    {data.client?.siret && <div className="text-xs text-gray-600">SIRET: {data.client.siret}</div>}
-                    {data.client?.vatNumber && <div className="text-xs text-gray-600">TVA: {data.client.vatNumber}</div>}
-                  </div>
-                </div>
-
-                {/* Adresse de livraison - seulement si différente */}
-                {hasShippingAddress && (
-                  <div>
-                    <div className="font-bold text-xs mb-2">LIVRER À:</div>
-                    <div className="space-y-1">
-                      {data.client.shippingAddress.name && (
-                        <div className="font-bold">{data.client.shippingAddress.name}</div>
-                      )}
-                      <div className="whitespace-pre-line text-xs text-gray-600">{formatAddress(data.client.shippingAddress)}</div>
-                      {data.client.shippingAddress.phone && <div className="text-xs text-gray-600">{data.client.shippingAddress.phone}</div>}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
-          {/* NOTES D'EN-TÊTE */}
-          {data.headerNotes && (
-            <div className="text-xs">
-              <div className="whitespace-pre-line">{data.headerNotes}</div>
+        {/* INFORMATIONS DOCUMENT */}
+        <div className="grid grid-cols-2 gap-6 mb-10">
+          <div className="space-y-1">
+            <div className="flex" style={{ fontSize: "10px" }}>
+              <span className="font-semibold w-32 dark:text-[#0A0A0A]">
+                Numéro de facture
+              </span>
+              <span className="dark:text-[#0A0A0A]">
+                {data.number || "F-202507-001"}
+              </span>
             </div>
-          )}
+            <div className="flex" style={{ fontSize: "10px" }}>
+              <span className="font-semibold w-32 dark:text-[#0A0A0A]">
+                Date d'émission
+              </span>
+              <span className="dark:text-[#0A0A0A]">
+                {formatDate(data.issueDate || data.date) ||
+                  formatDate(new Date())}
+              </span>
+            </div>
+            <div className="flex" style={{ fontSize: "10px" }}>
+              <span className="font-semibold w-32 dark:text-[#0A0A0A]">
+                Date d'échéance
+              </span>
+              <span className="dark:text-[#0A0A0A]">
+                {formatDate(data.dueDate) ||
+                  formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}
+              </span>
+            </div>
+          </div>
+          <div></div>
+        </div>
 
-          {/* TABLEAU DES ARTICLES */}
-          <div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#000000', color: '#ffffff' }}>
-                  <th style={{ padding: '8px', textAlign: 'left', width: '40%' }}>Description</th>
-                  <th style={{ padding: '8px', textAlign: 'center', width: '15%' }}>Quantité</th>
-                  <th style={{ padding: '8px', textAlign: 'right', width: '15%' }}>Prix unitaire</th>
-                  <th style={{ padding: '8px', textAlign: 'center', width: '10%' }}>TVA</th>
-                  <th style={{ padding: '8px', textAlign: 'right', width: '20%' }}>Total HT</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items && data.items.length > 0 ? (
-                  data.items.map((item, index) => (
-                    <tr key={index}>
-                      <td style={{ padding: '8px', borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ fontWeight: '500' }}>{item.description || ''}</div>
-                        {item.details && (
-                          <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>{item.details}</div>
-                        )}
-                        {(() => {
-                          const itemDiscount = parseFloat(item.discount) || 0;
-                          const discountType = item.discountType || 'percentage';
-                          if (itemDiscount > 0) {
-                            const discountText = discountType === 'percentage' ? 
-                              `Remise: ${itemDiscount}%` : 
-                              `Remise: ${formatCurrency(itemDiscount)}`;
-                            return (
-                              <div style={{ fontSize: '8px', color: '#0066cc', marginTop: '2px' }}>
-                                {discountText}
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-                        {item.quantity} {item.unit || ''}
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-                        {formatCurrency(item.unitPrice)}
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-                        {item.vatRate}%
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
-                        {(() => {
-                          const itemDiscount = parseFloat(item.discount) || 0;
-                          const discountType = item.discountType || 'percentage';
-                          let itemTotal = item.quantity * item.unitPrice;
-                          
-                          if (itemDiscount > 0) {
-                            if (discountType === 'percentage') {
-                              itemTotal = itemTotal * (1 - itemDiscount / 100);
-                            } else {
-                              itemTotal = Math.max(0, itemTotal - itemDiscount);
-                            }
-                          }
-                          
-                          return formatCurrency(itemTotal);
-                        })()}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" style={{ padding: '32px', textAlign: 'center', color: '#666', fontStyle: 'italic', border: '1px solid #000' }}>
-                      Aucun article
+        {/* INFORMATIONS ENTREPRISE ET CLIENT */}
+        <div className="grid grid-cols-2 gap-6 mb-16">
+          {/* Informations entreprise */}
+          <div className="space-y-1">
+            <div
+              className="font-bold mb-2 dark:text-[#0A0A0A]"
+              style={{ fontSize: "10px" }}
+            >
+              {data.companyInfo?.name || "Sweily"}
+            </div>
+            <div className="space-y-1" style={{ fontSize: "10px" }}>
+              {data.companyInfo?.address && (
+                <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                  {formatAddress(data.companyInfo.address) ||
+                    "229 Rue Saint-Honoré\n75001 Paris, FR"}
+                </div>
+              )}
+              <span className="dark:text-[#0A0A0A]">
+                {data.companyInfo?.email && <div>{data.companyInfo.email}</div>}
+              </span>
+              <span className="dark:text-[#0A0A0A]">
+                {data.companyInfo?.siret && <div>{data.companyInfo.siret}</div>}
+              </span>
+            </div>
+          </div>
+
+          {/* Informations client */}
+          <div className="space-y-1">
+            <div
+              className="font-bold mb-2 dark:text-[#0A0A0A]"
+              style={{ fontSize: "10px" }}
+            >
+              {data.client?.name ||
+                `${data.client?.firstName || ""} ${data.client?.lastName || ""}`.trim() ||
+                "Client"}
+            </div>
+            <div className="space-y-1" style={{ fontSize: "10px" }}>
+              {data.client?.address && (
+                <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                  {formatAddress(data.client.address)}
+                </div>
+              )}
+              <span className="dark:text-[#0A0A0A]">
+                {data.client?.email && <div>{data.client.email}</div>}
+              </span>
+              <span className="dark:text-[#0A0A0A]">
+                {data.client?.phone && <div>{data.client.phone}</div>}
+              </span>
+              <span className="dark:text-[#0A0A0A]">
+                {data.client?.siret && <div>SIRET: {data.client.siret}</div>}
+              </span>
+              <span className="dark:text-[#0A0A0A]">
+                {data.client?.vatNumber && (
+                  <div>TVA: {data.client.vatNumber}</div>
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* NOTES D'EN-TÊTE */}
+        {data.headerNotes && (
+          <div className="mb-4" style={{ fontSize: "10px" }}>
+            <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+              {data.headerNotes}
+            </div>
+          </div>
+        )}
+
+        {/* TABLEAU DES ARTICLES */}
+        <div className="mb-6">
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="bg-[#1d1d1b] text-white">
+                <th className="p-2 text-left text-[10px] font-medium">
+                  Description
+                </th>
+                <th className="p-2 text-center text-[10px] font-medium">Qté</th>
+                <th className="p-2 text-center text-[10px] font-medium">
+                  Prix unitaire
+                </th>
+                <th className="p-2 text-center text-[10px] font-medium">
+                  TVA (%)
+                </th>
+                <th className="p-2 text-right text-[10px] font-medium">
+                  Total HT
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items && data.items.length > 0 ? (
+                data.items.map((item, index) => (
+                  <tr key={index} className="border-b border-gray-200">
+                    <td className="p-2 dark:text-[#0A0A0A]">
+                      <div className="font-medium dark:text-[#0A0A0A]">
+                        {item.description || ""}
+                      </div>
+                      {item.details && (
+                        <div className="text-xs text-gray-600 mt-1 dark:text-[#0A0A0A]">
+                          {item.details}
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-2 text-center dark:text-[#0A0A0A]">
+                      {item.quantity} {item.unit || ""}
+                    </td>
+                    <td className="p-2 text-right dark:text-[#0A0A0A]">
+                      {formatCurrency(item.unitPrice)}
+                    </td>
+                    <td className="p-2 text-center dark:text-[#0A0A0A]">
+                      {item.vatRate} %
+                    </td>
+                    <td className="p-2 text-right dark:text-[#0A0A0A]">
+                      {formatCurrency(
+                        (item.quantity || 0) * (item.unitPrice || 0)
+                      )}
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              ) : (
+                <tr className="border-b border-gray-200">
+                  <td className="p-2 text-center dark:text-[#0A0A0A]">--</td>
+                  <td className="p-2 text-center dark:text-[#0A0A0A]">--</td>
+                  <td className="p-2 text-center dark:text-[#0A0A0A]">--</td>
+                  <td className="p-2 text-center dark:text-[#0A0A0A]">20 %</td>
+                  <td className="p-2 text-center dark:text-[#0A0A0A]">
+                    0,00 €
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          {/* TOTAUX */}
-          <div className="flex justify-end mt-4">
-            <div className="w-64 text-xs">
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span>Total HT:</span>
-                  <span>{formatCurrency(data.subtotal)}</span>
-                </div>
-                
-                {data.discount > 0 && (
-                  <div className="flex justify-between">
-                    <span>Remise:</span>
-                    <span>-{formatCurrency(data.discount)}</span>
-                  </div>
-                )}
-                
-                <div className="flex justify-between">
-                  <span>TVA:</span>
-                  <span>{formatCurrency(data.totalTax)}</span>
-                </div>
-                
-                <div className="flex justify-between pt-1 border-t border-gray-300 font-bold">
-                  <span>Total TTC:</span>
-                  <span>{formatCurrency(data.total)}</span>
-                </div>
-              </div>
+        {/* TOTAUX */}
+        <div className="flex justify-end mb-6">
+          <div className="w-84 space-y-1 text-xs">
+            <div className="flex justify-between py-1 px-3">
+              <span className="font-bold text-[10px] dark:text-[#0A0A0A]">
+                Total HT
+              </span>
+              <span className="dark:text-[#0A0A0A] text-[10px]">
+                {formatCurrency(data.subtotal || 0)}
+              </span>
+            </div>
+            <div className="flex justify-between py-1 px-3">
+              <span className="font-bold text-[10px] dark:text-[#0A0A0A]">
+                Montant total de TVA
+              </span>
+              <span className="dark:text-[#0A0A0A] text-[10px]">
+                {formatCurrency(data.totalTax || 0)}
+              </span>
+            </div>
+            <div className="flex justify-between py-2 px-6 bg-[#F3F3F3] font-bold text-sm">
+              <span className="-ml-3 text-[10px] font-bold dark:text-[#0A0A0A]">
+                Total TTC
+              </span>
+              <span className="-mr-3 text-[10px] dark:text-[#0A0A0A]">
+                {formatCurrency(data.total || 0)}
+              </span>
             </div>
           </div>
+        </div>
 
-          {/* CONDITIONS GÉNÉRALES */}
-          {data.termsAndConditions && (
-            <div className="mt-4 text-xs">
-              <div className="whitespace-pre-line text-gray-600">{data.termsAndConditions}</div>
+        {/* NOTES ET CONDITIONS */}
+        {data.footerNotes && (
+          <div className="mb-4 text-xs">
+            <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+              {data.footerNotes}
             </div>
-          )}
-
+          </div>
+        )}
       </div>
-      
-      {/* FOOTER FIXE EN BAS DE PAGE */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gray-100 p-4 transform scale-90 origin-bottom-left" style={{ width: '111%' }}>
-          {/* Coordonnées bancaires */}
-          {data.showBankDetails && (
-            (data.bankDetails?.iban || data.bankDetails?.bic || data.bankDetails?.bankName ||
-             data.companyInfo?.bankDetails?.iban || data.companyInfo?.bankDetails?.bic || data.companyInfo?.bankDetails?.bankName)
-          ) && (
-            <div className="mb-4">
-              <div className="font-bold text-xs mb-2">Coordonnées bancaires</div>
-              <div className="text-xs text-gray-600 space-y-1">
-                {(data.bankDetails?.iban || data.companyInfo?.bankDetails?.iban) && (
-                  <div>IBAN: {data.bankDetails?.iban || data.companyInfo?.bankDetails?.iban}</div>
-                )}
-                {(data.bankDetails?.bic || data.companyInfo?.bankDetails?.bic) && (
-                  <div>BIC: {data.bankDetails?.bic || data.companyInfo?.bankDetails?.bic}</div>
-                )}
-                {(data.bankDetails?.bankName || data.companyInfo?.bankDetails?.bankName) && (
-                  <div>Banque: {data.bankDetails?.bankName || data.companyInfo?.bankDetails?.bankName}</div>
-                )}
+
+      {/* FOOTER - DÉTAILS BANCAIRES */}
+      <div className="absolute bottom-0 left-0 right-0 bg-[#F3F3F3] pt-8 pb-8 pl-14 border-t">
+        <div className="mb-3">
+          <div className="font-bold text-xs mb-2 dark:text-[#0A0A0A]">
+            Détails du paiement
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-[10px] dark:text-[#0A0A0A]">
+            <div>
+              <div className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                Nom du bénéficiaire
+              </div>
+              <div>{data.companyInfo?.name || "Sweily"}</div>
+            </div>
+            <div>
+              <div className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                BIC
+              </div>
+              <div>{data.bankDetails?.bic || "QNTOFR21XXX"}</div>
+            </div>
+            <div>
+              <div className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                IBAN
+              </div>
+              <div>
+                {data.bankDetails?.iban || "FR7616958000001719566325588"}
               </div>
             </div>
-          )}
-
-          {/* Notes de bas de page */}
-          {data.footerNotes && (
-            <div className="text-xs text-gray-600 mb-4">
-              <div className="whitespace-pre-line">{data.footerNotes}</div>
-            </div>
-          )}
-          
-          {/* PAGINATION - Toujours en bas */}
-          <div className="flex justify-between items-center pt-2 border-t border-gray-300">
-            <div className="text-xs text-gray-500">
-              Merci de votre confiance
-            </div>
-            <div className="text-xs text-gray-500">
-              Page 1/1
+            <div>
+              <div className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                Référence
+              </div>
+              <div></div>
             </div>
           </div>
+        </div>
+
+        <div className="text-[10px] dark:text-[#0A0A0A] border-t pt-2">
+          <div>
+            {data.companyInfo?.name || "Sweily"}, SAS au capital de 10 000,00 €
+            - 981 576 649 R.C.S. Paris
+          </div>
+        </div>
       </div>
     </div>
   );

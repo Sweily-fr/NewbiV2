@@ -21,7 +21,7 @@ export default function DiscountsAndTotalsSection({
         <div className="flex items-center gap-2 my-8">
           <Separator className="flex-1" />
           <div className="flex items-center gap-2 px-3 text-sm font-medium text-muted-foreground">
-            <Percent className="h-4 w-4" />
+            {/* <Percent className="h-4 w-4" /> */}
             Remises et totaux
           </div>
           <Separator className="flex-1" />
@@ -44,9 +44,7 @@ export default function DiscountsAndTotalsSection({
                 }}
                 disabled={!canEdit}
               >
-                <SelectTrigger className={`h-10 rounded-lg px-3 w-full text-sm ${
-                  errors?.discountType ? 'border-red-500' : ''
-                }`}>
+                <SelectTrigger>
                   <SelectValue placeholder="Pourcentage" />
                 </SelectTrigger>
                 <SelectContent>
@@ -87,9 +85,6 @@ export default function DiscountsAndTotalsSection({
                 step="0.01"
                 disabled={!canEdit}
                 placeholder={data.discountType === 'PERCENTAGE' ? "Ex: 10" : "Ex: 50.00"}
-                className={`h-10 rounded-lg px-3 text-sm ${
-                  errors?.discount ? 'border-red-500' : ''
-                }`}
               />
               {errors?.discount && (
                 <p className="text-xs text-red-500">

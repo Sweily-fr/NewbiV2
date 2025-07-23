@@ -13,10 +13,7 @@ export default function EditInvoicePage({ params }) {
     <CompanyInfoGuard>
       <div className="h-auto flex flex-col">
         <Suspense fallback={<InvoiceEditorSkeleton />}>
-          <ModernInvoiceEditor 
-            mode="edit" 
-            invoiceId={id}
-          />
+          <ModernInvoiceEditor mode="edit" invoiceId={id} />
         </Suspense>
       </div>
     </CompanyInfoGuard>
@@ -141,7 +138,7 @@ function InvoiceEditorSkeleton() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-4">
               <Skeleton className="h-32 w-full" />
