@@ -12,6 +12,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
+import { useImageUpload } from "../hooks/useImageUpload";
 import {
   Tabs,
   TabsContent,
@@ -22,6 +23,7 @@ import {
 // Aperçu de l'email avec édition inline
 const EmailPreview = ({ signatureData }) => {
   const { updateSignatureData } = useSignatureData();
+  const { uploadImageFile, getImageUrl, isUploading, error } = useImageUpload();
   const [isCopying, setIsCopying] = useState(false);
   const [imageStatus, setImageStatus] = useState({ photo: 'idle', logo: 'idle' });
   const [convertedImages, setConvertedImages] = useState({ photo: null, logo: null });
@@ -31,9 +33,9 @@ const EmailPreview = ({ signatureData }) => {
   
   // Conversion à la demande uniquement (pas de useEffect automatique)
   
-  // Fonction pour convertir une image en base64 avec mise en cache
+  // Fonction pour récupérer l'URL d'image (Cloudflare ou locale)
   const getImageSrc = async (imageUrl) => {
-    console.log('🔍 DÉBUT CONVERSION IMAGE:');
+    console.log('🔍 RÉCUPÉRATION URL IMAGE:');
     console.log('  - URL reçue:', imageUrl);
     console.log('  - Type URL:', typeof imageUrl);
     console.log('  - URL vide?', !imageUrl);
@@ -43,7 +45,13 @@ const EmailPreview = ({ signatureData }) => {
       return null;
     }
     
-    // Vérifier le cache d'abord
+    // Si c'est déjà une URL Cloudflare (https://), on la retourne directement
+    if (imageUrl.startsWith('https://')) {
+      console.log('✅ URL Cloudflare détectée, utilisation directe');
+      return imageUrl;
+    }
+    
+    // Vérifier le cache pour les conversions blob
     if (imageCache.current.has(imageUrl)) {
       console.log('💾 Image trouvée dans le cache:', imageUrl.substring(0, 30) + '...');
       return imageCache.current.get(imageUrl);
@@ -513,16 +521,41 @@ const EmailPreview = ({ signatureData }) => {
     updateSignatureData(field, value);
   };
 
-  const handleImageChange = (field, imageUrl) => {
-    console.log('🖼️ UPLOAD IMAGE:');
+  const handleImageChange = async (field, file) => {
+    console.log('🖼️ UPLOAD IMAGE TO CLOUDFLARE:');
     console.log('  - Field:', field);
-    console.log('  - Image URL:', imageUrl);
-    console.log('  - Image URL type:', typeof imageUrl);
-    console.log('  - Image URL length:', imageUrl ? imageUrl.length : 'N/A');
+    console.log('  - File:', file?.name);
+    console.log('  - File type:', file?.type);
+    console.log('  - File size:', file?.size);
     
-    updateSignatureData(field, imageUrl);
-    
-    console.log('✅ Image sauvegardée dans signatureData.' + field);
+    if (!file) {
+      // Si pas de fichier, on supprime l'image
+      updateSignatureData(field, null);
+      updateSignatureData(field + 'Key', null);
+      return;
+    }
+
+    try {
+      // Déterminer le type d'image pour Cloudflare
+      const imageType = field === 'photo' ? 'profile' : 'company';
+      
+      // Upload vers Cloudflare
+      const result = await uploadImageFile(file, imageType);
+      
+      console.log('✅ Image uploadée vers Cloudflare:');
+      console.log('  - URL:', result.url);
+      console.log('  - Key:', result.key);
+      
+      // Stocker l'URL publique et la clé Cloudflare
+      updateSignatureData(field, result.url);
+      updateSignatureData(field + 'Key', result.key);
+      
+      toast.success('Image uploadée avec succès vers Cloudflare');
+      
+    } catch (error) {
+      console.error('❌ Erreur upload Cloudflare:', error);
+      toast.error('Erreur lors de l\'upload: ' + error.message);
+    }
   };
 
   return (
