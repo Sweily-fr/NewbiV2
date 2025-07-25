@@ -246,11 +246,17 @@ const EmailPreview = ({ signatureData }) => {
               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
                 <!-- Nom séparé en 2 cellules avec espacement contrôlé -->
                 <tr>
-                  <td style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; padding-bottom: 2px; padding-right: 4px; width: 1px; white-space: nowrap;">
-                    ${signatureData.firstName}
-                  </td>
-                  <td style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; padding-bottom: 2px; padding-left: 0; width: auto; white-space: nowrap;">
-                    ${signatureData.lastName}
+                  <td colspan="2" style="text-align: ${signatureData.nameAlignment || 'left'}; padding-bottom: 2px;">
+                    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 ${signatureData.nameAlignment === 'center' ? 'auto' : signatureData.nameAlignment === 'right' ? '0 0 0 auto' : '0 auto 0 0'};">
+                      <tr>
+                        <td style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; padding-right: ${signatureData.nameSpacing}px; white-space: nowrap;">
+                          ${signatureData.firstName}
+                        </td>
+                        <td style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; white-space: nowrap;">
+                          ${signatureData.lastName}
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
                 
@@ -583,49 +589,60 @@ const EmailPreview = ({ signatureData }) => {
                 <td style={{ verticalAlign: 'top' }}>
                   <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', tableLayout: 'auto', width: 'auto' }}>
                     <tbody>
-                      {/* Nom séparé en 2 cellules avec espacement contrôlé */}
-                      <tr>
-                        <td style={{ 
-                          fontSize: '16px',
-                          fontWeight: 'bold',
-                          color: signatureData.primaryColor || '#2563eb',
-                          lineHeight: '1.2',
-                          paddingBottom: '2px',
-                          paddingRight: '4px',
-                          width: '1px',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          <InlineEdit
-                            value={signatureData.firstName}
-                            onChange={(value) => handleFieldChange("firstName", value)}
-                            placeholder="Prénom"
-                            displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
-                            inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none h-auto w-auto min-w-0"
-                            className="!p-0 !m-0 !rounded-none inline-block w-auto"
-                            style={{ width: 'auto', minWidth: '0' }}
-                          />
-                        </td>
-                        <td style={{ 
-                          fontSize: '16px',
-                          fontWeight: 'bold',
-                          color: signatureData.primaryColor || '#2563eb',
-                          lineHeight: '1.2',
-                          paddingBottom: '2px',
-                          paddingLeft: '0',
-                          width: 'auto',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          <InlineEdit
-                            value={signatureData.lastName}
-                            onChange={(value) => handleFieldChange("lastName", value)}
-                            placeholder="Nom"
-                            displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
-                            inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none h-auto w-auto min-w-0"
-                            className="!p-0 !m-0 !rounded-none inline-block w-auto"
-                            style={{ width: 'auto', minWidth: '0' }}
-                          />
-                        </td>
-                      </tr>
+                       {/* Nom séparé en 2 cellules avec espacement contrôlé */}
+                       <tr>
+                         <td colSpan="2" style={{ 
+                           textAlign: signatureData.nameAlignment || 'left',
+                           paddingBottom: '2px'
+                         }}>
+                           <table cellPadding="0" cellSpacing="0" border="0" style={{ 
+                             borderCollapse: 'collapse',
+                             margin: signatureData.nameAlignment === 'center' ? '0 auto' : 
+                                     signatureData.nameAlignment === 'right' ? '0 0 0 auto' : 
+                                     '0 auto 0 0'
+                           }}>
+                             <tbody>
+                               <tr>
+                                 <td style={{ 
+                                   fontSize: '16px',
+                                   fontWeight: 'bold',
+                                   color: signatureData.primaryColor || '#2563eb',
+                                   lineHeight: '1.2',
+                                   paddingRight: `${signatureData.nameSpacing || 4}px`,
+                                   whiteSpace: 'nowrap'
+                                 }}>
+                                   <InlineEdit
+                                     value={signatureData.firstName}
+                                     onChange={(value) => handleFieldChange("firstName", value)}
+                                     placeholder="Prénom"
+                                     displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
+                                     inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none h-auto w-auto min-w-0"
+                                     className="!p-0 !m-0 !rounded-none inline-block w-auto"
+                                     style={{ width: 'auto', minWidth: '0' }}
+                                   />
+                                 </td>
+                                 <td style={{ 
+                                   fontSize: '16px',
+                                   fontWeight: 'bold',
+                                   color: signatureData.primaryColor || '#2563eb',
+                                   lineHeight: '1.2',
+                                   whiteSpace: 'nowrap'
+                                 }}>
+                                   <InlineEdit
+                                     value={signatureData.lastName}
+                                     onChange={(value) => handleFieldChange("lastName", value)}
+                                     placeholder="Nom"
+                                     displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
+                                     inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none h-auto w-auto min-w-0"
+                                     className="!p-0 !m-0 !rounded-none inline-block w-auto"
+                                     style={{ width: 'auto', minWidth: '0' }}
+                                   />
+                                 </td>
+                               </tr>
+                             </tbody>
+                           </table>
+                         </td>
+                       </tr>
                       
                       {/* Titre sur toute la largeur */}
                       {signatureData.position && (

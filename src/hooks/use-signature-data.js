@@ -34,6 +34,10 @@ export function SignatureProvider({ children }) {
     website: "https://www.newbi.fr",
     address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
     primaryColor: "#2563eb",
+    // Espacement entre prénom et nom (en pixels)
+    nameSpacing: 4,
+    // Alignement du nom et prénom (left, center, right)
+    nameAlignment: 'left',
     // Images Cloudflare
     photo: null, // URL de la photo de profil
     photoKey: null, // Clé Cloudflare de la photo de profil
@@ -64,6 +68,10 @@ export function SignatureProvider({ children }) {
       website: "https://www.newbi.fr",
       address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
       primaryColor: "#2563eb",
+      // Espacement entre prénom et nom (en pixels)
+      nameSpacing: 4,
+      // Alignement du nom et prénom (left, center, right)
+      nameAlignment: 'left',
       // Images Cloudflare
       photo: null,
       photoKey: null,
