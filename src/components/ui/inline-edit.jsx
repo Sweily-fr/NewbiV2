@@ -25,7 +25,9 @@ export function InlineEdit({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
   const [error, setError] = useState("");
+  const [inputWidth, setInputWidth] = useState('auto');
   const inputRef = useRef(null);
+  const measureRef = useRef(null);
 
   useEffect(() => {
     setEditValue(value || "");
@@ -37,6 +39,14 @@ export function InlineEdit({
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  // Effet séparé pour mettre à jour la largeur en temps réel
+  useEffect(() => {
+    if (isEditing && measureRef.current) {
+      const textWidth = measureRef.current.scrollWidth;
+      setInputWidth(Math.max(textWidth + 20, 60) + 'px'); // +20px pour le padding et la marge, minimum 60px
+    }
+  }, [isEditing, editValue]);
 
   const handleStartEdit = () => {
     if (disabled) return;
@@ -96,13 +106,40 @@ export function InlineEdit({
     
     return (
       <div className="relative">
+        {/* Élément invisible pour mesurer la largeur du texte */}
+        <span
+          ref={measureRef}
+          className={inputClassName}
+          style={{
+            position: 'absolute',
+            visibility: 'hidden',
+            whiteSpace: 'pre',
+            fontSize: 'inherit',
+            fontFamily: 'inherit',
+            fontWeight: 'inherit',
+            letterSpacing: 'inherit',
+            padding: '0'
+          }}
+        >
+          {editValue || placeholder}
+        </span>
         <InputComponent
           ref={inputRef}
           value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
+          onChange={(e) => {
+            setEditValue(e.target.value);
+            // Mettre à jour la largeur immédiatement après le changement
+            setTimeout(() => {
+              if (measureRef.current) {
+                const textWidth = measureRef.current.scrollWidth;
+                setInputWidth(Math.max(textWidth + 20, 60) + 'px');
+              }
+            }, 0);
+          }}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           className={`${inputClassName} ${error ? "border-red-500" : ""}`}
+          style={{ width: inputWidth, minWidth: '60px' }}
           maxLength={maxLength}
           rows={multiline ? 3 : undefined}
         />

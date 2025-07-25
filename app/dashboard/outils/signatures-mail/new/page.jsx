@@ -244,12 +244,12 @@ const EmailPreview = ({ signatureData }) => {
             <td style="vertical-align: top;">
               <!-- Tableau principal pour les informations -->
               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
-                <!-- Nom séparé en 2 cellules -->
+                <!-- Nom séparé en 2 cellules avec espacement contrôlé -->
                 <tr>
-                  <td style="font-size: 16px; font-weight: bold; color: ${primaryColor}; padding-right: 5px; line-height: 1.2; padding-bottom: 2px;">
+                  <td style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; padding-bottom: 2px; padding-right: 4px; width: 1px; white-space: nowrap;">
                     ${signatureData.firstName}
                   </td>
-                  <td style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; padding-bottom: 2px;">
+                  <td style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; padding-bottom: 2px; padding-left: 0; width: auto; white-space: nowrap;">
                     ${signatureData.lastName}
                   </td>
                 </tr>
@@ -581,24 +581,28 @@ const EmailPreview = ({ signatureData }) => {
                 
                 {/* Informations principales */}
                 <td style={{ verticalAlign: 'top' }}>
-                  <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
+                  <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', tableLayout: 'auto', width: 'auto' }}>
                     <tbody>
-                      {/* Nom séparé en 2 cellules */}
+                      {/* Nom séparé en 2 cellules avec espacement contrôlé */}
                       <tr>
                         <td style={{ 
                           fontSize: '16px',
                           fontWeight: 'bold',
                           color: signatureData.primaryColor || '#2563eb',
-                          paddingRight: '5px',
                           lineHeight: '1.2',
-                          paddingBottom: '2px'
+                          paddingBottom: '2px',
+                          paddingRight: '4px',
+                          width: '1px',
+                          whiteSpace: 'nowrap'
                         }}>
                           <InlineEdit
                             value={signatureData.firstName}
                             onChange={(value) => handleFieldChange("firstName", value)}
                             placeholder="Prénom"
-                            displayClassName="font-semibold"
-                            inputClassName="font-semibold border-0 shadow-none p-1 h-auto"
+                            displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
+                            inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none h-auto w-auto min-w-0"
+                            className="!p-0 !m-0 !rounded-none inline-block w-auto"
+                            style={{ width: 'auto', minWidth: '0' }}
                           />
                         </td>
                         <td style={{ 
@@ -606,14 +610,19 @@ const EmailPreview = ({ signatureData }) => {
                           fontWeight: 'bold',
                           color: signatureData.primaryColor || '#2563eb',
                           lineHeight: '1.2',
-                          paddingBottom: '2px'
+                          paddingBottom: '2px',
+                          paddingLeft: '0',
+                          width: 'auto',
+                          whiteSpace: 'nowrap'
                         }}>
                           <InlineEdit
                             value={signatureData.lastName}
                             onChange={(value) => handleFieldChange("lastName", value)}
                             placeholder="Nom"
-                            displayClassName="font-semibold"
-                            inputClassName="font-semibold border-0 shadow-none p-1 h-auto"
+                            displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
+                            inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none h-auto w-auto min-w-0"
+                            className="!p-0 !m-0 !rounded-none inline-block w-auto"
+                            style={{ width: 'auto', minWidth: '0' }}
                           />
                         </td>
                       </tr>
