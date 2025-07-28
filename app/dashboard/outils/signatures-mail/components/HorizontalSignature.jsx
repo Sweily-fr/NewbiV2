@@ -112,12 +112,12 @@ const HorizontalSignature = ({
                {/* Informations de contact avec icônes images */}
                {signatureData.phone && (
                  <tr>
-                   <td colSpan="2" style={{ paddingTop: '1px', paddingBottom: '1px' }}>
+                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                        <tbody>
                          <tr>
-                           <td style={{ paddingRight: '8px', verticalAlign: 'middle', width: '14px' }}>
-                             <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style={{ width: '12px', height: '12px', display: 'block' }} />
+                           <td style={{ paddingRight: '10px', verticalAlign: 'middle', width: '20px' }}>
+                             <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
                            <td style={{ fontSize: '12px', color: 'rgb(102,102,102)', verticalAlign: 'middle' }}>
                              <InlineEdit
@@ -138,12 +138,12 @@ const HorizontalSignature = ({
                
                {signatureData.mobile && (
                  <tr>
-                   <td colSpan="2" style={{ paddingTop: '1px', paddingBottom: '1px' }}>
+                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                        <tbody>
                          <tr>
-                           <td style={{ paddingRight: '8px', verticalAlign: 'middle', width: '14px' }}>
-                             <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style={{ width: '12px', height: '12px', display: 'block' }} />
+                           <td style={{ paddingRight: '10px', verticalAlign: 'middle', width: '20px' }}>
+                             <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
                            <td style={{ fontSize: '12px', color: 'rgb(102,102,102)', verticalAlign: 'middle' }}>
                              <InlineEdit
@@ -164,12 +164,12 @@ const HorizontalSignature = ({
                
                {signatureData.email && (
                  <tr>
-                   <td colSpan="2" style={{ paddingTop: '1px', paddingBottom: '1px' }}>
+                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                        <tbody>
                          <tr>
-                           <td style={{ paddingRight: '8px', verticalAlign: 'middle', width: '14px' }}>
-                             <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style={{ width: '12px', height: '12px', display: 'block' }} />
+                           <td style={{ paddingRight: '10px', verticalAlign: 'middle', width: '20px' }}>
+                             <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
                            <td style={{ fontSize: '12px', color: 'rgb(102,102,102)', verticalAlign: 'middle' }}>
                              <InlineEdit
@@ -190,12 +190,12 @@ const HorizontalSignature = ({
                
                {signatureData.website && (
                  <tr>
-                   <td colSpan="2" style={{ paddingTop: '1px', paddingBottom: '1px' }}>
+                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                        <tbody>
                          <tr>
-                           <td style={{ paddingRight: '8px', verticalAlign: 'middle', width: '14px' }}>
-                             <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style={{ width: '12px', height: '12px', display: 'block' }} />
+                           <td style={{ paddingRight: '10px', verticalAlign: 'middle', width: '20px' }}>
+                             <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
                            <td style={{ fontSize: '12px', color: 'rgb(102,102,102)', verticalAlign: 'middle' }}>
                              <InlineEdit
@@ -216,12 +216,12 @@ const HorizontalSignature = ({
                
                {signatureData.address && (
                  <tr>
-                   <td colSpan="2" style={{ paddingTop: '1px', paddingBottom: '4px' }}>
+                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: '8px' }}>
                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                        <tbody>
                          <tr>
-                           <td style={{ paddingRight: '8px', verticalAlign: 'top', width: '14px' }}>
-                             <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style={{ width: '12px', height: '12px', display: 'block', marginTop: '1px' }} />
+                           <td style={{ paddingRight: '10px', verticalAlign: 'top', width: '20px' }}>
+                             <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', marginTop: '2px', minWidth: '16px' }} />
                            </td>
                            <td style={{ fontSize: '12px', color: 'rgb(102,102,102)', verticalAlign: 'top' }}>
                              <InlineEdit
@@ -246,7 +246,12 @@ const HorizontalSignature = ({
                    <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                      <tbody>
                        <tr>
-                         <td style={{ paddingTop: '8px', paddingRight: '8px' }}>
+                         <td style={{ 
+                           paddingTop: '12px', 
+                           paddingRight: '12px',
+                           paddingBottom: '4px',
+                           verticalAlign: 'middle'
+                         }}>
                            <ImageDropZone
                              currentImage={signatureData.companyLogo}
                              onImageChange={(imageUrl) =>
@@ -255,7 +260,14 @@ const HorizontalSignature = ({
                              placeholder="Logo entreprise"
                              size="xs"
                              type="logo"
-                             style={{ height: '30px', maxWidth: '100px', width: 'auto' }}
+                             style={{ 
+                               height: '30px !important', 
+                               maxHeight: '30px !important',
+                               maxWidth: '120px !important', 
+                               width: 'auto !important',
+                               display: 'block',
+                               objectFit: 'contain'
+                             }}
                            />
                          </td>
                          <td style={{ 

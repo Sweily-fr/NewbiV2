@@ -17,7 +17,7 @@ const VerticalSignature = ({
       <tbody>
         <tr>
           {/* Colonne de gauche : Logo, Nom, Profession, Entreprise */}
-          <td style={{ width: '200px', paddingRight: '20px', verticalAlign: 'top' }}>
+          <td style={{ width: '200px', paddingRight: '15px', verticalAlign: 'top', borderRight: '1px solid #e0e0e0' }}>
             <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', width: '100%' }}>
               <tbody>
                 {/* Logo */}
@@ -121,10 +121,10 @@ const VerticalSignature = ({
           </td>
           
           {/* Colonne de droite : Contacts */}
-          <td style={{ verticalAlign: 'top' }}>
+          <td style={{ paddingLeft: '15px', verticalAlign: 'top' }}>
             <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', width: '100%' }}>
               <tbody>
-                {/* Téléphone fixe */}
+                {/* Téléphone */}
                 {signatureData.phone && (
                   <tr>
                     <td style={{ paddingBottom: '6px' }}>
@@ -133,7 +133,7 @@ const VerticalSignature = ({
                         <InlineEdit
                           value={signatureData.phone}
                           onChange={(value) => handleFieldChange("phone", value)}
-                          placeholder="Téléphone fixe"
+                          placeholder="Numéro de téléphone"
                           validation={validatePhone}
                           displayClassName="text-xs text-gray-600"
                           inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
@@ -143,7 +143,7 @@ const VerticalSignature = ({
                   </tr>
                 )}
                 
-                {/* Téléphone mobile */}
+                {/* Mobile */}
                 {signatureData.mobile && (
                   <tr>
                     <td style={{ paddingBottom: '6px' }}>
@@ -203,7 +203,7 @@ const VerticalSignature = ({
                 {/* Adresse */}
                 {signatureData.address && (
                   <tr>
-                    <td style={{ paddingBottom: '6px' }}>
+                    <td style={{ paddingBottom: '12px' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', fontSize: '12px', color: 'rgb(102,102,102)' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px', marginTop: '1px' }} />
                         <InlineEdit
@@ -215,6 +215,55 @@ const VerticalSignature = ({
                           inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 min-h-[2rem] resize-none"
                         />
                       </div>
+                    </td>
+                  </tr>
+                )}
+                
+                {/* Logo entreprise */}
+                {signatureData.companyLogo && (
+                  <tr>
+                    <td style={{ paddingTop: '8px', borderTop: '1px solid #e0e0e0' }}>
+                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
+                        <tbody>
+                          <tr>
+                            <td style={{ paddingRight: '8px', verticalAlign: 'middle' }}>
+                              <ImageDropZone
+                                currentImage={signatureData.companyLogo}
+                                onImageChange={(imageUrl) =>
+                                  handleImageChange("companyLogo", imageUrl)
+                                }
+                                placeholder="Logo entreprise"
+                                size="xs"
+                                type="logo"
+                                style={{ 
+                                  height: '30px !important', 
+                                  maxHeight: '30px !important',
+                                  maxWidth: '120px !important', 
+                                  width: 'auto !important',
+                                  display: 'block',
+                                  objectFit: 'contain'
+                                }}
+                              />
+                            </td>
+                            <td style={{ 
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              color: signatureData.primaryColor || '#2563eb',
+                              verticalAlign: 'middle'
+                            }}>
+                              <InlineEdit
+                                value={signatureData.companyName}
+                                onChange={(value) =>
+                                  handleFieldChange("companyName", value)
+                                }
+                                placeholder="Nom entreprise"
+                                displayClassName="text-blue-600 font-semibold text-sm"
+                                inputClassName="text-blue-600 font-semibold text-sm border-0 shadow-none p-1 h-auto"
+                              />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </td>
                   </tr>
                 )}
