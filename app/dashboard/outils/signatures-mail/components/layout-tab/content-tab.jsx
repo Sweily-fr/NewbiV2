@@ -53,11 +53,13 @@ export default function ContentTab() {
             <Label className="text-xs text-muted-foreground">Orientation</Label>
             <AlignmentSelector
               items={[
-                { value: "horizontal", icon: FlipHorizontalIcon },
-                { value: "vertical", icon: FlipVerticalIcon },
+                { value: "horizontal", icon: FlipVerticalIcon },
+                { value: "vertical", icon: FlipHorizontalIcon },
               ]}
               size="sm"
               className="w-30"
+              value={signatureData.layout}
+              onValueChange={(value) => updateSignatureData('layout', value)}
             />
           </div>
         </div>

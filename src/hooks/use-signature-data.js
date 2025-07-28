@@ -38,6 +38,8 @@ export function SignatureProvider({ children }) {
     nameSpacing: 4,
     // Alignement du nom et prénom (left, center, right)
     nameAlignment: 'left',
+    // Layout de la signature (vertical ou horizontal)
+    layout: 'vertical',
     // Images Cloudflare
     photo: null, // URL de la photo de profil
     photoKey: null, // Clé Cloudflare de la photo de profil
@@ -72,6 +74,8 @@ export function SignatureProvider({ children }) {
       nameSpacing: 4,
       // Alignement du nom et prénom (left, center, right)
       nameAlignment: 'left',
+      // Layout de la signature (vertical ou horizontal)
+      layout: 'vertical',
       // Images Cloudflare
       photo: null,
       photoKey: null,
