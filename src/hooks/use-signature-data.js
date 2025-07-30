@@ -45,6 +45,8 @@ export function SignatureProvider({ children }) {
     photoKey: null, // Clé Cloudflare de la photo de profil
     logo: null, // URL du logo d'entreprise
     logoKey: null, // Clé Cloudflare du logo d'entreprise
+    // Taille de l'image de profil (en pixels)
+    imageSize: 80, // Taille par défaut de l'image de profil
   });
 
   const updateSignatureData = (key, value) => {
@@ -81,6 +83,8 @@ export function SignatureProvider({ children }) {
       photoKey: null,
       logo: null,
       logoKey: null,
+      // Taille de l'image de profil (en pixels)
+      imageSize: 80,
     });
   };
 

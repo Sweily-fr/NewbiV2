@@ -237,6 +237,7 @@ const EmailPreview = ({ signatureData }) => {
 
 // Fonction pour générer le HTML du layout vertical
 const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
+  const imageSize = signatureData.imageSize || 80;
   return `
     <!DOCTYPE html>
     <html>
@@ -255,13 +256,10 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                 <tbody>
                   ${photoSrc ? `
                  <tr>
-  <td style="padding-bottom: 12px; text-align: left;">
-    <div style="width: 80px; height: 80px; border-radius: 50%; background: url('${photoSrc}') center center / cover no-repeat; display: inline-block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
-  </td>
-</tr>
-
-
-
+                  <td style="padding-bottom: 12px; text-align: left;">
+                    <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: 50%; background: url('${photoSrc}') center center / cover no-repeat; display: inline-block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
+                  </td>
+                </tr>
                   ` : ''}
                   <tr>
                     <td style="padding-bottom: 8px; text-align: left;">
@@ -365,6 +363,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
 
 // Fonction pour générer le HTML du layout horizontal
 const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
+  const imageSize = signatureData.imageSize || 80;
   return `
     <!DOCTYPE html>
     <html>
@@ -379,7 +378,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
           <!-- Photo de profil à gauche -->
           ${photoSrc ? `
             <td style="width: 80px; padding-right: 16px; vertical-align: top;">
-              <div style="width: 80px; height: 80px; border-radius: 50%; background: url('${photoSrc}') center center / cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
+              <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: 50%; background: url('${photoSrc}') center center / cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
             </td>
           ` : ''}
           

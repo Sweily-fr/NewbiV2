@@ -21,8 +21,8 @@ const HorizontalSignature = ({
             {signatureData.photo ? (
               <div 
                 style={{
-                  width: '80px',
-                  height: '80px',
+                  width: `${signatureData.imageSize || 80}px`,
+                  height: `${signatureData.imageSize || 80}px`,
                   borderRadius: '50%',
                   backgroundImage: `url('${signatureData.photo}')`,
                   backgroundSize: 'cover',
@@ -56,8 +56,8 @@ const HorizontalSignature = ({
                 size="md"
                 type="profile"
                 style={{ 
-                  width: '80px',
-                  height: '80px',
+                  width: `${signatureData.imageSize || 80}px`,
+                  height: `${signatureData.imageSize || 80}px`,
                   borderRadius: '50%'
                 }}
               />

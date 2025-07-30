@@ -44,6 +44,12 @@ export default function ContentTab() {
     updateSignatureData('nameSpacing', Math.max(0, Math.min(20, numValue))); // Entre 0 et 20px
   };
 
+  // Gestion de la taille de l'image de profil
+  const handleImageSizeChange = (value) => {
+    const numValue = parseInt(value) || 80;
+    updateSignatureData('imageSize', Math.max(40, Math.min(150, numValue))); // Entre 40 et 150px
+  };
+
   return (
     <div className="mt-4 flex flex-col gap-10">
       <div className="flex flex-col gap-3">
@@ -267,6 +273,35 @@ export default function ContentTab() {
                 max={20}
                 step={1}
                 aria-label="Espacement prénom/nom"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Taille image</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.imageSize || 80}
+                onChange={(e) => handleImageSizeChange(e.target.value)}
+                onBlur={(e) => handleImageSizeChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleImageSizeChange(e.target.value);
+                  }
+                }}
+                aria-label="Taille de l'image de profil"
+                placeholder="80"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.imageSize || 80]}
+                onValueChange={(value) => handleImageSizeChange(value[0])}
+                min={40}
+                max={150}
+                step={5}
+                aria-label="Taille image profil"
               />
             </div>
           </div>
