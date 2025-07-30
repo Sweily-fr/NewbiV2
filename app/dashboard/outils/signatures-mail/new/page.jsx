@@ -254,13 +254,14 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
                 <tbody>
                   ${photoSrc ? `
-                    <tr>
-                      <td style="padding-bottom: 12px; text-align: left;">
-                        <div style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; display: inline-block;">
-                          <img src="${photoSrc}" style="width: 100%; height: 100%; margin-left: -10%; margin-top: -10%; display: block;" width="96" height="96" />
-                        </div>
-                      </td>
-                    </tr>
+                 <tr>
+  <td style="padding-bottom: 12px; text-align: left;">
+    <div style="width: 80px; height: 80px; border-radius: 50%; background: url('${photoSrc}') center center / cover no-repeat; display: inline-block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
+  </td>
+</tr>
+
+
+
                   ` : ''}
                   <tr>
                     <td style="padding-bottom: 8px; text-align: left;">
@@ -378,9 +379,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
           <!-- Photo de profil à gauche -->
           ${photoSrc ? `
             <td style="width: 80px; padding-right: 16px; vertical-align: top;">
-              <div style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; display: inline-block;">
-                <img src="${photoSrc}" style="width: 120%; height: 120%; margin-left: -10%; margin-top: -10%; display: block;" width="96" height="96" />
-              </div>
+              <div style="width: 80px; height: 80px; border-radius: 50%; background: url('${photoSrc}') center center / cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
             </td>
           ` : ''}
           
