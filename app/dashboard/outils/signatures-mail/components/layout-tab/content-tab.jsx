@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useSliderWithInput } from "@/src/hooks/use-slider-with-input";
 import { Input } from "@/src/components/ui/input";
+import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 
@@ -48,6 +49,33 @@ export default function ContentTab() {
   const handleImageSizeChange = (value) => {
     const numValue = parseInt(value) || 80;
     updateSignatureData('imageSize', Math.max(40, Math.min(150, numValue))); // Entre 40 et 150px
+  };
+
+  // Gestion de la forme de l'image de profil
+  const handleImageShapeChange = (shape) => {
+    updateSignatureData('imageShape', shape);
+  };
+
+  // Gestion de l'épaisseur du séparateur
+  const handleSeparatorWidthChange = (value) => {
+    const numValue = parseInt(value) || 1;
+    updateSignatureData('separatorWidth', Math.max(1, Math.min(5, numValue))); // Entre 1 et 5px
+  };
+
+  // Gestion de la taille du logo
+  const handleLogoSizeChange = (value) => {
+    const numValue = parseInt(value) || 60;
+    updateSignatureData('logoSize', Math.max(30, Math.min(120, numValue))); // Entre 30 et 120px
+  };
+
+  // Gestion des espacements
+  const handleSpacingChange = (spacingKey, value) => {
+    const numValue = parseInt(value) || 0;
+    const clampedValue = Math.max(0, Math.min(30, numValue)); // Entre 0 et 30px
+    updateSignatureData('spacings', {
+      ...signatureData.spacings,
+      [spacingKey]: clampedValue
+    });
   };
 
   return (
@@ -106,6 +134,277 @@ export default function ContentTab() {
               className="w-30"
               value={signatureData.nameAlignment}
               onValueChange={(value) => updateSignatureData('nameAlignment', value)}
+            />
+          </div>
+        </div>
+      </div>
+      <Separator />
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium">Photo de profil</h2>
+        <div className="flex flex-col gap-3 ml-4">
+          {/* Upload de la photo de profil */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Photo</Label>
+            <div className="flex items-center gap-2">
+              {signatureData.photo ? (
+                <div className="flex items-center gap-2">
+                  <img 
+                    src={signatureData.photo} 
+                    alt="Photo" 
+                    className="w-8 h-8 object-cover rounded border"
+                    style={{
+                      borderRadius: signatureData.imageShape === 'square' ? '4px' : '50%'
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (e) => updateSignatureData('photo', e.target.result);
+                          reader.readAsDataURL(file);
+                        }
+                      };
+                      input.click();
+                    }}
+                    className="h-7 px-2 text-xs"
+                  >
+                    Changer
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateSignatureData('photo', null)}
+                    className="h-7 px-2 text-xs text-red-600 hover:text-red-700"
+                  >
+                    Supprimer
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => updateSignatureData('photo', e.target.result);
+                        reader.readAsDataURL(file);
+                      }
+                    };
+                    input.click();
+                  }}
+                  className="h-7 px-3 text-xs"
+                >
+                  Ajouter photo
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* Taille de la photo */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Taille</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.imageSize || 80}
+                onChange={(e) => handleImageSizeChange(e.target.value)}
+                onBlur={(e) => handleImageSizeChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleImageSizeChange(e.target.value);
+                  }
+                }}
+                aria-label="Taille de l'image de profil"
+                placeholder="80"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.imageSize || 80]}
+                onValueChange={(value) => handleImageSizeChange(value[0])}
+                min={40}
+                max={150}
+                step={5}
+                aria-label="Taille image profil"
+              />
+            </div>
+          </div>
+          
+          {/* Forme de la photo */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Forme</Label>
+            <AlignmentSelector
+              items={[
+                { value: "square", icon: Table2 },
+                { value: "round", icon: CircleOff }
+              ]}
+              size="sm"
+              className="w-30"
+              value={signatureData.imageShape || 'round'}
+              onValueChange={handleImageShapeChange}
+            />
+          </div>
+          
+          {/* Alignement de la photo */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Alignement</Label>
+            <AlignmentSelector
+              items={[
+                { value: "left", icon: AlignLeft },
+                { value: "center", icon: AlignCenter },
+                { value: "right", icon: AlignRight }
+              ]}
+              size="sm"
+              className="w-30"
+              value={signatureData.imageAlignment || 'left'}
+              onValueChange={(value) => updateSignatureData('imageAlignment', value)}
+            />
+          </div>
+        </div>
+      </div>
+      <Separator />
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium">Logo entreprise</h2>
+        <div className="flex flex-col gap-3 ml-4">
+          {/* Upload du logo entreprise */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Logo</Label>
+            <div className="flex items-center gap-2">
+              {signatureData.logo ? (
+                <div className="flex items-center gap-2">
+                  <img 
+                    src={signatureData.logo} 
+                    alt="Logo" 
+                    className="w-8 h-8 object-contain rounded border"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (e) => updateSignatureData('logo', e.target.result);
+                          reader.readAsDataURL(file);
+                        }
+                      };
+                      input.click();
+                    }}
+                    className="h-7 px-2 text-xs"
+                  >
+                    Changer
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateSignatureData('logo', null)}
+                    className="h-7 px-2 text-xs text-red-600 hover:text-red-700"
+                  >
+                    Supprimer
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => updateSignatureData('logo', e.target.result);
+                        reader.readAsDataURL(file);
+                      }
+                    };
+                    input.click();
+                  }}
+                  className="h-7 px-3 text-xs"
+                >
+                  Ajouter logo
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* Taille du logo */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Taille</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.logoSize || 60}
+                onChange={(e) => handleLogoSizeChange(e.target.value)}
+                onBlur={(e) => handleLogoSizeChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleLogoSizeChange(e.target.value);
+                  }
+                }}
+                aria-label="Taille du logo entreprise"
+                placeholder="60"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.logoSize || 60]}
+                onValueChange={(value) => handleLogoSizeChange(value[0])}
+                min={30}
+                max={120}
+                step={5}
+                aria-label="Taille logo entreprise"
+              />
+            </div>
+          </div>
+          
+          {/* Forme du logo */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Forme logo</Label>
+            <AlignmentSelector
+              items={[
+                { value: "square", icon: Table2 },
+                { value: "round", icon: CircleOff }
+              ]}
+              size="sm"
+              className="w-30"
+              value={signatureData.logoShape || 'square'}
+              onValueChange={(value) => updateSignatureData('logoShape', value)}
+            />
+          </div>
+          
+          {/* Alignement du logo */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Alignement</Label>
+            <AlignmentSelector
+              items={[
+                { value: "left", icon: AlignLeft },
+                { value: "center", icon: AlignCenter },
+                { value: "right", icon: AlignRight }
+              ]}
+              size="sm"
+              className="w-30"
+              value={signatureData.logoAlignment || 'center'}
+              onValueChange={(value) => updateSignatureData('logoAlignment', value)}
             />
           </div>
         </div>
@@ -305,6 +604,20 @@ export default function ContentTab() {
               />
             </div>
           </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Forme image</Label>
+            <AlignmentSelector
+              items={[
+                { value: "round", icon: CircleOff },
+                { value: "square", icon: Table2 },
+              ]}
+              size="sm"
+              className="w-30"
+              value={signatureData.imageShape || 'round'}
+              onValueChange={handleImageShapeChange}
+            />
+          </div>
+          
         </div>
       </div>
       <Separator />
@@ -323,6 +636,35 @@ export default function ContentTab() {
               size="sm"
               className="w-30"
             />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Épaisseur séparateur</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.separatorWidth || 1}
+                onChange={(e) => handleSeparatorWidthChange(e.target.value)}
+                onBlur={(e) => handleSeparatorWidthChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSeparatorWidthChange(e.target.value);
+                  }
+                }}
+                aria-label="Épaisseur du séparateur"
+                placeholder="1"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.separatorWidth || 1]}
+                onValueChange={(value) => handleSeparatorWidthChange(value[0])}
+                min={1}
+                max={5}
+                step={1}
+                aria-label="Épaisseur séparateur"
+              />
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">
@@ -380,6 +722,224 @@ export default function ContentTab() {
               />
             </div>
           </div>
+        </div>
+      </div>
+      
+      <Separator />
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium">Espacements détaillés</h2>
+        <div className="flex flex-col gap-3 ml-4">
+          
+          {/* Espacement sous la photo */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Sous photo</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={signatureData.spacings?.photoBottom || 12}
+                onChange={(e) => handleSpacingChange('photoBottom', e.target.value)}
+                min={0}
+                max={30}
+                className="w-16 h-7 text-xs"
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                }}
+                aria-label="Espacement sous la photo"
+                placeholder="12"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.photoBottom || 12]}
+                onValueChange={(value) => handleSpacingChange('photoBottom', value[0])}
+                min={0}
+                max={30}
+                step={2}
+                aria-label="Espacement sous photo"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement sous le logo */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Sous logo</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={signatureData.spacings?.logoBottom || 12}
+                onChange={(e) => handleSpacingChange('logoBottom', e.target.value)}
+                min={0}
+                max={30}
+                className="w-16 h-7 text-xs"
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                }}
+                aria-label="Espacement sous le logo"
+                placeholder="12"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.logoBottom || 12]}
+                onValueChange={(value) => handleSpacingChange('logoBottom', value[0])}
+                min={0}
+                max={30}
+                step={2}
+                aria-label="Espacement sous logo"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement sous le nom */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Sous nom</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={signatureData.spacings?.nameBottom || 8}
+                onChange={(e) => handleSpacingChange('nameBottom', e.target.value)}
+                min={0}
+                max={30}
+                className="w-16 h-7 text-xs"
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                }}
+                aria-label="Espacement sous le nom"
+                placeholder="8"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.nameBottom || 8]}
+                onValueChange={(value) => handleSpacingChange('nameBottom', value[0])}
+                min={0}
+                max={30}
+                step={2}
+                aria-label="Espacement sous nom"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement sous le poste */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Sous poste</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={signatureData.spacings?.positionBottom || 8}
+                onChange={(e) => handleSpacingChange('positionBottom', e.target.value)}
+                min={0}
+                max={30}
+                className="w-16 h-7 text-xs"
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                }}
+                aria-label="Espacement sous le poste"
+                placeholder="8"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.positionBottom || 8]}
+                onValueChange={(value) => handleSpacingChange('positionBottom', value[0])}
+                min={0}
+                max={30}
+                step={2}
+                aria-label="Espacement sous poste"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement entre contacts */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Entre contacts</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={signatureData.spacings?.contactBottom || 6}
+                onChange={(e) => handleSpacingChange('contactBottom', e.target.value)}
+                min={0}
+                max={30}
+                className="w-16 h-7 text-xs"
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                }}
+                aria-label="Espacement entre les contacts"
+                placeholder="6"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.contactBottom || 6]}
+                onValueChange={(value) => handleSpacingChange('contactBottom', value[0])}
+                min={0}
+                max={30}
+                step={2}
+                aria-label="Espacement entre contacts"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement au-dessus du séparateur */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Avant séparateur</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={signatureData.spacings?.separatorTop || 12}
+                onChange={(e) => handleSpacingChange('separatorTop', e.target.value)}
+                min={0}
+                max={30}
+                className="w-16 h-7 text-xs"
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                }}
+                aria-label="Espacement avant le séparateur"
+                placeholder="12"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.separatorTop || 12]}
+                onValueChange={(value) => handleSpacingChange('separatorTop', value[0])}
+                min={0}
+                max={30}
+                step={2}
+                aria-label="Espacement avant séparateur"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement sous le séparateur */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Après séparateur</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={signatureData.spacings?.separatorBottom || 12}
+                onChange={(e) => handleSpacingChange('separatorBottom', e.target.value)}
+                min={0}
+                max={30}
+                className="w-16 h-7 text-xs"
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                }}
+                aria-label="Espacement après le séparateur"
+                placeholder="12"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.separatorBottom || 12]}
+                onValueChange={(value) => handleSpacingChange('separatorBottom', value[0])}
+                min={0}
+                max={30}
+                step={2}
+                aria-label="Espacement après séparateur"
+              />
+            </div>
+          </div>
+          
         </div>
       </div>
     </div>

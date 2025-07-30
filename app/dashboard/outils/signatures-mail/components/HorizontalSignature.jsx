@@ -10,7 +10,8 @@ const HorizontalSignature = ({
   handleImageChange, 
   validatePhone, 
   validateEmail, 
-  validateUrl 
+  validateUrl,
+  logoSrc 
 }) => {
   return (
     <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', maxWidth: '500px', fontFamily: 'Arial, sans-serif' }}>
@@ -23,7 +24,7 @@ const HorizontalSignature = ({
                 style={{
                   width: `${signatureData.imageSize || 80}px`,
                   height: `${signatureData.imageSize || 80}px`,
-                  borderRadius: '50%',
+                  borderRadius: signatureData.imageShape === 'square' ? '8px' : '50%',
                   backgroundImage: `url('${signatureData.photo}')`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
@@ -58,7 +59,7 @@ const HorizontalSignature = ({
                 style={{ 
                   width: `${signatureData.imageSize || 80}px`,
                   height: `${signatureData.imageSize || 80}px`,
-                  borderRadius: '50%'
+                  borderRadius: signatureData.imageShape === 'square' ? '8px' : '50%'
                 }}
               />
             )}
@@ -273,9 +274,74 @@ const HorizontalSignature = ({
                    </td>
                  </tr>
                )}
+               
 
               </tbody>
             </table>
+          </td>
+        </tr>
+        
+        {/* Séparateur horizontal */}
+        <tr>
+          <td colSpan="2" style={{ 
+            paddingTop: `${signatureData.spacings?.separatorTop || 12}px`, 
+            paddingBottom: `${signatureData.spacings?.separatorBottom || 12}px` 
+          }}>
+            <hr style={{
+              border: 'none',
+              borderTop: `${signatureData.separatorWidth || 1}px solid #e0e0e0`,
+              margin: '0',
+              width: '100%'
+            }} />
+          </td>
+        </tr>
+        
+        {/* Logo entreprise après le séparateur */}
+        <tr>
+          <td colSpan="2" style={{ 
+            paddingTop: `${signatureData.spacings?.separatorBottom || 12}px`,
+            textAlign: 'center' 
+          }}>
+            {logoSrc ? (
+              <img 
+                src={logoSrc} 
+                alt="Logo entreprise" 
+                style={{
+                  width: `${signatureData.logoSize || 60}px`,
+                  height: 'auto',
+                  maxHeight: `${signatureData.logoSize || 60}px`,
+                  objectFit: 'contain',
+                  cursor: 'pointer'
+                }}
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => handleImageChange('logo', e.target.result);
+                      reader.readAsDataURL(file);
+                    }
+                  };
+                  input.click();
+                }}
+                title="Cliquer pour changer le logo"
+              />
+            ) : (
+              <ImageDropZone
+                currentImage={signatureData.logo}
+                onImageChange={(imageUrl) => handleImageChange("logo", imageUrl)}
+                placeholder="Logo entreprise"
+                size="sm"
+                type="logo"
+                style={{ 
+                  width: `${signatureData.logoSize || 60}px`,
+                  height: `${signatureData.logoSize || 60}px`
+                }}
+              />
+            )}
           </td>
         </tr>
       </tbody>

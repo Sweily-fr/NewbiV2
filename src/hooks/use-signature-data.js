@@ -47,6 +47,22 @@ export function SignatureProvider({ children }) {
     logoKey: null, // Clé Cloudflare du logo d'entreprise
     // Taille de l'image de profil (en pixels)
     imageSize: 80, // Taille par défaut de l'image de profil
+    // Forme de l'image de profil (round ou square)
+    imageShape: 'round', // Forme par défaut : ronde
+    // Épaisseur du séparateur vertical (en pixels)
+    separatorWidth: 1, // Épaisseur par défaut du séparateur
+    // Taille du logo entreprise (en pixels)
+    logoSize: 60, // Taille par défaut du logo
+    // Espacements entre les éléments (en pixels)
+    spacings: {
+      photoBottom: 12, // Espacement sous la photo
+      logoBottom: 12, // Espacement sous le logo
+      nameBottom: 8, // Espacement sous le nom
+      positionBottom: 8, // Espacement sous le poste
+      contactBottom: 6, // Espacement entre chaque contact
+      separatorTop: 12, // Espacement au-dessus du séparateur
+      separatorBottom: 12, // Espacement sous le séparateur
+    }
   });
 
   const updateSignatureData = (key, value) => {
@@ -85,6 +101,22 @@ export function SignatureProvider({ children }) {
       logoKey: null,
       // Taille de l'image de profil (en pixels)
       imageSize: 80,
+      // Forme de l'image de profil (round ou square)
+      imageShape: 'round',
+      // Épaisseur du séparateur vertical (en pixels)
+      separatorWidth: 1,
+      // Taille du logo entreprise (en pixels)
+      logoSize: 60,
+      // Espacements entre les éléments (en pixels)
+      spacings: {
+        photoBottom: 12,
+        logoBottom: 12,
+        nameBottom: 8,
+        positionBottom: 8,
+        contactBottom: 6,
+        separatorTop: 12,
+        separatorBottom: 12,
+      }
     });
   };
 

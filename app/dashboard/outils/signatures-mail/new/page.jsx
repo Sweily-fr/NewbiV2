@@ -201,23 +201,22 @@ const EmailPreview = ({ signatureData }) => {
     // Convertir les images en base64 si nécessaire
     console.log('🔍 Données avant conversion:');
     console.log('  - Photo originale:', signatureData.photo);
-    console.log('  - Logo original:', signatureData.companyLogo);
-    console.log('  - Nom entreprise:', signatureData.companyName);
+    console.log('  - Logo original:', signatureData.logo);
     
     // Conversion directe des images
     console.log('🖼️ Conversion des images pour la signature:');
     console.log('  - Photo URL originale:', signatureData.photo);
-    console.log('  - Logo URL originale:', signatureData.companyLogo);
-    console.log('  - URLs identiques?', signatureData.photo === signatureData.companyLogo);
+    console.log('  - Logo URL originale:', signatureData.logo);
+    console.log('  - URLs identiques?', signatureData.photo === signatureData.logo);
     console.log('📊 ÉTAT COMPLET signatureData:');
     console.log('  - photo:', signatureData.photo);
-    console.log('  - companyLogo:', signatureData.companyLogo);
+    console.log('  - logo:', signatureData.logo);
     console.log('  - companyName:', signatureData.companyName);
     
     try {
       // Utiliser directement les URLs des images (plus simple et efficace)
       const photoSrc = signatureData.photo;
-      const logoSrc = signatureData.companyLogo;
+      const logoSrc = signatureData.logo;
       
       console.log('🖼️ Images utilisées:');
       console.log('  - Photo URL:', photoSrc || 'Aucune');
@@ -238,6 +237,10 @@ const EmailPreview = ({ signatureData }) => {
 // Fonction pour générer le HTML du layout vertical
 const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
   const imageSize = signatureData.imageSize || 80;
+  const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
+  const separatorWidth = signatureData.separatorWidth || 1;
+  const logoSize = signatureData.logoSize || 60;
+  const spacings = signatureData.spacings || {};
   return `
     <!DOCTYPE html>
     <html>
@@ -256,13 +259,15 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                 <tbody>
                   ${photoSrc ? `
                  <tr>
-                  <td style="padding-bottom: 12px; text-align: left;">
-                    <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: 50%; background: url('${photoSrc}') center center / cover no-repeat; display: inline-block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
+                  <td style="padding-bottom: ${spacings.photoBottom || 12}px; text-align: left;">
+                    <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center / cover no-repeat; display: inline-block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
                   </td>
                 </tr>
                   ` : ''}
+                  
+
                   <tr>
-                    <td style="padding-bottom: 8px; text-align: left;">
+                    <td style="padding-bottom: ${spacings.nameBottom || 8}px; text-align: left;">
                       <div style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2;">
                         ${signatureData.firstName} ${signatureData.lastName}
                       </div>
@@ -270,7 +275,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   </tr>
                   ${signatureData.position ? `
                     <tr>
-                      <td style="padding-bottom: 8px; text-align: left;">
+                      <td style="padding-bottom: ${spacings.positionBottom || 8}px; text-align: left;">
                         <div style="font-size: 14px; color: rgb(102,102,102);">
                           ${signatureData.position}
                         </div>
@@ -352,9 +357,24 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                 </tbody>
               </table>
             </td>
-
-          </td>
-        </tr>
+          </tr>
+          
+          <!-- Séparateur horizontal -->
+          <tr>
+            <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
+              <hr style="border: none; border-top: ${separatorWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
+            </td>
+          </tr>
+          
+          <!-- Logo entreprise après le séparateur -->
+          ${logoSrc ? `
+          <tr>
+            <td colspan="2" style="padding: ${spacings.separatorBottom || 12}px 0 0 0; text-align: center;">
+              <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
+            </td>
+          </tr>
+          ` : ''}
+        </tbody>
       </table>
     </body>
     </html>
@@ -364,6 +384,8 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
 // Fonction pour générer le HTML du layout horizontal
 const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
   const imageSize = signatureData.imageSize || 80;
+  const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
+  const separatorWidth = signatureData.separatorWidth || 1;
   return `
     <!DOCTYPE html>
     <html>
@@ -378,7 +400,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
           <!-- Photo de profil à gauche -->
           ${photoSrc ? `
             <td style="width: 80px; padding-right: 16px; vertical-align: top;">
-              <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: 50%; background: url('${photoSrc}') center center / cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
+              <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center / cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
             </td>
           ` : ''}
           
@@ -436,6 +458,22 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
             ${(signatureData.companyName || logoSrc) ? '' : ''}
           </td>
         </tr>
+        
+        <!-- Séparateur horizontal -->
+        <tr>
+          <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
+            <hr style="border: none; border-top: ${separatorWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
+          </td>
+        </tr>
+        
+        <!-- Logo entreprise après le séparateur -->
+        ${logoSrc ? `
+        <tr>
+          <td colspan="2" style="padding: ${spacings.separatorBottom || 12}px 0 0 0; text-align: center;">
+            <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
+          </td>
+        </tr>
+        ` : ''}
       </table>
     </body>
     </html>
@@ -449,7 +487,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
     console.log('🚀 Début de la copie de signature');
     console.log('📋 Données signature:', {
       photo: signatureData.photo ? 'Présente' : 'Absente',
-      companyLogo: signatureData.companyLogo ? 'Présent' : 'Absent',
+      companyLogo: signatureData.logo ? 'Présent' : 'Absent',
       firstName: signatureData.firstName,
       lastName: signatureData.lastName
     });
@@ -614,6 +652,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
               validatePhone={validatePhone}
               validateEmail={validateEmail}
               validateUrl={validateUrl}
+              logoSrc={signatureData.logo}
             />
           ) : (
             <VerticalSignature
@@ -623,6 +662,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
               validatePhone={validatePhone}
               validateEmail={validateEmail}
               validateUrl={validateUrl}
+              logoSrc={signatureData.logo}
             />
           )}
         </div>
