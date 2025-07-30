@@ -215,16 +215,13 @@ const EmailPreview = ({ signatureData }) => {
     console.log('  - companyName:', signatureData.companyName);
     
     try {
-      const [photoSrc, logoSrc] = await Promise.all([
-        signatureData.photo ? getImageSrc(signatureData.photo) : Promise.resolve(null),
-        signatureData.companyLogo ? getImageSrc(signatureData.companyLogo) : Promise.resolve(null)
-      ]);
+      // Utiliser directement les URLs des images (plus simple et efficace)
+      const photoSrc = signatureData.photo;
+      const logoSrc = signatureData.companyLogo;
       
-      console.log('🖼️ Résultats de conversion:');
-      console.log('  - Photo src:', photoSrc ? 'Convertie (' + photoSrc.length + ' chars)' : 'Indisponible');
-      console.log('  - Logo src:', logoSrc ? 'Converti (' + logoSrc.length + ' chars)' : 'Indisponible');
-      console.log('  - Logo src type:', typeof logoSrc);
-      console.log('  - Logo src preview:', logoSrc ? logoSrc.substring(0, 100) + '...' : 'null');
+      console.log('🖼️ Images utilisées:');
+      console.log('  - Photo URL:', photoSrc || 'Aucune');
+      console.log('  - Logo URL:', logoSrc || 'Aucun');
       
       // Générer le HTML selon le layout sélectionné
     const htmlSignature = signatureData.layout === 'horizontal' ? 
@@ -249,90 +246,114 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
       <title>Signature Email</title>
     </head>
     <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
-      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px !important;">
-        <tr>
-          <!-- Colonne de gauche : Logo, Nom, Profession, Entreprise -->
-          <td style="width: 200px; padding-right: 20px; vertical-align: top;">
-            ${photoSrc ? `
-              <img src="${photoSrc}" alt="${signatureData.firstName} ${signatureData.lastName}" style="width: 80px !important; height: 80px !important; max-width: 80px !important; max-height: 80px !important; border-radius: 50%; object-fit: cover; display: block; margin-bottom: 12px;" />
-            ` : ''}
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: Arial, sans-serif;">
+        <tbody>
+          <tr>
+            <!-- Colonne de gauche : Informations personnelles -->
+            <td style="width: 200px; padding-right: 15px; vertical-align: top;">
+              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
+                <tbody>
+                  ${photoSrc ? `
+                    <tr>
+                      <td style="padding-bottom: 12px; text-align: left;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; display: inline-block;">
+                          <img src="${photoSrc}" style="width: 100%; height: 100%; margin-left: -10%; margin-top: -10%; display: block;" width="96" height="96" />
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  <tr>
+                    <td style="padding-bottom: 8px; text-align: left;">
+                      <div style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2;">
+                        ${signatureData.firstName} ${signatureData.lastName}
+                      </div>
+                    </td>
+                  </tr>
+                  ${signatureData.position ? `
+                    <tr>
+                      <td style="padding-bottom: 8px; text-align: left;">
+                        <div style="font-size: 14px; color: rgb(102,102,102);">
+                          ${signatureData.position}
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  ${signatureData.companyName ? `
+                    <tr>
+                      <td style="padding-bottom: 8px; text-align: left;">
+                        <div style="font-size: 14px; font-weight: bold; color: ${primaryColor};">
+                          ${signatureData.companyName}
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                </tbody>
+              </table>
+            </td>
             
-            <!-- Nom et prénom -->
-            <div style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; margin-bottom: 8px;">
-              ${signatureData.firstName} ${signatureData.lastName}
-            </div>
+            <!-- Séparateur vertical - Gmail compatible -->
+            <td style="width: 1px; background-color: #e0e0e0; padding: 0; font-size: 1px; line-height: 1px;">
+              &nbsp;
+            </td>
             
-            <!-- Profession -->
-            ${signatureData.position ? `
-              <div style="font-size: 14px; color: rgb(102,102,102); margin-bottom: 8px;">
-                ${signatureData.position}
-              </div>
-            ` : ''}
-            
-            <!-- Nom de l'entreprise -->
-            ${signatureData.companyName ? `
-              <div style="font-size: 14px; font-weight: bold; color: ${primaryColor}; margin-bottom: 8px;">
-                ${signatureData.companyName}
-              </div>
-            ` : ''}
-          </td>
-          
-          <!-- Colonne de droite : Contacts -->
-          <td style="vertical-align: top;">
-            ${signatureData.phone ? `
-              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 6px;">
-                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                ${signatureData.phone}
-              </div>
-            ` : ''}
-            
-            ${signatureData.mobile ? `
-              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 6px;">
-                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                ${signatureData.mobile}
-              </div>
-            ` : ''}
-            
-            ${signatureData.email ? `
-              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 6px;">
-                <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                <a href="mailto:${signatureData.email}" style="color: ${primaryColor}; text-decoration: none;">${signatureData.email}</a>
-              </div>
-            ` : ''}
-            
-            ${signatureData.website ? `
-              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 6px;">
-                <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                <a href="${signatureData.website.startsWith('http') ? signatureData.website : 'https://' + signatureData.website}" target="_blank" style="color: ${primaryColor}; text-decoration: none;">${signatureData.website.replace(/^https?:\/\//, '')}</a>
-              </div>
-            ` : ''}
-            
-            ${signatureData.address ? `
-              <div style="display: flex; align-items: flex-start; font-size: 12px; color: rgb(102,102,102); margin-bottom: 6px;">
-                <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
-                ${signatureData.address.replace(/\n/g, '<br>')}
-              </div>
-            ` : ''}
-            
-            <!-- Logo/Nom entreprise -->
-            ${(signatureData.companyName || logoSrc) ? `
-              <div style="padding-top: 6px; border-top: 1px solid #e0e0e0; margin-top: 6px; display: flex; align-items: center;">
-                ${logoSrc ? `
-                  <img 
-                    src="${logoSrc}" 
-                    alt="${signatureData.companyName || 'Logo'}" 
-                    width="auto"
-                    height="30"
-                    style="width: auto !important; height: 30px !important; max-width: 120px !important; display: block; border: none; margin-right: 8px;" 
-                  />
-                ` : ''}
-                ${signatureData.companyName ? `
-                  <span style="font-size: 14px; font-weight: bold; color: ${primaryColor};">
-                    ${signatureData.companyName}
-                  </span>
-                ` : ''}
-              </div>
-            ` : ''}
+            <!-- Colonne de droite : Informations de contact -->
+            <td style="padding-left: 15px; vertical-align: top; width: 200px;">
+              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
+                <tbody>
+                  ${signatureData.phone ? `
+                    <tr>
+                      <td style="padding-bottom: 6px;">
+                        <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102);">
+                          <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                          <a href="tel:${signatureData.phone}" style="color: rgb(102,102,102); text-decoration: none;">${signatureData.phone}</a>
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  ${signatureData.mobile ? `
+                    <tr>
+                      <td style="padding-bottom: 6px;">
+                        <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102);">
+                          <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                          <a href="tel:${signatureData.mobile}" style="color: rgb(102,102,102); text-decoration: none;">${signatureData.mobile}</a>
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  ${signatureData.email ? `
+                    <tr>
+                      <td style="padding-bottom: 6px;">
+                        <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102);">
+                          <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                          <a href="mailto:${signatureData.email}" style="color: rgb(102,102,102); text-decoration: none;">${signatureData.email}</a>
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  ${signatureData.website ? `
+                    <tr>
+                      <td style="padding-bottom: 6px;">
+                        <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102);">
+                          <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                          <a href="${signatureData.website && signatureData.website.startsWith('http') ? signatureData.website : 'https://' + (signatureData.website || '')}" style="color: rgb(102,102,102); text-decoration: none;">${signatureData.website ? signatureData.website.replace(/^https?:\/\//, '') : ''}</a>
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  ${signatureData.address ? `
+                    <tr>
+                      <td style="padding-bottom: 12px;">
+                        <div style="display: flex; align-items: flex-start; font-size: 12px; color: rgb(102,102,102);">
+                          <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
+                          <span>${signatureData.address.replace(/\n/g, '<br>')}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                </tbody>
+              </table>
+            </td>
+
           </td>
         </tr>
       </table>
@@ -357,7 +378,9 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
           <!-- Photo de profil à gauche -->
           ${photoSrc ? `
             <td style="width: 80px; padding-right: 16px; vertical-align: top;">
-              <img src="${photoSrc}" alt="${signatureData.firstName} ${signatureData.lastName}" style="width: 80px !important; height: 80px !important; max-width: 80px !important; max-height: 80px !important; border-radius: 50%; object-fit: cover; display: block;" />
+              <div style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; display: inline-block;">
+                <img src="${photoSrc}" style="width: 120%; height: 120%; margin-left: -10%; margin-top: -10%; display: block;" width="96" height="96" />
+              </div>
             </td>
           ` : ''}
           
@@ -412,24 +435,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
             ` : ''}
             
             <!-- Logo/Nom entreprise -->
-            ${(signatureData.companyName || logoSrc) ? `
-              <div style="padding-top: 6px; border-top: 1px solid #e0e0e0; margin-top: 6px; display: flex; align-items: center;">
-                ${logoSrc ? `
-                  <img 
-                    src="${logoSrc}" 
-                    alt="${signatureData.companyName || 'Logo'}" 
-                    width="auto"
-                    height="30"
-                    style="width: auto !important; height: 30px !important; max-width: 120px !important; display: block; border: none; margin-right: 8px;" 
-                  />
-                ` : ''}
-                ${signatureData.companyName ? `
-                  <span style="font-size: 14px; font-weight: bold; color: ${primaryColor};">
-                    ${signatureData.companyName}
-                  </span>
-                ` : ''}
-              </div>
-            ` : ''}
+            ${(signatureData.companyName || logoSrc) ? '' : ''}
           </td>
         </tr>
       </table>

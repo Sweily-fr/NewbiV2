@@ -18,16 +18,50 @@ const HorizontalSignature = ({
         <tr>
           {/* Photo de profil à gauche */}
           <td style={{ width: '80px', paddingRight: '16px', verticalAlign: 'top' }}>
-            <ImageDropZone
-              currentImage={signatureData.photo}
-              onImageChange={(imageUrl) =>
-                handleImageChange("photo", imageUrl)
-              }
-              placeholder="Photo de profil"
-              size="md"
-              type="profile"
-              style={{ width: '80px', height: '80px', borderRadius: '50%' }}
-            />
+            {signatureData.photo ? (
+              <div 
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  backgroundImage: `url('${signatureData.photo}')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  display: 'block',
+                  cursor: 'pointer'
+                }}
+                onClick={() => {
+                  // Créer un input file invisible pour changer l'image
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => handleImageChange('photo', e.target.result);
+                      reader.readAsDataURL(file);
+                    }
+                  };
+                  input.click();
+                }}
+                title="Cliquer pour changer la photo"
+              />
+            ) : (
+              <ImageDropZone
+                currentImage={signatureData.photo}
+                onImageChange={(imageUrl) => handleImageChange("photo", imageUrl)}
+                placeholder="Photo de profil"
+                size="md"
+                type="profile"
+                style={{ 
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%'
+                }}
+              />
+            )}
           </td>
           
           {/* Informations empilées verticalement à droite */}
@@ -239,59 +273,7 @@ const HorizontalSignature = ({
                    </td>
                  </tr>
                )}
-               
-               {/* Logo/Nom entreprise */}
-               <tr>
-                 <td colSpan="2" style={{ paddingTop: '6px', borderTop: '1px solid #e0e0e0' }}>
-                   <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
-                     <tbody>
-                       <tr>
-                         <td style={{ 
-                           paddingTop: '12px', 
-                           paddingRight: '12px',
-                           paddingBottom: '4px',
-                           verticalAlign: 'middle'
-                         }}>
-                           <ImageDropZone
-                             currentImage={signatureData.companyLogo}
-                             onImageChange={(imageUrl) =>
-                               handleImageChange("companyLogo", imageUrl)
-                             }
-                             placeholder="Logo entreprise"
-                             size="xs"
-                             type="logo"
-                             style={{ 
-                               height: '30px !important', 
-                               maxHeight: '30px !important',
-                               maxWidth: '120px !important', 
-                               width: 'auto !important',
-                               display: 'block',
-                               objectFit: 'contain'
-                             }}
-                           />
-                         </td>
-                         <td style={{ 
-                           fontSize: '14px',
-                           fontWeight: 'bold',
-                           color: signatureData.primaryColor || '#2563eb',
-                           paddingTop: '8px',
-                           verticalAlign: 'middle'
-                         }}>
-                           <InlineEdit
-                             value={signatureData.companyName}
-                             onChange={(value) =>
-                               handleFieldChange("companyName", value)
-                             }
-                             placeholder="Nom entreprise"
-                             displayClassName="text-blue-600 font-semibold text-sm"
-                             inputClassName="text-blue-600 font-semibold text-sm border-0 shadow-none p-1 h-auto"
-                           />
-                         </td>
-                       </tr>
-                     </tbody>
-                   </table>
-                 </td>
-               </tr>
+
               </tbody>
             </table>
           </td>
