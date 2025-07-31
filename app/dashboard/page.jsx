@@ -20,78 +20,65 @@ import {
   Monitor,
   Target,
   Scale,
+  Receipt,
+  CreditCard,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { useUser } from "@/src/lib/auth/hooks";
 import { redirect } from "next/navigation";
+import { useFinancialStats } from "@/src/hooks/useFinancialStats";
 
 export default function Dashboard() {
   const { session } = useUser();
+
+  // Récupération des statistiques financières réelles
+  const {
+    totalIncome,
+    totalExpenses,
+    netBalance,
+    incomeChartData,
+    expenseChartData,
+    getRecentTransactions,
+    loading,
+    formatCurrency,
+  } = useFinancialStats();
+
+  // Récupérer les dernières transactions réelles
+  const recentTransactions = getRecentTransactions(5);
+
+  // Fonction utilitaire pour obtenir l'icône et les couleurs d'une transaction
+  const getTransactionDisplay = (transaction) => {
+    if (transaction.category === "income") {
+      return {
+        icon: TrendingUp,
+        bgColor: "bg-green-50",
+        iconColor: "text-green-600",
+      };
+    } else {
+      // Pour les dépenses, on peut différencier par type
+      return {
+        icon: TrendingDown,
+        bgColor: "bg-red-50",
+        iconColor: "text-red-600",
+      };
+    }
+  };
+
   const expenseChartConfig = {
     visitors: {
       label: "Visitors",
     },
     desktop: {
       label: "Montant",
-      color: "#2a7eff", // Rouge pour les dépenses
+      color: "#ef4444", // Rouge pour les dépenses
     },
     mobile: {
       label: "Nombre de transactions",
-      color: "#2a7eff", // Rouge plus foncé
+      color: "#dc2626", // Rouge plus foncé
     },
   };
 
-  const recentTransactions = [
-    {
-      id: 1,
-      name: "Mammouth AI",
-      type: "Paiement par carte",
-      amount: -12.0,
-      date: "18 juil. 2025",
-      icon: Zap,
-      bgColor: "bg-orange-50",
-      iconColor: "text-orange-600",
-    },
-    {
-      id: 2,
-      name: "Jitter (SnackThis SAS)",
-      type: "Prélèvement",
-      amount: -19.0,
-      date: "18 juil. 2025",
-      icon: Monitor,
-      bgColor: "bg-yellow-50",
-      iconColor: "text-yellow-600",
-    },
-    {
-      id: 3,
-      name: "A WAY OUT",
-      type: "Virement",
-      amount: 750.0,
-      date: "17 juil. 2025",
-      icon: Target,
-      bgColor: "bg-blue-50",
-      iconColor: "text-blue-600",
-    },
-    {
-      id: 4,
-      name: "ORDYAL",
-      type: "Virement instantané",
-      amount: -770.4,
-      date: "15 juil. 2025",
-      icon: Scale,
-      bgColor: "bg-orange-50",
-      iconColor: "text-orange-600",
-    },
-    {
-      id: 5,
-      name: "A WAY OUT",
-      type: "Virement",
-      amount: 750.0,
-      date: "1 juil. 2025",
-      icon: Target,
-      bgColor: "bg-blue-50",
-      iconColor: "text-blue-600",
-    },
-  ];
   // Configuration des couleurs pour les graphiques
   const expenseChartConfigs = {
     visitors: {
@@ -121,11 +108,22 @@ export default function Dashboard() {
     },
   };
 
-  // Calculer le montant total des transactions
-  const totalAmount = recentTransactions.reduce(
-    (sum, transaction) => sum + transaction.amount,
-    0
-  );
+  const balanceChartConfig = {
+    visitors: {
+      label: "Visitors",
+    },
+    desktop: {
+      label: "Montant",
+      color: "#3b82f6", // Bleu pour le solde
+    },
+    mobile: {
+      label: "Nombre de transactions",
+      color: "#2563eb", // Bleu plus foncé
+    },
+  };
+
+  // Utiliser les vraies données financières
+  const totalAmount = netBalance; // Solde net (entrées - sorties)
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
@@ -200,9 +198,10 @@ export default function Dashboard() {
         <ChartAreaInteractive
           className="shadow-xs w-1/2"
           title="Soldes"
-          description={`${totalAmount >= 0 ? "+" : ""}${totalAmount.toFixed(2)} €`}
+          description={loading ? "Chargement..." : formatCurrency(totalAmount)}
           height="250px"
-          config={expenseChartConfig}
+          config={balanceChartConfig}
+          data={expenseChartData}
           hideMobileCurve={true}
         />
         <Card className="shadow-xs w-1/2">
@@ -220,62 +219,81 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentTransactions.map((transaction) => {
-              const IconComponent = transaction.icon;
-              return (
-                <div
-                  key={transaction.id}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 ${transaction.bgColor} rounded-full flex items-center justify-center`}
-                    >
-                      <IconComponent
-                        className={`h-4 w-4 ${transaction.iconColor}`}
-                      />
+            {loading ? (
+              <div className="text-center text-muted-foreground py-4">
+                Chargement des transactions...
+              </div>
+            ) : recentTransactions.length === 0 ? (
+              <div className="text-center text-muted-foreground py-4">
+                Aucune transaction récente
+              </div>
+            ) : (
+              recentTransactions.map((transaction) => {
+                const displayConfig = getTransactionDisplay(transaction);
+                const IconComponent = displayConfig.icon;
+                return (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 ${displayConfig.bgColor} rounded-full flex items-center justify-center`}
+                      >
+                        <IconComponent
+                          className={`h-4 w-4 ${displayConfig.iconColor}`}
+                        />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">
+                          {transaction.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {transaction.type}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{transaction.name}</p>
+                    <div className="text-right">
+                      <p
+                        className={`font-medium text-sm ${
+                          transaction.isIncome
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {transaction.isIncome ? "+" : "-"}
+                        {transaction.formattedAmount}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {transaction.type}
+                        {transaction.formattedDate}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p
-                      className={`font-medium text-sm ${
-                        transaction.amount > 0 ? "text-green-600" : ""
-                      }`}
-                    >
-                      {transaction.amount > 0 ? "+" : ""}
-                      {transaction.amount.toFixed(2)} €
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {transaction.date}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </CardContent>
         </Card>
       </div>
       <div className="flex gap-6 w-full">
         <ChartAreaInteractive
           title="Entrées"
-          description={`${totalAmount >= 0 ? "+" : ""}${totalAmount.toFixed(2)} €`}
+          description={loading ? "Chargement..." : formatCurrency(totalIncome)}
           height="250px"
           className="shadow-xs w-1/2"
           config={incomeChartConfig}
+          data={incomeChartData}
           hideMobileCurve={true}
         />
         <ChartAreaInteractive
           title="Sorties"
-          description={`${totalAmount >= 0 ? "+" : ""}${totalAmount.toFixed(2)} €`}
+          description={
+            loading ? "Chargement..." : formatCurrency(totalExpenses)
+          }
           height="250px"
           className="shadow-xs w-1/2"
           config={expenseChartConfigs}
+          data={expenseChartData}
           hideMobileCurve={true}
         />
         {/* <ChartRadarGridCircle className="shadow-xs" />

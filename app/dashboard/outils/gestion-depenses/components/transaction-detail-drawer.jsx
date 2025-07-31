@@ -166,91 +166,155 @@ export function TransactionDetailDrawer({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">Fichiers épinglés</h3>
-              <span className="text-xs">(2)</span>
+              <span className="text-xs">({transaction.files?.length || 0})</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* Facture PDF */}
-              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center">
-                    <FileTextIcon className="h-4 w-4 text-red-600" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    Facture_{transaction.id}.pdf
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {Math.floor(Math.random() * 500 + 100)} KB
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600"
-                >
-                  <DownloadIcon className="h-4 w-4" />
-                </Button>
+            {transaction.files && transaction.files.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3">
+                {transaction.files.map((file, index) => {
+                  // Déterminer le type de fichier et l'icône
+                  const isImage = file.mimetype?.startsWith('image/');
+                  const isPdf = file.mimetype === 'application/pdf';
+                  const fileExtension = file.filename?.split('.').pop()?.toLowerCase() || 'pdf';
+                  
+                  // Couleur et icône selon le type
+                  const iconBgColor = isPdf ? 'bg-red-100' : isImage ? 'bg-blue-100' : 'bg-gray-100';
+                  const iconColor = isPdf ? 'text-red-600' : isImage ? 'text-blue-600' : 'text-gray-600';
+                  
+                  // Fonction pour formater la taille du fichier
+                  const formatFileSize = (bytes) => {
+                    if (!bytes) return 'Taille inconnue';
+                    if (bytes < 1024) return `${bytes} B`;
+                    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+                    return `${Math.round(bytes / (1024 * 1024))} MB`;
+                  };
+                  
+                  // Fonction pour télécharger le fichier
+                  const handleDownload = () => {
+                    try {
+                      const link = document.createElement('a');
+                      link.href = file.url;
+                      link.download = file.originalFilename || file.filename || `fichier-${index + 1}.${fileExtension}`;
+                      link.target = '_blank';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    } catch (error) {
+                      console.error('Erreur lors du téléchargement:', error);
+                    }
+                  };
+                  
+                  return (
+                    <div key={file.id || index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex-shrink-0">
+                        <div className={`w-10 h-10 ${iconBgColor} rounded flex items-center justify-center`}>
+                          <FileTextIcon className={`h-5 w-5 ${iconColor}`} />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate" title={file.originalFilename || file.filename}>
+                          {file.originalFilename || file.filename || `Fichier ${index + 1}`}
+                        </p>
+                        <div className="flex items-center space-x-2 text-xs text-gray-500">
+                          <span>{formatFileSize(file.size)}</span>
+                          {file.ocrProcessed && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              OCR traité
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600"
+                        onClick={handleDownload}
+                        title="Télécharger le fichier"
+                      >
+                        <DownloadIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
-
-              {/* Reçu image */}
-              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                    <FileTextIcon className="h-4 w-4 text-blue-600" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    Recu_{transaction.category}.jpg
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {Math.floor(Math.random() * 200 + 50)} KB
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600"
-                >
-                  <DownloadIcon className="h-4 w-4" />
-                </Button>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <FileTextIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">Aucun fichier attaché</p>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Billing Information */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-            <h3 className="text-sm font-medium">Informations de facturation</h3>
+          {/* Informations du fournisseur */}
+          {(transaction.vendor || transaction.ocrMetadata) && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h3 className="text-sm font-medium">Informations du fournisseur</h3>
 
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm">Adresse</span>
-                <span className="text-sm">123 Business Ave</span>
-              </div>
+              <div className="space-y-2">
+                {(transaction.vendor || transaction.ocrMetadata?.vendorName) && (
+                  <div className="flex justify-between">
+                    <span className="text-sm">Nom du fournisseur</span>
+                    <span className="text-sm font-medium">
+                      {transaction.vendor || transaction.ocrMetadata?.vendorName}
+                    </span>
+                  </div>
+                )}
 
-              <div className="flex justify-between">
-                <span className="text-sm">Ville</span>
-                <span className="text-sm">Paris</span>
-              </div>
+                {transaction.ocrMetadata?.vendorAddress && (
+                  <div className="flex justify-between">
+                    <span className="text-sm">Adresse</span>
+                    <span className="text-sm text-right max-w-48 truncate" title={transaction.ocrMetadata.vendorAddress}>
+                      {transaction.ocrMetadata.vendorAddress}
+                    </span>
+                  </div>
+                )}
 
-              <div className="flex justify-between">
-                <span className="text-sm">Région</span>
-                <span className="text-sm">Ile-de-France</span>
-              </div>
+                {(transaction.vendorVatNumber || transaction.ocrMetadata?.vendorVatNumber) && (
+                  <div className="flex justify-between">
+                    <span className="text-sm">Numéro SIRET/TVA</span>
+                    <span className="text-sm font-medium">
+                      {transaction.vendorVatNumber || transaction.ocrMetadata?.vendorVatNumber}
+                    </span>
+                  </div>
+                )}
 
-              <div className="flex justify-between">
-                <span className="text-sm">Code postal</span>
-                <span className="text-sm">75001</span>
-              </div>
+                {(transaction.invoiceNumber || transaction.ocrMetadata?.invoiceNumber) && (
+                  <div className="flex justify-between">
+                    <span className="text-sm">Numéro de facture</span>
+                    <span className="text-sm font-medium">
+                      {transaction.invoiceNumber || transaction.ocrMetadata?.invoiceNumber}
+                    </span>
+                  </div>
+                )}
 
-              <div className="flex justify-between">
-                <span className="text-sm">Numéro de téléphone</span>
-                <span className="text-sm">+33 1 23 45 67 89</span>
+                {transaction.ocrMetadata?.invoiceDate && (
+                  <div className="flex justify-between">
+                    <span className="text-sm">Date de facture</span>
+                    <span className="text-sm">
+                      {new Date(transaction.ocrMetadata.invoiceDate).toLocaleDateString('fr-FR')}
+                    </span>
+                  </div>
+                )}
+
+                {transaction.ocrMetadata?.confidenceScore && (
+                  <div className="flex justify-between">
+                    <span className="text-sm">Confiance OCR</span>
+                    <span className="text-sm">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        transaction.ocrMetadata.confidenceScore > 0.8 
+                          ? 'bg-green-100 text-green-800' 
+                          : transaction.ocrMetadata.confidenceScore > 0.6 
+                          ? 'bg-yellow-100 text-yellow-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {Math.round(transaction.ocrMetadata.confidenceScore * 100)}%
+                      </span>
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Shipping Information */}
           {transaction.description && (

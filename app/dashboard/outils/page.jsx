@@ -23,7 +23,7 @@ export default function Outils() {
             defaultValue="outline"
             className="flex-1 flex-col justify-start gap-6"
           >
-            <TabsList className="bg-[#5B4FFF]/5 **:data-[slot=badge]:bg-[#5B4FFF]/10 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
+            <TabsList>
               <TabsTrigger value="outline">Tout</TabsTrigger>
               <TabsTrigger value="past-performance">
                 Financier <Badge variant="secondary">3</Badge>

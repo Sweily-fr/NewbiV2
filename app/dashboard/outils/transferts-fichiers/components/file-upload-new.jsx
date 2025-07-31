@@ -93,7 +93,7 @@ export default function FileUploadNew() {
   const {
     isConnected: stripeConnected,
     canReceivePayments,
-    isLoading: stripeLoading
+    isLoading: stripeLoading,
   } = useStripeConnect(user?.id);
 
   // Use the file transfer hook
@@ -381,10 +381,9 @@ export default function FileUploadNew() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {stripeConnected 
+                  {stripeConnected
                     ? "Exiger un paiement avant le téléchargement"
-                    : "Connectez Stripe Connect pour activer les paiements"
-                  }
+                    : "Connectez Stripe Connect pour activer les paiements"}
                 </p>
               </div>
               <Switch
@@ -444,7 +443,8 @@ export default function FileUploadNew() {
                       ⚠️ Configuration Stripe incomplète
                     </p>
                     <p className="text-xs text-amber-600 mt-1">
-                      Finalisez votre configuration Stripe pour recevoir des paiements.
+                      Finalisez votre configuration Stripe pour recevoir des
+                      paiements.
                     </p>
                     <Button
                       variant="outline"
@@ -531,7 +531,7 @@ export default function FileUploadNew() {
           </div>
         </div>
       )}
-      
+
       {/* Modal Stripe Connect Onboarding */}
       <StripeConnectOnboarding
         isOpen={showStripeOnboarding}

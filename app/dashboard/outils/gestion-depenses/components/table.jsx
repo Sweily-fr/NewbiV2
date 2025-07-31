@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -90,6 +97,9 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { TransactionDetailDrawer } from "./transaction-detail-drawer";
 import { AddTransactionDrawer } from "./add-transaction-drawer";
+import { ReceiptUploadDrawer } from "./receipt-upload-drawer";
+import { useExpenses } from "@/src/hooks/useExpenses";
+import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { Plus } from "lucide-react";
 import {
   FileTextIcon,
@@ -156,24 +166,63 @@ const columns = [
     accessorKey: "type",
     cell: ({ row }) => {
       const type = row.getValue("type");
+      const source = row.original.source;
+
+      // Configuration des badges selon le type (INCOME vs EXPENSE)
+      const getBadgeConfig = () => {
+        if (type === "INCOME") {
+          // Factures = Entrées d'argent (vert)
+          return {
+            className: "bg-green-100 border-green-300 text-green-800",
+            icon: <ArrowUpIcon size={12} />,
+            label: "Entrée",
+          };
+        }
+
+        if (type === "EXPENSE") {
+          // Dépenses = Sorties d'argent (rouge) avec sous-type
+          const subType = row.original.subType;
+          let subLabel = "Sortie";
+
+          switch (subType) {
+            case "transport":
+              subLabel = "Transport";
+              break;
+            case "repas":
+              subLabel = "Repas";
+              break;
+            case "bureau":
+              subLabel = "Bureau";
+              break;
+            case "prestation":
+              subLabel = "Sortie";
+              break;
+            default:
+              subLabel = "Autre";
+          }
+
+          return {
+            className: "bg-red-100 border-red-300 text-red-800",
+            icon: <ArrowDownIcon size={12} />,
+            label: subLabel,
+          };
+        }
+
+        // Fallback
+        return {
+          className: "bg-gray-100 border-gray-300 text-gray-800",
+          icon: <ArrowDownIcon size={12} />,
+          label: "Inconnu",
+        };
+      };
+
+      const config = getBadgeConfig();
+
       return (
         <Badge
-          className={cn(
-            "flex items-center gap-1 w-fit",
-            type === "INCOME"
-              ? "bg-green-100 border-green-300 text-green-800"
-              : "bg-red-100 border-red-300 text-red-800"
-          )}
+          className={cn("flex items-center gap-1 w-fit", config.className)}
         >
-          {type === "INCOME" ? (
-            <>
-              <ArrowUpIcon size={12} /> Entrée
-            </>
-          ) : (
-            <>
-              <ArrowDownIcon size={12} /> Sortie
-            </>
-          )}
+          {config.icon} {config.label}
         </Badge>
       );
     },
@@ -364,12 +413,122 @@ export default function TransactionTable() {
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [isAddTransactionDrawerOpen, setIsAddTransactionDrawerOpen] =
     useState(false);
+  const [isReceiptUploadDrawerOpen, setIsReceiptUploadDrawerOpen] =
+    useState(false);
 
-  // Utilisation des données d'exemple (à remplacer par un hook GraphQL plus tard)
-  const transactions = sampleTransactions;
-  const totalItems = transactions.length;
-  const loading = false;
-  const error = null;
+  // Récupération des dépenses depuis l'API
+  const {
+    expenses,
+    totalCount: expensesTotalCount,
+    loading: expensesLoading,
+    error: expensesError,
+    refetch: refetchExpenses,
+  } = useExpenses({
+    status: "PAID", // Récupérer les dépenses payées
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+  });
+
+  // Récupération des factures payées depuis l'API
+  const {
+    invoices,
+    totalCount: invoicesTotalCount,
+    loading: invoicesLoading,
+    error: invoicesError,
+    refetch: refetchInvoices,
+  } = useInvoices();
+
+  // Filtrer les factures payées (statut COMPLETED)
+  const paidInvoices = useMemo(() => {
+    return invoices.filter((invoice) => invoice.status === "COMPLETED");
+  }, [invoices]);
+
+  // Combiner les états de chargement et d'erreur
+  const loading = expensesLoading || invoicesLoading;
+  const error = expensesError || invoicesError;
+  const totalCount = expensesTotalCount + paidInvoices.length;
+
+  // Fonction de refetch combinée
+  const refetch = useCallback(() => {
+    refetchExpenses();
+    refetchInvoices();
+  }, [refetchExpenses, refetchInvoices]);
+
+  // Mapper les dépenses et factures vers le format attendu par le tableau
+  const transactions = useMemo(() => {
+    // Mapper les dépenses (SORTIES D'ARGENT)
+    const expenseTransactions = expenses.map((expense) => ({
+      id: expense.id,
+      date: expense.date,
+      type: "EXPENSE", // Dépense = Sortie d'argent
+      subType:
+        expense.category === "TRAVEL"
+          ? "transport"
+          : expense.category === "MEALS"
+            ? "repas"
+            : expense.category === "OFFICE_SUPPLIES"
+              ? "bureau"
+              : expense.category === "SERVICES"
+                ? "prestation"
+                : "autre",
+      category: expense.category,
+      amount: expense.amount,
+      currency: expense.currency || "EUR",
+      description: expense.description || expense.title,
+      paymentMethod: expense.paymentMethod,
+      vendor: expense.vendor,
+      invoiceNumber: expense.invoiceNumber,
+      documentNumber: expense.documentNumber,
+      vatAmount: expense.vatAmount,
+      vatRate: expense.vatRate,
+      status: expense.status,
+      tags: expense.tags || [],
+      attachment:
+        expense.files && expense.files.length > 0 ? expense.files[0].url : null,
+      files: expense.files || [],
+      ocrMetadata: expense.ocrMetadata || null,
+      createdAt: expense.createdAt,
+      updatedAt: expense.updatedAt,
+      source: "expense", // Identifier la source
+    }));
+
+    // Mapper les factures payées (ENTRÉES D'ARGENT)
+    const invoiceTransactions = paidInvoices.map((invoice) => ({
+      id: `invoice-${invoice.id}`,
+      date: invoice.issueDate,
+      type: "INCOME", // Facture = Entrée d'argent
+      category: "SERVICES", // Catégorie par défaut pour les factures
+      amount: invoice.finalTotalTTC,
+      currency: "EUR",
+      description: `Facture ${invoice.prefix}${invoice.number} - ${invoice.client.name}`,
+      paymentMethod: "BANK_TRANSFER", // Méthode par défaut
+      vendor: invoice.client.name,
+      invoiceNumber: `${invoice.prefix}${invoice.number}`,
+      documentNumber: invoice.number,
+      vatAmount: invoice.totalVAT,
+      vatRate: null, // Non applicable pour les factures
+      status: "PAID", // Statut payé
+      tags: [],
+      attachment: null, // Les factures n'ont pas de fichiers attachés comme les dépenses
+      files: [],
+      ocrMetadata: null,
+      createdAt: invoice.createdAt,
+      updatedAt: invoice.updatedAt,
+      source: "invoice", // Identifier la source
+      // Données spécifiques aux factures
+      client: invoice.client,
+      dueDate: invoice.dueDate,
+      totalHT: invoice.totalHT,
+      totalTTC: invoice.totalTTC,
+    }));
+
+    // Combiner et trier par date (plus récent en premier)
+    return [...expenseTransactions, ...invoiceTransactions].sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    );
+  }, [expenses, paidInvoices]);
+
+  const totalItems = totalCount;
 
   const [sorting, setSorting] = useState([
     {
@@ -449,11 +608,60 @@ export default function TransactionTable() {
     toast.success("Transaction ajoutée");
   };
 
+  const handleReceiptUploadSuccess = (receiptData) => {
+    setIsReceiptUploadDrawerOpen(false);
+
+    // Si une dépense a été créée, rafraîchir les données
+    if (receiptData.createdExpense) {
+      console.log("Dépense créée:", receiptData.createdExpense);
+      refetch(); // Rafraîchir la liste des dépenses
+      toast.success(
+        `Dépense créée avec succès: ${receiptData.createdExpense.title}`
+      );
+    } else {
+      console.log("Reçu traité:", receiptData);
+      toast.success(`Reçu "${receiptData.fileName}" traité avec succès`);
+    }
+  };
+
   const handleSaveTransaction = async (updatedTransaction) => {
     // Simulation de sauvegarde (à remplacer par une mutation GraphQL)
     console.log("Sauvegarde de la transaction:", updatedTransaction);
     handleCloseEditModal();
     toast.success("Transaction mise à jour");
+  };
+
+  // Fonction pour télécharger le justificatif via l'URL Cloudflare
+  const handleDownloadAttachment = async (transaction) => {
+    try {
+      if (!transaction.attachment) {
+        toast.error("Aucun justificatif disponible");
+        return;
+      }
+
+      // L'URL Cloudflare est directement utilisable pour le téléchargement
+      const cloudflareUrl = transaction.attachment;
+
+      // Créer un lien de téléchargement temporaire
+      const link = document.createElement("a");
+      link.href = cloudflareUrl;
+      link.download = `justificatif-${transaction.id}.pdf`; // Nom par défaut
+      link.target = "_blank"; // Ouvrir dans un nouvel onglet si le téléchargement échoue
+
+      // Déclencher le téléchargement
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("Téléchargement du justificatif lancé");
+      console.log("✅ Téléchargement lancé pour:", {
+        transactionId: transaction.id,
+        cloudflareUrl: cloudflareUrl,
+      });
+    } catch (error) {
+      console.error("❌ Erreur lors du téléchargement:", error);
+      toast.error("Erreur lors du téléchargement du justificatif");
+    }
   };
 
   const table = useReactTable({
@@ -693,11 +901,19 @@ export default function TransactionTable() {
           {/* Add transaction button */}
           <Button
             className="ml-auto cursor-pointer"
+            variant="default"
+            onClick={() => setIsReceiptUploadDrawerOpen(true)}
+          >
+            <Plus className="-ms-1 opacity-60" size={16} aria-hidden="true" />
+            Ajouter un reçu
+          </Button>
+          <Button
+            className="ml-auto cursor-pointer"
             variant="outline"
             onClick={() => setIsAddTransactionDrawerOpen(true)}
           >
             <Plus className="-ms-1 opacity-60" size={16} aria-hidden="true" />
-            Ajouter une transaction
+            Ajouter manuellement
           </Button>
         </div>
       </div>
@@ -935,6 +1151,13 @@ export default function TransactionTable() {
         onOpenChange={setIsAddTransactionDrawerOpen}
         onSubmit={handleAddTransaction}
       />
+
+      {/* Receipt Upload Drawer */}
+      <ReceiptUploadDrawer
+        open={isReceiptUploadDrawerOpen}
+        onOpenChange={setIsReceiptUploadDrawerOpen}
+        onUploadSuccess={handleReceiptUploadSuccess}
+      />
     </div>
   );
 }
@@ -992,9 +1215,9 @@ function RowActions({ row, onEdit }) {
           </DropdownMenuItem>
           {transaction.attachment && (
             <DropdownMenuItem
-              onClick={() => console.log("Voir justificatif", transaction.id)}
+              onClick={() => handleDownloadAttachment(transaction)}
             >
-              <span>Voir justificatif</span>
+              <span>Télécharger justificatif</span>
               <DropdownMenuShortcut>⌘V</DropdownMenuShortcut>
             </DropdownMenuItem>
           )}

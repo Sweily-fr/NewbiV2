@@ -5,7 +5,7 @@ import { Button } from "@/src/components/ui/button";
 import { useForm } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { updateUser, useSession } from "../../../src/lib/auth-client";
-import ProfileImageUpload from "@/src/components/profile/ProfileImageUpload";
+import { GraphQLProfileImageUpload } from "@/src/components/profile/GraphQLProfileImageUpload";
 
 export default function ProfileForm({ user }) {
   const { data: session, isPending, error, refetch } = useSession();
@@ -47,11 +47,9 @@ export default function ProfileForm({ user }) {
       phone: formData.phone,
     };
 
-    // Ajouter l'avatar seulement s'il y en a un
-    if (profileImageUrl) {
-      updateData.avatar = profileImageUrl;
-    }
-
+    // Avec GraphQL, l'avatar est automatiquement mis à jour côté serveur
+    // Pas besoin de l'inclure dans updateData car l'upload GraphQL
+    // gère déjà la mise à jour de l'avatar utilisateur
     console.log("Données à mettre à jour:", updateData);
 
     await updateUser(updateData, {
@@ -67,18 +65,32 @@ export default function ProfileForm({ user }) {
     });
   };
 
-  const handleImageChange = (imageUrl) => {
+  const handleImageChange = (imageUrl, uploadData) => {
+    console.log('Image uploadée via GraphQL:', { imageUrl, uploadData });
     setProfileImageUrl(imageUrl);
+    
+    // Optionnel: recharger la session immédiatement pour refléter le changement
+    refetch();
+  };
+
+  const handleImageDelete = () => {
+    console.log('Image supprimée via GraphQL');
+    setProfileImageUrl(null);
+    
+    // Optionnel: recharger la session immédiatement pour refléter le changement
+    refetch();
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
         <div className="flex justify-center pb-6">
-          <ProfileImageUpload
+          <GraphQLProfileImageUpload
             currentImageUrl={profileImageUrl}
             onImageChange={handleImageChange}
+            onImageDelete={handleImageDelete}
             showDescription={true}
+            size="lg"
           />
         </div>
         <div className="flex justify-between gap-4 w-full">

@@ -168,7 +168,7 @@ export function ChartAreaInteractive({
 
   const filteredData = data.filter((item) => {
     const date = new Date(item.date);
-    const referenceDate = new Date("2024-06-30");
+    const referenceDate = new Date(); // Utiliser la date actuelle
     let daysToSubtract = 90;
     if (timeRange === "30d") {
       daysToSubtract = 30;
@@ -189,7 +189,7 @@ export function ChartAreaInteractive({
       <CardHeader>
         <CardTitle className="text-base font-medium">{title}</CardTitle>
         <CardDescription>
-          <span className="hidden @[540px]/card:block text-lg text-[#202020]">
+          <span className="hidden @[540px]/card:block text-lg">
             {description}
           </span>
           <span className="@[540px]/card:hidden">{shortDescription}</span>
@@ -286,9 +286,9 @@ export function ChartAreaInteractive({
               minTickGap={32}
               tickFormatter={(value) => {
                 const date = new Date(value);
-                return date.toLocaleDateString("en-US", {
+                return date.toLocaleDateString("fr-FR", {
                   month: "short",
-                  day: "numeric",
+                  year: "numeric",
                 });
               }}
             />
@@ -299,9 +299,9 @@ export function ChartAreaInteractive({
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) => {
-                      return new Date(value).toLocaleDateString("en-US", {
+                      return new Date(value).toLocaleDateString("fr-FR", {
                         month: "short",
-                        day: "numeric",
+                        year: "numeric",
                       });
                     }}
                     indicator="none"

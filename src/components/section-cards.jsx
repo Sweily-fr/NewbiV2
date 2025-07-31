@@ -51,7 +51,7 @@ const cards = [
   {
     title: "Factures",
     subtitle: "Créez et gérez vos factures.",
-    icon: <IconFileInvoice size={20} />,
+    icon: <IconFileInvoice size={15} />,
     href: "/dashboard/outils/factures",
     status: "available",
     bgIconColor: "#8681FF",
@@ -60,7 +60,7 @@ const cards = [
   {
     title: "Devis",
     subtitle: "Créez et suivez vos devis.",
-    icon: <IconFileDescription size={20} />,
+    icon: <IconFileDescription size={15} />,
     href: "/dashboard/outils/devis",
     status: "available",
     bgIconColor: "#FFC782",
@@ -69,7 +69,7 @@ const cards = [
   {
     title: "KANBAN",
     subtitle: "Créez et gérez vos tâches.",
-    icon: <IconLayoutKanban size={20} />,
+    icon: <IconLayoutKanban size={15} />,
     href: "/dashboard/outils/kanban",
     status: "available",
     bgIconColor: "#FF7D65",
@@ -78,7 +78,7 @@ const cards = [
   {
     title: "Signatures de mail",
     subtitle: "Créez et gérez vos signatures de mail.",
-    icon: <IconMailForward size={20} />,
+    icon: <IconMailForward size={15} />,
     href: "/dashboard/outils/signatures-mail",
     status: "available",
     bgIconColor: "#8BA6FF",
@@ -87,7 +87,7 @@ const cards = [
   {
     title: "Transfert de fichiers",
     subtitle: "Transférez vos fichiers.",
-    icon: <IconTransfer size={20} />,
+    icon: <IconTransfer size={15} />,
     href: "/dashboard/outils/transferts-fichiers",
     status: "available",
     bgIconColor: "#FF9F65",
@@ -96,7 +96,7 @@ const cards = [
   {
     title: "Dépenses",
     subtitle: "Créez et gérez vos dépenses.",
-    icon: <IconReceipt size={20} />,
+    icon: <IconReceipt size={15} />,
     href: "/dashboard/outils/gestion-depenses",
     status: "available",
     bgIconColor: "#5B4FFF",
@@ -146,7 +146,7 @@ export function SectionCards({ className }) {
                 <div className="space-y-4">
                   <div
                     className={cn(
-                      "p-3 rounded-md w-9 h-9 flex items-center justify-center",
+                      "p-2 rounded-md w-7 h-7 flex items-center justify-center",
                       `bg-[${card.bgIconColor}]`
                     )}
                     // style={{ backgroundColor: getIconColor(card.title) }}
@@ -156,7 +156,7 @@ export function SectionCards({ className }) {
 
                   <div className="space-y-3">
                     <CardTitle className="text-regular">{card.title}</CardTitle>
-                    <CardDescription className="text-sm">
+                    <CardDescription className="text-xs">
                       {card.subtitle}
                     </CardDescription>
                   </div>
