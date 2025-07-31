@@ -34,8 +34,6 @@ export function SignatureProvider({ children }) {
     website: "https://www.newbi.fr",
     address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
     primaryColor: "#2563eb",
-<<<<<<< HEAD
-=======
     // Couleurs des différents éléments
     colors: {
       name: "#2563eb", // Couleur du nom et prénom
@@ -51,14 +49,11 @@ export function SignatureProvider({ children }) {
     nameAlignment: 'left',
     // Layout de la signature (vertical ou horizontal)
     layout: 'vertical',
->>>>>>> Dylan/SM/AlignedField
     // Images Cloudflare
     photo: null, // URL de la photo de profil
     photoKey: null, // Clé Cloudflare de la photo de profil
     logo: null, // URL du logo d'entreprise
     logoKey: null, // Clé Cloudflare du logo d'entreprise
-<<<<<<< HEAD
-=======
     // Taille de l'image de profil (en pixels)
     imageSize: 80, // Taille par défaut de l'image de profil
     // Forme de l'image de profil (round ou square)
@@ -85,7 +80,6 @@ export function SignatureProvider({ children }) {
       position: 14, // Taille de police pour le poste
       contact: 12, // Taille de police pour les contacts
     }
->>>>>>> Dylan/SM/AlignedField
   });
 
   const updateSignatureData = (key, value) => {
@@ -111,8 +105,6 @@ export function SignatureProvider({ children }) {
       website: "https://www.newbi.fr",
       address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
       primaryColor: "#2563eb",
-<<<<<<< HEAD
-=======
       // Couleurs des différents éléments
       colors: {
         name: "#2563eb",
@@ -128,14 +120,11 @@ export function SignatureProvider({ children }) {
       nameAlignment: 'left',
       // Layout de la signature (vertical ou horizontal)
       layout: 'vertical',
->>>>>>> Dylan/SM/AlignedField
       // Images Cloudflare
       photo: null,
       photoKey: null,
       logo: null,
       logoKey: null,
-<<<<<<< HEAD
-=======
       // Taille de l'image de profil (en pixels)
       imageSize: 80,
       // Forme de l'image de profil (round ou square)
@@ -162,7 +151,6 @@ export function SignatureProvider({ children }) {
         position: 14,
         contact: 12,
       }
->>>>>>> Dylan/SM/AlignedField
     });
   };
 
