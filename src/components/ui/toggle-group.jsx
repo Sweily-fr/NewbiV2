@@ -30,8 +30,9 @@ function ToggleGroup({ className, variant, size, children, ...props }) {
   );
 }
 
-function ToggleGroupItem({ className, children, variant, size, ...props }) {
+function ToggleGroupItem({ className, children, variant, size, disabled, ...props }) {
   const context = React.useContext(ToggleGroupContext);
+  const isSelected = props['data-state'] === 'on';
 
   return (
     <ToggleGroupPrimitive.Item
@@ -44,8 +45,12 @@ function ToggleGroupItem({ className, children, variant, size, ...props }) {
           size: context.size || size,
         }),
         "min-w-0 flex-1 shrink-0 rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l",
+        isSelected && "bg-primary/10 text-primary-foreground",
+        disabled && "opacity-50 cursor-not-allowed",
         className
       )}
+      disabled={disabled || isSelected}
+      aria-disabled={disabled || isSelected}
       {...props}
     >
       {children}

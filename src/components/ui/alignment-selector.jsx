@@ -19,10 +19,12 @@ export default function AlignmentSelector({
     { value: "right", icon: AlignRightIcon },
   ],
   defaultValue,
+  value,
   onValueChange,
   className = "",
   size = "md",
   variant = "outline",
+  ...props
 }) {
   // Définir les tailles d'icônes en fonction du paramètre size
   const iconSizes = {
@@ -33,18 +35,26 @@ export default function AlignmentSelector({
 
   const iconSize = iconSizes[size] || iconSizes.md;
 
+  // Utiliser la prop value si fournie, sinon utiliser defaultValue
+  const selectedValue = value !== undefined ? value : defaultValue;
+
   return (
     <ToggleGroup 
       variant={variant} 
       className={`inline-flex ${className}`} 
       type="single"
-      defaultValue={defaultValue}
+      value={selectedValue}
       onValueChange={onValueChange}
     >
       {items.map((item) => {
         const Icon = item.icon;
         return (
-          <ToggleGroupItem key={item.value} value={item.value} className={item.className}>
+          <ToggleGroupItem 
+            key={item.value} 
+            value={item.value} 
+            className={item.className}
+            data-state={selectedValue === item.value ? 'on' : 'off'}
+          >
             {Icon && <Icon className={iconSize} />}
             {item.label && <span className="ml-1">{item.label}</span>}
           </ToggleGroupItem>

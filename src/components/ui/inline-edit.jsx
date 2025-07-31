@@ -25,11 +25,31 @@ export function InlineEdit({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
   const [error, setError] = useState("");
+  const [inputWidth, setInputWidth] = useState('auto');
   const inputRef = useRef(null);
+  const measureRef = useRef(null);
+  const displayRef = useRef(null);
 
   useEffect(() => {
     setEditValue(value || "");
   }, [value]);
+
+  // Fonction pour calculer la largeur du texte avec précision
+  const calculateTextWidth = (text) => {
+    if (measureRef.current) {
+      // Utiliser le texte exact ou le placeholder
+      const textToMeasure = text || placeholder;
+      measureRef.current.textContent = textToMeasure;
+      
+      // Obtenir la largeur exacte du texte
+      const textWidth = measureRef.current.scrollWidth;
+      
+      // Ajuster avec un facteur minimal pour éviter la troncature
+      // Pas de padding supplémentaire pour une correspondance exacte
+      return Math.max(textWidth + 4, 30) + 'px';
+    }
+    return 'auto';
+  };
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -38,8 +58,21 @@ export function InlineEdit({
     }
   }, [isEditing]);
 
+  // Effet séparé pour mettre à jour la largeur en temps réel
+  useEffect(() => {
+    if (isEditing && measureRef.current) {
+      setInputWidth(calculateTextWidth(editValue));
+    }
+  }, [isEditing, editValue]);
+
   const handleStartEdit = () => {
     if (disabled) return;
+    
+    // Pré-calculer la largeur avant d'entrer en mode édition
+    // pour éviter l'effet de saut
+    const initialWidth = calculateTextWidth(value || "");
+    setInputWidth(initialWidth);
+    
     setIsEditing(true);
     setEditValue(value || "");
     setError("");
@@ -96,13 +129,41 @@ export function InlineEdit({
     
     return (
       <div className="relative">
+        {/* Élément invisible pour mesurer la largeur du texte */}
+        <span
+          ref={measureRef}
+          className={inputClassName}
+          style={{
+            position: 'absolute',
+            visibility: 'hidden',
+            whiteSpace: 'pre',
+            fontSize: 'inherit',
+            fontFamily: 'inherit',
+            fontWeight: 'inherit',
+            letterSpacing: 'inherit',
+            textTransform: 'inherit',
+            padding: '0',
+            border: '0',
+            margin: '0',
+            overflow: 'auto'
+          }}
+        >
+          {editValue || placeholder}
+        </span>
         <InputComponent
           ref={inputRef}
           value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
+          onChange={(e) => {
+            setEditValue(e.target.value);
+            // Mettre à jour la largeur immédiatement après le changement
+            setTimeout(() => {
+              setInputWidth(calculateTextWidth(e.target.value));
+            }, 0);
+          }}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           className={`${inputClassName} ${error ? "border-red-500" : ""}`}
+          style={{ width: inputWidth, minWidth: '60px' }}
           maxLength={maxLength}
           rows={multiline ? 3 : undefined}
         />
@@ -122,6 +183,7 @@ export function InlineEdit({
 
   return (
     <div
+      ref={displayRef}
       onClick={handleStartEdit}
       className={`
         ${className} 

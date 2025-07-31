@@ -13,6 +13,8 @@ import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
 import { useImageUpload } from "../hooks/useImageUpload";
+import VerticalSignature from "../components/VerticalSignature";
+import HorizontalSignature from "../components/HorizontalSignature";
 import {
   Tabs,
   TabsContent,
@@ -199,250 +201,294 @@ const EmailPreview = ({ signatureData }) => {
     // Convertir les images en base64 si nécessaire
     console.log('🔍 Données avant conversion:');
     console.log('  - Photo originale:', signatureData.photo);
-    console.log('  - Logo original:', signatureData.companyLogo);
-    console.log('  - Nom entreprise:', signatureData.companyName);
+    console.log('  - Logo original:', signatureData.logo);
     
     // Conversion directe des images
     console.log('🖼️ Conversion des images pour la signature:');
     console.log('  - Photo URL originale:', signatureData.photo);
-    console.log('  - Logo URL originale:', signatureData.companyLogo);
-    console.log('  - URLs identiques?', signatureData.photo === signatureData.companyLogo);
+    console.log('  - Logo URL originale:', signatureData.logo);
+    console.log('  - URLs identiques?', signatureData.photo === signatureData.logo);
     console.log('📊 ÉTAT COMPLET signatureData:');
     console.log('  - photo:', signatureData.photo);
-    console.log('  - companyLogo:', signatureData.companyLogo);
+    console.log('  - logo:', signatureData.logo);
     console.log('  - companyName:', signatureData.companyName);
     
     try {
-      const [photoSrc, logoSrc] = await Promise.all([
-        signatureData.photo ? getImageSrc(signatureData.photo) : Promise.resolve(null),
-        signatureData.companyLogo ? getImageSrc(signatureData.companyLogo) : Promise.resolve(null)
-      ]);
+      // Utiliser directement les URLs des images (plus simple et efficace)
+      const photoSrc = signatureData.photo;
+      const logoSrc = signatureData.logo;
       
-      console.log('🖼️ Résultats de conversion:');
-      console.log('  - Photo src:', photoSrc ? 'Convertie (' + photoSrc.length + ' chars)' : 'Indisponible');
-      console.log('  - Logo src:', logoSrc ? 'Converti (' + logoSrc.length + ' chars)' : 'Indisponible');
-      console.log('  - Logo src type:', typeof logoSrc);
-      console.log('  - Logo src preview:', logoSrc ? logoSrc.substring(0, 100) + '...' : 'null');
+      console.log('🖼️ Images utilisées:');
+      console.log('  - Photo URL:', photoSrc || 'Aucune');
+      console.log('  - Logo URL:', logoSrc || 'Aucun');
       
-      // Version HTML de la signature (compatible email clients)
-    const htmlSignature = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Signature Email</title>
-        <style type="text/css">
-          /* Styles inline pour la compatibilité email */
-          body, html {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-            line-height: 1.4;
-            color: #333333;
-          }
-          table {
-            border-collapse: collapse;
-            mso-table-lspace: 0pt;
-            mso-table-rspace: 0pt;
-          }
-          img {
-            -ms-interpolation-mode: bicubic;
-            border: 0;
-            height: auto;
-            line-height: 100%;
-            outline: none;
-            text-decoration: none;
-            display: block;
-          }
-          .signature-table {
-            border-collapse: collapse;
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-          }
-          .signature-cell {
-            vertical-align: top;
-            padding: 10px 0;
-          }
-          .photo-cell {
-            width: 80px;
-            padding-right: 15px;
-          }
-          .photo {
-            width: 80px !important;
-            height: 80px !important;
-            border-radius: 50%;
-            object-fit: cover;
-          }
-          .logo {
-            height: 30px !important;
-            max-width: 150px !important;
-            width: auto !important;
-          }
-          .name {
-            font-size: 16px;
-            font-weight: bold;
-            color: ${primaryColor};
-            margin: 0 0 5px 0;
-            line-height: 1.2;
-          }
-          .position {
-            font-size: 14px;
-            color: #666666;
-            margin: 0 0 5px 0;
-          }
-          .company {
-            font-size: 14px;
-            font-weight: bold;
-            color: ${primaryColor};
-            margin: 10px 0 5px 0;
-          }
-          .contact {
-            font-size: 12px;
-            color: #666666;
-            margin: 3px 0;
-          }
-          .divider {
-            height: 1px;
-            background-color: #e0e0e0;
-            margin: 10px 0;
-          }
-        </style>
-      </head>
-      <body style="margin: 0; padding: 0;">
-        <table class="signature-table" cellpadding="0" cellspacing="0" border="0">
+      // Générer le HTML selon le layout sélectionné
+    const htmlSignature = signatureData.layout === 'horizontal' ? 
+      generateHorizontalHTML(signatureData, primaryColor, photoSrc, logoSrc) :
+      generateVerticalHTML(signatureData, primaryColor, photoSrc, logoSrc);
+    
+    return htmlSignature;
+  } catch (error) {
+    console.error('❌ Erreur lors de la génération HTML:', error);
+    throw error;
+  }
+};
+
+// Fonction pour générer le HTML du layout vertical
+const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
+  const imageSize = signatureData.imageSize || 80;
+  const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
+  const separatorVerticalWidth = signatureData.separatorVerticalWidth || 1;
+  const separatorHorizontalWidth = signatureData.separatorHorizontalWidth || 1;
+  const logoSize = signatureData.logoSize || 60;
+  const spacings = signatureData.spacings || {};
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Signature Email</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+        <tbody>
           <tr>
-            ${photoSrc ? `
-              <td class="signature-cell photo-cell">
-                <img src="${photoSrc}" alt="${signatureData.firstName} ${signatureData.lastName}" class="photo" style="width: 80px !important; height: 80px !important; max-width: 80px !important; max-height: 80px !important; border-radius: 50%; object-fit: cover; display: block;" />
-              </td>
-            ` : ''}
-            <td class="signature-cell" style="vertical-align: middle; padding-left: ${photoSrc ? '15px' : '0'};">
-              <table cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td>
-                    <div class="name" style="font-size: 16px; font-weight: bold; color: ${primaryColor}; margin: 0 0 5px 0; line-height: 1.2;">
-                      ${signatureData.firstName} ${signatureData.lastName}
-                    </div>
-                    ${signatureData.position ? `
-                      <div class="position" style="font-size: 14px; color: #666666; margin: 0 0 5px 0;">
-                        ${signatureData.position}
-                      </div>
-                    ` : ''}
-                    
-                    <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 10px;">
-                      ${signatureData.phone ? `
-                        <tr>
-                          <td style="padding-right: 10px; vertical-align: middle;">
-                            <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="14" height="14" style="width: 14px; height: 14px; vertical-align: middle;" />
-                          </td>
-                          <td class="contact" style="font-size: 12px; color: #666666; margin: 3px 0; vertical-align: middle;">
-                            ${signatureData.phone}
-                          </td>
-                        </tr>
-                      ` : ''}
-                      
-                      ${signatureData.email ? `
-                        <tr>
-                          <td style="padding-right: 10px; vertical-align: middle;">
-                            <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="14" height="14" style="width: 14px; height: 14px; vertical-align: middle;" />
-                          </td>
-                          <td class="contact" style="font-size: 12px; color: #666666; margin: 3px 0; vertical-align: middle;">
-                            <a href="mailto:${signatureData.email}" style="color: ${primaryColor}; text-decoration: none;">${signatureData.email}</a>
-                          </td>
-                        </tr>
-                      ` : ''}
-                      
-                      ${signatureData.website ? `
-                        <tr>
-                          <td style="padding-right: 10px; vertical-align: middle;">
-                            <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="14" height="14" style="width: 14px; height: 14px; vertical-align: middle;" />
-                          </td>
-                          <td class="contact" style="font-size: 12px; color: #666666; margin: 3px 0; vertical-align: middle;">
-                            <a href="${signatureData.website.startsWith('http') ? signatureData.website : 'https://' + signatureData.website}" target="_blank" style="color: ${primaryColor}; text-decoration: none;">${signatureData.website.replace(/^https?:\/\//, '')}</a>
-                          </td>
-                        </tr>
-                      ` : ''}
-                      
-                      ${signatureData.address ? `
-                        <tr>
-                          <td style="padding-right: 10px; vertical-align: top;">
-                            <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="14" height="14" style="width: 14px; height: 14px; vertical-align: top; margin-top: 2px;" />
-                          </td>
-                          <td class="contact" style="font-size: 12px; color: #666666; margin: 3px 0; vertical-align: top;">
-                            ${signatureData.address.replace(/\n/g, '<br>')}
-                          </td>
-                        </tr>
-                      ` : ''}
-                    </table>
-                    
-                    ${(signatureData.companyName || (logoSrc && logoSrc !== null)) ? `
-                       <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
-                         ${(() => {
-                           console.log('🏢 DIAGNOSTIC LOGO DANS HTML:');
-                           console.log('  - logoSrc exists:', !!logoSrc);
-                           console.log('  - logoSrc !== null:', logoSrc !== null);
-                           console.log('  - logoSrc type:', typeof logoSrc);
-                           console.log('  - logoSrc length:', logoSrc ? logoSrc.length : 'N/A');
-                           console.log('  - logoSrc preview:', logoSrc ? logoSrc.substring(0, 100) + '...' : 'null/undefined');
-                           console.log('  - companyName:', signatureData.companyName);
-                           console.log('  - Condition logo (logoSrc && logoSrc !== null):', (logoSrc && logoSrc !== null));
-                           console.log('  - Condition texte (!logoSrc || logoSrc === null):', (!logoSrc || logoSrc === null));
-                           return '';
-                         })()}
-                         ${(logoSrc && logoSrc !== null) ? `
-                           <img src="${logoSrc}" alt="${signatureData.companyName || 'Logo'}" class="logo" style="height: 30px !important; max-width: 150px !important; width: auto !important; display: block;" />
-                         ` : ''}
-                         ${signatureData.companyName && (!logoSrc || logoSrc === null) ? `
-                           <div class="company" style="font-size: 14px; font-weight: bold; color: ${primaryColor}; margin: 10px 0 5px 0;">
-                             ${signatureData.companyName}
-                           </div>
-                         ` : ''}
-                       </div>
-                     ` : ''}
+            <!-- Colonne de gauche : Informations personnelles -->
+            <td style="width: 200px; padding-right: 15px; vertical-align: top;">
+              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
+                <tbody>
+                  ${photoSrc ? `
+                 <tr>
+                  <td style="padding-bottom: ${spacings.photoBottom || 12}px; text-align: left;">
+                    <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center / cover no-repeat; display: inline-block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
                   </td>
                 </tr>
+                  ` : ''}
+                  
+
+                  <tr>
+                    <td style="padding-bottom: ${spacings.nameBottom || 8}px; text-align: left;">
+                      <div style="font-size: ${signatureData.fontSize?.name || 16}px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                        ${signatureData.firstName} ${signatureData.lastName}
+                      </div>
+                    </td>
+                  </tr>
+                  ${signatureData.position ? `
+                    <tr>
+                      <td style="padding-bottom: ${spacings.positionBottom || 8}px; text-align: left;">
+                        <div style="font-size: ${signatureData.fontSize?.position || 14}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                          ${signatureData.position}
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  ${signatureData.companyName ? `
+                    <tr>
+                      <td style="padding-bottom: 8px; text-align: left;">
+                        <div style="font-size: 14px; font-weight: bold; color: ${primaryColor};">
+                          ${signatureData.companyName}
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                </tbody>
+              </table>
+            </td>
+            
+            <!-- Séparateur vertical - Gmail compatible -->
+            <td style="width: ${separatorVerticalWidth}px; background-color: #e0e0e0; padding: 0; font-size: 1px; line-height: 1px;">
+              &nbsp;
+            </td>
+            
+            <!-- Colonne de droite : Informations de contact -->
+            <td style="padding-left: 15px; vertical-align: top; width: 200px;">
+              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
+                <tbody>
+                  ${signatureData.phone ? `
+                    <tr>
+                      <td style="padding-bottom: 6px;">
+                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                          <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                          <a href="tel:${signatureData.phone}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.phone}</a>
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  ${signatureData.mobile ? `
+                    <tr>
+                      <td style="padding-bottom: 6px;">
+                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                          <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                          <a href="tel:${signatureData.mobile}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.mobile}</a>
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  ${signatureData.email ? `
+                    <tr>
+                      <td style="padding-bottom: 6px;">
+                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                          <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                          <a href="mailto:${signatureData.email}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.email}</a>
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  ${signatureData.website ? `
+                    <tr>
+                      <td style="padding-bottom: 6px;">
+                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                          <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                          <a href="${signatureData.website && signatureData.website.startsWith('http') ? signatureData.website : 'https://' + (signatureData.website || '')}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.website ? signatureData.website.replace(/^https?:\/\//, '') : ''}</a>
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  ${signatureData.address ? `
+                    <tr>
+                      <td style="padding-bottom: 12px;">
+                        <div style="display: flex; align-items: flex-start; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                          <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
+                          <span style="font-family: inherit;">${signatureData.address.replace(/\n/g, '<br>')}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ` : ''}
+                </tbody>
               </table>
             </td>
           </tr>
-          ${signatureData.socialLinks && signatureData.socialLinks.length > 0 ? `
-            <tr>
-              <td colspan="2" style="padding-top: 10px;">
-                <table cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    ${signatureData.socialLinks.map(link => `
-                      <td style="padding-right: 10px; padding-bottom: 5px;">
-                        <a href="${link.url}" target="_blank" style="display: inline-block;">
-                          <img src="${link.icon}" alt="${link.name}" width="24" height="24" style="width: 24px; height: 24px; border: none; display: block;" />
-                        </a>
-                      </td>
-                    `).join('')}
-                  </tr>
-                </table>
-              </td>
-            </tr>
+          
+          <!-- Séparateur horizontal -->
+          <tr>
+            <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
+              <hr style="border: none; border-top: ${separatorHorizontalWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
+            </td>
+          </tr>
+          
+          <!-- Logo entreprise après le séparateur -->
+          ${logoSrc ? `
+          <tr>
+            <td colspan="2" style="padding: ${spacings.separatorBottom || 12}px 0 0 0; text-align: center;">
+              <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
+            </td>
+          </tr>
           ` : ''}
-        </table>
-      </body>
-      </html>
-    `;
-    
-      return htmlSignature;
-      
-    } catch (error) {
-      console.error('❌ Erreur lors de la conversion des images:', error);
-      throw error;
-    }
-  };
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+};
+
+// Fonction pour générer le HTML du layout horizontal
+const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
+  const imageSize = signatureData.imageSize || 80;
+  const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
+  const separatorHorizontalWidth = signatureData.separatorHorizontalWidth || 1;
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Signature Email</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px !important;">
+        <tr>
+          <!-- Photo de profil à gauche -->
+          ${photoSrc ? `
+            <td style="width: 80px; padding-right: 16px; vertical-align: top;">
+              <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center / cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
+            </td>
+          ` : ''}
+          
+          <!-- Informations empilées verticalement à droite -->
+          <td style="vertical-align: top;">
+            <!-- Nom et prénom -->
+            <div style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; margin-bottom: 2px;">
+              ${signatureData.firstName} ${signatureData.lastName}
+            </div>
+            
+            <!-- Profession -->
+            ${signatureData.position ? `
+              <div style="font-size: 14px; color: rgb(102,102,102); margin-bottom: 4px;">
+                ${signatureData.position}
+              </div>
+            ` : ''}
+            
+            <!-- Contacts -->
+            ${signatureData.phone ? `
+              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 1px;">
+                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                ${signatureData.phone}
+              </div>
+            ` : ''}
+            
+            ${signatureData.mobile ? `
+              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 1px;">
+                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                ${signatureData.mobile}
+              </div>
+            ` : ''}
+            
+            ${signatureData.email ? `
+              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 1px;">
+                <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                <a href="mailto:${signatureData.email}" style="color: ${primaryColor}; text-decoration: none;">${signatureData.email}</a>
+              </div>
+            ` : ''}
+            
+            ${signatureData.website ? `
+              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 1px;">
+                <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+                <a href="${signatureData.website.startsWith('http') ? signatureData.website : 'https://' + signatureData.website}" target="_blank" style="color: ${primaryColor}; text-decoration: none;">${signatureData.website.replace(/^https?:\/\//, '')}</a>
+              </div>
+            ` : ''}
+            
+            ${signatureData.address ? `
+              <div style="display: flex; align-items: flex-start; font-size: 12px; color: rgb(102,102,102); margin-bottom: 4px;">
+                <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
+                ${signatureData.address.replace(/\n/g, '<br>')}
+              </div>
+            ` : ''}
+            
+            <!-- Logo/Nom entreprise -->
+            ${(signatureData.companyName || logoSrc) ? '' : ''}
+          </td>
+        </tr>
+        
+        <!-- Séparateur horizontal -->
+        <tr>
+          <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
+            <hr style="border: none; border-top: ${separatorHorizontalWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
+          </td>
+        </tr>
+        
+        <!-- Logo entreprise après le séparateur -->
+        ${logoSrc ? `
+        <tr>
+          <td colspan="2" style="padding: ${spacings.separatorBottom || 12}px 0 0 0; text-align: center;">
+            <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
+          </td>
+        </tr>
+        ` : ''}
+      </table>
+    </body>
+    </html>
+  `;
+};
+
+
   
   // Fonction pour copier la signature dans le presse-papier
   const handleCopySignature = async () => {
     console.log('🚀 Début de la copie de signature');
     console.log('📋 Données signature:', {
       photo: signatureData.photo ? 'Présente' : 'Absente',
-      companyLogo: signatureData.companyLogo ? 'Présent' : 'Absent',
+      companyLogo: signatureData.logo ? 'Présent' : 'Absent',
       firstName: signatureData.firstName,
       lastName: signatureData.lastName
     });
@@ -598,236 +644,28 @@ const EmailPreview = ({ signatureData }) => {
         </div>
 
         <div className="border-t pt-4 mt-4">
-          {/* Signature générée avec tableau HTML pour meilleure compatibilité email */}
-          <table cellPadding="0" cellSpacing="0" border="0" style={{ fontFamily: 'Arial, sans-serif', fontSize: '14px', lineHeight: '1.4' }}>
-            <tbody>
-              <tr>
-                {/* Photo de profil */}
-                <td style={{ verticalAlign: 'top', paddingRight: '16px' }}>
-                  <ImageDropZone
-                    currentImage={signatureData.photo}
-                    onImageChange={(imageUrl) =>
-                      handleImageChange("photo", imageUrl)
-                    }
-                    placeholder="Photo de profil"
-                    size="md"
-                    type="profile"
-                    className="mb-2"
-                  />
-                </td>
-                
-                {/* Informations principales */}
-                <td style={{ verticalAlign: 'top' }}>
-                  <table cellPadding="0" cellSpacing="0" border="0" style={{ width: '100%' }}>
-                    <tbody>
-                      {/* Nom et prénom */}
-                      <tr>
-                        <td style={{ 
-                          paddingBottom: '4px',
-                          color: signatureData.primaryColor || '#2563eb',
-                          fontWeight: 'bold',
-                          fontSize: '16px'
-                        }}>
-                          <InlineEdit
-                            value={signatureData.firstName}
-                            onChange={(value) => handleFieldChange("firstName", value)}
-                            placeholder="Prénom"
-                            displayClassName="font-semibold"
-                            inputClassName="font-semibold border-0 shadow-none p-1 h-auto"
-                          />
-                          {' '}
-                          <InlineEdit
-                            value={signatureData.lastName}
-                            onChange={(value) => handleFieldChange("lastName", value)}
-                            placeholder="Nom"
-                            displayClassName="font-semibold"
-                            inputClassName="font-semibold border-0 shadow-none p-1 h-auto"
-                          />
-                        </td>
-                      </tr>
-                      
-                      {/* Poste */}
-                      <tr>
-                        <td style={{ 
-                          paddingBottom: '2px',
-                          color: '#6b7280',
-                          fontSize: '14px'
-                        }}>
-                          <InlineEdit
-                            value={signatureData.position}
-                            onChange={(value) => handleFieldChange("position", value)}
-                            placeholder="Votre poste"
-                            displayClassName="text-gray-600 text-sm"
-                            inputClassName="text-gray-600 text-sm border-0 shadow-none p-1 h-auto"
-                          />
-                        </td>
-                      </tr>
-                      
-                      {/* Entreprise - n'afficher que s'il n'y a pas de logo */}
-                      {!signatureData.companyLogo && (
-                        <tr>
-                          <td style={{ 
-                            paddingBottom: '8px',
-                            color: '#6b7280',
-                            fontSize: '14px'
-                          }}>
-                            <InlineEdit
-                              value={signatureData.companyName}
-                              onChange={(value) => handleFieldChange("companyName", value)}
-                              placeholder="Nom de l'entreprise"
-                              displayClassName="text-gray-600 text-sm"
-                              inputClassName="text-gray-600 text-sm border-0 shadow-none p-1 h-auto"
-                            />
-                          </td>
-                        </tr>
-                      )}
-                      
-                      {/* Informations de contact */}
-                      {signatureData.showPhoneIcon && (
-                        <tr>
-                          <td style={{ 
-                            paddingBottom: '2px',
-                            color: '#6b7280',
-                            fontSize: '12px'
-                          }}>
-                            <span style={{ marginRight: '4px' }}>📞</span>
-                            <InlineEdit
-                              value={signatureData.phone}
-                              onChange={(value) => handleFieldChange("phone", value)}
-                              placeholder="Numéro de téléphone"
-                              validation={validatePhone}
-                              displayClassName="text-xs text-gray-600"
-                              inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
-                            />
-                          </td>
-                        </tr>
-                      )}
-                      
-                      {signatureData.showMobileIcon && (
-                        <tr>
-                          <td style={{ 
-                            paddingBottom: '2px',
-                            color: '#6b7280',
-                            fontSize: '12px'
-                          }}>
-                            <span style={{ marginRight: '4px' }}>📱</span>
-                            <InlineEdit
-                              value={signatureData.mobile}
-                              onChange={(value) => handleFieldChange("mobile", value)}
-                              placeholder="Numéro de mobile"
-                              validation={validatePhone}
-                              displayClassName="text-xs text-gray-600"
-                              inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
-                            />
-                          </td>
-                        </tr>
-                      )}
-                      
-                      {signatureData.showEmailIcon && (
-                        <tr>
-                          <td style={{ 
-                            paddingBottom: '2px',
-                            color: '#6b7280',
-                            fontSize: '12px'
-                          }}>
-                            <span style={{ marginRight: '4px' }}>✉️</span>
-                            <InlineEdit
-                              value={signatureData.email}
-                              onChange={(value) => handleFieldChange("email", value)}
-                              placeholder="adresse@email.com"
-                              validation={validateEmail}
-                              displayClassName="text-xs text-gray-600"
-                              inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
-                            />
-                          </td>
-                        </tr>
-                      )}
-                      
-                      {signatureData.showWebsiteIcon && (
-                        <tr>
-                          <td style={{ 
-                            paddingBottom: '2px',
-                            color: '#6b7280',
-                            fontSize: '12px'
-                          }}>
-                            <span style={{ marginRight: '4px' }}>🌐</span>
-                            <InlineEdit
-                              value={signatureData.website}
-                              onChange={(value) => handleFieldChange("website", value)}
-                              placeholder="www.monsite.com"
-                              validation={validateUrl}
-                              displayClassName="text-xs text-gray-600"
-                              inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
-                            />
-                          </td>
-                        </tr>
-                      )}
-                      
-                      {signatureData.showAddressIcon && (
-                        <tr>
-                          <td style={{ 
-                            paddingBottom: '8px',
-                            color: '#6b7280',
-                            fontSize: '12px'
-                          }}>
-                            <span style={{ marginRight: '4px', verticalAlign: 'top' }}>📍</span>
-                            <InlineEdit
-                              value={signatureData.address}
-                              onChange={(value) => handleFieldChange("address", value)}
-                              placeholder="Adresse complète"
-                              multiline={true}
-                              displayClassName="text-xs text-gray-600"
-                              inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 min-h-[2rem] resize-none"
-                            />
-                          </td>
-                        </tr>
-                      )}
-                      
-                      {/* Logo entreprise */}
-                      <tr>
-                        <td style={{ paddingTop: '12px' }}>
-                          <table cellPadding="0" cellSpacing="0" border="0" style={{ width: '100%' }}>
-                            <tbody>
-                              <tr>
-                                <td style={{ verticalAlign: 'middle', paddingRight: '12px', width: 'auto' }}>
-                                  <ImageDropZone
-                                    currentImage={signatureData.companyLogo}
-                                    onImageChange={(imageUrl) =>
-                                      handleImageChange("companyLogo", imageUrl)
-                                    }
-                                    placeholder="Logo entreprise"
-                                    size="sm"
-                                    type="logo"
-                                  />
-                                </td>
-                                <td style={{ 
-                                  verticalAlign: 'middle',
-                                  color: signatureData.companyLogo ? '#2563eb' : '#6b7280',
-                                  fontWeight: signatureData.companyLogo ? 'bold' : 'normal',
-                                  fontSize: '14px',
-                                  width: '100%'
-                                }}>
-                                  <InlineEdit
-                                    value={signatureData.companyName}
-                                    onChange={(value) =>
-                                      handleFieldChange("companyName", value)
-                                    }
-                                    placeholder="Nom entreprise"
-                                    displayClassName={signatureData.companyLogo ? "text-blue-600 font-semibold text-sm" : "text-gray-600 text-sm"}
-                                    inputClassName={signatureData.companyLogo ? "text-blue-600 font-semibold text-sm border-0 shadow-none p-1 h-auto" : "text-gray-600 text-sm border-0 shadow-none p-1 h-auto"}
-                                  />
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {/* Signature avec rendu conditionnel selon le layout */}
+          {signatureData.layout === 'horizontal' ? (
+            <HorizontalSignature
+              signatureData={signatureData}
+              handleFieldChange={handleFieldChange}
+              handleImageChange={handleImageChange}
+              validatePhone={validatePhone}
+              validateEmail={validateEmail}
+              validateUrl={validateUrl}
+              logoSrc={signatureData.logo}
+            />
+          ) : (
+            <VerticalSignature
+              signatureData={signatureData}
+              handleFieldChange={handleFieldChange}
+              handleImageChange={handleImageChange}
+              validatePhone={validatePhone}
+              validateEmail={validateEmail}
+              validateUrl={validateUrl}
+              logoSrc={signatureData.logo}
+            />
+          )}
         </div>
       </div>
     </div>
