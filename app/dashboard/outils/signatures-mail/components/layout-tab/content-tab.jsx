@@ -84,6 +84,14 @@ export default function ContentTab() {
     });
   };
 
+  // Gestion des couleurs
+  const handleColorChange = (colorKey, value) => {
+    updateSignatureData('colors', {
+      ...signatureData.colors,
+      [colorKey]: value
+    });
+  };
+
   return (
     <div className="mt-4 flex flex-col gap-10">
       <div className="flex flex-col gap-3">
@@ -1125,6 +1133,116 @@ export default function ContentTab() {
                 step={2}
                 aria-label="Espacement après séparateur"
               />
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      
+      <Separator />
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium">Couleurs</h2>
+        <div className="flex flex-col gap-3 ml-4">
+          
+          {/* Couleur du nom */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Nom et prénom</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={signatureData.colors?.name || "#2563eb"}
+                onChange={(e) => handleColorChange('name', e.target.value)}
+                className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                title="Couleur du nom et prénom"
+              />
+              <span className="text-xs text-muted-foreground w-16 text-right">
+                {signatureData.colors?.name || "#2563eb"}
+              </span>
+            </div>
+          </div>
+          
+          {/* Couleur du poste */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Poste</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={signatureData.colors?.position || "#666666"}
+                onChange={(e) => handleColorChange('position', e.target.value)}
+                className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                title="Couleur du poste"
+              />
+              <span className="text-xs text-muted-foreground w-16 text-right">
+                {signatureData.colors?.position || "#666666"}
+              </span>
+            </div>
+          </div>
+          
+          {/* Couleur de l'entreprise */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Entreprise</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={signatureData.colors?.company || "#2563eb"}
+                onChange={(e) => handleColorChange('company', e.target.value)}
+                className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                title="Couleur du nom d'entreprise"
+              />
+              <span className="text-xs text-muted-foreground w-16 text-right">
+                {signatureData.colors?.company || "#2563eb"}
+              </span>
+            </div>
+          </div>
+          
+          {/* Couleur des contacts */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Contacts</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={signatureData.colors?.contact || "#666666"}
+                onChange={(e) => handleColorChange('contact', e.target.value)}
+                className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                title="Couleur des informations de contact"
+              />
+              <span className="text-xs text-muted-foreground w-16 text-right">
+                {signatureData.colors?.contact || "#666666"}
+              </span>
+            </div>
+          </div>
+          
+          {/* Couleur du séparateur vertical */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Séparateur vertical</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={signatureData.colors?.separatorVertical || "#e0e0e0"}
+                onChange={(e) => handleColorChange('separatorVertical', e.target.value)}
+                className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                title="Couleur du séparateur vertical"
+              />
+              <span className="text-xs text-muted-foreground w-16 text-right">
+                {signatureData.colors?.separatorVertical || "#e0e0e0"}
+              </span>
+            </div>
+          </div>
+          
+          {/* Couleur du séparateur horizontal */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Séparateur horizontal</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
+                onChange={(e) => handleColorChange('separatorHorizontal', e.target.value)}
+                className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                title="Couleur du séparateur horizontal"
+              />
+              <span className="text-xs text-muted-foreground w-16 text-right">
+                {signatureData.colors?.separatorHorizontal || "#e0e0e0"}
+              </span>
             </div>
           </div>
           

@@ -86,7 +86,7 @@ const HorizontalSignature = ({
                           <td style={{ 
                             fontSize: `${signatureData.fontSize?.name || 16}px`,
                             fontWeight: 'bold',
-                            color: signatureData.primaryColor || '#2563eb',
+                            color: signatureData.colors?.name || signatureData.primaryColor || '#2563eb',
                             lineHeight: '1.2',
                             paddingRight: `${signatureData.nameSpacing || 4}px`,
                             whiteSpace: 'nowrap',
@@ -105,7 +105,7 @@ const HorizontalSignature = ({
                           <td style={{ 
                             fontSize: `${signatureData.fontSize?.name || 16}px`,
                             fontWeight: 'bold',
-                            color: signatureData.primaryColor || '#2563eb',
+                            color: signatureData.colors?.name || signatureData.primaryColor || '#2563eb',
                             lineHeight: '1.2',
                             whiteSpace: 'nowrap',
                             fontFamily: signatureData.fontFamily || 'Arial, sans-serif'
@@ -131,7 +131,7 @@ const HorizontalSignature = ({
                  <tr>
                    <td colSpan="2" style={{ 
                      fontSize: '14px',
-                     color: 'rgb(102,102,102)',
+                     color: signatureData.colors?.position || 'rgb(102,102,102)',
                      paddingTop: '2px',
                      paddingBottom: '4px'
                    }}>

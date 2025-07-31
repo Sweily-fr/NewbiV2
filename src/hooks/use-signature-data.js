@@ -34,6 +34,15 @@ export function SignatureProvider({ children }) {
     website: "https://www.newbi.fr",
     address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
     primaryColor: "#2563eb",
+    // Couleurs des différents éléments
+    colors: {
+      name: "#2563eb", // Couleur du nom et prénom
+      position: "#666666", // Couleur du poste
+      company: "#2563eb", // Couleur du nom d'entreprise
+      contact: "#666666", // Couleur des informations de contact
+      separatorVertical: "#e0e0e0", // Couleur du séparateur vertical
+      separatorHorizontal: "#e0e0e0", // Couleur du séparateur horizontal
+    },
     // Espacement entre prénom et nom (en pixels)
     nameSpacing: 4,
     // Alignement du nom et prénom (left, center, right)
@@ -96,6 +105,15 @@ export function SignatureProvider({ children }) {
       website: "https://www.newbi.fr",
       address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
       primaryColor: "#2563eb",
+      // Couleurs des différents éléments
+      colors: {
+        name: "#2563eb",
+        position: "#666666",
+        company: "#2563eb",
+        contact: "#666666",
+        separatorVertical: "#e0e0e0",
+        separatorHorizontal: "#e0e0e0",
+      },
       // Espacement entre prénom et nom (en pixels)
       nameSpacing: 4,
       // Alignement du nom et prénom (left, center, right)

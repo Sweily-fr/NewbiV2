@@ -82,7 +82,7 @@ const VerticalSignature = ({
                     <div style={{ 
                       fontSize: `${signatureData.fontSize?.name || 16}px`,
                       fontWeight: 'bold',
-                      color: signatureData.primaryColor || '#2563eb',
+                      color: signatureData.colors?.name || signatureData.primaryColor || '#2563eb',
                       lineHeight: '1.2',
                       fontFamily: signatureData.fontFamily || 'Arial, sans-serif'
                     }}>
@@ -119,7 +119,7 @@ const VerticalSignature = ({
                     }}>
                       <div style={{ 
                         fontSize: `${signatureData.fontSize?.position || 14}px`,
-                        color: 'rgb(102,102,102)',
+                        color: signatureData.colors?.position || 'rgb(102,102,102)',
                         fontFamily: signatureData.fontFamily || 'Arial, sans-serif'
                       }}>
                         <InlineEdit
@@ -144,7 +144,7 @@ const VerticalSignature = ({
                       <div style={{ 
                         fontSize: '14px',
                         fontWeight: 'bold',
-                        color: signatureData.primaryColor || '#2563eb'
+                        color: signatureData.colors?.company || signatureData.primaryColor || '#2563eb'
                       }}>
                         <InlineEdit
                           value={signatureData.companyName}
@@ -162,7 +162,7 @@ const VerticalSignature = ({
           </td>
 
           {/* Séparateur vertical - Gmail compatible */}
-          <td style={{ width: `${signatureData.separatorVerticalWidth || 1}px`, backgroundColor: '#e0e0e0', padding: '0', fontSize: '1px', lineHeight: '1px' }}>
+          <td style={{ width: `${signatureData.separatorVerticalWidth || 1}px`, backgroundColor: signatureData.colors?.separatorVertical || '#e0e0e0', padding: '0', fontSize: '1px', lineHeight: '1px' }}>
             &nbsp;
           </td>
 
@@ -174,7 +174,7 @@ const VerticalSignature = ({
                 {signatureData.phone && (
                   <tr>
                     <td style={{ paddingBottom: '6px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.phone}
@@ -193,7 +193,7 @@ const VerticalSignature = ({
                 {signatureData.mobile && (
                   <tr>
                     <td style={{ paddingBottom: '6px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.mobile}
@@ -212,7 +212,7 @@ const VerticalSignature = ({
                 {signatureData.email && (
                   <tr>
                     <td style={{ paddingBottom: '6px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.email}
@@ -231,7 +231,7 @@ const VerticalSignature = ({
                 {signatureData.website && (
                   <tr>
                     <td style={{ paddingBottom: '6px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.website}
@@ -250,7 +250,7 @@ const VerticalSignature = ({
                 {signatureData.address && (
                   <tr>
                     <td style={{ paddingBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px', marginTop: '1px' }} />
                         <InlineEdit
                           value={signatureData.address}
@@ -273,7 +273,7 @@ const VerticalSignature = ({
                   }}>
                     <hr style={{
                       border: 'none',
-                      borderTop: `${signatureData.separatorHorizontalWidth || 1}px solid #e0e0e0`,
+                      borderTop: `${signatureData.separatorHorizontalWidth || 1}px solid ${signatureData.colors?.separatorHorizontal || '#e0e0e0'}`,
                       margin: '0',
                       width: '100%'
                     }} />
