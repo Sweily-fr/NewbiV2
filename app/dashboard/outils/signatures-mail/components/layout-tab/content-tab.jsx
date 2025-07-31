@@ -411,6 +411,159 @@ export default function ContentTab() {
       </div>
       <Separator />
       <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium">Typographie</h2>
+        <div className="flex flex-col gap-3 ml-4">
+          {/* Police générale */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Police générale</Label>
+            <select
+              value={signatureData.fontFamily || 'Arial, sans-serif'}
+              onChange={(e) => updateSignatureData('fontFamily', e.target.value)}
+              className="h-8 px-2 text-xs border rounded w-32 bg-white"
+            >
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="Helvetica, sans-serif">Helvetica</option>
+              <option value="'Times New Roman', serif">Times New Roman</option>
+              <option value="Georgia, serif">Georgia</option>
+              <option value="Verdana, sans-serif">Verdana</option>
+              <option value="Tahoma, sans-serif">Tahoma</option>
+              <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+              <option value="'Courier New', monospace">Courier New</option>
+            </select>
+          </div>
+          
+          {/* Taille police nom */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Taille nom</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.fontSize?.name || 16}
+                onChange={(e) => {
+                  const newSize = parseInt(e.target.value) || 16;
+                  updateSignatureData('fontSize', {
+                    ...signatureData.fontSize,
+                    name: Math.max(10, Math.min(24, newSize))
+                  });
+                }}
+                onBlur={(e) => {
+                  const newSize = parseInt(e.target.value) || 16;
+                  updateSignatureData('fontSize', {
+                    ...signatureData.fontSize,
+                    name: Math.max(10, Math.min(24, newSize))
+                  });
+                }}
+                aria-label="Taille de police pour le nom"
+                placeholder="16"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.fontSize?.name || 16]}
+                onValueChange={(value) => {
+                  updateSignatureData('fontSize', {
+                    ...signatureData.fontSize,
+                    name: value[0]
+                  });
+                }}
+                min={10}
+                max={24}
+                step={1}
+                aria-label="Taille police nom"
+              />
+            </div>
+          </div>
+          
+          {/* Taille police poste */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Taille poste</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.fontSize?.position || 14}
+                onChange={(e) => {
+                  const newSize = parseInt(e.target.value) || 14;
+                  updateSignatureData('fontSize', {
+                    ...signatureData.fontSize,
+                    position: Math.max(8, Math.min(20, newSize))
+                  });
+                }}
+                onBlur={(e) => {
+                  const newSize = parseInt(e.target.value) || 14;
+                  updateSignatureData('fontSize', {
+                    ...signatureData.fontSize,
+                    position: Math.max(8, Math.min(20, newSize))
+                  });
+                }}
+                aria-label="Taille de police pour le poste"
+                placeholder="14"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.fontSize?.position || 14]}
+                onValueChange={(value) => {
+                  updateSignatureData('fontSize', {
+                    ...signatureData.fontSize,
+                    position: value[0]
+                  });
+                }}
+                min={8}
+                max={20}
+                step={1}
+                aria-label="Taille police poste"
+              />
+            </div>
+          </div>
+          
+          {/* Taille police contacts */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Taille contacts</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.fontSize?.contact || 12}
+                onChange={(e) => {
+                  const newSize = parseInt(e.target.value) || 12;
+                  updateSignatureData('fontSize', {
+                    ...signatureData.fontSize,
+                    contact: Math.max(8, Math.min(16, newSize))
+                  });
+                }}
+                onBlur={(e) => {
+                  const newSize = parseInt(e.target.value) || 12;
+                  updateSignatureData('fontSize', {
+                    ...signatureData.fontSize,
+                    contact: Math.max(8, Math.min(16, newSize))
+                  });
+                }}
+                aria-label="Taille de police pour les contacts"
+                placeholder="12"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.fontSize?.contact || 12]}
+                onValueChange={(value) => {
+                  updateSignatureData('fontSize', {
+                    ...signatureData.fontSize,
+                    contact: value[0]
+                  });
+                }}
+                min={8}
+                max={16}
+                step={1}
+                aria-label="Taille police contacts"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <Separator />
+      <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium">Espacements</h2>
         <div className="flex flex-col gap-3 ml-4">
           <div className="flex items-center justify-between">

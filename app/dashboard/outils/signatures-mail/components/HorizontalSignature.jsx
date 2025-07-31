@@ -84,12 +84,13 @@ const HorizontalSignature = ({
                       <tbody>
                         <tr>
                           <td style={{ 
-                            fontSize: '16px',
+                            fontSize: `${signatureData.fontSize?.name || 16}px`,
                             fontWeight: 'bold',
                             color: signatureData.primaryColor || '#2563eb',
                             lineHeight: '1.2',
                             paddingRight: `${signatureData.nameSpacing || 4}px`,
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
+                            fontFamily: signatureData.fontFamily || 'Arial, sans-serif'
                           }}>
                             <InlineEdit
                               value={signatureData.firstName}
@@ -102,11 +103,12 @@ const HorizontalSignature = ({
                             />
                           </td>
                           <td style={{ 
-                            fontSize: '16px',
+                            fontSize: `${signatureData.fontSize?.name || 16}px`,
                             fontWeight: 'bold',
                             color: signatureData.primaryColor || '#2563eb',
                             lineHeight: '1.2',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
+                            fontFamily: signatureData.fontFamily || 'Arial, sans-serif'
                           }}>
                             <InlineEdit
                               value={signatureData.lastName}

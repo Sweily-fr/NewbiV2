@@ -62,6 +62,13 @@ export function SignatureProvider({ children }) {
       contactBottom: 6, // Espacement entre chaque contact
       separatorTop: 12, // Espacement au-dessus du séparateur
       separatorBottom: 12, // Espacement sous le séparateur
+    },
+    // Typographie générale
+    fontFamily: 'Arial, sans-serif', // Police par défaut
+    fontSize: {
+      name: 16, // Taille de police pour le nom
+      position: 14, // Taille de police pour le poste
+      contact: 12, // Taille de police pour les contacts
     }
   });
 
@@ -116,6 +123,13 @@ export function SignatureProvider({ children }) {
         contactBottom: 6,
         separatorTop: 12,
         separatorBottom: 12,
+      },
+      // Typographie générale
+      fontFamily: 'Arial, sans-serif',
+      fontSize: {
+        name: 16,
+        position: 14,
+        contact: 12,
       }
     });
   };

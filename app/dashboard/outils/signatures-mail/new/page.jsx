@@ -249,8 +249,8 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Signature Email</title>
     </head>
-    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
-      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: Arial, sans-serif;">
+    <body style="margin: 0; padding: 0; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
         <tbody>
           <tr>
             <!-- Colonne de gauche : Informations personnelles -->
@@ -268,7 +268,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
 
                   <tr>
                     <td style="padding-bottom: ${spacings.nameBottom || 8}px; text-align: left;">
-                      <div style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2;">
+                      <div style="font-size: ${signatureData.fontSize?.name || 16}px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                         ${signatureData.firstName} ${signatureData.lastName}
                       </div>
                     </td>
@@ -276,7 +276,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   ${signatureData.position ? `
                     <tr>
                       <td style="padding-bottom: ${spacings.positionBottom || 8}px; text-align: left;">
-                        <div style="font-size: 14px; color: rgb(102,102,102);">
+                        <div style="font-size: ${signatureData.fontSize?.position || 14}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                           ${signatureData.position}
                         </div>
                       </td>
@@ -307,9 +307,9 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   ${signatureData.phone ? `
                     <tr>
                       <td style="padding-bottom: 6px;">
-                        <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102);">
+                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                           <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                          <a href="tel:${signatureData.phone}" style="color: rgb(102,102,102); text-decoration: none;">${signatureData.phone}</a>
+                          <a href="tel:${signatureData.phone}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.phone}</a>
                         </div>
                       </td>
                     </tr>
@@ -317,9 +317,9 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   ${signatureData.mobile ? `
                     <tr>
                       <td style="padding-bottom: 6px;">
-                        <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102);">
+                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                           <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                          <a href="tel:${signatureData.mobile}" style="color: rgb(102,102,102); text-decoration: none;">${signatureData.mobile}</a>
+                          <a href="tel:${signatureData.mobile}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.mobile}</a>
                         </div>
                       </td>
                     </tr>
@@ -327,9 +327,9 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   ${signatureData.email ? `
                     <tr>
                       <td style="padding-bottom: 6px;">
-                        <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102);">
+                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                           <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                          <a href="mailto:${signatureData.email}" style="color: rgb(102,102,102); text-decoration: none;">${signatureData.email}</a>
+                          <a href="mailto:${signatureData.email}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.email}</a>
                         </div>
                       </td>
                     </tr>
@@ -337,9 +337,9 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   ${signatureData.website ? `
                     <tr>
                       <td style="padding-bottom: 6px;">
-                        <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102);">
+                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                           <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                          <a href="${signatureData.website && signatureData.website.startsWith('http') ? signatureData.website : 'https://' + (signatureData.website || '')}" style="color: rgb(102,102,102); text-decoration: none;">${signatureData.website ? signatureData.website.replace(/^https?:\/\//, '') : ''}</a>
+                          <a href="${signatureData.website && signatureData.website.startsWith('http') ? signatureData.website : 'https://' + (signatureData.website || '')}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.website ? signatureData.website.replace(/^https?:\/\//, '') : ''}</a>
                         </div>
                       </td>
                     </tr>
@@ -347,9 +347,9 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   ${signatureData.address ? `
                     <tr>
                       <td style="padding-bottom: 12px;">
-                        <div style="display: flex; align-items: flex-start; font-size: 12px; color: rgb(102,102,102);">
+                        <div style="display: flex; align-items: flex-start; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                           <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
-                          <span>${signatureData.address.replace(/\n/g, '<br>')}</span>
+                          <span style="font-family: inherit;">${signatureData.address.replace(/\n/g, '<br>')}</span>
                         </div>
                       </td>
                     </tr>
