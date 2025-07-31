@@ -56,10 +56,16 @@ export default function ContentTab() {
     updateSignatureData('imageShape', shape);
   };
 
-  // Gestion de l'épaisseur du séparateur
-  const handleSeparatorWidthChange = (value) => {
+  // Gestion de l'épaisseur du séparateur vertical
+  const handleSeparatorVerticalWidthChange = (value) => {
     const numValue = parseInt(value) || 1;
-    updateSignatureData('separatorWidth', Math.max(1, Math.min(5, numValue))); // Entre 1 et 5px
+    updateSignatureData('separatorVerticalWidth', Math.max(1, Math.min(5, numValue))); // Entre 1 et 5px
+  };
+
+  // Gestion de l'épaisseur du séparateur horizontal
+  const handleSeparatorHorizontalWidthChange = (value) => {
+    const numValue = parseInt(value) || 1;
+    updateSignatureData('separatorHorizontalWidth', Math.max(1, Math.min(5, numValue))); // Entre 1 et 5px
   };
 
   // Gestion de la taille du logo
@@ -791,31 +797,60 @@ export default function ContentTab() {
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Épaisseur séparateur</Label>
+            <Label className="text-xs text-muted-foreground">Séparateur vertical</Label>
             <div className="flex items-center gap-3 w-30">
               <Input
                 className="h-8 w-12 px-2 py-1"
                 type="text"
                 inputMode="decimal"
-                value={signatureData.separatorWidth || 1}
-                onChange={(e) => handleSeparatorWidthChange(e.target.value)}
-                onBlur={(e) => handleSeparatorWidthChange(e.target.value)}
+                value={signatureData.separatorVerticalWidth || 1}
+                onChange={(e) => handleSeparatorVerticalWidthChange(e.target.value)}
+                onBlur={(e) => handleSeparatorVerticalWidthChange(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    handleSeparatorWidthChange(e.target.value);
+                    handleSeparatorVerticalWidthChange(e.target.value);
                   }
                 }}
-                aria-label="Épaisseur du séparateur"
+                aria-label="Épaisseur du séparateur vertical"
                 placeholder="1"
               />
               <Slider
                 className="grow"
-                value={[signatureData.separatorWidth || 1]}
-                onValueChange={(value) => handleSeparatorWidthChange(value[0])}
+                value={[signatureData.separatorVerticalWidth || 1]}
+                onValueChange={(value) => handleSeparatorVerticalWidthChange(value[0])}
                 min={1}
                 max={5}
                 step={1}
-                aria-label="Épaisseur séparateur"
+                aria-label="Épaisseur séparateur vertical"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Séparateur horizontal</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.separatorHorizontalWidth || 1}
+                onChange={(e) => handleSeparatorHorizontalWidthChange(e.target.value)}
+                onBlur={(e) => handleSeparatorHorizontalWidthChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSeparatorHorizontalWidthChange(e.target.value);
+                  }
+                }}
+                aria-label="Épaisseur du séparateur horizontal"
+                placeholder="1"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.separatorHorizontalWidth || 1]}
+                onValueChange={(value) => handleSeparatorHorizontalWidthChange(value[0])}
+                min={1}
+                max={5}
+                step={1}
+                aria-label="Épaisseur séparateur horizontal"
               />
             </div>
           </div>

@@ -238,7 +238,8 @@ const EmailPreview = ({ signatureData }) => {
 const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
   const imageSize = signatureData.imageSize || 80;
   const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
-  const separatorWidth = signatureData.separatorWidth || 1;
+  const separatorVerticalWidth = signatureData.separatorVerticalWidth || 1;
+  const separatorHorizontalWidth = signatureData.separatorHorizontalWidth || 1;
   const logoSize = signatureData.logoSize || 60;
   const spacings = signatureData.spacings || {};
   return `
@@ -296,7 +297,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
             </td>
             
             <!-- Séparateur vertical - Gmail compatible -->
-            <td style="width: 1px; background-color: #e0e0e0; padding: 0; font-size: 1px; line-height: 1px;">
+            <td style="width: ${separatorVerticalWidth}px; background-color: #e0e0e0; padding: 0; font-size: 1px; line-height: 1px;">
               &nbsp;
             </td>
             
@@ -362,7 +363,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
           <!-- Séparateur horizontal -->
           <tr>
             <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
-              <hr style="border: none; border-top: ${separatorWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
+              <hr style="border: none; border-top: ${separatorHorizontalWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
             </td>
           </tr>
           
@@ -385,7 +386,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
 const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
   const imageSize = signatureData.imageSize || 80;
   const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
-  const separatorWidth = signatureData.separatorWidth || 1;
+  const separatorHorizontalWidth = signatureData.separatorHorizontalWidth || 1;
   return `
     <!DOCTYPE html>
     <html>
@@ -462,7 +463,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
         <!-- Séparateur horizontal -->
         <tr>
           <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
-            <hr style="border: none; border-top: ${separatorWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
+            <hr style="border: none; border-top: ${separatorHorizontalWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
           </td>
         </tr>
         

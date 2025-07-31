@@ -162,7 +162,7 @@ const VerticalSignature = ({
           </td>
 
           {/* Séparateur vertical - Gmail compatible */}
-          <td style={{ width: '1px', backgroundColor: '#e0e0e0', padding: '0', fontSize: '1px', lineHeight: '1px' }}>
+          <td style={{ width: `${signatureData.separatorVerticalWidth || 1}px`, backgroundColor: '#e0e0e0', padding: '0', fontSize: '1px', lineHeight: '1px' }}>
             &nbsp;
           </td>
 
@@ -273,7 +273,7 @@ const VerticalSignature = ({
                   }}>
                     <hr style={{
                       border: 'none',
-                      borderTop: `${signatureData.separatorWidth || 1}px solid #e0e0e0`,
+                      borderTop: `${signatureData.separatorHorizontalWidth || 1}px solid #e0e0e0`,
                       margin: '0',
                       width: '100%'
                     }} />

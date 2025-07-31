@@ -49,8 +49,9 @@ export function SignatureProvider({ children }) {
     imageSize: 80, // Taille par défaut de l'image de profil
     // Forme de l'image de profil (round ou square)
     imageShape: 'round', // Forme par défaut : ronde
-    // Épaisseur du séparateur vertical (en pixels)
-    separatorWidth: 1, // Épaisseur par défaut du séparateur
+    // Épaisseur des séparateurs (en pixels)
+    separatorVerticalWidth: 1, // Épaisseur du séparateur vertical (entre colonnes)
+    separatorHorizontalWidth: 1, // Épaisseur du séparateur horizontal (sous l'adresse)
     // Taille du logo entreprise (en pixels)
     logoSize: 60, // Taille par défaut du logo
     // Espacements entre les éléments (en pixels)
@@ -110,8 +111,9 @@ export function SignatureProvider({ children }) {
       imageSize: 80,
       // Forme de l'image de profil (round ou square)
       imageShape: 'round',
-      // Épaisseur du séparateur vertical (en pixels)
-      separatorWidth: 1,
+      // Épaisseur des séparateurs (en pixels)
+      separatorVerticalWidth: 1,
+      separatorHorizontalWidth: 1,
       // Taille du logo entreprise (en pixels)
       logoSize: 60,
       // Espacements entre les éléments (en pixels)
