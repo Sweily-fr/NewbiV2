@@ -265,7 +265,7 @@ const VerticalSignature = ({
                   </tr>
                 )}
                 
-                {/* Séparateur horizontal */}
+                {/* Séparateur horizontal - après l'adresse */}
                 <tr>
                   <td style={{ 
                     paddingTop: `${signatureData.spacings?.separatorTop || 12}px`, 
@@ -332,6 +332,7 @@ const VerticalSignature = ({
             </table>
           </td>
         </tr>
+
       </tbody>
     </table>
   );
