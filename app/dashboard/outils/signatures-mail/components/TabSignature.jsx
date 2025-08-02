@@ -35,13 +35,13 @@ export function TabSignature() {
         </TabsList>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
-      <TabsContent value="tab-1" className="w-full">
+      <TabsContent value="tab-1" className="w-full max-h-[calc(100vh-200px)] overflow-y-auto">
         <LayoutTab />
       </TabsContent>
-      <TabsContent value="tab-2" className="w-full">
+      <TabsContent value="tab-2" className="w-full max-h-[calc(100vh-200px)] overflow-y-auto">
         <LayoutTabTypography />
       </TabsContent>
-      <TabsContent value="tab-3" className="w-full">
+      <TabsContent value="tab-3" className="w-full max-h-[calc(100vh-200px)] overflow-y-auto">
         <LayoutTabImg />
       </TabsContent>
       <TabsContent

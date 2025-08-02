@@ -156,14 +156,19 @@ const HorizontalSignature = ({
                            <td style={{ paddingRight: '10px', verticalAlign: 'middle', width: '20px' }}>
                              <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
-                           <td style={{ fontSize: '12px', color: 'rgb(102,102,102)', verticalAlign: 'middle' }}>
+                           <td style={{ 
+                             fontSize: '12px', 
+                             color: signatureData.colors?.contact || 'rgb(102,102,102)', 
+                             verticalAlign: 'middle' 
+                           }}>
                              <InlineEdit
                                value={signatureData.phone}
                                onChange={(value) => handleFieldChange("phone", value)}
                                placeholder="Numéro de téléphone"
                                validation={validatePhone}
-                               displayClassName="text-xs text-gray-600"
-                               inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                               displayClassName="text-xs"
+                               inputClassName="text-xs border-0 shadow-none p-1 h-auto"
+                               style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
                              />
                            </td>
                          </tr>
@@ -182,14 +187,19 @@ const HorizontalSignature = ({
                            <td style={{ paddingRight: '10px', verticalAlign: 'middle', width: '20px' }}>
                              <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
-                           <td style={{ fontSize: '12px', color: 'rgb(102,102,102)', verticalAlign: 'middle' }}>
+                           <td style={{ 
+                             fontSize: '12px', 
+                             color: signatureData.colors?.contact || 'rgb(102,102,102)', 
+                             verticalAlign: 'middle' 
+                           }}>
                              <InlineEdit
                                value={signatureData.mobile}
                                onChange={(value) => handleFieldChange("mobile", value)}
                                placeholder="Téléphone mobile"
                                validation={validatePhone}
-                               displayClassName="text-xs text-gray-600"
-                               inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                               displayClassName="text-xs"
+                               inputClassName="text-xs border-0 shadow-none p-1 h-auto"
+                               style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
                              />
                            </td>
                          </tr>
@@ -208,14 +218,19 @@ const HorizontalSignature = ({
                            <td style={{ paddingRight: '10px', verticalAlign: 'middle', width: '20px' }}>
                              <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
-                           <td style={{ fontSize: '12px', color: 'rgb(102,102,102)', verticalAlign: 'middle' }}>
+                           <td style={{ 
+                             fontSize: '12px', 
+                             color: signatureData.colors?.contact || 'rgb(102,102,102)', 
+                             verticalAlign: 'middle' 
+                           }}>
                              <InlineEdit
                                value={signatureData.email}
                                onChange={(value) => handleFieldChange("email", value)}
                                placeholder="adresse@email.com"
                                validation={validateEmail}
-                               displayClassName="text-xs text-gray-600"
-                               inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                               displayClassName="text-xs"
+                               inputClassName="text-xs border-0 shadow-none p-1 h-auto"
+                               style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
                              />
                            </td>
                          </tr>
@@ -234,14 +249,19 @@ const HorizontalSignature = ({
                            <td style={{ paddingRight: '10px', verticalAlign: 'middle', width: '20px' }}>
                              <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
-                           <td style={{ fontSize: '12px', color: 'rgb(102,102,102)', verticalAlign: 'middle' }}>
+                           <td style={{ 
+                             fontSize: '12px', 
+                             color: signatureData.colors?.contact || 'rgb(102,102,102)', 
+                             verticalAlign: 'middle' 
+                           }}>
                              <InlineEdit
                                value={signatureData.website}
                                onChange={(value) => handleFieldChange("website", value)}
                                placeholder="www.monsite.com"
                                validation={validateUrl}
-                               displayClassName="text-xs text-gray-600"
-                               inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                               displayClassName="text-xs"
+                               inputClassName="text-xs border-0 shadow-none p-1 h-auto"
+                               style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
                              />
                            </td>
                          </tr>
@@ -260,7 +280,11 @@ const HorizontalSignature = ({
                            <td style={{ paddingRight: '10px', verticalAlign: 'top', width: '20px' }}>
                              <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', marginTop: '2px', minWidth: '16px' }} />
                            </td>
-                           <td style={{ fontSize: '12px', color: 'rgb(102,102,102)', verticalAlign: 'top' }}>
+                           <td style={{ 
+                             fontSize: '12px', 
+                             color: signatureData.colors?.contact || 'rgb(102,102,102)', 
+                             verticalAlign: 'top' 
+                           }}>
                              <InlineEdit
                                value={signatureData.address}
                                onChange={(value) => handleFieldChange("address", value)}

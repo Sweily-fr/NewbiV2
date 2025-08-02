@@ -181,8 +181,9 @@ const VerticalSignature = ({
                           onChange={(value) => handleFieldChange("phone", value)}
                           placeholder="Téléphone fixe"
                           validation={validatePhone}
-                          displayClassName="text-xs text-gray-600"
-                          inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                          displayClassName="text-xs"
+                          inputClassName="text-xs border-0 shadow-none p-1 h-auto"
+                          style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
                         />
                       </div>
                     </td>
@@ -200,8 +201,9 @@ const VerticalSignature = ({
                           onChange={(value) => handleFieldChange("mobile", value)}
                           placeholder="Téléphone mobile"
                           validation={validatePhone}
-                          displayClassName="text-xs text-gray-600"
-                          inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                          displayClassName="text-xs"
+                          inputClassName="text-xs border-0 shadow-none p-1 h-auto"
+                          style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
                         />
                       </div>
                     </td>
@@ -219,8 +221,9 @@ const VerticalSignature = ({
                           onChange={(value) => handleFieldChange("email", value)}
                           placeholder="adresse@email.com"
                           validation={validateEmail}
-                          displayClassName="text-xs text-gray-600"
-                          inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                          displayClassName="text-xs"
+                          inputClassName="text-xs border-0 shadow-none p-1 h-auto"
+                          style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
                         />
                       </div>
                     </td>
@@ -238,8 +241,9 @@ const VerticalSignature = ({
                           onChange={(value) => handleFieldChange("website", value)}
                           placeholder="www.monsite.com"
                           validation={validateUrl}
-                          displayClassName="text-xs text-gray-600"
-                          inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 h-auto"
+                          displayClassName="text-xs"
+                          inputClassName="text-xs border-0 shadow-none p-1 h-auto"
+                          style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
                         />
                       </div>
                     </td>
@@ -265,7 +269,7 @@ const VerticalSignature = ({
                   </tr>
                 )}
                 
-                {/* Séparateur horizontal - après l'adresse */}
+                {/* Séparateur horizontal - après tous les contacts */}
                 <tr>
                   <td style={{ 
                     paddingTop: `${signatureData.spacings?.separatorTop || 12}px`, 
@@ -328,6 +332,7 @@ const VerticalSignature = ({
                     )}
                   </td>
                 </tr>
+
               </tbody>
             </table>
           </td>

@@ -307,51 +307,121 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                 <tbody>
                   ${signatureData.phone ? `
                     <tr>
-                      <td style="padding-bottom: 6px;">
-                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                          <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                          <a href="tel:${signatureData.phone}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.phone}</a>
-                        </div>
+                      <td style="padding-bottom: ${spacings.contactBottom || 6}px;">
+                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                          <tbody>
+                            <tr>
+                              <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
+                                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
+                              </td>
+                              <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                                <a href="tel:${signatureData.phone}" style="color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; text-decoration: none; font-family: inherit;">${signatureData.phone}</a>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </td>
                     </tr>
                   ` : ''}
                   ${signatureData.mobile ? `
                     <tr>
-                      <td style="padding-bottom: 6px;">
-                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                          <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                          <a href="tel:${signatureData.mobile}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.mobile}</a>
-                        </div>
+                      <td style="padding-bottom: ${spacings.contactBottom || 6}px;">
+                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                          <tbody>
+                            <tr>
+                              <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
+                                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
+                              </td>
+                              <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                                <a href="tel:${signatureData.mobile}" style="color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; text-decoration: none; font-family: inherit;">${signatureData.mobile}</a>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </td>
                     </tr>
                   ` : ''}
                   ${signatureData.email ? `
                     <tr>
-                      <td style="padding-bottom: 6px;">
-                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                          <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                          <a href="mailto:${signatureData.email}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.email}</a>
-                        </div>
+                      <td style="padding-bottom: ${spacings.contactBottom || 6}px;">
+                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                          <tbody>
+                            <tr>
+                              <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
+                                <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
+                              </td>
+                              <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                                <a href="mailto:${signatureData.email}" style="color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; text-decoration: none; font-family: inherit;">${signatureData.email}</a>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </td>
                     </tr>
                   ` : ''}
                   ${signatureData.website ? `
                     <tr>
-                      <td style="padding-bottom: 6px;">
-                        <div style="display: flex; align-items: center; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                          <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                          <a href="${signatureData.website && signatureData.website.startsWith('http') ? signatureData.website : 'https://' + (signatureData.website || '')}" style="color: rgb(102,102,102); text-decoration: none; font-family: inherit;">${signatureData.website ? signatureData.website.replace(/^https?:\/\//, '') : ''}</a>
-                        </div>
+                      <td style="padding-bottom: ${spacings.contactBottom || 6}px;">
+                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                          <tbody>
+                            <tr>
+                              <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
+                                <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
+                              </td>
+                              <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                                <a href="${signatureData.website && signatureData.website.startsWith('http') ? signatureData.website : 'https://' + (signatureData.website || '')}" style="color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; text-decoration: none; font-family: inherit;">${signatureData.website ? signatureData.website.replace(/^https?:\/\//, '') : ''}</a>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </td>
                     </tr>
                   ` : ''}
                   ${signatureData.address ? `
                     <tr>
                       <td style="padding-bottom: 12px;">
-                        <div style="display: flex; align-items: flex-start; font-size: ${signatureData.fontSize?.contact || 12}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                          <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
-                          <span style="font-family: inherit;">${signatureData.address.replace(/\n/g, '<br>')}</span>
-                        </div>
+                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                          <tbody>
+                            <tr>
+                              <td style="padding-right: 8px; vertical-align: top; width: 12px;">
+                                <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block; margin-top: 1px;" />
+                              </td>
+                              <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: top; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                                <span style="font-family: inherit;">${signatureData.address.replace(/\n/g, '<br>')}</span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  ` : ''}
+                  
+                  <!-- Séparateur horizontal après tous les contacts -->
+                  <tr>
+                    <td style="padding-top: ${spacings.separatorTop || 12}px; padding-bottom: ${spacings.separatorBottom || 12}px;">
+                      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
+                        <tbody>
+                          <tr>
+                            <td style="border-top: ${separatorHorizontalWidth}px solid ${signatureData.colors?.separatorHorizontal || '#e0e0e0'}; line-height: 1px; font-size: 1px;">&nbsp;</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Logo entreprise après le séparateur -->
+                  ${logoSrc ? `
+                    <tr>
+                      <td style="padding-top: ${spacings.separatorBottom || 12}px; text-align: left;">
+                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                          <tbody>
+                            <tr>
+                              <td style="text-align: left;">
+                                <img src="${logoSrc}" alt="Logo entreprise" style="max-width: ${logoSize}px; height: auto; display: block;" />
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </td>
                     </tr>
                   ` : ''}
@@ -359,22 +429,6 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
               </table>
             </td>
           </tr>
-          
-          <!-- Séparateur horizontal -->
-          <tr>
-            <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
-              <hr style="border: none; border-top: ${separatorHorizontalWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
-            </td>
-          </tr>
-          
-          <!-- Logo entreprise après le séparateur -->
-          ${logoSrc ? `
-          <tr>
-            <td colspan="2" style="padding: ${spacings.separatorBottom || 12}px 0 0 0; text-align: center;">
-              <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
-            </td>
-          </tr>
-          ` : ''}
         </tbody>
       </table>
     </body>
