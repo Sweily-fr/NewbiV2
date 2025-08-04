@@ -65,11 +65,17 @@ export function SignatureProvider({ children }) {
     logoSize: 60, // Taille par défaut du logo
     // Espacements entre les éléments (en pixels)
     spacings: {
+      global: 8, // Espacement global par défaut
       photoBottom: 12, // Espacement sous la photo
       logoBottom: 12, // Espacement sous le logo
       nameBottom: 8, // Espacement sous le nom
       positionBottom: 8, // Espacement sous le poste
+      companyBottom: 12, // Espacement sous l'entreprise
       contactBottom: 6, // Espacement entre chaque contact
+      phoneToMobile: 4, // Espacement téléphone vers mobile
+      mobileToEmail: 4, // Espacement mobile vers email
+      emailToWebsite: 4, // Espacement email vers site web
+      websiteToAddress: 4, // Espacement site web vers adresse
       separatorTop: 12, // Espacement au-dessus du séparateur
       separatorBottom: 12, // Espacement sous le séparateur
     },

@@ -285,8 +285,8 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   ` : ''}
                   ${signatureData.companyName ? `
                     <tr>
-                      <td style="padding-bottom: 8px; text-align: left;">
-                        <div style="font-size: 14px; font-weight: bold; color: ${primaryColor};">
+                      <td style="padding-bottom: ${spacings.companyBottom || 12}px; text-align: left;">
+                        <div style="font-size: 14px; font-weight: bold; color: ${primaryColor}; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                           ${signatureData.companyName}
                         </div>
                       </td>
@@ -307,7 +307,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                 <tbody>
                   ${signatureData.phone ? `
                     <tr>
-                      <td style="padding-bottom: ${spacings.contactBottom || 6}px;">
+                      <td style="padding-bottom: ${signatureData.mobile ? (spacings.phoneToMobile || 4) : (spacings.contactBottom || 6)}px;">
                         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
                           <tbody>
                             <tr>
@@ -325,7 +325,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   ` : ''}
                   ${signatureData.mobile ? `
                     <tr>
-                      <td style="padding-bottom: ${spacings.contactBottom || 6}px;">
+                      <td style="padding-bottom: ${signatureData.email ? (spacings.mobileToEmail || 4) : (spacings.contactBottom || 6)}px;">
                         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
                           <tbody>
                             <tr>
@@ -343,7 +343,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   ` : ''}
                   ${signatureData.email ? `
                     <tr>
-                      <td style="padding-bottom: ${spacings.contactBottom || 6}px;">
+                      <td style="padding-bottom: ${signatureData.website ? (spacings.emailToWebsite || 4) : (spacings.contactBottom || 6)}px;">
                         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
                           <tbody>
                             <tr>
@@ -361,7 +361,7 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
                   ` : ''}
                   ${signatureData.website ? `
                     <tr>
-                      <td style="padding-bottom: ${spacings.contactBottom || 6}px;">
+                      <td style="padding-bottom: ${signatureData.address ? (spacings.websiteToAddress || 4) : (spacings.contactBottom || 6)}px;">
                         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
                           <tbody>
                             <tr>

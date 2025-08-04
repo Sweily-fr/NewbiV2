@@ -23,60 +23,61 @@ const VerticalSignature = ({
               <tbody>
                 {/* Photo */}
                 <tr>
-                  <td style={{ paddingBottom: '12px', textAlign: signatureData.nameAlignment || 'left' }}>
-                    {signatureData.photo ? (
-                      <div 
-                        style={{
-                          width: `${signatureData.imageSize || 80}px`,
-                          height: `${signatureData.imageSize || 80}px`,
-                          borderRadius: signatureData.imageShape === 'square' ? '8px' : '50%',
-                          backgroundImage: `url('${signatureData.photo}')`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          backgroundRepeat: 'no-repeat',
-                          display: 'block',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => {
-                          // Créer un input file invisible pour changer l'image
-                          const input = document.createElement('input');
-                          input.type = 'file';
-                          input.accept = 'image/*';
-                          input.onchange = (e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (e) => handleImageChange('photo', e.target.result);
-                              reader.readAsDataURL(file);
-                            }
-                          };
-                          input.click();
-                        }}
-                        title="Cliquer pour changer la photo"
-                      />
-                    ) : (
-                      <ImageDropZone
-                        currentImage={signatureData.photo}
-                        onImageChange={(imageUrl) => handleImageChange("photo", imageUrl)}
-                        placeholder="Photo de profil"
-                        size="md"
-                        type="profile"
-                        style={{ 
-                          width: `${signatureData.imageSize || 80}px`,
-                          height: `${signatureData.imageSize || 80}px`,
-                          borderRadius: signatureData.imageShape === 'square' ? '8px' : '50%'
-                        }}
-                      />
-                    )}
-                  </td>
-                </tr>
-
-
-
+                  <td style={{ 
+                    paddingBottom: `${signatureData.spacings?.photoBottom || 12}px`,
+                    textAlign: signatureData.nameAlignment || 'left'
+                  }}>
+                      {signatureData.photo ? (
+                        <div 
+                          style={{
+                            width: `${signatureData.imageSize || 80}px`,
+                            height: `${signatureData.imageSize || 80}px`,
+                            borderRadius: signatureData.imageShape === 'square' ? '8px' : '50%',
+                            backgroundImage: `url('${signatureData.photo}')`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat',
+                            display: 'block',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => {
+                            // Créer un input file invisible pour changer l'image
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*';
+                            input.onchange = (e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (e) => handleImageChange('photo', e.target.result);
+                                reader.readAsDataURL(file);
+                              }
+                            };
+                            input.click();
+                          }}
+                          title="Cliquer pour changer la photo"
+                        />
+                      ) : (
+                        <ImageDropZone
+                          currentImage={signatureData.photo}
+                          onImageChange={(imageUrl) => handleImageChange("photo", imageUrl)}
+                          placeholder="Photo de profil"
+                          size="md"
+                          type="profile"
+                          style={{ 
+                            width: `${signatureData.imageSize || 80}px`,
+                            height: `${signatureData.imageSize || 80}px`,
+                            borderRadius: signatureData.imageShape === 'square' ? '8px' : '50%'
+                          }}
+                        />
+                      )}
+                    </td>
+                  </tr>
+                
                 {/* Prénom et Nom */}
                 <tr>
                   <td style={{ 
-                    paddingBottom: '8px',
+                    paddingBottom: `${signatureData.spacings?.nameBottom || 8}px`,
                     textAlign: signatureData.nameAlignment || 'left'
                   }}>
                     <div style={{ 
@@ -114,7 +115,7 @@ const VerticalSignature = ({
                 {signatureData.position && (
                   <tr>
                     <td style={{ 
-                      paddingBottom: '8px',
+                      paddingBottom: `${signatureData.spacings?.positionBottom || 8}px`,
                       textAlign: signatureData.nameAlignment || 'left'
                     }}>
                       <div style={{ 
@@ -138,7 +139,7 @@ const VerticalSignature = ({
                 {signatureData.companyName && (
                   <tr>
                     <td style={{ 
-                      paddingBottom: '8px',
+                      paddingBottom: `${signatureData.spacings?.companyBottom || 12}px`,
                       textAlign: signatureData.nameAlignment || 'left'
                     }}>
                       <div style={{ 
@@ -173,7 +174,7 @@ const VerticalSignature = ({
                 {/* Téléphone */}
                 {signatureData.phone && (
                   <tr>
-                    <td style={{ paddingBottom: '6px' }}>
+                    <td style={{ paddingBottom: signatureData.mobile ? `${signatureData.spacings?.phoneToMobile || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
                       <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
@@ -193,7 +194,7 @@ const VerticalSignature = ({
                 {/* Mobile */}
                 {signatureData.mobile && (
                   <tr>
-                    <td style={{ paddingBottom: '6px' }}>
+                    <td style={{ paddingBottom: signatureData.email ? `${signatureData.spacings?.mobileToEmail || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
                       <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
@@ -213,7 +214,7 @@ const VerticalSignature = ({
                 {/* Email */}
                 {signatureData.email && (
                   <tr>
-                    <td style={{ paddingBottom: '6px' }}>
+                    <td style={{ paddingBottom: signatureData.website ? `${signatureData.spacings?.emailToWebsite || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
                       <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
@@ -233,7 +234,7 @@ const VerticalSignature = ({
                 {/* Site web */}
                 {signatureData.website && (
                   <tr>
-                    <td style={{ paddingBottom: '6px' }}>
+                    <td style={{ paddingBottom: signatureData.address ? `${signatureData.spacings?.websiteToAddress || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
                       <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
@@ -287,7 +288,7 @@ const VerticalSignature = ({
                 {/* Logo entreprise après le séparateur */}
                 <tr>
                   <td style={{ 
-                    paddingTop: `${signatureData.spacings?.separatorBottom || 12}px`,
+                    paddingTop: `${signatureData.spacings?.logoBottom || 12}px`,
                     textAlign: 'center' 
                   }}>
                     {logoSrc ? (

@@ -84,6 +84,30 @@ export default function ContentTab() {
     });
   };
 
+  // Fonction spéciale pour l'espacement global
+  const handleGlobalSpacingChange = (value) => {
+    const numValue = parseInt(value) || 0;
+    const clampedValue = Math.max(0, Math.min(30, numValue));
+    
+    // Mettre à jour tous les espacements en une seule fois
+    updateSignatureData('spacings', {
+      ...signatureData.spacings,
+      global: clampedValue,
+      photoBottom: clampedValue,
+      logoBottom: clampedValue,
+      nameBottom: clampedValue,
+      positionBottom: clampedValue,
+      companyBottom: clampedValue,
+      contactBottom: clampedValue,
+      phoneToMobile: clampedValue,
+      mobileToEmail: clampedValue,
+      emailToWebsite: clampedValue,
+      websiteToAddress: clampedValue,
+      separatorTop: clampedValue,
+      separatorBottom: clampedValue
+    });
+  };
+
   // Gestion des couleurs
   const handleColorChange = (colorKey, value) => {
     updateSignatureData('colors', {
@@ -159,9 +183,9 @@ export default function ContentTab() {
           {/* Upload de la photo de profil */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Photo</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               {signatureData.photo ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 w-30">
                   <img 
                     src={signatureData.photo} 
                     alt="Photo" 
@@ -296,9 +320,9 @@ export default function ContentTab() {
           {/* Upload du logo entreprise */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Logo</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               {signatureData.logo ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 w-30">
                   <img 
                     src={signatureData.logo} 
                     alt="Logo" 
@@ -923,24 +947,85 @@ export default function ContentTab() {
       
       <Separator />
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium">Espacements détaillés</h2>
-        <div className="flex flex-col gap-3 ml-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium">Espacements</h2>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">Détaillé</Label>
+            <div className="relative inline-flex items-center">
+              <input
+                type="checkbox"
+                checked={signatureData.detailedSpacing || false}
+                onChange={(e) => updateSignatureData('detailedSpacing', e.target.checked)}
+                className="sr-only"
+                id="detailed-spacing-toggle"
+              />
+              <label
+                htmlFor="detailed-spacing-toggle"
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer ${
+                  signatureData.detailedSpacing
+                    ? 'bg-blue-600'
+                    : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                    signatureData.detailedSpacing ? 'translate-x-5' : 'translate-x-1'
+                  }`}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        {!signatureData.detailedSpacing ? (
+          // Mode espacement global
+          <div className="flex flex-col gap-3 ml-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">Espacement global</Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.global || 8}
+                  onChange={(e) => {
+                    handleGlobalSpacingChange(e.target.value);
+                  }}
+                  min={0}
+                  max={30}
+                  className="h-8 w-12 px-2 py-1"
+                  aria-label="Espacement global"
+                  placeholder="8"
+                />
+                <Slider
+                  className="grow"
+                  value={[signatureData.spacings?.global || 8]}
+                  onValueChange={(value) => {
+                    handleGlobalSpacingChange(value[0]);
+                  }}
+                  min={0}
+                  max={30}
+                  step={2}
+                  aria-label="Espacement global"
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Mode espacement détaillé
+          <div className="flex flex-col gap-3 ml-4">
           
           {/* Espacement sous la photo */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Sous photo</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <Input
-                type="number"
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
                 value={signatureData.spacings?.photoBottom || 12}
                 onChange={(e) => handleSpacingChange('photoBottom', e.target.value)}
                 min={0}
                 max={30}
-                className="w-16 h-7 text-xs"
-                style={{
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                }}
                 aria-label="Espacement sous la photo"
                 placeholder="12"
               />
@@ -959,18 +1044,16 @@ export default function ContentTab() {
           {/* Espacement sous le logo */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Sous logo</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <Input
-                type="number"
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
                 value={signatureData.spacings?.logoBottom || 12}
                 onChange={(e) => handleSpacingChange('logoBottom', e.target.value)}
                 min={0}
                 max={30}
-                className="w-16 h-7 text-xs"
-                style={{
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                }}
+
                 aria-label="Espacement sous le logo"
                 placeholder="12"
               />
@@ -989,18 +1072,16 @@ export default function ContentTab() {
           {/* Espacement sous le nom */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Sous nom</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <Input
-                type="number"
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
                 value={signatureData.spacings?.nameBottom || 8}
                 onChange={(e) => handleSpacingChange('nameBottom', e.target.value)}
                 min={0}
                 max={30}
-                className="w-16 h-7 text-xs"
-                style={{
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                }}
+
                 aria-label="Espacement sous le nom"
                 placeholder="8"
               />
@@ -1019,18 +1100,16 @@ export default function ContentTab() {
           {/* Espacement sous le poste */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Sous poste</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <Input
-                type="number"
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
                 value={signatureData.spacings?.positionBottom || 8}
                 onChange={(e) => handleSpacingChange('positionBottom', e.target.value)}
                 min={0}
                 max={30}
-                className="w-16 h-7 text-xs"
-                style={{
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                }}
+
                 aria-label="Espacement sous le poste"
                 placeholder="8"
               />
@@ -1046,21 +1125,159 @@ export default function ContentTab() {
             </div>
           </div>
           
-          {/* Espacement entre contacts */}
+          {/* Espacement sous l'entreprise */}
           <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Entre contacts</Label>
-            <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">Sous entreprise</Label>
+            <div className="flex items-center gap-3 w-30">
               <Input
-                type="number"
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.spacings?.companyBottom || 12}
+                onChange={(e) => handleSpacingChange('companyBottom', e.target.value)}
+                min={0}
+                max={30}
+
+                aria-label="Espacement sous l'entreprise"
+                placeholder="12"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.companyBottom || 12]}
+                onValueChange={(value) => handleSpacingChange('companyBottom', value[0])}
+                min={0}
+                max={30}
+                step={2}
+                aria-label="Espacement sous entreprise"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement entre téléphone et mobile */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Téléphone → Mobile</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.spacings?.phoneToMobile || 4}
+                onChange={(e) => handleSpacingChange('phoneToMobile', e.target.value)}
+                min={0}
+                max={20}
+
+                aria-label="Espacement téléphone vers mobile"
+                placeholder="4"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.phoneToMobile || 4]}
+                onValueChange={(value) => handleSpacingChange('phoneToMobile', value[0])}
+                min={0}
+                max={20}
+                step={1}
+                aria-label="Espacement téléphone vers mobile"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement entre mobile et email */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Mobile → Email</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.spacings?.mobileToEmail || 4}
+                onChange={(e) => handleSpacingChange('mobileToEmail', e.target.value)}
+                min={0}
+                max={20}
+
+                aria-label="Espacement mobile vers email"
+                placeholder="4"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.mobileToEmail || 4]}
+                onValueChange={(value) => handleSpacingChange('mobileToEmail', value[0])}
+                min={0}
+                max={20}
+                step={1}
+                aria-label="Espacement mobile vers email"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement entre email et site web */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Email → Site web</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.spacings?.emailToWebsite || 4}
+                onChange={(e) => handleSpacingChange('emailToWebsite', e.target.value)}
+                min={0}
+                max={20}
+
+                aria-label="Espacement email vers site web"
+                placeholder="4"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.emailToWebsite || 4]}
+                onValueChange={(value) => handleSpacingChange('emailToWebsite', value[0])}
+                min={0}
+                max={20}
+                step={1}
+                aria-label="Espacement email vers site web"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement entre site web et adresse */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Site web → Adresse</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.spacings?.websiteToAddress || 4}
+                onChange={(e) => handleSpacingChange('websiteToAddress', e.target.value)}
+                min={0}
+                max={20}
+
+                aria-label="Espacement site web vers adresse"
+                placeholder="4"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.websiteToAddress || 4]}
+                onValueChange={(value) => handleSpacingChange('websiteToAddress', value[0])}
+                min={0}
+                max={20}
+                step={1}
+                aria-label="Espacement site web vers adresse"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement entre contacts (global) */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Entre contacts (global)</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
                 value={signatureData.spacings?.contactBottom || 6}
                 onChange={(e) => handleSpacingChange('contactBottom', e.target.value)}
                 min={0}
                 max={30}
-                className="w-16 h-7 text-xs"
-                style={{
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                }}
+
                 aria-label="Espacement entre les contacts"
                 placeholder="6"
               />
@@ -1079,18 +1296,16 @@ export default function ContentTab() {
           {/* Espacement au-dessus du séparateur */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Avant séparateur</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <Input
-                type="number"
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
                 value={signatureData.spacings?.separatorTop || 12}
                 onChange={(e) => handleSpacingChange('separatorTop', e.target.value)}
                 min={0}
                 max={30}
-                className="w-16 h-7 text-xs"
-                style={{
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                }}
+
                 aria-label="Espacement avant le séparateur"
                 placeholder="12"
               />
@@ -1109,18 +1324,16 @@ export default function ContentTab() {
           {/* Espacement sous le séparateur */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Après séparateur</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <Input
-                type="number"
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
                 value={signatureData.spacings?.separatorBottom || 12}
                 onChange={(e) => handleSpacingChange('separatorBottom', e.target.value)}
                 min={0}
                 max={30}
-                className="w-16 h-7 text-xs"
-                style={{
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                }}
+
                 aria-label="Espacement après le séparateur"
                 placeholder="12"
               />
@@ -1137,6 +1350,7 @@ export default function ContentTab() {
           </div>
           
         </div>
+        )}
       </div>
       
       <Separator />
@@ -1147,7 +1361,7 @@ export default function ContentTab() {
           {/* Couleur du nom */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Nom et prénom</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <input
                 type="color"
                 value={signatureData.colors?.name || "#2563eb"}
@@ -1164,7 +1378,7 @@ export default function ContentTab() {
           {/* Couleur du poste */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Poste</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <input
                 type="color"
                 value={signatureData.colors?.position || "#666666"}
@@ -1181,7 +1395,7 @@ export default function ContentTab() {
           {/* Couleur de l'entreprise */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Entreprise</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <input
                 type="color"
                 value={signatureData.colors?.company || "#2563eb"}
@@ -1198,7 +1412,7 @@ export default function ContentTab() {
           {/* Couleur des contacts */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Contacts</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <input
                 type="color"
                 value={signatureData.colors?.contact || "#666666"}
@@ -1215,7 +1429,7 @@ export default function ContentTab() {
           {/* Couleur du séparateur vertical */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Séparateur vertical</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <input
                 type="color"
                 value={signatureData.colors?.separatorVertical || "#e0e0e0"}
@@ -1232,7 +1446,7 @@ export default function ContentTab() {
           {/* Couleur du séparateur horizontal */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Séparateur horizontal</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <input
                 type="color"
                 value={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
