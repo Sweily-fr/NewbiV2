@@ -13,12 +13,19 @@ const VerticalSignature = ({
   validateUrl,
   logoSrc 
 }) => {
+  // Calcul des largeurs de colonnes dynamiques pour la signature verticale
+  const photoColumnWidth = signatureData.columnWidths?.photo || 25;
+  const contentColumnWidth = signatureData.columnWidths?.content || 75;
+  const maxTableWidth = 500;
+  const photoWidthPx = Math.round((photoColumnWidth / 100) * maxTableWidth);
+  const contentWidthPx = Math.round((contentColumnWidth / 100) * maxTableWidth);
+
   return (
-    <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', maxWidth: '500px', fontFamily: 'Arial, sans-serif' }}>
+    <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', maxWidth: '500px', fontFamily: 'Arial, sans-serif', width: '100%' }}>
       <tbody>
         <tr>
           {/* Colonne de gauche : Informations personnelles */}
-          <td style={{ width: '200px', paddingRight: '15px', verticalAlign: 'top' }}>
+          <td style={{ width: `${photoWidthPx}px`, paddingRight: '15px', verticalAlign: 'top' }}>
             <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', width: '100%' }}>
               <tbody>
                 {/* Photo */}
@@ -172,7 +179,7 @@ const VerticalSignature = ({
           </td>
 
           {/* Colonne de droite : Informations de contact */}
-          <td style={{ paddingLeft: '15px', verticalAlign: 'top', width: '200px' }}>
+          <td style={{ paddingLeft: '15px', verticalAlign: 'top', width: `${contentWidthPx}px` }}>
             <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', width: '100%' }}>
               <tbody>
                 {/* Téléphone */}

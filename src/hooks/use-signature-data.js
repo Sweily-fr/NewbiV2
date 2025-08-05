@@ -48,7 +48,12 @@ export function SignatureProvider({ children }) {
     // Alignement du nom et prénom (left, center, right)
     nameAlignment: 'left',
     // Layout de la signature (vertical ou horizontal)
-    layout: 'vertical',
+    layout: 'horizontal',
+    // Largeurs des colonnes (en pourcentage)
+    columnWidths: {
+      photo: 25,      // Largeur de la colonne photo (25%)
+      content: 75     // Largeur de la colonne contenu (75%)
+    },
     // Images Cloudflare
     photo: null, // URL de la photo de profil
     photoKey: null, // Clé Cloudflare de la photo de profil
@@ -126,6 +131,11 @@ export function SignatureProvider({ children }) {
       nameAlignment: 'left',
       // Layout de la signature (vertical ou horizontal)
       layout: 'vertical',
+      // Largeurs des colonnes (en pourcentage)
+      columnWidths: {
+        photo: 25,      // Largeur de la colonne photo (25%)
+        content: 75     // Largeur de la colonne contenu (75%)
+      },
       // Images Cloudflare
       photo: null,
       photoKey: null,
