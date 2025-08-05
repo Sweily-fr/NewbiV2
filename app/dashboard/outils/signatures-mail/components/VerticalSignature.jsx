@@ -120,15 +120,19 @@ const VerticalSignature = ({
                     }}>
                       <div style={{ 
                         fontSize: `${signatureData.fontSize?.position || 14}px`,
-                        color: signatureData.colors?.position || 'rgb(102,102,102)',
+                        color: signatureData.colors?.position || '#666666',
                         fontFamily: signatureData.fontFamily || 'Arial, sans-serif'
                       }}>
                         <InlineEdit
                           value={signatureData.position}
                           onChange={(value) => handleFieldChange("position", value)}
                           placeholder="Votre poste"
-                          displayClassName="text-gray-600 text-sm"
-                          inputClassName="text-gray-600 text-sm border-0 shadow-none p-1 h-auto"
+                          displayClassName="text-sm"
+                          inputClassName="text-sm border-0 shadow-none p-1 h-auto"
+                          style={{
+                            color: signatureData.colors?.position || '#666666',
+                            fontSize: `${signatureData.fontSize?.position || 14}px`
+                          }}
                         />
                       </div>
                     </td>

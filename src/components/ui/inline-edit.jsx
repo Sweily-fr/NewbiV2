@@ -34,19 +34,24 @@ export function InlineEdit({
     setEditValue(value || "");
   }, [value]);
 
-  // Fonction pour calculer la largeur du texte avec précision
+  // Fonction pour calculer la largeur exacte du texte affiché
   const calculateTextWidth = (text) => {
-    if (measureRef.current) {
+    if (measureRef.current && displayRef.current) {
+      // Copier exactement les styles du texte affiché
+      const computedStyle = window.getComputedStyle(displayRef.current);
+      measureRef.current.style.fontSize = computedStyle.fontSize;
+      measureRef.current.style.fontFamily = computedStyle.fontFamily;
+      measureRef.current.style.fontWeight = computedStyle.fontWeight;
+      measureRef.current.style.letterSpacing = computedStyle.letterSpacing;
+      measureRef.current.style.textTransform = computedStyle.textTransform;
+      
       // Utiliser le texte exact ou le placeholder
       const textToMeasure = text || placeholder;
       measureRef.current.textContent = textToMeasure;
       
-      // Obtenir la largeur exacte du texte
-      const textWidth = measureRef.current.scrollWidth;
-      
-      // Ajuster avec un facteur minimal pour éviter la troncature
-      // Pas de padding supplémentaire pour une correspondance exacte
-      return Math.max(textWidth + 4, 30) + 'px';
+      // Obtenir les dimensions exactes du texte affiché
+      const rect = displayRef.current.getBoundingClientRect();
+      return Math.max(rect.width, 30) + 'px';
     }
     return 'auto';
   };
@@ -68,8 +73,8 @@ export function InlineEdit({
   const handleStartEdit = () => {
     if (disabled) return;
     
-    // Pré-calculer la largeur avant d'entrer en mode édition
-    // pour éviter l'effet de saut
+    // Pré-calculer la largeur exacte avant d'entrer en mode édition
+    // pour garantir zéro décalage visuel
     const initialWidth = calculateTextWidth(value || "");
     setInputWidth(initialWidth);
     
@@ -128,11 +133,14 @@ export function InlineEdit({
     const InputComponent = multiline ? Textarea : Input;
     
     return (
-      <div className="relative">
+      <span style={{ 
+        display: 'inline-block',
+        verticalAlign: 'baseline',
+        position: 'relative'
+      }}>
         {/* Élément invisible pour mesurer la largeur du texte */}
         <span
           ref={measureRef}
-          className={inputClassName}
           style={{
             position: 'absolute',
             visibility: 'hidden',
@@ -145,7 +153,8 @@ export function InlineEdit({
             padding: '0',
             border: '0',
             margin: '0',
-            overflow: 'auto'
+            overflow: 'hidden',
+            top: '-9999px'
           }}
         >
           {editValue || placeholder}
@@ -155,15 +164,21 @@ export function InlineEdit({
           value={editValue}
           onChange={(e) => {
             setEditValue(e.target.value);
-            // Mettre à jour la largeur immédiatement après le changement
-            setTimeout(() => {
-              setInputWidth(calculateTextWidth(e.target.value));
-            }, 0);
           }}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           className={`${inputClassName} ${error ? "border-red-500" : ""}`}
-          style={{ width: inputWidth, minWidth: '60px' }}
+          style={{ 
+            width: inputWidth, 
+            minWidth: '60px',
+            fontSize: 'inherit',
+            fontFamily: 'inherit',
+            fontWeight: 'inherit',
+            color: 'inherit',
+            lineHeight: 'inherit',
+            verticalAlign: 'baseline',
+            display: 'inline-block'
+          }}
           maxLength={maxLength}
           rows={multiline ? 3 : undefined}
         />
@@ -172,12 +187,7 @@ export function InlineEdit({
             {error}
           </div>
         )}
-        {multiline && (
-          <div className="absolute top-full left-0 mt-1 text-xs text-gray-500">
-            Ctrl+Entrée pour sauvegarder, Échap pour annuler
-          </div>
-        )}
-      </div>
+      </span>
     );
   }
 
@@ -189,8 +199,15 @@ export function InlineEdit({
         ${className} 
         ${displayClassName}
         ${isEmpty ? "text-gray-400 italic" : ""}
-        ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-gray-50 hover:outline hover:outline-1 hover:outline-gray-300 rounded px-1 -mx-1 transition-all duration-150"}
+        ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
       `}
+      style={{
+        margin: '0',
+        padding: '0',
+        border: 'none',
+        outline: 'none',
+        background: 'transparent'
+      }}
       title={disabled ? "" : "Cliquez pour éditer"}
     >
       {displayValue}

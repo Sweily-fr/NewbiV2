@@ -22,6 +22,7 @@ import { useSliderWithInput } from "@/src/hooks/use-slider-with-input";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
+import { Switch } from "@/src/components/ui/switch";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 
 export default function ContentTab() {
@@ -115,6 +116,8 @@ export default function ContentTab() {
       [colorKey]: value
     });
   };
+
+
 
   return (
     <div className="mt-4 flex flex-col gap-10">

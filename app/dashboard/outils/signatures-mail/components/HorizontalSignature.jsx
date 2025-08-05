@@ -97,27 +97,21 @@ const HorizontalSignature = ({
                               onChange={(value) => handleFieldChange("firstName", value)}
                               placeholder="Prénom"
                               displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
-                              inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none h-auto w-auto min-w-0"
+                              inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none !h-[1em] w-auto min-w-0 !leading-none"
                               className="!p-0 !m-0 !rounded-none inline-block w-auto"
-                              style={{ width: 'auto', minWidth: '0' }}
+                              style={{ width: 'auto', minWidth: '0', height: '1em', lineHeight: '1em' }}
                             />
-                          </td>
-                          <td style={{ 
-                            fontSize: `${signatureData.fontSize?.name || 16}px`,
-                            fontWeight: 'bold',
-                            color: signatureData.colors?.name || signatureData.primaryColor || '#2563eb',
-                            lineHeight: '1.2',
-                            whiteSpace: 'nowrap',
-                            fontFamily: signatureData.fontFamily || 'Arial, sans-serif'
-                          }}>
+                            {signatureData.firstName && signatureData.lastName && (
+                              <span style={{ margin: '0 4px' }}> </span>
+                            )}
                             <InlineEdit
                               value={signatureData.lastName}
                               onChange={(value) => handleFieldChange("lastName", value)}
                               placeholder="Nom"
                               displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
-                              inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none h-auto w-auto min-w-0"
+                              inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none !h-[1em] w-auto min-w-0 !leading-none"
                               className="!p-0 !m-0 !rounded-none inline-block w-auto"
-                              style={{ width: 'auto', minWidth: '0' }}
+                              style={{ width: 'auto', minWidth: '0', height: '1em', lineHeight: '1em' }}
                             />
                           </td>
                         </tr>
@@ -131,7 +125,7 @@ const HorizontalSignature = ({
                  <tr>
                    <td colSpan="2" style={{ 
                      fontSize: '14px',
-                     color: signatureData.colors?.position || 'rgb(102,102,102)',
+                     color: signatureData.colors?.position || '#666666',
                      paddingTop: '2px',
                      paddingBottom: '4px'
                    }}>
@@ -139,8 +133,12 @@ const HorizontalSignature = ({
                        value={signatureData.position}
                        onChange={(value) => handleFieldChange("position", value)}
                        placeholder="Votre poste"
-                       displayClassName="text-gray-600 text-sm"
-                       inputClassName="text-gray-600 text-sm border-0 shadow-none p-1 h-auto"
+                       displayClassName="text-sm"
+                       inputClassName="text-sm border-0 shadow-none p-1 h-auto"
+                       style={{
+                         color: signatureData.colors?.position || '#666666',
+                         fontSize: `${signatureData.fontSize?.position || 14}px`
+                       }}
                      />
                    </td>
                  </tr>
