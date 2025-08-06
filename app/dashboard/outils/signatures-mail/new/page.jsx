@@ -15,6 +15,7 @@ import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
 import { useImageUpload } from "../hooks/useImageUpload";
 import VerticalSignature from "../components/VerticalSignature";
 import HorizontalSignature from "../components/HorizontalSignature";
+import SignatureSave from "../components/SignatureSave";
 import {
   Tabs,
   TabsContent,
@@ -757,6 +758,11 @@ export default function NewSignaturePage() {
 
   return (
     <div className="p-12 h-[calc(100vh-64px)] flex items-center justify-center">
+      {/* Bouton de sauvegarde en haut à droite */}
+      <div className="absolute top-4 right-4 z-10">
+        <SignatureSave />
+      </div>
+      
       {/* Onglets Desktop/Mobile - Verticaux à gauche */}
       <Tabs
         defaultValue="desktop"

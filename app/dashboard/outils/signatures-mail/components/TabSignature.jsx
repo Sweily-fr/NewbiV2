@@ -12,6 +12,7 @@ import {
 import LayoutTab from "./layout-tab/layout-tab";
 import LayoutTabTypography from "./tab-typography/layout-tab";
 import LayoutTabImg from "./layout-img/layout-tab";
+import SignatureManager from "./SignatureManager";
 // import { LayoutTab } from "./layout-tab";
 // import { LayoutTabTypography } from "./tab-typography/layout-tab";
 
@@ -44,11 +45,8 @@ export function TabSignature() {
       <TabsContent value="tab-3" className="w-full max-h-[calc(100vh-200px)] overflow-y-auto">
         <LayoutTabImg />
       </TabsContent>
-      <TabsContent
-        value="tab-4"
-        className="w-full flex items-center justify-center h-full"
-      >
-        <p className="text-center">Template à venir ...</p>
+      <TabsContent value="tab-4" className="w-full max-h-[calc(100vh-200px)] overflow-y-auto">
+        <SignatureManager />
       </TabsContent>
     </Tabs>
   );

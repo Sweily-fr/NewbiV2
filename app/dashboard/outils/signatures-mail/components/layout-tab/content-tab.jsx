@@ -24,6 +24,7 @@ import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import { Switch } from "@/src/components/ui/switch";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
+import SignatureSave from "../SignatureSave";
 
 export default function ContentTab() {
   const { signatureData, updateSignatureData } = useSignatureData();
@@ -1532,6 +1533,15 @@ export default function ContentTab() {
             </div>
           </div>
           
+        </div>
+      </div>
+      
+      {/* Bouton de sauvegarde */}
+      <Separator />
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium">Sauvegarde</h2>
+        <div className="flex justify-center">
+          <SignatureSave />
         </div>
       </div>
     </div>

@@ -119,7 +119,7 @@ export class CloudflareImageService {
 
     } catch (error) {
       console.error('Erreur upload Cloudflare:', error);
-      throw new Error(error.message || 'Erreur lors de l\'upload de l\'image');
+      throw new Error(error?.message || 'Erreur lors de l\'upload de l\'image');
     }
   }
 
