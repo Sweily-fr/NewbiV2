@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery, useMutation, useApolloClient } from "@apollo/client";
 import { gql } from "@apollo/client";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
@@ -140,6 +140,7 @@ const GET_EMAIL_SIGNATURE = gql`
 const SignatureManager = () => {
   const { updateSignatureData } = useSignatureData();
   const [isMounted, setIsMounted] = useState(false);
+  const client = useApolloClient();
 
   // Éviter l'erreur d'hydratation
   useEffect(() => {
@@ -157,13 +158,29 @@ const SignatureManager = () => {
     }
   });
 
-  const [deleteSignature, { loading: deleting }] = useMutation(DELETE_EMAIL_SIGNATURE, {
-    onCompleted: () => {
-      console.log("✅ Signature supprimée");
-      refetch();
+  const [deleteSignature] = useMutation(DELETE_EMAIL_SIGNATURE, {
+    // Mise à jour optimiste du cache
+    update: (cache, { data: { deleteEmailSignature: deletedId } }) => {
+      // Lire les données actuelles du cache
+      const existingSignatures = cache.readQuery({ query: GET_MY_EMAIL_SIGNATURES });
+      
+      if (existingSignatures?.getMyEmailSignatures) {
+        // Filtrer la signature supprimée
+        const newSignatures = existingSignatures.getMyEmailSignatures.filter(
+          sig => sig.id !== deletedId
+        );
+        
+        // Écrire les données mises à jour dans le cache
+        cache.writeQuery({
+          query: GET_MY_EMAIL_SIGNATURES,
+          data: { getMyEmailSignatures: newSignatures }
+        });
+      }
     },
     onError: (error) => {
       console.error("❌ Erreur suppression:", error);
+      // En cas d'erreur, on recharge les données
+      refetch();
     }
   });
 
@@ -274,7 +291,14 @@ const SignatureManager = () => {
   const handleDeleteSignature = async (id, name) => {
     if (window.confirm(`Êtes-vous sûr de vouloir supprimer la signature "${name}" ?`)) {
       try {
-        await deleteSignature({ variables: { id } });
+        await deleteSignature({ 
+          variables: { id },
+          // Réponse optimiste pour une mise à jour immédiate
+          optimisticResponse: {
+            __typename: 'Mutation',
+            deleteEmailSignature: id
+          }
+        });
       } catch (error) {
         console.error("Erreur lors de la suppression:", error);
       }

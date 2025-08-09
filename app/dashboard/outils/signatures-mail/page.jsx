@@ -1,6 +1,6 @@
 "use client";
 import { DataTable } from "@/src/components/data-table";
-import { useQuery, useMutation, useLazyQuery, gql } from '@apollo/client';
+import { useQuery, useMutation, useLazyQuery, gql, useApolloClient } from '@apollo/client';
 import { useState, useEffect, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/src/components/ui/sonner';
@@ -129,24 +129,16 @@ const CREATE_EMAIL_SIGNATURE = gql`
 
 export default function SignaturesMail() {
   const [isMounted, setIsMounted] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [localSignatures, setLocalSignatures] = useState([]);
   const router = useRouter();
+  const client = useApolloClient();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Fonction pour forcer le re-render
-  const forceRefresh = () => {
-    console.log('🔄 [REFRESH] Forçage du re-render...');
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const { data: queryData, loading, error, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
+  const { data, loading, error, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
     skip: !isMounted,
-    // Forcer le refetch depuis le serveur pour garantir les données fraîches
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: true,
     onCompleted: (data) => {
       console.log('✅ [QUERY] Signatures récupérées:', data.getMyEmailSignatures?.length);
@@ -156,28 +148,30 @@ export default function SignaturesMail() {
     }
   });
 
-  // Extraire les signatures pour un accès plus facile
-  const apolloSignatures = queryData?.getMyEmailSignatures || [];
-  
-  // Synchroniser l'état local avec les données Apollo
-  useEffect(() => {
-    if (apolloSignatures.length > 0) {
-      console.log('🔄 [SYNC] Synchronisation état local avec Apollo:', apolloSignatures.length, 'signatures');
-      setLocalSignatures(apolloSignatures);
-    }
-  }, [apolloSignatures]);
-  
-  // Utiliser l'état local pour l'affichage (permet les mises à jour immédiates)
-  const signatures = localSignatures.length > 0 ? localSignatures : apolloSignatures;
+  const signatures = data?.getMyEmailSignatures || [];
 
   // Mutations
-  const [deleteSignature, { loading: deleting }] = useMutation(DELETE_EMAIL_SIGNATURE, {
-    onCompleted: (data) => {
-      console.log('✅ [DELETE] Suppression réussie, data:', data);
+  const [deleteSignature] = useMutation(DELETE_EMAIL_SIGNATURE, {
+    update: (cache, { data: { deleteEmailSignature: deletedId } }) => {
+      // Lire les données actuelles du cache
+      const existingData = cache.readQuery({ query: GET_MY_EMAIL_SIGNATURES });
+      
+      if (existingData?.getMyEmailSignatures) {
+        // Filtrer la signature supprimée
+        const newSignatures = existingData.getMyEmailSignatures.filter(
+          sig => sig.id !== deletedId
+        );
+        
+        // Écrire les données mises à jour dans le cache
+        cache.writeQuery({
+          query: GET_MY_EMAIL_SIGNATURES,
+          data: { getMyEmailSignatures: newSignatures }
+        });
+      }
+    },
+    onCompleted: () => {
+      console.log('✅ [DELETE] Suppression réussie');
       toast.success('Signature supprimée avec succès');
-      // Refetch pour mettre à jour les données sans rechargement complet
-      console.log('🔄 [DELETE] Refetch des données...');
-      refetch();
     },
     onError: (error) => {
       console.error('❌ [DELETE] Erreur suppression:', error);
@@ -244,10 +238,9 @@ export default function SignaturesMail() {
   });
 
   // Transformer les données des signatures pour le format DataTable
-  // Le refreshKey force le recalcul quand on fait un forceRefresh()
   const transformedData = useMemo(() => {
-    console.log('🔄 [FRONTEND] Recalcul des données transformées (refreshKey:', refreshKey, ')');
-    return (signatures || []).map(signature => ({
+    console.log('🔄 [FRONTEND] Recalcul des données transformées');
+    return signatures.map(signature => ({
       id: signature.id,
       header: signature.signatureName,
       type: `${signature.firstName || ''} ${signature.lastName || ''}`.trim() || 'Sans nom',
@@ -256,7 +249,7 @@ export default function SignaturesMail() {
       limit: signature.email || 'Non spécifié',
       reviewer: signature.companyName || 'Non spécifié',
     }));
-  }, [signatures, refreshKey]);
+  }, [signatures]);
 
   console.log('🔄 [FRONTEND] Données transformées pour DataTable:', transformedData.length, 'éléments');
 

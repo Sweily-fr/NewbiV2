@@ -347,7 +347,12 @@ function DraggableRow({ row }) {
   );
 }
 export function DataTable({ data: initialData, textButton, link, onEdit, onDelete, onDuplicate, onToggleFavorite }) {
-  const [data, setData] = React.useState(() => initialData);
+  const [data, setData] = React.useState(initialData);
+  
+  // Mise à jour de l'état local lorsque les données initiales changent
+  React.useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
   
   // Définir les colonnes à l'intérieur du composant pour avoir accès aux props
   const columns = React.useMemo(() => [
