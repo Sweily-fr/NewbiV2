@@ -163,59 +163,21 @@ const SignatureSave = ({ existingSignatureId = null }) => {
   const handleSave = async () => {
     console.log("🚀 Début de la sauvegarde");
     
-    // Préparer les données en filtrant les valeurs nulles/undefined
-    const cleanData = {
+    // Utiliser la fonction prepareSignatureData qui contient TOUS les champs avancés
+    const completeData = prepareSignatureData();
+    
+    // Remplacer le nom et le statut par défaut avec les valeurs du modal
+    const finalData = {
+      ...completeData,
       signatureName: signatureName || "Ma signature",
-      isDefault: isDefault || false,
-      
-      // Informations personnelles (seulement si définies)
-      ...(signatureData.firstName && { firstName: signatureData.firstName }),
-      ...(signatureData.lastName && { lastName: signatureData.lastName }),
-      ...(signatureData.position && { position: signatureData.position }),
-      
-      // Informations de contact (seulement si définies)
-      ...(signatureData.email && { email: signatureData.email }),
-      ...(signatureData.phone && { phone: signatureData.phone }),
-      ...(signatureData.mobile && { mobile: signatureData.mobile }),
-      ...(signatureData.website && { website: signatureData.website }),
-      ...(signatureData.address && { address: signatureData.address }),
-      ...(signatureData.companyName && { companyName: signatureData.companyName }),
-      
-      // Options d'affichage (avec valeurs par défaut)
-      showPhoneIcon: signatureData.showPhoneIcon ?? true,
-      showMobileIcon: signatureData.showMobileIcon ?? true,
-      showEmailIcon: signatureData.showEmailIcon ?? true,
-      showAddressIcon: signatureData.showAddressIcon ?? true,
-      showWebsiteIcon: signatureData.showWebsiteIcon ?? true,
-      
-      // Couleurs (avec valeurs par défaut)
-      primaryColor: signatureData.primaryColor || "#3b82f6",
-      
-      // Layout (avec valeurs par défaut)
-      nameSpacing: signatureData.nameSpacing || 8,
-      nameAlignment: signatureData.nameAlignment || "left",
-      layout: signatureData.layout || "vertical",
-      
-      // Images (seulement si définies)
-      ...(signatureData.photo && { photo: signatureData.photo }),
-      ...(signatureData.photoKey && { photoKey: signatureData.photoKey }),
-      ...(signatureData.logo && { logo: signatureData.logo }),
-      ...(signatureData.logoKey && { logoKey: signatureData.logoKey }),
-      
-      // Tailles (avec valeurs par défaut)
-      imageSize: signatureData.imageSize || 80,
-      imageShape: signatureData.imageShape || "round",
-      logoSize: signatureData.logoSize || 60,
-      
-      // Séparateurs (avec valeurs par défaut)
-      separatorVerticalWidth: signatureData.separatorVerticalWidth || 1,
-      separatorHorizontalWidth: signatureData.separatorHorizontalWidth || 1,
-      
-      // Typographie (avec valeurs par défaut)
-      fontFamily: signatureData.fontFamily || "Arial, sans-serif"
+      isDefault: isDefault || false
     };
     
-    console.log("📝 Données nettoyées pour sauvegarde:", cleanData);
+    console.log("📝 Données complètes pour sauvegarde:", finalData);
+    console.log("🎨 Couleurs incluses:", finalData.colors);
+    console.log("📏 Largeurs colonnes incluses:", finalData.columnWidths);
+    console.log("📎 Espacements inclus:", finalData.spacings);
+    console.log("🔤 Tailles police incluses:", finalData.fontSize);
     
     try {
       if (existingSignatureId) {
@@ -225,16 +187,16 @@ const SignatureSave = ({ existingSignatureId = null }) => {
           variables: {
             input: {
               id: existingSignatureId,
-              ...cleanData
+              ...finalData
             }
           }
         });
       } else {
         // Création d'une nouvelle signature
-        console.log("✨ Création d'une nouvelle signature");
+        console.log("✨ Création d'une nouvelle signature avec TOUS les champs avancés");
         const result = await createSignature({
           variables: {
-            input: cleanData
+            input: finalData
           }
         });
         console.log("✅ Signature créée avec succès:", result.data.createEmailSignature);

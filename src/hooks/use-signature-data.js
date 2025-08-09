@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 
 // Context pour les données de signature
 const SignatureContext = createContext();
@@ -16,7 +17,11 @@ export const useSignatureData = () => {
 
 // Provider pour les données de signature
 export function SignatureProvider({ children }) {
-  const [signatureData, setSignatureData] = useState({
+  const searchParams = useSearchParams();
+  const isEditMode = searchParams?.get('edit') === 'true';
+  
+  // Données par défaut (mémorisées pour éviter les re-renders)
+  const defaultSignatureData = useMemo(() => ({
     signatureName: "Ma signature professionnelle",
     isDefault: true,
     firstName: "Jean",
@@ -91,90 +96,112 @@ export function SignatureProvider({ children }) {
       position: 14, // Taille de police pour le poste
       contact: 12, // Taille de police pour les contacts
     }
-  });
+  }), []);
+  
+  const [signatureData, setSignatureData] = useState(defaultSignatureData);
+  const [editingSignatureId, setEditingSignatureId] = useState(null);
+  
+  // Effet pour charger les données d'édition depuis localStorage
+  useEffect(() => {
+    console.log('🔍 [SIGNATURE_PROVIDER] Mode édition détecté:', isEditMode);
+    
+    if (isEditMode) {
+      try {
+        const editingSignature = localStorage.getItem('editingSignature');
+        console.log('📦 [SIGNATURE_PROVIDER] Données localStorage:', editingSignature);
+        
+        if (editingSignature) {
+          const parsedData = JSON.parse(editingSignature);
+          console.log('✅ [SIGNATURE_PROVIDER] Données parsées:', parsedData);
+          
+          // Merger les données existantes avec les données par défaut pour éviter les champs manquants
+          const mergedData = {
+            ...defaultSignatureData,
+            ...parsedData,
+            // S'assurer que les objets imbriqués sont bien mergés
+            colors: {
+              ...defaultSignatureData.colors,
+              ...(parsedData.colors || {})
+            },
+            columnWidths: {
+              ...defaultSignatureData.columnWidths,
+              ...(parsedData.columnWidths || {})
+            },
+            spacings: {
+              ...defaultSignatureData.spacings,
+              ...(parsedData.spacings || {})
+            },
+            fontSize: {
+              ...defaultSignatureData.fontSize,
+              ...(parsedData.fontSize || {})
+            }
+          };
+          
+          console.log('🔄 [SIGNATURE_PROVIDER] Données mergées:', mergedData);
+          setSignatureData(mergedData);
+          
+          // Stocker l'ID de la signature en cours d'édition
+          setEditingSignatureId(parsedData.id);
+          console.log('🆔 [SIGNATURE_PROVIDER] ID signature en édition:', parsedData.id);
+          
+          // Nettoyer localStorage après chargement
+          localStorage.removeItem('editingSignature');
+          console.log('🧹 [SIGNATURE_PROVIDER] localStorage nettoyé');
+        } else {
+          console.log('⚠️ [SIGNATURE_PROVIDER] Aucune donnée d\'édition trouvée dans localStorage');
+        }
+      } catch (error) {
+        console.error('❌ [SIGNATURE_PROVIDER] Erreur lors du chargement des données d\'édition:', error);
+      }
+    } else {
+      console.log('📝 [SIGNATURE_PROVIDER] Mode création - utilisation des données par défaut');
+    }
+  }, [isEditMode, defaultSignatureData]);
 
   const updateSignatureData = (key, value) => {
     setSignatureData((prev) => ({ ...prev, [key]: value }));
   };
 
   const resetSignatureData = () => {
-    setSignatureData({
-      signatureName: "Ma signature professionnelle",
-      isDefault: true,
-      firstName: "Jean",
-      lastName: "Dupont",
-      position: "Fondateur & CEO",
-      email: "newbi@contact.fr",
-      phone: "+33 7 34 64 06 18",
-      mobile: "+33 6 12 34 56 78",
-      showPhoneIcon: true,
-      showMobileIcon: true,
-      showEmailIcon: true,
-      showAddressIcon: true,
-      showWebsiteIcon: true,
-      companyName: "",
-      website: "https://www.newbi.fr",
-      address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
-      primaryColor: "#2563eb",
-      // Couleurs des différents éléments
-      colors: {
-        name: "#2563eb",
-        position: "#666666",
-        company: "#2563eb",
-        contact: "#666666",
-        separatorVertical: "#e0e0e0",
-        separatorHorizontal: "#e0e0e0",
-      },
-      // Espacement entre prénom et nom (en pixels)
-      nameSpacing: 4,
-      // Alignement du nom et prénom (left, center, right)
-      nameAlignment: 'left',
-      // Layout de la signature (vertical ou horizontal)
-      layout: 'vertical',
-      // Largeurs des colonnes (en pourcentage)
-      columnWidths: {
-        photo: 25,      // Largeur de la colonne photo (25%)
-        content: 75     // Largeur de la colonne contenu (75%)
-      },
-      // Images Cloudflare
-      photo: null,
-      photoKey: null,
-      logo: null,
-      logoKey: null,
-      // Taille de l'image de profil (en pixels)
-      imageSize: 80,
-      // Forme de l'image de profil (round ou square)
-      imageShape: 'round',
-      // Épaisseur des séparateurs (en pixels)
-      separatorVerticalWidth: 1,
-      separatorHorizontalWidth: 1,
-      // Taille du logo entreprise (en pixels)
-      logoSize: 60,
-      // Espacements entre les éléments (en pixels)
-      spacings: {
-        photoBottom: 12,
-        logoBottom: 12,
-        nameBottom: 8,
-        positionBottom: 8,
-        contactBottom: 6,
-        separatorTop: 12,
-        separatorBottom: 12,
-      },
-      // Typographie générale
-      fontFamily: 'Arial, sans-serif',
-      fontSize: {
-        name: 16,
-        position: 14,
-        contact: 12,
-      }
-    });
+    setSignatureData(defaultSignatureData);
   };
+  
+  // Fonction pour charger manuellement des données d'édition
+  const loadEditingData = (editData) => {
+    console.log('🔄 [SIGNATURE_PROVIDER] Chargement manuel des données d\'édition:', editData);
+    const mergedData = {
+      ...defaultSignatureData,
+      ...editData,
+      colors: {
+        ...defaultSignatureData.colors,
+        ...(editData.colors || {})
+      },
+      columnWidths: {
+        ...defaultSignatureData.columnWidths,
+        ...(editData.columnWidths || {})
+      },
+      spacings: {
+        ...defaultSignatureData.spacings,
+        ...(editData.spacings || {})
+      },
+      fontSize: {
+        ...defaultSignatureData.fontSize,
+        ...(editData.fontSize || {})
+      }
+    };
+    setSignatureData(mergedData);
+  };
+  
+  // Fonction supprimée car redondante avec resetSignatureData
 
   const value = {
     signatureData,
     updateSignatureData,
     setSignatureData,
     resetSignatureData,
+    loadEditingData,
+    isEditMode,
+    editingSignatureId,
   };
 
   return (

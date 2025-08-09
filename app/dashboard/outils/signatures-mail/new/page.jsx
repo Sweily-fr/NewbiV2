@@ -754,13 +754,13 @@ const MobilePreview = ({ signatureData }) => {
 
 // Composant principal de la page
 export default function NewSignaturePage() {
-  const { signatureData } = useSignatureData();
+  const { signatureData, isEditMode, editingSignatureId } = useSignatureData();
 
   return (
     <div className="p-12 h-[calc(100vh-64px)] flex items-center justify-center">
       {/* Bouton de sauvegarde en haut à droite */}
       <div className="absolute top-4 right-4 z-10">
-        <SignatureSave />
+        <SignatureSave existingSignatureId={isEditMode ? editingSignatureId : null} />
       </div>
       
       {/* Onglets Desktop/Mobile - Verticaux à gauche */}

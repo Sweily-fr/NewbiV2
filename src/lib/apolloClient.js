@@ -100,15 +100,37 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
 export const apolloClient = new ApolloClient({
   link: from([authLink, errorLink, uploadLink]),
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache({
+    // Configuration pour améliorer la synchronisation du cache
+    typePolicies: {
+      Query: {
+        fields: {
+          getMyEmailSignatures: {
+            // Toujours refetch depuis le serveur pour garantir la fraîcheur
+            fetchPolicy: "cache-and-network",
+          },
+        },
+      },
+    },
+    // Activer les notifications de changement de cache
+    addTypename: true,
+  }),
   defaultOptions: {
     watchQuery: {
       fetchPolicy: "cache-and-network",
       errorPolicy: "all",
+      // Forcer la notification des changements
+      notifyOnNetworkStatusChange: true,
     },
     query: {
       fetchPolicy: "cache-and-network",
       errorPolicy: "all",
+    },
+    mutate: {
+      // Configuration pour les mutations
+      errorPolicy: "all",
+      // Forcer la mise à jour du cache après mutation
+      awaitRefetchQueries: true,
     },
   },
 });

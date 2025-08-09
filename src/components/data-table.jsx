@@ -286,27 +286,39 @@ const columns = [
   },
   {
     id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-            size="icon"
-          >
-            <IconDotsVertical />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: ({ row }) => {
+      const rowData = row.original;
+      const isFavorite = rowData.status === 'Par défaut';
+      
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+              size="icon"
+            >
+              <IconDotsVertical />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-32">
+            <DropdownMenuItem onClick={() => onEdit?.(rowData)}>Edit</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDuplicate?.(rowData)}>Make a copy</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onToggleFavorite?.(rowData)}>
+              {isFavorite ? 'Remove from default' : 'Set as default'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="text-red-600 focus:text-red-600"
+              onClick={() => onDelete?.(rowData)}
+            >
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
   },
 ];
 
@@ -334,9 +346,136 @@ function DraggableRow({ row }) {
     </TableRow>
   );
 }
-
-export function DataTable({ data: initialData, textButton, link }) {
+export function DataTable({ data: initialData, textButton, link, onEdit, onDelete, onDuplicate, onToggleFavorite }) {
   const [data, setData] = React.useState(() => initialData);
+  
+  // Définir les colonnes à l'intérieur du composant pour avoir accès aux props
+  const columns = React.useMemo(() => [
+    {
+      id: "drag",
+      header: () => null,
+      cell: ({ row }) => <DragHandle id={row.original.id} />,
+    },
+    {
+      id: "select",
+      header: ({ table }) => (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "header",
+      header: "Header",
+      cell: ({ row }) => {
+        return <TableCellViewer item={row.original} />;
+      },
+      enableHiding: false,
+    },
+    {
+      accessorKey: "type",
+      header: "Section Type",
+      cell: ({ row }) => (
+        <div className="w-32">
+          <Badge variant="outline" className="text-muted-foreground px-1.5">
+            {row.original.type}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge variant="outline" className="text-muted-foreground px-1.5">
+          {row.original.status === "Done" ? (
+            <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
+          ) : (
+            <IconLoader />
+          )}
+          {row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "target",
+      header: "Target",
+      cell: ({ row }) => (
+        <div className="w-16">
+          <Badge variant="outline" className="text-muted-foreground px-1.5">
+            {row.original.target}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "limit",
+      header: "Limit",
+      cell: ({ row }) => (
+        <div className="w-16">
+          <Badge variant="outline" className="text-muted-foreground px-1.5">
+            {row.original.limit}
+          </Badge>
+        </div>
+      ),
+    },
+
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const rowData = row.original;
+        const isFavorite = rowData.status === 'Par défaut';
+        
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                size="icon"
+              >
+                <IconDotsVertical />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-32">
+              <DropdownMenuItem onClick={() => onEdit?.(rowData)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDuplicate?.(rowData)}>Make a copy</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onToggleFavorite?.(rowData)}>
+                {isFavorite ? 'Remove from default' : 'Set as default'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-red-600 focus:text-red-600"
+                onClick={() => onDelete?.(rowData)}
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ], [data, onEdit, onDelete, onDuplicate, onToggleFavorite]);
+
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState({});
   const [columnFilters, setColumnFilters] = React.useState([]);
