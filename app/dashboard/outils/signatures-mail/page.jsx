@@ -1,7 +1,7 @@
 "use client";
 import { DataTable } from "@/src/components/data-table";
 import { useQuery, useMutation, useLazyQuery, gql, useApolloClient } from '@apollo/client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/src/components/ui/sonner';
 import { useRouter } from 'next/navigation';
@@ -152,29 +152,35 @@ export default function SignaturesMail() {
 
   // Mutations
   const [deleteSignature] = useMutation(DELETE_EMAIL_SIGNATURE, {
-    update: (cache, { data: { deleteEmailSignature: deletedId } }) => {
-      // Lire les données actuelles du cache
-      const existingData = cache.readQuery({ query: GET_MY_EMAIL_SIGNATURES });
-      
-      if (existingData?.getMyEmailSignatures) {
-        // Filtrer la signature supprimée
-        const newSignatures = existingData.getMyEmailSignatures.filter(
-          sig => sig.id !== deletedId
-        );
+    // Désactiver complètement le rechargement automatique
+    refetchQueries: [],
+    awaitRefetchQueries: false,
+    
+    // Mise à jour optimiste immédiate
+    update: (cache, { data }) => {
+      if (data?.deleteEmailSignature) {
+        // Lire les données actuelles du cache
+        const existingData = cache.readQuery({ query: GET_MY_EMAIL_SIGNATURES });
         
-        // Écrire les données mises à jour dans le cache
-        cache.writeQuery({
-          query: GET_MY_EMAIL_SIGNATURES,
-          data: { getMyEmailSignatures: newSignatures }
-        });
+        if (existingData?.getMyEmailSignatures) {
+          // Filtrer la signature supprimée (l'ID est passé dans les variables de la mutation)
+          const newSignatures = existingData.getMyEmailSignatures.filter(
+            sig => sig.id !== data.deleteEmailSignature
+          );
+          
+          // Mettre à jour le cache sans déclencher de rechargement
+          cache.writeQuery({
+            query: GET_MY_EMAIL_SIGNATURES,
+            data: { getMyEmailSignatures: newSignatures }
+          });
+        }
       }
     },
     onCompleted: () => {
-      console.log('✅ [DELETE] Suppression réussie');
       toast.success('Signature supprimée avec succès');
     },
     onError: (error) => {
-      console.error('❌ [DELETE] Erreur suppression:', error);
+      console.error('Erreur lors de la suppression:', error);
       toast.error('Erreur lors de la suppression de la signature');
     }
   });
@@ -269,52 +275,42 @@ export default function SignaturesMail() {
   };
 
   const handleDelete = async (rowData) => {
-    // Suppression directe sans confirmation (la confirmation est gérée par le DataTable)
-    console.log('🗑️ [ACTION] Suppression directe de la signature:', rowData.id);
-    console.log('📊 [DELETE] Données avant suppression:', signatures?.length, 'signatures');
-      
-      try {
-        console.log('🚀 [DELETE] Lancement de la mutation de suppression...');
-        const result = await deleteSignature({ 
-          variables: { id: rowData.id },
-          // Mise à jour optimiste du cache pour suppression immédiate
-          update: (cache) => {
-            console.log('🔄 [DELETE] Mise à jour optimiste du cache...');
-            try {
-              // Lire les données actuelles du cache
-              const existingData = cache.readQuery({ query: GET_MY_EMAIL_SIGNATURES });
-              console.log('📊 [DELETE] Signatures avant suppression:', existingData?.getMyEmailSignatures?.length);
-              
-              if (existingData && existingData.getMyEmailSignatures) {
-                // Filtrer la signature supprimée
-                const filteredSignatures = existingData.getMyEmailSignatures.filter(
-                  signature => signature.id !== rowData.id
-                );
-                console.log('📊 [DELETE] Signatures après filtrage:', filteredSignatures.length);
-                
-                // Écrire les nouvelles données dans le cache
-                cache.writeQuery({
-                  query: GET_MY_EMAIL_SIGNATURES,
-                  data: {
-                    getMyEmailSignatures: filteredSignatures
-                  }
-                });
-                console.log('✅ [DELETE] Cache mis à jour avec succès');
-              }
-            } catch (cacheError) {
-              console.error('❌ [DELETE] Erreur lors de la mise à jour du cache:', cacheError);
-            }
+    const signatureId = rowData?.id || rowData?.original?.id;
+    
+    if (!signatureId) {
+      toast.error('Erreur: Impossible de trouver l\'identifiant de la signature');
+      return;
+    }
+    
+    try {
+      await deleteSignature({
+        variables: { id: signatureId },
+        optimisticResponse: {
+          __typename: 'Mutation',
+          deleteEmailSignature: signatureId
+        },
+        update: (cache) => {
+          // Mise à jour immédiate du cache
+          const existingData = cache.readQuery({ query: GET_MY_EMAIL_SIGNATURES });
+          
+          if (existingData?.getMyEmailSignatures) {
+            const newSignatures = existingData.getMyEmailSignatures.filter(
+              sig => sig.id !== signatureId
+            );
+            
+            cache.writeQuery({
+              query: GET_MY_EMAIL_SIGNATURES,
+              data: { getMyEmailSignatures: newSignatures }
+            });
           }
-        });
-        
-        console.log('✅ [DELETE] Résultat de la mutation:', result);
-        console.log('📊 [DELETE] Suppression terminée avec succès');
-        
-      } catch (error) {
-        console.error('❌ [DELETE] Erreur lors de la suppression:', error);
-        console.error('❌ [DELETE] Détails de l\'erreur:', error.message);
-        toast.error('Erreur lors de la suppression de la signature');
-      }
+        }
+      });
+      
+      toast.success('Signature supprimée avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      toast.error('Erreur lors de la suppression de la signature');
+    }
   };
 
   const handleDuplicate = async (rowData) => {
