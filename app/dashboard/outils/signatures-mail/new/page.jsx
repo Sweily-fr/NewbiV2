@@ -15,6 +15,10 @@ import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
 import { useImageUpload } from "../hooks/useImageUpload";
 import VerticalSignature from "../components/VerticalSignature";
 import HorizontalSignature from "../components/HorizontalSignature";
+import TemplateObama from "../components/templates/TemplateObama";
+import TemplateRangan from "../components/templates/TemplateRangan";
+import TemplateShah from "../components/templates/TemplateShah";
+import TemplateSelector from "../components/TemplateSelector";
 import SignatureSave from "../components/SignatureSave";
 import {
   Tabs,
@@ -223,10 +227,28 @@ const EmailPreview = ({ signatureData }) => {
       console.log('  - Photo URL:', photoSrc || 'Aucune');
       console.log('  - Logo URL:', logoSrc || 'Aucun');
       
-      // Générer le HTML selon le layout sélectionné
-    const htmlSignature = signatureData.layout === 'horizontal' ? 
-      generateHorizontalHTML(signatureData, primaryColor, photoSrc, logoSrc) :
-      generateVerticalHTML(signatureData, primaryColor, photoSrc, logoSrc);
+      // Générer le HTML selon le template sélectionné
+    const template = signatureData.template || signatureData.layout;
+    let htmlSignature;
+    
+    switch (template) {
+      case 'obama':
+        htmlSignature = generateObamaHTML(signatureData, primaryColor, photoSrc, logoSrc);
+        break;
+      case 'rangan':
+        htmlSignature = generateRanganHTML(signatureData, primaryColor, photoSrc, logoSrc);
+        break;
+      case 'shah':
+        htmlSignature = generateShahHTML(signatureData, primaryColor, photoSrc, logoSrc);
+        break;
+      case 'horizontal':
+        htmlSignature = generateHorizontalHTML(signatureData, primaryColor, photoSrc, logoSrc);
+        break;
+      case 'vertical':
+      default:
+        htmlSignature = generateVerticalHTML(signatureData, primaryColor, photoSrc, logoSrc);
+        break;
+    }
     
     return htmlSignature;
   } catch (error) {
@@ -442,6 +464,8 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
   const imageSize = signatureData.imageSize || 80;
   const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
   const separatorHorizontalWidth = signatureData.separatorHorizontalWidth || 1;
+  const spacings = signatureData.spacings || {};
+  const logoSize = signatureData.logoSize || 60;
   return `
     <!DOCTYPE html>
     <html>
@@ -455,8 +479,8 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
         <tr>
           <!-- Photo de profil à gauche -->
           ${photoSrc ? `
-            <td style="width: 80px; padding-right: 16px; vertical-align: top;">
-              <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center / cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
+            <td style="width: 80px; padding-right: ${spacings.photoBottom || 16}px; vertical-align: top;">
+              <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center/cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;"></div>
             </td>
           ` : ''}
           
@@ -525,7 +549,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
         <!-- Logo entreprise après le séparateur -->
         ${logoSrc ? `
         <tr>
-          <td colspan="2" style="padding: ${spacings.separatorBottom || 12}px 0 0 0; text-align: center;">
+          <td colspan="2" style="padding: ${spacings.logoBottom || 12}px 0 0 0; text-align: left;">
             <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
           </td>
         </tr>
@@ -536,6 +560,208 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
   `;
 };
 
+// Générateur HTML pour le template Obama
+const generateObamaHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
+  return `
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 450px; font-family: Arial, sans-serif; background-color: #ffffff;">
+  <tbody>
+    <tr>
+      <!-- Photo de profil à gauche -->
+      <td style="width: 100px; padding-right: 20px; vertical-align: top; padding-bottom: 10px;">
+        ${photoSrc ? `
+        <div style="width: 90px; height: 90px; border-radius: 50%; background: url('${photoSrc}') center center/cover no-repeat; display: block; border: 3px solid #f0f0f0;"></div>
+        ` : ''}
+      </td>
+      
+      <!-- Informations à droite -->
+      <td style="vertical-align: top; padding-bottom: 10px;">
+        <!-- Nom complet -->
+        <div style="font-size: 22px; font-weight: bold; color: #2563eb; line-height: 1.2; margin-bottom: 5px; font-family: Arial, sans-serif;">
+          ${signatureData.firstName || ''} ${signatureData.lastName || ''}
+        </div>
+        
+        <!-- Titre/Position -->
+        ${(signatureData.position || signatureData.company) ? `
+        <div style="font-size: 14px; color: #666666; line-height: 1.3; margin-bottom: 15px; font-family: Arial, sans-serif;">
+          ${signatureData.position || ''}${signatureData.position && signatureData.company ? ' | ' : ''}${signatureData.company || ''}
+        </div>
+        ` : ''}
+        
+        <!-- Informations de contact -->
+        <div style="font-size: 13px; color: #666666; line-height: 1.6;">
+          ${signatureData.email ? `
+          <div style="margin-bottom: 3px; display: flex; align-items: center;">
+            <span style="color: #2563eb; margin-right: 8px; font-size: 14px;">✉</span>
+            <a href="mailto:${signatureData.email}" style="color: #666666; text-decoration: none;">${signatureData.email}</a>
+          </div>
+          ` : ''}
+          
+          ${signatureData.phone ? `
+          <div style="margin-bottom: 3px; display: flex; align-items: center;">
+            <span style="color: #2563eb; margin-right: 8px; font-size: 14px;">📞</span>
+            <span style="color: #666666;">${signatureData.phone}</span>
+          </div>
+          ` : ''}
+          
+          ${signatureData.website ? `
+          <div style="margin-bottom: 3px; display: flex; align-items: center;">
+            <span style="color: #2563eb; margin-right: 8px; font-size: 14px;">🌐</span>
+            <a href="${signatureData.website}" style="color: #666666; text-decoration: none;">${signatureData.website}</a>
+          </div>
+          ` : ''}
+          
+          ${signatureData.address ? `
+          <div style="margin-top: 8px; display: flex; align-items: flex-start;">
+            <span style="color: #2563eb; margin-right: 8px; font-size: 14px; margin-top: 2px;">📍</span>
+            <span style="color: #666666;">${signatureData.address}</span>
+          </div>
+          ` : ''}
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+  `;
+};
+
+// Générateur HTML pour le template Rangan
+const generateRanganHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
+  return `
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: Arial, sans-serif; background-color: #ffffff;">
+  <tbody>
+    <tr>
+      <!-- Photo de profil à gauche -->
+      <td style="width: 110px; padding-right: 25px; vertical-align: top; padding-bottom: 15px;">
+        ${photoSrc ? `
+        <div style="width: 100px; height: 100px; border-radius: 50%; background: url('${photoSrc}') center center/cover no-repeat; display: block; border: 4px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+        ` : ''}
+      </td>
+      
+      <!-- Informations à droite -->
+      <td style="vertical-align: top; padding-bottom: 15px;">
+        <!-- Nom complet -->
+        <div style="font-size: 24px; font-weight: bold; color: #1a1a1a; line-height: 1.2; margin-bottom: 4px; font-family: Arial, sans-serif;">
+          ${signatureData.firstName || ''} ${signatureData.lastName || ''}
+        </div>
+        
+        <!-- Titre/Position -->
+        <div style="font-size: 16px; color: #666666; line-height: 1.3; margin-bottom: 12px; font-family: Arial, sans-serif;">
+          ${signatureData.position || ''}${signatureData.position && signatureData.company ? '<br>' : ''}${signatureData.company || ''}
+        </div>
+        
+        <!-- Informations de contact avec icônes colorées -->
+        <div style="font-size: 14px; line-height: 1.8; margin-bottom: 15px;">
+          ${signatureData.phone ? `
+          <div style="margin-bottom: 4px; display: flex; align-items: center;">
+            <div style="width: 16px; height: 16px; border-radius: 50%; background-color: #ff6b35; margin-right: 10px; display: flex; align-items: center; justify-content: center; font-size: 10px;">📞</div>
+            <span style="color: #333;">${signatureData.phone}</span>
+          </div>
+          ` : ''}
+          
+          ${signatureData.email ? `
+          <div style="margin-bottom: 4px; display: flex; align-items: center;">
+            <div style="width: 16px; height: 16px; border-radius: 50%; background-color: #4285f4; margin-right: 10px; display: flex; align-items: center; justify-content: center; font-size: 10px;">✉</div>
+            <a href="mailto:${signatureData.email}" style="color: #333; text-decoration: none;">${signatureData.email}</a>
+          </div>
+          ` : ''}
+          
+          ${signatureData.website ? `
+          <div style="margin-bottom: 4px; display: flex; align-items: center;">
+            <div style="width: 16px; height: 16px; border-radius: 50%; background-color: #34a853; margin-right: 10px; display: flex; align-items: center; justify-content: center; font-size: 10px;">🌐</div>
+            <a href="${signatureData.website}" style="color: #333; text-decoration: none;">${signatureData.website}</a>
+          </div>
+          ` : ''}
+        </div>
+        
+        <!-- Icônes sociales colorées -->
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #0077b5; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: white; font-size: 14px; font-weight: bold;">in</span>
+          </div>
+          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #1da1f2; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: white; font-size: 12px;">🐦</span>
+          </div>
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: white; font-size: 12px;">📷</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+  `;
+};
+
+// Générateur HTML pour le template Shah
+const generateShahHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
+  return `
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 480px; font-family: Arial, sans-serif; background-color: #ffffff;">
+  <tbody>
+    <tr>
+      <!-- Informations à gauche -->
+      <td style="vertical-align: top; padding-right: 25px; padding-bottom: 15px; width: 300px;">
+        <!-- Nom complet -->
+        <div style="font-size: 26px; font-weight: bold; color: #1a1a1a; line-height: 1.1; margin-bottom: 6px; font-family: Arial, sans-serif;">
+          ${signatureData.firstName || ''} ${signatureData.lastName || ''}
+        </div>
+        
+        <!-- Titre/Position -->
+        <div style="font-size: 15px; color: #666666; line-height: 1.4; margin-bottom: 18px; font-family: Arial, sans-serif;">
+          ${signatureData.position || ''}${signatureData.position && signatureData.company ? ' at ' : ''}${signatureData.company || ''}
+        </div>
+        
+        <!-- Informations de contact -->
+        <div style="font-size: 14px; line-height: 1.7; margin-bottom: 20px;">
+          ${signatureData.email ? `
+          <div style="margin-bottom: 5px; display: flex; align-items: center;">
+            <span style="color: #666666; margin-right: 8px; font-size: 13px;">📧</span>
+            <a href="mailto:${signatureData.email}" style="color: #333; text-decoration: none;">${signatureData.email}</a>
+          </div>
+          ` : ''}
+          
+          ${signatureData.phone ? `
+          <div style="margin-bottom: 5px; display: flex; align-items: center;">
+            <span style="color: #666666; margin-right: 8px; font-size: 13px;">📱</span>
+            <span style="color: #333;">${signatureData.phone}</span>
+          </div>
+          ` : ''}
+          
+          ${signatureData.website ? `
+          <div style="margin-bottom: 5px; display: flex; align-items: center;">
+            <span style="color: #666666; margin-right: 8px; font-size: 13px;">🌍</span>
+            <a href="${signatureData.website}" style="color: #333; text-decoration: none;">${signatureData.website}</a>
+          </div>
+          ` : ''}
+        </div>
+        
+        <!-- Icônes sociales bleues alignées -->
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <div style="width: 32px; height: 32px; border-radius: 6px; background-color: #0077b5; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: white; font-size: 16px; font-weight: bold;">in</span>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background-color: #0077b5; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: white; font-size: 14px;">🐦</span>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background-color: #0077b5; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: white; font-size: 16px; font-weight: bold;">f</span>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background-color: #0077b5; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: white; font-size: 14px;">📷</span>
+          </div>
+        </div>
+      </td>
+      
+      <!-- Photo de profil carrée à droite -->
+      <td style="width: 130px; vertical-align: top; padding-bottom: 15px; text-align: center;">
+        ${photoSrc ? `
+        <div style="width: 120px; height: 120px; border-radius: 8px; background: url('${photoSrc}') center center/cover no-repeat; display: inline-block; border: 2px solid #f0f0f0; box-shadow: 0 2px 6px rgba(0,0,0,0.08);"></div>
+        ` : ''}
+      </td>
+    </tr>
+  </tbody>
+</table>
+  `;
+};
 
   
   // Fonction pour copier la signature dans le presse-papier
@@ -699,28 +925,32 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
         </div>
 
         <div className="border-t pt-4 mt-4">
-          {/* Signature avec rendu conditionnel selon le layout */}
-          {signatureData.layout === 'horizontal' ? (
-            <HorizontalSignature
-              signatureData={signatureData}
-              handleFieldChange={handleFieldChange}
-              handleImageChange={handleImageChange}
-              validatePhone={validatePhone}
-              validateEmail={validateEmail}
-              validateUrl={validateUrl}
-              logoSrc={signatureData.logo}
-            />
-          ) : (
-            <VerticalSignature
-              signatureData={signatureData}
-              handleFieldChange={handleFieldChange}
-              handleImageChange={handleImageChange}
-              validatePhone={validatePhone}
-              validateEmail={validateEmail}
-              validateUrl={validateUrl}
-              logoSrc={signatureData.logo}
-            />
-          )}
+          {/* Signature avec rendu conditionnel selon le template */}
+          {(() => {
+            const templateProps = {
+              signatureData,
+              handleFieldChange,
+              handleImageChange,
+              validatePhone,
+              validateEmail,
+              validateUrl,
+              logoSrc: signatureData.logo
+            };
+            
+            switch (signatureData.template || signatureData.layout) {
+              case 'obama':
+                return <TemplateObama {...templateProps} />;
+              case 'rangan':
+                return <TemplateRangan {...templateProps} />;
+              case 'shah':
+                return <TemplateShah {...templateProps} />;
+              case 'horizontal':
+                return <HorizontalSignature {...templateProps} />;
+              case 'vertical':
+              default:
+                return <VerticalSignature {...templateProps} />;
+            }
+          })()}
         </div>
       </div>
     </div>
@@ -754,10 +984,20 @@ const MobilePreview = ({ signatureData }) => {
 
 // Composant principal de la page
 export default function NewSignaturePage() {
-  const { signatureData, isEditMode, editingSignatureId } = useSignatureData();
+  const { signatureData, updateSignatureData, isEditMode, editingSignatureId } = useSignatureData();
+  
+  // Fonction pour changer de template
+  const handleTemplateChange = (templateId) => {
+    updateSignatureData('template', templateId);
+    // Maintenir la compatibilité avec l'ancien système layout
+    if (templateId === 'horizontal' || templateId === 'vertical') {
+      updateSignatureData('layout', templateId);
+    }
+  };
 
   return (
     <div className="p-12 h-[calc(100vh-64px)] flex items-center justify-center">
+
       {/* Bouton de sauvegarde en haut à droite */}
       <div className="absolute top-4 right-4 z-10">
         <SignatureSave existingSignatureId={isEditMode ? editingSignatureId : null} />

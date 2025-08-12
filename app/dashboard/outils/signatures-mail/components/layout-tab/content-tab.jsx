@@ -91,32 +91,23 @@ export default function ContentTab() {
     const numValue = parseInt(value) || 0;
     const clampedValue = Math.max(0, Math.min(30, numValue));
     
-    // Adapter l'application de l'espacement global selon la mise en page sélectionnée
-    const isVertical = signatureData.layout === 'vertical';
-    const base = { ...signatureData.spacings, global: clampedValue };
-    const updated = isVertical
-      ? {
-          // Signature verticale: applique à tous les espacements utilisés
-          ...base,
-          photoBottom: clampedValue,
-          logoBottom: clampedValue,
-          nameBottom: clampedValue,
-          positionBottom: clampedValue,
-          companyBottom: clampedValue,
-          contactBottom: clampedValue,
-          phoneToMobile: clampedValue,
-          mobileToEmail: clampedValue,
-          emailToWebsite: clampedValue,
-          websiteToAddress: clampedValue,
-          separatorTop: clampedValue,
-          separatorBottom: clampedValue,
-        }
-      : {
-          // Signature horizontale: uniquement les espacements réellement utilisés
-          ...base,
-          separatorTop: clampedValue,
-          separatorBottom: clampedValue,
-        };
+    // Applique l'espacement global à tous les espacements pour les deux layouts
+    const updated = {
+      ...signatureData.spacings,
+      global: clampedValue,
+      photoBottom: clampedValue,
+      logoBottom: clampedValue,
+      nameBottom: clampedValue,
+      positionBottom: clampedValue,
+      companyBottom: clampedValue,
+      contactBottom: clampedValue,
+      phoneToMobile: clampedValue,
+      mobileToEmail: clampedValue,
+      emailToWebsite: clampedValue,
+      websiteToAddress: clampedValue,
+      separatorTop: clampedValue,
+      separatorBottom: clampedValue,
+    };
     
     updateSignatureData('spacings', updated);
   };
@@ -986,10 +977,11 @@ export default function ContentTab() {
         ) : (
           // Mode espacement détaillé
           <div className="flex flex-col gap-3 ml-4">
-          {signatureData.layout === 'vertical' && (
-          /* Espacement sous la photo */
+          {/* Espacement sous la photo - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Sous photo</Label>
+            <Label className="text-xs text-muted-foreground">
+              {signatureData.layout === 'vertical' ? 'Sous photo' : 'Photo → Contenu'}
+            </Label>
             <div className="flex items-center gap-3 w-30">
               <Input
                 className="h-8 w-12 px-2 py-1"
@@ -997,9 +989,15 @@ export default function ContentTab() {
                 inputMode="decimal"
                 value={signatureData.spacings?.photoBottom || 12}
                 onChange={(e) => handleSpacingChange('photoBottom', e.target.value)}
+                onBlur={(e) => handleSpacingChange('photoBottom', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('photoBottom', e.target.value);
+                  }
+                }}
                 min={0}
                 max={30}
-                aria-label="Espacement sous la photo"
+                aria-label="Espacement photo"
                 placeholder="12"
               />
               <Slider
@@ -1009,16 +1007,16 @@ export default function ContentTab() {
                 min={0}
                 max={30}
                 step={2}
-                aria-label="Espacement sous photo"
+                aria-label="Espacement photo"
               />
             </div>
           </div>
-          )}
           
-          {signatureData.layout === 'vertical' && (
-          /* Espacement sous le logo */
+          {/* Espacement sous le logo - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Sous logo</Label>
+            <Label className="text-xs text-muted-foreground">
+              {signatureData.layout === 'vertical' ? 'Sous logo' : 'Logo → Contenu'}
+            </Label>
             <div className="flex items-center gap-3 w-30">
               <Input
                 className="h-8 w-12 px-2 py-1"
@@ -1026,9 +1024,15 @@ export default function ContentTab() {
                 inputMode="decimal"
                 value={signatureData.spacings?.logoBottom || 12}
                 onChange={(e) => handleSpacingChange('logoBottom', e.target.value)}
+                onBlur={(e) => handleSpacingChange('logoBottom', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('logoBottom', e.target.value);
+                  }
+                }}
                 min={0}
                 max={30}
-                aria-label="Espacement sous le logo"
+                aria-label="Espacement logo"
                 placeholder="12"
               />
               <Slider
@@ -1038,16 +1042,16 @@ export default function ContentTab() {
                 min={0}
                 max={30}
                 step={2}
-                aria-label="Espacement sous logo"
+                aria-label="Espacement logo"
               />
             </div>
           </div>
-          )}
           
-          {signatureData.layout === 'vertical' && (
-          /* Espacement sous le nom */
+          {/* Espacement sous le nom - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Sous nom</Label>
+            <Label className="text-xs text-muted-foreground">
+              {signatureData.layout === 'vertical' ? 'Sous nom' : 'Nom → Poste'}
+            </Label>
             <div className="flex items-center gap-3 w-30">
               <Input
                 className="h-8 w-12 px-2 py-1"
@@ -1055,9 +1059,15 @@ export default function ContentTab() {
                 inputMode="decimal"
                 value={signatureData.spacings?.nameBottom || 8}
                 onChange={(e) => handleSpacingChange('nameBottom', e.target.value)}
+                onBlur={(e) => handleSpacingChange('nameBottom', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('nameBottom', e.target.value);
+                  }
+                }}
                 min={0}
                 max={30}
-                aria-label="Espacement sous le nom"
+                aria-label="Espacement nom"
                 placeholder="8"
               />
               <Slider
@@ -1067,16 +1077,16 @@ export default function ContentTab() {
                 min={0}
                 max={30}
                 step={2}
-                aria-label="Espacement sous nom"
+                aria-label="Espacement nom"
               />
             </div>
           </div>
-          )}
           
-          {signatureData.layout === 'vertical' && (
-          /* Espacement sous le poste */
+          {/* Espacement sous le poste - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Sous poste</Label>
+            <Label className="text-xs text-muted-foreground">
+              {signatureData.layout === 'vertical' ? 'Sous poste' : 'Poste → Entreprise'}
+            </Label>
             <div className="flex items-center gap-3 w-30">
               <Input
                 className="h-8 w-12 px-2 py-1"
@@ -1084,9 +1094,15 @@ export default function ContentTab() {
                 inputMode="decimal"
                 value={signatureData.spacings?.positionBottom || 8}
                 onChange={(e) => handleSpacingChange('positionBottom', e.target.value)}
+                onBlur={(e) => handleSpacingChange('positionBottom', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('positionBottom', e.target.value);
+                  }
+                }}
                 min={0}
                 max={30}
-                aria-label="Espacement sous le poste"
+                aria-label="Espacement poste"
                 placeholder="8"
               />
               <Slider
@@ -1096,16 +1112,16 @@ export default function ContentTab() {
                 min={0}
                 max={30}
                 step={2}
-                aria-label="Espacement sous poste"
+                aria-label="Espacement poste"
               />
             </div>
           </div>
-          )}
           
-          {signatureData.layout === 'vertical' && (
-          /* Espacement sous l'entreprise */
+          {/* Espacement sous l'entreprise - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Sous entreprise</Label>
+            <Label className="text-xs text-muted-foreground">
+              {signatureData.layout === 'vertical' ? 'Sous entreprise' : 'Entreprise → Contacts'}
+            </Label>
             <div className="flex items-center gap-3 w-30">
               <Input
                 className="h-8 w-12 px-2 py-1"
@@ -1113,9 +1129,15 @@ export default function ContentTab() {
                 inputMode="decimal"
                 value={signatureData.spacings?.companyBottom || 12}
                 onChange={(e) => handleSpacingChange('companyBottom', e.target.value)}
+                onBlur={(e) => handleSpacingChange('companyBottom', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('companyBottom', e.target.value);
+                  }
+                }}
                 min={0}
                 max={30}
-                aria-label="Espacement sous l'entreprise"
+                aria-label="Espacement entreprise"
                 placeholder="12"
               />
               <Slider
@@ -1125,14 +1147,12 @@ export default function ContentTab() {
                 min={0}
                 max={30}
                 step={2}
-                aria-label="Espacement sous entreprise"
+                aria-label="Espacement entreprise"
               />
             </div>
           </div>
-          )}
           
-          {signatureData.layout === 'vertical' && (
-          /* Espacement entre téléphone et mobile */
+          {/* Espacement entre téléphone et mobile - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Téléphone → Mobile</Label>
             <div className="flex items-center gap-3 w-30">
@@ -1142,6 +1162,12 @@ export default function ContentTab() {
                 inputMode="decimal"
                 value={signatureData.spacings?.phoneToMobile || 4}
                 onChange={(e) => handleSpacingChange('phoneToMobile', e.target.value)}
+                onBlur={(e) => handleSpacingChange('phoneToMobile', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('phoneToMobile', e.target.value);
+                  }
+                }}
                 min={0}
                 max={20}
                 aria-label="Espacement téléphone vers mobile"
@@ -1158,10 +1184,8 @@ export default function ContentTab() {
               />
             </div>
           </div>
-          )}
           
-          {signatureData.layout === 'vertical' && (
-          /* Espacement entre mobile et email */
+          {/* Espacement entre mobile et email - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Mobile → Email</Label>
             <div className="flex items-center gap-3 w-30">
@@ -1171,6 +1195,12 @@ export default function ContentTab() {
                 inputMode="decimal"
                 value={signatureData.spacings?.mobileToEmail || 4}
                 onChange={(e) => handleSpacingChange('mobileToEmail', e.target.value)}
+                onBlur={(e) => handleSpacingChange('mobileToEmail', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('mobileToEmail', e.target.value);
+                  }
+                }}
                 min={0}
                 max={20}
                 aria-label="Espacement mobile vers email"
@@ -1187,10 +1217,8 @@ export default function ContentTab() {
               />
             </div>
           </div>
-          )}
           
-          {signatureData.layout === 'vertical' && (
-          /* Espacement entre email et site web */
+          {/* Espacement entre email et site web - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Email → Site web</Label>
             <div className="flex items-center gap-3 w-30">
@@ -1200,6 +1228,12 @@ export default function ContentTab() {
                 inputMode="decimal"
                 value={signatureData.spacings?.emailToWebsite || 4}
                 onChange={(e) => handleSpacingChange('emailToWebsite', e.target.value)}
+                onBlur={(e) => handleSpacingChange('emailToWebsite', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('emailToWebsite', e.target.value);
+                  }
+                }}
                 min={0}
                 max={20}
                 aria-label="Espacement email vers site web"
@@ -1216,10 +1250,8 @@ export default function ContentTab() {
               />
             </div>
           </div>
-          )}
           
-          {signatureData.layout === 'vertical' && (
-          /* Espacement entre site web et adresse */
+          {/* Espacement entre site web et adresse - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Site web → Adresse</Label>
             <div className="flex items-center gap-3 w-30">
@@ -1229,6 +1261,12 @@ export default function ContentTab() {
                 inputMode="decimal"
                 value={signatureData.spacings?.websiteToAddress || 4}
                 onChange={(e) => handleSpacingChange('websiteToAddress', e.target.value)}
+                onBlur={(e) => handleSpacingChange('websiteToAddress', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('websiteToAddress', e.target.value);
+                  }
+                }}
                 min={0}
                 max={20}
                 aria-label="Espacement site web vers adresse"
@@ -1245,10 +1283,8 @@ export default function ContentTab() {
               />
             </div>
           </div>
-          )}
           
-          {signatureData.layout === 'vertical' && (
-          /* Espacement entre les contacts (fallback) */
+          {/* Espacement entre les contacts - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Entre contacts</Label>
             <div className="flex items-center gap-3 w-30">
@@ -1258,6 +1294,12 @@ export default function ContentTab() {
                 inputMode="decimal"
                 value={signatureData.spacings?.contactBottom || 6}
                 onChange={(e) => handleSpacingChange('contactBottom', e.target.value)}
+                onBlur={(e) => handleSpacingChange('contactBottom', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('contactBottom', e.target.value);
+                  }
+                }}
                 min={0}
                 max={30}
                 aria-label="Espacement entre contacts"
@@ -1274,7 +1316,6 @@ export default function ContentTab() {
               />
             </div>
           </div>
-          )}
           
           {/* Espacement au-dessus du séparateur */}
           <div className="flex items-center justify-between">

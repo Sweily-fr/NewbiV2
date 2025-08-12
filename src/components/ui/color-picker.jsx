@@ -254,4 +254,4 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
   );
 }
 
-export { ColorPicker };
+// Export déjà fait via export function ColorPicker

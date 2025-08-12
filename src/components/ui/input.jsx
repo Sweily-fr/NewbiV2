@@ -114,7 +114,7 @@ function InputPhone({
   );
 }
 
-export default function InputEndAddOn({
+function InputEndAddOn({
   className,
   label,
   placeholder,
@@ -140,7 +140,7 @@ export default function InputEndAddOn({
   );
 }
 
-export function InputLoader({ className, label, placeholder, ...props }) {
+function InputLoader({ className, label, placeholder, ...props }) {
   const id = useId();
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);

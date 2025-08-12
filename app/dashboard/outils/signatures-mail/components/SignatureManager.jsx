@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, useApolloClient } from "@apollo/client";
+import { useQuery, useMutation, useLazyQuery, useApolloClient } from "@apollo/client";
 import { gql } from "@apollo/client";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Trash2, Download, Star, StarOff, Loader2, AlertCircle } from "lucide-react";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
+import TemplateSelector from "./TemplateSelector";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
 const GET_MY_EMAIL_SIGNATURES = gql`
@@ -138,7 +139,7 @@ const GET_EMAIL_SIGNATURE = gql`
 `;
 
 const SignatureManager = () => {
-  const { updateSignatureData } = useSignatureData();
+  const { updateSignatureData, signatureData } = useSignatureData();
   const [isMounted, setIsMounted] = useState(false);
   const client = useApolloClient();
 
@@ -158,7 +159,7 @@ const SignatureManager = () => {
     }
   });
 
-  const [deleteSignature] = useMutation(DELETE_EMAIL_SIGNATURE, {
+  const [deleteSignature, { loading: deleting }] = useMutation(DELETE_EMAIL_SIGNATURE, {
     // Mise à jour optimiste du cache
     update: (cache, { data: { deleteEmailSignature: deletedId } }) => {
       // Lire les données actuelles du cache
@@ -194,7 +195,7 @@ const SignatureManager = () => {
     }
   });
 
-  const [loadSignature, { loading: loadingSignature }] = useMutation(GET_EMAIL_SIGNATURE, {
+  const [loadSignature, { loading: loadingSignature }] = useLazyQuery(GET_EMAIL_SIGNATURE, {
     onCompleted: (data) => {
       const signature = data.getEmailSignature;
       if (signature) {
@@ -355,21 +356,32 @@ const SignatureManager = () => {
   console.log('  - signatures:', signatures);
   console.log('  - signatures.length:', signatures.length);
 
-  if (signatures.length === 0) {
-    return (
-      <div className="text-center p-8 text-gray-500">
-        <p className="text-lg mb-2">Aucune signature sauvegardée</p>
-        <p className="text-sm">Créez votre première signature et sauvegardez-la pour la retrouver ici.</p>
-      </div>
-    );
-  }
+  // Fonction pour changer de template
+  const handleTemplateChange = (templateId) => {
+    updateSignatureData('template', templateId);
+    // Maintenir la compatibilité avec l'ancien système layout
+    if (templateId === 'horizontal' || templateId === 'vertical') {
+      updateSignatureData('layout', templateId);
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Mes signatures sauvegardées</h2>
-        <Badge variant="outline">{signatures.length} signature(s)</Badge>
+    <div className="space-y-6">
+      {/* Sélecteur de templates */}
+      <div>
+        <TemplateSelector 
+          selectedTemplate={signatureData.template || signatureData.layout || 'horizontal'}
+          onTemplateChange={handleTemplateChange}
+        />
       </div>
+      
+      {/* Section signatures sauvegardées (si il y en a) */}
+      {signatures.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Mes signatures sauvegardées</h2>
+            <Badge variant="outline">{signatures.length} signature(s)</Badge>
+          </div>
 
       <div className="grid gap-4">
         {signatures.map((signature) => (
@@ -448,6 +460,16 @@ const SignatureManager = () => {
           </Card>
         ))}
       </div>
+        </div>
+      )}
+      
+      {/* Message si aucune signature sauvegardée */}
+      {signatures.length === 0 && (
+        <div className="text-center p-8 text-gray-500">
+          <p className="text-lg mb-2">Aucune signature sauvegardée</p>
+          <p className="text-sm">Créez votre première signature et sauvegardez-la pour la retrouver ici.</p>
+        </div>
+      )}
     </div>
   );
 };

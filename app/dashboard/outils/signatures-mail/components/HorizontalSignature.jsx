@@ -18,7 +18,7 @@ const HorizontalSignature = ({
       <tbody>
         <tr>
           {/* Photo de profil à gauche */}
-          <td style={{ width: '80px', paddingRight: '16px', verticalAlign: 'top' }}>
+          <td style={{ width: '80px', paddingRight: `${signatureData.spacings?.photoBottom || 16}px`, verticalAlign: 'top' }}>
             {signatureData.photo ? (
               <div 
                 style={{
@@ -73,7 +73,7 @@ const HorizontalSignature = ({
                 <tr>
                   <td colSpan="2" style={{ 
                     textAlign: signatureData.nameAlignment || 'left',
-                    paddingBottom: '2px'
+                    paddingBottom: `${signatureData.spacings?.nameBottom || 2}px`
                   }}>
                     <table cellPadding="0" cellSpacing="0" border="0" style={{ 
                       borderCollapse: 'collapse',
@@ -127,7 +127,7 @@ const HorizontalSignature = ({
                      fontSize: '14px',
                      color: signatureData.colors?.position || '#666666',
                      paddingTop: '2px',
-                     paddingBottom: '4px'
+                     paddingBottom: `${signatureData.spacings?.positionBottom || 4}px`
                    }}>
                      <InlineEdit
                        value={signatureData.position}
@@ -144,10 +144,34 @@ const HorizontalSignature = ({
                  </tr>
                )}
                
-               {/* Informations de contact avec icônes images */}
+               {/* Entreprise */}
+                {signatureData.company && (
+                  <tr>
+                    <td colSpan="2" style={{ 
+                      fontSize: `${signatureData.fontSize?.company || 14}px`,
+                      color: signatureData.colors?.company || '#2563eb',
+                      paddingTop: '2px',
+                      paddingBottom: `${signatureData.spacings?.companyBottom || 8}px`
+                    }}>
+                      <InlineEdit
+                        value={signatureData.company}
+                        onChange={(value) => handleFieldChange("company", value)}
+                        placeholder="Nom de l'entreprise"
+                        displayClassName="text-sm"
+                        inputClassName="text-sm border-0 shadow-none p-1 h-auto"
+                        style={{
+                          color: signatureData.colors?.company || '#2563eb',
+                          fontSize: `${signatureData.fontSize?.company || 14}px`
+                        }}
+                      />
+                    </td>
+                  </tr>
+                )}
+                
+                {/* Informations de contact avec icônes images */}
                {signatureData.phone && (
                  <tr>
-                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
+                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: `${signatureData.spacings?.phoneToMobile || 4}px` }}>
                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                        <tbody>
                          <tr>
@@ -178,7 +202,7 @@ const HorizontalSignature = ({
                
                {signatureData.mobile && (
                  <tr>
-                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
+                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: `${signatureData.spacings?.mobileToEmail || 4}px` }}>
                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                        <tbody>
                          <tr>
@@ -209,7 +233,7 @@ const HorizontalSignature = ({
                
                {signatureData.email && (
                  <tr>
-                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
+                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: `${signatureData.spacings?.emailToWebsite || 4}px` }}>
                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                        <tbody>
                          <tr>
@@ -240,7 +264,7 @@ const HorizontalSignature = ({
                
                {signatureData.website && (
                  <tr>
-                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
+                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: `${signatureData.spacings?.websiteToAddress || 4}px` }}>
                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                        <tbody>
                          <tr>
@@ -270,8 +294,8 @@ const HorizontalSignature = ({
                )}
                
                {signatureData.address && (
-                 <tr>
-                   <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: '8px' }}>
+                  <tr>
+                    <td colSpan="2" style={{ paddingTop: '4px', paddingBottom: `${signatureData.spacings?.contactBottom || 8}px` }}>
                      <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>
                        <tbody>
                          <tr>
@@ -323,7 +347,7 @@ const HorizontalSignature = ({
         {/* Logo entreprise après le séparateur */}
         <tr>
           <td colSpan="2" style={{ 
-            paddingTop: `${signatureData.spacings?.separatorBottom || 12}px`,
+            paddingTop: `${signatureData.spacings?.logoBottom || 12}px`,
             textAlign: 'center' 
           }}>
             {logoSrc ? (
