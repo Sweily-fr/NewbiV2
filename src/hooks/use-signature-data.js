@@ -54,8 +54,10 @@ export function SignatureProvider({ children }) {
     nameAlignment: 'left',
     // Layout de la signature (vertical ou horizontal)
     layout: 'horizontal',
-    // Template de signature (vertical, horizontal, obama, rangan, shah)
+    // Template de signature (vertical, horizontal, obama, rangan, shah, custom)
     template: 'horizontal',
+    // Layout personnalisé pour le template custom
+    customLayout: null,
     // Largeurs des colonnes (en pourcentage)
     columnWidths: {
       photo: 25,      // Largeur de la colonne photo (25%)

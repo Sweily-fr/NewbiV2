@@ -17,6 +17,8 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Grid3X3,
+  Square,
 } from "lucide-react";
 import { useSliderWithInput } from "@/src/hooks/use-slider-with-input";
 import { Input } from "@/src/components/ui/input";
@@ -131,6 +133,202 @@ export default function ContentTab() {
       [columnKey]: clampedValue,
       [otherColumn]: otherValue
     });
+  };
+
+  // Gestion de la grille personnalisée
+  const handleCustomGridChange = (rows, cols) => {
+    const newCells = [];
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const cellId = `cell-${row}-${col}`;
+        const existingCell = signatureData.customLayout?.cells?.find(c => c.id === cellId);
+        newCells.push(existingCell || {
+          id: cellId,
+          row,
+          col,
+          elements: [],
+          borders: { top: false, right: false, bottom: false, left: false }
+        });
+      }
+    }
+
+    const newLayout = {
+      grid: { rows, cols },
+      cells: newCells
+    };
+
+    updateSignatureData('customLayout', newLayout);
+  };
+
+  // Gestion des bordures de cellule
+  const handleCellBorderChange = (cellId, side, enabled) => {
+    if (!signatureData.customLayout) return;
+    
+    const updatedCells = signatureData.customLayout.cells.map(cell => {
+      if (cell.id === cellId) {
+        return {
+          ...cell,
+          borders: {
+            ...cell.borders,
+            [side]: enabled
+          }
+        };
+      }
+      return cell;
+    });
+
+    updateSignatureData('customLayout', {
+      ...signatureData.customLayout,
+      cells: updatedCells
+    });
+  };
+
+  // Gestion de l'alignement des cellules
+  const handleCellAlignmentChange = (cellId, alignment) => {
+    if (!signatureData.customLayout) return;
+    
+    const updatedCells = signatureData.customLayout.cells.map(cell => {
+      if (cell.id === cellId) {
+        return {
+          ...cell,
+          alignment: alignment
+        };
+      }
+      return cell;
+    });
+
+    updateSignatureData('customLayout', {
+      ...signatureData.customLayout,
+      cells: updatedCells
+    });
+  };
+
+  // Gestion des dimensions des cellules
+  const handleCellDimensionChange = (cellId, dimension, value) => {
+    if (!signatureData.customLayout) return;
+    
+    const numValue = value === '' ? null : parseInt(value);
+    
+    const updatedCells = signatureData.customLayout.cells.map(cell => {
+      if (cell.id === cellId) {
+        return {
+          ...cell,
+          [dimension]: numValue
+        };
+      }
+      return cell;
+    });
+
+    updateSignatureData('customLayout', {
+      ...signatureData.customLayout,
+      cells: updatedCells
+    });
+  };
+
+  // Gestion des marges des éléments
+  const handleElementMarginChange = (cellId, elementId, side, value) => {
+    if (!signatureData.customLayout) return;
+    
+    const numValue = value === '' ? 0 : parseInt(value);
+    
+    const updatedCells = signatureData.customLayout.cells.map(cell => {
+      if (cell.id === cellId) {
+        const updatedElements = cell.elements.map(element => {
+          if (element.id === elementId) {
+            return {
+              ...element,
+              margins: {
+                ...element.margins,
+                [side]: numValue
+              }
+            };
+          }
+          return element;
+        });
+        
+        return {
+          ...cell,
+          elements: updatedElements
+        };
+      }
+      return cell;
+    });
+
+    updateSignatureData('customLayout', {
+      ...signatureData.customLayout,
+      cells: updatedCells
+    });
+  };
+
+  // Ajouter un élément à une cellule
+  const handleAddElementToCell = (cellId, elementType) => {
+    if (!signatureData.customLayout) return;
+
+    const newElement = {
+      id: `element-${Date.now()}`,
+      type: elementType,
+      content: getDefaultElementContent(elementType),
+      alignment: 'left',
+      styles: getDefaultElementStyles(elementType)
+    };
+
+    const updatedCells = signatureData.customLayout.cells.map(cell => {
+      if (cell.id === cellId) {
+        return {
+          ...cell,
+          elements: [...(cell.elements || []), newElement]
+        };
+      }
+      return cell;
+    });
+
+    updateSignatureData('customLayout', {
+      ...signatureData.customLayout,
+      cells: updatedCells
+    });
+  };
+
+  // Supprimer un élément d'une cellule
+  const handleRemoveElementFromCell = (cellId, elementId) => {
+    if (!signatureData.customLayout) return;
+
+    const updatedCells = signatureData.customLayout.cells.map(cell => {
+      if (cell.id === cellId) {
+        return {
+          ...cell,
+          elements: (cell.elements || []).filter(el => el.id !== elementId)
+        };
+      }
+      return cell;
+    });
+
+    updateSignatureData('customLayout', {
+      ...signatureData.customLayout,
+      cells: updatedCells
+    });
+  };
+
+  // Contenu par défaut pour les nouveaux éléments
+  const getDefaultElementContent = (type) => {
+    switch (type) {
+      case 'photo': return signatureData.photo || '';
+      case 'logo': return signatureData.logo || '';
+      case 'text': return `${signatureData.firstName || ''} ${signatureData.lastName || ''}`.trim() || 'Nouveau texte';
+      case 'custom': return 'Contenu personnalisé';
+      default: return '';
+    }
+  };
+
+  // Styles par défaut pour les nouveaux éléments
+  const getDefaultElementStyles = (type) => {
+    switch (type) {
+      case 'text':
+        return { fontSize: '16px', color: '#000', fontWeight: 'bold' };
+      case 'custom':
+        return { fontSize: '14px', color: '#666' };
+      default:
+        return {};
+    }
   };
 
 
@@ -251,6 +449,312 @@ export default function ContentTab() {
         </div>
       </div>
       <Separator />
+      
+      {/* Section Configuration de grille personnalisée - visible uniquement pour le template custom */}
+      {signatureData.template === 'custom' && (
+        <>
+          <div className="flex flex-col gap-3">
+            <h2 className="text-sm font-medium flex items-center gap-2">
+              <Grid3X3 className="w-4 h-4" />
+              Configuration de grille
+            </h2>
+            <div className="space-y-3 ml-4">
+              {/* Nombre de lignes */}
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">Lignes (max 2)</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={signatureData.customLayout?.grid?.rows === 1 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleCustomGridChange(1, signatureData.customLayout?.grid?.cols || 2)}
+                    className="h-6 w-6 p-0"
+                  >
+                    1
+                  </Button>
+                  <Button
+                    variant={signatureData.customLayout?.grid?.rows === 2 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleCustomGridChange(2, signatureData.customLayout?.grid?.cols || 2)}
+                    className="h-6 w-6 p-0"
+                  >
+                    2
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Nombre de colonnes */}
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">Colonnes (max 2)</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={signatureData.customLayout?.grid?.cols === 1 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleCustomGridChange(signatureData.customLayout?.grid?.rows || 2, 1)}
+                    className="h-6 w-6 p-0"
+                  >
+                    1
+                  </Button>
+                  <Button
+                    variant={signatureData.customLayout?.grid?.cols === 2 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleCustomGridChange(signatureData.customLayout?.grid?.rows || 2, 2)}
+                    className="h-6 w-6 p-0"
+                  >
+                    2
+                  </Button>
+                </div>
+              </div>
+
+              {/* Configuration des bordures par cellule */}
+              {signatureData.customLayout?.cells && (
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Bordures des cellules</Label>
+                  {signatureData.customLayout.cells.map((cell) => (
+                    <div key={cell.id} className="border rounded p-2 space-y-2">
+                      <div className="text-xs font-medium text-center">
+                        Cellule {cell.row + 1}-{cell.col + 1}
+                      </div>
+                      <div className="grid grid-cols-4 gap-1">
+                        {/* Bordure haut */}
+                        <Button
+                          variant={cell.borders?.top ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleCellBorderChange(cell.id, 'top', !cell.borders?.top)}
+                          className="h-6 p-0 text-xs"
+                          title="Bordure haut"
+                        >
+                          ↑
+                        </Button>
+                        {/* Bordure droite */}
+                        <Button
+                          variant={cell.borders?.right ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleCellBorderChange(cell.id, 'right', !cell.borders?.right)}
+                          className="h-6 p-0 text-xs"
+                          title="Bordure droite"
+                        >
+                          →
+                        </Button>
+                        {/* Bordure bas */}
+                        <Button
+                          variant={cell.borders?.bottom ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleCellBorderChange(cell.id, 'bottom', !cell.borders?.bottom)}
+                          className="h-6 p-0 text-xs"
+                          title="Bordure bas"
+                        >
+                          ↓
+                        </Button>
+                        {/* Bordure gauche */}
+                        <Button
+                          variant={cell.borders?.left ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleCellBorderChange(cell.id, 'left', !cell.borders?.left)}
+                          className="h-6 p-0 text-xs"
+                          title="Bordure gauche"
+                        >
+                          ←
+                        </Button>
+                      </div>
+                      
+                      {/* Alignement de la cellule */}
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Alignement</Label>
+                        <div className="flex gap-1">
+                          <Button
+                            variant={cell.alignment === 'left' ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleCellAlignmentChange(cell.id, 'left')}
+                            className="h-6 p-0 text-xs flex-1"
+                          >
+                            ←
+                          </Button>
+                          <Button
+                            variant={cell.alignment === 'center' ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleCellAlignmentChange(cell.id, 'center')}
+                            className="h-6 p-0 text-xs flex-1"
+                          >
+                            ↔
+                          </Button>
+                          <Button
+                            variant={cell.alignment === 'right' ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleCellAlignmentChange(cell.id, 'right')}
+                            className="h-6 p-0 text-xs flex-1"
+                          >
+                            →
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Dimensions de la cellule */}
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Dimensions</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs">Largeur (px)</Label>
+                            <Input
+                              type="number"
+                              value={cell.width || ''}
+                              onChange={(e) => handleCellDimensionChange(cell.id, 'width', e.target.value)}
+                              placeholder="Auto"
+                              className="h-6 text-xs"
+                              min="50"
+                              max="500"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Hauteur (px)</Label>
+                            <Input
+                              type="number"
+                              value={cell.height || ''}
+                              onChange={(e) => handleCellDimensionChange(cell.id, 'height', e.target.value)}
+                              placeholder="Auto"
+                              className="h-6 text-xs"
+                              min="50"
+                              max="300"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Gestion des éléments de la grille */}
+              {signatureData.customLayout?.cells && (
+                <div className="space-y-3">
+                  <Label className="text-xs text-muted-foreground">Éléments de la grille</Label>
+                  {signatureData.customLayout.cells.map((cell) => (
+                    <div key={cell.id} className="border rounded p-2 space-y-2">
+                      <div className="text-xs font-medium text-center">
+                        Cellule {cell.row + 1}-{cell.col + 1}
+                      </div>
+                      
+                      {/* Ajouter un élément */}
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddElementToCell(cell.id, 'photo')}
+                          className="h-6 px-2 text-xs flex-1"
+                          title="Ajouter photo"
+                        >
+                          📷
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddElementToCell(cell.id, 'logo')}
+                          className="h-6 px-2 text-xs flex-1"
+                          title="Ajouter logo"
+                        >
+                          🏢
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddElementToCell(cell.id, 'text')}
+                          className="h-6 px-2 text-xs flex-1"
+                          title="Ajouter texte"
+                        >
+                          📝
+                        </Button>
+                      </div>
+
+                      {/* Liste des éléments existants */}
+                      {cell.elements && cell.elements.length > 0 && (
+                        <div className="space-y-2">
+                          {cell.elements.map((element, index) => (
+                            <div key={element.id || index} className="border rounded p-2 bg-gray-50 space-y-2">
+                              {/* En-tête de l'élément */}
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="flex-1 font-medium">
+                                  {element.type === 'photo' && '📷 Photo de profil'}
+                                  {element.type === 'logo' && '🏢 Logo entreprise'}
+                                  {element.type === 'text' && `📝 ${element.content?.substring(0, 20)}...`}
+                                  {element.type === 'custom' && `✨ ${element.content?.substring(0, 20)}...`}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveElementFromCell(cell.id, element.id)}
+                                  className="h-4 w-4 p-0 text-red-500 hover:text-red-700"
+                                  title="Supprimer"
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                              
+                              {/* Contrôles des marges */}
+                              <div className="space-y-2">
+                                <Label className="text-xs text-muted-foreground">Marges (px)</Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <Label className="text-xs">Haut</Label>
+                                    <Input
+                                      type="number"
+                                      value={element.margins?.top || ''}
+                                      onChange={(e) => handleElementMarginChange(cell.id, element.id, 'top', e.target.value)}
+                                      placeholder="0"
+                                      className="h-6 text-xs"
+                                      min="0"
+                                      max="50"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Bas</Label>
+                                    <Input
+                                      type="number"
+                                      value={element.margins?.bottom || ''}
+                                      onChange={(e) => handleElementMarginChange(cell.id, element.id, 'bottom', e.target.value)}
+                                      placeholder="0"
+                                      className="h-6 text-xs"
+                                      min="0"
+                                      max="50"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Gauche</Label>
+                                    <Input
+                                      type="number"
+                                      value={element.margins?.left || ''}
+                                      onChange={(e) => handleElementMarginChange(cell.id, element.id, 'left', e.target.value)}
+                                      placeholder="0"
+                                      className="h-6 text-xs"
+                                      min="0"
+                                      max="50"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Droite</Label>
+                                    <Input
+                                      type="number"
+                                      value={element.margins?.right || ''}
+                                      onChange={(e) => handleElementMarginChange(cell.id, element.id, 'right', e.target.value)}
+                                      placeholder="0"
+                                      className="h-6 text-xs"
+                                      min="0"
+                                      max="50"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <Separator />
+        </>
+      )}
       
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium">Photo de profil</h2>
@@ -523,6 +1027,93 @@ export default function ContentTab() {
         </div>
       </div>
       <Separator />
+      
+      {/* Section Réseaux sociaux */}
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium">Réseaux sociaux</h2>
+        <div className="flex flex-col gap-3 ml-4">
+          {/* LinkedIn */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">LinkedIn</Label>
+            <Input
+              className="h-8 w-48 px-2 text-xs"
+              type="url"
+              value={signatureData.socialLinks?.linkedin || ''}
+              onChange={(e) => updateSignatureData('socialLinks', {
+                ...signatureData.socialLinks,
+                linkedin: e.target.value
+              })}
+              placeholder="https://linkedin.com/in/..."
+            />
+          </div>
+          
+          {/* Facebook */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Facebook</Label>
+            <Input
+              className="h-8 w-48 px-2 text-xs"
+              type="url"
+              value={signatureData.socialLinks?.facebook || ''}
+              onChange={(e) => updateSignatureData('socialLinks', {
+                ...signatureData.socialLinks,
+                facebook: e.target.value
+              })}
+              placeholder="https://facebook.com/..."
+            />
+          </div>
+          
+          {/* Twitter */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Twitter</Label>
+            <Input
+              className="h-8 w-48 px-2 text-xs"
+              type="url"
+              value={signatureData.socialLinks?.twitter || ''}
+              onChange={(e) => updateSignatureData('socialLinks', {
+                ...signatureData.socialLinks,
+                twitter: e.target.value
+              })}
+              placeholder="https://twitter.com/..."
+            />
+          </div>
+          
+          {/* Instagram */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Instagram</Label>
+            <Input
+              className="h-8 w-48 px-2 text-xs"
+              type="url"
+              value={signatureData.socialLinks?.instagram || ''}
+              onChange={(e) => updateSignatureData('socialLinks', {
+                ...signatureData.socialLinks,
+                instagram: e.target.value
+              })}
+              placeholder="https://instagram.com/..."
+            />
+          </div>
+          
+          {/* Couleur des logos sociaux */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Couleur des logos</Label>
+            <div className="flex items-center gap-2">
+              <input 
+                type="color"
+                value={signatureData.colors?.social || '#0077B5'}
+                onChange={(e) => updateSignatureData('colors', {
+                  ...signatureData.colors,
+                  social: e.target.value
+                })}
+                className="h-8 w-8 p-1 border rounded cursor-pointer"
+              />
+              <span className="text-xs text-muted-foreground">
+                {signatureData.colors?.social || '#0077B5'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Separator />
+      
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium">Typographie</h2>
         <div className="flex flex-col gap-3 ml-4">

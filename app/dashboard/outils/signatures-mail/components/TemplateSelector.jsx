@@ -34,6 +34,12 @@ const TemplateSelector = ({ selectedTemplate, onTemplateChange }) => {
       description: 'Style corporate avec photo carrée',
       preview: '🏢'
     }
+    // {
+    //   id: 'custom',
+    //   name: 'Éditeur Personnalisé',
+    //   description: 'Créez votre signature de A à Z',
+    //   preview: '🎯'
+    // }
   ];
 
   return (

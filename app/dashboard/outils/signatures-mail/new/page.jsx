@@ -18,7 +18,9 @@ import HorizontalSignature from "../components/HorizontalSignature";
 import TemplateObama from "../components/templates/TemplateObama";
 import TemplateRangan from "../components/templates/TemplateRangan";
 import TemplateShah from "../components/templates/TemplateShah";
+import TemplateCustom from "../components/templates/TemplateCustom";
 import TemplateSelector from "../components/TemplateSelector";
+// CustomSignatureBuilder supprimé - édition maintenant dans le panneau de droite
 import SignatureSave from "../components/SignatureSave";
 import {
   Tabs,
@@ -240,6 +242,9 @@ const EmailPreview = ({ signatureData }) => {
         break;
       case 'shah':
         htmlSignature = generateShahHTML(signatureData, primaryColor, photoSrc, logoSrc);
+        break;
+      case 'custom':
+        htmlSignature = generateCustomHTML(signatureData, primaryColor, photoSrc, logoSrc);
         break;
       case 'horizontal':
         htmlSignature = generateHorizontalHTML(signatureData, primaryColor, photoSrc, logoSrc);
@@ -763,6 +768,102 @@ const generateShahHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
   `;
 };
 
+// Générateur HTML pour le template personnalisé
+const generateCustomHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
+  const layout = signatureData.customLayout || {
+    grid: { rows: 2, cols: 2 },
+    cells: [
+      { id: "cell-0-0", row: 0, col: 0, elements: [{ type: "photo", content: photoSrc, alignment: "center" }] },
+      { id: "cell-0-1", row: 0, col: 1, elements: [
+        { type: "text", content: `${signatureData.firstName || ''} ${signatureData.lastName || ''}`, alignment: "left", styles: { fontSize: "18px", fontWeight: "bold", color: primaryColor } },
+        { type: "text", content: signatureData.position || '', alignment: "left", styles: { fontSize: "14px", color: "#666", marginTop: "4px" } }
+      ]},
+      { id: "cell-1-0", row: 1, col: 0, elements: [{ type: "logo", content: logoSrc, alignment: "center" }] },
+      { id: "cell-1-1", row: 1, col: 1, elements: [{ type: "text", content: signatureData.contact || '', alignment: "left", styles: { fontSize: "12px", color: "#666" } }] }
+    ]
+  };
+
+  const { grid, cells } = layout;
+
+  // Fonction pour générer le HTML d'un élément
+  const generateElementHTML = (element) => {
+    const { type, content, alignment, styles = {} } = element;
+    
+    if (!content) return '';
+
+    const alignStyle = alignment === 'center' ? 'text-align: center;' : 
+                      alignment === 'right' ? 'text-align: right;' : 'text-align: left;';
+    
+    const styleString = Object.entries(styles).map(([key, value]) => {
+      const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+      return `${cssKey}: ${value};`;
+    }).join(' ');
+
+    switch (type) {
+      case 'photo':
+        return `
+          <div style="${alignStyle}">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: url('${content}') center center/cover no-repeat; display: inline-block; border: 2px solid #f0f0f0; ${styleString}"></div>
+          </div>
+        `;
+      
+      case 'logo':
+        return `
+          <div style="${alignStyle}">
+            <img src="${content}" alt="Logo" style="height: 40px; object-fit: contain; ${styleString}" />
+          </div>
+        `;
+      
+      case 'text':
+      case 'custom':
+        return `<div style="${alignStyle} ${styleString}">${content}</div>`;
+      
+      default:
+        return '';
+    }
+  };
+
+  // Fonction pour générer le HTML d'une cellule
+  const generateCellHTML = (cell) => {
+    const elementsHTML = cell.elements.map(generateElementHTML).filter(html => html).join('');
+    const { borders = {} } = cell;
+    
+    // Construire les styles de bordure pour le HTML
+    const borderStyles = [
+      borders.top ? 'border-top: 2px solid #e5e7eb' : '',
+      borders.right ? 'border-right: 2px solid #e5e7eb' : '',
+      borders.bottom ? 'border-bottom: 2px solid #e5e7eb' : '',
+      borders.left ? 'border-left: 2px solid #e5e7eb' : ''
+    ].filter(Boolean).join('; ');
+    
+    return `
+      <td style="padding: 10px; vertical-align: top; ${borderStyles}">
+        ${elementsHTML}
+      </td>
+    `;
+  };
+
+  // Générer la structure de la grille
+  const rows = [];
+  for (let row = 0; row < grid.rows; row++) {
+    const rowCells = cells.filter(cell => cell.row === row).sort((a, b) => a.col - b.col);
+    const rowHTML = `
+      <tr>
+        ${rowCells.map(generateCellHTML).join('')}
+      </tr>
+    `;
+    rows.push(rowHTML);
+  }
+
+  return `
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 600px; font-family: Arial, sans-serif; background-color: #ffffff;">
+  <tbody>
+    ${rows.join('')}
+  </tbody>
+</table>
+  `;
+};
+
   
   // Fonction pour copier la signature dans le presse-papier
   const handleCopySignature = async () => {
@@ -944,6 +1045,8 @@ const generateShahHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
                 return <TemplateRangan {...templateProps} />;
               case 'shah':
                 return <TemplateShah {...templateProps} />;
+              case 'custom':
+                return <TemplateCustom {...templateProps} />;
               case 'horizontal':
                 return <HorizontalSignature {...templateProps} />;
               case 'vertical':
@@ -993,6 +1096,11 @@ export default function NewSignaturePage() {
     if (templateId === 'horizontal' || templateId === 'vertical') {
       updateSignatureData('layout', templateId);
     }
+  };
+
+  // Fonction pour mettre à jour le layout personnalisé
+  const handleCustomLayoutChange = (newLayout) => {
+    updateSignatureData('customLayout', newLayout);
   };
 
   return (
