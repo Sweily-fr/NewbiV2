@@ -27,7 +27,18 @@ const LoginForm = () => {
         // Store the token securely (e.g., in localStorage)
         localStorage.setItem("bearer_token", authToken);
         toast.success("Connexion reussie");
-        router.push("/dashboard");
+        
+        // Vérifier s'il y a un callbackUrl dans les paramètres URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const callbackUrl = urlParams.get('callbackUrl');
+        
+        if (callbackUrl) {
+          console.log('🔄 Redirection vers callbackUrl:', callbackUrl);
+          router.push(callbackUrl);
+        } else {
+          console.log('🔄 Redirection vers dashboard par défaut');
+          router.push("/dashboard");
+        }
       },
       onError: (error) => {
         toast.error("Erreur lors de la connexion");

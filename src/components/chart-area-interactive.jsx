@@ -187,7 +187,7 @@ export function ChartAreaInteractive({
       {...props}
     >
       <CardHeader>
-        <CardTitle className="text-base font-medium">{title}</CardTitle>
+        <CardTitle className="text-base font-normal">{title}</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block text-lg">
             {description}

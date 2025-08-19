@@ -1,69 +1,105 @@
 "use client";
 
 import { useState } from "react";
-import { X, Eye, Pencil, Trash2, CheckCircle, FileText, XCircle, Download, Loader2, Clock, Building, Tag, Package, Percent } from "lucide-react";
+import {
+  X,
+  Eye,
+  Pencil,
+  Trash2,
+  CheckCircle,
+  FileText,
+  XCircle,
+  Download,
+  Loader2,
+  Clock,
+  Building,
+  Tag,
+  Package,
+  Percent,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import { useRouter } from "next/navigation";
-import { useMarkInvoiceAsPaid, useChangeInvoiceStatus, useInvoice, INVOICE_STATUS, INVOICE_STATUS_LABELS, INVOICE_STATUS_COLORS } from "@/src/graphql/invoiceQueries";
-import { toast } from "sonner";
+import {
+  useMarkInvoiceAsPaid,
+  useChangeInvoiceStatus,
+  useInvoice,
+  INVOICE_STATUS,
+  INVOICE_STATUS_LABELS,
+  INVOICE_STATUS_COLORS,
+} from "@/src/graphql/invoiceQueries";
+import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
 
-export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoice, onRefetch }) {
+export default function InvoiceSidebar({
+  isOpen,
+  onClose,
+  invoice: initialInvoice,
+  onRefetch,
+}) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const router = useRouter();
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
-  
+
   // Récupérer les données complètes de la facture
-  const { invoice: fullInvoice, loading: loadingFullInvoice, error: invoiceError } = useInvoice(initialInvoice?.id);
-  
+  const {
+    invoice: fullInvoice,
+    loading: loadingFullInvoice,
+    error: invoiceError,
+  } = useInvoice(initialInvoice?.id);
+
   if (!isOpen || !initialInvoice) return null;
-  
+
   // Utiliser les données complètes si disponibles, sinon les données initiales
   const invoice = fullInvoice || initialInvoice;
-  
+
   // Debug: Vérifier si les données complètes sont récupérées
   if (loadingFullInvoice) {
-    console.log('Loading full invoice...');
+    console.log("Loading full invoice...");
   }
   if (invoiceError) {
-    console.log('Invoice error:', invoiceError);
+    console.log("Invoice error:", invoiceError);
   }
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(amount || 0);
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Non définie';
-    
+    if (!dateString) return "Non définie";
+
     let date;
     // Gérer les timestamps en millisecondes (string ou number)
-    if (typeof dateString === 'string' && /^\d+$/.test(dateString)) {
+    if (typeof dateString === "string" && /^\d+$/.test(dateString)) {
       date = new Date(parseInt(dateString, 10));
-    } else if (typeof dateString === 'number') {
+    } else if (typeof dateString === "number") {
       date = new Date(dateString);
     } else {
       date = new Date(dateString);
     }
-    
+
     if (isNaN(date.getTime())) {
-      console.warn('Date invalide:', dateString);
-      return 'Date invalide';
+      console.warn("Date invalide:", dateString);
+      return "Date invalide";
     }
-    
-    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-    return date.toLocaleDateString('fr-FR', options);
+
+    const options = { day: "2-digit", month: "2-digit", year: "numeric" };
+    return date.toLocaleDateString("fr-FR", options);
   };
 
   const handleEdit = () => {
@@ -79,31 +115,31 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
   const handleCreateInvoice = async () => {
     try {
       await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
-      toast.success('Facture créée avec succès');
+      toast.success("Facture créée avec succès");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error('Erreur lors de la création de la facture');
+      toast.error("Erreur lors de la création de la facture");
     }
   };
 
   const handleMarkAsPaid = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       await markAsPaid(invoice.id, today);
-      toast.success('Facture marquée comme payée');
+      toast.success("Facture marquée comme payée");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error('Erreur lors du marquage comme payée');
+      toast.error("Erreur lors du marquage comme payée");
     }
   };
 
   const handleCancel = async () => {
     try {
       await changeStatus(invoice.id, INVOICE_STATUS.CANCELED);
-      toast.success('Facture annulée');
+      toast.success("Facture annulée");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error('Erreur lors de l\'annulation de la facture');
+      toast.error("Erreur lors de l'annulation de la facture");
     }
   };
 
@@ -111,35 +147,39 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
 
   return (
     <>
-      {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-black/50 z-40"
+      {/* Overlay with scroll */}
+      <div
+        className="fixed inset-0 bg-black/70 z-40 overflow-y-auto"
         onClick={onClose}
         style={{
-          right: isOpen ? '600px' : '0',
-          transition: 'right 0.2s ease-in-out'
+          right: isOpen ? "500px" : "0",
+          transition: "right 0.2s ease-in-out",
         }}
-      />
-      
-      {/* Sidebar */}
-      <div className="fixed right-0 top-0 h-full w-[600px] bg-card border-l shadow-lg z-50 flex flex-col">
+      >
+        {/* Preview Section - Floating on overlay */}
+        {isOpen && (
+          <div className="absolute left-[470px] top-8 bottom-4  transform -translate-x-1/2 z-45 w-[750px]">
+            <UniversalPreviewPDF data={invoice} type="invoice" />
+          </div>
+        )}
+      </div>
+
+      {/* Sidebar - Details Section */}
+      <div className="fixed right-0 top-0 h-full w-[500px] bg-card border-l shadow-lg z-50 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-semibold">Détails de la facture</h2>
+          <h2 className="text-lg font-medium">Détails de la facture</h2>
           <div className="flex items-center gap-2">
             {/* Bouton PDF - masqué pour les brouillons */}
             {invoice.status !== INVOICE_STATUS.DRAFT && (
-              <UniversalPDFGenerator
-                data={invoice}
-                type="invoice"
-              >
+              <UniversalPDFGenerator data={invoice} type="invoice">
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="sm"
-                  className="h-8 px-3"
+                  className="h-8 px-3 font-normal cursor-pointer"
                   title="Télécharger en PDF"
                 >
-                  <Download className="h-4 w-4 mr-2" />
+                  {/* <Download className="h-4 w-4 mr-2" /> */}
                   Télécharger en PDF
                 </Button>
               </UniversalPDFGenerator>
@@ -160,12 +200,14 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
           {/* Status and Number */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Numéro</span>
-              <span className="font-mono text-sm">{invoice.number || 'Brouillon'}</span>
+              <span className="text-sm font-normal">Numéro</span>
+              <span className="font-mono text-sm">
+                {invoice.number || "Brouillon"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Statut</span>
-              <Badge 
+              <span className="text-sm font-normal">Statut</span>
+              <Badge
                 variant="secondary"
                 className={`${INVOICE_STATUS_COLORS[invoice.status]}`}
               >
@@ -178,19 +220,19 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
 
           {/* Dates */}
           <div className="space-y-3">
-            <h3 className="font-medium">Dates importantes</h3>
+            <h3 className="font-normal">Dates importantes</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Émission</span>
+                <span className="font-normal">Émission</span>
                 <span>{formatDate(invoice.issueDate)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Échéance</span>
+                <span className="font-normal">Échéance</span>
                 <span>{formatDate(invoice.dueDate)}</span>
               </div>
               {invoice.paymentDate && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Paiement</span>
+                  <span className="font-normal">Paiement</span>
                   <span>{formatDate(invoice.paymentDate)}</span>
                 </div>
               )}
@@ -201,24 +243,39 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
 
           {/* Client Info */}
           <div className="space-y-3">
-            <h3 className="font-medium">Client</h3>
-            <div className="text-sm space-y-1">
-              <div className="font-medium">
-                {invoice.client?.type === 'COMPANY' ? String(invoice.client?.name || '') : 
-                 `${String(invoice.client?.firstName || '')} ${String(invoice.client?.lastName || '')}`.trim() || String(invoice.client?.name || '')}
+            <h3 className="font-normal">Client</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="font-normal">Nom</span>
+                <span>
+                  {invoice.client?.type === "COMPANY"
+                    ? String(invoice.client?.name || "")
+                    : `${String(invoice.client?.firstName || "")} ${String(invoice.client?.lastName || "")}`.trim() ||
+                      String(invoice.client?.name || "")}
+                </span>
               </div>
-              <div className="text-muted-foreground">{String(invoice.client?.email || '')}</div>
+              <div className="flex justify-between">
+                <span className="font-normal">Email</span>
+                <span>{String(invoice.client?.email || "")}</span>
+              </div>
               {invoice.client?.address && (
-                <div className="text-muted-foreground text-xs">
-                  {invoice.client.address.street && (
-                    <>{String(invoice.client.address.street)}<br /></>
-                  )}
-                  {(invoice.client.address.postalCode || invoice.client.address.city) && (
-                    <>{String(invoice.client.address.postalCode || '')} {String(invoice.client.address.city || '')}</>
-                  )}
-                  {invoice.client.address.country && (
-                    <><br />{String(invoice.client.address.country)}</>
-                  )}
+                <div className="flex justify-between">
+                  <span className="font-normal">Adresse</span>
+                  <div className="text-right">
+                    {invoice.client.address.street && (
+                      <div>{String(invoice.client.address.street)}</div>
+                    )}
+                    {(invoice.client.address.postalCode ||
+                      invoice.client.address.city) && (
+                      <div>
+                        {String(invoice.client.address.postalCode || "")}{" "}
+                        {String(invoice.client.address.city || "")}
+                      </div>
+                    )}
+                    {invoice.client.address.country && (
+                      <div>{String(invoice.client.address.country)}</div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -228,29 +285,35 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
 
           {/* Financial Info */}
           <div className="space-y-3">
-            <h3 className="font-medium">Montants</h3>
+            <h3 className="font-normal">Montants</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Total HT</span>
-                <span>{formatCurrency(invoice.finalTotalHT || invoice.totalHT || 0)}</span>
+                <span className="font-normal">Total HT</span>
+                <span>
+                  {formatCurrency(invoice.finalTotalHT || invoice.totalHT || 0)}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">TVA</span>
+                <span className="font-normal">TVA</span>
                 <span>{formatCurrency(invoice.totalVAT || 0)}</span>
               </div>
               <div className="flex justify-between font-medium">
-                <span>Total TTC</span>
-                <span>{formatCurrency(invoice.finalTotalTTC || invoice.totalTTC || 0)}</span>
+                <span className="font-normal">Total TTC</span>
+                <span>
+                  {formatCurrency(
+                    invoice.finalTotalTTC || invoice.totalTTC || 0
+                  )}
+                </span>
               </div>
             </div>
           </div>
 
-          <Separator />
+          {/* <Separator /> */}
 
           {/* Preview Thumbnail */}
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <h3 className="font-medium">Aperçu</h3>
-            <div 
+            <div
               className="border w-[200px] rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => setIsPreviewOpen(true)}
             >
@@ -261,47 +324,42 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Action Buttons */}
-        <div className="border-t p-6 space-y-3">
+        <div className="border-t pl-6 pr-6 pt-4 pb-4">
           {/* Primary Actions */}
           <div className="flex gap-2">
-            <Button
+            {/* <Button
               variant="outline"
-              size="sm"
               onClick={() => setIsPreviewOpen(true)}
-              className="flex-1"
+              className="flex-1 font-normal"
             >
-              <Eye className="h-4 w-4 mr-2" />
               Voir
-            </Button>
-            
+            </Button> */}
+
             {/* Bouton PDF avec UniversalPDFGenerator - masqué pour les brouillons */}
-            {invoice.status !== INVOICE_STATUS.DRAFT && (
-              <UniversalPDFGenerator
-                data={invoice}
-                type="invoice"
-              >
+            {/* {invoice.status !== INVOICE_STATUS.DRAFT && (
+              <UniversalPDFGenerator data={invoice} type="invoice">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1"
+                  className="flex-1 font-normal"
                   title="Télécharger en PDF"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   PDF
                 </Button>
               </UniversalPDFGenerator>
-            )}
-            
+            )} */}
+
             {invoice.status === INVOICE_STATUS.DRAFT && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleEdit}
-                className="flex-1"
+                className="flex-1 font-normal"
               >
                 <Pencil className="h-4 w-4 mr-2" />
                 Éditer
@@ -314,7 +372,7 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
             <Button
               onClick={handleCreateInvoice}
               disabled={isLoading}
-              className="w-full"
+              className="w-full font-normal"
             >
               <FileText className="h-4 w-4 mr-2" />
               Créer la facture
@@ -322,20 +380,20 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
           )}
 
           {invoice.status === INVOICE_STATUS.PENDING && (
-            <div className="flex flex-col space-y-2">
+            <div className="flex space-x-2">
               <Button
                 onClick={handleMarkAsPaid}
                 disabled={isLoading}
-                className="w-full"
+                className="flex-1 font-normal"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Marquer comme payée
               </Button>
               <Button
-                variant="outline"
+                variant="destructive"
                 onClick={handleCancel}
                 disabled={isLoading}
-                className="w-full"
+                className="flex-1 font-normal"
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Annuler la facture
@@ -349,7 +407,9 @@ export default function InvoiceSidebar({ isOpen, onClose, invoice: initialInvoic
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
           <DialogHeader>
-            <DialogTitle className="pl-6 pt-6">Aperçu de la facture {invoice.number || 'Brouillon'}</DialogTitle>
+            <DialogTitle className="pl-6 pt-6">
+              Aperçu de la facture {invoice.number || "Brouillon"}
+            </DialogTitle>
           </DialogHeader>
           <div className="mt-0">
             <UniversalPreviewPDF data={invoice} type="invoice" />

@@ -442,9 +442,9 @@ export default function EnhancedInvoiceForm({
               <Separator />
 
               {/* Section 2: Sélection d'un client */}
-              <Card className="shadow-none border-none pt-2 pr-2 pl-2 bg-transparent">
+              <Card className="gap-0 shadow-none border-none pt-2 pb-6 pr-2 pl-2 bg-transparent">
                 <CardHeader className="p-0">
-                  <CardTitle className="flex items-center gap-2 font-medium text-lg">
+                  <CardTitle className="flex items-center font-normal text-lg">
                     Sélection d'un client
                   </CardTitle>
                 </CardHeader>
@@ -484,6 +484,7 @@ export default function EnhancedInvoiceForm({
                 variant="outline"
                 onClick={() => window.history.back()}
                 disabled={loading || saving}
+                className="text-sm font-normal"
               >
                 Annuler
               </Button>
@@ -492,6 +493,7 @@ export default function EnhancedInvoiceForm({
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={!canEdit || saving}
+                className="text-sm font-normal"
               >
                 {saving ? "Sauvegarde..." : "Brouillon"}
               </Button>
@@ -502,7 +504,7 @@ export default function EnhancedInvoiceForm({
                 <Button
                   onClick={handleNextStep}
                   disabled={!isStep1Valid() || !canEdit}
-                  className="px-6"
+                  className="px-6 text-sm font-normal"
                 >
                   Suivant
                 </Button>
@@ -511,6 +513,7 @@ export default function EnhancedInvoiceForm({
               {currentStep === 2 && (
                 <>
                   <Button
+                    className="text-sm font-normal"
                     variant="outline"
                     onClick={handlePreviousStep}
                     disabled={!canEdit}
@@ -520,7 +523,7 @@ export default function EnhancedInvoiceForm({
                   <Button
                     onClick={handleCreateInvoice}
                     disabled={!isStep2Valid() || !canEdit || saving}
-                    className="px-6"
+                    className="px-6 text-sm font-normal"
                   >
                     {saving ? "Création..." : "Créer la facture"}
                   </Button>

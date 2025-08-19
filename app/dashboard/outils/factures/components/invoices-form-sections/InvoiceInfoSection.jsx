@@ -195,7 +195,7 @@ export default function InvoiceInfoSection({ canEdit }) {
   return (
     <Card className="shadow-none p-2 border-none bg-transparent">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+        <CardTitle className="flex items-center gap-2 font-normal text-lg">
           {/* <Clock className="h-5 w-5" /> */}
           Informations de la facture
         </CardTitle>
@@ -212,7 +212,7 @@ export default function InvoiceInfoSection({ canEdit }) {
             disabled={!canEdit}
           />
           <div className="space-y-0.5">
-            <Label htmlFor="deposit-invoice" className="text-sm font-medium">
+            <Label htmlFor="deposit-invoice" className="text-sm font-light">
               Il s'agit d'une facture d'acompte
             </Label>
           </div>
@@ -222,7 +222,7 @@ export default function InvoiceInfoSection({ canEdit }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label htmlFor="invoice-prefix" className="text-sm font-medium">
+              <Label htmlFor="invoice-prefix" className="text-sm font-light">
                 Préfixe de facture
               </Label>
               <TooltipProvider>
@@ -262,7 +262,7 @@ export default function InvoiceInfoSection({ canEdit }) {
           </div>
           <div className="md:col-span-2 space-y-2">
             <div className="flex items-center gap-2">
-              <Label htmlFor="invoice-number" className="text-sm font-medium">
+              <Label htmlFor="invoice-number" className="text-sm font-light">
                 Numéro de facture
               </Label>
               <TooltipProvider>
@@ -343,7 +343,7 @@ export default function InvoiceInfoSection({ canEdit }) {
           <div className="flex items-center gap-2">
             <Label
               htmlFor="purchase-order-number"
-              className="text-sm font-medium"
+              className="text-sm font-light"
             >
               Référence devis
             </Label>
@@ -378,7 +378,7 @@ export default function InvoiceInfoSection({ canEdit }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium">
+                <Label className="text-sm font-light">
                   Date d'émission <span className="text-red-500">*</span>
                 </Label>
                 <TooltipProvider>
@@ -430,7 +430,7 @@ export default function InvoiceInfoSection({ canEdit }) {
               )}
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Date d'exécution</Label>
+              <Label className="text-sm font-light">Date d'exécution</Label>
               <input
                 type="hidden"
                 {...register("executionDate", {
@@ -499,7 +499,7 @@ export default function InvoiceInfoSection({ canEdit }) {
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label className="text-sm font-medium">Date d'échéance</Label>
+              <Label className="text-sm font-light">Date d'échéance</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

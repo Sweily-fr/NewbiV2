@@ -32,7 +32,7 @@ export default function AddressSection({ register, errors, watch, setValue }) {
     <div className="space-y-6">
       <Card className="border-0 shadow-sm backdrop-blur-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+          <CardTitle className="flex items-center gap-3 text-lg font-medium">
             <div className="p-2 bg-blue-50 rounded-lg">
               <MapPin className="h-5 w-5 text-blue-600" />
             </div>
@@ -46,10 +46,14 @@ export default function AddressSection({ register, errors, watch, setValue }) {
             <Input
               id="address.street"
               placeholder="123 Rue de la République"
-              {...register("address.street", { required: "L'adresse est requise" })}
+              {...register("address.street", {
+                required: "L'adresse est requise",
+              })}
             />
             {errors.address?.street && (
-              <p className="text-sm text-red-500">{errors.address.street.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.address.street.message}
+              </p>
             )}
           </div>
 
@@ -60,10 +64,14 @@ export default function AddressSection({ register, errors, watch, setValue }) {
               <Input
                 id="address.city"
                 placeholder="Paris"
-                {...register("address.city", { required: "La ville est requise" })}
+                {...register("address.city", {
+                  required: "La ville est requise",
+                })}
               />
               {errors.address?.city && (
-                <p className="text-sm text-red-500">{errors.address.city.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.address.city.message}
+                </p>
               )}
             </div>
 
@@ -72,10 +80,14 @@ export default function AddressSection({ register, errors, watch, setValue }) {
               <Input
                 id="address.postalCode"
                 placeholder="75001"
-                {...register("address.postalCode", { required: "Le code postal est requis" })}
+                {...register("address.postalCode", {
+                  required: "Le code postal est requis",
+                })}
               />
               {errors.address?.postalCode && (
-                <p className="text-sm text-red-500">{errors.address.postalCode.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.address.postalCode.message}
+                </p>
               )}
             </div>
           </div>
@@ -99,7 +111,9 @@ export default function AddressSection({ register, errors, watch, setValue }) {
               </SelectContent>
             </Select>
             {errors.address?.country && (
-              <p className="text-sm text-red-500">{errors.address.country.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.address.country.message}
+              </p>
             )}
           </div>
         </CardContent>

@@ -99,3 +99,33 @@ export const APPLY_OCR_DATA_TO_EXPENSE = gql`
     }
   }
 `;
+
+/**
+ * Mutation pour supprimer une dépense
+ */
+export const DELETE_EXPENSE = gql`
+  mutation DeleteExpense($id: ID!) {
+    deleteExpense(id: $id) {
+      success
+      message
+    }
+  }
+`;
+
+/**
+ * Mutation pour supprimer plusieurs dépenses
+ */
+export const DELETE_MULTIPLE_EXPENSES = gql`
+  mutation DeleteMultipleExpenses($ids: [ID!]!) {
+    deleteMultipleExpenses(ids: $ids) {
+      success
+      message
+      deletedCount
+      failedCount
+      errors {
+        id
+        error
+      }
+    }
+  }
+`;

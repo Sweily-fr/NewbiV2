@@ -42,7 +42,7 @@ function SettingsDropdownMenu() {
         onClick={() => setOpen(true)}
       >
         <IconSettings />
-        <span>Paramètres</span>
+        <span className="font-polysans font-light">Paramètres</span>
       </SidebarMenuButton>
 
       <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -64,21 +64,23 @@ function SettingsDropdownMenu() {
           <DropdownMenuItem className="cursor-pointer" asChild>
             <Link href={"/dashboard/settings"}>
               <IconFolder />
-              <span>Paramètres entreprise</span>
+              <span className="font-polysans font-light">
+                Paramètres entreprise
+              </span>
             </Link>
           </DropdownMenuItem>
 
           <DropdownMenuItem className="cursor-pointer" asChild>
             <Link href={"/dashboard/collaborateurs"}>
               <IconUsers />
-              <span>Collaborateurs</span>
+              <span className="font-polysans font-light">Collaborateurs</span>
             </Link>
           </DropdownMenuItem>
 
           <DropdownMenuItem className="cursor-pointer" asChild>
             <Link href={"/dashboard/automatisation"}>
               <IconRobot />
-              <span>Intégrations</span>
+              <span className="font-polysans font-light">Intégrations</span>
             </Link>
           </DropdownMenuItem>
 
@@ -91,7 +93,9 @@ function SettingsDropdownMenu() {
           >
             <Link href={"/dashboard/settings/delete-account"}>
               <IconTrash />
-              <span>Supprimer le compte</span>
+              <span className="font-polysans font-light">
+                Supprimer le compte
+              </span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -124,7 +128,7 @@ export function NavSecondary({ items, ...props }) {
                   }}
                 >
                   <item.icon />
-                  <span>{item.title}</span>
+                  <span className="font-polysans font-light">{item.title}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>

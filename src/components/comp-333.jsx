@@ -20,7 +20,11 @@ import {
   CommandShortcut,
 } from "@/src/components/ui/command";
 
-export default function Component({ className = "", placeholder = "Search", commandPlaceholder = "Type a command or search..." }) {
+export default function Component({
+  className = "",
+  placeholder = "Search",
+  commandPlaceholder = "Type a command or search...",
+}) {
   const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -47,11 +51,18 @@ export default function Component({ className = "", placeholder = "Search", comm
             size={16}
             aria-hidden="true"
           />
-          <span className="text-muted-foreground/70 font-normal">{placeholder}</span>
+          <span className="text-muted-foreground/70 font-normal">
+            {placeholder}
+          </span>
         </span>
-        <kbd className="bg-background text-muted-foreground/70 ms-12 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
-          ⌘K
-        </kbd>
+        <div className="flex items-center gap-1">
+          <kbd className="bg-background flex justify-center items-center text-muted-foreground/70 inline-flex h-6 w-6 max-h-full items-center rounded border px-1 font-[inherit] text-[0.825rem] font-medium">
+            ⌘
+          </kbd>
+          <kbd className="bg-background flex justify-center items-center text-muted-foreground/70 inline-flex h-6 w-6 max-h-full items-center rounded border px-1 font-[inherit] text-[0.825rem] font-medium">
+            K
+          </kbd>
+        </div>
       </button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder={commandPlaceholder} />

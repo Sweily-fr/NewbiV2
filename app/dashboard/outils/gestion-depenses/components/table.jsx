@@ -34,6 +34,7 @@ import {
   FilterIcon,
   ListFilterIcon,
   PlusIcon,
+  Landmark,
   TrashIcon,
 } from "lucide-react";
 
@@ -98,8 +99,13 @@ import { toast } from "@/src/components/ui/sonner";
 import { TransactionDetailDrawer } from "./transaction-detail-drawer";
 import { AddTransactionDrawer } from "./add-transaction-drawer";
 import { ReceiptUploadDrawer } from "./receipt-upload-drawer";
-import { useExpenses } from "@/src/hooks/useExpenses";
+import {
+  useExpenses,
+  useDeleteExpense,
+  useDeleteMultipleExpenses,
+} from "@/src/hooks/useExpenses";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
+import { useBridge } from "@/src/hooks/useBridge";
 import { Plus } from "lucide-react";
 import {
   FileTextIcon,
@@ -155,7 +161,7 @@ const columns = [
     cell: ({ row }) => {
       const date = new Date(row.getValue("date"));
       return (
-        <div className="font-medium">{date.toLocaleDateString("fr-FR")}</div>
+        <div className="font-normal">{date.toLocaleDateString("fr-FR")}</div>
       );
     },
     size: 120,
@@ -168,21 +174,41 @@ const columns = [
       const type = row.getValue("type");
       const source = row.original.source;
 
-      // Configuration des badges selon le type (INCOME vs EXPENSE)
+      // Configuration des badges selon le type et la source
       const getBadgeConfig = () => {
-        if (type === "INCOME") {
-          // Factures = Entrées d'argent (vert)
+        // Transactions Bridge - Badge bleu pour les distinguer
+        if (source === "bridge") {
+          if (type === "INCOME") {
+            return {
+              className:
+                "bg-transparent border-blue-300 text-blue-800 font-normal",
+              icon: <ArrowUpIcon size={12} />,
+              label: "Virement reçu",
+            };
+          } else {
+            return {
+              className:
+                "bg-transparent border-blue-300 text-blue-800 font-normal",
+              icon: <Landmark size={12} />,
+              label: "Virement",
+            };
+          }
+        }
+
+        // Factures - Entrées d'argent (vert)
+        if (type === "INCOME" && source === "invoice") {
           return {
-            className: "bg-green-100 border-green-300 text-green-800",
+            className:
+              "bg-transparent border-green-300 text-green-800 font-normal",
             icon: <ArrowUpIcon size={12} />,
-            label: "Entrée",
+            label: "Facture",
           };
         }
 
-        if (type === "EXPENSE") {
-          // Dépenses = Sorties d'argent (rouge) avec sous-type
+        // Dépenses manuelles - Sorties d'argent (rouge) avec sous-type
+        if (type === "EXPENSE" && source === "expense") {
           const subType = row.original.subType;
-          let subLabel = "Sortie";
+          let subLabel = "Dépense";
 
           switch (subType) {
             case "transport":
@@ -195,14 +221,14 @@ const columns = [
               subLabel = "Bureau";
               break;
             case "prestation":
-              subLabel = "Sortie";
+              subLabel = "Prestation";
               break;
             default:
-              subLabel = "Autre";
+              subLabel = "Dépense";
           }
 
           return {
-            className: "bg-red-100 border-red-300 text-red-800",
+            className: "bg-transparent border-red-300 text-red-800 font-normal",
             icon: <ArrowDownIcon size={12} />,
             label: subLabel,
           };
@@ -210,7 +236,7 @@ const columns = [
 
         // Fallback
         return {
-          className: "bg-gray-100 border-gray-300 text-gray-800",
+          className: "bg-transparent border-gray-300 text-gray-800 font-normal",
           icon: <ArrowDownIcon size={12} />,
           label: "Inconnu",
         };
@@ -233,7 +259,7 @@ const columns = [
     header: "Catégorie",
     accessorKey: "category",
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("category")}</div>
+      <div className="font-normal">{row.getValue("category")}</div>
     ),
     size: 140,
   },
@@ -246,7 +272,7 @@ const columns = [
       return (
         <div
           className={cn(
-            "font-medium text-left",
+            "font-normal text-left",
             type === "INCOME" ? "text-green-600" : "text-red-600"
           )}
         >
@@ -403,7 +429,7 @@ export default function TransactionTable() {
   const [columnFilters, setColumnFilters] = useState([]);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 8,
   });
   const inputRef = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -425,9 +451,14 @@ export default function TransactionTable() {
     refetch: refetchExpenses,
   } = useExpenses({
     status: "PAID", // Récupérer les dépenses payées
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
+    page: 1,
+    limit: 100, // Récupérer plus de données pour la pagination côté client
   });
+
+  // Hooks pour la suppression
+  const { deleteExpense, loading: deleteLoading } = useDeleteExpense();
+  const { deleteMultipleExpenses, loading: deleteMultipleLoading } =
+    useDeleteMultipleExpenses();
 
   // Récupération des factures payées depuis l'API
   const {
@@ -443,10 +474,21 @@ export default function TransactionTable() {
     return invoices.filter((invoice) => invoice.status === "COMPLETED");
   }, [invoices]);
 
+  // Récupération des transactions Bridge
+  const {
+    transactions: bridgeTransactions,
+    loading: bridgeLoading,
+    loadingTransactions: bridgeTransactionsLoading,
+  } = useBridge();
+
   // Combiner les états de chargement et d'erreur
-  const loading = expensesLoading || invoicesLoading;
+  const loading =
+    expensesLoading || invoicesLoading || bridgeTransactionsLoading;
   const error = expensesError || invoicesError;
-  const totalCount = expensesTotalCount + paidInvoices.length;
+  const totalCount =
+    expensesTotalCount +
+    paidInvoices.length +
+    (bridgeTransactions?.length || 0);
 
   // Fonction de refetch combinée
   const refetch = useCallback(() => {
@@ -522,11 +564,46 @@ export default function TransactionTable() {
       totalTTC: invoice.totalTTC,
     }));
 
-    // Combiner et trier par date (plus récent en premier)
-    return [...expenseTransactions, ...invoiceTransactions].sort(
-      (a, b) => new Date(b.date) - new Date(a.date)
+    // Mapper les transactions Bridge (SORTIES D'ARGENT depuis les comptes bancaires)
+    const bridgeTransactionsMapped = (bridgeTransactions || []).map(
+      (transaction) => ({
+        id: `bridge-${transaction.id}`,
+        date: transaction.date,
+        type: transaction.type === 'credit' ? 'INCOME' : 'EXPENSE', // Convertit credit/debit vers INCOME/EXPENSE
+        subType: transaction.category?.toLowerCase() || "autre",
+        category: transaction.category || "OTHER",
+        amount: Math.abs(transaction.amount), // Valeur absolue pour l'affichage
+        currency: transaction.currency || "EUR",
+        description: transaction.description || "Transaction bancaire",
+        paymentMethod: "BANK_TRANSFER", // Toujours virement bancaire pour Bridge
+        vendor: null, // Pas de vendeur pour les transactions bancaires
+        invoiceNumber: null,
+        documentNumber: transaction.bridgeTransactionId,
+        vatAmount: null,
+        vatRate: null,
+        status: transaction.status || "PAID",
+        tags: [],
+        attachment: null,
+        files: [],
+        ocrMetadata: null,
+        createdAt: transaction.date,
+        updatedAt: transaction.date,
+        source: "bridge", // Identifier la source Bridge
+        // Données spécifiques Bridge
+        bridgeTransactionId: transaction.bridgeTransactionId,
+        bridgeAccountId: transaction.bridgeAccountId,
+        formattedAmount: transaction.formattedAmount,
+        formattedDate: transaction.formattedDate,
+      })
     );
-  }, [expenses, paidInvoices]);
+
+    // Combiner et trier par date (plus récent en premier)
+    return [
+      ...expenseTransactions,
+      ...invoiceTransactions,
+      ...bridgeTransactionsMapped,
+    ].sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [expenses, paidInvoices, bridgeTransactions]);
 
   const totalItems = totalCount;
 
@@ -547,17 +624,51 @@ export default function TransactionTable() {
 
   const handleDeleteRows = async () => {
     const selectedRows = table.getSelectedRowModel().rows;
+
+    if (selectedRows.length === 0) {
+      toast.error("Aucune transaction sélectionnée");
+      return;
+    }
+
+    // Séparer les dépenses des autres types (seules les dépenses peuvent être supprimées)
+    const expenseRows = selectedRows.filter(
+      (row) => row.original.source === "expense"
+    );
+    const invoiceRows = selectedRows.filter(
+      (row) => row.original.source === "invoice"
+    );
+    const bridgeRows = selectedRows.filter(
+      (row) => row.original.source === "bridge"
+    );
+
+    const nonDeletableCount = invoiceRows.length + bridgeRows.length;
+    if (nonDeletableCount > 0) {
+      const messages = [];
+      if (invoiceRows.length > 0) {
+        messages.push(`${invoiceRows.length} facture(s)`);
+      }
+      if (bridgeRows.length > 0) {
+        messages.push(`${bridgeRows.length} transaction(s) bancaire(s)`);
+      }
+      toast.warning(`${messages.join(" et ")} ignorée(s) (non supprimables)`);
+    }
+
+    if (expenseRows.length === 0) {
+      toast.error("Aucune dépense sélectionnée pour la suppression");
+      return;
+    }
+
     try {
-      // Simulation de suppression (à remplacer par une mutation GraphQL)
-      console.log(
-        "Suppression des transactions:",
-        selectedRows.map((row) => row.original.id)
-      );
-      table.resetRowSelection();
-      toast.success(`${selectedRows.length} transaction(s) supprimée(s)`);
+      const expenseIds = expenseRows.map((row) => row.original.id);
+      const result = await deleteMultipleExpenses(expenseIds);
+
+      if (result.success) {
+        table.resetRowSelection();
+        // Le toast de succès est géré dans le hook
+      }
     } catch (error) {
-      console.error("Error deleting transactions:", error);
-      toast.error("Erreur lors de la suppression");
+      console.error("Error deleting expenses:", error);
+      // Le toast d'erreur est géré dans le hook
     }
   };
 
@@ -591,10 +702,24 @@ export default function TransactionTable() {
     handleEditTransaction(transaction);
   };
 
-  const handleDeleteFromDrawer = (transaction) => {
+  const handleDeleteFromDrawer = async (transaction) => {
     setIsDetailDrawerOpen(false);
-    // Simulation de suppression
-    toast.success("Transaction supprimée");
+
+    // Vérifier si c'est une dépense (seules les dépenses peuvent être supprimées)
+    if (transaction.source === "invoice") {
+      toast.error(
+        "Les factures ne peuvent pas être supprimées depuis cette interface"
+      );
+      return;
+    }
+
+    try {
+      const result = await deleteExpense(transaction.id);
+      // Le toast de succès/erreur est géré dans le hook
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      // Le toast d'erreur est géré dans le hook
+    }
   };
 
   const handleCloseEditModal = () => {
@@ -669,6 +794,7 @@ export default function TransactionTable() {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     enableSortingRemoval: false,
     manualPagination: false,
@@ -772,7 +898,7 @@ export default function TransactionTable() {
           {/* Filter by type */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="font-normal">
                 <FilterIcon
                   className="-ms-1 opacity-60"
                   size={16}
@@ -816,7 +942,7 @@ export default function TransactionTable() {
           {/* Toggle columns visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="font-normal">
                 <Columns3Icon
                   className="-ms-1 opacity-60"
                   size={16}
@@ -853,13 +979,17 @@ export default function TransactionTable() {
           {table.getSelectedRowModel().rows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="ml-auto" variant="outline">
+                <Button
+                  className="ml-auto"
+                  variant="outline"
+                  disabled={deleteMultipleLoading}
+                >
                   <TrashIcon
                     className="-ms-1 opacity-60"
                     size={16}
                     aria-hidden="true"
                   />
-                  Supprimer
+                  {deleteMultipleLoading ? "Suppression..." : "Supprimer"}
                   <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
                     {table.getSelectedRowModel().rows.length}
                   </span>
@@ -878,21 +1008,58 @@ export default function TransactionTable() {
                       Êtes-vous absolument sûr ?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Cette action ne peut pas être annulée. Cela supprimera
-                      définitivement {table.getSelectedRowModel().rows.length}{" "}
-                      transaction
-                      {table.getSelectedRowModel().rows.length > 1
-                        ? "s"
-                        : ""}{" "}
-                      sélectionnée
-                      {table.getSelectedRowModel().rows.length > 1 ? "s" : ""}.
+                      {(() => {
+                        const selectedRows = table.getSelectedRowModel().rows;
+                        const expenseRows = selectedRows.filter(
+                          (row) => row.original.source === "expense"
+                        );
+                        const invoiceRows = selectedRows.filter(
+                          (row) => row.original.source === "invoice"
+                        );
+                        const bridgeRows = selectedRows.filter(
+                          (row) => row.original.source === "bridge"
+                        );
+
+                        if (expenseRows.length === 0) {
+                          return "Aucune dépense sélectionnée. Seules les dépenses peuvent être supprimées.";
+                        }
+
+                        let message = `Cette action ne peut pas être annulée. Cela supprimera définitivement ${expenseRows.length} dépense${expenseRows.length > 1 ? "s" : ""}.`;
+
+                        const ignoredItems = [];
+                        if (invoiceRows.length > 0) {
+                          ignoredItems.push(
+                            `${invoiceRows.length} facture${invoiceRows.length > 1 ? "s" : ""}`
+                          );
+                        }
+                        if (bridgeRows.length > 0) {
+                          ignoredItems.push(
+                            `${bridgeRows.length} transaction${bridgeRows.length > 1 ? "s" : ""} bancaire${bridgeRows.length > 1 ? "s" : ""}`
+                          );
+                        }
+
+                        if (ignoredItems.length > 0) {
+                          message += ` ${ignoredItems.join(" et ")} sera${ignoredItems.length > 1 || (ignoredItems.length === 1 && (invoiceRows.length > 1 || bridgeRows.length > 1)) ? "ont" : ""} ignorée${ignoredItems.length > 1 || (ignoredItems.length === 1 && (invoiceRows.length > 1 || bridgeRows.length > 1)) ? "s" : ""} (non supprimables).`;
+                        }
+
+                        return message;
+                      })()}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                 </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteRows}>
-                    Supprimer
+                  <AlertDialogAction
+                    onClick={handleDeleteRows}
+                    disabled={
+                      deleteMultipleLoading ||
+                      table
+                        .getSelectedRowModel()
+                        .rows.filter((row) => row.original.source === "expense")
+                        .length === 0
+                    }
+                  >
+                    {deleteMultipleLoading ? "Suppression..." : "Supprimer"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -900,19 +1067,19 @@ export default function TransactionTable() {
           )}
           {/* Add transaction button */}
           <Button
-            className="ml-auto cursor-pointer"
+            className="ml-auto cursor-pointer font-normal"
             variant="default"
             onClick={() => setIsReceiptUploadDrawerOpen(true)}
           >
-            <Plus className="-ms-1 opacity-60" size={16} aria-hidden="true" />
+            {/* <Plus className="-ms-1 opacity-60" size={16} aria-hidden="true" />*/}
             Ajouter un reçu
           </Button>
           <Button
-            className="ml-auto cursor-pointer"
+            className="ml-auto cursor-pointer font-normal"
             variant="outline"
             onClick={() => setIsAddTransactionDrawerOpen(true)}
           >
-            <Plus className="-ms-1 opacity-60" size={16} aria-hidden="true" />
+            {/* <Plus className="-ms-1 opacity-60" size={16} aria-hidden="true" />*/}
             Ajouter manuellement
           </Button>
         </div>
@@ -929,7 +1096,7 @@ export default function TransactionTable() {
                     <TableHead
                       key={header.id}
                       style={{ width: `${header.getSize()}px` }}
-                      className="h-11"
+                      className="h-11 font-normal"
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
@@ -1037,7 +1204,7 @@ export default function TransactionTable() {
       <div className="flex items-center justify-between gap-8">
         {/* Results per page */}
         <div className="flex items-center gap-3">
-          <Label htmlFor={id} className="max-sm:sr-only">
+          <Label htmlFor={id} className="max-sm:sr-only font-normal">
             Lignes par page
           </Label>
           <Select
@@ -1050,7 +1217,7 @@ export default function TransactionTable() {
               <SelectValue placeholder="Select number of results" />
             </SelectTrigger>
             <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
-              {[5, 10, 25, 50].map((pageSize) => (
+              {[5, 8, 10, 25, 50].map((pageSize) => (
                 <SelectItem key={pageSize} value={pageSize.toString()}>
                   {pageSize}
                 </SelectItem>
@@ -1165,6 +1332,7 @@ export default function TransactionTable() {
 function RowActions({ row, onEdit }) {
   const transaction = row.original;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { deleteExpense, loading: deleteLoading } = useDeleteExpense();
 
   const handleEdit = () => {
     if (onEdit) {
@@ -1173,14 +1341,23 @@ function RowActions({ row, onEdit }) {
   };
 
   const handleDelete = async () => {
-    try {
-      // Simulation de suppression (à remplacer par une mutation GraphQL)
-      console.log("Suppression de la transaction:", transaction.id);
+    // Vérifier si c'est une dépense (seules les dépenses peuvent être supprimées)
+    if (transaction.source === "invoice") {
+      toast.error(
+        "Les factures ne peuvent pas être supprimées depuis cette interface"
+      );
       setShowDeleteDialog(false);
-      toast.success("Transaction supprimée");
+      return;
+    }
+
+    try {
+      const result = await deleteExpense(transaction.id);
+      setShowDeleteDialog(false);
+      // Le toast de succès/erreur est géré dans le hook
     } catch (error) {
-      console.error("Error deleting transaction:", error);
-      toast.error("Erreur lors de la suppression");
+      console.error("Error deleting expense:", error);
+      setShowDeleteDialog(false);
+      // Le toast d'erreur est géré dans le hook
     }
   };
 
@@ -1205,7 +1382,13 @@ function RowActions({ row, onEdit }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={handleEdit}>
+          <DropdownMenuItem
+            onClick={handleEdit}
+            disabled={
+              transaction.source === "invoice" ||
+              transaction.source === "bridge"
+            }
+          >
             <span>Modifier</span>
             <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -1227,8 +1410,13 @@ function RowActions({ row, onEdit }) {
           className="text-destructive focus:text-destructive"
           onClick={() => setShowDeleteDialog(true)}
           variant="destructive"
+          disabled={
+            deleteLoading ||
+            transaction.source === "invoice" ||
+            transaction.source === "bridge"
+          }
         >
-          <span>Supprimer</span>
+          <span>{deleteLoading ? "Suppression..." : "Supprimer"}</span>
           <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>

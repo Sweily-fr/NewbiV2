@@ -90,24 +90,35 @@ export default function Settings() {
   // Fonction pour mettre à jour les informations
   const onSubmit = async (formData) => {
     try {
+      // Récupérer les données existantes de l'entreprise
+      const existingCompany = session?.user?.company || {};
+      
       // Transformer les données pour aplatir la structure legal
       const transformedData = {
         ...formData,
         // Aplatir les champs legal directement dans company
-        siret: formData.legal?.siret || "",
-        vatNumber: formData.legal?.vatNumber || "",
-        rcs: formData.legal?.rcs || "",
-        companyStatus: formData.legal?.legalForm || "",
-        capitalSocial: formData.legal?.capital || "",
+        siret: formData.legal?.siret || existingCompany.siret || "",
+        vatNumber: formData.legal?.vatNumber || existingCompany.vatNumber || "",
+        rcs: formData.legal?.rcs || existingCompany.rcs || "",
+        companyStatus: formData.legal?.legalForm || existingCompany.companyStatus || "",
+        capitalSocial: formData.legal?.capital || existingCompany.capitalSocial || "",
       };
-      
+
       // Supprimer l'objet legal car les champs sont maintenant aplatis
       delete transformedData.legal;
-      
-      console.log('🔄 Données transformées pour le backend:', transformedData);
-      
+
+      // Préserver les champs existants qui ne sont pas dans le formulaire actuel
+      const finalData = {
+        ...existingCompany, // Commencer avec les données existantes
+        ...transformedData, // Appliquer les modifications
+      };
+
+      console.log("🔄 Données existantes:", existingCompany);
+      console.log("🔄 Données du formulaire:", formData);
+      console.log("🔄 Données finales pour le backend:", finalData);
+
       await updateUser(
-        { company: transformedData },
+        { company: finalData },
         {
           onSuccess: () => {
             toast.success("Informations mises à jour avec succès");
@@ -147,6 +158,8 @@ export default function Settings() {
           bic: company.bankDetails?.bic || "",
           bankName: company.bankDetails?.bankName || "",
         },
+        // Informations légales - mapper vers la structure legal.* pour cohérence avec LegalSection
+        legal: {
           siret: company.siret || "",
           vatNumber: company.vatNumber || "",
           rcs: company.rcs || "",
@@ -154,6 +167,7 @@ export default function Settings() {
           capital: company.capitalSocial || "",
           regime: company.legal?.regime || "",
           category: company.legal?.category || "",
+        },
       });
     }
   }, [session, reset]);
@@ -196,7 +210,7 @@ export default function Settings() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
+              <h1 className="text-2xl font-medium mb-2 text-gray-900 dark:text-gray-100">
                 {currentTab.title}
               </h1>
               <p className="text-sm text-muted-foreground">

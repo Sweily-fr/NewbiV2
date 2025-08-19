@@ -12,18 +12,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import {
-  Alert,
-  AlertDescription,
-} from "@/src/components/ui/alert";
+import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { FileText, Plus, AlertCircle, Euro, Calculator } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
-export default function CreateLinkedInvoicePopover({ 
-  quote, 
-  onCreateInvoice, 
+export default function CreateLinkedInvoicePopover({
+  quote,
+  onCreateInvoice,
   loading = false,
-  existingInvoices = []
+  existingInvoices = [],
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [invoiceAmount, setInvoiceAmount] = useState("");
@@ -32,7 +29,10 @@ export default function CreateLinkedInvoicePopover({
 
   // Calculer les montants
   const quoteTotal = quote?.finalTotalTTC || 0;
-  const totalInvoiced = existingInvoices.reduce((sum, inv) => sum + (inv.finalTotalTTC || 0), 0);
+  const totalInvoiced = existingInvoices.reduce(
+    (sum, inv) => sum + (inv.finalTotalTTC || 0),
+    0
+  );
   const remainingAmount = quoteTotal - totalInvoiced;
   const canCreateMore = existingInvoices.length < 3 && remainingAmount > 0;
 
@@ -65,14 +65,14 @@ export default function CreateLinkedInvoicePopover({
     if (!validateForm()) return;
 
     const amount = parseFloat(invoiceAmount);
-    
+
     try {
       await onCreateInvoice({
         amount,
         isDeposit,
-        sourceQuoteId: quote.id
+        sourceQuoteId: quote.id,
       });
-      
+
       setIsOpen(false);
       toast.success("Facture créée avec succès");
     } catch (error) {
@@ -81,7 +81,7 @@ export default function CreateLinkedInvoicePopover({
   };
 
   const handleQuickAmount = (percentage) => {
-    const amount = (remainingAmount * percentage / 100).toFixed(2);
+    const amount = ((remainingAmount * percentage) / 100).toFixed(2);
     setInvoiceAmount(amount);
   };
 
@@ -107,7 +107,8 @@ export default function CreateLinkedInvoicePopover({
             <div>
               <h3 className="font-semibold text-lg">Créer une facture</h3>
               <p className="text-sm text-muted-foreground">
-                Basée sur le devis {quote?.prefix}{quote?.number}
+                Basée sur le devis {quote?.prefix}
+                {quote?.number}
               </p>
             </div>
           </div>
@@ -120,7 +121,7 @@ export default function CreateLinkedInvoicePopover({
               <Calculator className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Résumé des montants</span>
             </div>
-            
+
             <div className="bg-gray-50 p-3 rounded-lg space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Total du devis :</span>
@@ -133,23 +134,39 @@ export default function CreateLinkedInvoicePopover({
               <Separator />
               <div className="flex justify-between font-semibold">
                 <span>Montant restant :</span>
-                <span className="text-green-600">{remainingAmount.toFixed(2)}€</span>
+                <span className="text-green-600">
+                  {remainingAmount.toFixed(2)}€
+                </span>
               </div>
             </div>
 
             {existingInvoices.length > 0 && (
               <div className="space-y-2">
-                <span className="text-sm font-medium">Factures existantes :</span>
+                <span className="text-sm font-medium">
+                  Factures existantes :
+                </span>
                 <div className="space-y-1">
                   {existingInvoices.map((invoice, index) => (
-                    <div key={invoice.id} className="flex items-center justify-between text-sm">
+                    <div
+                      key={invoice.id}
+                      className="flex items-center justify-between text-sm"
+                    >
                       <div className="flex items-center gap-2">
-                        <Badge variant={invoice.isDeposit ? "secondary" : "outline"} className="text-xs">
-                          {invoice.isDeposit ? "Acompte" : "Facture"} #{index + 1}
+                        <Badge
+                          variant={invoice.isDeposit ? "secondary" : "outline"}
+                          className="text-xs"
+                        >
+                          {invoice.isDeposit ? "Acompte" : "Facture"} #
+                          {index + 1}
                         </Badge>
-                        <span>{invoice.prefix}{invoice.number}</span>
+                        <span>
+                          {invoice.prefix}
+                          {invoice.number}
+                        </span>
                       </div>
-                      <span className="font-medium">{invoice.finalTotalTTC?.toFixed(2)}€</span>
+                      <span className="font-medium">
+                        {invoice.finalTotalTTC?.toFixed(2)}€
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -232,8 +249,8 @@ export default function CreateLinkedInvoicePopover({
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-sm">
-                Vous pouvez créer jusqu'à 3 factures par devis. 
-                Factures créées : {existingInvoices.length}/3
+                Vous pouvez créer jusqu'à 3 factures par devis. Factures créées
+                : {existingInvoices.length}/3
               </AlertDescription>
             </Alert>
           </div>

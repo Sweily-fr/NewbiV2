@@ -26,7 +26,6 @@ export default function CompanySection({
 }) {
   const [logoUrl, setLogoUrl] = React.useState(watch("logo") || null);
 
-  // Mettre à jour l'URL du logo dans le formulaire
   const handleLogoChange = (imageUrl) => {
     setLogoUrl(imageUrl);
     setValue("logo", imageUrl);
@@ -44,7 +43,7 @@ export default function CompanySection({
     <div className="space-y-6">
       <Card className="border-0 shadow-sm backdrop-blur-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+          <CardTitle className="flex items-center gap-3 text-lg font-medium">
             <div className="p-2 bg-blue-50 rounded-lg">
               <Building className="h-5 w-5 text-blue-600" />
             </div>

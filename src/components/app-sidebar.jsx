@@ -20,6 +20,7 @@ import {
   IconUsers,
   IconHeart,
   IconCalendar,
+  IconCirclePlusFilled,
 } from "@tabler/icons-react";
 
 import { NavDocuments } from "@/src/components/nav-documents";

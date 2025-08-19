@@ -271,7 +271,7 @@ const HeroHeader = ({ className }) => {
 const Logo = ({ className }) => {
   return (
     <img
-      src="http://localhost:3000/newbiLogo.png"
+      src="http://localhost:3000/NewbiLogo.svg"
       alt="Logo newbi"
       //   className="absolute inset-x-0 top-56 -z-20 hidden lg:top-32 dark:block"
       width="100"

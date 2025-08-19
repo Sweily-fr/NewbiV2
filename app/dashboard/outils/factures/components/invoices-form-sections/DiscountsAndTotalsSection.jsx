@@ -42,7 +42,7 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
       <CardContent className="space-y-6 p-0">
         <div className="flex items-center gap-2 my-8">
           <Separator className="flex-1" />
-          <div className="flex items-center gap-2 px-3 text-sm font-medium text-muted-foreground">
+          <div className="flex items-center gap-2 px-3 text-sm font-normal text-muted-foreground">
             <Percent className="h-4 w-4" />
             Remises et totaux
           </div>
@@ -52,7 +52,7 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
         <div className="flex gap-4">
           {/* Type de remise - 50% de la largeur */}
           <div className="w-1/2 space-y-2">
-            <Label className="text-sm font-medium">Type de remise</Label>
+            <Label className="text-sm font-normal">Type de remise</Label>
             <div className="space-y-1">
               <Select
                 value={data.discountType || "PERCENTAGE"}
@@ -90,7 +90,7 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
 
           {/* Valeur de la remise - 50% de la largeur */}
           <div className="w-1/2 space-y-2">
-            <Label htmlFor="discount-value" className="text-sm font-medium">
+            <Label htmlFor="discount-value" className="text-sm font-normal">
               Valeur de la remise
             </Label>
             <div className="space-y-1">
@@ -143,7 +143,7 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
         {/* Champs personnalisés */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Champs personnalisés</Label>
+            <Label className="text-sm font-normal">Champs personnalisés</Label>
             <span className="text-xs text-muted-foreground">
               *Informations supplémentaires à afficher sur la facture
             </span>
@@ -156,7 +156,7 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
                   className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 rounded-lg"
                 >
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Nom du champ</Label>
+                    <Label className="text-sm font-normal">Nom du champ</Label>
                     <Input
                       value={field.name || ""}
                       onChange={(e) => {
@@ -175,7 +175,7 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Valeur</Label>
+                    <Label className="text-sm font-normal">Valeur</Label>
                     <div className="flex gap-2">
                       <div className="space-y-1 flex-1">
                         <Input
@@ -253,9 +253,8 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
             }}
             disabled={!canEdit}
             size="lg"
-            className="w-full h-10"
+            className="w-full h-10 font-normal"
           >
-            <Plus />
             Ajouter un champ personnalisé
           </Button>
         </div>

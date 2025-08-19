@@ -1,161 +1,130 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { addDays, setHours, setMinutes, subDays } from "date-fns"
+import { useState, useEffect } from "react";
+import { addDays, setHours, setMinutes, subDays } from "date-fns";
+import Loading from "./loading";
 
-import {
-  EventCalendar,
-} from './components'
-
-// Sample events data with hardcoded times
-const sampleEvents = [
-  {
-    id: "1",
-    title: "Annual Planning",
-    description: "Strategic planning for next year",
-    start: subDays(new Date(), 24), // 24 days before today
-    end: subDays(new Date(), 23), // 23 days before today
-    allDay: true,
-    color: "sky",
-    location: "Main Conference Hall",
-  },
-  {
-    id: "2",
-    title: "Project Deadline",
-    description: "Submit final deliverables",
-    start: setMinutes(setHours(subDays(new Date(), 9), 13), 0), // 1:00 PM, 9 days before
-    end: setMinutes(setHours(subDays(new Date(), 9), 15), 30), // 3:30 PM, 9 days before
-    color: "amber",
-    location: "Office",
-  },
-  {
-    id: "3",
-    title: "Quarterly Budget Review",
-    description: "Strategic planning for next year",
-    start: subDays(new Date(), 13), // 13 days before today
-    end: subDays(new Date(), 13), // 13 days before today
-    allDay: true,
-    color: "orange",
-    location: "Main Conference Hall",
-  },
-  {
-    id: "4",
-    title: "Team Meeting",
-    description: "Weekly team sync",
-    start: setMinutes(setHours(new Date(), 10), 0), // 10:00 AM today
-    end: setMinutes(setHours(new Date(), 11), 0), // 11:00 AM today
-    color: "sky",
-    location: "Conference Room A",
-  },
-  {
-    id: "5",
-    title: "Lunch with Client",
-    description: "Discuss new project requirements",
-    start: setMinutes(setHours(addDays(new Date(), 1), 12), 0), // 12:00 PM, 1 day from now
-    end: setMinutes(setHours(addDays(new Date(), 1), 13), 15), // 1:15 PM, 1 day from now
-    color: "emerald",
-    location: "Downtown Cafe",
-  },
-  {
-    id: "6",
-    title: "Product Launch",
-    description: "New product release",
-    start: addDays(new Date(), 3), // 3 days from now
-    end: addDays(new Date(), 6), // 6 days from now
-    allDay: true,
-    color: "violet",
-  },
-  {
-    id: "7",
-    title: "Sales Conference",
-    description: "Discuss about new clients",
-    start: setMinutes(setHours(addDays(new Date(), 4), 14), 30), // 2:30 PM, 4 days from now
-    end: setMinutes(setHours(addDays(new Date(), 5), 14), 45), // 2:45 PM, 5 days from now
-    color: "rose",
-    location: "Downtown Cafe",
-  },
-  {
-    id: "8",
-    title: "Team Meeting",
-    description: "Weekly team sync",
-    start: setMinutes(setHours(addDays(new Date(), 5), 9), 0), // 9:00 AM, 5 days from now
-    end: setMinutes(setHours(addDays(new Date(), 5), 10), 30), // 10:30 AM, 5 days from now
-    color: "orange",
-    location: "Conference Room A",
-  },
-  {
-    id: "9",
-    title: "Review contracts",
-    description: "Weekly team sync",
-    start: setMinutes(setHours(addDays(new Date(), 5), 14), 0), // 2:00 PM, 5 days from now
-    end: setMinutes(setHours(addDays(new Date(), 5), 15), 30), // 3:30 PM, 5 days from now
-    color: "sky",
-    location: "Conference Room A",
-  },
-  {
-    id: "10",
-    title: "Team Meeting",
-    description: "Weekly team sync",
-    start: setMinutes(setHours(addDays(new Date(), 5), 9), 45), // 9:45 AM, 5 days from now
-    end: setMinutes(setHours(addDays(new Date(), 5), 11), 0), // 11:00 AM, 5 days from now
-    color: "amber",
-    location: "Conference Room A",
-  },
-  {
-    id: "11",
-    title: "Marketing Strategy Session",
-    description: "Quarterly marketing planning",
-    start: setMinutes(setHours(addDays(new Date(), 9), 10), 0), // 10:00 AM, 9 days from now
-    end: setMinutes(setHours(addDays(new Date(), 9), 15), 30), // 3:30 PM, 9 days from now
-    color: "emerald",
-    location: "Marketing Department",
-  },
-  {
-    id: "12",
-    title: "Annual Shareholders Meeting",
-    description: "Presentation of yearly results",
-    start: addDays(new Date(), 17), // 17 days from now
-    end: addDays(new Date(), 17), // 17 days from now
-    allDay: true,
-    color: "sky",
-    location: "Grand Conference Center",
-  },
-  {
-    id: "13",
-    title: "Product Development Workshop",
-    description: "Brainstorming for new features",
-    start: setMinutes(setHours(addDays(new Date(), 26), 9), 0), // 9:00 AM, 26 days from now
-    end: setMinutes(setHours(addDays(new Date(), 27), 17), 0), // 5:00 PM, 27 days from now
-    color: "rose",
-    location: "Innovation Lab",
-  },
-]
+import { EventCalendar } from "./components";
+import { useEvents, useEventOperations } from "@/src/hooks/useEvents";
+import { toast } from "@/src/components/ui/sonner";
 
 export default function Component() {
-  const [events, setEvents] = useState(sampleEvents)
+  // Récupération des événements depuis la base de données
+  const { events: dbEvents, loading, error } = useEvents();
 
-  const handleEventAdd = (event) => {
-    setEvents([...events, event])
+  // Opérations sur les événements
+  const { createEvent, updateEvent, deleteEvent } = useEventOperations();
+
+  // État local pour les événements (combine BDD + événements temporaires)
+  const [localEvents, setLocalEvents] = useState([]);
+
+  // Synchroniser les événements de la BDD avec l'état local
+  useEffect(() => {
+    if (dbEvents && dbEvents.length > 0) {
+      // Transformer les événements de la BDD au format attendu par le calendrier
+      const transformedEvents = dbEvents.map((event) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        start: new Date(event.start),
+        end: new Date(event.end),
+        allDay: event.allDay,
+        color: event.color,
+        location: event.location,
+        type: event.type,
+        invoiceId: event.invoiceId,
+        invoice: event.invoice,
+      }));
+      setLocalEvents(transformedEvents);
+    } else if (!loading) {
+      // Si pas d'événements en BDD et chargement terminé, initialiser avec un tableau vide
+      setLocalEvents([]);
+    }
+  }, [dbEvents, loading]);
+
+  // Gestionnaire pour ajouter un événement
+  const handleEventAdd = async (event) => {
+    try {
+      const newEvent = await createEvent({
+        title: event.title,
+        description: event.description,
+        start: event.start.toISOString(),
+        end: event.end.toISOString(),
+        allDay: event.allDay || false,
+        color: event.color || "sky",
+        location: event.location,
+        type: "MANUAL",
+      });
+
+      if (newEvent) {
+        // L'événement sera automatiquement ajouté via le cache Apollo
+        console.log("Événement ajouté avec succès");
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'ajout de l'événement:", error);
+      toast.error("Erreur lors de l'ajout de l'événement");
+    }
+  };
+
+  // Gestionnaire pour mettre à jour un événement
+  const handleEventUpdate = async (updatedEvent) => {
+    try {
+      const result = await updateEvent({
+        id: updatedEvent.id,
+        title: updatedEvent.title,
+        description: updatedEvent.description,
+        start: updatedEvent.start.toISOString(),
+        end: updatedEvent.end.toISOString(),
+        allDay: updatedEvent.allDay,
+        color: updatedEvent.color,
+        location: updatedEvent.location,
+        type: updatedEvent.type || "MANUAL",
+      });
+
+      if (result) {
+        // L'événement sera automatiquement mis à jour via le cache Apollo
+        console.log("Événement mis à jour avec succès");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de l'événement:", error);
+      toast.error("Erreur lors de la mise à jour de l'événement");
+    }
+  };
+
+  // Gestionnaire pour supprimer un événement
+  const handleEventDelete = async (eventId) => {
+    try {
+      const success = await deleteEvent(eventId);
+
+      if (success) {
+        // L'événement sera automatiquement supprimé via le cache Apollo
+        console.log("Événement supprimé avec succès");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la suppression de l'événement:", error);
+      toast.error("Erreur lors de la suppression de l'événement");
+    }
+  };
+
+  if (loading) {
+    return <Loading />;
   }
 
-  const handleEventUpdate = (updatedEvent) => {
-    setEvents(
-      events.map((event) =>
-        event.id === updatedEvent.id ? updatedEvent : event
-      )
-    )
-  }
-
-  const handleEventDelete = (eventId) => {
-    setEvents(events.filter((event) => event.id !== eventId))
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <p className="text-red-600">Erreur lors du chargement des événements</p>
+        <p className="text-sm text-gray-500">Veuillez rafraîchir la page</p>
+      </div>
+    );
   }
 
   return (
     <EventCalendar
-      events={events}
+      events={localEvents}
       onEventAdd={handleEventAdd}
       onEventUpdate={handleEventUpdate}
       onEventDelete={handleEventDelete}
     />
-  )
+  );
 }

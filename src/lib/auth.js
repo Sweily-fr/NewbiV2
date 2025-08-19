@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { mongoDb } from "./mongodb";
 import { resend } from "./resend";
-import { admin } from "better-auth/plugins";
+import { admin, organization } from "better-auth/plugins";
 // import { bearer } from "better-auth/plugins";
 
 export const auth = betterAuth({
@@ -11,8 +11,42 @@ export const auth = betterAuth({
     admin({
       adminUserIds: ["685ff0250e083b9a2987a0b9"],
     }),
+    organization({
+      async sendInvitationEmail(data) {
+        console.log('Envoi d\'email d\'invitation:', data);
+        
+        // Construire le lien d'invitation avec les informations de base
+        const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/accept-invitation/${data.id}?org=${encodeURIComponent(data.organization.name)}&email=${encodeURIComponent(data.email)}&role=${encodeURIComponent(data.role)}`;
+        
+        try {
+          // Envoyer l'email d'invitation via Resend
+          await resend.emails.send({
+            to: data.email,
+            subject: `Invitation à rejoindre ${data.organization.name}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Vous êtes invité(e) à rejoindre ${data.organization.name}</h2>
+                <p>Bonjour,</p>
+                <p><strong>${data.inviter.user.name || data.inviter.user.email}</strong> vous invite à rejoindre l'organisation <strong>${data.organization.name}</strong>.</p>
+                <p>Cliquez sur le lien ci-dessous pour accepter l'invitation :</p>
+                <a href="${inviteLink}" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 16px 0;">Accepter l'invitation</a>
+                <p>Si vous ne souhaitez pas rejoindre cette organisation, vous pouvez ignorer cet email.</p>
+                <p>Cordialement,<br>L'équipe Newbi</p>
+              </div>
+            `,
+            from: "noreply@newbi.sweily.fr",
+          });
+          
+          console.log('Email d\'invitation envoyé avec succès à:', data.email);
+        } catch (error) {
+          console.error('Erreur lors de l\'envoi de l\'email d\'invitation:', error);
+          throw error;
+        }
+      },
+    }),
   ],
   // plugins: [bearer()],
+  
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url, token }, request) => {
@@ -24,6 +58,7 @@ export const auth = betterAuth({
       });
     },
   },
+
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }) => {
       await resend.emails.send({

@@ -21,13 +21,13 @@ export default function InvoicesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-medium mb-2">Factures</h1>
+            <h1 className="text-2xl font-medium mb-2">Factures clients</h1>
             <p className="text-muted-foreground text-sm">
               Gérez vos factures, devis et documents commerciaux
             </p>
           </div>
-          <Button onClick={handleCreateInvoice} className="gap-2">
-            <Plus className="h-4 w-4" />
+          <Button onClick={handleCreateInvoice} className="gap-2 font-normal">
+            {/* <Plus className="h-4 w-4" /> */}
             Créer une facture
           </Button>
         </div>

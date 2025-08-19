@@ -12,64 +12,55 @@ import {
   DialogTrigger,
 } from "@/src/components/ui/dialog";
 import { Label } from "@/src/components/ui/label";
-import { InputEmail, Input } from "@/src/components/ui/input";
-import { InputPassword } from "@/src/components/ui/input";
-import { useForm } from "react-hook-form";
-import { admin } from "../../../../src/lib/auth-client";
-import { toast } from "@/src/components/ui/sonner";
-import { useUser } from "../../../../src/lib/auth/hooks";
+import { InputEmail } from "@/src/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { useForm, Controller } from "react-hook-form";
+import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 
-export default function InviteMembers({ open, onOpenChange }) {
+export default function InviteMembers({
+  open,
+  onOpenChange,
+  onInvitationSent,
+}) {
   const {
     register,
     handleSubmit,
-    watch,
-    formState: { errors, isSubmitting },
-    setError: setFormError,
-  } = useForm();
-  const { session } = useUser();
-  console.log(session?.session.userId, "session");
+    control,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      email: "",
+      role: "member",
+    },
+  });
+
+  const { inviteMember, inviting } = useOrganizationInvitations();
 
   const onSubmit = async (formData) => {
-    console.log({ ...formData, role: "user" }, "formData");
-    await admin.createUser(
-      {
-        ...formData,
-        role: "user",
-        createdBy: session?.session.userId,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Un nouveau collaborateur a été ajouté");
-          onOpenChange(false);
-        },
-        onError: (error) => {
-          toast.error("Erreur lors de l'inscription");
-        },
-      }
-    );
-  };
-  const users = async () => {
-    await admin.listUsers(
-      {
-        query: {
-          filterField: "createdBy",
-          filterValue: session?.session?.userId,
-        },
-        onSuccess: (users) => {
-          console.log(users, "users");
-          return users;
-        },
-      },
-      {
-        onError: (error) => {
-          console.log(error, "error");
-        },
-      }
-    );
-  };
+    console.log("Envoi d'invitation:", formData);
 
-  console.log(users(), "users");
+    const result = await inviteMember({
+      email: formData.email,
+      role: formData.role,
+    });
+
+    if (result.success) {
+      reset(); // Réinitialiser le formulaire
+      onOpenChange(false); // Fermer le dialog
+
+      // Notifier le parent pour rafraîchir la liste
+      if (onInvitationSent) {
+        onInvitationSent();
+      }
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,45 +88,54 @@ export default function InviteMembers({ open, onOpenChange }) {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-4">
-            <div className="*:not-first:mt-2">
-              <Label>Nom</Label>
-              <div className="space-y-3">
-                <Input
-                  id="name"
-                  placeholder="Nom"
-                  type="text"
-                  value={watch("name")}
-                  {...register("name")}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email du collaborateur</Label>
+              <InputEmail
+                id="email"
+                placeholder="collaborateur@exemple.com"
+                {...register("email", {
+                  required: "L'email est requis",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Email invalide",
+                  },
+                })}
+              />
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email.message}</p>
+              )}
             </div>
-            <div className="*:not-first:mt-2">
-              <Label>Email</Label>
-              <div className="space-y-3">
-                <InputEmail
-                  id="email"
-                  placeholder="hi@yourcompany.com"
-                  type="email"
-                  value={watch("email")}
-                  {...register("email")}
-                />
-              </div>
-            </div>
-            <div className="*:not-first:mt-2">
-              <Label>Mot de passe</Label>
-              <div className="space-y-3">
-                <InputPassword
-                  id="password"
-                  placeholder="Saisissez votre mot de passe"
-                  type="password"
-                  value={watch("password")}
-                  {...register("password")}
-                />
-              </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">Rôle</Label>
+              <Controller
+                name="role"
+                control={control}
+                rules={{ required: "Le rôle est requis" }}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez un rôle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="member">Membre</SelectItem>
+                      <SelectItem value="admin">Administrateur</SelectItem>
+                      <SelectItem value="guest">Invité</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.role && (
+                <p className="text-sm text-red-500">{errors.role.message}</p>
+              )}
             </div>
           </div>
-          <Button type="submit" className="w-full">
-            Ajouter
+
+          <Button type="submit" className="w-full" disabled={inviting}>
+            {inviting ? "Envoi en cours..." : "Envoyer l'invitation"}
           </Button>
         </form>
       </DialogContent>

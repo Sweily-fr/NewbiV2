@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import {
   useCreateInvoice,
   useUpdateInvoice,
@@ -423,8 +423,8 @@ function getInitialFormData(mode, initialData, session) {
     },
     appearance: {
       textColor: "#000000",
-      headerTextColor: "#000000",
-      headerBgColor: "#f8f9fa",
+      headerTextColor: "#ffffff",
+      headerBgColor: "#1d1d1b",
     },
   };
 
@@ -595,8 +595,8 @@ function transformInvoiceToFormData(invoice) {
     },
     appearance: {
       textColor: invoice.appearance?.textColor || "#000000",
-      headerTextColor: invoice.appearance?.headerTextColor || "#000000",
-      headerBgColor: invoice.appearance?.headerBgColor || "#f8f9fa",
+      headerTextColor: invoice.appearance?.headerTextColor || "#ffffff",
+      headerBgColor: invoice.appearance?.headerBgColor || "#1d1d1b",
     },
   };
 
@@ -786,8 +786,8 @@ function transformFormDataToInput(formData, previousStatus = null) {
     bankDetails: bankDetailsForInvoice,
     appearance: {
       textColor: formData.appearance?.textColor || "#000000",
-      headerTextColor: formData.appearance?.headerTextColor || "#000000",
-      headerBgColor: formData.appearance?.headerBgColor || "#f8f9fa",
+      headerTextColor: formData.appearance?.headerTextColor || "#ffffff",
+      headerBgColor: formData.appearance?.headerBgColor || "#1d1d1b",
     },
   };
 }

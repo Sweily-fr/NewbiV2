@@ -468,11 +468,11 @@ export default function ClientSelector({
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="existing" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <span>Client existant</span>
+                <span className="font-normal">Client existant</span>
               </TabsTrigger>
               <TabsTrigger value="new" className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                <span>Nouveau client</span>
+                <span className="font-normal">Nouveau client</span>
               </TabsTrigger>
             </TabsList>
           </CardHeader>
@@ -531,7 +531,7 @@ export default function ClientSelector({
                                       variant="outline"
                                       size="sm"
                                       onClick={handleSwitchToNewClient}
-                                      className="text-xs"
+                                      className="text-xs font-normal"
                                     >
                                       <Plus className="h-3 w-3 mr-1" />
                                       Créer "{query}" comme nouveau client

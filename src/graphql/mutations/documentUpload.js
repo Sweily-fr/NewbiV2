@@ -17,3 +17,12 @@ export const UPLOAD_DOCUMENT = gql`
     }
   }
 `;
+
+export const DELETE_DOCUMENT = gql`
+  mutation DeleteDocument($key: String!) {
+    deleteDocument(key: $key) {
+      success
+      message
+    }
+  }
+`;

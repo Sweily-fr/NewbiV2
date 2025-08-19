@@ -9,6 +9,7 @@ import { registerUser, verifyEmail } from "../../../src/lib/auth/api";
 import { signUp } from "../../../src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
+import { useAutoOrganization } from "@/src/hooks/useAutoOrganization";
 
 const RegisterForm = () => {
   const {
@@ -20,12 +21,35 @@ const RegisterForm = () => {
   } = useForm();
 
   const router = useRouter();
+  const { createAutoOrganization } = useAutoOrganization();
 
   const onSubmit = async (formData) => {
     console.log(formData, "formData");
     await signUp.email(formData, {
-      onSuccess: () => {
+      onSuccess: async (context) => {
         toast.success("Vous avez reçu un email de verification");
+        
+        console.log('Callback onSuccess - Context:', context);
+        
+        // Créer automatiquement une organisation après l'inscription
+        console.log("Tentative de création automatique d'organisation...");
+        
+        // Attendre un peu pour que l'utilisateur soit bien créé et connecté
+        setTimeout(async () => {
+          // Passer l'utilisateur depuis le contexte si disponible
+          const user = context?.user || context?.data?.user;
+          console.log('Utilisateur depuis le contexte:', user);
+          
+          const result = await createAutoOrganization(user);
+          if (result.success) {
+            console.log("Organisation créée automatiquement après inscription");
+            toast.success("Organisation créée automatiquement");
+          } else {
+            console.error("Échec de la création automatique d'organisation:", result.error);
+            // Ne pas afficher d'erreur à l'utilisateur car l'inscription a réussi
+          }
+        }, 3000); // Attendre 3 secondes pour être sûr
+        
         // router.push("/auth/login");
       },
       onError: (error) => {

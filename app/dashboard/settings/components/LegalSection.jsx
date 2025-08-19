@@ -59,7 +59,7 @@ export default function LegalSection({ register, errors, watch, setValue }) {
     <div className="space-y-6">
       <Card className="border-0 shadow-sm backdrop-blur-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+          <CardTitle className="flex items-center gap-3 text-lg font-medium">
             <div className="p-2 bg-blue-50 rounded-lg">
               <FileText className="h-5 w-5 text-blue-600" />
             </div>

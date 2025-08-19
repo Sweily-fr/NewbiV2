@@ -87,8 +87,7 @@ export default function ItemsSection({
   return (
     <Card className="shadow-none border-none bg-transparent mb-0">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 font-normal text-lg">
           Articles et produits
         </CardTitle>
       </CardHeader>
@@ -109,10 +108,9 @@ export default function ItemsSection({
             <Button
               onClick={() => addItem()}
               disabled={!canEdit}
-              className="gap-2 w-full h-full min-h-10"
+              className="gap-2 w-full h-full min-h-10 font-normal"
               size="lg"
             >
-              <Plus />
               Ajouter un article
             </Button>
           </div>
@@ -157,14 +155,14 @@ export default function ItemsSection({
                   <AccordionTrigger className="w-full justify-start gap-3 text-[15px] leading-6 hover:no-underline focus-visible:ring-0 py-3 [&[data-state=open]>svg]:rotate-180">
                     <div className="flex items-center justify-between w-full gap-3">
                       <div className="flex-1 text-left">
-                        <div className="font-medium">{description}</div>
+                        <div className="font-normal">{description}</div>
                         <div className="text-sm mt-1 space-y-1">
                           <div className="flex items-center gap-2 text-muted-foreground">
-                            <span>
+                            <span className="font-normal">
                               {quantity} {unit}
                             </span>
-                            <span>•</span>
-                            <span>
+                            <span className="font-normal">•</span>
+                            <span className="font-normal">
                               {formatCurrency(unitPrice)}/
                               {unit === "heure"
                                 ? "h"
@@ -180,7 +178,7 @@ export default function ItemsSection({
                               </span>
                             )}
                           </div>
-                          <div className="font-medium">
+                          <div className="font-normal">
                             {formatCurrency(subtotal)} HT • {vatRate}% TVA •{" "}
                             {formatCurrency(totalTTC)} TTC
                           </div>
@@ -215,7 +213,7 @@ export default function ItemsSection({
                       <div className="space-y-2">
                         <Label
                           htmlFor={`item-description-${index}`}
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           Description de l'article
                         </Label>
@@ -255,7 +253,7 @@ export default function ItemsSection({
                       <div className="space-y-2">
                         <Label
                           htmlFor={`item-details-${index}`}
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           Détails supplémentaires (optionnel)
                         </Label>
@@ -274,7 +272,7 @@ export default function ItemsSection({
                         <div className="space-y-2">
                           <Label
                             htmlFor={`item-quantity-${index}`}
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Quantité
                           </Label>
@@ -329,7 +327,7 @@ export default function ItemsSection({
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Unité</Label>
+                          <Label className="text-sm font-normal">Unité</Label>
                           <Controller
                             name={`items.${index}.unit`}
                             defaultValue="unité"
@@ -370,7 +368,7 @@ export default function ItemsSection({
                         <div className="space-y-2">
                           <Label
                             htmlFor={`item-price-${index}`}
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Prix unitaire (€)
                           </Label>
@@ -424,7 +422,7 @@ export default function ItemsSection({
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">
+                          <Label className="text-sm font-normal">
                             Taux de TVA
                           </Label>
                           <Controller
@@ -466,7 +464,7 @@ export default function ItemsSection({
                         <div className="space-y-2">
                           <Label
                             htmlFor={`item-vat-exemption-${index}`}
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Texte d'exonération de TVA
                           </Label>
@@ -552,7 +550,7 @@ export default function ItemsSection({
                         </div>
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label className="text-sm font-medium">
+                            <Label className="text-sm font-normal">
                               Type de remise
                             </Label>
                             <Controller
@@ -602,7 +600,7 @@ export default function ItemsSection({
                           <div className="space-y-2">
                             <Label
                               htmlFor={`item-discount-${index}`}
-                              className="text-sm font-medium"
+                              className="text-sm font-normal"
                             >
                               {watch(`items.${index}.discountType`) ===
                               "percentage"
@@ -718,7 +716,7 @@ export default function ItemsSection({
         {items.length > 0 && (
           <div className="border-t pt-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">
+              <span className="text-sm font-normal">
                 Total HT des articles :
               </span>
               <span className="text-lg font-semibold">
@@ -752,9 +750,8 @@ export default function ItemsSection({
               onClick={() => addItem()}
               disabled={!canEdit}
               variant="outline"
-              className="gap-2"
+              className="gap-2 font-normal"
             >
-              <Plus />
               Ajouter un article
             </Button>
           </div>

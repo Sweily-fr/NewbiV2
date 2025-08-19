@@ -1,20 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_INVOICES, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
+import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
 
 export const useInvoiceNumber = () => {
   const [lastInvoiceNumber, setLastInvoiceNumber] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Récupérer le workspace actuel
+  const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
 
   // Fetch all finalized invoices (PENDING and COMPLETED) to find the highest sequential number
   // We exclude DRAFT invoices as they don't have final invoice numbers
   const { data, loading, error: queryError } = useQuery(GET_INVOICES, {
     variables: { 
+      workspaceId, // AJOUTÉ : workspaceId requis
       limit: 1000 // Adjust limit as needed
       // No status filter - we'll filter out DRAFT invoices in the processing logic
     },
     fetchPolicy: 'cache-and-network',
+    skip: !workspaceId, // Ne pas exécuter sans workspaceId
   });
 
   useEffect(() => {
@@ -77,8 +83,8 @@ export const useInvoiceNumber = () => {
       setError(queryError);
     }
     
-    setIsLoading(loading);
-  }, [data, loading, queryError]);
+    setIsLoading(loading || workspaceLoading);
+  }, [data, loading, queryError, workspaceLoading]);
 
   // Generate the next sequential number
   const getNextInvoiceNumber = () => {

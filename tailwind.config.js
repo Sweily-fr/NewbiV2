@@ -13,6 +13,9 @@ module.exports = {
   darkMode: "class",
   theme: {
     extend: {
+      fontFamily: {
+        'polysans': ['PolySans', 'sans-serif'],
+      },
       animation: {
         aurora: "aurora 60s linear infinite",
       },

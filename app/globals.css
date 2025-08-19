@@ -1,3 +1,36 @@
+/* PolySans Font Family - Déclarées avant Tailwind */
+@font-face {
+  font-family: 'PolySans';
+  src: url('/fonts/polysanstrial-slim.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PolySans';
+  src: url('/fonts/polysanstrial-neutral.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PolySans';
+  src: url('/fonts/polysanstrial-median.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PolySans';
+  src: url('/fonts/polysanstrial-bulky.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Police Poppins supprimée du global et déplacée dans le layout spécifique */
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -5,6 +38,11 @@
 /* Classe pour utiliser la police Poppins uniquement dans les composants qui en ont besoin */
 .font-poppins {
   font-family: var(--font-poppins), system-ui, sans-serif;
+}
+
+/* Classe pour utiliser la police PolySans */
+.font-polysans {
+  font-family: 'PolySans', system-ui, sans-serif;
 }
 
 /* Custom scrollbar styles */

@@ -341,7 +341,6 @@ export default function EnhancedQuoteForm({
                   />
                 </CardContent>
               </Card>
-
             </>
           )}
 
@@ -389,7 +388,7 @@ export default function EnhancedQuoteForm({
                 <Button
                   onClick={handleNextStep}
                   disabled={!isStep1Valid() || !canEdit}
-                  className="px-6"
+                  className="px-6 text-sm font-light"
                 >
                   Suivant
                 </Button>
@@ -407,7 +406,7 @@ export default function EnhancedQuoteForm({
                   <Button
                     onClick={handleCreateQuote}
                     disabled={!isStep2Valid() || !canEdit || saving}
-                    className="px-6"
+                    className="px-6 text-sm font-light"
                   >
                     {saving ? "Création..." : "Créer le devis"}
                   </Button>

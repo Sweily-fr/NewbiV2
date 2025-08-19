@@ -96,110 +96,19 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
     <div className="h-full flex flex-col">
       {/* Contenu scrollable */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto pl-2 pr-2">
-          {/* Notes et bas de page */}
-          <Card className="shadow-none border-none bg-transparent">
-            <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-medium text-lg">
-                Notes et bas de page
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-0">
-              {/* Notes d'en-tête */}
-              <div>
-                <Label htmlFor="header-notes">Notes d'en-tête</Label>
-                <div className="space-y-1">
-                  <Textarea
-                    id="header-notes"
-                    className={`mt-2 ${errors?.headerNotes ? "border-red-500" : ""}`}
-                    {...register("headerNotes", {
-                      maxLength: {
-                        value: 1000,
-                        message:
-                          "Les notes d'en-tête ne doivent pas dépasser 1000 caractères",
-                      },
-                    })}
-                    defaultValue={data.headerNotes || ""}
-                    placeholder="Notes qui apparaîtront en haut de la facture..."
-                    rows={3}
-                    disabled={!canEdit}
-                  />
-                  {errors?.headerNotes && (
-                    <p className="text-xs text-red-500">
-                      {errors.headerNotes.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Notes de bas de page */}
-              <div>
-                <Label htmlFor="footer-notes">Notes de bas de page</Label>
-                <div className="space-y-1">
-                  <Textarea
-                    id="footer-notes"
-                    className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
-                    {...register("footerNotes", {
-                      maxLength: {
-                        value: 1000,
-                        message:
-                          "Les notes de bas de page ne doivent pas dépasser 1000 caractères",
-                      },
-                    })}
-                    defaultValue={data.footerNotes || ""}
-                    placeholder="Notes qui apparaîtront en bas de la facture..."
-                    rows={3}
-                    disabled={!canEdit}
-                  />
-                  {errors?.footerNotes && (
-                    <p className="text-xs text-red-500">
-                      {errors.footerNotes.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Conditions générales */}
-              <div>
-                <Label htmlFor="terms-conditions">Conditions générales</Label>
-                <div className="space-y-1">
-                  <Textarea
-                    id="terms-conditions"
-                    className={`mt-2 ${errors?.termsAndConditions ? "border-red-500" : ""}`}
-                    {...register("termsAndConditions", {
-                      maxLength: {
-                        value: 2000,
-                        message:
-                          "Les conditions générales ne doivent pas dépasser 2000 caractères",
-                      },
-                    })}
-                    defaultValue={data.termsAndConditions || ""}
-                    placeholder="Conditions générales de vente..."
-                    rows={4}
-                    disabled={!canEdit}
-                  />
-                  {errors?.termsAndConditions && (
-                    <p className="text-xs text-red-500">
-                      {errors.termsAndConditions.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
+        <div className="max-w-2xl mx-auto pl-2 pr-2 space-y-6">
           {/* Coordonnées bancaires */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-medium text-lg">
+              <CardTitle className="flex items-center gap-2 font-normal text-lg">
                 Coordonnées bancaires
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               {/* Séparateur avec titre de section */}
-              <div className="relative">
+              {/* <div className="relative">
                 <Separator />
-              </div>
+              </div> */}
 
               {/* Afficher les coordonnées bancaires */}
               <div className="flex items-center space-x-3">
@@ -246,7 +155,7 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
                 <div className="grid gap-1.5 leading-none">
                   <Label
                     htmlFor="show-bank-details"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="text-sm font-light leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     Afficher les coordonnées bancaires
                   </Label>
@@ -261,7 +170,9 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
                 <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                   {/* Nom de la banque */}
                   <div>
-                    <Label htmlFor="bank-name">Nom de la banque</Label>
+                    <Label htmlFor="bank-name" className="font-light">
+                      Nom de la banque
+                    </Label>
                     <div className="space-y-1">
                       <Input
                         id="bank-name"
@@ -287,7 +198,9 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
 
                   {/* IBAN */}
                   <div>
-                    <Label htmlFor="iban">IBAN</Label>
+                    <Label htmlFor="iban" className="font-light">
+                      IBAN
+                    </Label>
                     <div className="space-y-1">
                       <Input
                         id="iban"
@@ -314,7 +227,9 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
 
                   {/* BIC/SWIFT */}
                   <div>
-                    <Label htmlFor="bic">BIC/SWIFT</Label>
+                    <Label htmlFor="bic" className="font-light">
+                      BIC/SWIFT
+                    </Label>
                     <div className="space-y-1">
                       <Input
                         id="bic"
@@ -350,11 +265,12 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
               )}
             </CardContent>
           </Card>
+          <Separator />
 
           {/* Section Apparence */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-medium text-lg">
+              <CardTitle className="flex items-center gap-2 font-normal text-lg">
                 Apparence
               </CardTitle>
             </CardHeader>
@@ -363,7 +279,9 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
               <div className="grid grid-cols-2 gap-4">
                 {/* Couleur du texte */}
                 <div className="space-y-2">
-                  <Label htmlFor="text-color">Couleur du texte</Label>
+                  <Label htmlFor="text-color" className="font-light">
+                    Couleur du texte
+                  </Label>
                   <ColorPicker
                     className="w-full"
                     color={data.appearance?.textColor || "#000000"}
@@ -377,12 +295,12 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
 
                 {/* Couleur des titres du header */}
                 <div className="space-y-2">
-                  <Label htmlFor="header-text-color">
+                  <Label htmlFor="header-text-color" className="font-light">
                     Couleur des titres du tableau
                   </Label>
                   <ColorPicker
                     className="w-full"
-                    color={data.appearance?.headerTextColor || "#000000"}
+                    color={data.appearance?.headerTextColor || "#ffffff"}
                     onChange={(color) => {
                       setValue("appearance.headerTextColor", color, {
                         shouldDirty: true,
@@ -394,12 +312,12 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
 
               {/* Couleur de fond du header */}
               <div className="space-y-2">
-                <Label htmlFor="header-bg-color">
+                <Label htmlFor="header-bg-color" className="font-light">
                   Couleur de fond du tableau
                 </Label>
                 <ColorPicker
                   className="w-full"
-                  color={data.appearance?.headerBgColor || "#f8f9fa"}
+                  color={data.appearance?.headerBgColor || "#1d1d1b"}
                   onChange={(color) => {
                     setValue("appearance.headerBgColor", color, {
                       shouldDirty: true,
@@ -409,16 +327,118 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
               </div>
             </CardContent>
           </Card>
+          <Separator />
+
+          {/* Notes et bas de page */}
+          <Card className="shadow-none border-none bg-transparent">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+                Notes et bas de page
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              {/* Notes d'en-tête */}
+              <div>
+                <Label htmlFor="header-notes" className="font-light">
+                  Notes d'en-tête
+                </Label>
+                <div className="space-y-1">
+                  <Textarea
+                    id="header-notes"
+                    className={`mt-2 ${errors?.headerNotes ? "border-red-500" : ""}`}
+                    {...register("headerNotes", {
+                      maxLength: {
+                        value: 1000,
+                        message:
+                          "Les notes d'en-tête ne doivent pas dépasser 1000 caractères",
+                      },
+                    })}
+                    defaultValue={data.headerNotes || ""}
+                    placeholder="Notes qui apparaîtront en haut de la facture..."
+                    rows={3}
+                    disabled={!canEdit}
+                  />
+                  {errors?.headerNotes && (
+                    <p className="text-xs text-red-500">
+                      {errors.headerNotes.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Notes de bas de page */}
+              <div>
+                <Label htmlFor="footer-notes" className="font-light">
+                  Notes de bas de page
+                </Label>
+                <div className="space-y-1">
+                  <Textarea
+                    id="footer-notes"
+                    className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
+                    {...register("footerNotes", {
+                      maxLength: {
+                        value: 1000,
+                        message:
+                          "Les notes de bas de page ne doivent pas dépasser 1000 caractères",
+                      },
+                    })}
+                    defaultValue={data.footerNotes || ""}
+                    placeholder="Notes qui apparaîtront en bas de la facture..."
+                    rows={3}
+                    disabled={!canEdit}
+                  />
+                  {errors?.footerNotes && (
+                    <p className="text-xs text-red-500">
+                      {errors.footerNotes.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {/* Conditions générales */}
+              <div>
+                <Label htmlFor="terms-conditions" className="font-light">
+                  Conditions générales
+                </Label>
+                <div className="space-y-1">
+                  <Textarea
+                    id="terms-conditions"
+                    className={`mt-2 ${errors?.termsAndConditions ? "border-red-500" : ""}`}
+                    {...register("termsAndConditions", {
+                      maxLength: {
+                        value: 2000,
+                        message:
+                          "Les conditions générales ne doivent pas dépasser 2000 caractères",
+                      },
+                    })}
+                    defaultValue={data.termsAndConditions || ""}
+                    placeholder="Conditions générales de vente..."
+                    rows={4}
+                    disabled={!canEdit}
+                  />
+                  {errors?.termsAndConditions && (
+                    <p className="text-xs text-red-500">
+                      {errors.termsAndConditions.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       {/* Boutons fixes en bas */}
       <div className="flex-shrink-0 border-t bg-background pt-4">
         <div className="max-w-2xl mx-auto flex justify-end gap-3">
-          <Button variant="outline" onClick={onCancel} disabled={!canEdit}>
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            disabled={!canEdit}
+            className="font-normal"
+          >
             Annuler
           </Button>
-          <Button onClick={onSave} disabled={!canEdit}>
+          <Button onClick={onSave} disabled={!canEdit} className="font-normal">
             Enregistrer les modifications
           </Button>
         </div>

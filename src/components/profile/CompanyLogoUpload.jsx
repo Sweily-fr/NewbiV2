@@ -1,13 +1,13 @@
 /**
- * Composant d'upload de logo d'entreprise
- * Basé sur ProfileImageUpload mais adapté pour les logos d'entreprise
+ * Composant d'upload de logo d'entreprise vers Cloudflare R2
+ * Upload avec structure de dossiers par utilisateur : user/{userID}/imgCompany
  */
 
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Progress } from '@/src/components/ui/progress';
-import { Building2, X, Loader2 } from 'lucide-react';
-import { useProfileImageUpload } from '@/src/hooks/useProfileImageUpload';
+import { Building2, X, Loader2, AlertCircle } from 'lucide-react';
+import { useCompanyLogoUpload } from '@/src/hooks/useCompanyLogoUpload';
 import { cn } from '@/src/lib/utils';
 
 export function CompanyLogoUpload({ 
@@ -21,30 +21,28 @@ export function CompanyLogoUpload({
   const {
     isUploading,
     uploadProgress,
-    error,
+    previewUrl,
+    hasImage,
+    isNewImage,
+    fileInputRef,
     openFileDialog,
     handleFileSelect,
     removeImage,
-    fileInputRef,
     setExistingImage,
     getDisplayImageUrl,
-    hasImage,
-    isNewImage
-  } = useProfileImageUpload({
+    isAuthenticated
+  } = useCompanyLogoUpload({
     onUploadSuccess: (imageUrl) => {
       onImageChange(imageUrl);
-    },
-    onUploadError: (error) => {
-      console.error('Erreur upload logo:', error);
     }
   });
 
   // Initialiser avec l'image existante
   React.useEffect(() => {
-    if (currentImageUrl && currentImageUrl !== getDisplayImageUrl()) {
+    if (currentImageUrl) {
       setExistingImage(currentImageUrl);
     }
-  }, [currentImageUrl, setExistingImage, getDisplayImageUrl]);
+  }, [currentImageUrl, setExistingImage]);
 
   const displayImageUrl = getDisplayImageUrl();
 
@@ -86,6 +84,22 @@ export function CompanyLogoUpload({
     removeImage();
     onImageChange(null);
   };
+
+  // Afficher un message si l'utilisateur n'est pas connecté
+  if (!isAuthenticated) {
+    return (
+      <div className={cn('flex flex-col items-center gap-2', className)}>
+        <div className="relative inline-flex">
+          <div className="border-input relative flex size-24 items-center justify-center overflow-hidden rounded-lg border border-dashed opacity-50">
+            <AlertCircle className="size-8 text-muted-foreground" />
+          </div>
+        </div>
+        <p className="text-muted-foreground text-xs text-center">
+          Connectez-vous pour uploader un logo
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('flex flex-col items-center gap-2', className)}>
@@ -163,15 +177,22 @@ export function CompanyLogoUpload({
       
       {/* Description */}
       {showDescription && (
-        <p
-          role="region"
-          className="text-muted-foreground mt-2 text-xs text-center"
-        >
-          {isNewImage 
-            ? "Nouveau logo sélectionné. Sauvegardez pour confirmer."
-            : "Glissez un logo ou cliquez pour uploader"
-          }
-        </p>
+        <div className="flex flex-col items-center gap-1">
+          <p
+            role="region"
+            className="text-muted-foreground text-xs text-center"
+          >
+            {isNewImage 
+              ? "Nouveau logo sélectionné. Sauvegardez pour confirmer."
+              : "Glissez un logo ou cliquez pour uploader"
+            }
+          </p>
+          {userId && (
+            <p className="text-muted-foreground text-xs text-center opacity-75">
+              Stockage : user/{userId}/imgCompany
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

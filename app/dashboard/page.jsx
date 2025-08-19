@@ -3,8 +3,10 @@
 import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
 import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
+import BankBalanceCard from "@/src/components/bank-balance-card";
 import Comp333 from "@/src/components/comp-333";
 import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -12,10 +14,19 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/src/components/ui/table";
+import {
   CloudUpload,
   FileCheck2,
   Download,
   FileClock,
+  Landmark,
   Zap,
   Monitor,
   Target,
@@ -25,9 +36,15 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
+import BridgeConnectButton from "@/src/components/bridge-connect-button";
+import UnifiedTransactions from "@/src/components/unified-transactions";
 import { useUser } from "@/src/lib/auth/hooks";
 import { redirect } from "next/navigation";
 import { useFinancialStats } from "@/src/hooks/useFinancialStats";
+import { useBridge } from "@/src/hooks/useBridge";
+import { useExpenses } from "@/src/hooks/useExpenses";
+
+import LoadingSkeleton from "./loading";
 
 export default function Dashboard() {
   const { session } = useUser();
@@ -40,30 +57,29 @@ export default function Dashboard() {
     incomeChartData,
     expenseChartData,
     getRecentTransactions,
-    loading,
+    loading: statsLoading,
     formatCurrency,
   } = useFinancialStats();
 
-  // Récupérer les dernières transactions réelles
-  const recentTransactions = getRecentTransactions(5);
+  // Récupération des données Bridge pour BankBalanceCard
+  const {
+    loadingAccounts: bridgeLoading,
+  } = useBridge();
 
-  // Fonction utilitaire pour obtenir l'icône et les couleurs d'une transaction
-  const getTransactionDisplay = (transaction) => {
-    if (transaction.category === "income") {
-      return {
-        icon: TrendingUp,
-        bgColor: "bg-green-50",
-        iconColor: "text-green-600",
-      };
-    } else {
-      // Pour les dépenses, on peut différencier par type
-      return {
-        icon: TrendingDown,
-        bgColor: "bg-red-50",
-        iconColor: "text-red-600",
-      };
-    }
-  };
+  // Récupération des dépenses pour UnifiedTransactions
+  const {
+    loading: expensesLoading,
+  } = useExpenses({ status: "PAID" });
+
+  // Combinaison de tous les états de loading
+  const loading = statsLoading || bridgeLoading || expensesLoading;
+
+  // Si les données sont en cours de chargement, afficher le skeleton
+  if (loading) {
+    return <LoadingSkeleton />;
+  }
+
+  // Note: Les transactions sont maintenant gérées par le composant BridgeTransactions
 
   const expenseChartConfig = {
     visitors: {
@@ -127,18 +143,32 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
-      <div className="w-full mb-6">
-        <p className="text-2xl font-semibold">Bonjour {session?.user?.name},</p>
+      <div className="flex items-center justify-between w-full mb-6">
+        <p className="text-2xl font-medium">Bonjour {session?.user?.name},</p>
+        <BridgeConnectButton
+          variant="default"
+          size="sm"
+          onSuccess={(data) => {
+            console.log("Connexion bancaire réussie:", data);
+            // Ici vous pouvez rafraîchir les données financières
+          }}
+          onError={(error) => {
+            console.error("Erreur connexion bancaire:", error);
+          }}
+          className="font-polysans font-normal"
+        >
+          Connecter un compte bancaire
+        </BridgeConnectButton>
       </div>
       <div className="flex flex-col gap-3 w-full">
         <Comp333
-          className="w-full"
+          className="w-full h-11 flex items-center"
           placeholder="Rechercher des transactions ou lancer une action"
           commandPlaceholder="Rechercher des transactions ou lancer une action"
         />
         <div className="flex gap-3 w-full">
           <Button
-            className="cursor-pointer"
+            className="cursor-pointer font-polysans font-normal"
             variant="outline"
             size="sm"
             asChild
@@ -149,7 +179,7 @@ export default function Dashboard() {
             </a>
           </Button>
           <Button
-            className="cursor-pointer"
+            className="cursor-pointer font-polysans font-normal"
             variant="outline"
             size="sm"
             asChild
@@ -160,7 +190,7 @@ export default function Dashboard() {
             </a>
           </Button>
           <Button
-            className="cursor-pointer"
+            className="cursor-pointer font-polysans font-normal"
             variant="outline"
             size="sm"
             asChild
@@ -171,7 +201,7 @@ export default function Dashboard() {
             </a>
           </Button>
           <Button
-            className="cursor-pointer"
+            className="cursor-pointer font-polysans font-normal"
             variant="outline"
             size="sm"
             asChild
@@ -182,7 +212,7 @@ export default function Dashboard() {
             </a>
           </Button>
           <Button
-            className="cursor-pointer"
+            className="cursor-pointer font-polysans font-normal"
             variant="outline"
             size="sm"
             asChild
@@ -195,90 +225,13 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="flex gap-6 w-full mt-4">
-        <ChartAreaInteractive
-          className="shadow-xs w-1/2"
-          title="Soldes"
-          description={loading ? "Chargement..." : formatCurrency(totalAmount)}
-          height="250px"
-          config={balanceChartConfig}
-          data={expenseChartData}
-          hideMobileCurve={true}
-        />
-        <Card className="shadow-xs w-1/2">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-medium">
-                Dernières transactions
-              </CardTitle>
-              <button
-                onClick={() => redirect("/dashboard/outils/gestion-depenses")}
-                className="text-sm cursor-pointer text-muted-foreground hover:text-foreground border-b border-transparent hover:border-current transition-colors"
-              >
-                Afficher tout
-              </button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {loading ? (
-              <div className="text-center text-muted-foreground py-4">
-                Chargement des transactions...
-              </div>
-            ) : recentTransactions.length === 0 ? (
-              <div className="text-center text-muted-foreground py-4">
-                Aucune transaction récente
-              </div>
-            ) : (
-              recentTransactions.map((transaction) => {
-                const displayConfig = getTransactionDisplay(transaction);
-                const IconComponent = displayConfig.icon;
-                return (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 ${displayConfig.bgColor} rounded-full flex items-center justify-center`}
-                      >
-                        <IconComponent
-                          className={`h-4 w-4 ${displayConfig.iconColor}`}
-                        />
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">
-                          {transaction.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {transaction.type}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className={`font-medium text-sm ${
-                          transaction.isIncome
-                            ? "text-green-500"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {transaction.isIncome ? "+" : "-"}
-                        {transaction.formattedAmount}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {transaction.formattedDate}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
+        <BankBalanceCard className="w-1/2" />
+        <UnifiedTransactions limit={5} className="w-1/2" />
       </div>
       <div className="flex gap-6 w-full">
         <ChartAreaInteractive
           title="Entrées"
-          description={loading ? "Chargement..." : formatCurrency(totalIncome)}
+          description={formatCurrency(totalIncome)}
           height="250px"
           className="shadow-xs w-1/2"
           config={incomeChartConfig}
@@ -287,9 +240,7 @@ export default function Dashboard() {
         />
         <ChartAreaInteractive
           title="Sorties"
-          description={
-            loading ? "Chargement..." : formatCurrency(totalExpenses)
-          }
+          description={formatCurrency(totalExpenses)}
           height="250px"
           className="shadow-xs w-1/2"
           config={expenseChartConfigs}
@@ -300,6 +251,7 @@ export default function Dashboard() {
         <ChartBarMultiple className="shadow-xs" /> */}
         {/* <ChartRadarGridCircle /> */}
       </div>
+
     </div>
   );
 }

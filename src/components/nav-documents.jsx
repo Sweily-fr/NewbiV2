@@ -87,14 +87,16 @@ export function NavDocuments({ items }) {
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Mes apps</SidebarGroupLabel>
+      <SidebarGroupLabel className="font-polysans font-normal">
+        Mes apps
+      </SidebarGroupLabel>
       <SidebarMenu>
         {pinnedApps.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
               <a href={item.url}>
                 <item.icon />
-                <span>{item.name}</span>
+                <span className="font-polysans font-light">{item.name}</span>
               </a>
             </SidebarMenuButton>
             <DropdownMenu>
@@ -136,7 +138,9 @@ export function NavDocuments({ items }) {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton className="text-sidebar-foreground/70">
                   <IconPlus className="text-sidebar-foreground/70" />
-                  <span>Ajouter une app</span>
+                  <span className="font-polysans font-normal">
+                    Ajouter une app
+                  </span>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -150,7 +154,9 @@ export function NavDocuments({ items }) {
                     onClick={() => handlePinApp(tool)}
                   >
                     <tool.icon className="size-4" />
-                    <span>{tool.name}</span>
+                    <span className="font-polysans font-light">
+                      {tool.name}
+                    </span>
                   </DropdownMenuItem>
                 ))}
                 {pinnedApps.length >= 3 && (
