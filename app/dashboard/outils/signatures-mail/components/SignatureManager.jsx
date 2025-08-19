@@ -6,9 +6,10 @@ import { gql } from "@apollo/client";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Trash2, Download, Star, StarOff, Loader2, AlertCircle } from "lucide-react";
+import { Trash2, Download, Star, StarOff, Loader2, AlertCircle, Copy } from "lucide-react";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import TemplateSelector from "./TemplateSelector";
+import { toast } from "@/src/components/ui/sonner";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
 const GET_MY_EMAIL_SIGNATURES = gql`
@@ -141,6 +142,7 @@ const GET_EMAIL_SIGNATURE = gql`
 const SignatureManager = () => {
   const { updateSignatureData, signatureData } = useSignatureData();
   const [isMounted, setIsMounted] = useState(false);
+  const [copyingId, setCopyingId] = useState(null);
   const client = useApolloClient();
 
   // Éviter l'erreur d'hydratation
@@ -322,6 +324,145 @@ const SignatureManager = () => {
     }
   };
 
+  // Fonction pour générer le HTML d'une signature
+  const generateSignatureHTML = (signature) => {
+    const primaryColor = signature.primaryColor || "#3b82f6";
+    const photoSrc = signature.photo || "";
+    const logoSrc = signature.logo || "";
+    
+    // Génération HTML basique pour la signature horizontale
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signature Email</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 600px; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
+    <tbody>
+      <tr>
+        ${photoSrc ? `
+        <td style="padding-right: 20px; vertical-align: top; width: ${signature.imageSize || 80}px;">
+          <div style="width: ${signature.imageSize || 80}px; height: ${signature.imageSize || 80}px; border-radius: ${signature.imageShape === 'square' ? '8px' : '50%'}; background: url('${photoSrc}') center center / cover no-repeat; display: block; overflow: hidden;"></div>
+        </td>
+        ` : ''}
+        
+        <td style="vertical-align: top;">
+          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+            <tbody>
+              <tr>
+                <td style="padding-bottom: 8px;">
+                  <div style="font-size: ${signature.fontSize?.name || 16}px; font-weight: bold; color: ${primaryColor}; line-height: 1.2;">
+                    ${signature.firstName || ''} ${signature.lastName || ''}
+                  </div>
+                </td>
+              </tr>
+              ${signature.position ? `
+              <tr>
+                <td style="padding-bottom: 8px;">
+                  <div style="font-size: ${signature.fontSize?.position || 14}px; color: #666666;">
+                    ${signature.position}
+                  </div>
+                </td>
+              </tr>
+              ` : ''}
+              ${signature.companyName ? `
+              <tr>
+                <td style="padding-bottom: 12px;">
+                  <div style="font-size: 14px; font-weight: bold; color: ${primaryColor};">
+                    ${signature.companyName}
+                  </div>
+                </td>
+              </tr>
+              ` : ''}
+              ${signature.email ? `
+              <tr>
+                <td style="padding-bottom: 4px;">
+                  <div style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666;">
+                    <a href="mailto:${signature.email}" style="color: #666666; text-decoration: none;">${signature.email}</a>
+                  </div>
+                </td>
+              </tr>
+              ` : ''}
+              ${signature.phone ? `
+              <tr>
+                <td style="padding-bottom: 4px;">
+                  <div style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666;">
+                    <a href="tel:${signature.phone}" style="color: #666666; text-decoration: none;">${signature.phone}</a>
+                  </div>
+                </td>
+              </tr>
+              ` : ''}
+              ${signature.website ? `
+              <tr>
+                <td style="padding-bottom: 4px;">
+                  <div style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666;">
+                    <a href="${signature.website}" style="color: #666666; text-decoration: none;">${signature.website}</a>
+                  </div>
+                </td>
+              </tr>
+              ` : ''}
+            </tbody>
+          </table>
+        </td>
+      </tr>
+      
+      ${logoSrc ? `
+      <tr>
+        <td colSpan="2" style="padding-top: 15px; text-align: center;">
+          ${signature.logoBackground?.enabled ? `
+          <div style="display: inline-block; background-color: ${signature.logoBackground?.color || '#f3f4f6'}; border-radius: ${signature.logoBackground?.shape === 'round' ? '50%' : '0'}; padding: 8px;">
+            <img src="${logoSrc}" alt="Logo entreprise" style="width: ${signature.logoSize || 60}px; height: auto; max-height: ${signature.logoSize || 60}px; object-fit: contain; display: block;" />
+          </div>
+          ` : `
+          <img src="${logoSrc}" alt="Logo entreprise" style="width: ${signature.logoSize || 60}px; height: auto; max-height: ${signature.logoSize || 60}px; object-fit: contain;" />
+          `}
+        </td>
+      </tr>
+      ` : ''}
+    </tbody>
+  </table>
+</body>
+</html>
+    `;
+  };
+
+  // Fonction pour copier une signature
+  const handleCopySignature = async (signature) => {
+    setCopyingId(signature.id);
+    
+    try {
+      const htmlSignature = generateSignatureHTML(signature);
+      
+      // Copier en tant que texte riche (HTML)
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([htmlSignature], { type: 'text/html' }),
+            'text/plain': new Blob([htmlSignature.replace(/<[^>]*>/g, '')], { type: 'text/plain' })
+          })
+        ]);
+        toast.success(`Signature "${signature.signatureName}" copiée avec le visuel !`);
+      } else {
+        // Fallback pour les navigateurs plus anciens
+        const textarea = document.createElement('textarea');
+        textarea.value = htmlSignature;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        toast.success(`Signature "${signature.signatureName}" copiée ! (format HTML)`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la copie:', error);
+      toast.error('Erreur lors de la copie de la signature');
+    } finally {
+      setCopyingId(null);
+    }
+  };
+
   // Ne pas rendre le composant côté serveur
   if (!isMounted) {
     return null;
@@ -397,6 +538,20 @@ const SignatureManager = () => {
                   )}
                 </CardTitle>
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopySignature(signature)}
+                    disabled={copyingId === signature.id}
+                    className="p-2 text-blue-600 hover:text-blue-700"
+                    title="Copier la signature"
+                  >
+                    {copyingId === signature.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"

@@ -342,8 +342,8 @@ export default function ContentTab() {
             <Label className="text-xs text-muted-foreground">Orientation</Label>
             <AlignmentSelector
               items={[
-                { value: "horizontal", icon: FlipVerticalIcon },
-                { value: "vertical", icon: FlipHorizontalIcon },
+                { value: "horizontal", icon: FlipHorizontalIcon },
+                { value: "vertical", icon: FlipVerticalIcon },
               ]}
               size="sm"
               className="w-30"
@@ -1024,6 +1024,8 @@ export default function ContentTab() {
               onValueChange={(value) => updateSignatureData('logoAlignment', value)}
             />
           </div>
+          
+
         </div>
       </div>
       <Separator />
@@ -1109,6 +1111,72 @@ export default function ContentTab() {
                 {signatureData.colors?.social || '#0077B5'}
               </span>
             </div>
+          </div>
+          
+          {/* Background des logos sociaux */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Background logos</Label>
+            <Switch
+              checked={signatureData.socialBackground?.enabled || false}
+              onCheckedChange={(checked) => updateSignatureData('socialBackground', {
+                ...signatureData.socialBackground,
+                enabled: checked
+              })}
+            />
+          </div>
+          
+          {/* Couleur du background (si activé) */}
+          {signatureData.socialBackground?.enabled && (
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">Couleur background</Label>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="color"
+                  value={signatureData.socialBackground?.color || '#f3f4f6'}
+                  onChange={(e) => updateSignatureData('socialBackground', {
+                    ...signatureData.socialBackground,
+                    color: e.target.value
+                  })}
+                  className="h-8 w-8 p-1 border rounded cursor-pointer"
+                />
+                <span className="text-xs text-muted-foreground">
+                  {signatureData.socialBackground?.color || '#f3f4f6'}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {/* Forme du background (si activé) */}
+          {signatureData.socialBackground?.enabled && (
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">Forme background</Label>
+              <AlignmentSelector
+                items={[
+                  { value: "square", icon: Square },
+                  { value: "round", icon: CircleOff }
+                ]}
+                size="sm"
+                className="w-30"
+                value={signatureData.socialBackground?.shape || 'square'}
+                onValueChange={(value) => updateSignatureData('socialBackground', {
+                  ...signatureData.socialBackground,
+                  shape: value
+                })}
+              />
+            </div>
+          )}
+          
+          {/* Taille des logos sociaux */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Taille logos</Label>
+            <Input
+              type="number"
+              min="16"
+              max="48"
+              value={signatureData.socialSize || 24}
+              onChange={(e) => updateSignatureData('socialSize', parseInt(e.target.value))}
+              className="w-16 h-8 text-xs"
+            />
           </div>
         </div>
       </div>
