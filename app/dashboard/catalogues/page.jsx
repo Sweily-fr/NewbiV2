@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import TableUser from "./components/table";
-import ClientsModal from "./components/clients-modal";
+import TableProduct from "./components/table-product";
+import ProductModal from "./components/product-modal";
 
 export default function Catalogues() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
-  const handleOpenInviteDialog = () => {
+  // Fonction pour ouvrir le dialogue depuis le bouton dans TableProduct
+  const handleOpenProductDialog = () => {
     setDialogOpen(true);
   };
 
@@ -18,12 +18,12 @@ export default function Catalogues() {
         <div>
           <h1 className="text-xl font-medium mb-2">Gestion des Catalogues</h1>
           <p className="text-muted-foreground text-sm">
-            Gérez efficacement vos catalogues en un seul endroit.
+            Gérez efficacement vos produits et services en un seul endroit.
           </p>
         </div>
       </div>
-      <TableUser handleAddUser={handleOpenInviteDialog} />
-      <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
+      <TableProduct handleAddProduct={handleOpenProductDialog} />
+      <ProductModal open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   );
 }
