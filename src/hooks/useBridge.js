@@ -27,6 +27,14 @@ export const useBridge = () => {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const { workspaceId } = useRequiredWorkspace();
+  
+  // Debug logs pour diagnostiquer le problème
+  console.log('🔍 useBridge Debug:', {
+    userId,
+    workspaceId,
+    hasWorkspaceId: !!workspaceId,
+    workspaceIdType: typeof workspaceId
+  });
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
@@ -150,6 +158,21 @@ export const useBridge = () => {
     errorPolicy: "all",
     notifyOnNetworkStatusChange: true,
     skip: !workspaceId || !bridgeData?.getBridgeUserId?.bridgeUserId, // Skip si pas de workspace ou pas connecté à Bridge
+    onCompleted: (data) => {
+      console.log('✅ GET_RECENT_TRANSACTIONS completed:', data);
+    },
+    onError: (error) => {
+      console.log('❌ GET_RECENT_TRANSACTIONS error:', error);
+    }
+  });
+  
+  // Debug pour la condition skip
+  console.log('🔍 GET_RECENT_TRANSACTIONS skip condition:', {
+    workspaceId,
+    hasWorkspaceId: !!workspaceId,
+    bridgeUserId: bridgeData?.getBridgeUserId?.bridgeUserId,
+    hasBridgeUserId: !!bridgeData?.getBridgeUserId?.bridgeUserId,
+    skipCondition: !workspaceId || !bridgeData?.getBridgeUserId?.bridgeUserId
   });
 
   // Query pour récupérer les statistiques des transactions
