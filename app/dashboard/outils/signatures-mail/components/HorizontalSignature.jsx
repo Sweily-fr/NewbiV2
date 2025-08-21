@@ -73,7 +73,7 @@ const HorizontalSignature = ({
       <tbody>
         <tr>
           {/* Photo de profil à gauche */}
-          <td style={{ width: '80px', paddingRight: `${signatureData.spacings?.photoBottom || 16}px`, verticalAlign: 'top' }}>
+          <td style={{ width: `${signatureData.columnWidths?.photo || 25}%`, paddingRight: `${signatureData.spacings?.photoBottom || 16}px`, verticalAlign: 'top' }}>
             {signatureData.photo ? (
               <div 
                 style={{
@@ -121,7 +121,7 @@ const HorizontalSignature = ({
           </td>
           
           {/* Informations empilées verticalement à droite */}
-          <td style={{ verticalAlign: 'top' }}>
+          <td style={{ width: `${signatureData.columnWidths?.content || 75}%`, verticalAlign: 'top' }}>
             <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', tableLayout: 'auto', width: 'auto' }}>
               <tbody>
                 {/* Nom séparé en 2 cellules avec espacement contrôlé */}
@@ -392,7 +392,7 @@ const HorizontalSignature = ({
           }}>
             <hr style={{
               border: 'none',
-              borderTop: `${signatureData.separatorHorizontalWidth || 1}px solid #e0e0e0`,
+              borderTop: `${signatureData.separatorHorizontalWidth || 1}px solid ${signatureData.colors?.separatorHorizontal || '#e0e0e0'}`,
               margin: '0',
               width: '100%'
             }} />
@@ -402,7 +402,6 @@ const HorizontalSignature = ({
         {/* Logo entreprise en bas à gauche */}
         <tr>
           <td style={{ 
-            paddingTop: `${signatureData.spacings?.logoBottom || 12}px`,
             textAlign: 'left',
             verticalAlign: 'top'
           }}>
@@ -456,7 +455,7 @@ const HorizontalSignature = ({
         {(signatureData.socialLinks?.linkedin || signatureData.socialLinks?.facebook || signatureData.socialLinks?.twitter || signatureData.socialLinks?.instagram) && (
           <tr>
             <td colSpan="2" style={{ 
-              paddingTop: `${signatureData.spacings?.socialTop || 15}px`,
+              paddingTop: `${signatureData.spacings?.separatorBottom || 15}px`,
               textAlign: 'left' 
             }}>
               <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>

@@ -488,13 +488,13 @@ const generateHorizontalHTML = (signatureData, primaryColor, facebookImageUrl = 
         <tr>
           <!-- Photo de profil à gauche -->
           ${photoSrc ? `
-            <td style="width: 80px; padding-right: ${spacings.photoBottom || 16}px; vertical-align: top;">
+            <td style="width: ${signatureData.columnWidths?.photo || 25}%; padding-right: ${spacings.photoBottom || 16}px; vertical-align: top;">
               <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center/cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;"></div>
             </td>
           ` : ''}
           
           <!-- Informations empilées verticalement à droite -->
-          <td style="vertical-align: top;">
+          <td style="width: ${signatureData.columnWidths?.content || 75}%; vertical-align: top;">
             <!-- Nom et prénom -->
             <div style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; margin-bottom: 2px;">
               ${signatureData.firstName} ${signatureData.lastName}
@@ -551,14 +551,14 @@ const generateHorizontalHTML = (signatureData, primaryColor, facebookImageUrl = 
         <!-- Séparateur horizontal -->
         <tr>
           <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
-            <hr style="border: none; border-top: ${separatorHorizontalWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
+            <hr style="border: none; border-top: ${separatorHorizontalWidth}px solid ${signatureData.colors?.separatorHorizontal || '#e0e0e0'}; margin: 0; width: 100%;" />
           </td>
         </tr>
         
         <!-- Logo entreprise après le séparateur -->
         ${logoSrc ? `
         <tr>
-          <td colspan="2" style="padding: ${spacings.logoBottom || 12}px 0 0 0; text-align: left;">
+          <td colspan="2" style="text-align: left;">
             <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
           </td>
         </tr>
@@ -567,7 +567,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, facebookImageUrl = 
         <!-- Logos sociaux -->
         ${(signatureData.socialLinks?.linkedin || signatureData.socialLinks?.facebook || signatureData.socialLinks?.twitter || signatureData.socialLinks?.instagram) ? `
         <tr>
-          <td colspan="2" style="padding: ${spacings.socialTop || 15}px 0 0 0; text-align: left;">
+          <td colspan="2" style="padding: ${spacings.separatorBottom || 15}px 0 0 0; text-align: left;">
             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
               <tr>
                 ${signatureData.socialLinks?.linkedin ? `
@@ -591,18 +591,14 @@ const generateHorizontalHTML = (signatureData, primaryColor, facebookImageUrl = 
                       ${facebookImgUrl ? `
                       <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
                       ` : `
-                      <svg width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" viewBox="0 0 50 50" style="display: block;">
-                        <path fill="${signatureData.colors?.social || '#1877F2'}" d="M41,4H9C6.24,4,4,6.24,4,9v32c0,2.76,2.24,5,5,5h32c2.76,0,5-2.24,5-5V9C46,6.24,43.76,4,41,4z M37,19h-2c-2.14,0-3,0.5-3,2 v3h5l-1,5h-4v15h-5V29h-4v-5h4v-3c0-4,2-7,6-7c2.9,0,4,1,4,1V19z"/>
-                      </svg>
+                      <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
                       `}
                     </div>
                     ` : `
                     ${facebookImgUrl ? `
                     <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
                     ` : `
-                    <svg width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" viewBox="0 0 50 50" style="display: block;">
-                      <path fill="${signatureData.colors?.social || '#1877F2'}" d="M41,4H9C6.24,4,4,6.24,4,9v32c0,2.76,2.24,5,5,5h32c2.76,0,5-2.24,5-5V9C46,6.24,43.76,4,41,4z M37,19h-2c-2.14,0-3,0.5-3,2 v3h5l-1,5h-4v15h-5V29h-4v-5h4v-3c0-4,2-7,6-7c2.9,0,4,1,4,1V19z"/>
-                    </svg>
+                    <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
                     `}
                     `}
                   </a>
