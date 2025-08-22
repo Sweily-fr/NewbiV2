@@ -39,6 +39,9 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
       websiteToAddress: clampedValue,
       separatorTop: clampedValue,
       separatorBottom: clampedValue,
+      // Espacements du séparateur vertical
+      verticalSeparatorLeft: clampedValue,
+      verticalSeparatorRight: clampedValue,
     };
     
     updateSignatureData('spacings', updated);
@@ -462,6 +465,77 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               />
             </div>
           </div>
+          
+          {/* Espacements du séparateur vertical (horizontal layout uniquement) */}
+          {signatureData.layout === 'horizontal' && (
+            <>
+              {/* Espacement gauche du séparateur vertical */}
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">Séparateur vertical - Gauche</Label>
+                <div className="flex items-center gap-3 w-30">
+                  <Input
+                    className="h-8 w-12 px-2 py-1"
+                    type="text"
+                    inputMode="decimal"
+                    value={signatureData.spacings?.verticalSeparatorLeft || 8}
+                    onChange={(e) => handleSpacingChange('verticalSeparatorLeft', e.target.value)}
+                    onBlur={(e) => handleSpacingChange('verticalSeparatorLeft', e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSpacingChange('verticalSeparatorLeft', e.target.value);
+                      }
+                    }}
+                    min={0}
+                    max={30}
+                    aria-label="Espacement gauche séparateur vertical"
+                    placeholder="8"
+                  />
+                  <Slider
+                    className="grow"
+                    value={[signatureData.spacings?.verticalSeparatorLeft || 8]}
+                    onValueChange={(value) => handleSpacingChange('verticalSeparatorLeft', value[0])}
+                    min={0}
+                    max={30}
+                    step={2}
+                    aria-label="Espacement gauche séparateur vertical"
+                  />
+                </div>
+              </div>
+              
+              {/* Espacement droite du séparateur vertical */}
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">Séparateur vertical - Droite</Label>
+                <div className="flex items-center gap-3 w-30">
+                  <Input
+                    className="h-8 w-12 px-2 py-1"
+                    type="text"
+                    inputMode="decimal"
+                    value={signatureData.spacings?.verticalSeparatorRight || 12}
+                    onChange={(e) => handleSpacingChange('verticalSeparatorRight', e.target.value)}
+                    onBlur={(e) => handleSpacingChange('verticalSeparatorRight', e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSpacingChange('verticalSeparatorRight', e.target.value);
+                      }
+                    }}
+                    min={0}
+                    max={30}
+                    aria-label="Espacement droite séparateur vertical"
+                    placeholder="12"
+                  />
+                  <Slider
+                    className="grow"
+                    value={[signatureData.spacings?.verticalSeparatorRight || 12]}
+                    onValueChange={(value) => handleSpacingChange('verticalSeparatorRight', value[0])}
+                    min={0}
+                    max={30}
+                    step={2}
+                    aria-label="Espacement droite séparateur vertical"
+                  />
+                </div>
+              </div>
+            </>
+          )}
           
           </div>
         )}
