@@ -407,7 +407,7 @@ const VerticalSignature = ({
         {(signatureData.socialLinks?.linkedin || signatureData.socialLinks?.facebook || signatureData.socialLinks?.twitter || signatureData.socialLinks?.instagram) && (
           <tr>
             <td style={{ 
-              paddingTop: `${signatureData.spacings?.socialTop || 15}px`,
+              paddingTop: `${signatureData.spacings?.logoToSocial || 15}px`,
               textAlign: 'left' 
             }}>
               <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>

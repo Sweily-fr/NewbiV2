@@ -121,7 +121,11 @@ const HorizontalSignature = ({
           </td>
           
           {/* Informations empilées verticalement à droite */}
-          <td style={{ width: `${signatureData.columnWidths?.content || 75}%`, verticalAlign: 'top' }}>
+          <td style={{ 
+            width: `${signatureData.columnWidths?.content || 75}%`, 
+            verticalAlign: 'top',
+            paddingLeft: `${signatureData.spacings?.nameSpacing || 12}px`
+          }}>
             <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', tableLayout: 'auto', width: 'auto' }}>
               <tbody>
                 {/* Nom séparé en 2 cellules avec espacement contrôlé */}
@@ -455,7 +459,7 @@ const HorizontalSignature = ({
         {(signatureData.socialLinks?.linkedin || signatureData.socialLinks?.facebook || signatureData.socialLinks?.twitter || signatureData.socialLinks?.instagram) && (
           <tr>
             <td colSpan="2" style={{ 
-              paddingTop: `${signatureData.spacings?.separatorBottom || 15}px`,
+              paddingTop: `${signatureData.spacings?.logoToSocial || 15}px`,
               textAlign: 'left' 
             }}>
               <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse' }}>

@@ -31,27 +31,37 @@ const generateCacheKey = (logoType, color, size) => {
 };
 
 /**
- * Récupère le SVG Facebook et change sa couleur
- * Utilise directement le SVG local pour éviter les problèmes CORS
+ * Récupère le SVG Facebook depuis Cloudflare et change sa couleur
  */
-const fetchAndColorSvg = (color, size = 24) => {
-  // SVG inline comme source unique pour éviter les appels réseau
-  const facebookSvg = `<?xml version="1.0" encoding="UTF-8"?>
+const fetchAndColorSvg = async (color, size = 24) => {
+  try {
+    // Récupérer le SVG Facebook depuis Cloudflare
+    const response = await fetch('https://pub-6b0b1b6c4cfc4d8b8f5c5e5c5e5c5e5c.r2.dev/5b0ed97f-7efb-4be0-9c8b-dda5920042a7.svg');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch SVG: ${response.statusText}`);
+    }
+    
+    let svgText = await response.text();
+    console.log('✅ SVG Facebook récupéré depuis Cloudflare');
+    
+    // Remplacer la couleur dans le SVG
+    // Chercher les attributs fill et les remplacer par la nouvelle couleur
+    svgText = svgText.replace(/fill="[^"]*"/g, `fill="${color}"`);
+    svgText = svgText.replace(/fill:[^;]*/g, `fill:${color}`);
+    
+    // Ajuster la taille si nécessaire
+    svgText = svgText.replace(/width="[^"]*"/g, `width="${size}"`);
+    svgText = svgText.replace(/height="[^"]*"/g, `height="${size}"`);
+    
+    console.log('✅ SVG coloré avec succès:', color);
+    return svgText;
+  } catch (error) {
+    console.error('❌ Erreur récupération SVG Cloudflare:', error);
+    // Fallback vers le SVG local
+    const facebookSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 50 50">
   <path fill="${color}" d="M41,4H9C6.24,4,4,6.24,4,9v32c0,2.76,2.24,5,5,5h32c2.76,0,5-2.24,5-5V9C46,6.24,43.76,4,41,4z M37,19h-2c-2.14,0-3,0.5-3,2v3h5l-1,5h-4v15h-5V29h-4v-5h4v-3c0-4,2-7,6-7c2.9,0,4,1,4,1V19z"/>
 </svg>`;
-  
-  try {
-    // Vérifier que le SVG est valide
-    if (!facebookSvg || !facebookSvg.includes('<svg')) {
-      throw new Error('SVG invalide');
-    }
-    
-    console.log('✅ SVG généré avec succès');
-    return facebookSvg;
-  } catch (error) {
-    console.error('❌ Erreur avec le SVG:', error);
-    // En cas d'erreur, on retourne quand même le SVG de base
     return facebookSvg;
   }
 };

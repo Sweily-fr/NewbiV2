@@ -1,12 +1,22 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { mongoDb } from "./mongodb";
+import { mongoDb, ensureConnection } from "./mongodb";
 import { resend } from "./resend";
 import { admin } from "better-auth/plugins";
 // import { bearer } from "better-auth/plugins";
 
 export const auth = betterAuth({
-  database: mongodbAdapter(mongoDb),
+  database: mongodbAdapter(mongoDb, {
+    // Ajouter des options pour gérer les erreurs de connexion
+    onError: async (error) => {
+      console.error("❌ Database adapter error:", error);
+      try {
+        await ensureConnection();
+      } catch (reconnectError) {
+        console.error("❌ Failed to reconnect to database:", reconnectError);
+      }
+    }
+  }),
   plugins: [
     admin({
       adminUserIds: ["685ff0250e083b9a2987a0b9"],
@@ -15,7 +25,7 @@ export const auth = betterAuth({
   // plugins: [bearer()],
   emailAndPassword: {
     enabled: true,
-    sendResetPassword: async ({ user, url, token }, request) => {
+    sendResetPassword: async ({ user, url }) => {
       await resend.emails.send({
         to: user.email,
         subject: "Réinitialisation de votre mot de passe",
@@ -25,7 +35,7 @@ export const auth = betterAuth({
     },
   },
   emailVerification: {
-    sendVerificationEmail: async ({ user, url, token }) => {
+    sendVerificationEmail: async ({ user, url }) => {
       await resend.emails.send({
         to: user.email,
         subject: "Veuillez vérifier votre adresse e-mail",
