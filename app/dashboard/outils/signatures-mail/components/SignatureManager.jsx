@@ -716,7 +716,7 @@ export const generateGmailSignatureHTML = (signature) => {
   <tr>
     ${photoSrc ? `
     <td style="padding: 0; margin: 0; vertical-align: top; width: ${signature.imageSize || 80}px;">
-      <img src="${photoSrc}" alt="Photo de profil" style="width: ${signature.imageSize || 80}px; height: ${signature.imageSize || 80}px; border-radius: ${signature.imageShape === 'square' ? '8px' : '50%'}; display: block; margin: 0; padding: 0; border: none; object-fit: cover;" />
+      <div style="width: ${signature.imageSize || 80}px; height: ${signature.imageSize || 80}px; border-radius: ${signature.imageShape === 'square' ? '8px' : '50%'}; background: url('${photoSrc}') center center/cover no-repeat; display: block; margin: 0; padding: 0; border: none;"></div>
     </td>
     <td style="width: ${signature.spacings?.nameSpacing || 12}px; padding: 0; margin: 0; padding-left: ${signature.spacings?.nameSpacing || 12}px;">&nbsp;</td>
     ` : ''}

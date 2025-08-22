@@ -972,12 +972,12 @@ const generateCustomHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
       }
       
       // Utiliser la fonction generateSignatureHTML compatible Gmail avec espacements
-      const { generateGmailSignatureHTML } = await import('../components/SignatureManager');
+      const SignatureManagerModule = await import('../components/SignatureManager');
       const signatureWithFacebookUrl = {
         ...signatureData,
         facebookImageUrl: facebookImageUrl
       };
-      const htmlSignature = generateGmailSignatureHTML(signatureWithFacebookUrl);
+      const htmlSignature = SignatureManagerModule.generateGmailSignatureHTML(signatureWithFacebookUrl);
       console.log('📝 HTML généré:', htmlSignature);
       
       // Utiliser l'API moderne du clipboard pour copier du HTML
