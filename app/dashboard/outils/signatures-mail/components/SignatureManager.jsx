@@ -719,6 +719,11 @@ export const generateGmailSignatureHTML = (signature) => {
       <div style="width: ${signature.imageSize || 80}px; height: ${signature.imageSize || 80}px; border-radius: ${signature.imageShape === 'square' ? '8px' : '50%'}; background: url('${photoSrc}') center center/cover no-repeat; display: block; margin: 0; padding: 0; border: none;"></div>
     </td>
     <td style="width: ${signature.spacings?.nameSpacing || 12}px; padding: 0; margin: 0; padding-left: ${signature.spacings?.nameSpacing || 12}px;">&nbsp;</td>
+    ${signature.verticalSeparator?.enabled ? `
+    <td style="width: ${signature.spacings?.verticalSeparatorLeft || 8}px; padding: 0; margin: 0; vertical-align: top;">&nbsp;</td>
+    <td style="width: ${signature.verticalSeparator?.width || 2}px; background-color: ${signature.verticalSeparator?.color || '#000000'}; padding: 0; margin: 0; vertical-align: top; height: 100%; min-height: 80px;">&nbsp;</td>
+    <td style="width: ${signature.spacings?.verticalSeparatorRight || 12}px; padding: 0; margin: 0; vertical-align: top;">&nbsp;</td>
+    ` : ''}
     ` : ''}
     
     <td style="vertical-align: top; padding: 0; margin: 0;">
@@ -855,14 +860,14 @@ export const generateGmailSignatureHTML = (signature) => {
   </tr>
   
   <tr>
-    <td colspan="${photoSrc ? '3' : '1'}" style="padding: 0; margin: 0; padding-top: ${signature.spacings?.separatorTop || 12}px; padding-bottom: ${signature.spacings?.separatorBottom || 12}px;">
+    <td colspan="${photoSrc ? (signature.verticalSeparator?.enabled ? '6' : '3') : '1'}" style="padding: 0; margin: 0; padding-top: ${signature.spacings?.separatorTop || 12}px; padding-bottom: ${signature.spacings?.separatorBottom || 12}px;">
       <hr style="border: none; border-top: ${signature.separatorHorizontalWidth || 1}px solid ${signature.colors?.separatorHorizontal || '#e0e0e0'}; margin: 0; width: 100%;" />
     </td>
   </tr>
   
   ${logoSrc ? `
   <tr>
-    <td colspan="${photoSrc ? '3' : '1'}" style="padding: 0; margin: 0; text-align: left;">
+    <td colspan="${photoSrc ? (signature.verticalSeparator?.enabled ? '6' : '3') : '1'}" style="padding: 0; margin: 0; text-align: left;">
       <img src="${logoSrc}" alt="Logo entreprise" style="width: ${signature.logoSize || 60}px; height: auto; max-height: ${signature.logoSize || 60}px; margin: 0; padding: 0; border: none;" />
     </td>
   </tr>
@@ -870,7 +875,7 @@ export const generateGmailSignatureHTML = (signature) => {
   
   ${(signature.socialLinks?.linkedin || signature.socialLinks?.facebook || signature.socialLinks?.twitter || signature.socialLinks?.instagram) ? `
   <tr>
-    <td colspan="${photoSrc ? '3' : '1'}" style="padding: 0; margin: 0; padding-top: ${signature.spacings?.logoToSocial || 15}px; text-align: left;">
+    <td colspan="${photoSrc ? (signature.verticalSeparator?.enabled ? '6' : '3') : '1'}" style="padding: 0; margin: 0; padding-top: ${signature.spacings?.logoToSocial || 15}px; text-align: left;">
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
         <tbody>
           <tr>

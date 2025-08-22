@@ -120,6 +120,33 @@ const HorizontalSignature = ({
             )}
           </td>
           
+          {/* Espacement gauche du séparateur vertical */}
+          {signatureData.verticalSeparator?.enabled && (
+            <td style={{ 
+              width: `${signatureData.spacings?.verticalSeparatorLeft || 8}px`,
+              verticalAlign: 'top'
+            }}></td>
+          )}
+          
+          {/* Séparateur vertical si activé */}
+          {signatureData.verticalSeparator?.enabled && (
+            <td style={{ 
+              width: `${signatureData.verticalSeparator?.width || 2}px`,
+              backgroundColor: signatureData.verticalSeparator?.color || '#000000',
+              verticalAlign: 'top',
+              height: '100%',
+              minHeight: '80px'
+            }}>&nbsp;</td>
+          )}
+          
+          {/* Espacement droite du séparateur vertical */}
+          {signatureData.verticalSeparator?.enabled && (
+            <td style={{ 
+              width: `${signatureData.spacings?.verticalSeparatorRight || 12}px`,
+              verticalAlign: 'top'
+            }}></td>
+          )}
+          
           {/* Informations empilées verticalement à droite */}
           <td style={{ 
             width: `${signatureData.columnWidths?.content || 75}%`, 
@@ -390,7 +417,7 @@ const HorizontalSignature = ({
         
         {/* Séparateur horizontal */}
         <tr>
-          <td colSpan="2" style={{ 
+          <td colSpan={signatureData.verticalSeparator?.enabled ? "5" : "2"} style={{ 
             paddingTop: `${signatureData.spacings?.separatorTop || 12}px`, 
             paddingBottom: `${signatureData.spacings?.separatorBottom || 12}px` 
           }}>
@@ -458,7 +485,7 @@ const HorizontalSignature = ({
         {/* Logos sociaux */}
         {(signatureData.socialLinks?.linkedin || signatureData.socialLinks?.facebook || signatureData.socialLinks?.twitter || signatureData.socialLinks?.instagram) && (
           <tr>
-            <td colSpan="2" style={{ 
+            <td colSpan={signatureData.verticalSeparator?.enabled ? "5" : "2"} style={{ 
               paddingTop: `${signatureData.spacings?.logoToSocial || 15}px`,
               textAlign: 'left' 
             }}>
