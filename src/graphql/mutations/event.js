@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const CREATE_EVENT = gql`
-  mutation CreateEvent($input: CreateEventInput!) {
-    createEvent(input: $input) {
+  mutation CreateEvent($input: CreateEventInput!, $workspaceId: ID) {
+    createEvent(input: $input, workspaceId: $workspaceId) {
       success
       message
       event {
@@ -23,8 +23,8 @@ export const CREATE_EVENT = gql`
 `;
 
 export const UPDATE_EVENT = gql`
-  mutation UpdateEvent($input: UpdateEventInput!) {
-    updateEvent(input: $input) {
+  mutation UpdateEvent($input: UpdateEventInput!, $workspaceId: ID) {
+    updateEvent(input: $input, workspaceId: $workspaceId) {
       success
       message
       event {
@@ -45,8 +45,8 @@ export const UPDATE_EVENT = gql`
 `;
 
 export const DELETE_EVENT = gql`
-  mutation DeleteEvent($id: ID!) {
-    deleteEvent(id: $id) {
+  mutation DeleteEvent($id: ID!, $workspaceId: ID) {
+    deleteEvent(id: $id, workspaceId: $workspaceId) {
       success
       message
       event {
@@ -58,8 +58,8 @@ export const DELETE_EVENT = gql`
 `;
 
 export const SYNC_INVOICE_EVENTS = gql`
-  mutation SyncInvoiceEvents {
-    syncInvoiceEvents {
+  mutation SyncInvoiceEvents($workspaceId: ID) {
+    syncInvoiceEvents(workspaceId: $workspaceId) {
       success
       message
       totalCount

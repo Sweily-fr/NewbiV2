@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_CLIENTS = gql`
-  query GetClients($page: Int, $limit: Int, $search: String) {
-    clients(page: $page, limit: $limit, search: $search) {
+  query GetClients($workspaceId: String!, $page: Int, $limit: Int, $search: String) {
+    clients(workspaceId: $workspaceId, page: $page, limit: $limit, search: $search) {
       items {
         id
         name
@@ -34,8 +34,8 @@ export const GET_CLIENTS = gql`
 `;
 
 export const GET_CLIENT = gql`
-  query GetClient($id: ID!) {
-    client(id: $id) {
+  query GetClient($workspaceId: String!, $id: ID!) {
+    client(workspaceId: $workspaceId, id: $id) {
       id
       name
       email

@@ -10,6 +10,7 @@ export const auth = betterAuth({
   plugins: [
     admin({
       adminUserIds: ["685ff0250e083b9a2987a0b9"],
+      defaultRole: "owner", // Rôle par défaut pour les nouveaux utilisateurs
     }),
     organization({
       async sendInvitationEmail(data) {

@@ -301,7 +301,10 @@ export function EventCalendar({
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-1.5 max-[479px]:h-8">
+                <Button
+                  variant="outline"
+                  className="gap-1.5 max-[479px]:h-8 font-normal"
+                >
                   <span>
                     <span className="min-[480px]:hidden" aria-hidden="true">
                       {view.charAt(0).toUpperCase()}
@@ -333,14 +336,13 @@ export function EventCalendar({
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
-              className="max-[479px]:aspect-square max-[479px]:p-0! font-normal"
-              size="sm"
+              className="font-normal"
               onClick={() => {
                 setSelectedEvent(null); // Ensure we're creating a new event
                 setIsEventDialogOpen(true);
               }}
             >
-              <span className="max-sm:sr-only">Nouvel evenement</span>
+              Nouvel evenement
             </Button>
           </div>
         </div>

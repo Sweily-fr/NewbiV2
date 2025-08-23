@@ -337,223 +337,219 @@ export default function AcceptInvitationPage() {
   }
 
   return (
-    <AuroraBackground>
-      <div className="flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="h-8 w-8 text-blue-600" />
-            </div>
-            <CardTitle>Invitation à rejoindre une organisation</CardTitle>
-            <CardDescription>
-              Vous avez été invité(e) à rejoindre{" "}
-              <strong>{invitation.organization?.name}</strong>
-            </CardDescription>
-          </CardHeader>
+    <div className="flex items-center justify-center">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="h-8 w-8 text-blue-600" />
+          </div>
+          <CardTitle>Invitation à rejoindre une organisation</CardTitle>
+          <CardDescription>
+            Vous avez été invité(e) à rejoindre{" "}
+            <strong>{invitation.organization?.name}</strong>
+          </CardDescription>
+        </CardHeader>
 
-          <CardContent className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>
-                  <strong>Organisation:</strong> {invitation.organization?.name}
-                </p>
-                <p>
-                  <strong>Rôle:</strong> {invitation.role}
-                </p>
-                <p>
-                  <strong>Invité par:</strong>{" "}
-                  {invitation.inviter?.user?.name ||
-                    invitation.inviter?.user?.email}
-                </p>
-              </div>
+        <CardContent className="space-y-4">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>
+                <strong>Organisation:</strong> {invitation.organization?.name}
+              </p>
+              <p>
+                <strong>Rôle:</strong> {invitation.role}
+              </p>
+              <p>
+                <strong>Invité par:</strong>{" "}
+                {invitation.inviter?.user?.name ||
+                  invitation.inviter?.user?.email}
+              </p>
             </div>
+          </div>
 
-            {!session?.user ? (
-              <div className="space-y-3">
-                {!showSignupForm ? (
-                  <>
-                    <p className="text-sm text-gray-600 text-center">
-                      Vous devez avoir un compte pour accepter cette invitation
+          {!session?.user ? (
+            <div className="space-y-3">
+              {!showSignupForm ? (
+                <>
+                  <p className="text-sm text-gray-600 text-center">
+                    Vous devez avoir un compte pour accepter cette invitation
+                  </p>
+                  <Button
+                    onClick={() => {
+                      // Préserver les paramètres URL d'origine
+                      const currentUrl = window.location.href;
+                      const callbackUrl = currentUrl.includes("?")
+                        ? currentUrl
+                        : `/accept-invitation/${invitationId}`;
+                      router.push(
+                        `/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                      );
+                    }}
+                    className="w-full"
+                  >
+                    Se connecter
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowSignupForm(true);
+                      setSignupData((prev) => ({
+                        ...prev,
+                        email: invitation.email || "",
+                      }));
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Créer un compte
+                  </Button>
+                </>
+              ) : (
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <div className="text-center mb-4">
+                    <h3 className="font-medium text-lg">Créer votre compte</h3>
+                    <p className="text-sm text-gray-600">
+                      Vous rejoindrez automatiquement l'organisation avec le
+                      rôle : <strong>{invitation.role}</strong>
                     </p>
-                    <Button
-                      onClick={() => {
-                        // Préserver les paramètres URL d'origine
-                        const currentUrl = window.location.href;
-                        const callbackUrl = currentUrl.includes("?")
-                          ? currentUrl
-                          : `/accept-invitation/${invitationId}`;
-                        router.push(
-                          `/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
-                        );
-                      }}
-                      className="w-full"
-                    >
-                      Se connecter
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setShowSignupForm(true);
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nom complet</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Votre nom complet"
+                      value={signupData.name}
+                      onChange={(e) =>
                         setSignupData((prev) => ({
                           ...prev,
-                          email: invitation.email || "",
-                        }));
-                      }}
-                      variant="outline"
+                          name: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="votre@email.com"
+                      value={signupData.email}
+                      onChange={(e) =>
+                        setSignupData((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Mot de passe</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Minimum 8 caractères"
+                      value={signupData.password}
+                      onChange={(e) =>
+                        setSignupData((prev) => ({
+                          ...prev,
+                          password: e.target.value,
+                        }))
+                      }
+                      required
+                      minLength={8}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">
+                      Confirmer le mot de passe
+                    </Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Confirmer votre mot de passe"
+                      value={signupData.confirmPassword}
+                      onChange={(e) =>
+                        setSignupData((prev) => ({
+                          ...prev,
+                          confirmPassword: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Button
+                      type="submit"
+                      disabled={signupLoading}
                       className="w-full"
                     >
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Créer un compte
+                      {signupLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Création du compte...
+                        </>
+                      ) : (
+                        "Créer le compte et rejoindre"
+                      )}
                     </Button>
+
+                    <Button
+                      type="button"
+                      onClick={() => setShowSignupForm(false)}
+                      variant="outline"
+                      className="w-full"
+                      disabled={signupLoading}
+                    >
+                      Retour
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Button
+                onClick={handleAccept}
+                disabled={accepting}
+                className="w-full"
+              >
+                {accepting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Acceptation en cours...
                   </>
                 ) : (
-                  <form onSubmit={handleSignup} className="space-y-4">
-                    <div className="text-center mb-4">
-                      <h3 className="font-medium text-lg">
-                        Créer votre compte
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Vous rejoindrez automatiquement l'organisation avec le
-                        rôle : <strong>{invitation.role}</strong>
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Nom complet</Label>
-                      <Input
-                        id="name"
-                        type="text"
-                        placeholder="Votre nom complet"
-                        value={signupData.name}
-                        onChange={(e) =>
-                          setSignupData((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="votre@email.com"
-                        value={signupData.email}
-                        onChange={(e) =>
-                          setSignupData((prev) => ({
-                            ...prev,
-                            email: e.target.value,
-                          }))
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Mot de passe</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Minimum 8 caractères"
-                        value={signupData.password}
-                        onChange={(e) =>
-                          setSignupData((prev) => ({
-                            ...prev,
-                            password: e.target.value,
-                          }))
-                        }
-                        required
-                        minLength={8}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">
-                        Confirmer le mot de passe
-                      </Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        placeholder="Confirmer votre mot de passe"
-                        value={signupData.confirmPassword}
-                        onChange={(e) =>
-                          setSignupData((prev) => ({
-                            ...prev,
-                            confirmPassword: e.target.value,
-                          }))
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Button
-                        type="submit"
-                        disabled={signupLoading}
-                        className="w-full"
-                      >
-                        {signupLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Création du compte...
-                          </>
-                        ) : (
-                          "Créer le compte et rejoindre"
-                        )}
-                      </Button>
-
-                      <Button
-                        type="button"
-                        onClick={() => setShowSignupForm(false)}
-                        variant="outline"
-                        className="w-full"
-                        disabled={signupLoading}
-                      >
-                        Retour
-                      </Button>
-                    </div>
-                  </form>
+                  "Accepter l'invitation"
                 )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <Button
-                  onClick={handleAccept}
-                  disabled={accepting}
-                  className="w-full"
-                >
-                  {accepting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Acceptation en cours...
-                    </>
-                  ) : (
-                    "Accepter l'invitation"
-                  )}
-                </Button>
+              </Button>
 
-                <Button
-                  onClick={handleReject}
-                  disabled={rejecting}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {rejecting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Rejet en cours...
-                    </>
-                  ) : (
-                    "Rejeter l'invitation"
-                  )}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </AuroraBackground>
+              <Button
+                onClick={handleReject}
+                disabled={rejecting}
+                variant="outline"
+                className="w-full"
+              >
+                {rejecting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Rejet en cours...
+                  </>
+                ) : (
+                  "Rejeter l'invitation"
+                )}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

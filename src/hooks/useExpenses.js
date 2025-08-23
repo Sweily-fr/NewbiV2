@@ -2,23 +2,18 @@ import { useQuery, useMutation } from '@apollo/client';
 import { GET_EXPENSES, GET_EXPENSE_STATS } from '../graphql/queries/expense';
 import { DELETE_EXPENSE, DELETE_MULTIPLE_EXPENSES } from '../graphql/mutations/expense';
 import { toast } from '@/src/components/ui/sonner';
-import { useRequiredWorkspace } from './useWorkspace';
 
 /**
  * Hook pour récupérer les dépenses avec filtres et pagination
  */
 export const useExpenses = (filters = {}) => {
-  const { workspaceId } = useRequiredWorkspace();
-  
   const { data, loading, error, refetch } = useQuery(GET_EXPENSES, {
     variables: {
-      workspaceId,
       page: 1,
       limit: 20,
       ...filters
     },
-    fetchPolicy: 'cache-and-network',
-    skip: !workspaceId
+    fetchPolicy: 'cache-and-network'
   });
 
   return {
@@ -35,15 +30,9 @@ export const useExpenses = (filters = {}) => {
  * Hook pour récupérer les statistiques des dépenses
  */
 export const useExpenseStats = (dateRange = {}) => {
-  const { workspaceId } = useRequiredWorkspace();
-  
   const { data, loading, error } = useQuery(GET_EXPENSE_STATS, {
-    variables: {
-      workspaceId,
-      ...dateRange
-    },
-    fetchPolicy: 'cache-and-network',
-    skip: !workspaceId
+    variables: dateRange,
+    fetchPolicy: 'cache-and-network'
   });
 
   return {

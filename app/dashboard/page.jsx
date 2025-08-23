@@ -3,7 +3,6 @@
 import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
 import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
-import BankBalanceCard from "@/src/components/bank-balance-card";
 import Comp333 from "@/src/components/comp-333";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -36,43 +35,164 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import BridgeConnectButton from "@/src/components/bridge-connect-button";
-import UnifiedTransactions from "@/src/components/unified-transactions";
+// Bridge components removed
 import { useUser } from "@/src/lib/auth/hooks";
 import { redirect } from "next/navigation";
-import { useFinancialStats } from "@/src/hooks/useFinancialStats";
-import { useBridge } from "@/src/hooks/useBridge";
+// Financial stats and bridge hooks removed
 import { useExpenses } from "@/src/hooks/useExpenses";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
+import BankingConnectButton from "@/src/components/banking/BankingConnectButton";
+import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
+import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
 
 import LoadingSkeleton from "./loading";
+import { useState, useEffect } from "react";
 
 export default function Dashboard() {
   const { session } = useUser();
+  const { workspaceId } = useWorkspace();
 
-  // Récupération des statistiques financières réelles
-  const {
-    totalIncome,
-    totalExpenses,
-    netBalance,
-    incomeChartData,
-    expenseChartData,
-    getRecentTransactions,
-    loading: statsLoading,
-    formatCurrency,
-  } = useFinancialStats();
+  // Bridge integration removed - using basic expense data
+  const { loading: expensesLoading } = useExpenses({ status: "PAID" });
+  const [transactions, setTransactions] = useState([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
 
-  // Récupération des données Bridge pour BankBalanceCard
-  const {
-    loadingAccounts: bridgeLoading,
-  } = useBridge();
+  const loading = expensesLoading || transactionsLoading;
 
-  // Récupération des dépenses pour UnifiedTransactions
-  const {
-    loading: expensesLoading,
-  } = useExpenses({ status: "PAID" });
+  // Local formatCurrency function to replace the removed hook
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+    }).format(amount || 0);
+  };
 
-  // Combinaison de tous les états de loading
-  const loading = statsLoading || bridgeLoading || expensesLoading;
+  // Fetch transactions for charts
+  const fetchTransactions = async () => {
+    if (!workspaceId) return;
+
+    try {
+      setTransactionsLoading(true);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/banking/transactions`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "x-workspace-id": workspaceId,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Structure d'une transaction:", data.transactions?.[0]);
+        setTransactions(data.transactions || []);
+      }
+    } catch (err) {
+      console.error("Erreur lors de la récupération des transactions:", err);
+    } finally {
+      setTransactionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [workspaceId]);
+
+  // Process transactions data for charts
+  const processTransactionsForCharts = () => {
+    const now = new Date();
+    const chartData = [];
+
+    // Generate data for the last 90 days
+    for (let i = 89; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split("T")[0];
+
+      // Filter transactions for this day
+      const dayTransactions = transactions.filter((transaction) => {
+        // console.log("Transaction date fields:", {
+        //   date: transaction.date,
+        //   rawTransactionDate: transaction.raw?.transaction_date,
+        //   bridgeTransactionDate: transaction.metadata?.bridgeTransactionDate
+        // });
+        const transactionDate = new Date(
+          transaction.raw?.transaction_date || transaction.date
+        );
+        return transactionDate.toISOString().split("T")[0] === dateStr;
+      });
+
+      // Calculate income and expenses for this day
+      const dayIncome = dayTransactions
+        .filter((t) => t.amount > 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+      const dayExpenses = dayTransactions
+        .filter((t) => t.amount < 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+      chartData.push({
+        date: dateStr,
+        desktop: dayIncome, // Income
+        mobile: dayIncome, // Same value for mobile curve
+      });
+    }
+
+    return chartData;
+  };
+
+  const processExpensesForCharts = () => {
+    const now = new Date();
+    const chartData = [];
+
+    // Generate data for the last 90 days
+    for (let i = 89; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split("T")[0];
+
+      // Filter transactions for this day
+      const dayTransactions = transactions.filter((transaction) => {
+        // console.log("Transaction date fields (expenses):", {
+        //   date: transaction.date,
+        //   rawTransactionDate: transaction.raw?.transaction_date,
+        //   bridgeTransactionDate: transaction.metadata?.bridgeTransactionDate
+        // });
+        const transactionDate = new Date(
+          transaction.raw?.transaction_date || transaction.date
+        );
+        return transactionDate.toISOString().split("T")[0] === dateStr;
+      });
+
+      // Calculate expenses for this day
+      const dayExpenses = dayTransactions
+        .filter((t) => t.amount < 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+      chartData.push({
+        date: dateStr,
+        desktop: dayExpenses, // Expenses
+        mobile: dayExpenses, // Same value for mobile curve
+      });
+    }
+
+    return chartData;
+  };
+
+  // Calculate totals
+  const totalIncome = transactions
+    .filter((t) => t.amount > 0)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpenses = transactions
+    .filter((t) => t.amount < 0)
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const incomeChartData = processTransactionsForCharts();
+  const expenseChartData = processExpensesForCharts();
 
   // Si les données sont en cours de chargement, afficher le skeleton
   if (loading) {
@@ -139,26 +259,12 @@ export default function Dashboard() {
   };
 
   // Utiliser les vraies données financières
-  const totalAmount = netBalance; // Solde net (entrées - sorties)
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
       <div className="flex items-center justify-between w-full mb-6">
         <p className="text-2xl font-medium">Bonjour {session?.user?.name},</p>
-        <BridgeConnectButton
-          variant="default"
-          size="sm"
-          onSuccess={(data) => {
-            console.log("Connexion bancaire réussie:", data);
-            // Ici vous pouvez rafraîchir les données financières
-          }}
-          onError={(error) => {
-            console.error("Erreur connexion bancaire:", error);
-          }}
-          className="font-polysans font-normal"
-        >
-          Connecter un compte bancaire
-        </BridgeConnectButton>
+        <BankingConnectButton />
       </div>
       <div className="flex flex-col gap-3 w-full">
         <Comp333
@@ -225,8 +331,8 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="flex gap-6 w-full mt-4">
-        <BankBalanceCard className="w-1/2" />
-        <UnifiedTransactions limit={5} className="w-1/2" />
+        <BankBalanceCard className="shadow-xs w-1/2" />
+        <UnifiedTransactions limit={5} className="shadow-xs w-1/2" />
       </div>
       <div className="flex gap-6 w-full">
         <ChartAreaInteractive
@@ -251,7 +357,6 @@ export default function Dashboard() {
         <ChartBarMultiple className="shadow-xs" /> */}
         {/* <ChartRadarGridCircle /> */}
       </div>
-
     </div>
   );
 }

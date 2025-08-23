@@ -215,8 +215,11 @@ export default function KanbanBoardPage({ params }) {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button variant="default" onClick={openAddModal}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button
+              variant="default"
+              className="font-normal"
+              onClick={openAddModal}
+            >
               Ajouter une colonne
             </Button>
           </div>

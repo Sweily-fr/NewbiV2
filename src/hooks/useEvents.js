@@ -7,6 +7,7 @@ import {
   SYNC_INVOICE_EVENTS,
 } from "@/src/graphql/mutations/event";
 import { toast } from "@/src/components/ui/sonner";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 /**
  * Hook pour récupérer la liste des événements
@@ -19,7 +20,11 @@ export const useEvents = (options = {}) => {
     limit = 100,
     offset = 0,
     skip = false,
+    workspaceId,
   } = options;
+
+  const { workspaceId: contextWorkspaceId } = useWorkspace();
+  const finalWorkspaceId = workspaceId || contextWorkspaceId;
 
   const { data, loading, error, refetch } = useQuery(GET_EVENTS, {
     variables: {
@@ -28,8 +33,9 @@ export const useEvents = (options = {}) => {
       type,
       limit,
       offset,
+      workspaceId: finalWorkspaceId,
     },
-    skip,
+    skip: skip || !finalWorkspaceId,
     errorPolicy: "all",
   });
 
@@ -47,10 +53,14 @@ export const useEvents = (options = {}) => {
 /**
  * Hook pour récupérer un événement spécifique
  */
-export const useEvent = (id, skip = false) => {
+export const useEvent = (id, options = {}) => {
+  const { skip = false, workspaceId } = options;
+  const { workspaceId: contextWorkspaceId } = useWorkspace();
+  const finalWorkspaceId = workspaceId || contextWorkspaceId;
+
   const { data, loading, error, refetch } = useQuery(GET_EVENT, {
-    variables: { id },
-    skip: skip || !id,
+    variables: { id, workspaceId: finalWorkspaceId },
+    skip: skip || !id || !finalWorkspaceId,
     errorPolicy: "all",
   });
 
@@ -68,20 +78,23 @@ export const useEvent = (id, skip = false) => {
  * Hook pour créer un événement
  */
 export const useCreateEvent = () => {
+  const { workspaceId } = useWorkspace();
+  
   const [createEventMutation, { loading, error }] = useMutation(CREATE_EVENT, {
     refetchQueries: [
       {
         query: GET_EVENTS,
-        variables: { limit: 100, offset: 0 },
+        variables: { limit: 100, offset: 0, workspaceId },
       },
     ],
     awaitRefetchQueries: true,
   });
 
-  const createEvent = async (input) => {
+  const createEvent = async (input, customWorkspaceId) => {
     try {
+      const finalWorkspaceId = customWorkspaceId || workspaceId;
       const result = await createEventMutation({
-        variables: { input },
+        variables: { input, workspaceId: finalWorkspaceId },
       });
 
       if (result.data?.createEvent?.success) {
@@ -114,20 +127,23 @@ export const useCreateEvent = () => {
  * Hook pour mettre à jour un événement
  */
 export const useUpdateEvent = () => {
+  const { workspaceId } = useWorkspace();
+  
   const [updateEventMutation, { loading, error }] = useMutation(UPDATE_EVENT, {
     refetchQueries: [
       {
         query: GET_EVENTS,
-        variables: { limit: 100, offset: 0 },
+        variables: { limit: 100, offset: 0, workspaceId },
       },
     ],
     awaitRefetchQueries: true,
   });
 
-  const updateEvent = async (input) => {
+  const updateEvent = async (input, customWorkspaceId) => {
     try {
+      const finalWorkspaceId = customWorkspaceId || workspaceId;
       const result = await updateEventMutation({
-        variables: { input },
+        variables: { input, workspaceId: finalWorkspaceId },
       });
 
       if (result.data?.updateEvent?.success) {
@@ -160,20 +176,23 @@ export const useUpdateEvent = () => {
  * Hook pour supprimer un événement
  */
 export const useDeleteEvent = () => {
+  const { workspaceId } = useWorkspace();
+  
   const [deleteEventMutation, { loading, error }] = useMutation(DELETE_EVENT, {
     refetchQueries: [
       {
         query: GET_EVENTS,
-        variables: { limit: 100, offset: 0 },
+        variables: { limit: 100, offset: 0, workspaceId },
       },
     ],
     awaitRefetchQueries: true,
   });
 
-  const deleteEvent = async (id) => {
+  const deleteEvent = async (id, customWorkspaceId) => {
     try {
+      const finalWorkspaceId = customWorkspaceId || workspaceId;
       const result = await deleteEventMutation({
-        variables: { id },
+        variables: { id, workspaceId: finalWorkspaceId },
       });
 
       if (result.data?.deleteEvent?.success) {
@@ -206,22 +225,27 @@ export const useDeleteEvent = () => {
  * Hook pour synchroniser les événements avec les factures
  */
 export const useSyncInvoiceEvents = () => {
+  const { workspaceId } = useWorkspace();
+  
   const [syncInvoiceEventsMutation, { loading, error }] = useMutation(
     SYNC_INVOICE_EVENTS,
     {
       refetchQueries: [
         {
           query: GET_EVENTS,
-          variables: { limit: 100, offset: 0 },
+          variables: { limit: 100, offset: 0, workspaceId },
         },
       ],
       awaitRefetchQueries: true,
     }
   );
 
-  const syncInvoiceEvents = async () => {
+  const syncInvoiceEvents = async (customWorkspaceId) => {
     try {
-      const result = await syncInvoiceEventsMutation();
+      const finalWorkspaceId = customWorkspaceId || workspaceId;
+      const result = await syncInvoiceEventsMutation({
+        variables: { workspaceId: finalWorkspaceId },
+      });
 
       if (result.data?.syncInvoiceEvents?.success) {
         const count = result.data.syncInvoiceEvents.totalCount;

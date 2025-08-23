@@ -8,8 +8,10 @@ import {
   DELETE_TASK,
   MOVE_TASK,
 } from "@/src/graphql/kanbanQueries";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 export const useKanbanTasks = (boardId, board) => {
+  const { workspaceId } = useWorkspace();
   const initialTaskForm = {
     title: "",
     description: "",
@@ -32,7 +34,7 @@ export const useKanbanTasks = (boardId, board) => {
   const [createTask, { loading: createTaskLoading }] = useMutation(
     CREATE_TASK,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
+      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
         toast.success("Tâche créée avec succès");
         setTaskForm(initialTaskForm);
@@ -48,7 +50,7 @@ export const useKanbanTasks = (boardId, board) => {
   const [updateTask, { loading: updateTaskLoading }] = useMutation(
     UPDATE_TASK,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
+      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
         toast.success("Tâche modifiée avec succès");
         setTaskForm(initialTaskForm);
@@ -64,7 +66,7 @@ export const useKanbanTasks = (boardId, board) => {
   const [deleteTask, { loading: deleteTaskLoading }] = useMutation(
     DELETE_TASK,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
+      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
         toast.success("Tâche supprimée avec succès");
       },
@@ -305,6 +307,7 @@ export const useKanbanTasks = (boardId, board) => {
               completed: item.completed || false,
             })),
           },
+          workspaceId,
         },
       });
     } catch (error) {
@@ -337,6 +340,7 @@ export const useKanbanTasks = (boardId, board) => {
               completed: item.completed || false,
             })),
           },
+          workspaceId,
         },
       });
     } catch (error) {
@@ -346,7 +350,7 @@ export const useKanbanTasks = (boardId, board) => {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      await deleteTask({ variables: { id: taskId } });
+      await deleteTask({ variables: { id: taskId, workspaceId } });
     } catch (error) {
       console.error("Error deleting task:", error);
     }

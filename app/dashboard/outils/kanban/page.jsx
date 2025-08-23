@@ -93,7 +93,7 @@ export default function KanbanPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-medium mb-2">Tableaux Kanban</h1>
+          <h1 className="text-2xl font-medium mb-2">Tableaux Kanban</h1>
           <p className="text-muted-foreground text-sm">
             Gérez vos projets avec des tableaux Kanban
           </p>
@@ -116,9 +116,8 @@ export default function KanbanPage() {
             onOpenChange={setIsCreateDialogOpen}
           >
             <DialogTrigger asChild>
-              <Button variant="default">
-                <Plus className="mr-2 h-4 w-4" />
-                <span>Nouveau tableau</span>
+              <Button variant="default" className="font-normal">
+                Nouveau tableau
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] p-6">
@@ -196,13 +195,13 @@ export default function KanbanPage() {
           {!searchTerm ? (
             <>
               {/* Kanban Board Illustration */}
-              <div className="mb-8 flex justify-center">
+              {/* <div className="mb-8 flex justify-center">
                 <KanbanBoardIllustration className="w-[240px] h-[180px]" />
-              </div>
+              </div> */}
 
-              <div className="w-full flex flex-col items-center">
+              <div className="w-full flex flex-col items-center justify-center pt-20">
                 <div className="text-foreground mb-6 text-center">
-                  <h3 className="text-lg font-semibold mb-2">
+                  <h3 className="text-xl font-medium mb-2">
                     Commencez votre organisation
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -217,9 +216,8 @@ export default function KanbanPage() {
                     setIsCreateDialogOpen(true);
                   }}
                   variant="default"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 font-normal"
                 >
-                  <Plus className="mr-2 h-4 w-4" />
                   Créer votre premier tableau
                 </Button>
               </div>

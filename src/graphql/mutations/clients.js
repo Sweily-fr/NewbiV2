@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const CREATE_CLIENT = gql`
-  mutation CreateClient($input: ClientInput!) {
-    createClient(input: $input) {
+  mutation CreateClient($workspaceId: String!, $input: ClientInput!) {
+    createClient(workspaceId: $workspaceId, input: $input) {
       id
       name
       email
@@ -29,8 +29,8 @@ export const CREATE_CLIENT = gql`
 `;
 
 export const UPDATE_CLIENT = gql`
-  mutation UpdateClient($id: ID!, $input: ClientInput!) {
-    updateClient(id: $id, input: $input) {
+  mutation UpdateClient($workspaceId: String!, $id: ID!, $input: ClientInput!) {
+    updateClient(workspaceId: $workspaceId, id: $id, input: $input) {
       id
       name
       email
@@ -57,7 +57,7 @@ export const UPDATE_CLIENT = gql`
 `;
 
 export const DELETE_CLIENT = gql`
-  mutation DeleteClient($id: ID!) {
-    deleteClient(id: $id)
+  mutation DeleteClient($workspaceId: String!, $id: ID!) {
+    deleteClient(workspaceId: $workspaceId, id: $id)
   }
 `;

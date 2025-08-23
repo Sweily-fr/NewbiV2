@@ -4,24 +4,31 @@ import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
 import TransactionTable from "./components/table";
 import { useState } from "react";
-import { useFinancialStats } from "@/src/hooks/useFinancialStats";
+// Financial stats hook removed
 
 export default function GestionDepenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Récupération des statistiques financières réelles
-  const {
-    totalIncome,
-    totalExpenses,
-    netBalance,
-    incomeTransactionCount,
-    expenseTransactionCount,
-    incomeChartData,
-    expenseChartData,
-    loading,
-    error,
-    formatCurrency
-  } = useFinancialStats();
+  // Bridge integration removed - using basic data
+  const loading = false;
+  const error = null;
+  
+  // Local formatCurrency function
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+    }).format(amount || 0);
+  };
+
+  // Mock data to replace removed financial stats
+  const totalIncome = 0;
+  const totalExpenses = 0;
+  const incomeTransactionCount = 0;
+  const expenseTransactionCount = 0;
+  const incomeChartData = [];
+  const expenseChartData = [];
 
   // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
   const handleOpenInviteDialog = () => {
@@ -76,7 +83,9 @@ export default function GestionDepenses() {
         {/* Graphique des sorties avec vraies données */}
         <ChartAreaInteractive
           title="Sorties"
-          description={loading ? "Chargement..." : formatCurrency(totalExpenses)}
+          description={
+            loading ? "Chargement..." : formatCurrency(totalExpenses)
+          }
           height="150px"
           className="shadow-xs"
           config={expenseChartConfig}

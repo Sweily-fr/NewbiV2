@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_BOARDS, CREATE_BOARD, UPDATE_BOARD, DELETE_BOARD } from '@/src/graphql/kanbanQueries';
 import { toast } from 'sonner';
+import { useWorkspace } from '@/src/hooks/useWorkspace';
 
 export const useKanbanBoards = () => {
+  const { workspaceId } = useWorkspace();
   const [searchTerm, setSearchTerm] = useState("");
   const [boardToDelete, setBoardToDelete] = useState(null);
   const [boardToEdit, setBoardToEdit] = useState(null);
@@ -13,6 +15,8 @@ export const useKanbanBoards = () => {
 
   // GraphQL queries and mutations
   const { data, refetch } = useQuery(GET_BOARDS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
     errorPolicy: "all",
   });
 
@@ -53,15 +57,16 @@ export const useKanbanBoards = () => {
       console.error("Delete board error:", error);
       setBoardToDelete(null);
     },
-    refetchQueries: [{ query: GET_BOARDS }],
+    refetchQueries: [{ query: GET_BOARDS, variables: { workspaceId } }],
     awaitRefetchQueries: true,
     update: (cache, { data }) => {
       if (data?.deleteBoard && boardToDelete) {
         try {
-          const existingBoards = cache.readQuery({ query: GET_BOARDS });
+          const existingBoards = cache.readQuery({ query: GET_BOARDS, variables: { workspaceId } });
           if (existingBoards) {
             cache.writeQuery({
               query: GET_BOARDS,
+              variables: { workspaceId },
               data: {
                 boards: existingBoards.boards.filter(
                   (board) => board.id !== boardToDelete.id
@@ -99,6 +104,7 @@ export const useKanbanBoards = () => {
           title: formData.title.trim(),
           description: formData.description.trim() || null,
         },
+        workspaceId,
       },
     });
   };
@@ -117,6 +123,7 @@ export const useKanbanBoards = () => {
           title: formData.title.trim(),
           description: formData.description.trim() || null,
         },
+        workspaceId,
       },
     });
   };
@@ -143,7 +150,7 @@ export const useKanbanBoards = () => {
 
     try {
       await deleteBoard({
-        variables: { id: boardToDelete.id },
+        variables: { id: boardToDelete.id, workspaceId },
       });
     } catch (error) {
       console.error("Error in handleConfirmDelete:", error);

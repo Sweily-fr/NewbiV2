@@ -105,7 +105,7 @@ import {
   useDeleteMultipleExpenses,
 } from "@/src/hooks/useExpenses";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
-import { useBridge } from "@/src/hooks/useBridge";
+// Bridge integration removed
 import { Plus } from "lucide-react";
 import {
   FileTextIcon,
@@ -176,8 +176,8 @@ const columns = [
 
       // Configuration des badges selon le type et la source
       const getBadgeConfig = () => {
-        // Transactions Bridge - Badge bleu pour les distinguer
-        if (source === "bridge") {
+        // Bridge transactions removed - keeping only expenses and invoices
+        if (false) {
           if (type === "INCOME") {
             return {
               className:
@@ -474,21 +474,12 @@ export default function TransactionTable() {
     return invoices.filter((invoice) => invoice.status === "COMPLETED");
   }, [invoices]);
 
-  // Récupération des transactions Bridge
-  const {
-    transactions: bridgeTransactions,
-    loading: bridgeLoading,
-    loadingTransactions: bridgeTransactionsLoading,
-  } = useBridge();
+  // Bridge transactions removed
 
   // Combiner les états de chargement et d'erreur
-  const loading =
-    expensesLoading || invoicesLoading || bridgeTransactionsLoading;
+  const loading = expensesLoading || invoicesLoading;
   const error = expensesError || invoicesError;
-  const totalCount =
-    expensesTotalCount +
-    paidInvoices.length +
-    (bridgeTransactions?.length || 0);
+  const totalCount = expensesTotalCount + paidInvoices.length;
 
   // Fonction de refetch combinée
   const refetch = useCallback(() => {
@@ -564,46 +555,11 @@ export default function TransactionTable() {
       totalTTC: invoice.totalTTC,
     }));
 
-    // Mapper les transactions Bridge (SORTIES D'ARGENT depuis les comptes bancaires)
-    const bridgeTransactionsMapped = (bridgeTransactions || []).map(
-      (transaction) => ({
-        id: `bridge-${transaction.id}`,
-        date: transaction.date,
-        type: transaction.type === 'credit' ? 'INCOME' : 'EXPENSE', // Convertit credit/debit vers INCOME/EXPENSE
-        subType: transaction.category?.toLowerCase() || "autre",
-        category: transaction.category || "OTHER",
-        amount: Math.abs(transaction.amount), // Valeur absolue pour l'affichage
-        currency: transaction.currency || "EUR",
-        description: transaction.description || "Transaction bancaire",
-        paymentMethod: "BANK_TRANSFER", // Toujours virement bancaire pour Bridge
-        vendor: null, // Pas de vendeur pour les transactions bancaires
-        invoiceNumber: null,
-        documentNumber: transaction.bridgeTransactionId,
-        vatAmount: null,
-        vatRate: null,
-        status: transaction.status || "PAID",
-        tags: [],
-        attachment: null,
-        files: [],
-        ocrMetadata: null,
-        createdAt: transaction.date,
-        updatedAt: transaction.date,
-        source: "bridge", // Identifier la source Bridge
-        // Données spécifiques Bridge
-        bridgeTransactionId: transaction.bridgeTransactionId,
-        bridgeAccountId: transaction.bridgeAccountId,
-        formattedAmount: transaction.formattedAmount,
-        formattedDate: transaction.formattedDate,
-      })
-    );
-
     // Combiner et trier par date (plus récent en premier)
-    return [
-      ...expenseTransactions,
-      ...invoiceTransactions,
-      ...bridgeTransactionsMapped,
-    ].sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [expenses, paidInvoices, bridgeTransactions]);
+    return [...expenseTransactions, ...invoiceTransactions].sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    );
+  }, [expenses, paidInvoices]);
 
   const totalItems = totalCount;
 
@@ -637,20 +593,9 @@ export default function TransactionTable() {
     const invoiceRows = selectedRows.filter(
       (row) => row.original.source === "invoice"
     );
-    const bridgeRows = selectedRows.filter(
-      (row) => row.original.source === "bridge"
-    );
-
-    const nonDeletableCount = invoiceRows.length + bridgeRows.length;
+    const nonDeletableCount = invoiceRows.length;
     if (nonDeletableCount > 0) {
-      const messages = [];
-      if (invoiceRows.length > 0) {
-        messages.push(`${invoiceRows.length} facture(s)`);
-      }
-      if (bridgeRows.length > 0) {
-        messages.push(`${bridgeRows.length} transaction(s) bancaire(s)`);
-      }
-      toast.warning(`${messages.join(" et ")} ignorée(s) (non supprimables)`);
+      toast.warning(`${invoiceRows.length} facture(s) ignorée(s) (non supprimables)`);
     }
 
     if (expenseRows.length === 0) {
@@ -1016,30 +961,14 @@ export default function TransactionTable() {
                         const invoiceRows = selectedRows.filter(
                           (row) => row.original.source === "invoice"
                         );
-                        const bridgeRows = selectedRows.filter(
-                          (row) => row.original.source === "bridge"
-                        );
-
                         if (expenseRows.length === 0) {
-                          return "Aucune dépense sélectionnée. Seules les dépenses peuvent être supprimées.";
+                          return "Aucune dépense sélectionnée pour la suppression";
                         }
 
-                        let message = `Cette action ne peut pas être annulée. Cela supprimera définitivement ${expenseRows.length} dépense${expenseRows.length > 1 ? "s" : ""}.`;
+                        let message = `Êtes-vous sûr de vouloir supprimer ${expenseRows.length} dépense${expenseRows.length > 1 ? "s" : ""} ?`;
 
-                        const ignoredItems = [];
                         if (invoiceRows.length > 0) {
-                          ignoredItems.push(
-                            `${invoiceRows.length} facture${invoiceRows.length > 1 ? "s" : ""}`
-                          );
-                        }
-                        if (bridgeRows.length > 0) {
-                          ignoredItems.push(
-                            `${bridgeRows.length} transaction${bridgeRows.length > 1 ? "s" : ""} bancaire${bridgeRows.length > 1 ? "s" : ""}`
-                          );
-                        }
-
-                        if (ignoredItems.length > 0) {
-                          message += ` ${ignoredItems.join(" et ")} sera${ignoredItems.length > 1 || (ignoredItems.length === 1 && (invoiceRows.length > 1 || bridgeRows.length > 1)) ? "ont" : ""} ignorée${ignoredItems.length > 1 || (ignoredItems.length === 1 && (invoiceRows.length > 1 || bridgeRows.length > 1)) ? "s" : ""} (non supprimables).`;
+                          message += ` ${invoiceRows.length} facture${invoiceRows.length > 1 ? "s" : ""} sera${invoiceRows.length > 1 ? "ont" : ""} ignorée${invoiceRows.length > 1 ? "s" : ""} (non supprimables).`;
                         }
 
                         return message;
@@ -1384,10 +1313,7 @@ function RowActions({ row, onEdit }) {
         <DropdownMenuGroup>
           <DropdownMenuItem
             onClick={handleEdit}
-            disabled={
-              transaction.source === "invoice" ||
-              transaction.source === "bridge"
-            }
+            disabled={transaction.source === "invoice"}
           >
             <span>Modifier</span>
             <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
@@ -1412,8 +1338,7 @@ function RowActions({ row, onEdit }) {
           variant="destructive"
           disabled={
             deleteLoading ||
-            transaction.source === "invoice" ||
-            transaction.source === "bridge"
+            transaction.source === "invoice"
           }
         >
           <span>{deleteLoading ? "Suppression..." : "Supprimer"}</span>

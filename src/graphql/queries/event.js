@@ -7,6 +7,7 @@ export const GET_EVENTS = gql`
     $type: EventType
     $limit: Int
     $offset: Int
+    $workspaceId: ID
   ) {
     getEvents(
       startDate: $startDate
@@ -14,6 +15,7 @@ export const GET_EVENTS = gql`
       type: $type
       limit: $limit
       offset: $offset
+      workspaceId: $workspaceId
     ) {
       success
       message
@@ -47,8 +49,8 @@ export const GET_EVENTS = gql`
 `;
 
 export const GET_EVENT = gql`
-  query GetEvent($id: ID!) {
-    getEvent(id: $id) {
+  query GetEvent($id: ID!, $workspaceId: ID) {
+    getEvent(id: $id, workspaceId: $workspaceId) {
       success
       message
       event {

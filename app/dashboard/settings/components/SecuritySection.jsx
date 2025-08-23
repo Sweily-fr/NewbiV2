@@ -31,9 +31,10 @@ import {
   ExternalLink,
   AlertCircle,
   Landmark,
+  Trash2,
 } from "lucide-react";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
-import { useBridge } from "@/src/hooks/useBridge";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 import { toast } from "@/src/components/ui/sonner";
 
@@ -42,6 +43,10 @@ export default function SecuritySection({ session }) {
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
+  const [isDeletingBridgeUser, setIsDeletingBridgeUser] = useState(false);
+
+  // Hook workspace
+  const { workspaceId } = useWorkspace();
 
   // Simuler l'état des connexions OAuth
   const [oauthConnections, setOauthConnections] = useState({
@@ -64,18 +69,7 @@ export default function SecuritySection({ session }) {
     clearError,
   } = useStripeConnect(session?.user?.id);
 
-  // Hook Bridge pour la gestion des comptes bancaires
-  const {
-    bridgeUserId,
-    isConnected: bridgeConnected,
-    loading: bridgeLoading,
-    isDisconnecting: bridgeDisconnecting,
-    disconnectBridge,
-    accounts: bridgeAccounts,
-    loadingAccounts: bridgeAccountsLoading,
-    accountsError: bridgeAccountsError,
-    refetchAccounts,
-  } = useBridge();
+  // Bridge integration removed - to be replaced with new banking API
 
   const handleOAuthConnect = (provider) => {
     // Ici vous implémenteriez la logique de connexion OAuth
@@ -131,17 +125,50 @@ export default function SecuritySection({ session }) {
     await disconnectStripe();
   };
 
-  const handleBridgeDisconnect = async () => {
+  // Fonction pour supprimer l'utilisateur Bridge
+  const handleDeleteBridgeUser = async () => {
+    if (!workspaceId) {
+      toast.error("Workspace non trouvé");
+      return;
+    }
+
+    if (
+      !confirm(
+        "Êtes-vous sûr de vouloir supprimer votre connexion bancaire ? Cette action supprimera tous vos comptes et transactions synchronisés."
+      )
+    ) {
+      return;
+    }
+
+    setIsDeletingBridgeUser(true);
+
     try {
-      const success = await disconnectBridge();
-      if (success) {
-        toast.success("Compte bancaire déconnecté avec succès");
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/banking/user`,
+        {
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "x-workspace-id": workspaceId,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(
+          `Connexion bancaire supprimée avec succès. ${data.deletedAccounts} comptes et ${data.deletedTransactions} transactions supprimés.`
+        );
       } else {
-        toast.error("Erreur lors de la déconnexion du compte bancaire");
+        const error = await response.json();
+        throw new Error(error.error || "Erreur lors de la suppression");
       }
     } catch (error) {
-      console.error("Erreur déconnexion Bridge:", error);
-      toast.error("Erreur lors de la déconnexion du compte bancaire");
+      console.error("Erreur suppression utilisateur Bridge:", error);
+      toast.error("Erreur lors de la suppression de la connexion bancaire");
+    } finally {
+      setIsDeletingBridgeUser(false);
     }
   };
 
@@ -291,186 +318,45 @@ export default function SecuritySection({ session }) {
         </Card>
       </div>
 
-      {/* Connexion bancaire Bridge */}
+      {/* Banking integration section - to be replaced with new API */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Carte de connexion Bridge */}
         <Card className="border-0 shadow-sm backdrop-blur-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-lg font-medium">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Landmark className="h-5 w-5 text-blue-600" />
+              <div className="p-2 bg-green-50 rounded-lg">
+                <Landmark className="h-5 w-5 text-green-600" />
               </div>
               Connexion bancaire
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
+          <CardContent className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-normal text-gray-900 dark:text-gray-100">
-                      Bridge API
-                    </p>
-                    {bridgeConnected && (
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-xs text-green-600 font-normal">
-                          Connecté
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {bridgeConnected
-                      ? "Votre compte bancaire est connecté et synchronisé"
-                      : "Aucun compte bancaire connecté"}
+                  <p className="text-sm font-normal text-gray-900 dark:text-gray-100">
+                    Intégration bancaire Bridge
                   </p>
-                  {bridgeUserId && (
-                    <p className="text-xs text-muted-foreground">
-                      ID Bridge: {bridgeUserId}
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Gérez votre connexion aux services bancaires
+                  </p>
                 </div>
-              </div>
-
-              <div className="flex gap-2">
-                {bridgeConnected ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleBridgeDisconnect}
-                    disabled={bridgeDisconnecting || bridgeLoading}
-                  >
-                    {bridgeDisconnecting ? "Déconnexion..." : "Déconnecter"}
-                  </Button>
-                ) : (
-                  <div className="text-sm text-muted-foreground">
-                    Utilisez le bouton sur le tableau de bord principal pour
-                    connecter un compte bancaire
-                  </div>
-                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Liste des comptes bancaires */}
-        <Card className="border-0 shadow-sm backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg font-medium">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Landmark className="h-5 w-5 text-blue-600" />
-              </div>
-              Comptes bancaires
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {bridgeAccountsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-sm text-muted-foreground">
-                  Chargement...
-                </span>
-              </div>
-            ) : bridgeAccountsError ? (
-              <div className="flex items-center justify-center py-8 text-red-600">
-                <AlertCircle className="h-5 w-5 mr-2" />
-                <span className="text-sm">
-                  Erreur lors du chargement des comptes
-                </span>
-              </div>
-            ) : !bridgeConnected ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-normal text-gray-900 dark:text-gray-100">
-                      Aucun compte connecté
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Connectez un compte bancaire pour voir vos comptes ici
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : bridgeAccounts.length === 0 ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-normal text-gray-900 dark:text-gray-100">
-                      Aucun compte trouvé
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Vos comptes apparaîtront ici après synchronisation
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="space-y-1 mb-4">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-normal text-gray-900 dark:text-gray-100">
-                      {bridgeAccounts.length} compte{bridgeAccounts.length > 1 ? 's' : ''} synchronisé{bridgeAccounts.length > 1 ? 's' : ''}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-xs text-green-600 font-normal">
-                        Actif
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Comptes bancaires connectés via Bridge API
-                  </p>
-                </div>
-                
-                <div className="max-h-32 overflow-y-auto pr-2 -mr-2 space-y-2">
-                  {bridgeAccounts.map((account) => (
-                    <div
-                      key={account.id}
-                      className="flex items-center justify-between py-2 px-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0"></div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {account.name.length > 15 ? `${account.name.slice(0, 15)}...` : account.name}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{account.bank.name}</span>
-                            <span>•</span>
-                            <span className="uppercase tracking-wide">
-                              {account.type === "checking" ? "Courant" : 
-                               account.type === "savings" ? "Épargne" :
-                               account.type === "loan" ? "Crédit" : account.type}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p
-                          className={`text-sm font-medium ${
-                            account.balance >= 0
-                              ? "text-gray-900"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {account.balance.toLocaleString("fr-FR", {
-                            style: "currency",
-                            currency: account.currency,
-                          })}
-                        </p>
-                        {account.iban && (
-                          <p className="text-xs text-muted-foreground font-mono">
-                            •••• {account.iban.slice(-4)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDeleteBridgeUser}
+                disabled={isDeletingBridgeUser || !workspaceId}
+                className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {isDeletingBridgeUser
+                  ? "Suppression..."
+                  : "Supprimer l'utilisateur"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

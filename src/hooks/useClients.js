@@ -2,10 +2,14 @@ import { useMutation, useQuery } from '@apollo/client';
 import { CREATE_CLIENT, UPDATE_CLIENT, DELETE_CLIENT } from '../graphql/mutations/clients';
 import { GET_CLIENTS, GET_CLIENT } from '../graphql/queries/clients';
 import { toast } from '@/src/components/ui/sonner';
+import { useWorkspace } from './useWorkspace';
 
 export const useClients = (page = 1, limit = 10, search = '') => {
+  const { workspaceId } = useWorkspace();
+  
   const { data, loading, error, refetch } = useQuery(GET_CLIENTS, {
-    variables: { page, limit, search },
+    variables: { workspaceId, page, limit, search },
+    skip: !workspaceId,
     fetchPolicy: 'cache-and-network',
   });
 
@@ -21,9 +25,11 @@ export const useClients = (page = 1, limit = 10, search = '') => {
 };
 
 export const useClient = (id) => {
+  const { workspaceId } = useWorkspace();
+  
   const { data, loading, error } = useQuery(GET_CLIENT, {
-    variables: { id },
-    skip: !id,
+    variables: { workspaceId, id },
+    skip: !id || !workspaceId,
   });
 
   return {
@@ -34,8 +40,31 @@ export const useClient = (id) => {
 };
 
 export const useCreateClient = () => {
+  const { workspaceId } = useWorkspace();
+  
   const [createClient, { loading, error }] = useMutation(CREATE_CLIENT, {
-    refetchQueries: [{ query: GET_CLIENTS }],
+    update: (cache, { data: { createClient: newClient } }) => {
+      // Lire la query existante
+      const existingClients = cache.readQuery({
+        query: GET_CLIENTS,
+        variables: { workspaceId, page: 1, limit: 10, search: '' }
+      });
+
+      if (existingClients) {
+        // Ajouter le nouveau client au début de la liste
+        cache.writeQuery({
+          query: GET_CLIENTS,
+          variables: { workspaceId, page: 1, limit: 10, search: '' },
+          data: {
+            clients: {
+              ...existingClients.clients,
+              items: [newClient, ...existingClients.clients.items],
+              totalItems: existingClients.clients.totalItems + 1
+            }
+          }
+        });
+      }
+    },
     onCompleted: () => {
       toast.success('Client créé avec succès');
     },
@@ -46,15 +75,52 @@ export const useCreateClient = () => {
   });
 
   return {
-    createClient: (input) => createClient({ variables: { input } }),
+    createClient: (input) => createClient({ variables: { workspaceId, input } }),
     loading,
     error,
   };
 };
 
 export const useUpdateClient = () => {
+  const { workspaceId } = useWorkspace();
+  
   const [updateClient, { loading, error }] = useMutation(UPDATE_CLIENT, {
-    refetchQueries: [{ query: GET_CLIENTS }],
+    update: (cache, { data: { updateClient: updatedClient } }) => {
+      // Mettre à jour le client dans le cache GET_CLIENT
+      cache.writeQuery({
+        query: GET_CLIENT,
+        variables: { workspaceId, id: updatedClient.id },
+        data: { client: updatedClient }
+      });
+
+      // Mettre à jour le client dans la liste GET_CLIENTS
+      try {
+        const existingClients = cache.readQuery({
+          query: GET_CLIENTS,
+          variables: { workspaceId, page: 1, limit: 10, search: '' }
+        });
+
+        if (existingClients) {
+          const updatedItems = existingClients.clients.items.map(client =>
+            client.id === updatedClient.id ? updatedClient : client
+          );
+
+          cache.writeQuery({
+            query: GET_CLIENTS,
+            variables: { workspaceId, page: 1, limit: 10, search: '' },
+            data: {
+              clients: {
+                ...existingClients.clients,
+                items: updatedItems
+              }
+            }
+          });
+        }
+      } catch (e) {
+        // Si la query n'existe pas dans le cache, on l'ignore
+        console.log('GET_CLIENTS not in cache, skipping update');
+      }
+    },
     onCompleted: () => {
       toast.success('Client modifié avec succès');
     },
@@ -65,15 +131,51 @@ export const useUpdateClient = () => {
   });
 
   return {
-    updateClient: (id, input) => updateClient({ variables: { id, input } }),
+    updateClient: (id, input) => updateClient({ variables: { workspaceId, id, input } }),
     loading,
     error,
   };
 };
 
 export const useDeleteClient = () => {
+  const { workspaceId } = useWorkspace();
+  
   const [deleteClient, { loading, error }] = useMutation(DELETE_CLIENT, {
-    refetchQueries: [{ query: GET_CLIENTS }],
+    update: (cache, { data }, { variables: { id } }) => {
+      // Supprimer le client du cache GET_CLIENT
+      cache.evict({
+        id: cache.identify({ __typename: 'Client', id })
+      });
+
+      // Supprimer le client de la liste GET_CLIENTS
+      try {
+        const existingClients = cache.readQuery({
+          query: GET_CLIENTS,
+          variables: { workspaceId, page: 1, limit: 10, search: '' }
+        });
+
+        if (existingClients) {
+          const filteredItems = existingClients.clients.items.filter(client => client.id !== id);
+
+          cache.writeQuery({
+            query: GET_CLIENTS,
+            variables: { workspaceId, page: 1, limit: 10, search: '' },
+            data: {
+              clients: {
+                ...existingClients.clients,
+                items: filteredItems,
+                totalItems: existingClients.clients.totalItems - 1
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.log('GET_CLIENTS not in cache, skipping update');
+      }
+
+      // Nettoyer le cache
+      cache.gc();
+    },
     onCompleted: () => {
       toast.success('Client supprimé avec succès');
     },
@@ -84,7 +186,7 @@ export const useDeleteClient = () => {
   });
 
   return {
-    deleteClient: (id) => deleteClient({ variables: { id } }),
+    deleteClient: (id) => deleteClient({ variables: { workspaceId, id } }),
     loading,
     error,
   };

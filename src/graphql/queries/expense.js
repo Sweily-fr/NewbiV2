@@ -7,7 +7,6 @@ import { gql } from '@apollo/client';
 // Query pour récupérer la liste des dépenses avec pagination et filtres
 export const GET_EXPENSES = gql`
   query GetExpenses(
-    $workspaceId: ID!
     $startDate: String
     $endDate: String
     $category: ExpenseCategory
@@ -18,7 +17,6 @@ export const GET_EXPENSES = gql`
     $limit: Int = 10
   ) {
     expenses(
-      workspaceId: $workspaceId
       startDate: $startDate
       endDate: $endDate
       category: $category
@@ -79,8 +77,8 @@ export const GET_EXPENSES = gql`
 
 // Query pour récupérer une dépense par son ID
 export const GET_EXPENSE = gql`
-  query GetExpense($id: ID!, $workspaceId: ID!) {
-    expense(id: $id, workspaceId: $workspaceId) {
+  query GetExpense($id: ID!) {
+    expense(id: $id) {
       id
       title
       description
@@ -115,8 +113,8 @@ export const GET_EXPENSE = gql`
 
 // Query pour les statistiques des dépenses
 export const GET_EXPENSE_STATS = gql`
-  query GetExpenseStats($workspaceId: ID!, $startDate: String, $endDate: String) {
-    expenseStats(workspaceId: $workspaceId, startDate: $startDate, endDate: $endDate) {
+  query GetExpenseStats($startDate: String, $endDate: String) {
+    expenseStats(startDate: $startDate, endDate: $endDate) {
       totalAmount
       totalCount
       averageAmount

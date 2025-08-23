@@ -23,22 +23,18 @@ export const useWorkspace = () => {
     }
   }, [loading, activeOrganization, organizations]);
   
-  // Debug logs détaillés
+  // Debug logs
   React.useEffect(() => {
-    console.log('🔍 useWorkspace state DÉTAILLÉ:', {
+    console.log('🔍 useWorkspace state:', {
       loading,
       orgsLoading,
       activeLoading,
       organizationsCount: organizations?.length || 0,
-      organizations: organizations?.map(org => ({ id: org.id, name: org.name })) || [],
       activeOrganization: activeOrganization ? {
         id: activeOrganization.id,
-        name: activeOrganization.name,
-        slug: activeOrganization.slug
+        name: activeOrganization.name
       } : null,
-      workspaceId: activeOrganization?.id || null,
-      hasActiveOrg: !!activeOrganization,
-      hasOrganizations: !!(organizations && organizations.length > 0)
+      workspaceId: activeOrganization?.id || null
     });
   }, [loading, orgsLoading, activeLoading, organizations, activeOrganization]);
   

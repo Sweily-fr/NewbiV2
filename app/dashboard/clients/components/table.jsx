@@ -138,7 +138,7 @@ const columns = [
         client.type === "INDIVIDUAL" && (client.firstName || client.lastName)
           ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
           : client.name;
-      return <div className="font-medium">{displayName}</div>;
+      return <div className="font-normal">{displayName}</div>;
     },
     size: 200,
     filterFn: multiColumnFilterFn,
@@ -394,7 +394,7 @@ export default function TableClients({ handleAddUser }) {
           {/* Filter by type */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="font-normal">
                 <FilterIcon
                   className="-ms-1 opacity-60"
                   size={16}
@@ -410,7 +410,7 @@ export default function TableClients({ handleAddUser }) {
             </PopoverTrigger>
             <PopoverContent className="w-auto min-w-36 p-3" align="start">
               <div className="space-y-3">
-                <div className="text-muted-foreground text-xs font-medium">
+                <div className="text-muted-foreground text-xs font-normal">
                   Filtres
                 </div>
                 <div className="space-y-3">
@@ -441,7 +441,7 @@ export default function TableClients({ handleAddUser }) {
           {/* Toggle columns visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="font-normal">
                 <Columns3Icon
                   className="-ms-1 opacity-60"
                   size={16}
@@ -523,15 +523,10 @@ export default function TableClients({ handleAddUser }) {
           )}
           {/* Add user button */}
           <Button
-            className="ml-auto cursor-pointer"
-            variant="outline"
+            className="ml-auto cursor-pointer font-normal"
+            variant="default"
             onClick={handleAddUser}
           >
-            <PlusIcon
-              className="-ms-1 opacity-60"
-              size={16}
-              aria-hidden="true"
-            />
             Ajouter un client
           </Button>
         </div>
@@ -548,7 +543,7 @@ export default function TableClients({ handleAddUser }) {
                     <TableHead
                       key={header.id}
                       style={{ width: `${header.getSize()}px` }}
-                      className="h-11"
+                      className="h-11 font-normal"
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
@@ -654,8 +649,8 @@ export default function TableClients({ handleAddUser }) {
       <div className="flex items-center justify-between gap-8">
         {/* Results per page */}
         <div className="flex items-center gap-3">
-          <Label htmlFor={id} className="max-sm:sr-only">
-            Rows per page
+          <Label htmlFor={id} className="max-sm:sr-only font-normal">
+            Lignes par page
           </Label>
           <Select
             value={table.getState().pagination.pageSize.toString()}
