@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense } from "react";
-import { Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
@@ -21,13 +20,12 @@ export default function QuotesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-medium mb-2">Devis</h1>
+            <h1 className="text-2xl font-medium mb-2">Devis</h1>
             <p className="text-muted-foreground text-sm">
               Gérez vos devis et propositions commerciales
             </p>
           </div>
-          <Button onClick={handleCreateQuote} className="gap-2">
-            <Plus className="h-4 w-4" />
+          <Button onClick={handleCreateQuote} className="gap-2 font-normal">
             Créer un devis
           </Button>
         </div>
