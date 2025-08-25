@@ -1,0 +1,147 @@
+"use client";
+
+import * as React from "react";
+import { ChevronsUpDown, Plus } from "lucide-react";
+import { IconBuilding } from "@tabler/icons-react";
+import { authClient } from "@/src/lib/auth-client";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/src/components/ui/sidebar";
+
+export function TeamSwitcher() {
+  const { isMobile } = useSidebar();
+
+  // Utiliser les hooks Better Auth pour récupérer les organisations
+  const { data: organizations, isPending: organizationsLoading } =
+    authClient.useListOrganizations();
+  const { data: activeOrganization, isPending: activeLoading } =
+    authClient.useActiveOrganization();
+
+  // Fonction pour changer d'organisation active
+  const handleSetActiveOrganization = async (organizationId) => {
+    try {
+      await authClient.organization.setActive({ organizationId });
+    } catch (error) {
+      console.error("Erreur lors du changement d'organisation:", error);
+    }
+  };
+
+  // Afficher un loader pendant le chargement
+  if (organizationsLoading || activeLoading) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" disabled>
+            <img src="/newbi.svg" alt="NewBi Logo" className="size-8" />
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">...</span>
+              <span className="truncate text-xs">-</span>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
+
+  // Si aucune organisation n'est disponible
+  if (!organizations || organizations.length === 0) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" disabled>
+            <img src="/newbi.svg" alt="NewBi Logo" className="size-8" />
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">Aucune organisation</span>
+              <span className="truncate text-xs">-</span>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
+
+  // Utiliser l'organisation active ou la première disponible
+  const currentOrganization = activeOrganization || organizations[0];
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            >
+              <img src="/newbi.svg" alt="NewBi Logo" className="size-8" />
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">
+                  {currentOrganization.name}
+                </span>
+                <span className="truncate text-xs">
+                  {organizations.length} organisation
+                  {organizations.length > 1 ? "s" : ""}
+                </span>
+              </div>
+              <ChevronsUpDown className="ml-auto" />
+            </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            align="start"
+            side={isMobile ? "bottom" : "right"}
+            sideOffset={4}
+          >
+            <DropdownMenuLabel className="text-muted-foreground text-xs">
+              Organisations
+            </DropdownMenuLabel>
+            {organizations.map((org, index) => (
+              <DropdownMenuItem
+                key={org.id}
+                onClick={() => handleSetActiveOrganization(org.id)}
+                className="gap-2 p-2"
+              >
+                <div className="flex size-6 items-center justify-center rounded-md border">
+                  <IconBuilding className="size-3.5 shrink-0" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-medium">{org.name}</span>
+                  {org.slug && (
+                    <span className="text-xs text-muted-foreground">
+                      @{org.slug}
+                    </span>
+                  )}
+                </div>
+                {activeOrganization?.id === org.id && (
+                  <div className="ml-auto h-2 w-2 rounded-full bg-green-500" />
+                )}
+                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="gap-2 p-2" disabled>
+              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                <Plus className="size-4" />
+              </div>
+              <div className="text-muted-foreground font-medium">
+                Créer une organisation
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}

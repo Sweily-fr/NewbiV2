@@ -83,6 +83,31 @@ export async function POST(request, { params }) {
     console.log(`🎯 Action ${action} sur invitation:`, id);
 
     if (action === "accept") {
+      // ÉTAPE 1: Créer l'organisation personnelle AVANT d'accepter l'invitation
+      try {
+        console.log("🏢 Création de l'organisation personnelle...");
+        
+        const user = session.user;
+        const personalOrgName = `${user.name || user.email.split('@')[0]} (Personnel)`;
+        const personalSlug = `${user.id}-personal`;
+
+        // Créer l'organisation personnelle avec keepCurrentActiveOrganization: true
+        const personalOrgResult = await auth.api.createOrganization({
+          headers: await headers(),
+          body: {
+            name: personalOrgName,
+            slug: personalSlug,
+            keepCurrentActiveOrganization: true, // CRUCIAL: ne pas changer l'orga active
+          },
+        });
+
+        console.log("✅ Organisation personnelle créée:", personalOrgResult);
+      } catch (personalOrgError) {
+        console.warn("⚠️ Erreur création organisation personnelle (non bloquante):", personalOrgError);
+        // Ne pas faire échouer l'acceptation si la création de l'org perso échoue
+      }
+
+      // ÉTAPE 2: Accepter l'invitation (rejoint l'organisation de l'owner)
       const result = await auth.api.acceptInvitation({
         headers: await headers(),
         body: { invitationId: id },
@@ -90,11 +115,11 @@ export async function POST(request, { params }) {
 
       console.log("✅ Invitation acceptée:", result);
 
-      // Définir l'organisation comme active après acceptation
+      // ÉTAPE 3: S'assurer que l'organisation de l'owner reste active
       if (result && result.organizationId) {
         try {
           console.log(
-            "🎯 Définition de l'organisation active:",
+            "🎯 Définition de l'organisation active (owner):",
             result.organizationId
           );
           await auth.api.setActiveOrganization({

@@ -21,6 +21,9 @@ import {
   IconHeart,
   IconCalendar,
   IconCirclePlusFilled,
+  GalleryVerticalEnd,
+  AudioWaveform,
+  Command,
 } from "@tabler/icons-react";
 
 import { NavDocuments } from "@/src/components/nav-documents";
@@ -38,6 +41,7 @@ import {
 } from "@/src/components/ui/sidebar";
 import { getCurrentUser } from "../lib/auth/api";
 import { useUser } from "../lib/auth/hooks";
+import { TeamSwitcher } from "@/src/components/team-switcher";
 
 const data = {
   user: {
@@ -45,6 +49,23 @@ const data = {
     email: "sofiane@emtimet.com",
     avatar: "/avatars/shadcn.jpg",
   },
+  teams: [
+    {
+      name: "Sweily",
+      logo: IconUsers,
+      plan: "Enterprise",
+    },
+    {
+      name: "Newbi",
+      logo: IconUsers,
+      plan: "Startup",
+    },
+    {
+      name: "Cabinet comptable",
+      logo: IconUsers,
+      plan: "Free",
+    },
+  ],
   navMain: [
     {
       title: "Tableau de bord",
@@ -215,6 +236,9 @@ export function AppSidebar({ ...props }) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
+        <TeamSwitcher />
+      </SidebarHeader>
+      {/* <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -237,13 +261,11 @@ export function AppSidebar({ ...props }) {
                     height="100"
                   />
                 )}
-                {/* <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">NewBi.</span> */}
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarHeader>
+      </SidebarHeader> */}
       <SidebarContent className="mt-1">
         <NavMain items={data.navMain} />
         <NavDocuments items={data.documents} />

@@ -13,10 +13,10 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import { cn } from "@/src/lib/utils";
-import { 
-  QUOTE_STATUS_LABELS, 
+import {
+  QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
-  useDeleteQuote 
+  useDeleteQuote,
 } from "@/src/graphql/quoteQueries";
 import { formatDate, isDateExpired } from "../utils/date-utils";
 import QuoteRowActions from "../components/quote-row-actions";
@@ -33,7 +33,7 @@ const multiColumnFilterFn = (row, columnId, filterValue) => {
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
-  
+
   const searchTerm = (filterValue ?? "").toLowerCase();
   return searchableContent.includes(searchTerm);
 };
@@ -55,7 +55,7 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
-  
+
   const searchTerm = (filterValue ?? "").toLowerCase();
   return searchableContent.includes(searchTerm);
 };
@@ -69,7 +69,7 @@ const memoizedStatusFilter = (row, columnId, filterValue) => {
 export function useQuoteTable({ data = [], onRefetch }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
-  
+
   // Hook pour la suppression de devis
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
 
@@ -84,7 +84,9 @@ export function useQuoteTable({ data = [], onRefetch }) {
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && "indeterminate")
             }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
             aria-label="Sélectionner tout"
           />
         ),
@@ -102,10 +104,12 @@ export function useQuoteTable({ data = [], onRefetch }) {
       {
         accessorKey: "number",
         header: ({ column }) => (
-          <div className="flex items-center font-semibold px-0 py-2">
+          <div className="flex items-center font-normal px-0 py-2">
             <div
               className="flex items-center cursor-pointer"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              onClick={() =>
+                column.toggleSorting(column.getIsSorted() === "asc")
+              }
             >
               Numéro
               <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -129,10 +133,12 @@ export function useQuoteTable({ data = [], onRefetch }) {
       {
         accessorKey: "client.name",
         header: ({ column }) => (
-          <div className="flex items-center font-semibold px-0 py-2">
+          <div className="flex items-center font-normal px-0 py-2">
             <div
               className="flex items-center cursor-pointer"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              onClick={() =>
+                column.toggleSorting(column.getIsSorted() === "asc")
+              }
             >
               Client
               <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -142,12 +148,14 @@ export function useQuoteTable({ data = [], onRefetch }) {
         cell: ({ row }) => {
           const client = row.original.client;
           if (!client) return <span className="text-muted-foreground">-</span>;
-          
+
           return (
             <div>
               <div className="font-medium">{client.name}</div>
               {client.email && (
-                <div className="text-sm text-muted-foreground">{client.email}</div>
+                <div className="text-sm text-muted-foreground">
+                  {client.email}
+                </div>
               )}
             </div>
           );
@@ -158,10 +166,12 @@ export function useQuoteTable({ data = [], onRefetch }) {
       {
         accessorKey: "issueDate",
         header: ({ column }) => (
-          <div className="flex items-center font-semibold px-0 py-2">
+          <div className="flex items-center font-normal px-0 py-2">
             <div
               className="flex items-center cursor-pointer"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              onClick={() =>
+                column.toggleSorting(column.getIsSorted() === "asc")
+              }
             >
               Date d&apos;émission
               <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -177,10 +187,12 @@ export function useQuoteTable({ data = [], onRefetch }) {
       {
         accessorKey: "validUntil",
         header: ({ column }) => (
-          <div className="flex items-center font-semibold px-0 py-2">
+          <div className="flex items-center font-normal px-0 py-2">
             <div
               className="flex items-center cursor-pointer"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              onClick={() =>
+                column.toggleSorting(column.getIsSorted() === "asc")
+              }
             >
               Valide jusqu&apos;au
               <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -191,34 +203,37 @@ export function useQuoteTable({ data = [], onRefetch }) {
           const dateValue = row.original.validUntil; // Accéder directement à la valeur originale
           const quoteId = row.original.id;
           const quoteNumber = row.original.number;
-          
+
           // Si la valeur est manquante, retourner un indicateur visuel
-          if (dateValue === null || dateValue === undefined || dateValue === '') {
-            console.log(`[QUOTE ${quoteNumber || quoteId}] Champ validUntil manquant ou vide`);
+          if (
+            dateValue === null ||
+            dateValue === undefined ||
+            dateValue === ""
+          ) {
+            console.log(
+              `[QUOTE ${quoteNumber || quoteId}] Champ validUntil manquant ou vide`
+            );
             return (
-              <div className="text-muted-foreground text-sm">
-                Non définie
-              </div>
+              <div className="text-muted-foreground text-sm">Non définie</div>
             );
           }
-          
+
           try {
             // Utiliser la fonction formatDate pour gérer tous les formats de date
             const formattedDate = formatDate(dateValue);
-            
+
             // Si formatDate retourne "-", la date est invalide
             if (formattedDate === "-") {
-              throw new Error(`Format de date non supporté: ${dateValue} (${typeof dateValue})`);
+              throw new Error(
+                `Format de date non supporté: ${dateValue} (${typeof dateValue})`
+              );
             }
-            
+
             // Vérifier si la date est expirée
             const isExpired = isDateExpired(dateValue);
-            
+
             return (
-              <div className={cn(
-                "font-medium",
-                isExpired && "text-red-600"
-              )}>
+              <div className={cn("font-medium", isExpired && "text-red-600")}>
                 {formattedDate}
                 {isExpired && (
                   <div className="text-xs text-red-500">Expiré</div>
@@ -226,18 +241,22 @@ export function useQuoteTable({ data = [], onRefetch }) {
               </div>
             );
           } catch (error) {
-            console.error(`[QUOTE ${quoteNumber || quoteId}] Erreur lors du formatage de la date:`, {
-              error: error.message,
-              value: dateValue,
-              type: typeof dateValue,
-              isString: typeof dateValue === 'string',
-              isNumber: typeof dateValue === 'number',
-              isDate: dateValue instanceof Date,
-              timestamp: typeof dateValue === 'number' || /^\d+$/.test(dateValue) 
-                ? parseInt(dateValue, 10) 
-                : 'N/A'
-            });
-            
+            console.error(
+              `[QUOTE ${quoteNumber || quoteId}] Erreur lors du formatage de la date:`,
+              {
+                error: error.message,
+                value: dateValue,
+                type: typeof dateValue,
+                isString: typeof dateValue === "string",
+                isNumber: typeof dateValue === "number",
+                isDate: dateValue instanceof Date,
+                timestamp:
+                  typeof dateValue === "number" || /^\d+$/.test(dateValue)
+                    ? parseInt(dateValue, 10)
+                    : "N/A",
+              }
+            );
+
             return (
               <div className="text-amber-600 text-sm">
                 Format invalide
@@ -254,7 +273,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-semibold"
+            className="h-auto p-0 font-normal"
           >
             Statut
             <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -264,11 +283,9 @@ export function useQuoteTable({ data = [], onRefetch }) {
           const status = row.getValue("status");
           const label = QUOTE_STATUS_LABELS[status] || status;
           const colorClass = QUOTE_STATUS_COLORS[status] || "";
-          
+
           return (
-            <Badge className={cn("font-medium", colorClass)}>
-              {label}
-            </Badge>
+            <Badge className={cn("font-medium", colorClass)}>{label}</Badge>
           );
         },
         size: 100,
@@ -280,7 +297,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-semibold"
+            className="h-auto p-0 font-normal"
           >
             Montant TTC
             <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -302,9 +319,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
       },
       {
         id: "actions",
-        header: () => (
-          <div className="text-right">Actions</div>
-        ),
+        header: () => <div className="text-right">Actions</div>,
         cell: ({ row }) => <QuoteRowActions row={row} onRefetch={onRefetch} />,
         size: 60,
         enableHiding: false,
@@ -316,52 +331,70 @@ export function useQuoteTable({ data = [], onRefetch }) {
   // Log des données pour débogage
   useEffect(() => {
     if (data && data.length > 0) {
-      console.log('=== DÉBOGAGE DONNÉES DEVIS ===');
-      console.log('Nombre de devis:', data.length);
-      
+      console.log("=== DÉBOGAGE DONNÉES DEVIS ===");
+      console.log("Nombre de devis:", data.length);
+
       // Afficher les 3 premiers devis pour inspection
       const sampleQuotes = data.slice(0, 3);
-      
+
       sampleQuotes.forEach((quote, index) => {
         console.log(`\n=== Devis #${index + 1} ===`);
-        console.log('ID:', quote.id);
-        console.log('Numéro:', quote.number);
-        console.log('Date émission:', quote.issueDate, 'Type:', typeof quote.issueDate);
-        console.log('Valid until:', quote.validUntil, 'Type:', typeof quote.validUntil);
-        
+        console.log("ID:", quote.id);
+        console.log("Numéro:", quote.number);
+        console.log(
+          "Date émission:",
+          quote.issueDate,
+          "Type:",
+          typeof quote.issueDate
+        );
+        console.log(
+          "Valid until:",
+          quote.validUntil,
+          "Type:",
+          typeof quote.validUntil
+        );
+
         // Tester la conversion de la date
         if (quote.validUntil) {
           try {
             let date;
-            
+
             // Gérer les différents formats de date
-            if (typeof quote.validUntil === 'number' || /^\d+$/.test(quote.validUntil)) {
+            if (
+              typeof quote.validUntil === "number" ||
+              /^\d+$/.test(quote.validUntil)
+            ) {
               date = new Date(parseInt(quote.validUntil, 10));
             } else {
               date = new Date(quote.validUntil);
             }
-            
+
             const isValid = !isNaN(date.getTime());
-            
-            console.log('Conversion date:', {
+
+            console.log("Conversion date:", {
               isValid: isValid,
-              timestamp: isValid ? date.getTime() : 'Invalid',
-              localString: isValid ? date.toLocaleString('fr-FR') : 'Invalid',
-              isoString: isValid ? date.toISOString() : 'Invalid'
+              timestamp: isValid ? date.getTime() : "Invalid",
+              localString: isValid ? date.toLocaleString("fr-FR") : "Invalid",
+              isoString: isValid ? date.toISOString() : "Invalid",
             });
           } catch (error) {
-            console.log('Erreur lors de la conversion de date:', error.message, 'Valeur:', quote.validUntil);
+            console.log(
+              "Erreur lors de la conversion de date:",
+              error.message,
+              "Valeur:",
+              quote.validUntil
+            );
           }
         }
       });
-      
+
       // Vérifier si validUntil existe dans les clés
       const firstQuote = data[0];
       if (firstQuote) {
-        console.log('\n=== STRUCTURE DU PREMIER DEVIS ===');
-        console.log('Clés disponibles:', Object.keys(firstQuote));
-        console.log('validUntil existe:', 'validUntil' in firstQuote);
-        console.log('validUntil valeur:', firstQuote.validUntil);
+        console.log("\n=== STRUCTURE DU PREMIER DEVIS ===");
+        console.log("Clés disponibles:", Object.keys(firstQuote));
+        console.log("validUntil existe:", "validUntil" in firstQuote);
+        console.log("validUntil valeur:", firstQuote.validUntil);
       }
     }
   }, [data]);
@@ -374,26 +407,25 @@ export function useQuoteTable({ data = [], onRefetch }) {
     manualPagination: false,
     manualFiltering: false,
     manualSorting: false,
-    
+
     // Core models
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    
+
     // Optimize performance
     debugTable: false,
     autoResetPageIndex: false,
     enableMultiRemove: true,
-    
+
     // Filtering
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: memoizedMultiColumnFilter,
     state: {
       globalFilter,
-      columnFilters: statusFilter.length > 0 ? [
-        { id: "status", value: statusFilter }
-      ] : [],
+      columnFilters:
+        statusFilter.length > 0 ? [{ id: "status", value: statusFilter }] : [],
     },
     // Use the memoized filter function
     filterFns: {
@@ -408,19 +440,23 @@ export function useQuoteTable({ data = [], onRefetch }) {
 
   // Get selected rows - simplified to avoid infinite loops
   const selectedRowsModel = table.getFilteredSelectedRowModel();
-  const selectedRows = selectedRowsModel.rows.map(row => row.original);
+  const selectedRows = selectedRowsModel.rows.map((row) => row.original);
 
   // Handle bulk delete - optimized with batching
   const handleDeleteSelected = async () => {
-    const draftQuotes = selectedRows.filter(quote => quote.status === "DRAFT");
-    
+    const draftQuotes = selectedRows.filter(
+      (quote) => quote.status === "DRAFT"
+    );
+
     if (draftQuotes.length === 0) {
       toast.error("Seuls les devis en brouillon peuvent être supprimés");
       return;
     }
 
     if (draftQuotes.length < selectedRows.length) {
-      toast.warning(`${selectedRows.length - draftQuotes.length} devis ignoré(s) (non brouillon)`);
+      toast.warning(
+        `${selectedRows.length - draftQuotes.length} devis ignoré(s) (non brouillon)`
+      );
     }
 
     // Process in chunks to avoid overwhelming the browser
@@ -428,18 +464,18 @@ export function useQuoteTable({ data = [], onRefetch }) {
     for (let i = 0; i < draftQuotes.length; i += BATCH_SIZE) {
       const batch = draftQuotes.slice(i, i + BATCH_SIZE);
       try {
-        await Promise.all(
-          batch.map(quote => deleteQuote(quote.id))
-        );
+        await Promise.all(batch.map((quote) => deleteQuote(quote.id)));
       } catch (error) {
         console.error("Error deleting batch:", error);
-        toast.error(`Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`);
+        toast.error(
+          `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`
+        );
       }
     }
-    
+
     toast.success(`${draftQuotes.length} devis supprimé(s)`);
     table.resetRowSelection();
-    
+
     // Actualiser la liste des devis
     if (onRefetch) {
       onRefetch();

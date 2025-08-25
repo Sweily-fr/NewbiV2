@@ -85,17 +85,15 @@ import {
 } from "@/src/components/ui/table";
 
 import { useQuotes } from "@/src/graphql/quoteQueries";
-import { QUOTE_STATUS_LABELS, QUOTE_STATUS_COLORS } from "@/src/graphql/quoteQueries";
+import {
+  QUOTE_STATUS_LABELS,
+  QUOTE_STATUS_COLORS,
+} from "@/src/graphql/quoteQueries";
 import { useQuoteTable } from "../hooks/use-quote-table";
 import QuoteRowActions from "./quote-row-actions";
 
 export default function QuoteTable() {
-  const {
-    quotes,
-    loading,
-    error,
-    refetch,
-  } = useQuotes();
+  const { quotes, loading, error, refetch } = useQuotes();
 
   const {
     table,
@@ -137,11 +135,11 @@ export default function QuoteTable() {
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="w-80"
           />
-          
+
           {/* Status Filter */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="border-dashed">
+              <Button variant="outline" className="border-dashed font-normal">
                 <ListFilterIcon className="mr-2 h-4 w-4" />
                 Statut
                 {statusFilter?.length > 0 && (
@@ -155,24 +153,28 @@ export default function QuoteTable() {
               <div className="p-4">
                 <h4 className="font-medium leading-none mb-3">Statut</h4>
                 <div className="space-y-2">
-                  {Object.entries(QUOTE_STATUS_LABELS).map(([status, label]) => (
-                    <div key={status} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={status}
-                        checked={statusFilter.includes(status)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setStatusFilter([...statusFilter, status]);
-                          } else {
-                            setStatusFilter(statusFilter.filter(s => s !== status));
-                          }
-                        }}
-                      />
-                      <Label htmlFor={status} className="text-sm font-normal">
-                        {label}
-                      </Label>
-                    </div>
-                  ))}
+                  {Object.entries(QUOTE_STATUS_LABELS).map(
+                    ([status, label]) => (
+                      <div key={status} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={status}
+                          checked={statusFilter.includes(status)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setStatusFilter([...statusFilter, status]);
+                            } else {
+                              setStatusFilter(
+                                statusFilter.filter((s) => s !== status)
+                              );
+                            }
+                          }}
+                        />
+                        <Label htmlFor={status} className="text-sm font-normal">
+                          {label}
+                        </Label>
+                      </div>
+                    )
+                  )}
                 </div>
                 {statusFilter.length > 0 && (
                   <Button
@@ -192,7 +194,7 @@ export default function QuoteTable() {
           {/* Column visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="ml-auto">
+              <Button variant="outline" className="ml-auto font-normal">
                 <Columns3Icon className="mr-2 h-4 w-4" />
                 Colonnes
               </Button>
@@ -207,7 +209,9 @@ export default function QuoteTable() {
                       key={column.id}
                       className="capitalize"
                       checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
                     >
                       {column.id}
                     </DropdownMenuCheckboxItem>
@@ -220,7 +224,7 @@ export default function QuoteTable() {
           {selectedRows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={isDeleting}>
+                <Button variant="destructive" disabled={isDeleting}>
                   <TrashIcon className="mr-2 h-4 w-4" />
                   Supprimer ({selectedRows.length})
                 </Button>
@@ -229,11 +233,13 @@ export default function QuoteTable() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer {selectedRows.length} devis sélectionné(s) ?
-                    Cette action ne peut pas être annulée.
+                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                    devis sélectionné(s) ? Cette action ne peut pas être
+                    annulée.
                     <br />
                     <br />
-                    <strong>Note :</strong> Seuls les devis en brouillon peuvent être supprimés.
+                    <strong>Note :</strong> Seuls les devis en brouillon peuvent
+                    être supprimés.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -257,18 +263,20 @@ export default function QuoteTable() {
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id} style={{ width: header.getSize() }}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    style={{ width: header.getSize() }}
+                    className="font-normal"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
@@ -311,7 +319,9 @@ export default function QuoteTable() {
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center gap-2">
-            <p className="whitespace-nowrap text-sm font-medium">Lignes par page</p>
+            <p className="whitespace-nowrap text-sm font-medium">
+              Lignes par page
+            </p>
             <Select
               value={`${table.getState().pagination.pageSize}`}
               onValueChange={(value) => {
@@ -319,7 +329,9 @@ export default function QuoteTable() {
               }}
             >
               <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue placeholder={table.getState().pagination.pageSize} />
+                <SelectValue
+                  placeholder={table.getState().pagination.pageSize}
+                />
               </SelectTrigger>
               <SelectContent side="top">
                 {[10, 20, 30, 40, 50].map((pageSize) => (
@@ -331,7 +343,8 @@ export default function QuoteTable() {
             </Select>
           </div>
           <div className="flex items-center whitespace-nowrap text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} sur {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} sur{" "}
+            {table.getPageCount()}
           </div>
           <Pagination>
             <PaginationContent>

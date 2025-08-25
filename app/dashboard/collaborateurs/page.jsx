@@ -40,7 +40,7 @@ export default function Collaborateurs() {
           refreshTrigger={refreshTrigger}
           onRefresh={handleRefreshList}
         />
-        <Card className="w-1/3 h-auto sticky top-6">
+        {/* <Card className="w-1/3 h-auto sticky top-6">
           <CardHeader>
             <CardTitle className="font-normal">Ajouter un comptable</CardTitle>
           </CardHeader>
@@ -84,7 +84,7 @@ export default function Collaborateurs() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
       <InviteMembers
         open={dialogOpen}

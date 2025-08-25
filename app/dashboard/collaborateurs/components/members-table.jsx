@@ -12,35 +12,20 @@ import {
 } from "@/src/components/ui/table";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/src/components/ui/alert-dialog";
-import { MoreHorizontal, Mail, UserCheck, UserX, Trash2 } from "lucide-react";
+import { Input } from "@/src/components/ui/input";
+import { Mail, Search, Trash2 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
+import { useMembersTable } from "../hooks/use-members-table";
+import {
+  flexRender,
+} from "@tanstack/react-table";
 
-export default function MembersTable({ refreshTrigger, onRefresh }) {
+export default function MembersTable({ refreshTrigger, onRefresh, handleAddUser }) {
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const {
     getAllCollaborators,
-    removeMember,
-    cancelInvitation,
-    updateMemberRole,
   } = useOrganizationInvitations();
 
   // Charger tous les collaborateurs (membres + invitations)
@@ -69,71 +54,6 @@ export default function MembersTable({ refreshTrigger, onRefresh }) {
     loadData();
   }, [refreshTrigger]);
 
-  // Supprimer un membre
-  const handleRemoveMember = async (member) => {
-    const email = member.type === 'member' ? member.user?.email : member.email;
-    const result = await removeMember(email);
-    if (result.success) {
-      loadData(); // Recharger les données
-      if (onRefresh) onRefresh();
-    }
-  };
-
-  // Annuler une invitation
-  const handleCancelInvitation = async (invitation) => {
-    const result = await cancelInvitation(invitation.id);
-    if (result.success) {
-      loadData(); // Recharger les données
-      if (onRefresh) onRefresh();
-    }
-  };
-
-  // Changer le rôle d'un membre
-  const handleChangeRole = async (member, newRole) => {
-    const result = await updateMemberRole(member.id, newRole);
-    if (result.success) {
-      loadData(); // Recharger les données
-      if (onRefresh) onRefresh();
-    }
-  };
-
-  const getRoleBadgeVariant = (role) => {
-    switch (role) {
-      case "owner":
-        return "default";
-      case "admin":
-        return "secondary";
-      case "member":
-        return "outline";
-      default:
-        return "outline";
-    }
-  };
-
-  const getStatusBadgeVariant = (status) => {
-    switch (status) {
-      case "pending":
-        return "secondary";
-      case "accepted":
-        return "default";
-      case "rejected":
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Formater les données pour l'affichage
   const formattedData = collaborators.map((item) => {
     if (item.type === 'member') {
@@ -153,152 +73,148 @@ export default function MembersTable({ refreshTrigger, onRefresh }) {
     }
   });
 
+  // Utiliser le hook de table avec les données formatées - TOUJOURS appelé
+  const {
+    table,
+    globalFilter,
+    setGlobalFilter,
+    selectedRows,
+    handleDeleteSelected,
+  } = useMembersTable({ 
+    data: formattedData, 
+    onRefetch: () => {
+      loadData();
+      if (onRefresh) onRefresh();
+    }
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nom</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Rôle</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {formattedData.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center py-8">
-                <div className="text-gray-500">
-                  <Mail className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                  <p>Aucun collaborateur</p>
-                  <p className="text-sm">Invitez des personnes à rejoindre votre organisation</p>
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : (
-            formattedData.map((item, index) => (
-              <TableRow key={`${item.type}-${item.id}`}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center space-x-2">
-                    {item.type === "invitation" && (
-                      <Mail className="h-4 w-4 text-blue-500" />
-                    )}
-                    <span>{item.name || "N/A"}</span>
+    <div className="space-y-4">
+      {/* Barre de recherche et actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher des collaborateurs..."
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(String(event.target.value))}
+              className="pl-8 w-[300px]"
+            />
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          {selectedRows.length > 0 && (
+            <>
+              <span className="text-sm text-muted-foreground">
+                {selectedRows.length} élément(s) sélectionné(s)
+              </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteSelected}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Supprimer la sélection
+              </Button>
+            </>
+          )}
+          <Button onClick={handleAddUser} className="font-normal">
+            Ajouter un collaborateur
+          </Button>
+        </div>
+      </div>
+
+      {/* Tableau */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className="font-normal">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="font-normal">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={table.getAllColumns().length}
+                  className="h-24 text-center"
+                >
+                  <div className="text-gray-500">
+                    <Mail className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                    <p>Aucun collaborateur</p>
+                    <p className="text-sm">Invitez des personnes à rejoindre votre organisation</p>
                   </div>
                 </TableCell>
-                <TableCell>{item.email}</TableCell>
-                <TableCell>
-                  <Badge variant={getRoleBadgeVariant(item.role)}>
-                    {item.role}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusBadgeVariant(item.status)}>
-                    {item.type === "member" ? "Actif" : 
-                     item.status === "pending" ? "En attente" : 
-                     item.status === "accepted" ? "Accepté" : 
-                     item.status === "rejected" ? "Rejeté" : item.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {item.type === "member" && item.role !== "owner" && (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => handleChangeRole(item, "admin")}
-                            disabled={item.role === "admin"}
-                          >
-                            Promouvoir admin
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleChangeRole(item, "member")}
-                            disabled={item.role === "member"}
-                          >
-                            Rétrograder membre
-                          </DropdownMenuItem>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onSelect={(e) => e.preventDefault()}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Supprimer
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Supprimer le membre
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Êtes-vous sûr de vouloir supprimer{" "}
-                                  <strong>{item.name}</strong> de l'organisation ?
-                                  Cette action est irréversible.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleRemoveMember(item)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Supprimer
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
-                      )}
-                      
-                      {item.type === "invitation" && item.status === "pending" && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem
-                              className="text-red-600"
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <UserX className="mr-2 h-4 w-4" />
-                              Annuler l'invitation
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Annuler l'invitation
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Êtes-vous sûr de vouloir annuler l'invitation pour{" "}
-                                <strong>{item.email}</strong> ?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleCancelInvitation(item)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Annuler l'invitation
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between space-x-2 py-4">
+        <div className="text-sm text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} sur{" "}
+          {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Précédent
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Suivant
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

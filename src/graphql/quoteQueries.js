@@ -143,6 +143,7 @@ export const QUOTE_LIST_FRAGMENT = gql`
 
 export const GET_QUOTES = gql`
   query GetQuotes(
+    $workspaceId: ID!
     $startDate: String
     $endDate: String
     $status: QuoteStatus
@@ -151,6 +152,7 @@ export const GET_QUOTES = gql`
     $limit: Int
   ) {
     quotes(
+      workspaceId: $workspaceId
       startDate: $startDate
       endDate: $endDate
       status: $status
@@ -169,8 +171,8 @@ export const GET_QUOTES = gql`
 `;
 
 export const GET_QUOTE = gql`
-  query GetQuote($id: ID!) {
-    quote(id: $id) {
+  query GetQuote($workspaceId: ID!, $id: ID!) {
+    quote(workspaceId: $workspaceId, id: $id) {
       ...QuoteFragment
     }
   }
@@ -178,8 +180,8 @@ export const GET_QUOTE = gql`
 `;
 
 export const GET_QUOTE_STATS = gql`
-  query GetQuoteStats {
-    quoteStats {
+  query GetQuoteStats($workspaceId: ID!) {
+    quoteStats(workspaceId: $workspaceId) {
       totalCount
       draftCount
       pendingCount
@@ -192,16 +194,16 @@ export const GET_QUOTE_STATS = gql`
 `;
 
 export const GET_NEXT_QUOTE_NUMBER = gql`
-  query GetNextQuoteNumber($prefix: String) {
-    nextQuoteNumber(prefix: $prefix)
+  query GetNextQuoteNumber($workspaceId: ID!, $prefix: String) {
+    nextQuoteNumber(workspaceId: $workspaceId, prefix: $prefix)
   }
 `;
 
 // ==================== MUTATIONS ====================
 
 export const CREATE_QUOTE = gql`
-  mutation CreateQuote($input: CreateQuoteInput!) {
-    createQuote(input: $input) {
+  mutation CreateQuote($workspaceId: ID!, $input: CreateQuoteInput!) {
+    createQuote(workspaceId: $workspaceId, input: $input) {
       ...QuoteFragment
     }
   }
@@ -265,18 +267,22 @@ export const CONVERT_QUOTE_TO_INVOICE = gql`
 import { useQuery, useMutation, useApolloClient } from '@apollo/client';
 import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
+import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
 
 // Hook optimisé pour récupérer la liste des devis
 export const useQuotes = (filters = {}) => {
+  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
   const [page, setPage] = useState(1);
   const limit = 10;
 
   const { data, loading, error, fetchMore, refetch } = useQuery(GET_QUOTES, {
     variables: {
+      workspaceId,
       ...filters,
       page,
       limit
     },
+    skip: !workspaceId,
     fetchPolicy: 'cache-and-network',
     errorPolicy: 'all'
   });
@@ -318,8 +324,8 @@ export const useQuotes = (filters = {}) => {
     quotes,
     totalCount,
     hasNextPage,
-    loading,
-    error,
+    loading: loading || workspaceLoading,
+    error: error || workspaceError,
     loadMore,
     refetch,
     resetPage
@@ -328,40 +334,49 @@ export const useQuotes = (filters = {}) => {
 
 // Hook pour récupérer un devis spécifique
 export const useQuote = (id) => {
+  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
+  
   const { data, loading, error, refetch } = useQuery(GET_QUOTE, {
-    variables: { id },
-    skip: !id,
+    variables: { workspaceId, id },
+    skip: !id || !workspaceId,
     fetchPolicy: 'cache-and-network',
     errorPolicy: 'all'
   });
 
   return {
     quote: data?.quote,
-    loading,
-    error,
+    loading: loading || workspaceLoading,
+    error: error || workspaceError,
     refetch
   };
 };
 
 // Hook pour les statistiques des devis
 export const useQuoteStats = () => {
+  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
+  
   const { data, loading, error, refetch } = useQuery(GET_QUOTE_STATS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
     fetchPolicy: 'cache-and-network',
     errorPolicy: 'all'
   });
 
   return {
     stats: data?.quoteStats,
-    loading,
-    error,
+    loading: loading || workspaceLoading,
+    error: error || workspaceError,
     refetch
   };
 };
 
 // Hook pour récupérer le prochain numéro de devis
 export function useNextQuoteNumber(prefix, options = {}) {
+  const { workspaceId } = useRequiredWorkspace();
+  
   const { data, loading, error } = useQuery(GET_NEXT_QUOTE_NUMBER, {
-    variables: { prefix },
+    variables: { workspaceId, prefix },
+    skip: !workspaceId,
     ...options
   });
 
@@ -375,6 +390,7 @@ export function useNextQuoteNumber(prefix, options = {}) {
 // Hook pour créer un devis
 export const useCreateQuote = () => {
   const client = useApolloClient();
+  const { workspaceId } = useRequiredWorkspace();
   
   const [createQuoteMutation, { loading }] = useMutation(CREATE_QUOTE, {
     onCompleted: () => {
@@ -391,9 +407,13 @@ export const useCreateQuote = () => {
   });
 
   const createQuote = async (input) => {
+    if (!workspaceId) {
+      throw new Error('Aucun workspace sélectionné');
+    }
+
     try {
       const result = await createQuoteMutation({
-        variables: { input }
+        variables: { workspaceId, input }
       });
       return result.data.createQuote;
     } catch (error) {

@@ -260,7 +260,7 @@ export default function KanbanPage() {
               <Card className="min-h-42 hover:shadow-lg transition-all duration-200 cursor-pointer group relative">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg font-semibold text-foreground">
+                    <CardTitle className="text-lg font-medium text-foreground">
                       {board.title}
                     </CardTitle>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -286,7 +286,7 @@ export default function KanbanPage() {
                       </Button>
                     </div>
                   </div>
-                  <CardDescription className="line-clamp-2 mt-3 text-sm text-muted-foreground">
+                  <CardDescription className="line-clamp-2 text-sm text-muted-foreground">
                     {board.description || "Aucune description"}
                   </CardDescription>
                 </CardHeader>

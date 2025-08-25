@@ -20,7 +20,7 @@ export default function QuotesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-medium mb-2">Devis</h1>
+            <h1 className="text-2xl font-medium mb-2">Devis clients</h1>
             <p className="text-muted-foreground text-sm">
               Gérez vos devis et propositions commerciales
             </p>
