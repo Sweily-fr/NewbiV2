@@ -720,7 +720,7 @@ export const generateGmailSignatureHTML = (signature) => {
     </td>
     <td style="width: ${signature.spacings?.nameSpacing || 12}px; padding: 0; margin: 0; padding-left: ${signature.spacings?.nameSpacing || 12}px;">&nbsp;</td>
     ${signature.verticalSeparator?.enabled ? `
-    <td style="width: ${signature.spacings?.verticalSeparatorLeft || 8}px; padding: 0; margin: 0; vertical-align: top;">&nbsp;</td>
+    <td style="width: ${signature.spacings?.verticalSeparatorLeft || 4}px; padding: 0; margin: 0; vertical-align: top;">&nbsp;</td>
     <td style="width: ${signature.verticalSeparator?.width || 2}px; background-color: ${signature.verticalSeparator?.color || '#000000'}; padding: 0; margin: 0; vertical-align: top; height: 100%; min-height: 80px;">&nbsp;</td>
     <td style="width: ${signature.spacings?.verticalSeparatorRight || 12}px; padding: 0; margin: 0; vertical-align: top;">&nbsp;</td>
     ` : ''}

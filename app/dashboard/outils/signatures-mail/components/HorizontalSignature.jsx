@@ -73,7 +73,7 @@ const HorizontalSignature = ({
       <tbody>
         <tr>
           {/* Photo de profil à gauche */}
-          <td style={{ width: `${signatureData.columnWidths?.photo || 25}%`, paddingRight: `${signatureData.spacings?.photoBottom || 16}px`, verticalAlign: 'top' }}>
+          <td style={{ width: `${signatureData.imageSize || 80}px`, verticalAlign: 'top' }}>
             {signatureData.photo ? (
               <div 
                 style={{
@@ -123,9 +123,11 @@ const HorizontalSignature = ({
           {/* Espacement gauche du séparateur vertical */}
           {signatureData.verticalSeparator?.enabled && (
             <td style={{ 
-              width: `${signatureData.spacings?.verticalSeparatorLeft || 8}px`,
-              verticalAlign: 'top'
-            }}></td>
+              width: `${signatureData.spacings?.verticalSeparatorLeft || 22}px`,
+              minWidth: `${signatureData.spacings?.verticalSeparatorLeft || 22}px`,
+              maxWidth: `${signatureData.spacings?.verticalSeparatorLeft || 22}px`,
+              verticalAlign: 'top',
+            }}>&nbsp;</td>
           )}
           
           {/* Séparateur vertical si activé */}
@@ -142,14 +144,15 @@ const HorizontalSignature = ({
           {/* Espacement droite du séparateur vertical */}
           {signatureData.verticalSeparator?.enabled && (
             <td style={{ 
-              width: `${signatureData.spacings?.verticalSeparatorRight || 12}px`,
-              verticalAlign: 'top'
-            }}></td>
+              width: `${signatureData.spacings?.verticalSeparatorRight || 22}px`,
+              minWidth: `${signatureData.spacings?.verticalSeparatorRight || 22}px`,
+              maxWidth: `${signatureData.spacings?.verticalSeparatorRight || 22}px`,
+              verticalAlign: 'top',
+            }}>&nbsp;</td>
           )}
           
           {/* Informations empilées verticalement à droite */}
           <td style={{ 
-            width: `${signatureData.columnWidths?.content || 75}%`, 
             verticalAlign: 'top',
             paddingLeft: `${signatureData.spacings?.nameSpacing || 12}px`
           }}>
@@ -265,7 +268,7 @@ const HorizontalSignature = ({
                              <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
                            <td style={{ 
-                             fontSize: '12px', 
+                             fontSize: `${signatureData.fontSize?.contact || 12}px`, 
                              color: signatureData.colors?.contact || 'rgb(102,102,102)', 
                              verticalAlign: 'middle' 
                            }}>
@@ -296,7 +299,7 @@ const HorizontalSignature = ({
                              <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
                            <td style={{ 
-                             fontSize: '12px', 
+                             fontSize: `${signatureData.fontSize?.contact || 12}px`, 
                              color: signatureData.colors?.contact || 'rgb(102,102,102)', 
                              verticalAlign: 'middle' 
                            }}>
@@ -327,7 +330,7 @@ const HorizontalSignature = ({
                              <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
                            <td style={{ 
-                             fontSize: '12px', 
+                             fontSize: `${signatureData.fontSize?.contact || 12}px`, 
                              color: signatureData.colors?.contact || 'rgb(102,102,102)', 
                              verticalAlign: 'middle' 
                            }}>
@@ -358,7 +361,7 @@ const HorizontalSignature = ({
                              <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', minWidth: '16px' }} />
                            </td>
                            <td style={{ 
-                             fontSize: '12px', 
+                             fontSize: `${signatureData.fontSize?.contact || 12}px`, 
                              color: signatureData.colors?.contact || 'rgb(102,102,102)', 
                              verticalAlign: 'middle' 
                            }}>
@@ -389,7 +392,7 @@ const HorizontalSignature = ({
                              <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="16" height="16" style={{ width: '16px !important', height: '16px !important', display: 'block', marginTop: '2px', minWidth: '16px' }} />
                            </td>
                            <td style={{ 
-                             fontSize: '12px', 
+                             fontSize: `${signatureData.fontSize?.contact || 12}px`, 
                              color: signatureData.colors?.contact || 'rgb(102,102,102)', 
                              verticalAlign: 'top' 
                            }}>
