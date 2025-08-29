@@ -136,7 +136,7 @@ const columns = [
     accessorKey: "name",
     cell: ({ row }) => {
       const product = row.original;
-      return <div className="font-medium">{product.name}</div>;
+      return <div className="font-normal">{product.name}</div>;
     },
     size: 200,
     filterFn: multiColumnFilterFn,
@@ -462,7 +462,7 @@ export default function TableProduct({ handleAddProduct }) {
           {/* Filter by category */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="font-normal">
                 <FilterIcon
                   className="-ms-1 opacity-60"
                   size={16}
@@ -478,7 +478,7 @@ export default function TableProduct({ handleAddProduct }) {
             </PopoverTrigger>
             <PopoverContent className="w-auto min-w-36 p-3" align="start">
               <div className="space-y-3">
-                <div className="text-muted-foreground text-xs font-medium">
+                <div className="text-muted-foreground text-xs font-normal">
                   Filtres
                 </div>
                 <div className="space-y-3">
@@ -509,7 +509,7 @@ export default function TableProduct({ handleAddProduct }) {
           {/* Toggle columns visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="font-normal">
                 <Columns3Icon
                   className="-ms-1 opacity-60"
                   size={16}
@@ -546,7 +546,7 @@ export default function TableProduct({ handleAddProduct }) {
           {table.getSelectedRowModel().rows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="ml-auto" variant="outline">
+                <Button className="ml-auto" variant="destructive">
                   <TrashIcon
                     className="-ms-1 opacity-60"
                     size={16}
@@ -579,7 +579,10 @@ export default function TableProduct({ handleAddProduct }) {
                 </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteRows}>
+                  <AlertDialogAction
+                    onClick={handleDeleteRows}
+                    variant="destructive"
+                  >
                     Supprimer
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -588,15 +591,10 @@ export default function TableProduct({ handleAddProduct }) {
           )}
           {/* Add product button */}
           <Button
-            className="ml-auto cursor-pointer"
-            variant="outline"
+            className="ml-auto cursor-pointer font-normal"
+            variant="default"
             onClick={handleAddProduct}
           >
-            <PlusIcon
-              className="-ms-1 opacity-60"
-              size={16}
-              aria-hidden="true"
-            />
             Ajouter un produit
           </Button>
         </div>
@@ -613,7 +611,7 @@ export default function TableProduct({ handleAddProduct }) {
                     <TableHead
                       key={header.id}
                       style={{ width: `${header.getSize()}px` }}
-                      className="h-11"
+                      className="h-11 font-normal"
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
@@ -718,7 +716,7 @@ export default function TableProduct({ handleAddProduct }) {
       <div className="flex items-center justify-between gap-8">
         {/* Results per page */}
         <div className="flex items-center gap-3">
-          <Label htmlFor={id} className="max-sm:sr-only">
+          <Label htmlFor={id} className="max-sm:sr-only font-normal">
             Lignes par page
           </Label>
           <Select

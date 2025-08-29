@@ -138,7 +138,7 @@ const columns = [
     enableHiding: false,
   },
   {
-    header: "Nom",
+    header: "Nom du client",
     accessorKey: "name",
     cell: ({ row }) => {
       const client = row.original;
