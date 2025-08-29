@@ -4,6 +4,7 @@ import * as React from "react";
 import { ChevronsUpDown, Plus } from "lucide-react";
 import { IconBuilding } from "@tabler/icons-react";
 import { authClient } from "@/src/lib/auth-client";
+import Link from "next/link";
 
 import {
   DropdownMenu,
@@ -131,13 +132,15 @@ export function TeamSwitcher() {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2" disabled>
-              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <Plus className="size-4" />
-              </div>
-              <div className="text-muted-foreground font-medium">
-                Créer une organisation
-              </div>
+            <DropdownMenuItem className="gap-2 p-2" asChild>
+              <Link href="/dashboard/collaborateurs">
+                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                  <Plus className="size-4" />
+                </div>
+                <div className="text-muted-foreground font-medium">
+                  Inviter un collaborateur
+                </div>
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

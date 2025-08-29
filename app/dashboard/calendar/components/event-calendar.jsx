@@ -342,7 +342,7 @@ export function EventCalendar({
                 setIsEventDialogOpen(true);
               }}
             >
-              Nouvel evenement
+              Nouvel événement
             </Button>
           </div>
         </div>

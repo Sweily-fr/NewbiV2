@@ -24,14 +24,9 @@ const faqs = [
       "Un tableau de bord intuitif vous permet de visualiser en temps réel le statut de chaque facture et d’envoyer des relances automatiques.",
   },
   {
-    question: "Puis-je automatiser mes relances clients ?",
-    answer:
-      "Oui, vous pouvez planifier des relances automatiques selon vos propres règles, pour ne jamais oublier un paiement.",
-  },
-  {
     question: "Comment obtenir de l’aide si j’ai une question?",
     answer:
-      "Notre support est disponible par email à support@example.com ou directement via le chat intégré à la plateforme.",
+      "Notre support est disponible par email à contact@newbi.fr ou directement via le chat intégré à la plateforme.",
   },
 ];
 

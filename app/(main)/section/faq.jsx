@@ -5,22 +5,17 @@ const faqs = [
   {
     question: "Qu’est-ce que newbi ?",
     answer:
-      "newbi est une plateforme qui simplifie la gestion administrative et financière des indépendants et PME : facturation, relances automatiques, et suivi facile.",
+      "Newbi est une plateforme qui simplifie la gestion administrative et financière des indépendants et PME : facturation, transferts de fichiers volumineux, Gestion de projet, Signatures de mail professionnelles, et tout ça en quelques clics.",
   },
   {
     question: "À qui s’adresse newbi ?",
     answer:
-      "newbi s’adresse aux freelancers, indépendants, petites entreprises et associations qui veulent gagner du temps sur leur gestion quotidienne.",
+      "Newbi s’adresse aux freelances, indépendants, petites entreprises et associations qui veulent gagner du temps sur leur gestion quotidienne.",
   },
   {
     question: "L’utilisation de newbi est-elle sécurisée ?",
     answer:
       "Oui, la sécurité de vos données est notre priorité : toutes vos informations sont chiffrées et stockées de façon sécurisée.",
-  },
-  {
-    question: "Puis-je connecter newbi avec d’autres outils ?",
-    answer:
-      "newbi propose des intégrations avec vos outils préférés : agenda, messagerie, CRM et plus encore.",
   },
   {
     question: "Est-ce facile à prendre en main ?",
@@ -30,7 +25,7 @@ const faqs = [
   {
     question: "Comment contacter l’équipe support ?",
     answer:
-      "Vous pouvez nous écrire à support@example.com ou directement via le chat sur la plateforme.",
+      "Vous pouvez nous écrire à contact@newbi.fr ou directement via la communauté Whatsapp sur la plateforme.",
   },
 ];
 

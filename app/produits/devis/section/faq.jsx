@@ -5,33 +5,22 @@ const faqs = [
   {
     question: "Comment créer une facture avec newbi ?",
     answer:
-      "Il vous suffit de remplir les champs requis sur notre interface et d’envoyer la facture à votre client en quelques clics. Tout est guidé !",
+      "Il vous suffit de remplir les champs requis sur notre interface et d’envoyer le devis à votre client en quelques clics. Tout est guidé !",
   },
   {
-    question: "Puis-je personnaliser mes factures ?",
+    question: "Puis-je personnaliser mes devis ?",
     answer:
       "Oui, vous pouvez ajouter votre logo, personnaliser les couleurs et choisir parmi plusieurs modèles pour refléter l’image de votre entreprise.",
   },
   {
-    question:
-      "Est-ce que les factures sont conformes à la législation française ?",
+    question: "Est-ce que les devis sont conformes à la législation française?",
     answer:
-      "Toutes les factures émises via newbi respectent les normes légales et fiscales en vigueur en France.",
-  },
-  {
-    question: "Comment suivre les paiements de mes factures ?",
-    answer:
-      "Un tableau de bord intuitif vous permet de visualiser en temps réel le statut de chaque facture et d’envoyer des relances automatiques.",
-  },
-  {
-    question: "Puis-je automatiser mes relances clients ?",
-    answer:
-      "Oui, vous pouvez planifier des relances automatiques selon vos propres règles, pour ne jamais oublier un paiement.",
+      "Tout les devis émis via newbi respectent les normes légales et fiscales en vigueur en France.",
   },
   {
     question: "Comment obtenir de l’aide si j’ai une question?",
     answer:
-      "Notre support est disponible par email à support@example.com ou directement via le chat intégré à la plateforme.",
+      "Notre support est disponible par email à contact@newbi.fr ou directement via le chat intégré à la plateforme.",
   },
 ];
 

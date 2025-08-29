@@ -22,6 +22,7 @@ const GoogleIcon = (props) => (
 );
 
 export default function SignUpPage() {
+
   const signInWithProvider = async (provider) => {
     await signIn.social(
       { provider, callbackURL: "/dashboard" },

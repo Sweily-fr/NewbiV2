@@ -108,11 +108,11 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
         try {
           await updateCompanyLogo({
             variables: {
-              logoUrl: uploadData.url
-            }
+              logoUrl: uploadData.url,
+            },
           });
         } catch (dbError) {
-          console.warn('Erreur sauvegarde BDD:', dbError);
+          console.warn("Erreur sauvegarde BDD:", dbError);
           // Ne pas faire échouer l'upload si la BDD échoue
         }
 
@@ -165,11 +165,11 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
     try {
       await updateCompanyLogo({
         variables: {
-          logoUrl: null
-        }
+          logoUrl: null,
+        },
       });
     } catch (dbError) {
-      console.warn('Erreur suppression BDD:', dbError);
+      console.warn("Erreur suppression BDD:", dbError);
     }
 
     // Nettoyer l'état local
@@ -185,7 +185,13 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
     }
 
     onUploadSuccess?.(null);
-  }, [currentFileKey, deleteDocument, previewUrl, onUploadSuccess, updateCompanyLogo]);
+  }, [
+    currentFileKey,
+    deleteDocument,
+    previewUrl,
+    onUploadSuccess,
+    updateCompanyLogo,
+  ]);
 
   /**
    * Définit une image existante

@@ -180,32 +180,25 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   <Input placeholder="Prénom" {...register("firstName")} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nom de famille</Label>
-                  <Input
-                    placeholder="Nom de famille"
-                    {...register("lastName")}
+                  <Label>Email *</Label>
+                  <InputEmail
+                    placeholder="client@exemple.com"
+                    {...register("email", {
+                      required: "L'email est requis",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Email invalide",
+                      },
+                    })}
                   />
+                  {errors.email && (
+                    <p className="text-sm text-red-500">
+                      {errors.email.message}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label>Email *</Label>
-              <InputEmail
-                placeholder="client@exemple.com"
-                {...register("email", {
-                  required: "L'email est requis",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Email invalide",
-                  },
-                })}
-              />
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email.message}</p>
-              )}
-            </div>
 
             {/* Adresse de facturation */}
             <div className="space-y-3">

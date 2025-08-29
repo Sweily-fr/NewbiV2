@@ -16,7 +16,7 @@ export default function Catalogues() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-medium mb-2">Gestion des Catalogues</h1>
+          <h1 className="text-2xl font-medium mb-2">Gestion du Catalogue</h1>
           <p className="text-muted-foreground text-sm">
             Gérez efficacement vos produits et services en un seul endroit.
           </p>

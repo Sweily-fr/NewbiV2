@@ -112,14 +112,14 @@ export function NavUser({ user }) {
                   Compte
                 </DropdownMenuItem>
               </Link>
-              <DropdownMenuItem className="cursor-pointer">
+              {/* <DropdownMenuItem className="cursor-pointer">
                 <IconCreditCard />
                 Facture
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">
                 <IconNotification />
                 Notifications
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               {/* <DropdownMenuItem>
                 <ModeToggle />
               </DropdownMenuItem> */}

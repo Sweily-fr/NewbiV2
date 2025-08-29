@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { RiCalendarLine, RiDeleteBinLine } from "@remixicon/react";
 import { format, isBefore } from "date-fns";
+import { fr } from "date-fns/locale";
+import { sanitizeInput, detectInjectionAttempt } from "@/src/lib/validation";
 
 // Types removed for JavaScript compatibility
 import {
@@ -60,6 +62,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   const [location, setLocation] = useState("");
   const [color, setColor] = useState("sky");
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
 
@@ -100,6 +103,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     setLocation("");
     setColor("sky");
     setError(null);
+    setFieldErrors({});
   };
 
   const formatTimeForInput = (date) => {
@@ -125,6 +129,43 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     return options;
   }, []); // Empty dependency array ensures this only runs once
 
+  // Patterns de validation pour les événements
+  const eventValidationPatterns = {
+    title: {
+      pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()!?]{1,200}$/,
+      message: "Le titre doit contenir entre 1 et 200 caractères (lettres, chiffres, espaces et ponctuation de base autorisés)"
+    },
+    description: {
+      pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()!?\n\r]{0,1000}$/,
+      message: "La description ne peut pas dépasser 1000 caractères"
+    },
+    location: {
+      pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()]{0,200}$/,
+      message: "Le lieu ne peut pas dépasser 200 caractères (lettres, chiffres, espaces et ponctuation de base autorisés)"
+    }
+  };
+
+  // Fonction de validation des champs
+  const validateField = (fieldName, value) => {
+    if (!value && fieldName === 'title') {
+      return "Le titre est requis";
+    }
+    
+    if (!value) return null; // Champs optionnels
+    
+    // Vérification des tentatives d'injection
+    if (detectInjectionAttempt(value)) {
+      return "Caractères non autorisés détectés";
+    }
+    
+    const pattern = eventValidationPatterns[fieldName];
+    if (pattern && !pattern.pattern.test(value)) {
+      return pattern.message;
+    }
+    
+    return null;
+  };
+
   const handleSave = () => {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -142,7 +183,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
         endHours > EndHour
       ) {
         setError(
-          `Selected time must be between ${StartHour}:00 and ${EndHour}:00`
+          `L'heure sélectionnée doit être entre ${StartHour}:00 et ${EndHour}:00`
         );
         return;
       }
@@ -156,21 +197,48 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
 
     // Validate that end date is not before start date
     if (isBefore(end, start)) {
-      setError("End date cannot be before start date");
+      setError("La date de fin ne peut pas être antérieure à la date de début");
       return;
     }
 
+    // Validation des champs
+    const errors = {};
+    const titleValue = title.trim();
+    const descriptionValue = description.trim();
+    const locationValue = location.trim();
+    
+    // Validation du titre
+    const titleError = validateField('title', titleValue);
+    if (titleError) errors.title = titleError;
+    
+    // Validation de la description
+    const descriptionError = validateField('description', descriptionValue);
+    if (descriptionError) errors.description = descriptionError;
+    
+    // Validation du lieu
+    const locationError = validateField('location', locationValue);
+    if (locationError) errors.location = locationError;
+    
+    // Si des erreurs de validation existent, les afficher
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    
+    // Réinitialiser les erreurs de champs
+    setFieldErrors({});
+    
     // Use generic title if empty
-    const eventTitle = title.trim() ? title : "(no title)";
+    const eventTitle = titleValue || "(sans titre)";
 
     onSave({
       id: event?.id || "",
-      title: eventTitle,
-      description,
+      title: sanitizeInput(eventTitle),
+      description: sanitizeInput(descriptionValue),
       start,
       end,
       allDay,
-      location,
+      location: sanitizeInput(locationValue),
       color,
     });
   };
@@ -225,11 +293,13 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{event?.id ? "Edit Event" : "Create Event"}</DialogTitle>
+          <DialogTitle>
+            {event?.id ? "Modifier l'événement" : "Créer un événement"}
+          </DialogTitle>
           <DialogDescription className="sr-only">
             {event?.id
-              ? "Edit the details of this event"
-              : "Add a new event to your calendar"}
+              ? "Modifier les détails de cet événement"
+              : "Ajouter un nouvel événement à votre calendrier"}
           </DialogDescription>
         </DialogHeader>
         {error && (
@@ -239,12 +309,23 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
         )}
         <div className="grid gap-4 py-4">
           <div className="*:not-first:mt-1.5">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">Titre</Label>
             <Input
               id="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value);
+                setTitle(sanitized);
+                // Effacer l'erreur du champ quand l'utilisateur tape
+                if (fieldErrors.title) {
+                  setFieldErrors(prev => ({ ...prev, title: null }));
+                }
+              }}
+              className={fieldErrors.title ? "border-red-500" : ""}
             />
+            {fieldErrors.title && (
+              <p className="text-sm text-red-500 mt-1">{fieldErrors.title}</p>
+            )}
           </div>
 
           <div className="*:not-first:mt-1.5">
@@ -252,14 +333,25 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <Textarea
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value);
+                setDescription(sanitized);
+                // Effacer l'erreur du champ quand l'utilisateur tape
+                if (fieldErrors.description) {
+                  setFieldErrors(prev => ({ ...prev, description: null }));
+                }
+              }}
               rows={3}
+              className={fieldErrors.description ? "border-red-500" : ""}
             />
+            {fieldErrors.description && (
+              <p className="text-sm text-red-500 mt-1">{fieldErrors.description}</p>
+            )}
           </div>
 
           <div className="flex gap-4">
             <div className="flex-1 *:not-first:mt-1.5">
-              <Label htmlFor="start-date">Start Date</Label>
+              <Label htmlFor="start-date">Date de début</Label>
               <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -276,7 +368,9 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                         !startDate && "text-muted-foreground"
                       )}
                     >
-                      {startDate ? format(startDate, "PPP") : "Pick a date"}
+                      {startDate
+                        ? format(startDate, "PPP")
+                        : "Choisir une date"}
                     </span>
                     <RiCalendarLine
                       size={16}
@@ -308,10 +402,10 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
 
             {!allDay && (
               <div className="min-w-28 *:not-first:mt-1.5">
-                <Label htmlFor="start-time">Start Time</Label>
+                <Label htmlFor="start-time">Heure de début</Label>
                 <Select value={startTime} onValueChange={setStartTime}>
                   <SelectTrigger id="start-time">
-                    <SelectValue placeholder="Select time" />
+                    <SelectValue placeholder="Choisir l'heure" />
                   </SelectTrigger>
                   <SelectContent>
                     {timeOptions.map((option) => (
@@ -327,7 +421,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
 
           <div className="flex gap-4">
             <div className="flex-1 *:not-first:mt-1.5">
-              <Label htmlFor="end-date">End Date</Label>
+              <Label htmlFor="end-date">Date de fin</Label>
               <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -344,7 +438,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                         !endDate && "text-muted-foreground"
                       )}
                     >
-                      {endDate ? format(endDate, "PPP") : "Pick a date"}
+                      {endDate ? format(endDate, "PPP") : "Choisir une date"}
                     </span>
                     <RiCalendarLine
                       size={16}
@@ -373,10 +467,10 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
 
             {!allDay && (
               <div className="min-w-28 *:not-first:mt-1.5">
-                <Label htmlFor="end-time">End Time</Label>
+                <Label htmlFor="end-time">Heure de fin</Label>
                 <Select value={endTime} onValueChange={setEndTime}>
                   <SelectTrigger id="end-time">
-                    <SelectValue placeholder="Select time" />
+                    <SelectValue placeholder="Choisir l'heure" />
                   </SelectTrigger>
                   <SelectContent>
                     {timeOptions.map((option) => (
@@ -396,16 +490,27 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
               checked={allDay}
               onCheckedChange={(checked) => setAllDay(checked === true)}
             />
-            <Label htmlFor="all-day">All day</Label>
+            <Label htmlFor="all-day">Toute la journée</Label>
           </div>
 
           <div className="*:not-first:mt-1.5">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="location">Lieu</Label>
             <Input
               id="location"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value);
+                setLocation(sanitized);
+                // Effacer l'erreur du champ quand l'utilisateur tape
+                if (fieldErrors.location) {
+                  setFieldErrors(prev => ({ ...prev, location: null }));
+                }
+              }}
+              className={fieldErrors.location ? "border-red-500" : ""}
             />
+            {fieldErrors.location && (
+              <p className="text-sm text-red-500 mt-1">{fieldErrors.location}</p>
+            )}
           </div>
           <fieldset className="space-y-4">
             <legend className="text-foreground text-sm leading-none font-medium">
@@ -446,9 +551,9 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
           )}
           <div className="flex flex-1 justify-end gap-2">
             <Button variant="outline" onClick={onClose}>
-              Cancel
+              Annuler
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave}>Enregistrer</Button>
           </div>
         </DialogFooter>
       </DialogContent>

@@ -65,7 +65,7 @@ const menuItems = [
     ],
   },
   { name: "Tarifs", href: "#pricing" },
-  { name: "Ressources", href: "/blog" },
+  // { name: "Ressources", href: "/blog" },
 ];
 
 const HeroHeader = ({ className }) => {

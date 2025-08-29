@@ -18,7 +18,7 @@ export default function PricingSection() {
         </h2>
         <p className="text-md text-gray-600 max-w-2xl mx-auto mb-6">
           Inscrivez-vous gratuitement à Newbi avant de prendre un plan payant.
-          <span className="text-[#5B4FFF]">14 jours d'essais offerts</span> et
+          <span className="text-[#5B4FFF]"> 14 jours d'essais offerts</span> et
           possibilité de résilier à tout moment sans condition.
         </p>
 
@@ -48,8 +48,11 @@ export default function PricingSection() {
           <h3 className="text-2xl font-medium text-gray-900 mb-4">Premium</h3>
           <p className="text-gray-500 mb-6">
             Inscrivez-vous gratuitement à Newbi avant de prendre un plan payant.
-            <span className="text-[#5B4FFF]">14 jours d'essais offerts</span> et
-            possibilité de résilier à tout moment sans condition.
+            <span className="text-[#5B4FFF]">
+              {" "}
+              14 jours d'essais offerts
+            </span>{" "}
+            et possibilité de résilier à tout moment sans condition.
           </p>
           <div>
             <h4 className="font-medium text-[#5B4FFF] mb-4">
@@ -97,13 +100,22 @@ export default function PricingSection() {
                 </>
               ) : (
                 <>
-                  161,89{" "}
+                  13,49{" "}
                   <span className="text-base font-medium text-gray-500 ml-2">
-                    EUR/an
+                    EUR/mois
                   </span>
                 </>
               )}
             </p>
+            {billingCycle === "yearly" && (
+              <p className="text-sm text-gray-600 mb-2">
+                Facturé 161,89€ annuellement
+                <br />
+                <span className="text-[#5B4FFF] font-medium">
+                  Économisez 18€ par rapport au mensuel
+                </span>
+              </p>
+            )}
             <a
               href="#"
               className="block w-full bg-[#171717] text-white font-medium rounded-md px-6 py-3 mt-2 mb-3 transition"

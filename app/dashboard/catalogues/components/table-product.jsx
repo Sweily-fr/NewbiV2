@@ -147,7 +147,11 @@ const columns = [
     accessorKey: "reference",
     cell: ({ row }) => {
       const reference = row.getValue("reference");
-      return reference ? <span className="font-mono text-sm">{reference}</span> : "-";
+      return reference ? (
+        <span className="font-mono text-sm">{reference}</span>
+      ) : (
+        "-"
+      );
     },
     size: 120,
   },
@@ -158,7 +162,9 @@ const columns = [
       const price = row.getValue("unitPrice");
       return price ? (
         <span className="font-medium">{price.toFixed(2)} €</span>
-      ) : "-";
+      ) : (
+        "-"
+      );
     },
     size: 130,
   },
@@ -171,7 +177,9 @@ const columns = [
         <Badge className="bg-green-100 border-green-300 text-green-800">
           {vatRate}%
         </Badge>
-      ) : "-";
+      ) : (
+        "-"
+      );
     },
     size: 100,
   },
@@ -193,7 +201,9 @@ const columns = [
         <Badge className="bg-blue-100 border-blue-300 text-blue-800">
           {category}
         </Badge>
-      ) : "-";
+      ) : (
+        "-"
+      );
     },
     size: 120,
     filterFn: categoryFilterFn,
@@ -204,10 +214,15 @@ const columns = [
     cell: ({ row }) => {
       const description = row.getValue("description");
       return description ? (
-        <div className="text-sm text-muted-foreground max-w-[200px] truncate" title={description}>
+        <div
+          className="text-sm text-muted-foreground max-w-[200px] truncate"
+          title={description}
+        >
           {description}
         </div>
-      ) : "-";
+      ) : (
+        "-"
+      );
     },
     size: 200,
   },
@@ -217,7 +232,13 @@ const columns = [
     cell: ({ row, table }) => {
       const handleEditProduct = table.options.meta?.handleEditProduct;
       const handleDeleteProduct = table.options.meta?.handleDeleteProduct;
-      return <RowActions row={row} onEdit={handleEditProduct} onDelete={(id) => handleDeleteProduct(id)} />;
+      return (
+        <RowActions
+          row={row}
+          onEdit={handleEditProduct}
+          onDelete={(id) => handleDeleteProduct(id)}
+        />
+      );
     },
     size: 60,
     enableHiding: false,
@@ -498,7 +519,7 @@ export default function TableProduct({ handleAddProduct }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuLabel>Sélection des colonnes</DropdownMenuLabel>
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
@@ -550,8 +571,9 @@ export default function TableProduct({ handleAddProduct }) {
                       Êtes-vous absolument sûr ?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Cette action ne peut pas être annulée. Cela supprimera définitivement{" "}
-                      {table.getSelectedRowModel().rows.length} produit(s) sélectionné(s).
+                      Cette action ne peut pas être annulée. Cela supprimera
+                      définitivement {table.getSelectedRowModel().rows.length}{" "}
+                      produit(s) sélectionné(s).
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                 </div>
@@ -849,7 +871,9 @@ function RowActions({ row, onEdit, onDelete }) {
             <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => navigator.clipboard.writeText(product.reference || product.name)}
+            onClick={() =>
+              navigator.clipboard.writeText(product.reference || product.name)
+            }
           >
             <span>Copier référence</span>
             <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
@@ -878,7 +902,10 @@ function RowActions({ row, onEdit, onDelete }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>

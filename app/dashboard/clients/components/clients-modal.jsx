@@ -25,7 +25,7 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { useCreateClient, useUpdateClient } from "@/src/hooks/useClients";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function ClientsModal({ client, onSave, open, onOpenChange }) {
   const { createClient, loading: createLoading } = useCreateClient();
@@ -42,32 +42,82 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      type: client?.type || "INDIVIDUAL",
-      name: client?.name || "",
-      firstName: client?.firstName || "",
-      lastName: client?.lastName || "",
-      email: client?.email || "",
+      type: "INDIVIDUAL",
+      name: "",
+      firstName: "",
+      lastName: "",
+      email: "",
       address: {
-        street: client?.address?.street || "",
-        city: client?.address?.city || "",
-        postalCode: client?.address?.postalCode || "",
-        country: client?.address?.country || "",
+        street: "",
+        city: "",
+        postalCode: "",
+        country: "",
       },
       shippingAddress: {
-        street: client?.shippingAddress?.street || "",
-        city: client?.shippingAddress?.city || "",
-        postalCode: client?.shippingAddress?.postalCode || "",
-        country: client?.shippingAddress?.country || "",
+        street: "",
+        city: "",
+        postalCode: "",
+        country: "",
       },
-      siret: client?.siret || "",
-      vatNumber: client?.vatNumber || "",
+      siret: "",
+      vatNumber: "",
     },
   });
 
-  const [hasDifferentShipping, setHasDifferentShipping] = useState(
-    client?.hasDifferentShippingAddress || false
-  );
+  const [hasDifferentShipping, setHasDifferentShipping] = useState(false);
   const clientType = watch("type");
+
+  // Mettre à jour le formulaire quand le client change
+  useEffect(() => {
+    if (client) {
+      reset({
+        type: client.type || "INDIVIDUAL",
+        name: client.name || "",
+        firstName: client.firstName || "",
+        lastName: client.lastName || "",
+        email: client.email || "",
+        address: {
+          street: client.address?.street || "",
+          city: client.address?.city || "",
+          postalCode: client.address?.postalCode || "",
+          country: client.address?.country || "",
+        },
+        shippingAddress: {
+          street: client.shippingAddress?.street || "",
+          city: client.shippingAddress?.city || "",
+          postalCode: client.shippingAddress?.postalCode || "",
+          country: client.shippingAddress?.country || "",
+        },
+        siret: client.siret || "",
+        vatNumber: client.vatNumber || "",
+      });
+      setHasDifferentShipping(client.hasDifferentShippingAddress || false);
+    } else {
+      // Réinitialiser pour un nouveau client
+      reset({
+        type: "INDIVIDUAL",
+        name: "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        address: {
+          street: "",
+          city: "",
+          postalCode: "",
+          country: "",
+        },
+        shippingAddress: {
+          street: "",
+          city: "",
+          postalCode: "",
+          country: "",
+        },
+        siret: "",
+        vatNumber: "",
+      });
+      setHasDifferentShipping(false);
+    }
+  }, [client, reset]);
 
   const onSubmit = async (formData) => {
     try {
@@ -79,10 +129,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
       let result;
       if (isEditing) {
-        result = await updateClient({
-          id: client.id,
-          input: clientData,
-        });
+        result = await updateClient(client.id, clientData);
       } else {
         result = await createClient(clientData);
       }
@@ -91,14 +138,14 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
         await onSave(result);
       }
 
-      toast.success(
-        isEditing ? "Client modifié avec succès" : "Client créé avec succès"
-      );
+      // La notification est déjà gérée par le hook useUpdateClient/useCreateClient
       reset();
       onOpenChange(false);
     } catch (error) {
-      toast.error("Erreur lors de la sauvegarde du client");
+      // La notification d'erreur est déjà gérée par le hook useCreateClient/useUpdateClient
+      // Ne pas afficher de notification supplémentaire ici
       console.error(error);
+      // Ne pas fermer le modal en cas d'erreur
     }
   };
 
@@ -109,14 +156,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           Ajouter un collaborateur
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <div className="flex flex-col gap-2">
-          {/* <div
-            className="flex size-11 shrink-0 items-center justify-center rounded-full border"
-            aria-hidden="true"
-          >
-            <UserRoundPlusIcon className="opacity-80" size={16} />
-          </div> */}
+      <DialogContent className="flex flex-col max-h-[90vh] p-0 overflow-hidden">
+        <div className="flex flex-col gap-2 p-6 pb-0">
           <DialogHeader>
             <DialogTitle className="text-left">
               {client ? "Modifier le client" : "Ajouter un client"}
@@ -131,141 +172,133 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-5 max-h-[70vh] p-1 overflow-y-auto"
+          className="flex flex-col flex-1 min-h-0"
         >
-          <div className="space-y-4">
-            {/* Type de client */}
-            <div className="space-y-2">
-              <Label>Type de client *</Label>
-              <Controller
-                name="type"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez le type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INDIVIDUAL">Particulier</SelectItem>
-                      <SelectItem value="COMPANY">Entreprise</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-
-            {/* Nom/Raison sociale */}
-            <div className="space-y-2">
-              <Label>
-                {clientType === "COMPANY" ? "Raison sociale" : "Nom"} *
-              </Label>
-              <Input
-                placeholder={
-                  clientType === "COMPANY"
-                    ? "Nom de l'entreprise"
-                    : "Nom du client"
-                }
-                {...register("name", { required: "Ce champ est requis" })}
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
-              )}
-            </div>
-
-            {/* Prénom et Nom (pour particuliers) */}
-            {clientType === "INDIVIDUAL" && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Prénom</Label>
-                  <Input placeholder="Prénom" {...register("firstName")} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Nom de famille</Label>
-                  <Input
-                    placeholder="Nom de famille"
-                    {...register("lastName")}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label>Email *</Label>
-              <InputEmail
-                placeholder="client@exemple.com"
-                {...register("email", {
-                  required: "L'email est requis",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Email invalide",
-                  },
-                })}
-              />
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Adresse de facturation */}
-            <div className="space-y-3">
-              <Label className="text-base font-medium">
-                Adresse de facturation
-              </Label>
-
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            <div className="space-y-4">
+              {/* Type de client */}
               <div className="space-y-2">
-                <Label>Adresse</Label>
-                <Textarea
-                  placeholder="123 Rue de la Paix"
-                  {...register("address.street")}
-                  rows={2}
+                <Label>Type de client *</Label>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez le type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="INDIVIDUAL">Particulier</SelectItem>
+                        <SelectItem value="COMPANY">Entreprise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Ville</Label>
-                  <Input placeholder="Paris" {...register("address.city")} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Code postal</Label>
-                  <Input
-                    placeholder="75001"
-                    {...register("address.postalCode")}
-                  />
-                </div>
-              </div>
-
+              {/* Nom/Raison sociale */}
               <div className="space-y-2">
-                <Label>Pays</Label>
-                <Input placeholder="France" {...register("address.country")} />
+                <Label>
+                  {clientType === "COMPANY" ? "Raison sociale" : "Nom"} *
+                </Label>
+                <Input
+                  placeholder={
+                    clientType === "COMPANY"
+                      ? "Nom de l'entreprise"
+                      : "Nom du client"
+                  }
+                  {...register("name", {
+                    required: "Ce champ est requis",
+                    pattern: {
+                      value:
+                        clientType === "COMPANY"
+                          ? /^[a-zA-ZÀ-ÿ0-9\s&'"\-.,()]{2,100}$/
+                          : /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                      message:
+                        clientType === "COMPANY"
+                          ? "Le nom de l'entreprise doit contenir entre 2 et 100 caractères"
+                          : "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                    },
+                  })}
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                )}
               </div>
-            </div>
 
-            {/* Adresse de livraison différente */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="differentShipping"
-                checked={hasDifferentShipping}
-                onCheckedChange={setHasDifferentShipping}
-              />
-              <Label htmlFor="differentShipping">
-                Adresse de livraison différente
-              </Label>
-            </div>
+              {/* Prénom et Email côte à côte */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Prénom (pour particuliers uniquement) */}
+                <div className="space-y-2">
+                  <Label>
+                    {clientType === "INDIVIDUAL" ? "Prénom" : "Contact"}
+                  </Label>
+                  {clientType === "INDIVIDUAL" ? (
+                    <Input
+                      placeholder="Prénom"
+                      {...register("firstName", {
+                        pattern: {
+                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                          message:
+                            "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                        },
+                      })}
+                    />
+                  ) : (
+                    <Input
+                      placeholder="Nom du contact"
+                      {...register("firstName", {
+                        pattern: {
+                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                          message:
+                            "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                        },
+                      })}
+                    />
+                  )}
+                  {errors.firstName && (
+                    <p className="text-sm text-red-500">
+                      {errors.firstName.message}
+                    </p>
+                  )}
+                </div>
 
-            {/* Adresse de livraison */}
-            {hasDifferentShipping && (
-              <div className="space-y-3 border-l-2 border-gray-200 pl-4">
+                {/* Email (pour tous les types) */}
+                <div className="space-y-2">
+                  <Label>Email *</Label>
+                  <InputEmail
+                    placeholder={
+                      clientType === "COMPANY"
+                        ? "contact@entreprise.com"
+                        : "client@exemple.com"
+                    }
+                    {...register("email", {
+                      required: "L'email est requis",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Email invalide",
+                      },
+                    })}
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-red-500">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Adresse de facturation */}
+              <div className="space-y-3 py-2">
                 <Label className="text-base font-medium">
-                  Adresse de livraison
+                  Adresse de facturation
                 </Label>
 
                 <div className="space-y-2">
                   <Label>Adresse</Label>
                   <Textarea
-                    placeholder="123 Rue de la Livraison"
-                    {...register("shippingAddress.street")}
+                    placeholder="123 Rue de la Paix"
+                    {...register("address.street")}
                     rows={2}
                   />
                 </div>
@@ -275,15 +308,37 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     <Label>Ville</Label>
                     <Input
                       placeholder="Paris"
-                      {...register("shippingAddress.city")}
+                      {...register("address.city", {
+                        pattern: {
+                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                          message:
+                            "La ville doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                        },
+                      })}
                     />
+                    {errors.address?.city && (
+                      <p className="text-sm text-red-500">
+                        {errors.address.city.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Code postal</Label>
                     <Input
                       placeholder="75001"
-                      {...register("shippingAddress.postalCode")}
+                      {...register("address.postalCode", {
+                        pattern: {
+                          value: /^[0-9]{5}$/,
+                          message:
+                            "Le code postal doit contenir exactement 5 chiffres",
+                        },
+                      })}
                     />
+                    {errors.address?.postalCode && (
+                      <p className="text-sm text-red-500">
+                        {errors.address.postalCode.message}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -291,36 +346,160 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   <Label>Pays</Label>
                   <Input
                     placeholder="France"
-                    {...register("shippingAddress.country")}
+                    {...register("address.country", {
+                      pattern: {
+                        value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                        message:
+                          "Le pays doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                      },
+                    })}
                   />
+                  {errors.address?.country && (
+                    <p className="text-sm text-red-500">
+                      {errors.address.country.message}
+                    </p>
+                  )}
                 </div>
               </div>
-            )}
 
-            {/* Informations entreprise (pour les entreprises) */}
-            {clientType === "COMPANY" && (
-              <div className="space-y-3 border-t pt-4">
-                <Label className="text-base font-medium">
-                  Informations entreprise
+              {/* Adresse de livraison différente */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="differentShipping"
+                  checked={hasDifferentShipping}
+                  onCheckedChange={setHasDifferentShipping}
+                />
+                <Label htmlFor="differentShipping">
+                  Adresse de livraison différente
                 </Label>
-
-                <div className="space-y-2">
-                  <Label>SIRET</Label>
-                  <Input placeholder="12345678901234" {...register("siret")} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Numéro de TVA</Label>
-                  <Input
-                    placeholder="FR12345678901"
-                    {...register("vatNumber")}
-                  />
-                </div>
               </div>
-            )}
+
+              {/* Adresse de livraison */}
+              {hasDifferentShipping && (
+                <div className="space-y-3 border-l-2 border-gray-200 pl-4">
+                  <Label className="text-base font-medium">
+                    Adresse de livraison
+                  </Label>
+
+                  <div className="space-y-2">
+                    <Label>Adresse</Label>
+                    <Textarea
+                      placeholder="123 Rue de la Livraison"
+                      {...register("shippingAddress.street")}
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Ville</Label>
+                      <Input
+                        placeholder="Paris"
+                        {...register("shippingAddress.city", {
+                          pattern: {
+                            value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                            message:
+                              "La ville doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                          },
+                        })}
+                      />
+                      {errors.shippingAddress?.city && (
+                        <p className="text-sm text-red-500">
+                          {errors.shippingAddress.city.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Code postal</Label>
+                      <Input
+                        placeholder="75001"
+                        {...register("shippingAddress.postalCode", {
+                          pattern: {
+                            value: /^[0-9]{5}$/,
+                            message:
+                              "Le code postal doit contenir exactement 5 chiffres",
+                          },
+                        })}
+                      />
+                      {errors.shippingAddress?.postalCode && (
+                        <p className="text-sm text-red-500">
+                          {errors.shippingAddress.postalCode.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Pays</Label>
+                    <Input
+                      placeholder="France"
+                      {...register("shippingAddress.country", {
+                        pattern: {
+                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                          message:
+                            "Le pays doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                        },
+                      })}
+                    />
+                    {errors.shippingAddress?.country && (
+                      <p className="text-sm text-red-500">
+                        {errors.shippingAddress.country.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Informations entreprise (pour les entreprises) */}
+              {clientType === "COMPANY" && (
+                <div className="space-y-3 border-t pt-4">
+                  <Label className="text-base font-medium">
+                    Informations entreprise
+                  </Label>
+
+                  <div className="space-y-2">
+                    <Label>SIRET</Label>
+                    <Input
+                      placeholder="12345678901234"
+                      {...register("siret", {
+                        pattern: {
+                          value: /^[0-9]{14}$/,
+                          message:
+                            "Le SIRET doit contenir exactement 14 chiffres",
+                        },
+                      })}
+                    />
+                    {errors.siret && (
+                      <p className="text-sm text-red-500">
+                        {errors.siret.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Numéro de TVA</Label>
+                    <Input
+                      placeholder="FR12345678901"
+                      {...register("vatNumber", {
+                        pattern: {
+                          value: /^[A-Z]{2}[0-9A-Z]{2,13}$/,
+                          message: "Format de TVA invalide (ex: FR12345678901)",
+                        },
+                      })}
+                    />
+                    {errors.vatNumber && (
+                      <p className="text-sm text-red-500">
+                        {errors.vatNumber.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          {/* Boutons fixés en bas */}
+          <div className="flex gap-3 p-6 pt-4 border-t bg-background">
             <Button
               type="button"
               variant="outline"

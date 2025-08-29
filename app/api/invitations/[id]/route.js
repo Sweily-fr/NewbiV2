@@ -20,38 +20,45 @@ export async function GET(request, { params }) {
       return Response.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // Récupérer toutes les invitations de l'utilisateur
-    // Utiliser l'API interne Better Auth avec les bons paramètres
-    const invitations = await auth.api.listInvitations({
+    // Récupérer l'invitation spécifique par ID directement
+    // Utiliser l'API Better Auth côté client pour récupérer une invitation
+    const { data: invitation, error } = await auth.api.getInvitation({
       headers: await headers(),
       query: {
-        email: session.user.email,
+        id: id,
       },
     });
 
-    console.log("📋 Invitations trouvées:", invitations?.length || 0);
-    console.log(
-      "📋 Détail des invitations:",
-      invitations?.map((inv) => ({
-        id: inv.id,
-        email: inv.email,
-        status: inv.status,
-        expiresAt: inv.expiresAt,
-      }))
-    );
+    if (error) {
+      console.log("❌ Erreur Better Auth:", error);
+      return Response.json(
+        {
+          error: "Erreur lors de la récupération de l'invitation",
+          details: error,
+        },
+        { status: 400 }
+      );
+    }
 
-    // Trouver l'invitation spécifique par ID
-    const invitation = invitations?.find((inv) => inv.id === id);
+    console.log("📋 Invitation récupérée:", invitation);
 
     if (!invitation) {
       console.log("❌ Invitation non trouvée pour ID:", id);
-      console.log(
-        "❌ IDs disponibles:",
-        invitations?.map((inv) => inv.id)
-      );
       return Response.json(
         { error: "Invitation non trouvée" },
         { status: 404 }
+      );
+    }
+
+    // Vérifier que l'invitation appartient à l'utilisateur connecté
+    if (invitation.email !== session.user.email) {
+      console.log("❌ Invitation ne correspond pas à l'utilisateur:", {
+        invitationEmail: invitation.email,
+        userEmail: session.user.email,
+      });
+      return Response.json(
+        { error: "Invitation non autorisée" },
+        { status: 403 }
       );
     }
 
@@ -86,9 +93,9 @@ export async function POST(request, { params }) {
       // ÉTAPE 1: Créer l'organisation personnelle AVANT d'accepter l'invitation
       try {
         console.log("🏢 Création de l'organisation personnelle...");
-        
+
         const user = session.user;
-        const personalOrgName = `${user.name || user.email.split('@')[0]} (Personnel)`;
+        const personalOrgName = `${user.name || user.email.split("@")[0]} (Personnel)`;
         const personalSlug = `${user.id}-personal`;
 
         // Créer l'organisation personnelle avec keepCurrentActiveOrganization: true
@@ -103,7 +110,10 @@ export async function POST(request, { params }) {
 
         console.log("✅ Organisation personnelle créée:", personalOrgResult);
       } catch (personalOrgError) {
-        console.warn("⚠️ Erreur création organisation personnelle (non bloquante):", personalOrgError);
+        console.warn(
+          "⚠️ Erreur création organisation personnelle (non bloquante):",
+          personalOrgError
+        );
         // Ne pas faire échouer l'acceptation si la création de l'org perso échoue
       }
 

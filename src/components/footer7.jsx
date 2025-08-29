@@ -16,7 +16,7 @@ const defaultSections = [
   {
     title: "Ressources",
     links: [
-      { name: "Blog", href: "#" },
+      // { name: "Blog", href: "#" },
       { name: "FAQ", href: "#" },
       { name: "Tarifs", href: "#" },
       { name: "Communauté", href: "#" },
@@ -72,12 +72,12 @@ const Footer7 = ({
               Commencez gratuitement aujourd'hui.
             </p>
           </hgroup>
-          <p className="mx-auto mt-6 max-w-xs text-sm/6 text-gray-500">
-            Commencez à gagner plus rapidement avec NewBI.
+          <p className="mx-auto mt-6 max-w-sm text-sm/6 text-gray-500">
+            Commencez à gagner plus rapidement avec NewBi.
           </p>
           <div className="mt-6">
             <Button variant="default" asChild>
-              <a href="/auth/login">Commencez gratuitement</a>
+              <a href="/auth/login">Essayez Gratuitement</a>
             </Button>
           </div>
         </div>
@@ -94,7 +94,7 @@ const Footer7 = ({
               <div className="col-span-2 flex">
                 <div className="lg:pb-6 group/item relative">
                   <img
-                    src="/newbiLogo.png"
+                    src="/newbiLogo.svg"
                     alt="logo"
                     width="100"
                     height="100"
@@ -240,7 +240,8 @@ const Footer7 = ({
           <div>
             <div className="py-3 group/item relative">
               <div className="text-sm/6 text-gray-950">
-                Sweily — Made with ❤️ in France • © {new Date().getFullYear()}
+                <a href="https://www.sweily.fr">Sweily</a> — Made with ❤️ in
+                France • © {new Date().getFullYear()}
               </div>
             </div>
           </div>

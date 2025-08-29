@@ -9,11 +9,16 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { CreditCard, Building2, Hash } from "lucide-react";
+import {
+  VALIDATION_PATTERNS,
+  sanitizeInput,
+  detectInjectionAttempt,
+} from "@/src/lib/validation";
 
 export default function BankSection({ register, errors }) {
   return (
     <div className="space-y-6">
-      <Card className="border-0 shadow-sm backdrop-blur-sm">
+      <Card className="border-0 shadow-none backdrop-blur-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-3 text-lg font-medium">
             <div className="p-2 bg-blue-50 rounded-lg">
@@ -38,11 +43,20 @@ export default function BankSection({ register, errors }) {
               {...register("bankDetails.iban", {
                 required: "L'IBAN est requis",
                 pattern: {
-                  value:
-                    /^[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}$/,
-                  message: "Format IBAN invalide",
+                  value: VALIDATION_PATTERNS.iban.pattern,
+                  message: VALIDATION_PATTERNS.iban.message,
+                },
+                validate: (value) => {
+                  if (detectInjectionAttempt(value)) {
+                    return "Caractères non autorisés détectés";
+                  }
+                  return true;
                 },
               })}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value, "alphanumeric");
+                e.target.value = sanitized.toUpperCase();
+              }}
             />
             {errors.bankDetails?.iban && (
               <p className="text-sm text-red-500">
@@ -69,10 +83,20 @@ export default function BankSection({ register, errors }) {
               {...register("bankDetails.bic", {
                 required: "Le BIC est requis",
                 pattern: {
-                  value: /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/,
-                  message: "Format BIC invalide",
+                  value: VALIDATION_PATTERNS.bic.pattern,
+                  message: VALIDATION_PATTERNS.bic.message,
+                },
+                validate: (value) => {
+                  if (detectInjectionAttempt(value)) {
+                    return "Caractères non autorisés détectés";
+                  }
+                  return true;
                 },
               })}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value, "alphanumeric");
+                e.target.value = sanitized.toUpperCase();
+              }}
             />
             {errors.bankDetails?.bic && (
               <p className="text-sm text-red-500">
@@ -90,7 +114,22 @@ export default function BankSection({ register, errors }) {
             <Input
               id="bankDetails.bankName"
               placeholder="BNP Paribas"
-              {...register("bankDetails.bankName")}
+              {...register("bankDetails.bankName", {
+                pattern: {
+                  value: VALIDATION_PATTERNS.bankName.pattern,
+                  message: VALIDATION_PATTERNS.bankName.message,
+                },
+                validate: (value) => {
+                  if (value && detectInjectionAttempt(value)) {
+                    return "Caractères non autorisés détectés";
+                  }
+                  return true;
+                },
+              })}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value);
+                e.target.value = sanitized;
+              }}
             />
             <p className="text-xs text-muted-foreground">
               Nom de votre établissement bancaire

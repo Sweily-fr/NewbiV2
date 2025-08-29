@@ -77,12 +77,12 @@ function SettingsDropdownMenu() {
             </Link>
           </DropdownMenuItem>
 
-          <DropdownMenuItem className="cursor-pointer" asChild>
+          {/* <DropdownMenuItem className="cursor-pointer" asChild>
             <Link href={"/dashboard/automatisation"}>
               <IconRobot />
               <span className="font-polysans font-light">Intégrations</span>
             </Link>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
 
           <DropdownMenuSeparator />
 

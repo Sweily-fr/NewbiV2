@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
+import { useActiveOrganization } from "@/src/lib/organization-client";
 import {
   Table,
   TableBody,
@@ -13,20 +14,42 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Mail, Search, Trash2 } from "lucide-react";
+import {
+  Mail,
+  Search,
+  Trash2,
+  ChevronFirstIcon,
+  ChevronLastIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { useMembersTable } from "../hooks/use-members-table";
+import { flexRender } from "@tanstack/react-table";
 import {
-  flexRender,
-} from "@tanstack/react-table";
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/src/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
-export default function MembersTable({ refreshTrigger, onRefresh, handleAddUser }) {
+export default function MembersTable({
+  refreshTrigger,
+  onRefresh,
+  handleAddUser,
+}) {
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  const {
-    getAllCollaborators,
-  } = useOrganizationInvitations();
+
+  const { getAllCollaborators } = useOrganizationInvitations();
+  const { organization, loading: orgLoading } = useActiveOrganization();
 
   // Charger tous les collaborateurs (membres + invitations)
   const loadData = async () => {
@@ -36,10 +59,13 @@ export default function MembersTable({ refreshTrigger, onRefresh, handleAddUser 
 
       if (result.success) {
         setCollaborators(result.data || []);
-        console.log('Collaborateurs chargés:', result.data);
+        console.log("Collaborateurs chargés:", result.data);
       } else {
-        console.error('Erreur lors du chargement des collaborateurs:', result.error);
-        toast.error('Erreur lors du chargement des collaborateurs');
+        console.error(
+          "Erreur lors du chargement des collaborateurs:",
+          result.error
+        );
+        toast.error("Erreur lors du chargement des collaborateurs");
       }
     } catch (error) {
       console.error("Erreur lors du chargement des données:", error);
@@ -51,24 +77,32 @@ export default function MembersTable({ refreshTrigger, onRefresh, handleAddUser 
 
   // Charger les données au montage et lors du refresh
   useEffect(() => {
-    loadData();
-  }, [refreshTrigger]);
+    // Attendre que l'organisation soit chargée avant de charger les collaborateurs
+    if (!orgLoading && organization) {
+      loadData();
+    } else if (!orgLoading && !organization) {
+      // Si pas d'organisation après le chargement, afficher un message d'erreur
+      console.error('Aucune organisation active trouvée');
+      toast.error('Aucune organisation active trouvée');
+      setLoading(false);
+    }
+  }, [refreshTrigger, orgLoading, organization]);
 
   // Formater les données pour l'affichage
   const formattedData = collaborators.map((item) => {
-    if (item.type === 'member') {
+    if (item.type === "member") {
       return {
         ...item,
         email: item.user?.email,
-        name: item.user?.name || item.user?.email?.split('@')[0],
-        status: 'active',
+        name: item.user?.name || item.user?.email?.split("@")[0],
+        status: "active",
       };
     } else {
       // invitation
       return {
         ...item,
-        name: item.email?.split('@')[0],
-        status: item.status || 'pending',
+        name: item.email?.split("@")[0],
+        status: item.status || "pending",
       };
     }
   });
@@ -80,20 +114,91 @@ export default function MembersTable({ refreshTrigger, onRefresh, handleAddUser 
     setGlobalFilter,
     selectedRows,
     handleDeleteSelected,
-  } = useMembersTable({ 
-    data: formattedData, 
+  } = useMembersTable({
+    data: formattedData,
     onRefetch: () => {
       loadData();
       if (onRefresh) onRefresh();
-    }
+    },
   });
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Chargement...</p>
+      <div className="space-y-4">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-80" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        
+        {/* Table skeleton */}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">
+                  <Skeleton className="h-4 w-4" />
+                </TableHead>
+                <TableHead>
+                  <Skeleton className="h-4 w-24" />
+                </TableHead>
+                <TableHead>
+                  <Skeleton className="h-4 w-32" />
+                </TableHead>
+                <TableHead>
+                  <Skeleton className="h-4 w-20" />
+                </TableHead>
+                <TableHead>
+                  <Skeleton className="h-4 w-16" />
+                </TableHead>
+                <TableHead className="w-12">
+                  <Skeleton className="h-4 w-4" />
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-4" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-48" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-12" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        
+        {/* Pagination skeleton */}
+        <div className="flex items-center justify-between space-x-2 py-4">
+          <Skeleton className="h-4 w-48" />
+          <div className="flex items-center space-x-6 lg:space-x-8">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-16" />
+            </div>
+            <Skeleton className="h-4 w-24" />
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="h-8 w-8" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -179,9 +284,11 @@ export default function MembersTable({ refreshTrigger, onRefresh, handleAddUser 
                   className="h-24 text-center"
                 >
                   <div className="text-gray-500">
-                    <Mail className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                    {/* <Mail className="mx-auto h-12 w-12 mb-4 opacity-50" /> */}
                     <p>Aucun collaborateur</p>
-                    <p className="text-sm">Invitez des personnes à rejoindre votre organisation</p>
+                    <p className="text-sm">
+                      Invitez des personnes à rejoindre votre organisation
+                    </p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -191,28 +298,92 @@ export default function MembersTable({ refreshTrigger, onRefresh, handleAddUser 
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between space-x-2 py-4">
+      <div className="flex items-center justify-between space-x-2 py-2">
         <div className="text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
         </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Précédent
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Suivant
-          </Button>
+        <div className="flex items-center space-x-6 lg:space-x-8">
+          <div className="flex items-center gap-2">
+            <p className="whitespace-nowrap text-sm font-normal">
+              Lignes par page
+            </p>
+            <Select
+              value={`${table.getState().pagination.pageSize}`}
+              onValueChange={(value) => {
+                table.setPageSize(Number(value));
+              }}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue
+                  placeholder={table.getState().pagination.pageSize}
+                />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 20, 30, 40, 50].map((pageSize) => (
+                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center whitespace-nowrap text-sm font-normal">
+            Page {table.getState().pagination.pageIndex + 1} sur{" "}
+            {table.getPageCount()}
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="Go to first page"
+                >
+                  <ChevronFirstIcon size={16} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="Go to previous page"
+                >
+                  <ChevronLeftIcon size={16} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Go to next page"
+                >
+                  <ChevronRightIcon size={16} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.lastPage()}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Go to last page"
+                >
+                  <ChevronLastIcon size={16} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       </div>
     </div>

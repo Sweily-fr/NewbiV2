@@ -4,8 +4,10 @@ import { useForm } from "react-hook-form";
 import { SettingsSidebar } from "@/src/components/settings-sidebar";
 import { Separator } from "@/src/components/ui/separator";
 import { Button } from "@/src/components/ui/button";
-import { updateUser, useSession } from "@/src/lib/auth-client";
+import { useSession } from "@/src/lib/auth-client";
+import { useActiveOrganization } from "@/src/lib/organization-client";
 import { toast } from "@/src/components/ui/sonner";
+import { validateSettingsForm, sanitizeInput } from "@/src/lib/validation";
 
 // Import des composants de section
 import CompanySection from "./components/CompanySection";
@@ -41,6 +43,13 @@ const TABS_CONFIG = {
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("entreprise");
   const { data: session, isPending, error, refetch } = useSession();
+  const {
+    organization,
+    loading: orgLoading,
+    error: orgError,
+    refetch: refetchOrg,
+    updateOrganization,
+  } = useActiveOrganization();
 
   const {
     register,
@@ -87,90 +96,167 @@ export default function Settings() {
     },
   });
 
-  // Fonction pour mettre à jour les informations
+  // Fonction pour mettre à jour les informations de l'organisation
   const onSubmit = async (formData) => {
     try {
-      // Récupérer les données existantes de l'entreprise
-      const existingCompany = session?.user?.company || {};
-      
-      // Transformer les données pour aplatir la structure legal
+      console.log("🔍 Organisation actuelle:", organization);
+      console.log("🔍 Loading organisation:", orgLoading);
+      console.log("🔍 Erreur organisation:", orgError);
+
+      if (!organization?.id) {
+        toast.error("Aucune organisation active trouvée");
+        return;
+      }
+
+      // Validation et nettoyage des données côté frontend
+      const validation = validateSettingsForm(formData);
+
+      if (!validation.isValid) {
+        console.error("Erreurs de validation:", validation.errors);
+        console.error("Données du formulaire:", formData);
+        console.error("Données nettoyées:", validation.sanitizedData);
+
+        // Afficher les erreurs spécifiques dans la console
+        Object.keys(validation.errors).forEach((field) => {
+          console.error(`Erreur ${field}:`, validation.errors[field]);
+        });
+
+        toast.error(
+          `Erreurs de validation: ${Object.keys(validation.errors).join(", ")}`
+        );
+        return;
+      }
+
+      // Utiliser les données nettoyées
+      const sanitizedFormData = validation.sanitizedData;
+
+      // Récupérer les données existantes de l'organisation
+      const existingOrgData = organization || {};
+
+      // Transformer les données pour correspondre au schéma organization
       const transformedData = {
-        ...formData,
-        // Aplatir les champs legal directement dans company
-        siret: formData.legal?.siret || existingCompany.siret || "",
-        vatNumber: formData.legal?.vatNumber || existingCompany.vatNumber || "",
-        rcs: formData.legal?.rcs || existingCompany.rcs || "",
-        companyStatus: formData.legal?.legalForm || existingCompany.companyStatus || "",
-        capitalSocial: formData.legal?.capital || existingCompany.capitalSocial || "",
+        // Informations de base de l'entreprise
+        companyName:
+          sanitizedFormData.name || existingOrgData.companyName || "",
+        companyEmail:
+          sanitizedFormData.email || existingOrgData.companyEmail || "",
+        companyPhone:
+          sanitizedFormData.phone || existingOrgData.companyPhone || "",
+        website: sanitizedFormData.website || existingOrgData.website || "",
+        logo: sanitizedFormData.logo || existingOrgData.logo || "",
+
+        // Informations légales
+        siret: sanitizedFormData.legal?.siret || existingOrgData.siret || "",
+        vatNumber:
+          sanitizedFormData.legal?.vatNumber || existingOrgData.vatNumber || "",
+        rcs: sanitizedFormData.legal?.rcs || existingOrgData.rcs || "",
+        legalForm:
+          sanitizedFormData.legal?.legalForm || existingOrgData.legalForm || "",
+        capitalSocial:
+          sanitizedFormData.legal?.capital ||
+          existingOrgData.capitalSocial ||
+          "",
+        fiscalRegime:
+          sanitizedFormData.legal?.regime || existingOrgData.fiscalRegime || "",
+        activityCategory:
+          sanitizedFormData.legal?.category ||
+          existingOrgData.activityCategory ||
+          "",
+        isVatSubject:
+          sanitizedFormData.legal?.isVatSubject ||
+          existingOrgData.isVatSubject ||
+          false,
+        hasCommercialActivity:
+          sanitizedFormData.legal?.hasCommercialActivity ||
+          existingOrgData.hasCommercialActivity ||
+          false,
+
+        // Adresse (champs aplatis)
+        addressStreet:
+          sanitizedFormData.address?.street ||
+          existingOrgData.addressStreet ||
+          "",
+        addressCity:
+          sanitizedFormData.address?.city || existingOrgData.addressCity || "",
+        addressZipCode:
+          sanitizedFormData.address?.postalCode ||
+          existingOrgData.addressZipCode ||
+          "",
+        addressCountry:
+          sanitizedFormData.address?.country ||
+          existingOrgData.addressCountry ||
+          "France",
+
+        // Coordonnées bancaires (champs aplatis)
+        bankName:
+          sanitizedFormData.bankDetails?.bankName ||
+          existingOrgData.bankName ||
+          "",
+        bankIban:
+          sanitizedFormData.bankDetails?.iban || existingOrgData.bankIban || "",
+        bankBic:
+          sanitizedFormData.bankDetails?.bic || existingOrgData.bankBic || "",
       };
 
-      // Supprimer l'objet legal car les champs sont maintenant aplatis
-      delete transformedData.legal;
-
-      // Préserver les champs existants qui ne sont pas dans le formulaire actuel
-      const finalData = {
-        ...existingCompany, // Commencer avec les données existantes
-        ...transformedData, // Appliquer les modifications
-      };
-
-      console.log("🔄 Données existantes:", existingCompany);
+      console.log("🔄 Données existantes organisation:", existingOrgData);
       console.log("🔄 Données du formulaire:", formData);
-      console.log("🔄 Données finales pour le backend:", finalData);
+      console.log("🔄 Données nettoyées:", sanitizedFormData);
+      console.log("🔄 Données finales pour l'organisation:", transformedData);
 
-      await updateUser(
-        { company: finalData },
-        {
-          onSuccess: () => {
-            toast.success("Informations mises à jour avec succès");
-            refetch();
-          },
-          onError: (error) => {
-            toast.error("Erreur lors de la mise à jour");
-            console.error("Erreur de mise à jour:", error);
-          },
-        }
-      );
+      await updateOrganization(transformedData, {
+        onSuccess: () => {
+          toast.success(
+            "Informations de l'entreprise mises à jour avec succès"
+          );
+          refetchOrg();
+        },
+        onError: (error) => {
+          toast.error("Erreur lors de la mise à jour");
+          console.error("Erreur de mise à jour:", error);
+        },
+      });
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
       toast.error("Une erreur s'est produite lors de la mise à jour");
     }
   };
 
-  // Charger les données de la session dans le formulaire
+  // Charger les données de l'organisation et du user dans le formulaire
   useEffect(() => {
-    if (session?.user?.company) {
-      const company = session.user.company;
+    if (organization && session?.user) {
       reset({
-        name: company.name || "",
-        email: company.email || "",
-        phone: company.phone || "",
-        website: company.website || "",
-        description: company.description || "",
-        logo: company.logo || "",
+        name: organization.companyName || "",
+        email: organization.companyEmail || "",
+        phone: organization.companyPhone || "",
+        website: organization.website || "",
+        description: organization.description || "",
+        logo: session.user.company?.logo || "",
         address: {
-          street: company.address?.street || "",
-          city: company.address?.city || "",
-          postalCode: company.address?.postalCode || "",
-          country: company.address?.country || "France",
+          street: organization.addressStreet || "",
+          city: organization.addressCity || "",
+          postalCode: organization.addressZipCode || "",
+          country: organization.addressCountry || "France",
         },
         bankDetails: {
-          iban: company.bankDetails?.iban || "",
-          bic: company.bankDetails?.bic || "",
-          bankName: company.bankDetails?.bankName || "",
+          iban: organization.bankIban || "",
+          bic: organization.bankBic || "",
+          bankName: organization.bankName || "",
         },
         // Informations légales - mapper vers la structure legal.* pour cohérence avec LegalSection
         legal: {
-          siret: company.siret || "",
-          vatNumber: company.vatNumber || "",
-          rcs: company.rcs || "",
-          legalForm: company.companyStatus || "",
-          capital: company.capitalSocial || "",
-          regime: company.legal?.regime || "",
-          category: company.legal?.category || "",
+          siret: organization.siret || "",
+          vatNumber: organization.vatNumber || "",
+          rcs: organization.rcs || "",
+          legalForm: organization.legalForm || "",
+          capital: organization.capitalSocial || "",
+          regime: organization.fiscalRegime || "",
+          category: organization.activityCategory || "",
+          isVatSubject: organization.isVatSubject || false,
+          hasCommercialActivity: organization.hasCommercialActivity || false,
         },
       });
     }
-  }, [session, reset]);
+  }, [organization, session, reset]);
 
   // Fonction pour rendre la section active
   const renderActiveSection = () => {
@@ -180,6 +266,7 @@ export default function Settings() {
       watch,
       setValue,
       session,
+      organization,
     };
 
     switch (activeTab) {
@@ -221,7 +308,7 @@ export default function Settings() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="py-2 font-medium shadow-sm"
+                className="py-2 font-normal shadow-sm"
               >
                 {isSubmitting ? "Mise à jour..." : "Sauvegarder"}
               </Button>

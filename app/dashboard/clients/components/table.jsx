@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -87,6 +94,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
+import { Skeleton } from "@/src/components/ui/skeleton";
 // Le composant est exporté par défaut, pas en named export
 import { useClients, useDeleteClient } from "@/src/hooks/useClients";
 import { toast } from "@/src/components/ui/sonner";
@@ -152,17 +160,18 @@ const columns = [
   {
     header: "Type",
     accessorKey: "type",
-    cell: ({ row }) => (
-      <Badge
-        className={cn(
-          "bg-blue-100 border-blue-300 text-blue-800",
-          row.getValue("type") === "COMPANY" &&
-            "bg-purple-100 border-purple-300 text-purple-800"
-        )}
-      >
-        {row.getValue("type") === "INDIVIDUAL" ? "Particulier" : "Entreprise"}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const type = row.getValue("type");
+      const colorClass = type === "COMPANY" 
+        ? "bg-purple-100 text-purple-800 border-purple-200"
+        : "bg-green-100 text-green-800 border-green-200";
+      
+      return (
+        <Badge className={cn("font-normal", colorClass)}>
+          {type === "INDIVIDUAL" ? "Particulier" : "Entreprise"}
+        </Badge>
+      );
+    },
     size: 120,
     filterFn: typeFilterFn,
   },
@@ -451,11 +460,20 @@ export default function TableClients({ handleAddUser }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuLabel>Sélection des colonnes</DropdownMenuLabel>
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
                 .map((column) => {
+                  // Traduction des noms de colonnes
+                  const columnNames = {
+                    name: "Nom",
+                    email: "Email", 
+                    type: "Type",
+                    address: "Adresse",
+                    siret: "SIRET"
+                  };
+                  
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
@@ -466,7 +484,7 @@ export default function TableClients({ handleAddUser }) {
                       }
                       onSelect={(event) => event.preventDefault()}
                     >
-                      {column.id}
+                      {columnNames[column.id] || column.id}
                     </DropdownMenuCheckboxItem>
                   );
                 })}
@@ -478,13 +496,13 @@ export default function TableClients({ handleAddUser }) {
           {table.getSelectedRowModel().rows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="ml-auto" variant="outline">
+                <Button className="ml-auto" variant="destructive">
                   <TrashIcon
                     className="-ms-1 opacity-60"
                     size={16}
                     aria-hidden="true"
                   />
-                  Delete
+                  Supprimer
                   <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
                     {table.getSelectedRowModel().rows.length}
                   </span>
@@ -500,22 +518,25 @@ export default function TableClients({ handleAddUser }) {
                   </div>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
-                      Are you absolutely sure?
+                      Êtes-vous absolument sûr ?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete{" "}
-                      {table.getSelectedRowModel().rows.length} selected{" "}
+                      Cette action ne peut pas être annulée. Cela supprimera
+                      définitivement {table.getSelectedRowModel().rows.length}{" "}
                       {table.getSelectedRowModel().rows.length === 1
-                        ? "row"
-                        : "rows"}
+                        ? "client sélectionné"
+                        : "clients sélectionnés"}
                       .
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                 </div>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteRows}>
-                    Delete
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteRows}
+                    variant="destructive"
+                  >
+                    Supprimer
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -598,7 +619,39 @@ export default function TableClients({ handleAddUser }) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {loading ? (
+              // Skeleton loading state
+              Array.from({ length: pagination.pageSize }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-4 rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-40" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <Skeleton className="h-8 w-8 rounded" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -764,58 +817,146 @@ function RowActions({ row, onEdit }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { deleteClient } = useDeleteClient();
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     if (onEdit) {
       onEdit(client);
     }
-  };
+  }, [onEdit, client]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     try {
       await deleteClient(client.id);
       setShowDeleteDialog(false);
     } catch (error) {
       console.error("Error deleting client:", error);
     }
-  };
+  }, [deleteClient, client.id]);
+
+  const handleCopyEmail = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(client.email);
+      toast.success("Email copié dans le presse-papiers");
+    } catch (error) {
+      toast.error("Erreur lors de la copie de l'email");
+      console.error("Error copying email:", error);
+    }
+  }, [client.email]);
+
+  // Gestion des raccourcis clavier
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Vérifier si le dropdown est ouvert ou si le dialog de suppression est ouvert
+      if (!showDeleteDialog) return;
+
+      if (event.key === "Escape") {
+        setShowDeleteDialog(false);
+        event.preventDefault();
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        handleDelete();
+        event.preventDefault();
+      }
+    };
+
+    if (showDeleteDialog) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [showDeleteDialog, handleDelete]);
+
+  // Gestion des raccourcis pour le dropdown menu
+  useEffect(() => {
+    const handleGlobalKeyDown = (event) => {
+      // Raccourcis globaux uniquement si aucun dialog n'est ouvert
+      if (showDeleteDialog) return;
+
+      if ((event.metaKey || event.ctrlKey) && event.key === "e") {
+        handleEdit();
+        event.preventDefault();
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key === "c") {
+        handleCopyEmail();
+        event.preventDefault();
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key === "Backspace") {
+        setShowDeleteDialog(true);
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [handleEdit, handleCopyEmail, showDeleteDialog]);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <div className="flex justify-end">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="shadow-none"
-            aria-label="Actions du client"
-          >
-            <EllipsisIcon size={16} aria-hidden="true" />
-          </Button>
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuGroup>
-          <DropdownMenuItem onClick={handleEdit}>
-            <span>Modifier</span>
-            <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
-          </DropdownMenuItem>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div className="flex justify-end">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="shadow-none"
+              aria-label="Actions du client"
+            >
+              <EllipsisIcon size={16} aria-hidden="true" />
+            </Button>
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={handleEdit}>
+              <span>Modifier</span>
+              <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleCopyEmail}>
+              <span>Copier email</span>
+              <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => navigator.clipboard.writeText(client.email)}
+            className="text-destructive focus:text-destructive"
+            onClick={() => setShowDeleteDialog(true)}
+            variant="destructive"
           >
-            <span>Copier email</span>
-            <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
+            <span>Supprimer</span>
+            <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
           </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
-          onClick={() => setShowDeleteDialog(true)}
-          variant="destructive"
-        >
-          <span>Supprimer</span>
-          <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Dialog de confirmation de suppression */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+            <div
+              className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+              aria-hidden="true"
+            >
+              <CircleAlertIcon className="opacity-80" size={16} />
+            </div>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Êtes-vous sûr de vouloir supprimer ce client ?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action ne peut pas être annulée. Le client "{client.name}"
+                sera définitivement supprimé.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} variant="destructive">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

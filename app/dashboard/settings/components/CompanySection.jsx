@@ -16,6 +16,11 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Building, Mail, Phone, Globe, FileText } from "lucide-react";
+import {
+  VALIDATION_PATTERNS,
+  sanitizeInput,
+  detectInjectionAttempt,
+} from "@/src/lib/validation";
 
 export default function CompanySection({
   register,
@@ -41,7 +46,7 @@ export default function CompanySection({
 
   return (
     <div className="space-y-6">
-      <Card className="border-0 shadow-sm backdrop-blur-sm">
+      <Card className="border-0 shadow-none backdrop-blur-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-3 text-lg font-medium">
             <div className="p-2 bg-blue-50 rounded-lg">
@@ -52,7 +57,7 @@ export default function CompanySection({
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Logo de l'entreprise */}
-          <div className="flex items-start gap-4 p-4 bg-gray-100/50 rounded-xl">
+          <div className="flex items-start gap-4 p-4 bg-gray-100/80 dark:bg-[#000] rounded-xl">
             <CompanyLogoUpload
               currentImageUrl={logoUrl}
               onImageChange={handleLogoChange}
@@ -72,14 +77,33 @@ export default function CompanySection({
           {/* Nom de l'entreprise */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="flex items-center gap-2">
+              <Label
+                htmlFor="name"
+                className="flex items-center gap-2 font-normal"
+              >
                 <Building className="h-4 w-4 text-gray-500" />
                 Nom de l'entreprise *
               </Label>
               <Input
                 id="name"
                 placeholder="Nom de votre entreprise"
-                {...register("name", { required: "Le nom est requis" })}
+                {...register("name", {
+                  required: "Le nom est requis",
+                  pattern: {
+                    value: VALIDATION_PATTERNS.companyName.pattern,
+                    message: VALIDATION_PATTERNS.companyName.message,
+                  },
+                  validate: (value) => {
+                    if (detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
+                })}
+                onChange={(e) => {
+                  const sanitized = sanitizeInput(e.target.value);
+                  e.target.value = sanitized;
+                }}
               />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -87,7 +111,10 @@ export default function CompanySection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
+              <Label
+                htmlFor="email"
+                className="flex items-center gap-2 font-normal"
+              >
                 <Mail className="h-4 w-4 text-gray-500" />
                 Email professionnel *
               </Label>
@@ -98,10 +125,20 @@ export default function CompanySection({
                 {...register("email", {
                   required: "L'email est requis",
                   pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Email invalide",
+                    value: VALIDATION_PATTERNS.email.pattern,
+                    message: VALIDATION_PATTERNS.email.message,
+                  },
+                  validate: (value) => {
+                    if (detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
                   },
                 })}
+                onChange={(e) => {
+                  const sanitized = sanitizeInput(e.target.value, "email");
+                  e.target.value = sanitized;
+                }}
               />
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -112,33 +149,72 @@ export default function CompanySection({
           {/* Téléphone et site web */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone" className="flex items-center gap-2">
+              <Label
+                htmlFor="phone"
+                className="flex items-center gap-2 font-normal"
+              >
                 <Phone className="h-4 w-4 text-gray-500" />
                 Téléphone
               </Label>
               <InputPhone
                 id="phone"
                 placeholder="+33 1 23 45 67 89"
-                {...register("phone")}
+                {...register("phone", {
+                  pattern: {
+                    value: VALIDATION_PATTERNS.phone.pattern,
+                    message: VALIDATION_PATTERNS.phone.message,
+                  },
+                  validate: (value) => {
+                    if (value && detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
+                })}
+                onChange={(e) => {
+                  const sanitized = sanitizeInput(e.target.value, "phone");
+                  e.target.value = sanitized;
+                }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="website" className="flex items-center gap-2">
+              <Label
+                htmlFor="website"
+                className="flex items-center gap-2 font-normal"
+              >
                 <Globe className="h-4 w-4 text-gray-500" />
                 Site web
               </Label>
               <InputEndAddOn
                 id="website"
                 placeholder="https://www.entreprise.com"
-                {...register("website")}
+                {...register("website", {
+                  pattern: {
+                    value: VALIDATION_PATTERNS.website.pattern,
+                    message: VALIDATION_PATTERNS.website.message,
+                  },
+                  validate: (value) => {
+                    if (value && detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
+                })}
+                onChange={(e) => {
+                  const sanitized = sanitizeInput(e.target.value);
+                  e.target.value = sanitized;
+                }}
               />
             </div>
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="flex items-center gap-2">
+            <Label
+              htmlFor="description"
+              className="flex items-center gap-2 font-normal"
+            >
               <FileText className="h-4 w-4 text-gray-500" />
               Description de l'entreprise
             </Label>
@@ -146,7 +222,22 @@ export default function CompanySection({
               id="description"
               placeholder="Décrivez votre entreprise..."
               rows={4}
-              {...register("description")}
+              {...register("description", {
+                pattern: {
+                  value: VALIDATION_PATTERNS.description.pattern,
+                  message: VALIDATION_PATTERNS.description.message,
+                },
+                validate: (value) => {
+                  if (value && detectInjectionAttempt(value)) {
+                    return "Caractères non autorisés détectés";
+                  }
+                  return true;
+                },
+              })}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value);
+                e.target.value = sanitized;
+              }}
             />
           </div>
         </CardContent>

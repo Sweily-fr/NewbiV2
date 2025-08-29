@@ -3,6 +3,7 @@ import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { mongoDb } from "./mongodb";
 import { resend } from "./resend";
 import { admin, organization } from "better-auth/plugins";
+import { createAuthMiddleware } from "better-auth/api";
 // import { bearer } from "better-auth/plugins";
 
 export const auth = betterAuth({
@@ -13,60 +14,475 @@ export const auth = betterAuth({
       defaultRole: "owner", // Rôle par défaut pour les nouveaux utilisateurs
     }),
     organization({
+      allowUserToCreateOrganization: true,
+      organizationLimit: 5,
+      membershipLimit: 100,
+      creatorRole: "owner",
+      schema: {
+        organization: {
+          additionalFields: {
+            // Company basic information
+            companyName: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            companyEmail: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            companyPhone: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            website: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            // Legal information
+            siret: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            vatNumber: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            rcs: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            legalForm: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            capitalSocial: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            fiscalRegime: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            activityCategory: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            isVatSubject: {
+              type: "boolean",
+              input: true,
+              required: false,
+            },
+            hasCommercialActivity: {
+              type: "boolean",
+              input: true,
+              required: false,
+            },
+            // Address information (flattened)
+            addressStreet: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            addressCity: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            addressZipCode: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            addressCountry: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            // Bank details (flattened)
+            bankName: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            bankIban: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            bankBic: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+          },
+        },
+      },
       async sendInvitationEmail(data) {
-        console.log('Envoi d\'email d\'invitation:', data);
-        
+        console.log("Envoi d'email d'invitation:", data);
+
         // Construire le lien d'invitation avec les informations de base
-        const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/accept-invitation/${data.id}?org=${encodeURIComponent(data.organization.name)}&email=${encodeURIComponent(data.email)}&role=${encodeURIComponent(data.role)}`;
-        
+        const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/accept-invitation/${data.id}?org=${encodeURIComponent(data.organization.name)}&email=${encodeURIComponent(data.email)}&role=${encodeURIComponent(data.role)}`;
+
         try {
+          // Template HTML épuré pour l'invitation
+          const htmlTemplate = `
+            <!DOCTYPE html>
+            <html lang="fr">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Invitation à rejoindre ${data.organization.name}</title>
+            </head>
+            <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+              <div style="max-width: 500px; margin: 0 auto;">
+                
+                <!-- Logo -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+                </div>
+                
+                <!-- Titre principal -->
+                <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: start;">
+                  ${data.inviter.user.name || data.inviter.user.email} vous a invité·e à travailler dans ${data.organization.name}
+                </h1>
+                
+                <!-- Message principal -->
+                <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: start;">
+                  Rejoignez ${data.inviter.user.name || data.inviter.user.email} pour
+                  créer devis/factures, gérer la trésorerie et piloter vos projets.
+                </p>
+                
+                <!-- Illustration de l'interface -->
+               <div style="margin: 32px 0; background-color: #fafafa; border-radius: 12px; border: 1px solid #F2F2F2; overflow: hidden;">
+  <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; height: 350px; border-collapse: collapse;">
+    <tr>
+      <!-- Zone principale avec l'image -->
+      <td style="height: 290px; vertical-align: top; position: relative; padding: 0;">
+        <div style="width: 100%; height: 290px; position: relative; overflow: hidden;">
+          <img 
+            src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/Capture%20d%E2%80%99e%CC%81cran%202025-08-27%20a%CC%80%2018.18.21.png" 
+            alt="Illustration" 
+            style="
+              float: right;
+              margin-top: 50px;
+              margin-right: -10px;
+              width: 430px;
+              height: 240px;
+              border-radius: 10px;
+              border: solid 2px #F2F2F2;
+              box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            " 
+          />
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <!-- Footer fixé en bas -->
+      <td style="height: 60px; vertical-align: bottom; padding: 0;">
+        <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="border-top: solid 1px #F2F2F2; padding: 16px; background-color: #ffffff;">
+              <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="vertical-align: middle;">
+                    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                      <tr>
+                        <td style="vertical-align: middle; padding-right: 12px;">
+                          <div style="
+                            width: 28px;
+                            height: 28px;
+                            background-color: #fafafa;
+                            border-radius: 6px;
+                            text-align: center;
+                            line-height: 28px;
+                            color: #1f2937;
+                            font-weight: 600;
+                            font-size: 12px;
+                          ">N</div>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <div style="font-size: 14px; font-weight: 500; color: #454545; padding-bottom: 4px;">
+                            ${data.organization.name}
+                          </div>
+                          <div style="font-size: 12px; color: #B0B0B0;">
+                            Espace de travail • 5 Membres
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td style="text-align: right; vertical-align: middle;">
+                    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                      <tr>
+                        <td style="padding: 0 2px;">
+                          <div style="
+                            width: 24px;
+                            height: 24px;
+                            background-color: #fafafa;
+                            border-radius: 50%;
+                            text-align: center;
+                            line-height: 24px;
+                            color: #6b7280;
+                            font-size: 10px;
+                            font-weight: 600;
+                          ">J</div>
+                        </td>
+                        <td style="padding: 0 2px;">
+                          <div style="
+                            width: 24px;
+                            height: 24px;
+                            background-color: #fafafa;
+                            border-radius: 50%;
+                            text-align: center;
+                            line-height: 24px;
+                            color: #6b7280;
+                            font-size: 10px;
+                            font-weight: 600;
+                          ">D</div>
+                        </td>
+                        <td style="padding: 0 2px;">
+                          <div style="
+                            width: 24px;
+                            height: 24px;
+                            background-color: #fafafa;
+                            border-radius: 50%;
+                            text-align: center;
+                            line-height: 24px;
+                            color: #6b7280;
+                            font-size: 10px;
+                            font-weight: 600;
+                          ">H</div>
+                        </td>
+                        <td style="padding: 0 2px;">
+                          <div style="
+                            width: 24px;
+                            height: 24px;
+                            background-color: #fafafa;
+                            border-radius: 50%;
+                            text-align: center;
+                            line-height: 24px;
+                            color: #6b7280;
+                            font-size: 10px;
+                            font-weight: 600;
+                          ">A</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+                
+                <!-- Bouton CTA -->
+                <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; margin: 32px 0;">
+  <tr>
+    <td 
+      style="
+        background-color: #5b4fff;
+        border-radius: 8px;
+        padding: 0;
+      "
+    >
+      <a 
+        href="${data.invitationUrl}" 
+        style="
+          display: block;
+          width: 100%;
+          box-sizing: border-box;
+          color: white;
+          text-decoration: none;
+          padding: 16px;
+          text-align: center;
+          font-size: 16px;
+          font-weight: 600;
+          line-height: 1.4;
+        "
+      >
+        Accepter l'invitation
+      </a>
+    </td>
+  </tr>
+</table>
+                
+                <!-- Lien de secours -->
+                <p style="font-size: 11px; line-height: 1.4; color: #9ca3af; margin: 32px 0 0 0; text-align: center;">
+                  Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+                  <span style="color: #5B4FFF; word-break: break-all;">${inviteLink}</span>
+                </p>
+                
+                <!-- Footer -->
+                <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
+                  <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                    Si vous ne souhaitez pas rejoindre cette organisation, vous pouvez ignorer cet e-mail en toute sécurité.
+                  </p>
+                </div>
+                
+              </div>
+            </body>
+            </html>
+          `;
+
           // Envoyer l'email d'invitation via Resend
           await resend.emails.send({
             to: data.email,
-            subject: `Invitation à rejoindre ${data.organization.name}`,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2>Vous êtes invité(e) à rejoindre ${data.organization.name}</h2>
-                <p>Bonjour,</p>
-                <p><strong>${data.inviter.user.name || data.inviter.user.email}</strong> vous invite à rejoindre l'organisation <strong>${data.organization.name}</strong>.</p>
-                <p>Cliquez sur le lien ci-dessous pour accepter l'invitation :</p>
-                <a href="${inviteLink}" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 16px 0;">Accepter l'invitation</a>
-                <p>Si vous ne souhaitez pas rejoindre cette organisation, vous pouvez ignorer cet email.</p>
-                <p>Cordialement,<br>L'équipe Newbi</p>
-              </div>
-            `,
-            from: "noreply@newbi.sweily.fr",
+            subject: `${data.inviter.user.name || data.inviter.user.email} vous a invité·e à travailler dans ${data.organization.name}`,
+            html: htmlTemplate,
+            from: "Newbi <noreply@newbi.sweily.fr>",
           });
-          
-          console.log('Email d\'invitation envoyé avec succès à:', data.email);
+
+          console.log("Email d'invitation envoyé avec succès à:", data.email);
         } catch (error) {
-          console.error('Erreur lors de l\'envoi de l\'email d\'invitation:', error);
+          console.error(
+            "Erreur lors de l'envoi de l'email d'invitation:",
+            error
+          );
           throw error;
         }
       },
     }),
   ],
   // plugins: [bearer()],
-  
+
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url, token }, request) => {
+      const htmlTemplate = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Réinitialisez votre mot de passe</title>
+        </head>
+        <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+          <div style="max-width: 500px; margin: 0 auto;">
+            
+            <!-- Logo -->
+            <div style="text-align: center; margin-bottom: 40px;">
+              <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+            </div>
+            
+            <!-- Titre principal -->
+            <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: center;">
+              Réinitialisez votre mot de passe
+            </h1>
+            
+            <!-- Message principal -->
+            <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: center;">
+              Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe pour votre compte Newbi.
+            </p>
+            
+            <!-- Bouton CTA -->
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${url}" style="display: inline-block; background-color: #5B4FFF; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+                Réinitialiser mon mot de passe
+              </a>
+            </div>
+            
+            <!-- Lien de secours -->
+            <p style="font-size: 11px; line-height: 1.4; color: #9ca3af; margin: 32px 0 0 0; text-align: center;">
+              Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+              <span style="color: #5B4FFF; word-break: break-all;">${url}</span>
+            </p>
+            
+            <!-- Footer -->
+            <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
+              <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                Ce lien expire dans 1 heure. Si vous n'avez pas demandé cette réinitialisation, ignorez cet e-mail.
+              </p>
+            </div>
+            
+          </div>
+        </body>
+        </html>
+      `;
+
       await resend.emails.send({
         to: user.email,
-        subject: "Réinitialisation de votre mot de passe",
-        text: `Clique sur le lien suivant pour réinitialiser votre mot de passe: ${url}`,
-        from: "noreply@newbi.sweily.fr",
+        subject: "Réinitialisez votre mot de passe - Newbi",
+        html: htmlTemplate,
+        from: "Newbi <noreply@newbi.sweily.fr>",
       });
     },
   },
 
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }) => {
+      const htmlTemplate = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Vérifiez votre adresse e-mail</title>
+        </head>
+        <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+          <div style="max-width: 500px; margin: 0 auto;">
+            
+            <!-- Logo -->
+            <div style="text-align: center; margin-bottom: 40px;">
+              <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+            </div>
+            
+            <!-- Titre principal -->
+            <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: center;">
+              Vérifiez votre adresse e-mail
+            </h1>
+            
+            <!-- Message principal -->
+            <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: center;">
+              Cliquez sur le bouton ci-dessous pour vérifier votre adresse e-mail et finaliser votre inscription sur Newbi.
+            </p>
+            
+            <!-- Bouton CTA -->
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${url}" style="display: inline-block; background-color: #5B4FFF; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+                Vérifier mon e-mail
+              </a>
+            </div>
+            
+            <!-- Lien de secours -->
+            <p style="font-size: 11px; line-height: 1.4; color: #9ca3af; margin: 32px 0 0 0; text-align: center;">
+              Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+              <span style="color: #5B4FFF; word-break: break-all;">${url}</span>
+            </p>
+            
+            <!-- Footer -->
+            <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
+              <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                Ce lien expire dans 1 heure. Si vous n'avez pas créé de compte, ignorez cet e-mail.
+              </p>
+            </div>
+            
+          </div>
+        </body>
+        </html>
+      `;
+
       await resend.emails.send({
         to: user.email,
-        subject: "Veuillez vérifier votre adresse e-mail",
-        text: `Clique sur le lien suivant pour vérifier votre adresse e-mail: ${url}`,
-        from: "noreply@newbi.sweily.fr",
+        subject: "Vérifiez votre adresse e-mail - Newbi",
+        html: htmlTemplate,
+        from: "Newbi <noreply@newbi.sweily.fr>",
       });
     },
     sendOnSignUp: true,
@@ -107,107 +523,6 @@ export const auth = betterAuth({
         required: false,
         defaultValue: "",
       },
-      company: {
-        name: {
-          type: "string",
-          required: false,
-          defaultValue: "",
-        },
-        email: {
-          type: "string",
-          required: false,
-          defaultValue: "",
-        },
-        phone: {
-          type: "string",
-          required: false,
-          defaultValue: "",
-        },
-        website: {
-          type: "string",
-          required: false,
-          defaultValue: "",
-        },
-        logo: {
-          type: "string",
-          required: false,
-          defaultValue: "",
-        },
-        // siret: {
-        //   type: "string",
-        //   required: false,
-        //   defaultValue: "",
-        // },
-        // vatNumber: {
-        //   type: "string",
-        //   required: false,
-        //   defaultValue: "",
-        // },
-        // transactionCategory: {
-        //   type: "string",
-        //   required: false,
-        //   defaultValue: "",
-        // },
-        // vatPaymentCondition: {
-        //   type: "string",
-        //   required: false,
-        //   defaultValue: "",
-        // },
-        // companyStatus: {
-        //   type: "string",
-        //   required: false,
-        //   defaultValue: "",
-        // },
-        // capitalSocial: {
-        //   type: "string",
-        //   required: false,
-        //   defaultValue: "",
-        // },
-        // rcs: {
-        //   type: "string",
-        //   required: false,
-        //   defaultValue: "",
-        // },
-        address: {
-          street: {
-            type: "string",
-            required: false,
-            defaultValue: "",
-          },
-          city: {
-            type: "string",
-            required: false,
-            defaultValue: "",
-          },
-          zipCode: {
-            type: "string",
-            required: false,
-            defaultValue: "",
-          },
-          country: {
-            type: "string",
-            required: false,
-            defaultValue: "",
-          },
-        },
-        bankDetails: {
-          bankName: {
-            type: "string",
-            required: false,
-            defaultValue: "",
-          },
-          iban: {
-            type: "string",
-            required: false,
-            defaultValue: "",
-          },
-          bic: {
-            type: "string",
-            required: false,
-            defaultValue: "",
-          },
-        },
-      },
     },
   },
   socialProviders: {
@@ -219,5 +534,100 @@ export const auth = betterAuth({
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
     },
+  },
+
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      // Filtrer uniquement les callbacks OAuth
+      if (!ctx.path?.includes("/callback/")) {
+        return;
+      }
+
+      console.log("Hook OAuth déclenché sur:", ctx.path);
+
+      // Utiliser newSession comme nous l'avons vu dans les logs
+      const newSession = ctx.context.newSession;
+
+      if (newSession && newSession.user && newSession.session) {
+        const user = newSession.user;
+        const userId = newSession.session.userId;
+
+        console.log("Nouvelle session OAuth détectée pour userId:", userId);
+        console.log("Utilisateur:", user.email);
+
+        // Créer une organisation automatiquement comme pour l'inscription normale
+        try {
+          console.log("Création automatique d'organisation pour OAuth...");
+
+          // Générer le nom et le slug comme dans useAutoOrganization
+          const organizationName =
+            user.name || `Workspace ${user.email.split("@")[0]}'s`;
+          const organizationSlug = `org-${user.id.slice(-8)}`;
+
+          console.log("Nom de l'organisation:", organizationName);
+          console.log("Slug de l'organisation:", organizationSlug);
+
+          // Utiliser l'API interne Better Auth pour créer l'organisation
+          const organizationData = {
+            name: organizationName,
+            slug: organizationSlug,
+            metadata: {
+              autoCreated: true,
+              createdAt: new Date().toISOString(),
+              createdVia: "oauth",
+            },
+          };
+
+          const organization =
+            await ctx.context.internalAdapter.createOrganization({
+              ...organizationData,
+              creatorId: userId,
+            });
+
+          console.log(
+            "Organisation créée automatiquement via OAuth:",
+            organization
+          );
+        } catch (error) {
+          console.error(
+            "Erreur lors de la création automatique d'organisation OAuth:",
+            error
+          );
+
+          // Fallback: essayer avec l'adapter normal
+          try {
+            console.log("Tentative avec l'adapter normal...");
+
+            const organizationData = {
+              name: user.name
+                ? `Organisation de ${user.name}`
+                : `Organisation de ${user.email}`,
+              slug: `org-${user.id.slice(-8)}`,
+            };
+
+            const organization = await ctx.context.adapter.create({
+              model: "organization",
+              data: organizationData,
+            });
+
+            const member = await ctx.context.adapter.create({
+              model: "member",
+              data: {
+                userId: userId,
+                organizationId: organization.id,
+                role: "owner",
+              },
+            });
+
+            console.log("Organisation créée avec fallback:", organization);
+            console.log("Membre créé:", member);
+          } catch (fallbackError) {
+            console.error("Erreur même avec le fallback:", fallbackError);
+          }
+        }
+      } else {
+        console.log("Pas de nouvelle session dans le contexte pour:", ctx.path);
+      }
+    }),
   },
 });

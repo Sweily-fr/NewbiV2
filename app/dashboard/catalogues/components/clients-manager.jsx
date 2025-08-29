@@ -9,7 +9,7 @@ import { useCreateClient, useUpdateClient } from "@/src/hooks/useClients";
 export default function ClientsManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
-  
+
   const { createClient, loading: createLoading } = useCreateClient();
   const { updateClient, loading: updateLoading } = useUpdateClient();
 
@@ -25,7 +25,7 @@ export default function ClientsManager() {
       setIsModalOpen(false);
       setSelectedClient(null);
     } catch (error) {
-      console.error('Error saving client:', error);
+      console.error("Error saving client:", error);
       throw error; // Re-throw pour que le modal puisse gérer l'erreur
     }
   };

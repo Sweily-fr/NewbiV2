@@ -85,7 +85,7 @@ export default function BankBalanceCard({ className }) {
     return (
       <Card className={className}>
         <CardContent className="p-6">
-          <h3 className="text-lg font-normal text-gray-700 mb-4">Solde</h3>
+          <h3 className="text-lg font-normal mb-4">Solde</h3>
           <p className="text-sm text-red-500">Erreur: {error}</p>
         </CardContent>
       </Card>
@@ -96,7 +96,7 @@ export default function BankBalanceCard({ className }) {
     return (
       <Card className={className}>
         <CardContent className="p-6">
-          <h3 className="text-lg font-normal text-gray-700 mb-4">Solde</h3>
+          <h3 className="text-lg font-normal mb-4">Solde</h3>
           <p className="text-sm text-gray-500">Aucun compte connecté</p>
         </CardContent>
       </Card>

@@ -28,29 +28,33 @@ const RegisterForm = () => {
     await signUp.email(formData, {
       onSuccess: async (context) => {
         toast.success("Vous avez reçu un email de verification");
-        
-        console.log('Callback onSuccess - Context:', context);
-        
+
+        console.log("Callback onSuccess - Context:", context);
+
         // Créer automatiquement une organisation après l'inscription
         console.log("Tentative de création automatique d'organisation...");
-        
+
         // Attendre un peu pour que l'utilisateur soit bien créé et connecté
         setTimeout(async () => {
           // Passer l'utilisateur depuis le contexte si disponible
           const user = context?.user || context?.data?.user;
-          console.log('Utilisateur depuis le contexte:', user);
-          
+          console.log("Utilisateur depuis le contexte:", user);
+
           const result = await createAutoOrganization(user);
           if (result.success) {
             console.log("Organisation créée automatiquement après inscription");
             toast.success("Organisation créée automatiquement");
           } else {
-            console.error("Échec de la création automatique d'organisation:", result.error);
+            console.error(
+              "Échec de la création automatique d'organisation:",
+              result.error
+            );
             // Ne pas afficher d'erreur à l'utilisateur car l'inscription a réussi
           }
         }, 3000); // Attendre 3 secondes pour être sûr
-        
-        // router.push("/auth/login");
+
+        // Redirection vers la page de connexion après inscription
+        router.push("/auth/login");
       },
       onError: (error) => {
         toast.error("Erreur lors de l'inscription");
@@ -106,7 +110,7 @@ const RegisterForm = () => {
           {...register("password", {
             required: "Mot de passe est requis",
             minLength: {
-              value: 6,
+              value: 8,
               message: "Le mot de passe doit contenir au moins 8 caractères",
             },
           })}

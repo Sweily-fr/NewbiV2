@@ -69,7 +69,27 @@ export const useCreateClient = () => {
       toast.success('Client créé avec succès');
     },
     onError: (error) => {
-      toast.error('Erreur lors de la création du client');
+      // Analyser le type d'erreur pour afficher un message approprié
+      const errorMessage = error.message || '';
+      
+      if (errorMessage.includes('existe déjà') || errorMessage.includes('already exists')) {
+        toast.error('Un client avec cet email existe déjà');
+      } else if (errorMessage.includes('email') && errorMessage.includes('requis')) {
+        toast.error('L\'email est requis');
+      } else if (errorMessage.includes('nom') && errorMessage.includes('requis')) {
+        toast.error('Le nom est requis');
+      } else if (errorMessage.includes('SIRET')) {
+        toast.error('Le SIRET doit contenir exactement 14 chiffres');
+      } else if (errorMessage.includes('TVA')) {
+        toast.error('Format de numéro de TVA invalide');
+      } else if (errorMessage.includes('email') && errorMessage.includes('valide')) {
+        toast.error('Veuillez fournir une adresse email valide');
+      } else if (errorMessage.includes('validation')) {
+        toast.error('Données invalides. Veuillez vérifier les champs');
+      } else {
+        toast.error('Erreur lors de la création du client');
+      }
+      
       console.error('Create client error:', error);
     },
   });
@@ -125,7 +145,27 @@ export const useUpdateClient = () => {
       toast.success('Client modifié avec succès');
     },
     onError: (error) => {
-      toast.error('Erreur lors de la modification du client');
+      // Analyser le type d'erreur pour afficher un message approprié
+      const errorMessage = error.message || '';
+      
+      if (errorMessage.includes('existe déjà') || errorMessage.includes('already exists')) {
+        toast.error('Un client avec cet email existe déjà');
+      } else if (errorMessage.includes('email') && errorMessage.includes('requis')) {
+        toast.error('L\'email est requis');
+      } else if (errorMessage.includes('nom') && errorMessage.includes('requis')) {
+        toast.error('Le nom est requis');
+      } else if (errorMessage.includes('SIRET')) {
+        toast.error('Le SIRET doit contenir exactement 14 chiffres');
+      } else if (errorMessage.includes('TVA')) {
+        toast.error('Format de numéro de TVA invalide');
+      } else if (errorMessage.includes('email') && errorMessage.includes('valide')) {
+        toast.error('Veuillez fournir une adresse email valide');
+      } else if (errorMessage.includes('validation')) {
+        toast.error('Données invalides. Veuillez vérifier les champs');
+      } else {
+        toast.error('Erreur lors de la modification du client');
+      }
+      
       console.error('Update client error:', error);
     },
   });

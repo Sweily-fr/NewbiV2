@@ -319,7 +319,7 @@ export default function SecuritySection({ session }) {
       </div>
 
       {/* Banking integration section - to be replaced with new API */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* <div className="gap-6">
         <Card className="border-0 shadow-sm backdrop-blur-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-lg font-medium">
@@ -359,10 +359,10 @@ export default function SecuritySection({ session }) {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       {/* Authentification */}
-      <Card className="border-0 shadow-sm backdrop-blur-sm">
+      {/* <Card className="border-0 shadow-sm backdrop-blur-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-3 text-lg font-medium">
             <div className="p-2 bg-blue-50 rounded-lg">
@@ -585,7 +585,7 @@ export default function SecuritySection({ session }) {
             </Dialog>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }
