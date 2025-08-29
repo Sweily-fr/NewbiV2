@@ -197,46 +197,39 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               </div>
 
               {/* Nom/Raison sociale */}
-              <div className="space-y-2">
-                <Label>
-                  {clientType === "COMPANY" ? "Raison sociale" : "Nom"} *
-                </Label>
-                <Input
-                  placeholder={
-                    clientType === "COMPANY"
-                      ? "Nom de l'entreprise"
-                      : "Nom du client"
-                  }
-                  {...register("name", {
-                    required: "Ce champ est requis",
-                    pattern: {
-                      value:
-                        clientType === "COMPANY"
-                          ? /^[a-zA-ZÀ-ÿ0-9\s&'"\-.,()]{2,100}$/
-                          : /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                      message:
-                        clientType === "COMPANY"
-                          ? "Le nom de l'entreprise doit contenir entre 2 et 100 caractères"
-                          : "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                    },
-                  })}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
-                )}
-              </div>
-
-              {/* Prénom et Email côte à côte */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Prénom (pour particuliers uniquement) */}
+              {/* Raison sociale uniquement pour les entreprises */}
+              {clientType === "COMPANY" && (
                 <div className="space-y-2">
-                  <Label>
-                    {clientType === "INDIVIDUAL" ? "Prénom" : "Contact"}
-                  </Label>
-                  {clientType === "INDIVIDUAL" ? (
+                  <Label>Raison sociale *</Label>
+                  <Input
+                    placeholder="Nom de l'entreprise"
+                    {...register("name", {
+                      required: "Ce champ est requis",
+                      pattern: {
+                        value: /^[a-zA-ZÀ-ÿ0-9\s&'"\-.,()]{2,100}$/,
+                        message:
+                          "Le nom de l'entreprise doit contenir entre 2 et 100 caractères",
+                      },
+                    })}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-red-500">
+                      {errors.name.message}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Prénom et Nom pour particuliers, Contact et Email pour entreprises */}
+              {clientType === "INDIVIDUAL" ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Prénom */}
+                  <div className="space-y-2">
+                    <Label>Prénom *</Label>
                     <Input
                       placeholder="Prénom"
                       {...register("firstName", {
+                        required: "Le prénom est requis",
                         pattern: {
                           value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
                           message:
@@ -244,7 +237,39 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                         },
                       })}
                     />
-                  ) : (
+                    {errors.firstName && (
+                      <p className="text-sm text-red-500">
+                        {errors.firstName.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Nom de famille */}
+                  <div className="space-y-2">
+                    <Label>Nom *</Label>
+                    <Input
+                      placeholder="Nom"
+                      {...register("lastName", {
+                        required: "Le nom est requis",
+                        pattern: {
+                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                          message:
+                            "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                        },
+                      })}
+                    />
+                    {errors.lastName && (
+                      <p className="text-sm text-red-500">
+                        {errors.lastName.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Contact pour entreprises */}
+                  <div className="space-y-2">
+                    <Label>Contact</Label>
                     <Input
                       placeholder="Nom du contact"
                       {...register("firstName", {
@@ -255,23 +280,41 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                         },
                       })}
                     />
-                  )}
-                  {errors.firstName && (
-                    <p className="text-sm text-red-500">
-                      {errors.firstName.message}
-                    </p>
-                  )}
-                </div>
+                    {errors.firstName && (
+                      <p className="text-sm text-red-500">
+                        {errors.firstName.message}
+                      </p>
+                    )}
+                  </div>
 
-                {/* Email (pour tous les types) */}
+                  {/* Email (pour tous les types) */}
+                  <div className="space-y-2">
+                    <Label>Email *</Label>
+                    <InputEmail
+                      placeholder="contact@entreprise.com"
+                      {...register("email", {
+                        required: "L'email est requis",
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: "Email invalide",
+                        },
+                      })}
+                    />
+                    {errors.email && (
+                      <p className="text-sm text-red-500">
+                        {errors.email.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Email pour particuliers (ligne séparée) */}
+              {clientType === "INDIVIDUAL" && (
                 <div className="space-y-2">
                   <Label>Email *</Label>
                   <InputEmail
-                    placeholder={
-                      clientType === "COMPANY"
-                        ? "contact@entreprise.com"
-                        : "client@exemple.com"
-                    }
+                    placeholder="client@exemple.com"
                     {...register("email", {
                       required: "L'email est requis",
                       pattern: {
@@ -286,7 +329,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     </p>
                   )}
                 </div>
-              </div>
+              )}
 
               {/* Adresse de facturation */}
               <div className="space-y-3 py-2">

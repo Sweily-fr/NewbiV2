@@ -420,13 +420,13 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
             <div className="flex">
               <span className="font-medium w-32">BIC</span>
               <span className="font-normal">
-                {data.bankDetails?.bic || "QNTOFR21XXX"}
+                {data.bankDetails?.bic || data.companyInfo?.bankDetails?.bic || ""}
               </span>
             </div>
             <div className="flex">
               <span className="font-medium w-32">IBAN</span>
               <span className="font-normal">
-                {data.bankDetails?.iban || "FR7616958000001719566325588"}
+                {data.bankDetails?.iban || data.companyInfo?.bankDetails?.iban || ""}
               </span>
             </div>
             <div className="flex">
@@ -442,8 +442,10 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
 
         <div className="text-[10px] dark:text-[#0A0A0A] border-t pt-2">
           <div>
-            {data.companyInfo?.name || "Sweily"}, SAS au capital de 10 000,00 €
-            - 981 576 649 R.C.S. Paris
+            {data.companyInfo?.name || "Sweily"}
+            {data.companyInfo?.legalForm && `, ${data.companyInfo.legalForm}`}
+            {data.companyInfo?.capitalSocial && ` au capital de ${data.companyInfo.capitalSocial}`}
+            {data.companyInfo?.rcs && ` - ${data.companyInfo.rcs}`}
           </div>
         </div>
       </div>

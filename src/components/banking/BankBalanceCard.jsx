@@ -66,7 +66,7 @@ export default function BankBalanceCard({ className }) {
   if (loading) {
     return (
       <Card className={className}>
-        <CardContent className="p-6">
+        <CardContent className="px-6">
           <h3 className="text-lg font-normal text-gray-700 mb-4">Solde</h3>
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded mb-6"></div>
@@ -84,7 +84,7 @@ export default function BankBalanceCard({ className }) {
   if (error) {
     return (
       <Card className={className}>
-        <CardContent className="p-6">
+        <CardContent className="px-6">
           <h3 className="text-lg font-normal mb-4">Solde</h3>
           <p className="text-sm text-red-500">Erreur: {error}</p>
         </CardContent>
@@ -95,7 +95,7 @@ export default function BankBalanceCard({ className }) {
   if (accounts.length === 0) {
     return (
       <Card className={className}>
-        <CardContent className="p-6">
+        <CardContent className="px-6">
           <h3 className="text-lg font-normal mb-4">Solde</h3>
           <p className="text-sm text-gray-500">Aucun compte connecté</p>
         </CardContent>
@@ -105,7 +105,7 @@ export default function BankBalanceCard({ className }) {
 
   return (
     <Card className={className}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-normal">Soldes</CardTitle>
       </CardHeader>
       <CardContent>

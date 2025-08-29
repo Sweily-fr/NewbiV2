@@ -41,9 +41,20 @@ export const useWorkspace = () => {
         ? {
             id: activeOrganization.id,
             name: activeOrganization.name,
+            companyName: activeOrganization.companyName,
+            companyEmail: activeOrganization.companyEmail,
+            addressStreet: activeOrganization.addressStreet,
+            addressCity: activeOrganization.addressCity,
+            siret: activeOrganization.siret,
+            vatNumber: activeOrganization.vatNumber,
           }
         : null,
       workspaceId: activeOrganization?.id || null,
+      allOrganizations: organizations?.map(org => ({
+        id: org.id,
+        name: org.name,
+        companyName: org.companyName,
+      })),
     });
   }, [loading, orgsLoading, activeLoading, organizations, activeOrganization]);
 

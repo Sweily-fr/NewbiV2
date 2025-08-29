@@ -496,7 +496,7 @@ export default function TableClients({ handleAddUser }) {
           {table.getSelectedRowModel().rows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="ml-auto" variant="destructive">
+                <Button className="ml-auto font-normal" variant="destructive">
                   <TrashIcon
                     className="-ms-1 opacity-60"
                     size={16}

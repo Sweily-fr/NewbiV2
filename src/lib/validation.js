@@ -350,41 +350,56 @@ export const validateSettingsForm = (formData) => {
     const legalErrors = {};
     const sanitizedLegal = {};
     
+    // Forme juridique - toujours incluse
+    if (formData.legal.legalForm) {
+      const legalFormValidation = validateField(formData.legal.legalForm, 'legalForm', requiredFields.legalForm);
+      if (!legalFormValidation.isValid) legalErrors.legalForm = legalFormValidation.message;
+      else sanitizedLegal.legalForm = legalFormValidation.sanitizedValue;
+    }
+    
     // SIRET - toujours obligatoire
     const siretValidation = validateField(formData.legal.siret, 'siret', requiredFields.siret);
     if (!siretValidation.isValid) legalErrors.siret = siretValidation.message;
     else if (siretValidation.sanitizedValue) sanitizedLegal.siret = siretValidation.sanitizedValue;
     
     // RCS - obligatoire selon la forme juridique et activité commerciale
-    if (visibleFields.rcs) {
+    if (formData.legal.rcs) {
       const rcsValidation = validateField(formData.legal.rcs, 'rcs', requiredFields.rcs);
       if (!rcsValidation.isValid) legalErrors.rcs = rcsValidation.message;
-      else if (rcsValidation.sanitizedValue) sanitizedLegal.rcs = rcsValidation.sanitizedValue;
+      else sanitizedLegal.rcs = rcsValidation.sanitizedValue;
     }
     
     // Numéro de TVA - obligatoire seulement si assujetti à la TVA
-    if (visibleFields.vatNumber) {
+    if (formData.legal.vatNumber) {
       const vatValidation = validateField(formData.legal.vatNumber, 'vatNumber', requiredFields.vatNumber);
       if (!vatValidation.isValid) legalErrors.vatNumber = vatValidation.message;
-      else if (vatValidation.sanitizedValue) sanitizedLegal.vatNumber = vatValidation.sanitizedValue;
+      else sanitizedLegal.vatNumber = vatValidation.sanitizedValue;
     }
     
     // Capital social - obligatoire selon la forme juridique
-    if (visibleFields.capital) {
+    if (formData.legal.capital) {
       const capitalValidation = validateField(formData.legal.capital, 'capital', requiredFields.capital);
       if (!capitalValidation.isValid) legalErrors.capital = capitalValidation.message;
-      else if (capitalValidation.sanitizedValue) sanitizedLegal.capital = capitalValidation.sanitizedValue;
+      else sanitizedLegal.capital = capitalValidation.sanitizedValue;
     }
     
-    // Régime fiscal - toujours obligatoire
-    const fiscalRegimeValidation = validateField(formData.legal.fiscalRegime, 'fiscalRegime', requiredFields.fiscalRegime);
-    if (!fiscalRegimeValidation.isValid) legalErrors.fiscalRegime = fiscalRegimeValidation.message;
-    else if (fiscalRegimeValidation.sanitizedValue) sanitizedLegal.fiscalRegime = fiscalRegimeValidation.sanitizedValue;
+    // Régime fiscal - toujours inclus
+    if (formData.legal.regime) {
+      const fiscalRegimeValidation = validateField(formData.legal.regime, 'fiscalRegime', requiredFields.fiscalRegime);
+      if (!fiscalRegimeValidation.isValid) legalErrors.fiscalRegime = fiscalRegimeValidation.message;
+      else sanitizedLegal.regime = fiscalRegimeValidation.sanitizedValue;
+    }
     
-    // Catégorie d'activité - toujours obligatoire
-    const activityValidation = validateField(formData.legal.activityCategory, 'activityCategory', requiredFields.activityCategory);
-    if (!activityValidation.isValid) legalErrors.activityCategory = activityValidation.message;
-    else if (activityValidation.sanitizedValue) sanitizedLegal.activityCategory = activityValidation.sanitizedValue;
+    // Catégorie d'activité - toujours incluse
+    if (formData.legal.category) {
+      const activityValidation = validateField(formData.legal.category, 'activityCategory', requiredFields.activityCategory);
+      if (!activityValidation.isValid) legalErrors.activityCategory = activityValidation.message;
+      else sanitizedLegal.category = activityValidation.sanitizedValue;
+    }
+    
+    // Inclure les booléens
+    sanitizedLegal.isVatSubject = formData.legal.isVatSubject || false;
+    sanitizedLegal.hasCommercialActivity = formData.legal.hasCommercialActivity || false;
     
     if (Object.keys(legalErrors).length > 0) errors.legal = legalErrors;
     else sanitizedData.legal = sanitizedLegal;

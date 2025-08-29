@@ -11,6 +11,7 @@ import {
   useNextInvoiceNumber,
 } from "@/src/graphql/invoiceQueries";
 import { useUser } from "@/src/lib/auth/hooks";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -20,6 +21,9 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
 
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
+  
+  // Hook pour récupérer les données de l'organisation
+  const { organization } = useWorkspace();
 
   // GraphQL hooks
   const { invoice: existingInvoice, loading: loadingInvoice } =
@@ -38,7 +42,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
 
   // Form state avec react-hook-form
   const form = useForm({
-    defaultValues: getInitialFormData(mode, initialData, session),
+    defaultValues: getInitialFormData(mode, initialData, session, organization),
     mode: "onChange",
   });
 
@@ -96,65 +100,65 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     }
   }, [mode, nextNumberData, setValue]);
 
-  // Auto-remplir companyInfo quand la session devient disponible
+  // Auto-remplir companyInfo avec les données de l'organisation
   useEffect(() => {
-    if (mode === "create" && session?.user?.company) {
-      const userCompany = session.user.company;
-
-      // 🔍 Debug: Afficher la structure complète des données utilisateur
-      console.log("🔍 DEBUG - Session complète:", session);
-      console.log("🔍 DEBUG - User company:", userCompany);
-      console.log("🔍 DEBUG - SIRET disponible:", userCompany?.siret);
-      console.log("🔍 DEBUG - VAT Number disponible:", userCompany?.vatNumber);
+    if (mode === "create" && organization) {
+      // 🔍 Debug: Afficher la structure complète des données d'organisation
+      console.log("🔍 DEBUG - Organisation complète:", organization);
+      console.log("🔍 DEBUG - Organization ID:", organization?.id);
+      console.log("🔍 DEBUG - Organization Name:", organization?.name);
+      console.log("🔍 DEBUG - Company Name:", organization?.companyName);
+      console.log("🔍 DEBUG - Company Email:", organization?.companyEmail);
+      console.log("🔍 DEBUG - Address Street:", organization?.addressStreet);
+      console.log("🔍 DEBUG - Address City:", organization?.addressCity);
+      console.log("🔍 DEBUG - SIRET disponible:", organization?.siret);
+      console.log("🔍 DEBUG - VAT Number disponible:", organization?.vatNumber);
+      console.log("🔍 DEBUG - Bank IBAN:", organization?.bankIban);
 
       const autoFilledCompanyInfo = {
-        name: userCompany?.name || "",
-        address: userCompany?.address
-          ? `${userCompany.address.street || ""}, ${userCompany.address.city || ""}, ${userCompany.address.postalCode || ""}, ${userCompany.address.country || ""}`
-              .replace(/^,\s*|,\s*$/g, "")
-              .replace(/,\s*,/g, ",")
-              .trim()
-          : "",
-        email: userCompany?.email || "",
-        phone: userCompany?.phone || "",
-        siret: userCompany?.legal?.siret || userCompany?.siret || "",
-        vatNumber:
-          userCompany?.legal?.vatNumber || userCompany?.vatNumber || "",
-        website: userCompany?.website || "",
+        name: organization?.companyName || "",
+        address: {
+          street: organization?.addressStreet || "",
+          city: organization?.addressCity || "",
+          postalCode: organization?.addressZipCode || "",
+          country: organization?.addressCountry || "",
+        },
+        email: organization?.companyEmail || "",
+        phone: organization?.companyPhone || "",
+        siret: organization?.siret || "",
+        vatNumber: organization?.vatNumber || "",
+        website: organization?.website || "",
         bankDetails: {
-          iban: userCompany?.bankDetails?.iban || "",
-          bic: userCompany?.bankDetails?.bic || "",
-          bankName: userCompany?.bankDetails?.bankName || "",
+          iban: organization?.bankIban || "",
+          bic: organization?.bankBic || "",
+          bankName: organization?.bankName || "",
         },
       };
 
       setValue("companyInfo", autoFilledCompanyInfo);
 
       console.log(
-        "✅ CompanyInfo auto-rempli avec les données utilisateur:",
+        "✅ CompanyInfo auto-rempli avec les données d'organisation:",
         autoFilledCompanyInfo
       );
     }
-  }, [mode, session, setValue]);
+  }, [mode, organization, setValue]);
 
-  // Stocker les coordonnées bancaires de l'utilisateur actuel (disponible en création et édition)
+  // Stocker les coordonnées bancaires de l'organisation (disponible en création et édition)
   useEffect(() => {
-    if (session?.user?.company?.bankDetails) {
-      // Nettoyer les métadonnées GraphQL comme __typename
-      const sourceBankDetails = session.user.company.bankDetails;
+    if (organization?.bankIban) {
       const userBankDetails = {
-        iban: sourceBankDetails.iban || "",
-        bic: sourceBankDetails.bic || "",
-        bankName: sourceBankDetails.bankName || "",
-        // Suppression explicite de __typename et autres métadonnées GraphQL
+        iban: organization.bankIban || "",
+        bic: organization.bankBic || "",
+        bankName: organization.bankName || "",
       };
       setValue("userBankDetails", userBankDetails);
       console.log(
-        "🏦 Coordonnées bancaires utilisateur disponibles (nettoyées):",
+        "🏦 Coordonnées bancaires organisation disponibles:",
         userBankDetails
       );
     }
-  }, [session, setValue]);
+  }, [organization, setValue]);
 
   // Auto-save handler - DISABLED
   // const handleAutoSave = useCallback(async () => {
@@ -363,26 +367,25 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
 }
 
 // Helper functions
-function getInitialFormData(mode, initialData, session) {
-  // Auto-remplissage du companyInfo avec les données utilisateur
-  const userCompany = session?.user?.company;
+function getInitialFormData(mode, initialData, session, organization) {
+  // Auto-remplissage du companyInfo avec les données d'organisation
   const autoFilledCompanyInfo = {
-    name: userCompany?.name || "",
-    address: userCompany?.address
-      ? `${userCompany.address.street || ""}, ${userCompany.address.city || ""}, ${userCompany.address.postalCode || ""}, ${userCompany.address.country || ""}`
-          .replace(/^,\s*|,\s*$/g, "")
-          .replace(/,\s*,/g, ",")
-          .trim()
-      : "",
-    email: userCompany?.email || "",
-    phone: userCompany?.phone || "",
-    siret: userCompany?.legal?.siret || userCompany?.siret || "",
-    vatNumber: userCompany?.legal?.vatNumber || userCompany?.vatNumber || "",
-    website: userCompany?.website || "",
+    name: organization?.companyName || "",
+    address: {
+      street: organization?.addressStreet || "",
+      city: organization?.addressCity || "",
+      postalCode: organization?.addressZipCode || "",
+      country: organization?.addressCountry || "",
+    },
+    email: organization?.companyEmail || "",
+    phone: organization?.companyPhone || "",
+    siret: organization?.siret || "",
+    vatNumber: organization?.vatNumber || "",
+    website: organization?.website || "",
     bankDetails: {
-      iban: userCompany?.bankDetails?.iban || "",
-      bic: userCompany?.bankDetails?.bic || "",
-      bankName: userCompany?.bankDetails?.bankName || "",
+      iban: organization?.bankIban || "",
+      bic: organization?.bankBic || "",
+      bankName: organization?.bankName || "",
     },
   };
 
