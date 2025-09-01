@@ -4,6 +4,22 @@ import React from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
+// Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise
+const calculateItemTotal = (quantity, unitPrice, discount, discountType) => {
+  let subtotal = (quantity || 1) * (unitPrice || 0);
+
+  // Appliquer la remise si elle existe
+  if (discount && discount > 0) {
+    if (discountType === 'PERCENTAGE') {
+      subtotal = subtotal * (1 - Math.min(discount, 100) / 100);
+    } else {
+      subtotal = Math.max(0, subtotal - discount);
+    }
+  }
+
+  return subtotal;
+};
+
 const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
   const { data: session } = useSession();
   const { organization } = useWorkspace();
@@ -11,24 +27,84 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
   // Calcul des totaux basé sur les articles
   const calculateTotals = (items = []) => {
     let subtotal = 0;
+    let subtotalAfterItemDiscounts = 0;
     let totalTax = 0;
     const taxesByRate = {}; // Pour stocker les totaux de TVA par taux
     
+    // Calcul du sous-total HT de tous les articles avant remises
     items.forEach(item => {
       const quantity = parseFloat(item.quantity) || 0;
       const unitPrice = parseFloat(item.unitPrice) || 0;
       
-      // Récupérer le taux de TVA, avec une valeur par défaut de 20% si non spécifié
-      // Si vatRate est défini à 0, on le garde à 0, sinon on prend la valeur ou 20% par défaut
+      // Calcul du montant HT de l'article (quantité * prix unitaire)
+      subtotal += quantity * unitPrice;
+      
+      // Calcul du montant après remise sur l'article
+      const itemDiscount = parseFloat(item.discount) || 0;
+      const itemDiscountType = item.discountType || 'percentage';
+      
+      let itemTotal = quantity * unitPrice;
+      
+      // Application de la remise sur l'article
+      if (itemDiscount > 0) {
+        if (itemDiscountType === 'PERCENTAGE' || itemDiscountType === 'percentage') {
+          itemTotal = itemTotal * (1 - Math.min(itemDiscount, 100) / 100);
+        } else {
+          itemTotal = Math.max(0, itemTotal - itemDiscount);
+        }
+      }
+      
+      subtotalAfterItemDiscounts += itemTotal;
+    });
+
+    // Application de la remise globale sur le montant HT après remises sur les articles
+    let globalDiscountAmount = 0;
+    let totalAfterDiscount = subtotalAfterItemDiscounts;
+    
+    if (data.discount && data.discount > 0) {
+      if (data.discountType === 'PERCENTAGE' || data.discountType === 'percentage') {
+        // La remise en pourcentage s'applique sur le montant après remises sur les articles
+        globalDiscountAmount = (subtotalAfterItemDiscounts * data.discount) / 100;
+      } else {
+        // Remise fixe, limitée au montant HT après remises sur les articles
+        globalDiscountAmount = Math.min(data.discount, subtotalAfterItemDiscounts);
+      }
+      totalAfterDiscount = subtotalAfterItemDiscounts - globalDiscountAmount;
+    }
+    
+    // Calcul de la TVA sur le montant après toutes les remises (articles + globale)
+    items.forEach(item => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
       const vatRate = item.vatRate !== undefined ? parseFloat(item.vatRate) : 20;
       
-      // Calcul du montant HT de l'article (quantité * prix unitaire)
-      const itemSubtotal = quantity * unitPrice;
+      // 1. Calcul du montant HT de l'article avant remises
+      let itemSubtotal = quantity * unitPrice;
       
-      // Calcul de la TVA pour cet article (uniquement si le taux est supérieur à 0)
+      // 2. Application de la remise sur l'article si elle existe
+      const itemDiscount = parseFloat(item.discount) || 0;
+      const itemDiscountType = item.discountType;
+      
+      if (itemDiscount > 0) {
+        if (itemDiscountType === 'PERCENTAGE' || itemDiscountType === 'percentage') {
+          // Application de la remise en pourcentage sur l'article
+          itemSubtotal = itemSubtotal * (1 - Math.min(itemDiscount, 100) / 100);
+        } else {
+          // Application de la remise fixe sur l'article
+          itemSubtotal = Math.max(0, itemSubtotal - itemDiscount);
+        }
+      }
+      
+      // 3. Application de la remise globale au prorata pour chaque article
+      if (globalDiscountAmount > 0) {
+        // Calcul de la part de la remise globale qui s'applique à cet article
+        const itemRatio = itemSubtotal / (subtotalAfterItemDiscounts || 1); // Éviter la division par zéro
+        itemSubtotal = Math.max(0, itemSubtotal - (globalDiscountAmount * itemRatio));
+      }
+      
+      // 4. Calcul de la TVA sur le montant après toutes les remises
       const itemTax = vatRate > 0 ? itemSubtotal * (vatRate / 100) : 0;
       
-      subtotal += itemSubtotal;
       totalTax += itemTax;
       
       // On n'ajoute la TVA au détail que si le taux est supérieur à 0
@@ -40,9 +116,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
       }
     });
     
-    const total = subtotal + totalTax;
-    
-    console.log('Calcul des totaux:', { subtotal, totalTax, total, taxesByRate });
+    const total = totalAfterDiscount + totalTax;
     
     const taxDetails = Object.entries(taxesByRate)
       .sort(([rateA], [rateB]) => parseFloat(rateB) - parseFloat(rateA))
@@ -53,17 +127,33 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
     
     return {
       subtotal: Number(subtotal.toFixed(2)),
+      subtotalAfterItemDiscounts: Number(subtotalAfterItemDiscounts.toFixed(2)),
+      discount: Number(globalDiscountAmount.toFixed(2)),
+      totalAfterDiscount: Number(totalAfterDiscount.toFixed(2)),
       totalTax: Number(totalTax.toFixed(2)),
       total: Number(total.toFixed(2)),
-      taxDetails
+      taxDetails,
+      discountType: data.discountType || 'PERCENTAGE',
+      discountValue: data.discount || 0
     };
   };
   
   // Utiliser les totaux calculés ou ceux fournis dans les données
-  const { subtotal, totalTax, total, taxDetails = [] } = data.items?.length > 0 
+  const { 
+    subtotal, 
+    subtotalAfterItemDiscounts,
+    totalTax, 
+    total, 
+    taxDetails = [],
+    discount = 0,
+    totalAfterDiscount = data.subtotal || 0,
+    discountType = 'PERCENTAGE',
+    discountValue = 0
+  } = data.items?.length > 0 
     ? calculateTotals(data.items) 
     : { 
         subtotal: data.subtotal || 0, 
+        subtotalAfterItemDiscounts: data.subtotal || 0,
         totalTax: data.totalTax || 0, 
         total: data.total || 0,
         taxDetails: []
@@ -257,7 +347,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 {data.companyInfo?.email && <div>{data.companyInfo.email}</div>}
               </span>
               <span className="dark:text-[#0A0A0A]">
-                {data.companyInfo?.siret && <div>{data.companyInfo.siret}</div>}
+                {data.companyInfo?.siret && <div>SIRET: {data.companyInfo.siret}</div>}
+                {data.companyInfo?.vatNumber && <div>N° TVA: {data.companyInfo.vatNumber}</div>}
               </span>
             </div>
           </div>
@@ -297,7 +388,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 </span>
                 <span className="dark:text-[#0A0A0A]">
                   {data.client?.vatNumber && (
-                    <div>TVA: {data.client.vatNumber}</div>
+                    <div>N° TVA: {data.client.vatNumber}</div>
                   )}
                 </span>
               </div>
@@ -400,6 +491,13 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                           {item.details}
                         </div>
                       )}
+                      {item.discount > 0 && (
+                        <div className="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5">
+                          Remise: {item.discountType === 'percentage' 
+                            ? `${parseFloat(item.discount).toFixed(2)}%` 
+                            : formatCurrency(parseFloat(item.discount))}
+                        </div>
+                      )}
                     </td>
                     <td
                       className="py-3 px-2 text-right dark:text-[#0A0A0A]"
@@ -423,8 +521,24 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                       className="py-3 px-2 text-right dark:text-[#0A0A0A]"
                       style={{ width: "17%" }}
                     >
-                      {formatCurrency(
-                        (item.quantity || 0) * (item.unitPrice || 0)
+                      {item.discount > 0 ? (
+                        <div className="flex flex-col items-end">
+                          <span className="line-through text-gray-500 text-[9px] mb-[-2px]">
+                            {formatCurrency((item.quantity || 0) * (item.unitPrice || 0))}
+                          </span>
+                          <span>
+                            {formatCurrency(
+                              calculateItemTotal(
+                                item.quantity || 0,
+                                item.unitPrice || 0,
+                                item.discount || 0,
+                                item.discountType || 'percentage'
+                              )
+                            )}
+                          </span>
+                        </div>
+                      ) : (
+                        formatCurrency((item.quantity || 0) * (item.unitPrice || 0))
                       )}
                     </td>
                   </tr>
@@ -468,15 +582,51 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
         {/* TOTAUX */}
         <div className="flex justify-end mb-6">
           <div className="w-72 space-y-1 text-xs">
+            {/* 1. Total HT */}
             <div className="flex justify-between py-1 px-3">
               <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
                 Total HT
               </span>
-              <span className="dark:text-[#0A0A0A] text-[10px]">
-                {formatCurrency(subtotal)}
+              <div className="flex flex-col items-end">
+                {subtotalAfterItemDiscounts < subtotal && (
+                  <span className="line-through text-gray-400 text-[9px] mb-[-2px]">
+                    {formatCurrency(subtotal)}
+                  </span>
+                )}
+                <span className="dark:text-[#0A0A0A] text-[10px] font-medium">
+                  {formatCurrency(subtotalAfterItemDiscounts)}
+                </span>
+              </div>
+            </div>
+            
+            {/* 2. Remise */}
+            {discount > 0 && (
+              <div className="flex justify-between py-1 px-3">
+                <div className="flex flex-col">
+                  <span className="text-[10px] dark:text-[#0A0A0A]">
+                    Remise globale {discountType === 'PERCENTAGE' ? `(${discountValue}%)` : ''}
+                  </span>
+                  <span className="text-[8px] text-gray-500 -mt-0.5">
+                    (appliquée sur {formatCurrency(subtotalAfterItemDiscounts)})
+                  </span>
+                </div>
+                <span className="dark:text-[#FF0000] text-[10px] font-medium">
+                  -{formatCurrency(discount)}
+                </span>
+              </div>
+            )}
+            
+            {/* 3. Total HT après remise */}
+            <div className="flex justify-between py-1 px-3">
+              <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                Total HT après remise
+              </span>
+              <span className="dark:text-[#0A0A0A] text-[10px] font-medium">
+                {formatCurrency(totalAfterDiscount)}
               </span>
             </div>
-            {/* Détail des TVA par taux */}
+            
+            {/* 4. Détail des TVA par taux */}
             {taxDetails.length > 0 ? (
               taxDetails.map((tax, index) => (
                 <div key={`tax-${index}`} className="flex justify-between py-1 px-3">
@@ -488,19 +638,21 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                   </span>
                 </div>
               ))
-            ) : (
+            ) : totalTax > 0 && (
               <div className="flex justify-between py-1 px-3">
-                <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
-                  Montant total de TVA
+                <span className="text-[10px] dark:text-[#0A0A0A]">
+                  TVA
                 </span>
                 <span className="dark:text-[#0A0A0A] text-[10px]">
                   {formatCurrency(totalTax)}
                 </span>
               </div>
             )}
+            
+            {/* 5. Total TVA */}
             {totalTax > 0 && (
-              <div className="flex justify-between py-1 px-3">
-                <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
+              <div className="flex justify-between py-1 px-3 font-medium">
+                <span className="text-[10px] dark:text-[#0A0A0A]">
                   Total TVA
                 </span>
                 <span className="dark:text-[#0A0A0A] text-[10px]">
@@ -508,14 +660,28 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 </span>
               </div>
             )}
-            <div className="flex justify-between py-2 px-6 bg-[#F3F3F3] font-medium text-sm">
+            
+            {/* 6. Total TTC */}
+            <div className="flex justify-between py-2 px-6 bg-[#F3F3F3] font-medium text-sm mt-2">
               <span className="-ml-3 text-[10px] font-medium dark:text-[#0A0A0A]">
                 Total TTC
               </span>
-              <span className="-mr-3 text-[10px] dark:text-[#0A0A0A]">
+              <span className="-mr-3 text-[10px] dark:text-[#0A0A0A] font-medium">
                 {formatCurrency(total)}
               </span>
             </div>
+            
+            {/* 7. Champs personnalisés */}
+            {data.customFields && data.customFields.length > 0 && data.customFields.map((field, index) => (
+              <div key={`custom-field-${index}`} className="flex justify-between py-1 px-3 text-[10px]">
+                <span className="dark:text-[#0A0A0A]">
+                  {field.name}
+                </span>
+                <span className="dark:text-[#0A0A0A] font-medium">
+                  {field.value}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 

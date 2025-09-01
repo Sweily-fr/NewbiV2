@@ -561,14 +561,17 @@ export default function ItemsSection({
                                   value={field.value}
                                   onValueChange={(value) => {
                                     field.onChange(value);
+                                    
+                                    // Mettre à jour le type de remise immédiatement
+                                    setValue(`items.${index}.discountType`, value, {
+                                      shouldDirty: true,
+                                      shouldValidate: true
+                                    });
 
-                                    // Mettre à jour le total lorsque le type de remise change
-                                    const discount =
-                                      watch(`items.${index}.discount`) || 0;
-                                    const quantity =
-                                      watch(`items.${index}.quantity`) || 1;
-                                    const unitPrice =
-                                      watch(`items.${index}.unitPrice`) || 0;
+                                    // Mettre à jour le total avec les nouvelles valeurs
+                                    const discount = parseFloat(watch(`items.${index}.discount`)) || 0;
+                                    const quantity = parseFloat(watch(`items.${index}.quantity`)) || 1;
+                                    const unitPrice = parseFloat(watch(`items.${index}.unitPrice`)) || 0;
 
                                     const total = calculateItemTotal(
                                       quantity,
@@ -576,6 +579,7 @@ export default function ItemsSection({
                                       discount,
                                       value
                                     );
+                                    
                                     setValue(`items.${index}.total`, total, {
                                       shouldDirty: true,
                                     });
@@ -615,54 +619,39 @@ export default function ItemsSection({
                                   valueAsNumber: true,
                                   min: {
                                     value: 0,
-                                    message:
-                                      "La remise doit être positive ou nulle",
+                                    message: "La remise doit être positive ou nulle",
                                   },
                                   max: {
-                                    value:
-                                      watch(`items.${index}.discountType`) ===
-                                      "percentage"
-                                        ? 100
-                                        : undefined,
-                                    message:
-                                      "La remise ne peut pas dépasser 100%",
+                                    value: watch(`items.${index}.discountType`) === "percentage" ? 100 : undefined,
+                                    message: "La remise ne peut pas dépasser 100%",
                                   },
                                   validate: (value) => {
-                                    if (
-                                      watch(`items.${index}.discountType`) ===
-                                        "percentage" &&
-                                      value > 100
-                                    ) {
+                                    if (watch(`items.${index}.discountType`) === "percentage" && value > 100) {
                                       return "La remise ne peut pas dépasser 100%";
                                     }
                                     return true;
                                   },
                                 })}
                                 min="0"
-                                max={
-                                  watch(`items.${index}.discountType`) ===
-                                  "percentage"
-                                    ? "100"
-                                    : undefined
-                                }
+                                max={watch(`items.${index}.discountType`) === "percentage" ? "100" : undefined}
                                 step="0.01"
                                 disabled={!canEdit}
-                                className={`w-full h-10 rounded-lg text-sm ${
-                                  errors?.items?.[index]?.discount
-                                    ? "border-red-500"
-                                    : ""
-                                }`}
-                                onChange={(e) => {
-                                  const discountValue =
-                                    parseFloat(e.target.value) || 0;
-                                  const quantity =
-                                    watch(`items.${index}.quantity`) || 1;
-                                  const unitPrice =
-                                    watch(`items.${index}.unitPrice`) || 0;
-                                  const discountType =
-                                    watch(`items.${index}.discountType`) ||
-                                    "percentage";
+                                className={`w-full h-10 rounded-lg text-sm ${errors?.items?.[index]?.discount ? "border-red-500" : ""}`}
+                                // Utilisation de onInput pour une mise à jour en temps réel
+                                onInput={(e) => {
+                                  const value = e.target.value;
+                                  const discountValue = parseFloat(value) || 0;
+                                  const quantity = watch(`items.${index}.quantity`) || 1;
+                                  const unitPrice = watch(`items.${index}.unitPrice`) || 0;
+                                  const discountType = watch(`items.${index}.discountType`) || "percentage";
 
+                                  // Mettre à jour la valeur du champ immédiatement
+                                  setValue(`items.${index}.discount`, discountValue, {
+                                    shouldDirty: true,
+                                    shouldValidate: true
+                                  });
+
+                                  // Calculer et mettre à jour le total
                                   const total = calculateItemTotal(
                                     quantity,
                                     unitPrice,
@@ -670,18 +659,9 @@ export default function ItemsSection({
                                     discountType
                                   );
 
-                                  // Mettre à jour le total HT
                                   setValue(`items.${index}.total`, total, {
                                     shouldDirty: true,
                                   });
-
-                                  // Déclencher manuellement la validation et la mise à jour du formulaire
-                                  const event = {
-                                    target: { value: e.target.value },
-                                  };
-                                  register(`items.${index}.discount`).onChange(
-                                    event
-                                  );
                                 }}
                               />
                               {errors?.items?.[index]?.discount && (
