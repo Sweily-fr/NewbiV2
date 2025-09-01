@@ -112,9 +112,9 @@ export function TeamSwitcher() {
               <DropdownMenuItem
                 key={org.id}
                 onClick={() => handleSetActiveOrganization(org.id)}
-                className="gap-2 p-2"
+                className="gap-2 p-2 cursor-pointer"
               >
-                <div className="flex size-6 items-center justify-center rounded-md border">
+                <div className="flex size-6 items-center justify-center rounded-sm border">
                   <IconBuilding className="size-3.5 shrink-0" />
                 </div>
                 <div className="flex flex-col">
@@ -132,12 +132,12 @@ export function TeamSwitcher() {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2" asChild>
+            <DropdownMenuItem className="gap-2 p-2 cursor-pointer" asChild>
               <Link href="/dashboard/collaborateurs">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <Plus className="size-4" />
+                <div className="flex size-5 items-center justify-center rounded-sm border bg-transparent">
+                  <Plus className="size-3" />
                 </div>
-                <div className="text-muted-foreground font-medium">
+                <div className="text-muted-foreground text-xs font-normal">
                   Inviter un collaborateur
                 </div>
               </Link>

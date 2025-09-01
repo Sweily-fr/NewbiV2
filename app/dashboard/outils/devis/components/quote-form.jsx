@@ -76,7 +76,7 @@ import ClientSelector from "../../../factures/components/invoices-form-sections/
 import CompanyImport, {
   QuickCompanyImport,
 } from "../../../factures/components/company-import";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Composant de recherche de produits
 function ProductSearchCombobox({

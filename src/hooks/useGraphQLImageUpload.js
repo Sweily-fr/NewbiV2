@@ -14,7 +14,7 @@ import {
   syncUserAvatar,
   syncUserAvatarDeletion,
 } from "@/src/lib/auth/user-sync";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 export function useGraphQLImageUpload({
   onUploadSuccess = () => {},

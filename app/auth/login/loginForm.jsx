@@ -8,7 +8,8 @@ import { Input, InputPassword, InputEmail } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
-import { signIn } from "../../../src/lib/auth-client";
+import { authClient } from "../../../src/lib/auth-client";
+import { TwoFactorModal } from "./components/TwoFactorModal";
 
 const LoginForm = () => {
   const {
@@ -19,24 +20,37 @@ const LoginForm = () => {
   } = useForm();
 
   const router = useRouter();
+  const [show2FA, setShow2FA] = React.useState(false);
+  const [twoFactorData, setTwoFactorData] = React.useState(null);
 
   const onSubmit = async (formData) => {
-    await signIn.email(formData, {
+    await authClient.signIn.email(formData, {
       onSuccess: (ctx) => {
-        const authToken = ctx.response.headers.get("set-auth-token"); // get the token from the response headers
-        // Store the token securely (e.g., in localStorage)
+        // Vérifier si l'utilisateur doit passer par la 2FA
+        if (ctx.data.twoFactorRedirect) {
+          console.log("🔐 2FA requise pour cet utilisateur");
+          setTwoFactorData(ctx.data);
+          setShow2FA(true);
+
+          // Envoyer automatiquement l'OTP
+          handleSend2FA();
+          return;
+        }
+
+        // Connexion normale sans 2FA
+        const authToken = ctx.response.headers.get("set-auth-token");
         localStorage.setItem("bearer_token", authToken);
-        toast.success("Connexion reussie");
-        
+        toast.success("Connexion réussie");
+
         // Vérifier s'il y a un callbackUrl dans les paramètres URL
         const urlParams = new URLSearchParams(window.location.search);
-        const callbackUrl = urlParams.get('callbackUrl');
-        
+        const callbackUrl = urlParams.get("callbackUrl");
+
         if (callbackUrl) {
-          console.log('🔄 Redirection vers callbackUrl:', callbackUrl);
+          console.log("🔄 Redirection vers callbackUrl:", callbackUrl);
           router.push(callbackUrl);
         } else {
-          console.log('🔄 Redirection vers dashboard par défaut');
+          console.log("🔄 Redirection vers dashboard par défaut");
           router.push("/dashboard");
         }
       },
@@ -44,6 +58,57 @@ const LoginForm = () => {
         toast.error("Erreur lors de la connexion");
       },
     });
+  };
+
+  const handleSend2FA = async () => {
+    try {
+      const { data, error } = await authClient.twoFactor.sendOtp();
+
+      if (error) {
+        console.error("Erreur envoi OTP:", error);
+        toast.error("Erreur lors de l'envoi du code de vérification");
+        return;
+      }
+
+      console.log("OTP envoyé:", data);
+      toast.success("Code de vérification envoyé");
+    } catch (error) {
+      console.error("Erreur envoi OTP:", error);
+      toast.error("Erreur lors de l'envoi du code de vérification");
+    }
+  };
+
+  const handleVerify2FA = async (code) => {
+    try {
+      const { data, error } = await authClient.twoFactor.verifyOtp({
+        code: code,
+      });
+
+      if (error) {
+        console.error("Erreur vérification 2FA:", error);
+        toast.error("Code de vérification incorrect");
+        return false;
+      }
+
+      console.log("2FA vérifiée avec succès:", data);
+      toast.success("Connexion réussie");
+
+      // Redirection après vérification 2FA réussie
+      const urlParams = new URLSearchParams(window.location.search);
+      const callbackUrl = urlParams.get("callbackUrl");
+
+      if (callbackUrl) {
+        router.push(callbackUrl);
+      } else {
+        router.push("/dashboard");
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Erreur vérification 2FA:", error);
+      toast.error("Code de vérification incorrect");
+      return false;
+    }
   };
 
   return (
@@ -106,6 +171,13 @@ const LoginForm = () => {
       >
         Se connecter
       </SubmitButton>
+
+      {/* Modal de vérification 2FA */}
+      <TwoFactorModal
+        isOpen={show2FA}
+        onClose={() => setShow2FA(false)}
+        onVerify={handleVerify2FA}
+      />
     </form>
   );
 };

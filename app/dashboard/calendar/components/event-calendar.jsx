@@ -19,7 +19,7 @@ import {
   ChevronRightIcon,
   PlusIcon,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 import {
   addHoursToDate,

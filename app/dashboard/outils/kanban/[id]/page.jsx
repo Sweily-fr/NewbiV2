@@ -3,7 +3,7 @@
 import { use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Loader2, Search, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // UI Components
 import { Button } from "@/src/components/ui/button";

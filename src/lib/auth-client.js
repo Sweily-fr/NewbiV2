@@ -1,10 +1,13 @@
 import { createAuthClient } from "better-auth/react";
-import { adminClient, organizationClient, inferOrgAdditionalFields } from "better-auth/client/plugins";
+import { adminClient, organizationClient, inferOrgAdditionalFields, phoneNumberClient, twoFactorClient } from "better-auth/client/plugins";
+import { stripeClient } from "@better-auth/stripe/client";
 
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   plugins: [
-    adminClient(), 
+    adminClient(),
+    phoneNumberClient(),
+    twoFactorClient(),
     organizationClient({
       schema: inferOrgAdditionalFields({
         organization: {
@@ -36,6 +39,9 @@ export const authClient = createAuthClient({
           },
         },
       })
+    }),
+    stripeClient({
+      subscription: true
     })
   ],
 });

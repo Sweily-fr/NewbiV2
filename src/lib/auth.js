@@ -2,16 +2,216 @@ import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { mongoDb } from "./mongodb";
 import { resend } from "./resend";
-import { admin, organization } from "better-auth/plugins";
+import { admin, organization, phoneNumber, twoFactor } from "better-auth/plugins";
+import { stripe } from "@better-auth/stripe";
 import { createAuthMiddleware } from "better-auth/api";
+import Stripe from "stripe";
 // import { bearer } from "better-auth/plugins";
 
 export const auth = betterAuth({
   database: mongodbAdapter(mongoDb),
+  appName: "Newbi",
   plugins: [
     admin({
       adminUserIds: ["685ff0250e083b9a2987a0b9"],
       defaultRole: "owner", // Rôle par défaut pour les nouveaux utilisateurs
+    }),
+    phoneNumber({
+      sendOTP: async ({ phoneNumber, code }, request) => {
+        console.log(`[SMS] Envoi du code ${code} vers ${phoneNumber}`);
+
+        // Pour le développement, on simule l'envoi
+        // En production, vous devrez intégrer un service SMS comme Twilio, AWS SNS, etc.
+
+        // Simulation d'un délai d'envoi
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // En développement, afficher le code dans les logs
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            `[SMS DEV] Code de vérification pour ${phoneNumber}: ${code}`
+          );
+        }
+
+        // TODO: Intégrer un vrai service SMS en production
+        // Exemple avec Twilio:
+        // const twilio = require('twilio');
+        // const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        // await client.messages.create({
+        //   body: `Votre code de vérification Newbi: ${code}`,
+        //   from: process.env.TWILIO_PHONE_NUMBER,
+        //   to: phoneNumber
+        // });
+
+        return { success: true };
+      },
+    }),
+    twoFactor({
+      otpOptions: {
+        async sendOTP({ user, otp, type }, request) {
+          console.log(`[2FA PLUGIN] ========== FONCTION SENDOTP APPELÉE ==========`);
+          console.log(`[2FA] Envoi du code ${otp} vers ${user.email} (type: ${type})`);
+          console.log(`🔐 CODE DE VÉRIFICATION 2FA: ${otp}`);
+          console.log(`[DEBUG] Type reçu: "${type}" | User phoneNumber: "${user.phoneNumber}"`);
+          
+          // Better Auth ne passe pas automatiquement type="sms"
+          // Il faut détecter manuellement si l'utilisateur a un phoneNumber
+          const shouldUseSMS = user.phoneNumber && user.phoneNumber.trim() !== "";
+          
+          if (shouldUseSMS) {
+            // Envoi par SMS
+            console.log(`[2FA SMS] Code de vérification pour ${user.phoneNumber}: ${otp}`);
+            
+            // En développement, afficher le code dans les logs
+            if (process.env.NODE_ENV === "development") {
+              console.log(`[2FA SMS DEV] Code de vérification pour ${user.phoneNumber}: ${otp}`);
+            }
+            
+            // TODO: Intégrer un vrai service SMS en production
+            // Exemple avec Twilio:
+            // const twilio = require('twilio');
+            // const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+            // await client.messages.create({
+            //   body: `Votre code de vérification 2FA Newbi: ${otp}`,
+            //   from: process.env.TWILIO_PHONE_NUMBER,
+            //   to: user.phoneNumber
+            // });
+          } else {
+            // Envoi par email via Resend
+            try {
+              await resend.emails.send({
+                to: user.email,
+                subject: "Code de vérification 2FA - Newbi",
+                html: `
+                  <!DOCTYPE html>
+                  <html lang="fr">
+                  <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Code de vérification 2FA</title>
+                  </head>
+                  <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+                    <div style="max-width: 500px; margin: 0 auto;">
+                      
+                      <!-- Logo -->
+                      <div style="text-align: center; margin-bottom: 40px;">
+                        <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+                      </div>
+                      
+                      <!-- Titre principal -->
+                      <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: center;">
+                        Code de vérification 2FA
+                      </h1>
+                      
+                      <!-- Message principal -->
+                      <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: center;">
+                        Voici votre code de vérification à usage unique pour l'authentification à deux facteurs :
+                      </p>
+                      
+                      <!-- Code OTP -->
+                      <div style="text-align: center; margin: 32px 0;">
+                        <div style="display: inline-block; background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px 40px; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #1f2937;">
+                          ${otp}
+                        </div>
+                      </div>
+                      
+                      <!-- Instructions -->
+                      <p style="font-size: 14px; line-height: 1.4; color: #6b7280; margin: 32px 0 0 0; text-align: center;">
+                        Ce code expire dans 10 minutes. Si vous n'avez pas demandé cette vérification, ignorez cet e-mail.
+                      </p>
+                      
+                    </div>
+                  </body>
+                  </html>
+                `,
+                from: "Newbi <noreply@newbi.sweily.fr>",
+              });
+              console.log(`[2FA EMAIL] Code envoyé avec succès à ${user.email}`);
+            } catch (error) {
+              console.error(`[2FA EMAIL] Erreur lors de l'envoi:`, error);
+              throw error;
+            }
+          }
+          
+          return { success: true };
+        },
+      },
+    }),
+    stripe({
+      stripeClient: new Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: "2025-02-24.acacia",
+      }),
+      stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+      createCustomerOnSignUp: false, // Désactivé car on gère les abonnements au niveau organisation
+      subscription: {
+        enabled: true,
+        authorizeReference: async (
+          { user, session, referenceId, action },
+          request
+        ) => {
+          console.log(
+            `[STRIPE] Autorisation pour ${action} sur org ${referenceId} par user ${user.id}`
+          );
+
+          // Vérifier les permissions pour les actions d'abonnement
+          if (
+            action === "upgrade-subscription" ||
+            action === "cancel-subscription" ||
+            action === "restore-subscription"
+          ) {
+            try {
+              // Utiliser l'API Better Auth pour lister les membres
+              const authContext = request.context;
+              const { data: members, error } =
+                await authContext.internalAdapter.listMembers({
+                  organizationId: referenceId,
+                  limit: 100,
+                });
+
+              if (error) {
+                console.error(
+                  `[STRIPE] Erreur lors de la récupération des membres:`,
+                  error
+                );
+                return false;
+              }
+
+              // Trouver le membre correspondant à l'utilisateur
+              const member = members?.find((m) => m.userId === user.id);
+              const isAuthorized = member?.role === "owner";
+
+              console.log(
+                `[STRIPE] Autorisation: ${isAuthorized} (role: ${member?.role})`
+              );
+              return isAuthorized;
+            } catch (error) {
+              console.error(
+                `[STRIPE] Erreur lors de la vérification des membres:`,
+                error
+              );
+              return false;
+            }
+          }
+
+          return true;
+        },
+        plans: [
+          {
+            name: "pro",
+            priceId: process.env.STRIPE_PRICE_ID || "price_1234567890", // Prix mensuel 14.99€
+            annualDiscountPriceId:
+              process.env.STRIPE_ANNUAL_PRICE_ID || "price_annual_123", // Prix annuel avec réduction
+            limits: {
+              projects: 100,
+              storage: 100,
+              invoices: 1000,
+            },
+            freeTrial: {
+              days: 14,
+            },
+          },
+        ],
+      },
     }),
     organization({
       allowUserToCreateOrganization: true,
@@ -501,7 +701,7 @@ export const auth = betterAuth({
         required: false,
         defaultValue: "",
       },
-      phone: {
+      phoneNumber: {
         type: "string",
         required: false,
         defaultValue: "",

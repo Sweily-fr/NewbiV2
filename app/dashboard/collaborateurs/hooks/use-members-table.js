@@ -15,7 +15,7 @@ import { ArrowUpDown, Mail } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import MemberRowActions from "../components/member-row-actions";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Custom filter functions
 const multiColumnFilterFn = (row, columnId, filterValue) => {
@@ -114,9 +114,7 @@ export function useMembersTable({ data = [], onRefetch }) {
               {member.type === "invitation" && (
                 <Mail className="h-4 w-4 text-blue-500" />
               )}
-              <span className="font-normal">
-                {member.name || "N/A"}
-              </span>
+              <span className="font-normal">{member.name || "N/A"}</span>
             </div>
           );
         },
@@ -199,7 +197,7 @@ export function useMembersTable({ data = [], onRefetch }) {
         cell: ({ row }) => {
           const member = row.original;
           const status = member.type === "member" ? "active" : member.status;
-          
+
           const getStatusBadgeClass = (status) => {
             switch (status) {
               case "active":
@@ -218,10 +216,14 @@ export function useMembersTable({ data = [], onRefetch }) {
           const getStatusLabel = (status, type) => {
             if (type === "member") return "Actif";
             switch (status) {
-              case "pending": return "En attente";
-              case "accepted": return "Accepté";
-              case "rejected": return "Rejeté";
-              default: return status;
+              case "pending":
+                return "En attente";
+              case "accepted":
+                return "Accepté";
+              case "rejected":
+                return "Rejeté";
+              default:
+                return status;
             }
           };
 
@@ -236,9 +238,7 @@ export function useMembersTable({ data = [], onRefetch }) {
       },
       {
         id: "actions",
-        header: () => (
-          <div className="text-center font-normal">Actions</div>
-        ),
+        header: () => <div className="text-center font-normal">Actions</div>,
         cell: ({ row }) => (
           <div className="flex justify-center">
             <MemberRowActions row={row} onRefetch={onRefetch} />
@@ -315,7 +315,7 @@ export function useMembersTable({ data = [], onRefetch }) {
     // Process in chunks to avoid overwhelming the browser
     const BATCH_SIZE = 5;
     let successCount = 0;
-    
+
     for (let i = 0; i < deletableItems.length; i += BATCH_SIZE) {
       const batch = deletableItems.slice(i, i + BATCH_SIZE);
       try {

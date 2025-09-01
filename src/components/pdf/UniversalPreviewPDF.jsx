@@ -1,13 +1,15 @@
 "use client";
 
 import React from "react";
-import { useUser } from "../../lib/auth/hooks";
+import { useSession } from "@/src/lib/auth-client";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
-  const { session } = useUser();
+  const { data: session } = useSession();
+  const { organization } = useWorkspace();
 
-  // Utiliser le logo depuis les données ou depuis le contexte utilisateur comme fallback
-  const companyLogo = data.companyInfo?.logo || session?.user?.company?.logo;
+  // Utiliser le logo depuis les données ou depuis l'organisation comme fallback
+  const companyLogo = data.companyInfo?.logo || organization?.logo;
 
   if (!data) {
     return (
@@ -91,7 +93,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
   console.log(data.companyInfo, "companyInfo");
   console.log("Logo sources:", {
     fromData: data.companyInfo?.logo,
-    fromSession: session?.user?.company?.logo,
+    fromOrganization: organization?.logo,
     finalLogo: companyLogo,
   });
   return (
@@ -111,7 +113,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
               <img
                 src={companyLogo}
                 alt="Logo entreprise"
-                className="h-16 w-auto object-contain ml-auto"
+                className="h-22 w-auto object-contain ml-auto"
                 style={{ maxWidth: "100px" }}
               />
             ) : null}
@@ -420,13 +422,17 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
             <div className="flex">
               <span className="font-medium w-32">BIC</span>
               <span className="font-normal">
-                {data.bankDetails?.bic || data.companyInfo?.bankDetails?.bic || ""}
+                {data.bankDetails?.bic ||
+                  data.companyInfo?.bankDetails?.bic ||
+                  ""}
               </span>
             </div>
             <div className="flex">
               <span className="font-medium w-32">IBAN</span>
               <span className="font-normal">
-                {data.bankDetails?.iban || data.companyInfo?.bankDetails?.iban || ""}
+                {data.bankDetails?.iban ||
+                  data.companyInfo?.bankDetails?.iban ||
+                  ""}
               </span>
             </div>
             <div className="flex">
@@ -444,7 +450,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
           <div>
             {data.companyInfo?.name || "Sweily"}
             {data.companyInfo?.legalForm && `, ${data.companyInfo.legalForm}`}
-            {data.companyInfo?.capitalSocial && ` au capital de ${data.companyInfo.capitalSocial}`}
+            {data.companyInfo?.capitalSocial &&
+              ` au capital de ${data.companyInfo.capitalSocial}`}
             {data.companyInfo?.rcs && ` - ${data.companyInfo.rcs}`}
           </div>
         </div>

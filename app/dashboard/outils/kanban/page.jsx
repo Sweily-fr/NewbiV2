@@ -22,7 +22,7 @@ import {
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import {
   AlertDialog,
   AlertDialogAction,

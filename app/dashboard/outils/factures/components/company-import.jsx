@@ -3,7 +3,12 @@
 import { useState, useEffect } from "react";
 import { Building, Upload, Check, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
@@ -15,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/src/components/ui/dialog";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Mock company data - In real app, this would come from GraphQL
 const MOCK_COMPANY_INFO = {
@@ -25,7 +30,7 @@ const MOCK_COMPANY_INFO = {
     street: "123 Rue de la République",
     postalCode: "75001",
     city: "Paris",
-    country: "France"
+    country: "France",
   },
   email: "contact@masociete.fr",
   phone: "+33 1 23 45 67 89",
@@ -35,12 +40,16 @@ const MOCK_COMPANY_INFO = {
   bankDetails: {
     bankName: "Banque Populaire",
     iban: "FR14 2004 1010 0505 0001 3M02 606",
-    bic: "CCBPFRPPXXX"
+    bic: "CCBPFRPPXXX",
   },
-  logo: null
+  logo: null,
 };
 
-export default function CompanyImport({ onImport, currentCompanyInfo, className }) {
+export default function CompanyImport({
+  onImport,
+  currentCompanyInfo,
+  className,
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [companyData, setCompanyData] = useState(null);
@@ -56,7 +65,7 @@ export default function CompanyImport({ onImport, currentCompanyInfo, className 
     setLoading(true);
     try {
       // In real app, this would be a GraphQL query to get company info
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       setCompanyData(MOCK_COMPANY_INFO);
     } catch (error) {
       toast.error("Erreur lors du chargement des informations entreprise");
@@ -85,7 +94,8 @@ export default function CompanyImport({ onImport, currentCompanyInfo, className 
     toast.success("Informations entreprise importées avec succès");
   };
 
-  const hasCurrentInfo = currentCompanyInfo && Object.keys(currentCompanyInfo).length > 0;
+  const hasCurrentInfo =
+    currentCompanyInfo && Object.keys(currentCompanyInfo).length > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -95,7 +105,7 @@ export default function CompanyImport({ onImport, currentCompanyInfo, className 
           Importer infos entreprise
         </Button>
       </DialogTrigger>
-      
+
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -103,7 +113,8 @@ export default function CompanyImport({ onImport, currentCompanyInfo, className 
             Importer les informations entreprise
           </DialogTitle>
           <DialogDescription>
-            Importez automatiquement les informations de votre entreprise dans cette facture.
+            Importez automatiquement les informations de votre entreprise dans
+            cette facture.
           </DialogDescription>
         </DialogHeader>
 
@@ -118,14 +129,17 @@ export default function CompanyImport({ onImport, currentCompanyInfo, className 
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Cette facture contient déjà des informations entreprise. L'import les remplacera.
+                  Cette facture contient déjà des informations entreprise.
+                  L'import les remplacera.
                 </AlertDescription>
               </Alert>
             )}
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Informations à importer</CardTitle>
+                <CardTitle className="text-lg">
+                  Informations à importer
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Company Basic Info */}
@@ -158,7 +172,10 @@ export default function CompanyImport({ onImport, currentCompanyInfo, className 
                   <h4 className="font-medium mb-2">Adresse</h4>
                   <div className="text-sm">
                     <p>{companyData.address.street}</p>
-                    <p>{companyData.address.postalCode} {companyData.address.city}</p>
+                    <p>
+                      {companyData.address.postalCode}{" "}
+                      {companyData.address.city}
+                    </p>
                     <p>{companyData.address.country}</p>
                   </div>
                 </div>
@@ -189,7 +206,9 @@ export default function CompanyImport({ onImport, currentCompanyInfo, className 
                     <div className="space-y-2 text-sm">
                       <div>
                         <span className="text-muted-foreground">Banque :</span>
-                        <p className="font-medium">{companyData.bankDetails.bankName}</p>
+                        <p className="font-medium">
+                          {companyData.bankDetails.bankName}
+                        </p>
                       </div>
                       <div>
                         <span className="text-muted-foreground">IBAN :</span>
@@ -199,7 +218,9 @@ export default function CompanyImport({ onImport, currentCompanyInfo, className 
                       </div>
                       <div>
                         <span className="text-muted-foreground">BIC :</span>
-                        <p className="font-medium">{companyData.bankDetails.bic}</p>
+                        <p className="font-medium">
+                          {companyData.bankDetails.bic}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -241,8 +262,8 @@ export function QuickCompanyImport({ onImport, className }) {
     setLoading(true);
     try {
       // In real app, this would fetch the default company info
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       onImport?.(MOCK_COMPANY_INFO);
       toast.success("Informations entreprise importées");
     } catch (error) {
@@ -279,7 +300,7 @@ export function useCompanyImport() {
     setLoading(true);
     try {
       // In real app, this would be a GraphQL query
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       setCompanyInfo(MOCK_COMPANY_INFO);
       return MOCK_COMPANY_INFO;
     } finally {
@@ -300,12 +321,15 @@ export function useCompanyImport() {
         website: companyData.website,
         bankDetails: companyData.bankDetails,
         logo: companyData.logo,
-      }
+      },
     };
   };
 
   const hasCompanyInfo = (invoiceData) => {
-    return invoiceData?.companyInfo && Object.keys(invoiceData.companyInfo).length > 0;
+    return (
+      invoiceData?.companyInfo &&
+      Object.keys(invoiceData.companyInfo).length > 0
+    );
   };
 
   return {

@@ -78,7 +78,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import ClientSelector from "./invoices-form-sections/client-selector";
 import CompanyImport, { QuickCompanyImport } from "./company-import";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Composant de recherche de produits basé sur Origin UI
 function ProductSearchCombobox({

@@ -31,9 +31,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/src/components/ui/sidebar";
+import Link from "next/link";
 
 export function NavDocuments({ items }) {
   const { isMobile } = useSidebar();
+  // Initialiser avec seulement Factures par défaut
   const [pinnedApps, setPinnedApps] = useState(items || []);
 
   // Available tools that can be pinned
@@ -94,10 +96,10 @@ export function NavDocuments({ items }) {
         {pinnedApps.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
-              <a href={item.url}>
+              <Link href={item.url}>
                 <item.icon />
                 <span className="font-polysans font-light">{item.name}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

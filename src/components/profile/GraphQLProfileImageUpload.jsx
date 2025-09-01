@@ -3,23 +3,23 @@
  * Utilise Cloudflare R2 au lieu du base64 via Better Auth
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Button } from '@/src/components/ui/button';
-import { Progress } from '@/src/components/ui/progress';
-import { User, X, Loader2, Upload, Trash2 } from 'lucide-react';
-import { useGraphQLImageUpload } from '@/src/hooks/useGraphQLImageUpload';
-import { cn } from '@/src/lib/utils';
+import React, { useState, useCallback, useEffect } from "react";
+import { Button } from "@/src/components/ui/button";
+import { Progress } from "@/src/components/ui/progress";
+import { CircleUserRound, X, Loader2, Upload, Trash2 } from "lucide-react";
+import { useGraphQLImageUpload } from "@/src/hooks/useGraphQLImageUpload";
+import { cn } from "@/src/lib/utils";
 
-export function GraphQLProfileImageUpload({ 
+export function GraphQLProfileImageUpload({
   currentImageUrl = null,
   onImageChange = () => {},
   onImageDelete = () => {},
-  className = '',
-  showDescription = true,
-  size = 'default' // 'sm', 'default', 'lg'
+  className = "",
+  showDescription = false,
+  size = "default", // 'sm', 'default', 'lg'
 }) {
   const [isDragging, setIsDragging] = useState(false);
-  
+
   const {
     isUploading,
     isDeleting,
@@ -32,20 +32,20 @@ export function GraphQLProfileImageUpload({
     getDisplayImageUrl,
     hasImage,
     isNewImage,
-    cleanup
+    cleanup,
   } = useGraphQLImageUpload({
     onUploadSuccess: (imageUrl, uploadData) => {
       onImageChange(imageUrl, uploadData);
     },
     onUploadError: (error) => {
-      console.error('Erreur upload:', error);
+      console.error("Erreur upload:", error);
     },
     onDeleteSuccess: () => {
       onImageDelete();
     },
     onDeleteError: (error) => {
-      console.error('Erreur suppression:', error);
-    }
+      console.error("Erreur suppression:", error);
+    },
   });
 
   // Initialiser avec l'image existante
@@ -75,148 +75,116 @@ export function GraphQLProfileImageUpload({
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const fakeEvent = {
-        target: { files: [files[0]] }
-      };
-      handleFileSelect(fakeEvent);
-    }
-  }, [handleFileSelect]);
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      setIsDragging(false);
 
-  // Gestion de la suppression
-  const handleDelete = useCallback(async () => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer votre image de profil ?')) {
-      await deleteImage();
-    }
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        const fakeEvent = {
+          target: { files: [files[0]] },
+        };
+        handleFileSelect(fakeEvent);
+      }
+    },
+    [handleFileSelect]
+  );
+
+  // Gestion de la suppression avec le nouveau design
+  const handleRemove = useCallback(async () => {
+    await deleteImage();
   }, [deleteImage]);
 
-  // Tailles du composant
-  const sizeClasses = {
-    sm: 'w-16 h-16',
-    default: 'w-24 h-24',
-    lg: 'w-32 h-32'
-  };
-
-  const iconSizes = {
-    sm: 'h-6 w-6',
-    default: 'h-8 w-8',
-    lg: 'h-12 w-12'
-  };
+  const handleDragEnter = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
 
   return (
-    <div className={cn('space-y-4', className)}>
-      {/* Zone d'upload */}
-      <div
-        className={cn(
-          'relative border-2 border-dashed rounded-lg transition-colors',
-          isDragging 
-            ? 'border-blue-500 bg-blue-50' 
-            : 'border-gray-300 hover:border-gray-400',
-          'cursor-pointer group'
-        )}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={openFileSelector}
-      >
-        <div className="p-6 text-center">
+    <div className={cn("flex flex-col items-start gap-2", className)}>
+      <div className="relative inline-flex">
+        {/* Drop area */}
+        <div
+          className="border-input hover:bg-accent/50 data-[dragging=true]:bg-accent/50 focus-visible:border-ring focus-visible:ring-ring/50 relative flex size-26 items-center justify-center overflow-hidden rounded-full border border-dashed transition-colors outline-none focus-visible:ring-[3px] has-disabled:pointer-events-none has-disabled:opacity-50 has-[img]:border-none cursor-pointer"
+          onClick={openFileSelector}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          data-dragging={isDragging || undefined}
+          aria-label={displayImageUrl ? "Change image" : "Upload image"}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openFileSelector();
+            }
+          }}
+        >
           {displayImageUrl ? (
-            // Affichage de l'image
-            <div className={cn('relative mx-auto', sizeClasses[size])}>
-              <img
-                src={displayImageUrl}
-                alt="Image de profil"
-                className="w-full h-full rounded-full object-cover border-2 border-gray-200"
-              />
-              
-              {/* Overlay au survol */}
-              <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Upload className="h-6 w-6 text-white" />
-              </div>
-              
-              {/* Indicateur de nouvelle image */}
-              {isNewImage && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-              )}
-            </div>
+            <img
+              className="size-full object-cover"
+              src={displayImageUrl}
+              alt="Uploaded image"
+              width={64}
+              height={64}
+              style={{ objectFit: "cover" }}
+            />
           ) : (
-            // État vide
-            <div className={cn('mx-auto bg-gray-100 rounded-full flex items-center justify-center', sizeClasses[size])}>
-              <User className={cn('text-gray-400', iconSizes[size])} />
-            </div>
-          )}
-          
-          {showDescription && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-600">
-                {displayImageUrl 
-                  ? 'Cliquez ou glissez pour changer l\'image'
-                  : 'Cliquez ou glissez une image ici'
-                }
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                PNG, JPG, WebP jusqu'à 5MB
-              </p>
+            <div aria-hidden="true">
+              <CircleUserRound className="size-7 opacity-40" />
             </div>
           )}
         </div>
+        {displayImageUrl && !isUploading && (
+          <Button
+            type="button"
+            onClick={handleRemove}
+            size="icon"
+            className="border-background focus-visible:border-background absolute -top-0 -right-0 size-6 rounded-full border-2 shadow-none"
+            aria-label="Remove image"
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <X className="size-3.5" />
+            )}
+          </Button>
+        )}
+        <input
+          ref={fileInputRef}
+          className="sr-only"
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          aria-label="Upload image file"
+          tabIndex={-1}
+        />
       </div>
 
       {/* Barre de progression */}
       {isUploading && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Upload en cours...</span>
-            <span className="text-gray-600">{uploadProgress}%</span>
+        <div className="w-full space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Upload en cours...</span>
+            <span className="text-muted-foreground">{uploadProgress}%</span>
           </div>
-          <Progress value={uploadProgress} className="h-2" />
+          <Progress value={uploadProgress} className="h-1" />
         </div>
       )}
 
-      {/* Actions */}
-      {hasImage && !isUploading && (
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={openFileSelector}
-            className="flex-1"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Changer
-          </Button>
-          
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            {isDeleting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-      )}
-
-      {/* Input file caché */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelect}
-        className="hidden"
-      />
+      {/* {showDescription && (
+        <p
+          aria-live="polite"
+          role="region"
+          className="text-muted-foreground mt-2 text-xs"
+        >
+          Format recommandé : PNG ou JPG, max 2MB{" "}
+        </p>
+      )} */}
     </div>
   );
 }

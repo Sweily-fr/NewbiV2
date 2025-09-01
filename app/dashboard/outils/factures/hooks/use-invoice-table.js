@@ -19,7 +19,7 @@ import {
   useDeleteInvoice,
 } from "@/src/graphql/invoiceQueries";
 import InvoiceRowActions from "../components/invoice-row-actions";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Custom filter functions
 const multiColumnFilterFn = (row, columnId, filterValue) => {

@@ -8,6 +8,8 @@ import {
   IconUserCircle,
 } from "@tabler/icons-react";
 
+import { CreditCard } from "lucide-react";
+
 import {
   Avatar,
   AvatarFallback,
@@ -110,6 +112,12 @@ export function NavUser({ user }) {
                 <DropdownMenuItem className="cursor-pointer">
                   <IconUserCircle />
                   Compte
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/dashboard/account">
+                <DropdownMenuItem className="cursor-pointer">
+                  <CreditCard />
+                  Gérer l’abonnement
                 </DropdownMenuItem>
               </Link>
               {/* <DropdownMenuItem className="cursor-pointer">

@@ -17,7 +17,7 @@ import { useInvoiceEditor } from "../hooks/use-invoice-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
 import InvoiceSettingsView from "./invoice-settings-view";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 export default function ModernInvoiceEditor({
   mode = "create",

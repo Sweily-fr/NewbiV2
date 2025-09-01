@@ -14,6 +14,7 @@ import CompanySection from "./components/CompanySection";
 import AddressSection from "./components/AddressSection";
 import BankSection from "./components/BankSection";
 import LegalSection from "./components/LegalSection";
+import BillingSection from "./components/BillingSection";
 import SecuritySection from "./components/SecuritySection";
 
 // Configuration des onglets
@@ -33,6 +34,10 @@ const TABS_CONFIG = {
   legal: {
     title: "Informations légales",
     description: "Configurez les informations légales de votre entreprise",
+  },
+  billing: {
+    title: "Facturation et abonnement",
+    description: "Gérez votre abonnement et vos informations de facturation",
   },
   security: {
     title: "Sécurité",
@@ -230,7 +235,7 @@ export default function Settings() {
         phone: organization.companyPhone || "",
         website: organization.website || "",
         description: organization.description || "",
-        logo: session.user.company?.logo || "",
+        logo: organization.logo || "",
         address: {
           street: organization.addressStreet || "",
           city: organization.addressCity || "",
@@ -278,6 +283,8 @@ export default function Settings() {
         return <BankSection {...commonProps} />;
       case "legal":
         return <LegalSection {...commonProps} />;
+      case "billing":
+        return <BillingSection session={session} />;
       case "security":
         return <SecuritySection session={session} />;
       default:
@@ -304,7 +311,7 @@ export default function Settings() {
                 {currentTab.description}
               </p>
             </div>
-            {activeTab !== "security" && (
+            {activeTab !== "security" && activeTab !== "billing" && (
               <Button
                 type="submit"
                 disabled={isSubmitting}

@@ -7,6 +7,7 @@ import {
 } from "../graphql/mutations/documentUpload";
 import { UPDATE_COMPANY_LOGO } from "../graphql/mutations/user";
 import { toast } from "@/src/components/ui/sonner";
+import { useWorkspace } from "./useWorkspace";
 
 /**
  * Hook simplifié pour l'upload de logo d'entreprise sur Cloudflare uniquement
@@ -16,6 +17,7 @@ import { toast } from "@/src/components/ui/sonner";
  */
 export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
   const { data: session } = useSession();
+  const { workspaceId } = useWorkspace();
   const fileInputRef = useRef(null);
 
   // États locaux
@@ -109,6 +111,7 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
           await updateCompanyLogo({
             variables: {
               logoUrl: uploadData.url,
+              workspaceId: workspaceId,
             },
           });
         } catch (dbError) {
@@ -166,6 +169,7 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
       await updateCompanyLogo({
         variables: {
           logoUrl: null,
+          workspaceId: workspaceId,
         },
       });
     } catch (dbError) {

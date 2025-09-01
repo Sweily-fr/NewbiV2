@@ -1,4 +1,4 @@
-import { Building2, MapPin, CreditCard, FileText, Lock } from "lucide-react";
+import { Building2, MapPin, CreditCard, FileText, CrownIcon, Lock } from "lucide-react";
 
 const tabs = [
   {
@@ -20,6 +20,11 @@ const tabs = [
     id: "legal",
     label: "Informations légales",
     icon: <FileText className="h-4 w-4" />,
+  },
+  {
+    id: "billing",
+    label: "Facturation",
+    icon: <CrownIcon className="h-4 w-4" />,
   },
   {
     id: "security",

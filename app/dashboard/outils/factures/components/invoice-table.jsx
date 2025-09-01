@@ -91,6 +91,7 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { useInvoiceTable } from "../hooks/use-invoice-table";
 import InvoiceRowActions from "./invoice-row-actions";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 export default function InvoiceTable() {
   const { invoices, loading, error, refetch } = useInvoices();
@@ -108,6 +109,10 @@ export default function InvoiceTable() {
     data: invoices || [],
     onRefetch: refetch,
   });
+
+  if (loading) {
+    return <InvoiceTableSkeleton />;
+  }
 
   if (error) {
     return (
@@ -128,110 +133,58 @@ export default function InvoiceTable() {
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-1 items-center space-x-2">
           <Input
             placeholder="Rechercher des factures..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-80"
+            className="h-8 w-[150px] lg:w-[250px]"
           />
-
-          {/* Status Filter */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="border-dashed font-normal">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="ml-auto">
                 <ListFilterIcon className="mr-2 h-4 w-4" />
                 Statut
-                {statusFilter?.length > 0 && (
+                {statusFilter && (
                   <Badge variant="secondary" className="ml-2">
-                    {statusFilter.length}
+                    {INVOICE_STATUS_LABELS[statusFilter]}
                   </Badge>
                 )}
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0" align="start">
-              <div className="p-4">
-                <h4 className="font-medium leading-none mb-3">Statut</h4>
-                <div className="space-y-2">
-                  {Object.entries(INVOICE_STATUS_LABELS).map(
-                    ([status, label]) => (
-                      <div key={status} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={status}
-                          checked={statusFilter?.includes(status)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setStatusFilter([
-                                ...(statusFilter || []),
-                                status,
-                              ]);
-                            } else {
-                              setStatusFilter(
-                                statusFilter?.filter((s) => s !== status) || []
-                              );
-                            }
-                          }}
-                        />
-                        <Label htmlFor={status} className="text-sm">
-                          {label}
-                        </Label>
-                      </div>
-                    )
-                  )}
-                </div>
-                {statusFilter?.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => setStatusFilter([])}
-                    className="w-full mt-3"
-                  >
-                    Effacer
-                  </Button>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {/* Column visibility */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto font-normal">
-                <Columns3Icon className="mr-2 h-4 w-4" />
-                Colonnes
-              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
+              <DropdownMenuLabel>Filtrer par statut</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setStatusFilter("")}>
+                Tous les statuts
+              </DropdownMenuItem>
+              {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
+                <DropdownMenuItem
+                  key={value}
+                  onClick={() => setStatusFilter(value)}
+                >
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "mr-2",
+                      INVOICE_STATUS_COLORS[value] || "bg-gray-100"
+                    )}
+                  >
+                    {label}
+                  </Badge>
+                  {label}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Delete selected */}
+        </div>
+        <div className="flex items-center space-x-2">
           {selectedRows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={isDeleting}>
+                <Button variant="destructive" size="sm">
                   <TrashIcon className="mr-2 h-4 w-4" />
-                  {isDeleting
-                    ? "Suppression..."
-                    : `Supprimer (${selectedRows.length})`}
+                  Supprimer ({selectedRows.length})
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -303,7 +256,7 @@ export default function InvoiceTable() {
                   colSpan={table.getAllColumns().length}
                   className="h-24 text-center"
                 >
-                  {loading ? "Chargement..." : "Aucune facture trouvée."}
+                  Aucune facture trouvée.
                 </TableCell>
               </TableRow>
             )}
@@ -398,6 +351,99 @@ export default function InvoiceTable() {
               </PaginationItem>
             </PaginationContent>
           </Pagination>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InvoiceTableSkeleton() {
+  return (
+    <div className="space-y-4">
+      {/* Filters skeleton */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-60" />
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-9 w-16" />
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-32" />
+        </div>
+      </div>
+
+      {/* Table skeleton */}
+      <div className="bg-background overflow-hidden rounded-md border">
+        <Table className="table-fixed">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="h-11 w-7">
+                <Skeleton className="h-4 w-4 rounded" />
+              </TableHead>
+              <TableHead className="h-11 w-[150px]">
+                <Skeleton className="h-4 w-16" />
+              </TableHead>
+              <TableHead className="h-11 w-[200px]">
+                <Skeleton className="h-4 w-20" />
+              </TableHead>
+              <TableHead className="h-11 w-[100px]">
+                <Skeleton className="h-4 w-12" />
+              </TableHead>
+              <TableHead className="h-11 w-[80px]">
+                <Skeleton className="h-4 w-14" />
+              </TableHead>
+              <TableHead className="h-11 w-[120px]">
+                <Skeleton className="h-4 w-16" />
+              </TableHead>
+              <TableHead className="h-11 w-[60px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 10 }).map((_, index) => (
+              <TableRow key={`skeleton-${index}`}>
+                <TableCell>
+                  <Skeleton className="h-4 w-4 rounded" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-32" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-40" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-16" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-24" />
+                </TableCell>
+                <TableCell>
+                  <div className="flex justify-end">
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination skeleton */}
+      <div className="flex items-center justify-between gap-8">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-9 w-16" />
+        </div>
+        <div className="text-muted-foreground flex grow justify-end text-sm whitespace-nowrap">
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-9 w-9" />
+          <Skeleton className="h-9 w-9" />
+          <Skeleton className="h-9 w-9" />
+          <Skeleton className="h-9 w-9" />
         </div>
       </div>
     </div>

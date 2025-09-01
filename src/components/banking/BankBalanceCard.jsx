@@ -95,9 +95,11 @@ export default function BankBalanceCard({ className }) {
   if (accounts.length === 0) {
     return (
       <Card className={className}>
-        <CardContent className="px-6">
-          <h3 className="text-lg font-normal mb-4">Solde</h3>
-          <p className="text-sm text-gray-500">Aucun compte connecté</p>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="font-normal">Solde</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Aucun compte connecté</p>
         </CardContent>
       </Card>
     );

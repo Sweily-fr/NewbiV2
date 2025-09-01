@@ -48,7 +48,7 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { cn } from "@/src/lib/utils";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Import GraphQL hooks and utilities
 import {

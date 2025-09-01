@@ -20,7 +20,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { formatDate, isDateExpired } from "../utils/date-utils";
 import QuoteRowActions from "../components/quote-row-actions";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Custom filter functions
 const multiColumnFilterFn = (row, columnId, filterValue) => {

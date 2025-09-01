@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import { jsPDF } from "jspdf";
 
 const UniversalPDFGenerator = ({

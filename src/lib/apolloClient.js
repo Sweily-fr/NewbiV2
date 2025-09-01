@@ -2,7 +2,7 @@ import { ApolloClient, InMemoryCache, from } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Fonction pour vérifier si un token JWT est expiré
 const isTokenExpired = (token) => {

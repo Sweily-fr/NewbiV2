@@ -10,7 +10,7 @@ import { useQuoteEditor } from "../hooks/use-quote-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedQuoteForm from "./enhanced-quote-form";
 import QuoteSettingsView from "./quote-settings-view";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 export default function ModernQuoteEditor({
   mode = "create",

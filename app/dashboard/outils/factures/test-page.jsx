@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import EnhancedInvoiceForm from "./components/enhanced-invoice-form";
 import InvoicePreview from "./components/invoice-preview";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Test data for invoice
 const INITIAL_INVOICE_DATA = {
@@ -14,7 +19,7 @@ const INITIAL_INVOICE_DATA = {
   number: null,
   status: "DRAFT",
   type: "INVOICE",
-  issueDate: new Date().toISOString().split('T')[0],
+  issueDate: new Date().toISOString().split("T")[0],
   dueDate: null,
   executionDate: null,
   purchaseOrderNumber: "",
@@ -27,15 +32,15 @@ const INITIAL_INVOICE_DATA = {
       quantity: 1,
       unitPrice: 0,
       taxRate: 20,
-      total: 0
-    }
+      total: 0,
+    },
   ],
   discount: 0,
   discountType: "PERCENTAGE",
   headerNotes: "",
   footerNotes: "",
   termsAndConditions: "",
-  customFields: {}
+  customFields: {},
 };
 
 export default function InvoiceTestPage() {
@@ -71,9 +76,12 @@ export default function InvoiceTestPage() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Test des Fonctionnalités Avancées</h1>
+          <h1 className="text-3xl font-bold">
+            Test des Fonctionnalités Avancées
+          </h1>
           <p className="text-muted-foreground">
-            Page de test pour valider les nouvelles fonctionnalités de l'outil factures
+            Page de test pour valider les nouvelles fonctionnalités de l'outil
+            factures
           </p>
         </div>
       </div>
@@ -102,7 +110,9 @@ export default function InvoiceTestPage() {
       {activeTab === "form" && (
         <Card>
           <CardHeader>
-            <CardTitle>Test du Formulaire avec Fonctionnalités Avancées</CardTitle>
+            <CardTitle>
+              Test du Formulaire avec Fonctionnalités Avancées
+            </CardTitle>
             <div className="text-sm text-muted-foreground space-y-1">
               <p>✅ Sélection de client avec recherche et auto-complétion</p>
               <p>✅ Import automatique des informations entreprise</p>
@@ -133,10 +143,7 @@ export default function InvoiceTestPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <InvoicePreview 
-              data={invoiceData} 
-              className="w-full"
-            />
+            <InvoicePreview data={invoiceData} className="w-full" />
           </CardContent>
         </Card>
       )}

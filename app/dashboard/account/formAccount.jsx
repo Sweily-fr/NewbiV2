@@ -2,14 +2,33 @@ import React, { useEffect, useState } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input, InputEmail, InputPhone } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
+import { Separator } from "@/src/components/ui/separator";
 import { useForm } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { updateUser, useSession } from "../../../src/lib/auth-client";
 import { GraphQLProfileImageUpload } from "@/src/components/profile/GraphQLProfileImageUpload";
+import {
+  ChangeEmailModal,
+  ChangePasswordModal,
+  Setup2FAModal,
+  AddPasskeyModal,
+  ChangePhoneModal,
+} from "./components";
+import { DeactivateAccountModal } from "./components/DeactivateAccountModal";
 
 export default function ProfileForm({ user }) {
   const { data: session, isPending, error, refetch } = useSession();
   const [profileImageUrl, setProfileImageUrl] = useState(null);
+
+  // États pour les modales
+  const [isChangeEmailModalOpen, setIsChangeEmailModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+    useState(false);
+  const [isSetup2FAModalOpen, setIsSetup2FAModalOpen] = useState(false);
+  const [isAddPasskeyModalOpen, setIsAddPasskeyModalOpen] = useState(false);
+  const [isChangePhoneModalOpen, setIsChangePhoneModalOpen] = useState(false);
+  const [isDeactivateAccountModalOpen, setIsDeactivateAccountModalOpen] =
+    useState(false);
 
   const {
     register,
@@ -22,7 +41,7 @@ export default function ProfileForm({ user }) {
       email: "",
       name: "",
       lastName: "",
-      phone: "",
+      phoneNumber: "",
     },
   });
 
@@ -33,7 +52,7 @@ export default function ProfileForm({ user }) {
         email: session.user.email || "",
         name: session.user.name || "",
         lastName: session.user.lastName || "",
-        phone: session.user.phone || "",
+        phoneNumber: session.user.phoneNumber || "",
       });
       // Initialiser l'image de profil
       setProfileImageUrl(session.user.avatar || null);
@@ -44,7 +63,7 @@ export default function ProfileForm({ user }) {
     const updateData = {
       name: formData.name,
       lastName: formData.lastName,
-      phone: formData.phone,
+      phoneNumber: formData.phoneNumber,
     };
 
     // Avec GraphQL, l'avatar est automatiquement mis à jour côté serveur
@@ -65,26 +84,55 @@ export default function ProfileForm({ user }) {
     });
   };
 
+  // Fonction pour mettre à jour automatiquement les champs
+  const handleFieldUpdate = async (fieldName, value) => {
+    if (!value.trim()) return;
+
+    // Vérifier si la valeur a changé
+    const currentValue = fieldName === "name" ? user?.name : user?.lastName;
+    if (value === currentValue) return;
+
+    const updateData = { [fieldName]: value };
+    console.log("Mise à jour du champ:", fieldName, "avec la valeur:", value);
+
+    try {
+      await updateUser(updateData, {
+        onSuccess: () => {
+          toast.success(
+            `${fieldName === "name" ? "Prénom" : "Nom"} mis à jour`
+          );
+          refetch();
+        },
+        onError: (error) => {
+          console.error("Erreur mise à jour:", error);
+          toast.error("Erreur lors de la mise à jour");
+        },
+      });
+    } catch (error) {
+      console.error("Erreur:", error);
+    }
+  };
+
   const handleImageChange = (imageUrl, uploadData) => {
-    console.log('Image uploadée via GraphQL:', { imageUrl, uploadData });
+    console.log("Image uploadée via GraphQL:", { imageUrl, uploadData });
     setProfileImageUrl(imageUrl);
-    
+
     // Optionnel: recharger la session immédiatement pour refléter le changement
     refetch();
   };
 
   const handleImageDelete = () => {
-    console.log('Image supprimée via GraphQL');
+    console.log("Image supprimée via GraphQL");
     setProfileImageUrl(null);
-    
+
     // Optionnel: recharger la session immédiatement pour refléter le changement
     refetch();
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
-        <div className="flex justify-center pb-6">
+      <div>
+        <div className="flex items-start gap-6 mb-6">
           <GraphQLProfileImageUpload
             currentImageUrl={profileImageUrl}
             onImageChange={handleImageChange}
@@ -92,73 +140,41 @@ export default function ProfileForm({ user }) {
             showDescription={true}
             size="lg"
           />
-        </div>
-        <div className="flex justify-between gap-4 w-full">
-          <div className="w-full">
-            <Label
-              htmlFor="name"
-              className="text-sm font-medium text-foreground dark:text-foreground"
-            >
-              Prénom
-            </Label>
-            <Input
-              type="text"
-              id="name"
-              className="mt-2"
-              placeholder="Prénom"
-              defaultValue={user?.name}
-              {...register("name")}
-            />
-          </div>
-          <div className="w-full">
-            <Label
-              htmlFor="lastName"
-              className="text-sm font-medium text-foreground dark:text-foreground"
-            >
-              Nom
-            </Label>
-            <Input
-              type="text"
-              id="lastName"
-              className="mt-2"
-              placeholder="Nom"
-              defaultValue={user?.lastName}
-              {...register("lastName")}
-            />
-          </div>
-        </div>
-        <div className="flex justify-between gap-4 w-full">
-          <div className="w-full">
-            <Label
-              htmlFor="email"
-              className="text-sm font-medium text-foreground dark:text-foreground"
-            >
-              Adresse email
-            </Label>
-            <InputEmail
-              type="email"
-              id="email"
-              className="mt-2"
-              placeholder="Adresse email"
-              disabled
-              defaultValue={user?.email}
-            />
-          </div>
-          <div className="w-full">
-            <Label
-              htmlFor="phone"
-              className="text-sm font-medium text-foreground dark:text-foreground"
-            >
-              Numéro de téléphone
-            </Label>
-            <InputPhone
-              type="tel"
-              id="phone"
-              className="mt-2"
-              placeholder="xx xx xx xx xx"
-              defaultValue={user?.phone}
-              {...register("phone")}
-            />
+          <div className="flex justify-center items-center gap-4 mt-2">
+            <div>
+              <Label
+                htmlFor="name"
+                className="text-sm text-muted-foreground gap-1"
+              >
+                Prénom
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Prénom"
+                defaultValue={user?.name || ""}
+                className="mt-2"
+                {...register("name")}
+                onBlur={(e) => handleFieldUpdate("name", e.target.value)}
+              />
+            </div>
+            {/* <div>
+              <Label
+                htmlFor="lastName"
+                className="text-sm text-muted-foreground"
+              >
+                Nom
+              </Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Nom"
+                defaultValue={user?.lastName || ""}
+                className="mt-2"
+                {...register("lastName")}
+                onBlur={(e) => handleFieldUpdate("lastName", e.target.value)}
+              />
+            </div> */}
           </div>
         </div>
 
@@ -188,36 +204,146 @@ export default function ProfileForm({ user }) {
             </p>
           )}
         </div> */}
+      </div>
 
-        <div className="flex justify-between gap-4 h-full mt-4">
+      {/* Section Sécurité du compte */}
+      {/* <Separator className="my-6" /> */}
+      <div className="py-6">
+        <h3 className="text-lg font-medium mb-6">Sécurité du compte</h3>
+        <Separator className="my-4" />
+
+        {/* E-mail */}
+        <div className="flex items-center justify-between py-4 border-b border-border/40">
           <div>
-            <Button
-              variant="ghost"
-              type="button"
-              className="py-2 font-medium border rounded-md"
-              // onClick={() => navigate("/dashboard/account/password")}
-            >
-              Modifier le mot de passe
-            </Button>
-            {/* <Button
-              variant="default"
-              type="submit"
-              className="py-2 font-medium"
-              disabled={isSubmitting}
-            >
-              Modifier l'email
-            </Button> */}
+            <h4 className="text-sm font-medium text-foreground">E-mail</h4>
+            <p className="text-sm text-muted-foreground mt-1">{user?.email}</p>
           </div>
           <Button
-            variant="default"
-            type="submit"
-            className="py-2 font-medium"
-            disabled={isSubmitting}
+            variant="outline"
+            size="sm"
+            className="font-normal"
+            onClick={() => setIsChangeEmailModalOpen(true)}
           >
-            Mettre à jour le profil
+            Changer d'adresse e-mail
           </Button>
         </div>
+
+        {/* Numéro de téléphone */}
+        <div className="flex items-center justify-between py-4 border-b border-border/40">
+          <div>
+            <h4 className="text-sm font-medium text-foreground">
+              Numéro de téléphone
+            </h4>
+            <p className="text-sm text-muted-foreground mt-1">
+              {user?.phoneNumber || "Non renseigné"}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="font-normal"
+            type="button"
+            onClick={() => setIsChangePhoneModalOpen(true)}
+          >
+            Modifier votre numéro
+          </Button>
+        </div>
+
+        {/* Mot de passe */}
+        <div className="flex items-center justify-between py-4 border-b border-border/40">
+          <div>
+            <h4 className="text-sm font-medium text-foreground">
+              Mot de passe
+            </h4>
+            <p className="text-sm text-muted-foreground mt-1">
+              Modifiez votre mot de passe pour vous connecter à votre compte.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="font-normal"
+            onClick={() => setIsChangePasswordModalOpen(true)}
+          >
+            Modifier le mot de passe
+          </Button>
+        </div>
+
+        {/* Vérification en 2 étapes */}
+        {/* <div className="flex items-center justify-between py-4 border-b border-border/40">
+          <div>
+            <h4 className="text-sm font-medium text-foreground">
+              Vérification en 2 étapes
+            </h4>
+            <p className="text-sm text-muted-foreground mt-1">
+              Ajoutez une couche de sécurité supplémentaire lors de la connexion
+              à votre compte.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="font-normal"
+            onClick={() => setIsSetup2FAModalOpen(true)}
+          >
+            Ajouter une méthode de vérification
+          </Button>
+        </div> */}
+
+        {/* Clés d'accès */}
+        {/* <div className="flex items-center justify-between py-4">
+          <div>
+            <h4 className="text-sm font-medium text-foreground">
+              Clés d'accès
+            </h4>
+            <p className="text-sm text-muted-foreground mt-1">
+              Connectez-vous en toute sécurité avec une authentification
+              biométrique sur l'appareil.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="font-normal"
+          >
+            Ajouter une clé d'accès
+          </Button>
+        </div> */}
       </div>
+
+      {/* Modales */}
+      <ChangeEmailModal
+        isOpen={isChangeEmailModalOpen}
+        onClose={() => setIsChangeEmailModalOpen(false)}
+        currentEmail={user?.email}
+      />
+
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+      />
+
+      <Setup2FAModal
+        isOpen={isSetup2FAModalOpen}
+        onClose={() => setIsSetup2FAModalOpen(false)}
+      />
+
+      <AddPasskeyModal
+        isOpen={isAddPasskeyModalOpen}
+        onClose={() => setIsAddPasskeyModalOpen(false)}
+      />
+
+      <ChangePhoneModal
+        isOpen={isChangePhoneModalOpen}
+        onClose={() => setIsChangePhoneModalOpen(false)}
+        currentPhone={user?.phoneNumber}
+      />
+
+      <DeactivateAccountModal
+        isOpen={isDeactivateAccountModalOpen}
+        onClose={() => setIsDeactivateAccountModalOpen(false)}
+        userEmail={user?.email}
+      />
     </form>
   );
 }

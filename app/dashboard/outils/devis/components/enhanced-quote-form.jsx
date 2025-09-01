@@ -77,7 +77,7 @@ import { fr } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import ClientSelector from "./quote-form-sections/client-selector";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 // Composant de recherche de produits basé sur Origin UI
 function ProductSearchCombobox({

@@ -30,6 +30,7 @@ import { NavDocuments } from "@/src/components/nav-documents";
 import { NavMain } from "@/src/components/nav-main";
 import { NavSecondary } from "@/src/components/nav-secondary";
 import { NavUser } from "@/src/components/nav-user";
+import { SidebarTrialCard } from "@/src/components/sidebar-trial-card";
 import {
   Sidebar,
   SidebarContent,
@@ -179,16 +180,6 @@ const data = {
       url: "/dashboard/outils/factures",
       icon: IconDatabase,
     },
-    {
-      name: "Devis",
-      url: "/dashboard/outils/devis",
-      icon: IconReport,
-    },
-    {
-      name: "Dépenses",
-      url: "/dashboard/outils/gestion-depenses",
-      icon: IconFileWord,
-    },
   ],
 };
 
@@ -272,6 +263,7 @@ export function AppSidebar({ ...props }) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
+        <SidebarTrialCard />
         <NavUser user={session?.user || data.user} />
       </SidebarFooter>
     </Sidebar>

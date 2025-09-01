@@ -18,19 +18,16 @@ import {
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 export default function MemberRowActions({ row, onRefetch }) {
   const member = row.original;
-  const {
-    removeMember,
-    cancelInvitation,
-    updateMemberRole,
-  } = useOrganizationInvitations();
+  const { removeMember, cancelInvitation, updateMemberRole } =
+    useOrganizationInvitations();
 
   // Supprimer un membre
   const handleRemoveMember = async () => {
-    const email = member.type === 'member' ? member.user?.email : member.email;
+    const email = member.type === "member" ? member.user?.email : member.email;
     const result = await removeMember(email);
     if (result.success && onRefetch) {
       onRefetch();
@@ -140,37 +137,38 @@ export default function MemberRowActions({ row, onRefetch }) {
           </AlertDialog>
         )}
 
-        {member.type === "invitation" && (member.status === "rejected" || member.status === "canceled") && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <DropdownMenuItem
-                className="text-red-600"
-                onSelect={(e) => e.preventDefault()}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Supprimer l'invitation
-              </DropdownMenuItem>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Supprimer l'invitation</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer définitivement l'invitation pour{" "}
-                  <strong>{member.email}</strong> ?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleCancelInvitation}
-                  className="bg-red-600 hover:bg-red-700"
+        {member.type === "invitation" &&
+          (member.status === "rejected" || member.status === "canceled") && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onSelect={(e) => e.preventDefault()}
                 >
-                  Supprimer
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Supprimer l'invitation
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer l'invitation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir supprimer définitivement
+                    l'invitation pour <strong>{member.email}</strong> ?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCancelInvitation}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -60,8 +60,8 @@ export const UPDATE_COMPANY = gql`
  * Mutation spécifique pour mettre à jour le logo de l'entreprise
  */
 export const UPDATE_COMPANY_LOGO = gql`
-  mutation UpdateCompanyLogo($logoUrl: String) {
-    updateCompanyLogo(logoUrl: $logoUrl) {
+  mutation UpdateCompanyLogo($logoUrl: String, $workspaceId: ID!) {
+    updateCompanyLogo(logoUrl: $logoUrl, workspaceId: $workspaceId) {
       id
       company {
         logo

@@ -80,7 +80,7 @@ const RegisterForm = () => {
           id="email"
           name="email"
           autoComplete="email"
-          placeholder="ephraim@blocks.so"
+          placeholder="Saisissez votre email"
           className="mt-2"
           {...register("email", {
             required: "Email est requis",

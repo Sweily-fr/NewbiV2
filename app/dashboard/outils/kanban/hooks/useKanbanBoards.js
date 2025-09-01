@@ -1,8 +1,13 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
-import { GET_BOARDS, CREATE_BOARD, UPDATE_BOARD, DELETE_BOARD } from '@/src/graphql/kanbanQueries';
-import { toast } from 'sonner';
-import { useWorkspace } from '@/src/hooks/useWorkspace';
+import { useState } from "react";
+import { useQuery, useMutation } from "@apollo/client";
+import {
+  GET_BOARDS,
+  CREATE_BOARD,
+  UPDATE_BOARD,
+  DELETE_BOARD,
+} from "@/src/graphql/kanbanQueries";
+import { toast } from "@/src/components/ui/sonner";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 export const useKanbanBoards = () => {
   const { workspaceId } = useWorkspace();
@@ -62,7 +67,10 @@ export const useKanbanBoards = () => {
     update: (cache, { data }) => {
       if (data?.deleteBoard && boardToDelete) {
         try {
-          const existingBoards = cache.readQuery({ query: GET_BOARDS, variables: { workspaceId } });
+          const existingBoards = cache.readQuery({
+            query: GET_BOARDS,
+            variables: { workspaceId },
+          });
           if (existingBoards) {
             cache.writeQuery({
               query: GET_BOARDS,
@@ -179,14 +187,14 @@ export const useKanbanBoards = () => {
     setIsEditDialogOpen,
     formData,
     setFormData,
-    
+
     // Data & Loading States
     boards: filteredBoards,
     loading: creating || updating || deleting,
     creating,
     updating,
     deleting,
-    
+
     // Handlers
     handleCreateBoard,
     handleUpdateBoard,

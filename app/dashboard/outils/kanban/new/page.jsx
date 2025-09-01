@@ -1,52 +1,58 @@
 "use client";
 
-import { useState } from 'react';
-import { useMutation } from '@apollo/client';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Button } from '@/src/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { Textarea } from '@/src/components/ui/textarea';
-import { toast } from 'sonner';
-import { CREATE_BOARD } from '@/src/graphql/kanbanQueries';
+import { useState } from "react";
+import { useMutation } from "@apollo/client";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
+import { toast } from "@/src/components/ui/sonner";
+import { CREATE_BOARD } from "@/src/graphql/kanbanQueries";
 
 export default function NewKanbanPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    title: '',
-    description: ''
+    title: "",
+    description: "",
   });
 
   const [createBoard, { loading }] = useMutation(CREATE_BOARD, {
     onCompleted: async (data) => {
       try {
         // Créer les colonnes par défaut
-        console.log('Creating default columns for board:', data.createBoard.id);
+        console.log("Creating default columns for board:", data.createBoard.id);
         await createDefaultColumns(data.createBoard.id);
-        toast.success('Tableau créé avec succès');
+        toast.success("Tableau créé avec succès");
         router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);
       } catch (error) {
-        console.error('Error in onCompleted:', error);
+        console.error("Error in onCompleted:", error);
         // Même si les colonnes échouent, on redirige vers le tableau
-        toast.success('Tableau créé avec succès');
+        toast.success("Tableau créé avec succès");
         router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);
       }
     },
     onError: (error) => {
-      toast.error('Erreur lors de la création du tableau');
-      console.error('Create board error:', error);
-    }
+      toast.error("Erreur lors de la création du tableau");
+      console.error("Create board error:", error);
+    },
   });
 
   // Les colonnes par défaut sont maintenant créées automatiquement côté backend
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim()) {
-      toast.error('Le titre est requis');
+      toast.error("Le titre est requis");
       return;
     }
 
@@ -55,9 +61,9 @@ export default function NewKanbanPage() {
         variables: {
           input: {
             title: formData.title.trim(),
-            description: formData.description.trim() || null
-          }
-        }
+            description: formData.description.trim() || null,
+          },
+        },
       });
     } catch (error) {
       // L'erreur est déjà gérée dans la mutation onError
@@ -65,9 +71,9 @@ export default function NewKanbanPage() {
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -84,8 +90,12 @@ export default function NewKanbanPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Créer un nouveau tableau</h1>
-          <p className="text-gray-600">Organisez vos projets avec un tableau Kanban</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Créer un nouveau tableau
+          </h1>
+          <p className="text-gray-600">
+            Organisez vos projets avec un tableau Kanban
+          </p>
         </div>
       </div>
 
@@ -94,7 +104,8 @@ export default function NewKanbanPage() {
         <CardHeader>
           <CardTitle>Informations du tableau</CardTitle>
           <CardDescription>
-            Remplissez les informations de base pour votre nouveau tableau Kanban.
+            Remplissez les informations de base pour votre nouveau tableau
+            Kanban.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -106,7 +117,7 @@ export default function NewKanbanPage() {
               <Input
                 id="title"
                 value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
+                onChange={(e) => handleInputChange("title", e.target.value)}
                 placeholder="Ex: Projet Marketing Q1"
                 required
                 className="w-full"
@@ -121,7 +132,9 @@ export default function NewKanbanPage() {
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 placeholder="Décrivez l'objectif de ce tableau..."
                 rows={4}
                 className="w-full resize-none"
@@ -152,7 +165,7 @@ export default function NewKanbanPage() {
                     Création...
                   </>
                 ) : (
-                  'Créer le tableau'
+                  "Créer le tableau"
                 )}
               </Button>
             </div>
@@ -163,11 +176,16 @@ export default function NewKanbanPage() {
       {/* Tips */}
       <Card className="mt-6 bg-blue-50 border-blue-200">
         <CardContent className="pt-6">
-          <h3 className="font-semibold text-blue-900 mb-2">💡 Conseils pour bien commencer</h3>
+          <h3 className="font-semibold text-blue-900 mb-2">
+            💡 Conseils pour bien commencer
+          </h3>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>• Choisissez un titre clair et descriptif</li>
             <li>• Vous pourrez ajouter des colonnes après la création</li>
-            <li>• 4 colonnes seront créées automatiquement : "À faire", "En cours", "En attente", "Terminées"</li>
+            <li>
+              • 4 colonnes seront créées automatiquement : "À faire", "En
+              cours", "En attente", "Terminées"
+            </li>
             <li>• Vous pouvez modifier ces informations à tout moment</li>
           </ul>
         </CardContent>

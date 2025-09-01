@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const initialState = {
   theme: "system",
@@ -14,6 +15,9 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }) {
+  const pathname = usePathname();
+  const isDashboardRoute = pathname?.startsWith("/dashboard");
+  
   const [theme, setTheme] = useState(() => {
     // Check if code is running in browser environment
     if (typeof window !== "undefined") {
@@ -27,6 +31,13 @@ export function ThemeProvider({
 
     root.classList.remove("light", "dark");
 
+    // Si on n'est pas sur une route dashboard, forcer le thème light
+    if (!isDashboardRoute) {
+      root.classList.add("light");
+      return;
+    }
+
+    // Si on est sur dashboard, appliquer le thème choisi
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
         .matches
@@ -38,7 +49,7 @@ export function ThemeProvider({
     }
 
     root.classList.add(theme);
-  }, [theme]);
+  }, [theme, isDashboardRoute]);
 
   const value = {
     theme,

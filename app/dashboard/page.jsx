@@ -1,5 +1,6 @@
 "use client";
 
+import { TrialAlert } from "@/src/components/trial-alert";
 import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
 import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
@@ -264,7 +265,7 @@ export default function Dashboard() {
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
       <div className="flex items-center justify-between w-full mb-6">
         <p className="text-2xl font-medium">Bonjour {session?.user?.name},</p>
-        <BankingConnectButton />
+        {/* <BankingConnectButton /> */}
       </div>
       <div className="flex flex-col gap-3 w-full">
         <Comp333
