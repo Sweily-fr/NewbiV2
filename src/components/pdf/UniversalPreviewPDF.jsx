@@ -7,6 +7,67 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
   const { data: session } = useSession();
   const { organization } = useWorkspace();
+  
+  // Calcul des totaux basé sur les articles
+  const calculateTotals = (items = []) => {
+    let subtotal = 0;
+    let totalTax = 0;
+    const taxesByRate = {}; // Pour stocker les totaux de TVA par taux
+    
+    items.forEach(item => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
+      
+      // Récupérer le taux de TVA, avec une valeur par défaut de 20% si non spécifié
+      // Si vatRate est défini à 0, on le garde à 0, sinon on prend la valeur ou 20% par défaut
+      const vatRate = item.vatRate !== undefined ? parseFloat(item.vatRate) : 20;
+      
+      // Calcul du montant HT de l'article (quantité * prix unitaire)
+      const itemSubtotal = quantity * unitPrice;
+      
+      // Calcul de la TVA pour cet article (uniquement si le taux est supérieur à 0)
+      const itemTax = vatRate > 0 ? itemSubtotal * (vatRate / 100) : 0;
+      
+      subtotal += itemSubtotal;
+      totalTax += itemTax;
+      
+      // On n'ajoute la TVA au détail que si le taux est supérieur à 0
+      if (vatRate > 0) {
+        if (!taxesByRate[vatRate]) {
+          taxesByRate[vatRate] = 0;
+        }
+        taxesByRate[vatRate] += itemTax;
+      }
+    });
+    
+    const total = subtotal + totalTax;
+    
+    console.log('Calcul des totaux:', { subtotal, totalTax, total, taxesByRate });
+    
+    const taxDetails = Object.entries(taxesByRate)
+      .sort(([rateA], [rateB]) => parseFloat(rateB) - parseFloat(rateA))
+      .map(([rate, amount]) => ({
+        rate: parseFloat(rate),
+        amount: Number(amount.toFixed(2))
+      }));
+    
+    return {
+      subtotal: Number(subtotal.toFixed(2)),
+      totalTax: Number(totalTax.toFixed(2)),
+      total: Number(total.toFixed(2)),
+      taxDetails
+    };
+  };
+  
+  // Utiliser les totaux calculés ou ceux fournis dans les données
+  const { subtotal, totalTax, total, taxDetails = [] } = data.items?.length > 0 
+    ? calculateTotals(data.items) 
+    : { 
+        subtotal: data.subtotal || 0, 
+        totalTax: data.totalTax || 0, 
+        total: data.total || 0,
+        taxDetails: []
+      };
 
   // Utiliser le logo depuis les données ou depuis l'organisation comme fallback
   const companyLogo = data.companyInfo?.logo || organization?.logo;
@@ -85,7 +146,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
       return "Facture d'acompte";
     }
     if (data.status === "DRAFT") {
-      return isInvoice ? "Facture" : "Devis";
+      return isInvoice ? "Facture proforma" : "Devis";
     }
     return isInvoice ? "Facture" : "Devis";
   };
@@ -104,59 +165,79 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
       {/* CONTENU PRINCIPAL */}
       <div className="p-6 text-xs">
         {/* HEADER */}
-        <div className="flex justify-between items-start mb-2">
-          <div className="text-3xl font-medium dark:text-[#0A0A0A]">
-            {getDocumentTitle()}
-          </div>
-          <div className="text-right">
-            {companyLogo ? (
+        <div className="flex justify-between items-start mb-6">
+          {/* Logo à gauche */}
+          <div className="flex-shrink-0">
+            {companyLogo && (
               <img
                 src={companyLogo}
                 alt="Logo entreprise"
-                className="h-22 w-auto object-contain ml-auto"
-                style={{ maxWidth: "100px" }}
+                className="h-20 w-auto object-contain"
+                style={{ maxWidth: "150px" }}
               />
-            ) : null}
+            )}
           </div>
-        </div>
-
-        {/* INFORMATIONS DOCUMENT */}
-        <div className="grid grid-cols-2 gap-6 mb-14">
-          <div className="space-y-1">
-            <div className="flex" style={{ fontSize: "10px" }}>
-              <span className="font-medium w-38 dark:text-[#0A0A0A]">
-                Numéro de facture
-              </span>
-              <span className="dark:text-[#0A0A0A]">
-                {data.prefix && data.number
-                  ? `${data.prefix}-${data.number}`
-                  : data.number || "F-202507-001"}
-              </span>
+          
+          {/* Titre et informations de facture à droite */}
+          <div className="text-right mb-6">
+            <div className="text-3xl font-medium dark:text-[#0A0A0A] mb-2">
+              {getDocumentTitle()}
             </div>
-            <div className="flex" style={{ fontSize: "10px" }}>
-              <span className="font-medium w-38 dark:text-[#0A0A0A]">
-                Date d'émission
-              </span>
-              <span className="dark:text-[#0A0A0A]">
-                {formatDate(data.issueDate || data.date) ||
-                  formatDate(new Date())}
-              </span>
-            </div>
-            <div className="flex" style={{ fontSize: "10px" }}>
-              <span className="font-medium w-38 dark:text-[#0A0A0A]">
-                Date d'échéance
+            <div className="space-y-1">
+              <div className="flex justify-end" style={{ fontSize: "10px" }}>
+                <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                  Numéro de facture:
+                </span>
+                <span className="dark:text-[#0A0A0A]">
+                  {data.prefix && data.number
+                    ? `${data.prefix}-${data.number}`
+                    : data.number || "F-202507-001"}
+                </span>
+              </div>
+              <div className="flex justify-end" style={{ fontSize: "10px" }}>
+                <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                  Date d'émission:
+                </span>
+                <span className="dark:text-[#0A0A0A]">
+                  {formatDate(data.issueDate || data.date) ||
+                    formatDate(new Date())}
+                </span>
+              </div>
+              {data.executionDate && (
+              <div className="flex justify-end" style={{ fontSize: "10px" }}>
+                <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                  Date d'exécution:
+                </span>
+                <span className="dark:text-[#0A0A0A]">
+                  {formatDate(data.executionDate)}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-end" style={{ fontSize: "10px" }}>
+              <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                Date d'échéance:
               </span>
               <span className="dark:text-[#0A0A0A]">
                 {formatDate(data.dueDate) ||
                   formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}
               </span>
             </div>
+            {data.purchaseOrderNumber && (
+              <div className="flex justify-end" style={{ fontSize: "10px" }}>
+                <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                  Référence devis:
+                </span>
+                <span className="dark:text-[#0A0A0A]">
+                  {data.purchaseOrderNumber}
+                </span>
+              </div>
+            )}
+            </div>
           </div>
-          <div></div>
         </div>
 
         {/* INFORMATIONS ENTREPRISE ET CLIENT */}
-        <div className="grid grid-cols-2 gap-6 mb-10">
+        <div className="grid grid-cols-3 mb-6">
           {/* Informations entreprise */}
           <div>
             <div
@@ -222,6 +303,24 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
               </div>
             </div>
           )}
+
+          {/* Adresse de livraison - Afficher seulement si différente de l'adresse de facturation */}
+          {data.client?.hasDifferentShippingAddress && data.client?.shippingAddress && (
+            <div>
+              <div
+                className="font-medium mb-2 dark:text-[#0A0A0A]"
+                style={{ fontSize: "10px" }}
+              >
+                Adresse de livraison
+              </div>
+              <div className="font-normal" style={{ fontSize: "10px" }}>
+                <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                  {formatAddress(data.client.shippingAddress) ||
+                    "Aucune adresse de livraison spécifiée"}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* NOTES D'EN-TÊTE */}
@@ -239,7 +338,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
             <thead>
               <tr style={{ backgroundColor: data.appearance?.headerBgColor }}>
                 <th
-                  className="py-1 px-2 text-left text-[10px] font-medium"
+                  className="py-2 px-2 text-left text-[10px] font-medium"
                   style={{
                     color: data.appearance?.headerTextColor,
                     width: "46%",
@@ -374,23 +473,47 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 Total HT
               </span>
               <span className="dark:text-[#0A0A0A] text-[10px]">
-                {formatCurrency(data.subtotal || 0)}
+                {formatCurrency(subtotal)}
               </span>
             </div>
-            <div className="flex justify-between py-1 px-3">
-              <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
-                Montant total de TVA
-              </span>
-              <span className="dark:text-[#0A0A0A] text-[10px]">
-                {formatCurrency(data.totalTax || 0)}
-              </span>
-            </div>
+            {/* Détail des TVA par taux */}
+            {taxDetails.length > 0 ? (
+              taxDetails.map((tax, index) => (
+                <div key={`tax-${index}`} className="flex justify-between py-1 px-3">
+                  <span className="text-[10px] dark:text-[#0A0A0A]">
+                    TVA {tax.rate}%
+                  </span>
+                  <span className="dark:text-[#0A0A0A] text-[10px]">
+                    {formatCurrency(tax.amount)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="flex justify-between py-1 px-3">
+                <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                  Montant total de TVA
+                </span>
+                <span className="dark:text-[#0A0A0A] text-[10px]">
+                  {formatCurrency(totalTax)}
+                </span>
+              </div>
+            )}
+            {totalTax > 0 && (
+              <div className="flex justify-between py-1 px-3">
+                <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                  Total TVA
+                </span>
+                <span className="dark:text-[#0A0A0A] text-[10px]">
+                  {formatCurrency(totalTax)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between py-2 px-6 bg-[#F3F3F3] font-medium text-sm">
               <span className="-ml-3 text-[10px] font-medium dark:text-[#0A0A0A]">
                 Total TTC
               </span>
               <span className="-mr-3 text-[10px] dark:text-[#0A0A0A]">
-                {formatCurrency(data.total || 0)}
+                {formatCurrency(total)}
               </span>
             </div>
           </div>

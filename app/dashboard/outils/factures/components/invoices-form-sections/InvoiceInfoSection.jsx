@@ -576,6 +576,7 @@ export default function InvoiceInfoSection({ canEdit }) {
                   dueDate.setDate(dueDate.getDate() + days);
                   setValue("dueDate", dueDate.toISOString().split("T")[0], {
                     shouldDirty: true,
+                    shouldValidate: true  // Ajout de la validation
                   });
                 }}
                 disabled={!canEdit}
@@ -593,6 +594,11 @@ export default function InvoiceInfoSection({ canEdit }) {
                 </SelectContent>
               </Select>
             </div>
+            {errors?.dueDate && (
+              <p className="text-xs text-red-500">
+                {errors.dueDate.message}
+              </p>
+            )}
             <p className="text-xs">
               Utilisez le sélecteur "+" pour ajouter des jours automatiquement
             </p>

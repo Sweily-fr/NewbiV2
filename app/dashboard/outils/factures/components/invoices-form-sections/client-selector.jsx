@@ -87,6 +87,9 @@ export default function ClientSelector({
     country: "France",
   };
 
+  // État pour suivre les erreurs de validation
+  const [formErrors, setFormErrors] = useState({});
+  
   const [newClientForm, setNewClientForm] = useState(() => ({
     type: "INDIVIDUAL",
     name: "",
@@ -237,145 +240,220 @@ export default function ClientSelector({
     return type === "COMPANY" ? Building : User;
   };
 
-  const handleNewClientSubmit = async (e) => {
-    e.preventDefault();
-
+  const validateForm = () => {
+    const errors = {};
+    
     // Validation des champs obligatoires
     const requiredFields = [
-      { field: "name", label: "Le nom" },
-      { field: "email", label: "L'email" },
-      { field: "address.street", label: "La rue de l'adresse" },
-      { field: "address.postalCode", label: "Le code postal" },
-      { field: "address.city", label: "La ville" },
+      { field: "name", label: "name", message: "Le nom est obligatoire" },
+      { field: "email", label: "email", message: "L'email est obligatoire" },
+      { field: "address.street", label: "address.street", message: "La rue est obligatoire" },
+      { field: "address.postalCode", label: "address.postalCode", message: "Le code postal est obligatoire" },
+      { field: "address.city", label: "address.city", message: "La ville est obligatoire" },
+      
+      // Champs conditionnels selon le type de client
+      ...(newClientForm.type === 'INDIVIDUAL' ? [
+        { field: "firstName", label: "firstName", message: "Le prénom est obligatoire" },
+        { field: "lastName", label: "lastName", message: "Le nom est obligatoire" }
+      ] : []),
+      
+      // Champs conditionnels pour les entreprises
+      ...(newClientForm.type === 'COMPANY' && newClientForm.siret ? [
+        { field: "siret", label: "siret", message: "Le SIRET est invalide (14 chiffres requis)" }
+      ] : [])
     ];
 
-    // Vérifier les champs obligatoires
-    let hasErrors = false;
-    for (const { field, label } of requiredFields) {
-      const value = field
-        .split(".")
-        .reduce((obj, key) => obj?.[key], newClientForm);
-      if (!value || value.trim() === "") {
-        toast.error(`${label} est obligatoire`);
-        hasErrors = true;
+    // Validation des champs obligatoires
+    requiredFields.forEach(({ field, label, message }) => {
+      const value = field.split('.').reduce((obj, key) => obj?.[key], newClientForm);
+      if (!value || (typeof value === 'string' && value.trim() === "")) {
+        errors[label] = message;
       }
-    }
+    });
 
-    // Validation de l'email (obligatoire)
+    // Validation de l'email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!newClientForm.email || newClientForm.email.trim() === "") {
-      toast.error("L'adresse email est obligatoire");
-      hasErrors = true;
-    } else if (!emailRegex.test(newClientForm.email.trim())) {
-      toast.error("L'adresse email n'est pas valide");
-      hasErrors = true;
-    }
-
-    // Validation du SIRET pour les entreprises
-    if (newClientForm.type === "COMPANY" && newClientForm.siret) {
-      const siretRegex = /^\d{14}$/;
-      if (!siretRegex.test(newClientForm.siret)) {
-        toast.error("Le SIRET doit contenir exactement 14 chiffres");
-        hasErrors = true;
+    if (newClientForm.email) {
+      if (!emailRegex.test(newClientForm.email.trim())) {
+        errors.email = "L'email n'est pas valide";
       }
+    } else {
+      errors.email = "L'email est obligatoire";
     }
 
-    // Validation du numéro de TVA pour les entreprises
-    if (newClientForm.type === "COMPANY" && newClientForm.vatNumber) {
-      const vatRegex = /^[A-Z]{2}[A-Z0-9]+$/;
-      if (!vatRegex.test(newClientForm.vatNumber)) {
-        toast.error(
-          "Le numéro de TVA doit commencer par 2 lettres suivies de chiffres/lettres"
-        );
-        hasErrors = true;
-      }
-    }
-
-    // Validation du code postal
+    // Validation des codes postaux
     const postalCodeRegex = /^\d{5}$/;
-    if (
-      newClientForm.address.postalCode &&
-      !postalCodeRegex.test(newClientForm.address.postalCode)
-    ) {
-      toast.error("Le code postal doit contenir exactement 5 chiffres");
-      hasErrors = true;
+    
+    // Validation du code postal de facturation
+    if (newClientForm.address?.postalCode) {
+      if (!postalCodeRegex.test(newClientForm.address.postalCode)) {
+        errors['address.postalCode'] = "Le code postal doit contenir 5 chiffres";
+      }
+    } else {
+      errors['address.postalCode'] = "Le code postal est obligatoire";
     }
+    
+    // Validation de l'adresse de livraison (si différente)
+    if (newClientForm.hasDifferentShippingAddress) {
+      // Validation de la rue de livraison
+      if (!newClientForm.shippingAddress?.street?.trim()) {
+        errors['shippingAddress.street'] = "La rue de livraison est obligatoire";
+      }
+      
+      // Validation du code postal de livraison
+      if (!newClientForm.shippingAddress?.postalCode?.trim()) {
+        errors['shippingAddress.postalCode'] = "Le code postal de livraison est obligatoire";
+      } else if (!postalCodeRegex.test(newClientForm.shippingAddress.postalCode)) {
+        errors['shippingAddress.postalCode'] = "Le code postal de livraison doit contenir 5 chiffres";
+      }
+      
+      // Validation de la ville de livraison
+      if (!newClientForm.shippingAddress?.city?.trim()) {
+        errors['shippingAddress.city'] = "La ville de livraison est obligatoire";
+      }
+    }
+
+    // Validation du numéro de téléphone (optionnel mais doit être valide si renseigné)
+    if (newClientForm.phone && newClientForm.phone.trim() !== '') {
+      const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
+      if (!phoneRegex.test(newClientForm.phone.trim())) {
+        errors.phone = "Format de téléphone invalide. Ex: 01 23 45 67 89 ou 0123456789";
+      }
+    }
+
+    // Validation du SIRET (si entreprise)
+    if (newClientForm.type === "COMPANY") {
+      if (newClientForm.siret) {
+        const siretRegex = /^\d{14}$/;
+        if (!siretRegex.test(newClientForm.siret)) {
+          errors.siret = "Le SIRET doit contenir 14 chiffres";
+        }
+      } else if (newClientForm.siret === "") {
+        errors.siret = "Le SIRET est obligatoire pour une entreprise";
+      }
+    }
+
+    // Validation du numéro de téléphone (si fourni)
+    if (newClientForm.phone && newClientForm.phone.trim() !== "") {
+      const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
+      if (!phoneRegex.test(newClientForm.phone.trim())) {
+        errors.phone = "Le numéro de téléphone n'est pas valide (ex: 01 23 45 67 89)";
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNewClientSubmit = async (e) => {
+    e.preventDefault();
+    let hasErrors = false;
+
+    // Valider le formulaire de base
+    if (!validateForm()) {
+      toast.error("Veuillez corriger les erreurs dans le formulaire");
+      return;
+    }
+
+    // Vérification des champs obligatoires
+    const requiredFields = [
+      { field: "name", message: "Le nom est obligatoire" },
+      { field: "email", message: "L'email est obligatoire" },
+      { field: "address.street", message: "La rue est obligatoire" },
+      { field: "address.postalCode", message: "Le code postal est obligatoire" },
+      { field: "address.city", message: "La ville est obligatoire" },
+    ];
+
+    requiredFields.forEach(({ field, message }) => {
+      const value = field.split('.').reduce((obj, key) => obj?.[key], newClientForm);
+      if (!value || (typeof value === 'string' && value.trim() === "")) {
+        toast.error(message);
+        hasErrors = true;
+      }
+    });
 
     // Si des erreurs sont détectées, arrêter la soumission
     if (hasErrors) {
-      console.error("❌ SOUMISSION BLOQUÉE : Erreurs de validation détectées");
-      toast.error(
-        "Veuillez corriger les erreurs avant de soumettre le formulaire"
-      );
-      return; // ARRÊT COMPLET - Aucune soumission possible
+      console.error("❌ Erreurs de validation détectées");
+      return;
     }
-
-    // Vérification finale de sécurité avant soumission
-    if (
-      !newClientForm.name?.trim() ||
-      !newClientForm.email?.trim() ||
-      !newClientForm.address?.street?.trim() ||
-      !newClientForm.address?.postalCode?.trim() ||
-      !newClientForm.address?.city?.trim()
-    ) {
-      console.error(
-        "❌ VÉRIFICATION FINALE ÉCHOUÉE : Champs obligatoires manquants"
-      );
-      toast.error("Des champs obligatoires sont manquants");
-      return; // ARRÊT COMPLET - Double sécurité
-    }
-
-    console.log("✅ Validation réussie - Procédure de soumission autorisée");
 
     try {
-      // Préparation des données pour l'API - uniquement les champs acceptés par ClientInput
+      // Préparation des données pour l'API
+      // Note: Le champ 'phone' a été retiré car il n'est pas supporté par le type ClientInput
       const clientData = {
         type: newClientForm.type,
         name: newClientForm.name,
         email: newClientForm.email,
+        // Le champ phone est retiré car non supporté par l'API
+        // phone: newClientForm.phone,
         firstName: newClientForm.firstName || undefined,
         lastName: newClientForm.lastName || undefined,
         siret: newClientForm.siret || undefined,
         vatNumber: newClientForm.vatNumber || undefined,
-        hasDifferentShippingAddress:
-          newClientForm.hasDifferentShippingAddress || false,
+        hasDifferentShippingAddress: Boolean(newClientForm.hasDifferentShippingAddress),
         address: {
           street: newClientForm.address.street,
           postalCode: newClientForm.address.postalCode,
           city: newClientForm.address.city,
           country: newClientForm.address.country || "France",
         },
-        // Ne pas inclure l'adresse de livraison si elle n'est pas utilisée
-        ...(newClientForm.hasDifferentShippingAddress && {
+        ...(newClientForm.hasDifferentShippingAddress && newClientForm.shippingAddress && {
           shippingAddress: {
-            street: newClientForm.shippingAddress.street || "",
-            postalCode: newClientForm.shippingAddress.postalCode || "",
-            city: newClientForm.shippingAddress.city || "",
+            street: newClientForm.shippingAddress.street,
+            postalCode: newClientForm.shippingAddress.postalCode,
+            city: newClientForm.shippingAddress.city,
             country: newClientForm.shippingAddress.country || "France",
           },
         }),
       };
 
-      // Supprimer les champs undefined pour éviter les erreurs GraphQL
-      Object.keys(clientData).forEach((key) => {
+      // Nettoyage des champs undefined
+      Object.keys(clientData).forEach(key => {
         if (clientData[key] === undefined) {
           delete clientData[key];
         }
       });
 
-      // Utiliser la fonction createClient retournée par le hook
+      // Création du client
       const createdClient = await createClient(clientData);
 
       if (createdClient) {
-        // Le toast de succès est déjà géré par le hook
         onSelect?.(createdClient);
         resetNewClientForm();
         setActiveTab("existing");
-        setOpen(false); // Fermer le popover après création
+        setOpen(false);
       }
     } catch (error) {
       console.error("Erreur lors de la création du client:", error);
-      // Le toast d'erreur est déjà géré par le hook
+      
+      // Gestion des erreurs avec des messages clairs pour l'utilisateur
+      let errorMessage = "Une erreur est survenue lors de la création du client";
+      
+      if (error.message.includes("Network Error")) {
+        errorMessage = "Erreur de connexion au serveur. Vérifiez votre connexion Internet.";
+      } else if (error.message.includes("400") || 
+                error.message.includes("Validation Error") ||
+                error.message.includes("ClientInput")) {
+        errorMessage = "Erreur de validation. Vérifiez que tous les champs sont correctement remplis.";
+      } else if (error.message.includes("409") || 
+                (error.extensions?.exception?.code === 'ALREADY_EXISTS')) {
+        errorMessage = "Un client avec cet email existe déjà. Veuillez utiliser un email différent ou sélectionner ce client dans la liste.";
+      } else if (error.message.includes("401") || error.message.includes("403")) {
+        errorMessage = "Vous n'avez pas les droits nécessaires pour effectuer cette action.";
+      } else if (error.message.includes("500")) {
+        errorMessage = "Erreur serveur. Veuillez réessayer plus tard.";
+      }
+      
+      // Afficher le message d'erreur à l'utilisateur
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: 'top-center',
+        action: {
+          label: 'Fermer',
+          onClick: () => {}
+        }
+      });
     }
   };
 
@@ -394,6 +472,7 @@ export default function ClientSelector({
       shippingAddress: { ...defaultAddress },
       notes: "",
     });
+    setFormErrors({});
   };
 
   const handleSwitchToNewClient = () => {
@@ -425,6 +504,9 @@ export default function ClientSelector({
 
       // Remplir le formulaire avec les données de l'entreprise
       setNewClientForm(clientData);
+      
+      // Effacer les erreurs existantes
+      setFormErrors({});
 
       // Afficher le formulaire manuel pré-rempli
       setShowManualForm(true);
@@ -835,21 +917,28 @@ export default function ClientSelector({
                             htmlFor="client-name"
                             className="text-sm font-medium"
                           >
-                            Nom de l'entreprise
+                            Nom de l'entreprise <span className="text-red-500">*</span>
                           </Label>
                           <div className="relative">
                             <Input
                               id="client-name"
                               value={newClientForm.name}
-                              onChange={(e) =>
+                              onChange={(e) => {
                                 setNewClientForm((prev) => ({
                                   ...prev,
                                   name: e.target.value,
-                                }))
-                              }
+                                }));
+                                // Effacer l'erreur quand l'utilisateur commence à taper
+                                if (formErrors.name) {
+                                  setFormErrors(prev => ({...prev, name: null}));
+                                }
+                              }}
                               placeholder="Nom de l'entreprise"
-                              className="h-10 rounded-lg text-sm w-full"
+                              className={`h-10 rounded-lg text-sm w-full ${formErrors.name ? 'border-red-500' : ''}`}
                             />
+                            {formErrors.name && (
+                              <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -865,13 +954,17 @@ export default function ClientSelector({
                           <Input
                             id="client-firstname"
                             value={newClientForm.firstName}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setNewClientForm((prev) => ({
                                 ...prev,
                                 firstName: e.target.value,
                                 name: `${e.target.value} ${prev.lastName || ""}`.trim(),
-                              }))
-                            }
+                              }));
+                              // Effacer l'erreur du nom si elle existe
+                              if (formErrors.name) {
+                                setFormErrors(prev => ({...prev, name: null}));
+                              }
+                            }}
                             placeholder="Prénom"
                             className="h-10 rounded-lg text-sm w-full"
                           />
@@ -886,13 +979,17 @@ export default function ClientSelector({
                           <Input
                             id="client-lastname"
                             value={newClientForm.lastName}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setNewClientForm((prev) => ({
                                 ...prev,
                                 lastName: e.target.value,
                                 name: `${prev.firstName || ""} ${e.target.value}`.trim(),
-                              }))
-                            }
+                              }));
+                              // Effacer l'erreur du nom si elle existe
+                              if (formErrors.name) {
+                                setFormErrors(prev => ({...prev, name: null}));
+                              }
+                            }}
                             placeholder="Nom"
                             className="h-10 rounded-lg text-sm w-full"
                           />
@@ -907,22 +1004,29 @@ export default function ClientSelector({
                         htmlFor="client-email"
                         className="text-sm font-medium"
                       >
-                        Email
+                        Email <span className="text-red-500">*</span>
                       </Label>
                       <div className="relative">
                         <Input
                           id="client-email"
                           type="email"
                           value={newClientForm.email}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setNewClientForm((prev) => ({
                               ...prev,
                               email: e.target.value,
-                            }))
-                          }
+                            }));
+                            // Effacer l'erreur quand l'utilisateur commence à taper
+                            if (formErrors.email) {
+                              setFormErrors(prev => ({...prev, email: null}));
+                            }
+                          }}
                           placeholder="contact@exemple.com"
-                          className="h-10 rounded-lg text-sm w-full"
+                          className={`h-10 rounded-lg text-sm w-full ${formErrors.email ? 'border-red-500' : ''}`}
                         />
+                        {formErrors.email && (
+                          <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>
+                        )}
                       </div>
                     </div>
 
@@ -937,15 +1041,26 @@ export default function ClientSelector({
                         <Input
                           id="client-phone"
                           value={newClientForm.phone}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setNewClientForm((prev) => ({
                               ...prev,
                               phone: e.target.value,
-                            }))
-                          }
+                            }));
+                            // Effacer l'erreur quand l'utilisateur commence à taper
+                            if (formErrors.phone) {
+                              setFormErrors(prev => {
+                                const newErrors = {...prev};
+                                delete newErrors.phone;
+                                return newErrors;
+                              });
+                            }
+                          }}
+                          className={`h-10 rounded-lg text-sm w-full ${formErrors.phone ? 'border-red-500' : ''}`}
                           placeholder="01 23 45 67 89"
-                          className="h-10 rounded-lg text-sm w-full"
                         />
+                        {formErrors.phone && (
+                          <p className="text-xs text-red-500 mt-1">{formErrors.phone}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1018,23 +1133,36 @@ export default function ClientSelector({
                         htmlFor="client-street"
                         className="text-sm font-medium"
                       >
-                        Adresse
+                        Adresse <span className="text-red-500">*</span>
                       </Label>
-                      <Input
-                        id="client-street"
-                        value={newClientForm.address?.street || ""}
-                        onChange={(e) =>
-                          setNewClientForm((prev) => ({
-                            ...prev,
-                            address: {
-                              ...prev.address,
-                              street: e.target.value,
-                            },
-                          }))
-                        }
-                        placeholder="123 rue de la Paix"
-                        className="h-10 rounded-lg text-sm w-full"
-                      />
+                      <div className="relative">
+                        <Input
+                          id="client-street"
+                          value={newClientForm.address?.street || ""}
+                          onChange={(e) => {
+                            setNewClientForm((prev) => ({
+                              ...prev,
+                              address: {
+                                ...prev.address,
+                                street: e.target.value,
+                              },
+                            }));
+                            // Effacer l'erreur quand l'utilisateur commence à taper
+                            if (formErrors['address.street']) {
+                              setFormErrors(prev => {
+                                const newErrors = {...prev};
+                                delete newErrors['address.street'];
+                                return newErrors;
+                              });
+                            }
+                          }}
+                          placeholder="1 rue de l'exemple"
+                          className={`h-10 rounded-lg text-sm w-full ${formErrors['address.street'] ? 'border-red-500' : ''}`}
+                        />
+                        {formErrors['address.street'] && (
+                          <p className="text-xs text-red-500 mt-1">{formErrors['address.street']}</p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1043,23 +1171,36 @@ export default function ClientSelector({
                           htmlFor="client-postal-code"
                           className="text-sm font-medium"
                         >
-                          Code postal
+                          Code postal <span className="text-red-500">*</span>
                         </Label>
-                        <Input
-                          id="client-postal-code"
-                          value={newClientForm.address?.postalCode || ""}
-                          onChange={(e) =>
-                            setNewClientForm((prev) => ({
-                              ...prev,
-                              address: {
-                                ...prev.address,
-                                postalCode: e.target.value,
-                              },
-                            }))
-                          }
-                          placeholder="75001"
-                          className="h-10 rounded-lg text-sm w-full"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="client-postal-code"
+                            value={newClientForm.address?.postalCode || ""}
+                            onChange={(e) => {
+                              setNewClientForm((prev) => ({
+                                ...prev,
+                                address: {
+                                  ...prev.address,
+                                  postalCode: e.target.value,
+                                },
+                              }));
+                              // Effacer l'erreur quand l'utilisateur commence à taper
+                              if (formErrors['address.postalCode']) {
+                                setFormErrors(prev => {
+                                  const newErrors = {...prev};
+                                  delete newErrors['address.postalCode'];
+                                  return newErrors;
+                                });
+                              }
+                            }}
+                            placeholder="75000"
+                            className={`h-10 rounded-lg text-sm w-full ${formErrors['address.postalCode'] ? 'border-red-500' : ''}`}
+                          />
+                          {formErrors['address.postalCode'] && (
+                            <p className="text-xs text-red-500 mt-1">{formErrors['address.postalCode']}</p>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2 md:col-span-2">
@@ -1067,23 +1208,36 @@ export default function ClientSelector({
                           htmlFor="client-city"
                           className="text-sm font-medium"
                         >
-                          Ville
+                          Ville <span className="text-red-500">*</span>
                         </Label>
-                        <Input
-                          id="client-city"
-                          value={newClientForm.address?.city || ""}
-                          onChange={(e) =>
-                            setNewClientForm((prev) => ({
-                              ...prev,
-                              address: {
-                                ...prev.address,
-                                city: e.target.value,
-                              },
-                            }))
-                          }
-                          placeholder="Paris"
-                          className="h-10 rounded-lg text-sm w-full"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="client-city"
+                            value={newClientForm.address?.city || ""}
+                            onChange={(e) => {
+                              setNewClientForm((prev) => ({
+                                ...prev,
+                                address: {
+                                  ...prev.address,
+                                  city: e.target.value,
+                                },
+                              }));
+                              // Effacer l'erreur quand l'utilisateur commence à taper
+                              if (formErrors['address.city']) {
+                                setFormErrors(prev => {
+                                  const newErrors = {...prev};
+                                  delete newErrors['address.city'];
+                                  return newErrors;
+                                });
+                              }
+                            }}
+                            placeholder="Paris"
+                            className={`h-10 rounded-lg text-sm w-full ${formErrors['address.city'] ? 'border-red-500' : ''}`}
+                          />
+                          {formErrors['address.city'] && (
+                            <p className="text-xs text-red-500 mt-1">{formErrors['address.city']}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1190,25 +1344,40 @@ export default function ClientSelector({
                               htmlFor="shipping-street"
                               className="text-sm font-medium"
                             >
-                              Rue
+                              Rue <span className="text-red-500">*</span>
                             </Label>
-                            <Input
-                              id="shipping-street"
-                              value={
-                                newClientForm.shippingAddress?.street || ""
-                              }
-                              onChange={(e) =>
-                                setNewClientForm((prev) => ({
-                                  ...prev,
-                                  shippingAddress: {
-                                    ...prev.shippingAddress,
-                                    street: e.target.value,
-                                  },
-                                }))
-                              }
-                              placeholder="123 Rue de la Paix"
-                              className="h-10 rounded-lg text-sm w-full"
-                            />
+                            <div className="relative">
+                              <Input
+                                id="shipping-street"
+                                value={
+                                  newClientForm.shippingAddress?.street || ""
+                                }
+                                onChange={(e) => {
+                                  setNewClientForm((prev) => ({
+                                    ...prev,
+                                    shippingAddress: {
+                                      ...prev.shippingAddress,
+                                      street: e.target.value,
+                                    },
+                                  }));
+                                  // Effacer l'erreur quand l'utilisateur commence à taper
+                                  if (formErrors['shippingAddress.street']) {
+                                    setFormErrors(prev => {
+                                      const newErrors = {...prev};
+                                      delete newErrors['shippingAddress.street'];
+                                      return newErrors;
+                                    });
+                                  }
+                                }}
+                                placeholder="123 Rue de la Paix"
+                                className={`h-10 rounded-lg text-sm w-full ${formErrors['shippingAddress.street'] ? 'border-red-500' : ''}`}
+                              />
+                              {formErrors['shippingAddress.street'] && (
+                                <p className="text-xs text-red-500 mt-1">
+                                  {formErrors['shippingAddress.street']}
+                                </p>
+                              )}
+                            </div>
                           </div>
 
                           {/* Code postal et Ville */}
@@ -1220,49 +1389,79 @@ export default function ClientSelector({
                               >
                                 Code postal
                               </Label>
-                              <Input
-                                id="shipping-postal-code"
-                                value={
-                                  newClientForm.shippingAddress?.postalCode ||
-                                  ""
-                                }
-                                onChange={(e) =>
-                                  setNewClientForm((prev) => ({
-                                    ...prev,
-                                    shippingAddress: {
-                                      ...prev.shippingAddress,
-                                      postalCode: e.target.value,
-                                    },
-                                  }))
-                                }
-                                placeholder="75001"
-                                className="h-10 rounded-lg text-sm w-full"
-                              />
+                              <div className="relative">
+                                <Input
+                                  id="shipping-postal-code"
+                                  value={
+                                    newClientForm.shippingAddress?.postalCode ||
+                                    ""
+                                  }
+                                  onChange={(e) => {
+                                    setNewClientForm((prev) => ({
+                                      ...prev,
+                                      shippingAddress: {
+                                        ...prev.shippingAddress,
+                                        postalCode: e.target.value,
+                                      },
+                                    }));
+                                    // Effacer l'erreur quand l'utilisateur commence à taper
+                                    if (formErrors['shippingAddress.postalCode']) {
+                                      setFormErrors(prev => {
+                                        const newErrors = {...prev};
+                                        delete newErrors['shippingAddress.postalCode'];
+                                        return newErrors;
+                                      });
+                                    }
+                                  }}
+                                  placeholder="75001"
+                                  className={`h-10 rounded-lg text-sm w-full ${formErrors['shippingAddress.postalCode'] ? 'border-red-500' : ''}`}
+                                />
+                                {formErrors['shippingAddress.postalCode'] && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {formErrors['shippingAddress.postalCode']}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                             <div className="space-y-2">
                               <Label
                                 htmlFor="shipping-city"
                                 className="text-sm font-medium"
                               >
-                                Ville
+                                Ville <span className="text-red-500">*</span>
                               </Label>
-                              <Input
-                                id="shipping-city"
-                                value={
-                                  newClientForm.shippingAddress?.city || ""
-                                }
-                                onChange={(e) =>
-                                  setNewClientForm((prev) => ({
-                                    ...prev,
-                                    shippingAddress: {
-                                      ...prev.shippingAddress,
-                                      city: e.target.value,
-                                    },
-                                  }))
-                                }
-                                placeholder="Paris"
-                                className="h-10 rounded-lg text-sm w-full"
-                              />
+                              <div className="relative">
+                                <Input
+                                  id="shipping-city"
+                                  value={
+                                    newClientForm.shippingAddress?.city || ""
+                                  }
+                                  onChange={(e) => {
+                                    setNewClientForm((prev) => ({
+                                      ...prev,
+                                      shippingAddress: {
+                                        ...prev.shippingAddress,
+                                        city: e.target.value,
+                                      },
+                                    }));
+                                    // Effacer l'erreur quand l'utilisateur commence à taper
+                                    if (formErrors['shippingAddress.city']) {
+                                      setFormErrors(prev => {
+                                        const newErrors = {...prev};
+                                        delete newErrors['shippingAddress.city'];
+                                        return newErrors;
+                                      });
+                                    }
+                                  }}
+                                  placeholder="Paris"
+                                  className={`h-10 rounded-lg text-sm w-full ${formErrors['shippingAddress.city'] ? 'border-red-500' : ''}`}
+                                />
+                                {formErrors['shippingAddress.city'] && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {formErrors['shippingAddress.city']}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
 
