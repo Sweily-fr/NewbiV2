@@ -110,149 +110,86 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
                 <Separator />
               </div> */}
 
-              {/* Afficher les coordonnées bancaires */}
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  id="show-bank-details"
-                  checked={data.showBankDetails || false}
-                  onCheckedChange={(checked) => {
-                    setValue("showBankDetails", checked, { shouldDirty: true });
-
-                    // Si on active l'affichage et qu'il n'y a pas encore de données, importer depuis l'utilisateur actuel
-                    if (
-                      checked &&
-                      !data.bankDetails?.iban &&
-                      !data.bankDetails?.bic &&
-                      !data.bankDetails?.bankName
-                    ) {
-                      const sourceData = data.userBankDetails;
-                      if (
-                        sourceData &&
-                        (sourceData.iban ||
-                          sourceData.bic ||
-                          sourceData.bankName)
-                      ) {
-                        console.log(
-                          "🏦 Import automatique des coordonnées bancaires:",
-                          sourceData
-                        );
-                        setValue("bankDetails.iban", sourceData.iban || "", {
-                          shouldDirty: true,
-                        });
-                        setValue("bankDetails.bic", sourceData.bic || "", {
-                          shouldDirty: true,
-                        });
-                        setValue(
-                          "bankDetails.bankName",
-                          sourceData.bankName || "",
-                          { shouldDirty: true }
-                        );
-                      }
-                    }
-                  }}
-                  disabled={!canEdit}
-                />
-                <div className="grid gap-1.5 leading-none">
-                  <Label
-                    htmlFor="show-bank-details"
-                    className="text-sm font-light leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Afficher les coordonnées bancaires
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Cochez pour inclure vos coordonnées bancaires sur la facture
-                  </p>
+              {/* Vérifier si des coordonnées bancaires sont disponibles */}
+              {data.userBankDetails?.iban || data.userBankDetails?.bic || data.userBankDetails?.bankName ? (
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="show-bank-details"
+                    checked={data.showBankDetails || false}
+                    onCheckedChange={(checked) => {
+                      setValue("showBankDetails", checked, { shouldDirty: true });
+                    }}
+                    disabled={!canEdit}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="show-bank-details"
+                      className="text-sm font-light leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Afficher les coordonnées bancaires
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Cochez pour inclure vos coordonnées bancaires sur la facture
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-md">
+                  <p className="mb-2">
+                    Aucune coordonnée bancaire n'est configurée pour votre entreprise.
+                  </p>
+                  <a 
+                    href="/dashboard/parametres/entreprise"
+                    className="text-primary hover:underline font-medium flex items-center gap-1"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Configurer les coordonnées bancaires dans les paramètres
+                  </a>
+                </div>
+              )}
 
-              {/* Coordonnées bancaires - Affichage conditionnel */}
-              {data.showBankDetails && (
+              {/* Afficher les détails bancaires si activé et disponibles */}
+              {data.showBankDetails && (data.userBankDetails?.iban || data.userBankDetails?.bic || data.userBankDetails?.bankName) && (
                 <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                   {/* Nom de la banque */}
                   <div>
-                    <Label htmlFor="bank-name" className="font-light">
+                    <Label className="font-light">
                       Nom de la banque
                     </Label>
-                    <div className="space-y-1">
-                      <Input
-                        id="bank-name"
-                        className={`mt-2 ${errors?.bankDetails?.bankName ? "border-red-500" : ""}`}
-                        {...register("bankDetails.bankName", {
-                          maxLength: {
-                            value: 100,
-                            message:
-                              "Le nom de la banque ne doit pas dépasser 100 caractères",
-                          },
-                        })}
-                        defaultValue={data.bankDetails?.bankName || ""}
-                        placeholder="Ex: Crédit Agricole"
-                        disabled={!canEdit}
-                      />
-                      {errors?.bankDetails?.bankName && (
-                        <p className="text-xs text-red-500">
-                          {errors.bankDetails.bankName.message}
-                        </p>
-                      )}
+                    <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                      <p className="text-sm">
+                        {data.bankDetails?.bankName || "Non spécifié"}
+                      </p>
                     </div>
                   </div>
 
                   {/* IBAN */}
                   <div>
-                    <Label htmlFor="iban" className="font-light">
+                    <Label className="font-light">
                       IBAN
                     </Label>
-                    <div className="space-y-1">
-                      <Input
-                        id="iban"
-                        className={`mt-2 ${errors?.bankDetails?.iban ? "border-red-500" : ""}`}
-                        {...register("bankDetails.iban", {
-                          validate: validateIBAN,
-                          maxLength: {
-                            value: 34,
-                            message:
-                              "L'IBAN ne doit pas dépasser 34 caractères",
-                          },
-                        })}
-                        defaultValue={data.bankDetails?.iban || ""}
-                        placeholder="FR76 1234 5678 9012 3456 7890 123"
-                        disabled={!canEdit}
-                      />
-                      {errors?.bankDetails?.iban && (
-                        <p className="text-xs text-red-500">
-                          {errors.bankDetails.iban.message}
-                        </p>
-                      )}
+                    <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                      <p className="text-sm font-mono">
+                        {data.bankDetails?.iban || "Non spécifié"}
+                      </p>
                     </div>
                   </div>
 
                   {/* BIC/SWIFT */}
                   <div>
-                    <Label htmlFor="bic" className="font-light">
+                    <Label className="font-light">
                       BIC/SWIFT
                     </Label>
-                    <div className="space-y-1">
-                      <Input
-                        id="bic"
-                        className={`mt-2 ${errors?.bankDetails?.bic ? "border-red-500" : ""}`}
-                        {...register("bankDetails.bic", {
-                          validate: validateBIC,
-                          maxLength: {
-                            value: 11,
-                            message:
-                              "Le BIC/SWIFT ne doit pas dépasser 11 caractères",
-                          },
-                        })}
-                        defaultValue={data.bankDetails?.bic || ""}
-                        placeholder="AGRIFRPP123"
-                        disabled={!canEdit}
-                      />
-                      {errors?.bankDetails?.bic && (
-                        <p className="text-xs text-red-500">
-                          {errors.bankDetails.bic.message}
-                        </p>
-                      )}
+                    <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                      <p className="text-sm font-mono">
+                        {data.bankDetails?.bic || "Non spécifié"}
+                      </p>
                     </div>
                   </div>
+
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Les coordonnées bancaires sont gérées dans les paramètres de votre entreprise.
+                  </p>
 
                   {/* Alerte informative */}
                   <Alert>

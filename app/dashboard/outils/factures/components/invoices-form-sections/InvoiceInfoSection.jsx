@@ -497,6 +497,23 @@ export default function InvoiceInfoSection({ canEdit }) {
               )}
             </div>
           </div>
+          {/* Case à cocher pour afficher les coordonnées bancaires */}
+          <div className="flex items-center space-x-3 pt-2">
+            <Switch
+              id="show-bank-details"
+              checked={data.showBankDetails || false}
+              onCheckedChange={(checked) =>
+                setValue("showBankDetails", checked, { shouldDirty: true })
+              }
+              disabled={!canEdit}
+            />
+            <div className="space-y-0.5">
+              <Label htmlFor="show-bank-details" className="text-sm font-light">
+                Afficher les coordonnées bancaires
+              </Label>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label className="text-sm font-light">Date d'échéance</Label>

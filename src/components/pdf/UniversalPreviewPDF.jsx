@@ -249,11 +249,11 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
   });
   return (
     <div
-      className="w-full bg-white shadow-lg relative min-h-[900px] p-6"
+      className="w-full bg-white shadow-lg relative min-h-screen flex flex-col"
       style={{ color: data.appearance?.textColor }}
     >
       {/* CONTENU PRINCIPAL */}
-      <div className="p-6 text-xs">
+      <div className="px-14 pt-10 pb-32 relative flex-grow">
         {/* HEADER */}
         <div className="flex justify-between items-start mb-6">
           {/* Logo à gauche */}
@@ -685,55 +685,80 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
           </div>
         </div>
 
-        {/* NOTES ET CONDITIONS */}
-        {data.footerNotes && (
-          <div className="mb-4 text-xs">
-            <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-              {data.footerNotes}
+        {/* TEXTE D'EXONÉRATION DE TVA */}
+        {data.items && data.items.some(item => (item.vatRate === 0 || item.vatRate === '0') && item.vatExemptionText) && (
+          <div className="mb-4 text-[10px] pt-4">
+            <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
+              {data.items
+                .filter(item => (item.vatRate === 0 || item.vatRate === '0') && item.vatExemptionText)
+                .map((item, index) => (
+                  <div key={`vat-exemption-${index}`} className="mb-2">
+                    {item.vatExemptionText}
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+        
+        {/* CONDITIONS GÉNÉRALES */}
+        {data.termsAndConditions && (
+          <div className="mb-4 text-[10px] pt-4">
+            <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
+              {data.termsAndConditions}
             </div>
           </div>
         )}
       </div>
 
       {/* FOOTER - DÉTAILS BANCAIRES */}
-      <div className="absolute bottom-0 left-0 right-0 bg-[#F3F3F3] pt-8 pb-8 pl-14">
-        <div className="mb-3">
-          <div className="font-medium text-xs mb-2 dark:text-[#0A0A0A]">
-            Détails du paiement
+      <div className="bg-[#F3F3F3] pt-8 pb-8 px-14 w-full">
+        {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai */}
+        {(data.showBankDetails === undefined || data.showBankDetails === true) && (
+          <div className="mb-3">
+            <div className="font-medium text-xs mb-2 dark:text-[#0A0A0A]">
+              Détails du paiement
+            </div>
+            <div className="flex flex-col gap-1 mt-2 text-[10px] dark:text-[#0A0A0A]">
+              <div className="flex">
+                <span className="font-medium w-32">Nom du bénéficiaire</span>
+                <span className="font-normal">
+                  {data.companyInfo?.name || "Sweily"}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="font-medium w-32">Nom de la banque</span>
+                <span className="font-normal">
+                  {data.bankDetails?.bankName || "Sweily"}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="font-medium w-32">BIC</span>
+                <span className="font-normal">
+                  {data.bankDetails?.bic ||
+                    data.bankDetails?.bic ||
+                    ""}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="font-medium w-32">IBAN</span>
+                <span className="font-normal">
+                  {data.bankDetails?.iban ||
+                    data.bankDetails?.iban ||
+                    ""}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col gap-1 mt-2 text-[10px] dark:text-[#0A0A0A]">
-            <div className="flex">
-              <span className="font-medium w-32">Nom du bénéficiaire</span>
-              <span className="font-normal">
-                {data.companyInfo?.name || "Sweily"}
-              </span>
-            </div>
-            <div className="flex">
-              <span className="font-medium w-32">BIC</span>
-              <span className="font-normal">
-                {data.bankDetails?.bic ||
-                  data.companyInfo?.bankDetails?.bic ||
-                  ""}
-              </span>
-            </div>
-            <div className="flex">
-              <span className="font-medium w-32">IBAN</span>
-              <span className="font-normal">
-                {data.bankDetails?.iban ||
-                  data.companyInfo?.bankDetails?.iban ||
-                  ""}
-              </span>
-            </div>
-            <div className="flex">
-              <span className="font-medium w-32">Référence</span>
-              <span className="font-normal">
-                {data.prefix && data.number
-                  ? `${data.prefix}-${data.number}`
-                  : data.number || "F-202507-001"}
-              </span>
+        )}
+
+        {/* NOTES ET CONDITIONS */}
+        {data.footerNotes && (
+          <div className="mt-6 py-4 text-[10px]">
+            <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
+              {data.footerNotes}
             </div>
           </div>
-        </div>
+        )}
 
         <div className="text-[10px] dark:text-[#0A0A0A] border-t pt-2">
           <div>
