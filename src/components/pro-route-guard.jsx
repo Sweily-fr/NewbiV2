@@ -9,10 +9,10 @@ export function ProRouteGuard({ children, pageName }) {
   const { isActive, loading } = useSubscription();
   const router = useRouter();
 
-  // Rediriger vers /dashboard/outils avec le paramètre pricing=true si pas d'accès
+  // Rediriger vers /dashboard/outils si pas d'accès
   useEffect(() => {
     if (!loading && !isActive()) {
-      router.replace("/dashboard/outils?pricing=true");
+      router.replace("/dashboard/outils");
     }
   }, [loading, isActive, router]);
 

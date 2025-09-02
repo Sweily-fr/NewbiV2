@@ -11,17 +11,19 @@ import { InputLoader } from "@/src/components/ui/input";
 import PricingModal from "@/src/components/pricing-modal";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useSubscription } from "@/src/contexts/subscription-context";
 
 export default function Outils() {
   const searchParams = useSearchParams();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const { isActive } = useSubscription();
 
-  // Ouvrir le modal de pricing si le paramètre pricing=true est présent
+  // Ouvrir le modal de pricing si le paramètre pricing=true est présent ET que l'utilisateur n'a pas d'abonnement actif
   useEffect(() => {
-    if (searchParams.get("pricing") === "true") {
+    if (searchParams.get("pricing") === "true" && !isActive()) {
       setIsPricingModalOpen(true);
     }
-  }, [searchParams]);
+  }, [searchParams, isActive]);
   return (
     <div className="flex flex-col p-6 md:py-6">
       {/* <h1 className="text-2xl font-semibold mb-6">Outils</h1> */}
