@@ -328,32 +328,9 @@ export default function InvoiceSidebar({
         </div>
 
         {/* Action Buttons */}
-        <div className="border-t pl-6 pr-6 pt-4 pb-4">
+        <div className="border-t pl-6 pr-6 pt-4 pb-4 space-y-3">
           {/* Primary Actions */}
           <div className="flex gap-2">
-            {/* <Button
-              variant="outline"
-              onClick={() => setIsPreviewOpen(true)}
-              className="flex-1 font-normal"
-            >
-              Voir
-            </Button> */}
-
-            {/* Bouton PDF avec UniversalPDFGenerator - masqué pour les brouillons */}
-            {/* {invoice.status !== INVOICE_STATUS.DRAFT && (
-              <UniversalPDFGenerator data={invoice} type="invoice">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 font-normal"
-                  title="Télécharger en PDF"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  PDF
-                </Button>
-              </UniversalPDFGenerator>
-            )} */}
-
             {invoice.status === INVOICE_STATUS.DRAFT && (
               <Button
                 variant="outline"
@@ -380,11 +357,11 @@ export default function InvoiceSidebar({
           )}
 
           {invoice.status === INVOICE_STATUS.PENDING && (
-            <div className="flex space-x-2">
+            <div className="flex flex-col gap-2">
               <Button
                 onClick={handleMarkAsPaid}
                 disabled={isLoading}
-                className="flex-1 font-normal"
+                className="w-full font-normal"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Marquer comme payée
@@ -393,7 +370,7 @@ export default function InvoiceSidebar({
                 variant="destructive"
                 onClick={handleCancel}
                 disabled={isLoading}
-                className="flex-1 font-normal"
+                className="w-full font-normal"
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Annuler la facture
