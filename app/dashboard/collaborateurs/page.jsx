@@ -10,8 +10,9 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function Collaborateurs() {
+function CollaborateursContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -92,5 +93,13 @@ export default function Collaborateurs() {
         onInvitationSent={handleInvitationSent}
       />
     </div>
+  );
+}
+
+export default function Collaborateurs() {
+  return (
+    <ProRouteGuard pageName="Collaborateurs">
+      <CollaborateursContent />
+    </ProRouteGuard>
   );
 }

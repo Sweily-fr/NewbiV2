@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { ChevronsUpDown, Plus } from "lucide-react";
+import { ChevronsUpDown, Plus, Crown } from "lucide-react";
 import { IconBuilding } from "@tabler/icons-react";
 import { authClient } from "@/src/lib/auth-client";
+import { useSubscription } from "@/src/contexts/subscription-context";
+import { Badge } from "@/src/components/ui/badge";
 import Link from "next/link";
 
 import {
@@ -24,6 +26,7 @@ import {
 
 export function TeamSwitcher() {
   const { isMobile } = useSidebar();
+  const { isActive } = useSubscription();
 
   // Utiliser les hooks Better Auth pour récupérer les organisations
   const { data: organizations, isPending: organizationsLoading } =
@@ -105,8 +108,19 @@ export function TeamSwitcher() {
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}
           >
-            <DropdownMenuLabel className="text-muted-foreground text-xs">
-              Organisations
+            <DropdownMenuLabel className="text-muted-foreground text-xs flex items-center justify-between">
+              <span>Organisations</span>
+              <Badge
+                variant="outline"
+                className={`text-xs px-2 py-0.5 ${
+                  isActive()
+                    ? "bg-[#5b4fff]/10 text-[#5b4fff] border-[#5b4fff]/20"
+                    : "bg-gray-50 text-gray-600 border-gray-200"
+                }`}
+              >
+                <Crown className="w-3 h-3 mr-1" />
+                {isActive() ? "Pro" : "Free"}
+              </Badge>
             </DropdownMenuLabel>
             {organizations.map((org, index) => (
               <DropdownMenuItem
@@ -126,7 +140,7 @@ export function TeamSwitcher() {
                   )}
                 </div>
                 {activeOrganization?.id === org.id && (
-                  <div className="ml-auto h-2 w-2 rounded-full bg-green-500" />
+                  <div className="ml-auto h-2 w-2 rounded-full bg-[#5b4fff]/80" />
                 )}
                 <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
               </DropdownMenuItem>

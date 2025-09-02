@@ -2,9 +2,15 @@ import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { mongoDb } from "./mongodb";
 import { resend } from "./resend";
-import { admin, organization, phoneNumber, twoFactor } from "better-auth/plugins";
+import {
+  admin,
+  organization,
+  phoneNumber,
+  twoFactor,
+} from "better-auth/plugins";
 import { stripe } from "@better-auth/stripe";
 import { createAuthMiddleware } from "better-auth/api";
+import { authClient } from "./auth-client";
 import Stripe from "stripe";
 // import { bearer } from "better-auth/plugins";
 
@@ -22,9 +28,6 @@ export const auth = betterAuth({
 
         // Pour le développement, on simule l'envoi
         // En production, vous devrez intégrer un service SMS comme Twilio, AWS SNS, etc.
-
-        // Simulation d'un délai d'envoi
-        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // En développement, afficher le code dans les logs
         if (process.env.NODE_ENV === "development") {
@@ -49,24 +52,35 @@ export const auth = betterAuth({
     twoFactor({
       otpOptions: {
         async sendOTP({ user, otp, type }, request) {
-          console.log(`[2FA PLUGIN] ========== FONCTION SENDOTP APPELÉE ==========`);
-          console.log(`[2FA] Envoi du code ${otp} vers ${user.email} (type: ${type})`);
+          console.log(
+            `[2FA PLUGIN] ========== FONCTION SENDOTP APPELÉE ==========`
+          );
+          console.log(
+            `[2FA] Envoi du code ${otp} vers ${user.email} (type: ${type})`
+          );
           console.log(`🔐 CODE DE VÉRIFICATION 2FA: ${otp}`);
-          console.log(`[DEBUG] Type reçu: "${type}" | User phoneNumber: "${user.phoneNumber}"`);
-          
+          console.log(
+            `[DEBUG] Type reçu: "${type}" | User phoneNumber: "${user.phoneNumber}"`
+          );
+
           // Better Auth ne passe pas automatiquement type="sms"
           // Il faut détecter manuellement si l'utilisateur a un phoneNumber
-          const shouldUseSMS = user.phoneNumber && user.phoneNumber.trim() !== "";
-          
+          const shouldUseSMS =
+            user.phoneNumber && user.phoneNumber.trim() !== "";
+
           if (shouldUseSMS) {
             // Envoi par SMS
-            console.log(`[2FA SMS] Code de vérification pour ${user.phoneNumber}: ${otp}`);
-            
+            console.log(
+              `[2FA SMS] Code de vérification pour ${user.phoneNumber}: ${otp}`
+            );
+
             // En développement, afficher le code dans les logs
             if (process.env.NODE_ENV === "development") {
-              console.log(`[2FA SMS DEV] Code de vérification pour ${user.phoneNumber}: ${otp}`);
+              console.log(
+                `[2FA SMS DEV] Code de vérification pour ${user.phoneNumber}: ${otp}`
+              );
             }
-            
+
             // TODO: Intégrer un vrai service SMS en production
             // Exemple avec Twilio:
             // const twilio = require('twilio');
@@ -126,13 +140,15 @@ export const auth = betterAuth({
                 `,
                 from: "Newbi <noreply@newbi.sweily.fr>",
               });
-              console.log(`[2FA EMAIL] Code envoyé avec succès à ${user.email}`);
+              console.log(
+                `[2FA EMAIL] Code envoyé avec succès à ${user.email}`
+              );
             } catch (error) {
               console.error(`[2FA EMAIL] Erreur lors de l'envoi:`, error);
               throw error;
             }
           }
-          
+
           return { success: true };
         },
       },
@@ -153,54 +169,63 @@ export const auth = betterAuth({
             `[STRIPE] Autorisation pour ${action} sur org ${referenceId} par user ${user.id}`
           );
 
-          // Vérifier les permissions pour les actions d'abonnement
+          // Vérification des permissions selon la documentation Better Auth
+          console.log(`[STRIPE] Début de la vérification d'autorisation`);
+          console.log(`[STRIPE] User ID: ${user.id}`);
+          console.log(`[STRIPE] Reference ID (org): ${referenceId}`);
+          console.log(`[STRIPE] Action: ${action}`);
+
+          // Vérifier si l'utilisateur a les permissions pour gérer les abonnements
           if (
             action === "upgrade-subscription" ||
             action === "cancel-subscription" ||
             action === "restore-subscription"
           ) {
-            try {
-              // Utiliser l'API Better Auth pour lister les membres
-              const authContext = request.context;
-              const { data: members, error } =
-                await authContext.internalAdapter.listMembers({
-                  organizationId: referenceId,
-                  limit: 100,
+            // Utiliser l'adapter Better Auth pour accéder aux données
+            const adapter = auth.options.database;
+
+            if (adapter && typeof adapter.findFirst === "function") {
+              try {
+                const member = await adapter.findFirst({
+                  model: "member",
+                  where: {
+                    organizationId: referenceId,
+                    userId: user.id,
+                  },
                 });
 
-              if (error) {
+                console.log(`[STRIPE] Membre trouvé:`, member);
+                const isOwner = member?.role === "owner";
+                console.log(`[STRIPE] Est owner: ${isOwner}`);
+
+                return isOwner;
+              } catch (error) {
                 console.error(
-                  `[STRIPE] Erreur lors de la récupération des membres:`,
+                  `[STRIPE] Erreur lors de la vérification du membre:`,
                   error
                 );
                 return false;
               }
-
-              // Trouver le membre correspondant à l'utilisateur
-              const member = members?.find((m) => m.userId === user.id);
-              const isAuthorized = member?.role === "owner";
-
-              console.log(
-                `[STRIPE] Autorisation: ${isAuthorized} (role: ${member?.role})`
-              );
-              return isAuthorized;
-            } catch (error) {
-              console.error(
-                `[STRIPE] Erreur lors de la vérification des membres:`,
-                error
-              );
-              return false;
             }
+
+            // Fallback: autoriser temporairement si l'adapter ne fonctionne pas
+            console.log(
+              `[STRIPE] Adapter non disponible - autorisation temporaire`
+            );
+            return true;
           }
 
           return true;
         },
         plans: [
           {
+            name: "free",
+            priceId: process.env.STRIPE_FREE_PRICE_ID,
+          },
+          {
             name: "pro",
-            priceId: process.env.STRIPE_PRICE_ID || "price_1234567890", // Prix mensuel 14.99€
-            annualDiscountPriceId:
-              process.env.STRIPE_ANNUAL_PRICE_ID || "price_annual_123", // Prix annuel avec réduction
+            priceId: process.env.STRIPE_PRICE_ID,
+            // annualDiscountPriceId: process.env.STRIPE_ANNUAL_PRICE_ID, // Optionnel - commenté car pas configuré
             limits: {
               projects: 100,
               storage: 100,
@@ -211,6 +236,131 @@ export const auth = betterAuth({
             },
           },
         ],
+      },
+      // Webhooks Stripe pour mettre à jour automatiquement le statut
+      onEvent: async (event, adapter) => {
+        console.log(`[STRIPE WEBHOOK] Événement reçu: ${event.type}`);
+
+        switch (event.type) {
+          case "checkout.session.completed":
+            console.log(
+              `[STRIPE WEBHOOK] Checkout complété:`,
+              event.data.object
+            );
+            console.log(
+              `[STRIPE WEBHOOK] Métadonnées session:`,
+              event.data.object.metadata
+            );
+            const session = event.data.object;
+
+            if (session.subscription && session.metadata?.referenceId) {
+              try {
+                // Récupérer les détails de l'abonnement depuis Stripe
+                const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+                const subscription = await stripe.subscriptions.retrieve(
+                  session.subscription
+                );
+
+                console.log(
+                  `[STRIPE WEBHOOK] Création abonnement pour org: ${session.metadata.referenceId}`
+                );
+
+                // Créer l'abonnement dans Better Auth
+                await adapter.create({
+                  model: "subscription",
+                  data: {
+                    id: subscription.id,
+                    referenceId: session.metadata.referenceId,
+                    status: subscription.status,
+                    planName: "pro", // ou récupérer depuis les métadonnées
+                    stripeSubscriptionId: subscription.id,
+                    stripeCustomerId: subscription.customer,
+                    currentPeriodStart: new Date(
+                      subscription.current_period_start * 1000
+                    ),
+                    currentPeriodEnd: new Date(
+                      subscription.current_period_end * 1000
+                    ),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  },
+                });
+
+                console.log(`[STRIPE WEBHOOK] Abonnement créé avec succès`);
+              } catch (error) {
+                console.error(
+                  `[STRIPE WEBHOOK] Erreur création abonnement:`,
+                  error
+                );
+              }
+            }
+            break;
+
+          case "customer.subscription.updated":
+            console.log(
+              `[STRIPE WEBHOOK] Abonnement mis à jour:`,
+              event.data.object
+            );
+            const updatedSub = event.data.object;
+
+            try {
+              await adapter.update({
+                model: "subscription",
+                where: { stripeSubscriptionId: updatedSub.id },
+                data: {
+                  status: updatedSub.status,
+                  currentPeriodStart: new Date(
+                    updatedSub.current_period_start * 1000
+                  ),
+                  currentPeriodEnd: new Date(
+                    updatedSub.current_period_end * 1000
+                  ),
+                  updatedAt: new Date(),
+                },
+              });
+              console.log(`[STRIPE WEBHOOK] Abonnement mis à jour avec succès`);
+            } catch (error) {
+              console.error(
+                `[STRIPE WEBHOOK] Erreur mise à jour abonnement:`,
+                error
+              );
+            }
+            break;
+
+          case "customer.subscription.deleted":
+            console.log(
+              `[STRIPE WEBHOOK] Abonnement annulé:`,
+              event.data.object
+            );
+            const deletedSub = event.data.object;
+
+            try {
+              await adapter.update({
+                model: "subscription",
+                where: { stripeSubscriptionId: deletedSub.id },
+                data: {
+                  status: "canceled",
+                  updatedAt: new Date(),
+                },
+              });
+              console.log(`[STRIPE WEBHOOK] Abonnement annulé avec succès`);
+            } catch (error) {
+              console.error(
+                `[STRIPE WEBHOOK] Erreur annulation abonnement:`,
+                error
+              );
+            }
+            break;
+
+          case "invoice.paid":
+            console.log(`[STRIPE WEBHOOK] Facture payée:`, event.data.object);
+            break;
+          case "payment_intent.succeeded":
+            console.log(`[STRIPE WEBHOOK] Paiement réussi:`, event.data.object);
+            break;
+          default:
+            console.log(`[STRIPE WEBHOOK] Événement non géré: ${event.type}`);
+        }
       },
     }),
     organization({

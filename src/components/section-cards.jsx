@@ -155,7 +155,7 @@ export function SectionCards({ className }) {
                   </div>
 
                   <div className="space-y-3">
-                    <CardTitle className="text-regular">{card.title}</CardTitle>
+                    <CardTitle className="font-normal">{card.title}</CardTitle>
                     <CardDescription className="text-xs">
                       {card.subtitle}
                     </CardDescription>

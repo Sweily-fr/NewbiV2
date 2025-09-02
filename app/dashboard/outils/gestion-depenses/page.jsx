@@ -4,9 +4,10 @@ import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
 import TransactionTable from "./components/table";
 import { useState } from "react";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 // Financial stats hook removed
 
-export default function GestionDepenses() {
+function GestionDepensesContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Récupération des statistiques financières réelles
@@ -108,5 +109,13 @@ export default function GestionDepenses() {
         <TransactionTable />
       </div>
     </div>
+  );
+}
+
+export default function GestionDepenses() {
+  return (
+    <ProRouteGuard pageName="Gestion des dépenses">
+      <GestionDepensesContent />
+    </ProRouteGuard>
   );
 }

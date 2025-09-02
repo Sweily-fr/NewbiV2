@@ -8,17 +8,29 @@ import {
 } from "@/src/components/ui/tabs";
 import { Badge } from "@/src/components/ui/badge";
 import { InputLoader } from "@/src/components/ui/input";
+import PricingModal from "@/src/components/pricing-modal";
+import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function Outils() {
+  const searchParams = useSearchParams();
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+
+  // Ouvrir le modal de pricing si le paramètre pricing=true est présent
+  useEffect(() => {
+    if (searchParams.get("pricing") === "true") {
+      setIsPricingModalOpen(true);
+    }
+  }, [searchParams]);
   return (
     <div className="flex flex-col p-6 md:py-6">
       {/* <h1 className="text-2xl font-semibold mb-6">Outils</h1> */}
-      <h1 className="text-xl font-medium mb-2">Outils</h1>
+      <h1 className="text-2xl font-medium mb-2">Outils</h1>
       {/* <p className="text-muted-foreground text-sm">
         Gérez efficacement vos outils en un seul endroit.
       </p> */}
       <div className="flex flex-col gap-6 pt-8 w-full">
-        <div className="flex items-center justify-between gap-4 w-full">
+        {/* <div className="flex items-center justify-between gap-4 w-full">
           <Tabs
             defaultValue="outline"
             className="flex-1 flex-col justify-start gap-6"
@@ -36,15 +48,13 @@ export default function Outils() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          {/* <div className="flex-shrink-0">
-            <InputLoader
-              placeholder="Rechercher des outils"
-              className="w-[300px]"
-            />
-          </div> */}
-        </div>
+        </div> */}
         <SectionCards />
       </div>
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+      />
     </div>
   );
 }

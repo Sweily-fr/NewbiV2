@@ -14,6 +14,9 @@ import {
   IconFileUpload,
   IconCreditCard,
 } from "@tabler/icons-react";
+import { useSubscription } from "@/src/contexts/subscription-context";
+import { Crown } from "lucide-react";
+import { cn } from "@/src/lib/utils";
 
 import {
   DropdownMenu,
@@ -35,8 +38,12 @@ import Link from "next/link";
 
 export function NavDocuments({ items }) {
   const { isMobile } = useSidebar();
+  const { isActive } = useSubscription();
   // Initialiser avec seulement Factures par défaut
   const [pinnedApps, setPinnedApps] = useState(items || []);
+
+  // Outils qui nécessitent un abonnement Pro
+  const proTools = ["Factures", "Devis", "Transferts de fichiers", "Dépenses"];
 
   // Available tools that can be pinned
   const availableTools = [
@@ -44,31 +51,37 @@ export function NavDocuments({ items }) {
       name: "Factures",
       url: "/dashboard/outils/factures",
       icon: IconReceipt,
+      isPro: true,
     },
     {
       name: "Devis",
       url: "/dashboard/outils/devis",
       icon: IconFileText,
+      isPro: true,
     },
     {
       name: "Kanban",
       url: "/dashboard/outils/kanban",
       icon: IconLayoutKanban,
+      isPro: false,
     },
     {
       name: "Signatures de mail",
       url: "/dashboard/outils/signatures-mail",
       icon: IconMail,
+      isPro: false,
     },
     {
       name: "Transferts de fichiers",
       url: "/dashboard/outils/transferts-fichiers",
       icon: IconFileUpload,
+      isPro: true,
     },
     {
       name: "Dépenses",
       url: "/dashboard/outils/gestion-depenses",
       icon: IconCreditCard,
+      isPro: true,
     },
   ];
 
@@ -93,13 +106,34 @@ export function NavDocuments({ items }) {
         Mes apps
       </SidebarGroupLabel>
       <SidebarMenu>
-        {pinnedApps.map((item) => (
+        {pinnedApps.map((item) => {
+          const isProTool = item.isPro || proTools.includes(item.name);
+          const hasAccess = !isProTool || isActive();
+          
+          return (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <Link href={item.url}>
-                <item.icon />
-                <span className="font-polysans font-light">{item.name}</span>
-              </Link>
+            <SidebarMenuButton 
+              asChild={hasAccess}
+              className={cn(
+                "relative",
+                !hasAccess && "opacity-60 cursor-not-allowed"
+              )}
+              disabled={!hasAccess}
+            >
+              {hasAccess ? (
+                <Link href={item.url}>
+                  <item.icon />
+                  <span className="font-polysans font-light">{item.name}</span>
+                </Link>
+              ) : (
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <item.icon className="size-4" />
+                    <span className="font-polysans font-light">{item.name}</span>
+                  </div>
+                  <Crown className="w-3 h-3 text-[#5b4fff]" />
+                </div>
+              )}
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -133,7 +167,8 @@ export function NavDocuments({ items }) {
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
-        ))}
+          );
+        })}
         {pinnedApps.length < 3 && availableToPin.length > 0 && (
           <SidebarMenuItem>
             <DropdownMenu>
@@ -150,17 +185,28 @@ export function NavDocuments({ items }) {
                 side={isMobile ? "bottom" : "right"}
                 align={isMobile ? "end" : "start"}
               >
-                {availableToPin.map((tool) => (
-                  <DropdownMenuItem
-                    key={tool.name}
-                    onClick={() => handlePinApp(tool)}
-                  >
-                    <tool.icon className="size-4" />
-                    <span className="font-polysans font-light">
-                      {tool.name}
-                    </span>
-                  </DropdownMenuItem>
-                ))}
+                {availableToPin.map((tool) => {
+                  const hasAccess = !tool.isPro || isActive();
+                  
+                  return (
+                    <DropdownMenuItem
+                      key={tool.name}
+                      onClick={hasAccess ? () => handlePinApp(tool) : undefined}
+                      className={cn(
+                        "cursor-pointer",
+                        !hasAccess && "opacity-60 cursor-not-allowed"
+                      )}
+                    >
+                      <tool.icon className="size-4" />
+                      <span className="font-polysans font-light">
+                        {tool.name}
+                      </span>
+                      {!hasAccess && (
+                        <Crown className="w-3 h-3 ml-auto text-[#5b4fff]" />
+                      )}
+                    </DropdownMenuItem>
+                  );
+                })}
                 {pinnedApps.length >= 3 && (
                   <DropdownMenuItem disabled>
                     <span className="text-xs text-muted-foreground">

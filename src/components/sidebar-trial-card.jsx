@@ -5,18 +5,14 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { ClockIcon, CrownIcon, XIcon, ArrowRightIcon } from "lucide-react";
-import { useSubscription } from "@/src/hooks/useSubscription";
+import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSession } from "@/src/lib/auth-client";
 import { useRouter } from "next/navigation";
 import PricingModal from "@/src/components/pricing-modal";
 
 export function SidebarTrialCard() {
-  const {
-    isInTrial,
-    isTrialExpired,
-    trialDaysRemaining,
-    hasActiveSubscription,
-    loading,
-  } = useSubscription();
+  const { subscription, loading, isActive } = useSubscription();
+  const { data: session } = useSession();
 
   const [dismissed, setDismissed] = useState(false);
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
@@ -26,13 +22,33 @@ export function SidebarTrialCard() {
     setIsPricingModalOpen(true);
   };
 
+  // Calculer les informations d'essai
+  const getTrialInfo = () => {
+    if (!session?.user)
+      return { isInTrial: false, isTrialExpired: false, trialDaysRemaining: 0, isFreeMode: false };
+
+    const createdAt = new Date(session.user.createdAt);
+    const now = new Date();
+    const daysSinceCreation = (now - createdAt) / (1000 * 60 * 60 * 24);
+    const trialDaysRemaining = Math.max(0, Math.ceil(14 - daysSinceCreation));
+
+    const isInTrial = daysSinceCreation <= 14 && !isActive();
+    const isTrialExpired = daysSinceCreation > 14 && !isActive();
+    // Mode gratuit : utilisateur sans abonnement actif (peu importe la période d'essai)
+    const isFreeMode = !isActive();
+
+    return { isInTrial, isTrialExpired, trialDaysRemaining, isFreeMode };
+  };
+
+  const { isInTrial, isTrialExpired, trialDaysRemaining, isFreeMode } = getTrialInfo();
+
   // Reset dismissed state when trial status changes
   useEffect(() => {
     setDismissed(false);
-  }, [isInTrial, isTrialExpired, hasActiveSubscription]);
+  }, [isInTrial, isTrialExpired, isActive()]);
 
   // Ne pas afficher si loading, dismissed, ou si l'utilisateur a un abonnement actif
-  if (loading || dismissed || hasActiveSubscription) {
+  if (loading || dismissed || isActive()) {
     return null;
   }
 
@@ -139,8 +155,11 @@ export function SidebarTrialCard() {
     );
   }
 
-  // Essai normal (plus de 3 jours)
-  if (isInTrial && trialDaysRemaining > 3) {
+  // Afficher la card pour les utilisateurs en mode gratuit (essai expiré ou jamais eu d'essai)
+  if (isFreeMode) {
+    // Déterminer si c'est un utilisateur qui n'a jamais eu d'essai ou dont l'essai a expiré
+    const showFreeContent = !isInTrial || isTrialExpired;
+    
     return (
       <>
         <Card className="mb-2 bg-transparent shadow-xs py-3 rounded-md">
@@ -154,21 +173,13 @@ export function SidebarTrialCard() {
               {/* Contenu aligné à droite */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold dark:text-white   text-[12px] text-gray-900">
-                    Continuez à utiliser Newbi
+                  <h3 className="font-semibold dark:text-white text-[12px] text-gray-900">
+                    Débloquez toutes les fonctionnalités
                   </h3>
-                  {/*  <Button
-                    variant="ghost"
-                    size="sm"
-                  className="h-5 w-5 p-0 -mt-1 -mr-1"
-                    onClick={() => setDismissed(true)}
-                  >
-                    <XIcon className="h-3 w-3" />
-                  </Button> */}
                 </div>
 
                 <p className="text-[12px] text-gray-600 dark:text-white/80 mb-2">
-                  La période d’essai de cet espace de travail est déjà terminée
+                  Vous êtes actuellement en mode gratuit avec des fonctionnalités limitées
                 </p>
 
                 <div
@@ -176,8 +187,7 @@ export function SidebarTrialCard() {
                   onClick={openPricingModal}
                 >
                   <span>
-                    Passer à un forfait
-                    <br /> supérieur
+                    Passer au premium
                   </span>
                   <ArrowRightIcon className="w-4 h-4 self-center stroke-[2]" />
                 </div>

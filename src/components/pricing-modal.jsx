@@ -21,14 +21,14 @@ export function PricingModal({ isOpen, onClose }) {
     setIsLoading(true);
     try {
       const { data: sessionData } = await authClient.getSession();
-      
+
       if (!sessionData?.session?.activeOrganizationId) {
         toast.error("Aucune organisation active trouvée");
         return;
       }
 
       const activeOrgId = sessionData.session.activeOrganizationId;
-      
+
       const upgradeParams = {
         plan: plan,
         referenceId: activeOrgId,
@@ -37,7 +37,61 @@ export function PricingModal({ isOpen, onClose }) {
         disableRedirect: false,
       };
 
-      const { data, error } = await authClient.subscription.upgrade(upgradeParams);
+      console.log(upgradeParams, "plan");
+      const { data, error } =
+        await authClient.subscription.upgrade(upgradeParams);
+
+      // Vérifier l'abonnement après upgrade
+      if (!error && data) {
+        console.log("=== VERIFICATION ABONNEMENT ===");
+
+        // Attendre un peu pour laisser le temps aux webhooks
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        const { data: subscriptions } = await authClient.subscription.list({
+          referenceId: activeOrgId,
+        });
+        console.log("Tous les abonnements:", subscriptions);
+
+        // Si aucun abonnement trouvé, essayer de synchroniser manuellement
+        if (!subscriptions || subscriptions.length === 0) {
+          console.log(
+            "Aucun abonnement trouvé, tentative de synchronisation manuelle..."
+          );
+
+          try {
+            // Appeler une API pour synchroniser l'abonnement depuis Stripe
+            const syncResponse = await fetch("/api/auth/subscription/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ referenceId: activeOrgId }),
+            });
+
+            if (syncResponse.ok) {
+              console.log("Synchronisation manuelle réussie");
+              // Rafraîchir les abonnements
+              const { data: updatedSubscriptions } =
+                await authClient.subscription.list({
+                  referenceId: activeOrgId,
+                });
+              console.log("Abonnements après sync:", updatedSubscriptions);
+            }
+          } catch (syncError) {
+            console.error("Erreur synchronisation manuelle:", syncError);
+          }
+        }
+
+        const activeSubscription = subscriptions?.find(
+          (sub) => sub.status === "active" || sub.status === "trialing"
+        );
+        console.log("Abonnement actif:", activeSubscription);
+
+        if (activeSubscription) {
+          console.log("STATUT:", activeSubscription.status);
+          console.log("PLAN:", activeSubscription.planName);
+          console.log("LIMITES:", activeSubscription.limits);
+        }
+      }
 
       if (error) {
         toast.error(`Erreur: ${error.message || "Erreur inconnue"}`);
@@ -46,7 +100,6 @@ export function PricingModal({ isOpen, onClose }) {
           window.location.href = data.url;
         }
       }
-
     } catch (error) {
       toast.error(`Exception: ${error.message || "Erreur inconnue"}`);
     } finally {
@@ -59,92 +112,76 @@ export function PricingModal({ isOpen, onClose }) {
       name: "Gratuit",
       price: "0 € par membre et par mois",
       features: [
-        "Formulaires de base",
-        "Sites de base", 
-        "Automatisations de base",
-        "Bases de données personnalisées",
-        "Notion Calendar",
-        "Notion Mail"
-      ]
+        "Kanban",
+        "Signature d’e‑mail",
+        "Newbi Calendar",
+        "Accès communauté ",
+      ],
     },
     {
-      name: "Plus",
-      price: "9,50 € par membre et par mois facturation annuelle",
-      monthlyPrice: "11,50 € facturation mensuelle",
+      name: "Pro",
+      price: "13,99 € par mois facturation annuelle",
+      monthlyPrice: "14,99 € facturation mensuelle",
       features: [
-        "Blocs illimités",
-        "Graphiques illimités",
-        "Formulaires personnalisés",
-        "Sites personnalisés",
-        "Intégrations de base"
-      ]
+        "Facturation complète (devis → factures, TVA, relances)",
+        "Devis",
+        "Connexion comptes bancaires",
+        "Gestion de trésorerie",
+        "OCR des reçus et factures",
+        "Transfert de fichiers sécurisé",
+        "Gestion client",
+        "Catalogue produits et services",
+      ],
     },
-    {
-      name: "Business",
-      price: "19,50 € par membre et par mois facturation annuelle",
-      monthlyPrice: "23,50 € facturation mensuelle",
-      popular: true,
-      features: [
-        "IA de Notion incluse",
-        "SSO SAML",
-        "Vérifier n'importe quelle page",
-        "Recherche Enterprise",
-        "Intégrations Premium"
-      ]
-    },
-    {
-      name: "Enterprise",
-      price: "25,50 € par membre et par mois facturation annuelle",
-      monthlyPrice: "31,50 € facturation mensuelle",
-      features: [
-        "IA de Notion incluse",
-        "Provisionnement des utilisateurs",
-        "Journal d'audit",
-        "Contrôles et sécurité avancés",
-        "Recherche Enterprise"
-      ]
-    }
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-6xl bg-gray-900 text-white border-gray-700">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="text-xl font-medium text-white">
+      <DialogContent className="sm:max-w-4xl dark:bg-[#171717]">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-medium">
             Forfait actif
           </DialogTitle>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">€</span>
-            <span className="text-sm text-gray-400">EUR</span>
-          </div>
         </DialogHeader>
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Section Forfait actif */}
-          <div className="bg-gray-800 rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-semibold mb-2">Gratuit</h3>
-                <p className="text-gray-300 mb-1">
-                  Pour organiser tous les aspects de votre vie —
+          <div className="border border-gray-200 dark:bg-[#252525] dark:border-[#313131]/90 rounded-lg p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-semibold">Gratuit</h3>
+                  <Badge
+                    variant="outline"
+                    className="text-xs border-[#5b50fe] text-[#5b50fe]"
+                  >
+                    Actuel
+                  </Badge>
+                </div>
+                <p className="text-sm dark:text-gray-300 mb-3">
+                  Pour organiser tous les aspects de votre vie personnelle et
+                  professionnelle
                 </p>
-                <p className="text-gray-300 mb-4">personnelle et professionnelle</p>
-                <p className="text-sm text-gray-500">
-                  Vous avez utilisé tous les blocs gratuits de cet espace de travail
+                <p className="text-xs text-gray-500">
+                  L’essentiel pour démarrer
                 </p>
               </div>
-              <div className="text-right">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-                    <span className="text-sm">IA</span>
-                  </div>
-                  <span className="text-sm">IA de Notion</span>
-                </div>
-                <p className="text-sm text-gray-400 mb-4">
-                  Passez à un forfait supérieur pour rechercher n'importe où, automatiser les notes de réunion et plus encore
+              <div className="text-right flex-shrink-0">
+                <p className="text-xs text-gray-400 mb-3 max-w-sm">
+                  Passez à un forfait supérieur pour débloquer plus de
+                  fonctionnalités
                 </p>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Passer à un forfait supérieur
+                <Button
+                  size="sm"
+                  className="bg-[#5b50fe] hover:bg-[#5b50fe] cursor-pointer text-white"
+                  onClick={() => handleUpgrade("pro")}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  ) : (
+                    "Passer à Pro"
+                  )}
                 </Button>
               </div>
             </div>
@@ -152,30 +189,35 @@ export function PricingModal({ isOpen, onClose }) {
 
           {/* Section Tous les forfaits */}
           <div>
-            <h2 className="text-xl font-medium mb-6">Tous les forfaits</h2>
-            
-            <div className="grid grid-cols-4 gap-6">
+            <h2 className="text-lg font-medium mb-4">Tous les forfaits</h2>
+
+            {/* <div className="grid grid-cols-4 gap-6">
               {plans.map((plan, index) => (
-                <div key={index} className="bg-gray-800 rounded-lg p-6 relative">
+                <div
+                  key={index}
+                  className="bg-gray-400 rounded-lg p-6 relative"
+                >
                   {plan.popular && (
                     <Badge className="absolute -top-2 left-4 bg-blue-600 text-white">
                       Populaire
                     </Badge>
                   )}
-                  
+
                   <h3 className="text-xl font-semibold mb-4">{plan.name}</h3>
-                  
+
                   <div className="mb-4">
                     <p className="text-sm text-gray-300 mb-1">{plan.price}</p>
                     {plan.monthlyPrice && (
-                      <p className="text-sm text-gray-500">{plan.monthlyPrice}</p>
+                      <p className="text-sm text-gray-500">
+                        {plan.monthlyPrice}
+                      </p>
                     )}
                   </div>
 
-                  <Button 
+                  <Button
                     className={`w-full mb-6 ${
-                      plan.popular 
-                        ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                      plan.popular
+                        ? "bg-blue-600 hover:bg-blue-700 text-white"
                         : "bg-gray-700 hover:bg-gray-600 text-white"
                     }`}
                     onClick={() => handleUpgrade(plan.name.toLowerCase())}
@@ -189,76 +231,73 @@ export function PricingModal({ isOpen, onClose }) {
                   </Button>
                 </div>
               ))}
-            </div>
+            </div> */}
           </div>
 
-          {/* Section Éléments clefs */}
-          <div>
-            <h2 className="text-xl font-medium mb-6">Éléments clefs</h2>
-            
-            <div className="grid grid-cols-5 gap-6">
-              <div className="text-sm font-medium text-gray-400">
-                {/* Colonne vide pour les labels */}
-              </div>
-              
-              {plans.map((plan, index) => (
-                <div key={index} className="text-center">
-                  <h4 className="font-medium mb-4">{plan.name}</h4>
-                </div>
-              ))}
-            </div>
+          {/* Section Comparaison des forfaits */}
+          <div className="flex justify-between gap-4">
+            {plans.map((plan, index) => (
+              <div
+                key={index}
+                className={`flex-1 border border-gray-200 dark:border-[#313131]/90 dark:bg-[#252525] rounded-lg p-4 flex flex-col ${
+                  index === 1 ? "border-[#5b50fe] relative" : ""
+                }`}
+              >
+                {index === 1 && (
+                  <Badge className="absolute -top-3 right-6 bg-[#5b50fe] text-white text-xs">
+                    <Crown className="w-3 h-3 mr-1" />
+                    Recommandé
+                  </Badge>
+                )}
 
-            <div className="space-y-4 mt-4">
-              {plans[0].features.map((feature, featureIndex) => (
-                <div key={featureIndex} className="grid grid-cols-5 gap-6 py-2 border-b border-gray-700">
-                  <div className="text-sm text-gray-300">{feature}</div>
-                  {plans.map((plan, planIndex) => (
-                    <div key={planIndex} className="text-center">
-                      <Check className="h-4 w-4 text-green-500 mx-auto" />
+                <div className="mb-3">
+                  <h3 className="text-lg font-semibold mb-1">{plan.name}</h3>
+                  <p className="text-sm text-[#5b50fe] font-medium">
+                    {plan.price}
+                  </p>
+                </div>
+
+                <div className="space-y-2 mb-4 flex-grow">
+                  {plan.features.slice(0, 5).map((feature, featureIndex) => (
+                    <div key={featureIndex} className="flex items-center gap-2">
+                      <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
+                      <span className="text-xs dark:text-gray-300">
+                        {feature}
+                      </span>
                     </div>
                   ))}
+                  {plan.features.length > 5 && (
+                    <p className="text-xs text-gray-500 ml-5">
+                      +{plan.features.length - 5} autres fonctionnalités
+                    </p>
+                  )}
                 </div>
-              ))}
-              
-              {/* Features spécifiques aux plans payants */}
-              <div className="grid grid-cols-5 gap-6 py-2 border-b border-gray-700">
-                <div className="text-sm text-gray-300">Blocs illimités</div>
-                <div className="text-center">-</div>
-                <div className="text-center"><Check className="h-4 w-4 text-green-500 mx-auto" /></div>
-                <div className="text-center"><Check className="h-4 w-4 text-green-500 mx-auto" /></div>
-                <div className="text-center"><Check className="h-4 w-4 text-green-500 mx-auto" /></div>
+
+                {index === 1 && (
+                  <Button
+                    className="w-full bg-[#5b50fe] hover:bg-[#5b50fe] text-white text-sm cursor-pointer mt-auto"
+                    onClick={() => handleUpgrade("pro")}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    ) : (
+                      "Passer à Pro"
+                    )}
+                  </Button>
+                )}
+
+                {index === 0 && (
+                  <Button
+                    variant="outline"
+                    className="w-full text-sm mt-auto"
+                    disabled
+                  >
+                    Forfait actuel
+                  </Button>
+                )}
               </div>
-              
-              <div className="grid grid-cols-5 gap-6 py-2 border-b border-gray-700">
-                <div className="text-sm text-gray-300">IA de Notion incluse</div>
-                <div className="text-center">-</div>
-                <div className="text-center">-</div>
-                <div className="text-center"><Check className="h-4 w-4 text-green-500 mx-auto" /></div>
-                <div className="text-center"><Check className="h-4 w-4 text-green-500 mx-auto" /></div>
-              </div>
-              
-              <div className="grid grid-cols-5 gap-6 py-2">
-                <div className="text-sm text-gray-300">Intégrations Premium</div>
-                <div className="text-center">-</div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <span className="text-xs">🔗📧</span>
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <span className="text-xs">📊📋🔗</span>
-                    <span className="text-xs text-gray-400">+5</span>
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <span className="text-xs">🔗📊📋</span>
-                    <span className="text-xs text-gray-400">+4</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </DialogContent>

@@ -1,5 +1,11 @@
 import { createAuthClient } from "better-auth/react";
-import { adminClient, organizationClient, inferOrgAdditionalFields, phoneNumberClient, twoFactorClient } from "better-auth/client/plugins";
+import {
+  adminClient,
+  organizationClient,
+  inferOrgAdditionalFields,
+  phoneNumberClient,
+  twoFactorClient,
+} from "better-auth/client/plugins";
 import { stripeClient } from "@better-auth/stripe/client";
 
 export const authClient = createAuthClient({
@@ -38,11 +44,11 @@ export const authClient = createAuthClient({
             bankBic: { type: "string" },
           },
         },
-      })
+      }),
     }),
     stripeClient({
-      subscription: true
-    })
+      subscription: true,
+    }),
   ],
 });
 

@@ -31,6 +31,7 @@ import { NavMain } from "@/src/components/nav-main";
 import { NavSecondary } from "@/src/components/nav-secondary";
 import { NavUser } from "@/src/components/nav-user";
 import { SidebarTrialCard } from "@/src/components/sidebar-trial-card";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import {
   Sidebar,
   SidebarContent,
@@ -45,11 +46,6 @@ import { useUser } from "../lib/auth/hooks";
 import { TeamSwitcher } from "@/src/components/team-switcher";
 
 const data = {
-  user: {
-    name: "sofiane",
-    email: "sofiane@emtimet.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
       name: "Sweily",
@@ -224,47 +220,81 @@ export function AppSidebar({ ...props }) {
     }
   }, []);
 
+  let isLoading = false;
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <TeamSwitcher />
       </SidebarHeader>
-      {/* <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <a href="/dashboard">
-                {theme === "dark" ? (
-                  <img
-                    src="http://localhost:3000/Logo + texte_blanc.svg"
-                    alt="Logo newbi (version sombre)"
-                    width="100"
-                    height="100"
-                  />
-                ) : (
-                  <img
-                    src="http://localhost:3000/Logo + texte.svg"
-                    alt="Logo newbi (version claire)"
-                    width="100"
-                    height="100"
-                  />
-                )}
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader> */}
       <SidebarContent className="mt-1">
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        {session?.user ? (
+          <>
+            <NavMain items={data.navMain} />
+            <NavDocuments items={data.documents} />
+            <NavSecondary items={data.navSecondary} className="mt-auto" />
+          </>
+        ) : (
+          <>
+            {/* NavMain Skeleton */}
+            <div className="px-2 py-2">
+              <div className="space-y-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="flex w-full items-center gap-2 px-2 py-1.5"
+                  >
+                    <Skeleton className="h-8 w-full bg-[#EBEBEB] rounded-sm" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* NavDocuments Skeleton */}
+            <div className="px-4 py-6">
+              <Skeleton className="h-5 w-16 mb-2 bg-[#EBEBEB] rounded-sm" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 py-1.5">
+                  <Skeleton className="h-8 w-full bg-[#EBEBEB] rounded-sm" />
+                </div>
+                <div className="flex items-center gap-2 py-1.5">
+                  <Skeleton className="h-8 w-full bg-[#EBEBEB] rounded-sm" />
+                </div>
+              </div>
+            </div>
+
+            {/* NavSecondary Skeleton */}
+            <div className="px-2 py-2 mt-auto">
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-2 px-2 py-1.5">
+                    <Skeleton className="h-8 w-full bg-[#EBEBEB] rounded-sm" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </SidebarContent>
       <SidebarFooter>
-        <SidebarTrialCard />
-        <NavUser user={session?.user || data.user} />
+        {session?.user ? (
+          <SidebarTrialCard />
+        ) : (
+          <div className="mb-2 px-2">
+            <Skeleton className="h-16 w-full bg-[#EBEBEB] rounded-md" />
+          </div>
+        )}
+        {session?.user ? (
+          <NavUser user={session.user} />
+        ) : (
+          <div className="flex items-center gap-2 px-2 py-1.5">
+            <Skeleton className="h-8 w-8 rounded-full bg-[#EBEBEB]" />
+            <div className="flex-1">
+              <Skeleton className="h-4 w-24 mb-1 bg-[#EBEBEB] rounded-sm" />
+              <Skeleton className="h-3 w-32 bg-[#EBEBEB] rounded-sm" />
+            </div>
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

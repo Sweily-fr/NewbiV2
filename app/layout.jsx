@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/src/components/theme-provider";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
+import { SubscriptionProvider } from "@/src/contexts/subscription-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +28,9 @@ export default function RootLayout({ children }) {
       >
         <ApolloWrapper>
           <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-            {children}
+            <SubscriptionProvider>
+              {children}
+            </SubscriptionProvider>
           </ThemeProvider>
         </ApolloWrapper>
         <Toaster />

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { IconPlus } from "@tabler/icons-react";
 import TransferTable from "./components/transfer-table";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function TransfertsFichiers() {
+function TransfertsContent() {
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
@@ -26,5 +27,13 @@ export default function TransfertsFichiers() {
       </div>
       <TransferTable />
     </div>
+  );
+}
+
+export default function TransfertsFichiers() {
+  return (
+    <ProRouteGuard pageName="Transferts de fichiers">
+      <TransfertsContent />
+    </ProRouteGuard>
   );
 }

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import TableUser from "./components/table";
 import ClientsModal from "./components/clients-modal";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function Clients() {
+function ClientsContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
@@ -25,5 +26,13 @@ export default function Clients() {
       <TableUser handleAddUser={handleOpenInviteDialog} />
       <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
+  );
+}
+
+export default function Clients() {
+  return (
+    <ProRouteGuard pageName="Clients">
+      <ClientsContent />
+    </ProRouteGuard>
   );
 }

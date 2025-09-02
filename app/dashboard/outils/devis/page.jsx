@@ -6,8 +6,9 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
 import { useRouter } from "next/navigation";
 import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function QuotesPage() {
+function QuotesContent() {
   const router = useRouter();
 
   const handleCreateQuote = () => {
@@ -36,6 +37,14 @@ export default function QuotesPage() {
         </Suspense>
       </div>
     </CompanyInfoGuard>
+  );
+}
+
+export default function QuotesPage() {
+  return (
+    <ProRouteGuard pageName="Devis">
+      <QuotesContent />
+    </ProRouteGuard>
   );
 }
 

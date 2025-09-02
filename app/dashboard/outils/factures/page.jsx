@@ -7,8 +7,9 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
 import { useRouter } from "next/navigation";
 import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function InvoicesPage() {
+function InvoicesContent() {
   const router = useRouter();
 
   const handleCreateInvoice = () => {
@@ -38,6 +39,14 @@ export default function InvoicesPage() {
         </Suspense>
       </div>
     </CompanyInfoGuard>
+  );
+}
+
+export default function InvoicesPage() {
+  return (
+    <ProRouteGuard pageName="Factures">
+      <InvoicesContent />
+    </ProRouteGuard>
   );
 }
 

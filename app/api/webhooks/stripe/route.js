@@ -1,18 +1,7 @@
-import { auth } from '@/src/lib/auth';
-import { headers } from 'next/headers';
+// Cette route n'est plus nécessaire
+// Les webhooks Stripe doivent pointer vers /api/auth/stripe/webhook
+// qui est géré automatiquement par Better Auth
 
 export async function POST(request) {
-  try {
-    // Le plugin Better Auth Stripe gère automatiquement les webhooks
-    // Cette route délègue le traitement au plugin
-    const response = await auth.api.webhookHandler({
-      request,
-      headers: await headers(),
-    });
-
-    return response;
-  } catch (error) {
-    console.error('Erreur webhook Stripe:', error);
-    return new Response('Webhook Error', { status: 400 });
-  }
+  return new Response('Utilisez /api/auth/stripe/webhook pour les webhooks Stripe', { status: 200 });
 }

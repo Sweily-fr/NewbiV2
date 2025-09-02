@@ -1,42 +1,73 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useSubscription } from '@/src/hooks/useSubscription';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card';
-import { Button } from '@/src/components/ui/button';
-import { Badge } from '@/src/components/ui/badge';
-import { Separator } from '@/src/components/ui/separator';
-import { Progress } from '@/src/components/ui/progress';
-import { 
-  CreditCardIcon, 
-  CalendarIcon, 
-  CheckCircleIcon, 
+import { useState } from "react";
+import { useSubscription } from '@/src/contexts/subscription-context';
+import { useSession } from '@/src/lib/auth-client';
+import { authClient } from '@/src/lib/auth-client';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
+import { Separator } from "@/src/components/ui/separator";
+import { Progress } from "@/src/components/ui/progress";
+import {
+  CreditCardIcon,
+  CalendarIcon,
+  CheckCircleIcon,
   AlertTriangleIcon,
   ExternalLinkIcon,
   CrownIcon,
-  ClockIcon
-} from 'lucide-react';
-import { toast } from 'sonner';
+  ClockIcon,
+} from "lucide-react";
+import { toast } from "sonner";
 
-export default function BillingSection({ session }) {
-  const {
-    subscription,
-    isInTrial,
-    isTrialExpired,
-    trialDaysRemaining,
-    hasActiveSubscription,
-    createCheckoutSession,
-    createCustomerPortal,
-    loading
-  } = useSubscription();
+export default function BillingSection() {
+  const { subscription, loading, isActive } = useSubscription();
+  const { data: session } = useSession();
+
+  // Calculer les informations d'essai
+  const getTrialInfo = () => {
+    if (!session?.user) return { isInTrial: false, isTrialExpired: false, trialDaysRemaining: 0 };
+
+    const createdAt = new Date(session.user.createdAt);
+    const now = new Date();
+    const daysSinceCreation = (now - createdAt) / (1000 * 60 * 60 * 24);
+    const trialDaysRemaining = Math.max(0, Math.ceil(14 - daysSinceCreation));
+
+    const isInTrial = daysSinceCreation <= 14 && !isActive();
+    const isTrialExpired = daysSinceCreation > 14 && !isActive();
+
+    return { isInTrial, isTrialExpired, trialDaysRemaining };
+  };
+
+  const { isInTrial, isTrialExpired, trialDaysRemaining } = getTrialInfo();
+  const hasActiveSubscription = isActive();
 
   const [processingAction, setProcessingAction] = useState(null);
 
   const handleUpgrade = async () => {
     try {
       setProcessingAction('upgrade');
-      // Remplacez par votre vrai Price ID Stripe
-      await createCheckoutSession('price_pro_monthly');
+      const { data, error } = await authClient.stripe.createCheckout({
+        priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID || 'price_1234',
+        successUrl: `${window.location.origin}/dashboard/settings?tab=billing&success=true`,
+        cancelUrl: `${window.location.origin}/dashboard/settings?tab=billing&canceled=true`,
+        referenceId: session?.session?.activeOrganizationId
+      });
+
+      if (error) {
+        toast.error('Erreur lors de la création de la session de paiement');
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (error) {
       toast.error('Erreur lors de la redirection vers le paiement');
     } finally {
@@ -47,7 +78,18 @@ export default function BillingSection({ session }) {
   const handleManageSubscription = async () => {
     try {
       setProcessingAction('portal');
-      await createCustomerPortal();
+      const { data, error } = await authClient.stripe.createCustomerPortal({
+        returnUrl: `${window.location.origin}/dashboard/settings?tab=billing`
+      });
+
+      if (error) {
+        toast.error('Erreur lors de la création du portail client');
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (error) {
       toast.error('Erreur lors de l\'ouverture du portail de gestion');
     } finally {
@@ -58,24 +100,33 @@ export default function BillingSection({ session }) {
   const getStatusBadge = () => {
     if (isInTrial) {
       return (
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+        <Badge
+          variant="outline"
+          className="bg-blue-50 text-blue-700 border-blue-200"
+        >
           <ClockIcon className="w-3 h-3 mr-1" />
           Essai gratuit
         </Badge>
       );
     }
-    
+
     if (hasActiveSubscription) {
       return (
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+        <Badge
+          variant="outline"
+          className="bg-green-50 text-green-700 border-green-200"
+        >
           <CheckCircleIcon className="w-3 h-3 mr-1" />
           Actif
         </Badge>
       );
     }
-    
+
     return (
-      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+      <Badge
+        variant="outline"
+        className="bg-red-50 text-red-700 border-red-200"
+      >
         <AlertTriangleIcon className="w-3 h-3 mr-1" />
         Expiré
       </Badge>
@@ -123,7 +174,9 @@ export default function BillingSection({ session }) {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="font-medium text-blue-900">Période d'essai gratuit</h3>
+                  <h3 className="font-medium text-blue-900">
+                    Période d'essai gratuit
+                  </h3>
                   <p className="text-sm text-blue-700">
                     {trialDaysRemaining} jour(s) restant(s) sur 14
                   </p>
@@ -137,7 +190,8 @@ export default function BillingSection({ session }) {
               </div>
               <Progress value={getTrialProgress()} className="h-2 mb-3" />
               <p className="text-sm text-blue-700">
-                Profitez de toutes les fonctionnalités gratuitement pendant votre essai.
+                Profitez de toutes les fonctionnalités gratuitement pendant
+                votre essai.
               </p>
             </div>
           )}
@@ -147,7 +201,9 @@ export default function BillingSection({ session }) {
               <div className="flex items-center gap-3">
                 <CheckCircleIcon className="w-5 h-5 text-green-600" />
                 <div>
-                  <h3 className="font-medium text-green-900">Abonnement actif</h3>
+                  <h3 className="font-medium text-green-900">
+                    Abonnement actif
+                  </h3>
                   <p className="text-sm text-green-700">
                     Votre abonnement est actif et à jour
                   </p>
@@ -161,9 +217,12 @@ export default function BillingSection({ session }) {
               <div className="flex items-center gap-3">
                 <AlertTriangleIcon className="w-5 h-5 text-red-600" />
                 <div>
-                  <h3 className="font-medium text-red-900">Période d'essai expirée</h3>
+                  <h3 className="font-medium text-red-900">
+                    Période d'essai expirée
+                  </h3>
                   <p className="text-sm text-red-700">
-                    Votre essai gratuit a expiré. Choisissez un plan pour continuer.
+                    Votre essai gratuit a expiré. Choisissez un plan pour
+                    continuer.
                   </p>
                 </div>
               </div>
@@ -181,24 +240,27 @@ export default function BillingSection({ session }) {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-medium text-lg">
-                {isInTrial ? 'Essai Gratuit' : hasActiveSubscription ? 'Plan Professionnel' : 'Aucun plan'}
+                {isInTrial
+                  ? "Essai Gratuit"
+                  : hasActiveSubscription
+                    ? "Plan Professionnel"
+                    : "Aucun plan"}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {isInTrial 
+                {isInTrial
                   ? `Expire dans ${trialDaysRemaining} jour(s)`
-                  : hasActiveSubscription 
-                    ? 'Facturé mensuellement'
-                    : 'Choisissez un plan pour continuer'
-                }
+                  : hasActiveSubscription
+                    ? "Facturé mensuellement"
+                    : "Choisissez un plan pour continuer"}
               </p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold">
-                {isInTrial ? 'Gratuit' : hasActiveSubscription ? '29€' : '0€'}
+                {isInTrial ? "Gratuit" : hasActiveSubscription ? "29€" : "0€"}
               </div>
               {(isInTrial || hasActiveSubscription) && (
                 <div className="text-sm text-muted-foreground">
-                  {isInTrial ? 'pendant 14 jours' : 'par mois'}
+                  {isInTrial ? "pendant 14 jours" : "par mois"}
                 </div>
               )}
             </div>
@@ -218,16 +280,15 @@ export default function BillingSection({ session }) {
           {(isInTrial || isTrialExpired) && (
             <Button
               onClick={handleUpgrade}
-              disabled={processingAction === 'upgrade'}
+              disabled={processingAction === "upgrade"}
               className="w-full"
             >
               <CreditCardIcon className="w-4 h-4 mr-2" />
-              {processingAction === 'upgrade' 
-                ? 'Redirection...' 
-                : isTrialExpired 
-                  ? 'Choisir un plan' 
-                  : 'Passer au plan payant'
-              }
+              {processingAction === "upgrade"
+                ? "Redirection..."
+                : isTrialExpired
+                  ? "Choisir un plan"
+                  : "Passer au plan payant"}
             </Button>
           )}
 
@@ -235,14 +296,13 @@ export default function BillingSection({ session }) {
             <Button
               variant="outline"
               onClick={handleManageSubscription}
-              disabled={processingAction === 'portal'}
+              disabled={processingAction === "portal"}
               className="w-full"
             >
               <ExternalLinkIcon className="w-4 h-4 mr-2" />
-              {processingAction === 'portal' 
-                ? 'Ouverture...' 
-                : 'Gérer l\'abonnement'
-              }
+              {processingAction === "portal"
+                ? "Ouverture..."
+                : "Gérer l'abonnement"}
             </Button>
           )}
 
@@ -251,12 +311,16 @@ export default function BillingSection({ session }) {
           <div className="text-sm text-muted-foreground space-y-2">
             <p className="flex items-center gap-2">
               <CalendarIcon className="w-4 h-4" />
-              Compte créé le {new Date(session?.user?.createdAt).toLocaleDateString('fr-FR')}
+              Compte créé le{" "}
+              {new Date(session?.user?.createdAt).toLocaleDateString("fr-FR")}
             </p>
             {subscription && (
               <p className="flex items-center gap-2">
                 <CreditCardIcon className="w-4 h-4" />
-                Prochaine facturation le {new Date(subscription.currentPeriodEnd * 1000).toLocaleDateString('fr-FR')}
+                Prochaine facturation le{" "}
+                {new Date(
+                  subscription.currentPeriodEnd * 1000
+                ).toLocaleDateString("fr-FR")}
               </p>
             )}
           </div>
@@ -271,18 +335,20 @@ export default function BillingSection({ session }) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
-              'Factures illimitées',
-              'Gestion des clients',
-              'Tableau de bord financier',
-              'OCR pour reçus',
-              'Connexion bancaire',
-              'Support par email',
-              ...(hasActiveSubscription ? [
-                'Stockage illimité',
-                'Exports PDF/Excel',
-                'Support prioritaire',
-                'Multi-utilisateurs'
-              ] : [])
+              "Factures illimitées",
+              "Gestion des clients",
+              "Tableau de bord financier",
+              "OCR pour reçus",
+              "Connexion bancaire",
+              "Support par email",
+              ...(hasActiveSubscription
+                ? [
+                    "Stockage illimité",
+                    "Exports PDF/Excel",
+                    "Support prioritaire",
+                    "Multi-utilisateurs",
+                  ]
+                : []),
             ].map((feature, index) => (
               <div key={index} className="flex items-center gap-2">
                 <CheckCircleIcon className="w-4 h-4 text-green-600" />

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import TableProduct from "./components/table-product";
 import ProductModal from "./components/product-modal";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function Catalogues() {
+function CataloguesContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Fonction pour ouvrir le dialogue depuis le bouton dans TableProduct
@@ -25,5 +26,13 @@ export default function Catalogues() {
       <TableProduct handleAddProduct={handleOpenProductDialog} />
       <ProductModal open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
+  );
+}
+
+export default function Catalogues() {
+  return (
+    <ProRouteGuard pageName="Catalogues">
+      <CataloguesContent />
+    </ProRouteGuard>
   );
 }

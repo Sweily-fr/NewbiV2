@@ -1,6 +1,7 @@
 'use client';
 
-import { useSubscription } from '@/src/hooks/useSubscription';
+import { useSubscription } from '@/src/contexts/subscription-context';
+import { useSession } from '@/src/lib/auth-client';
 import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';
 import { 
@@ -16,13 +17,26 @@ import { useState } from 'react';
 export function SubscriptionStatus({ variant = 'badge', className = '' }) {
   const router = useRouter();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
-  const {
-    isInTrial,
-    isTrialExpired,
-    trialDaysRemaining,
-    hasActiveSubscription,
-    loading
-  } = useSubscription();
+  const { subscription, loading, isActive } = useSubscription();
+  const { data: session } = useSession();
+  
+  // Calculer les informations d'essai
+  const getTrialInfo = () => {
+    if (!session?.user) return { isInTrial: false, isTrialExpired: false, trialDaysRemaining: 0 };
+    
+    const createdAt = new Date(session.user.createdAt);
+    const now = new Date();
+    const daysSinceCreation = (now - createdAt) / (1000 * 60 * 60 * 24);
+    const trialDaysRemaining = Math.max(0, Math.ceil(14 - daysSinceCreation));
+    
+    const isInTrial = daysSinceCreation <= 14 && !isActive();
+    const isTrialExpired = daysSinceCreation > 14 && !isActive();
+    
+    return { isInTrial, isTrialExpired, trialDaysRemaining };
+  };
+
+  const { isInTrial, isTrialExpired, trialDaysRemaining } = getTrialInfo();
+  const hasActiveSubscription = isActive();
   
   const openPricingModal = () => {
     setIsPricingModalOpen(true);

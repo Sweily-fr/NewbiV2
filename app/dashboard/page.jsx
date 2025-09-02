@@ -7,6 +7,7 @@ import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
 import Comp333 from "@/src/components/comp-333";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import {
   Card,
   CardContent,
@@ -49,7 +50,7 @@ import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
 import LoadingSkeleton from "./loading";
 import { useState, useEffect } from "react";
 
-export default function Dashboard() {
+function DashboardContent() {
   const { session } = useUser();
   const { workspaceId } = useWorkspace();
 
@@ -359,5 +360,13 @@ export default function Dashboard() {
         {/* <ChartRadarGridCircle /> */}
       </div>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <ProRouteGuard pageName="Tableau de bord">
+      <DashboardContent />
+    </ProRouteGuard>
   );
 }
