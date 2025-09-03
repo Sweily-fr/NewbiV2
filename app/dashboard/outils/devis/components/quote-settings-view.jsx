@@ -135,7 +135,7 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave }) {
                   </p>
                   <a 
                     href="/dashboard/parametres/entreprise"
-                    className="text-primary hover:underline font-medium flex items-center gap-1"
+                    className="text-primary hover:underline flex items-center gap-1"
                   >
                     <Settings className="h-4 w-4" />
                     Configurer les coordonnées bancaires dans les paramètres

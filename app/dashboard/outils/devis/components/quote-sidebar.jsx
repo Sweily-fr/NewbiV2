@@ -47,8 +47,8 @@ export default function QuoteSidebar({
   onClose,
   quote: initialQuote,
   onRefetch,
+  isViewMode = false,
 }) {
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
@@ -209,8 +209,30 @@ export default function QuoteSidebar({
 
   return (
     <>
+      {/* Semi-transparent overlay */}
+      <div 
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
+      
+      {/* PDF Preview Panel */}
+      <div 
+        className={`fixed inset-y-0 left-0 right-[35%] z-50 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-12 px-24">
+          <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
+            <UniversalPreviewPDF data={quote} type="quote" />
+          </div>
+        </div>
+      </div>
+      
+      {/* Main Sidebar */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 w-[600px] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 right-0 z-50 w-[35%] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -243,16 +265,7 @@ export default function QuoteSidebar({
             <div className="flex items-center gap-2">
               {/* Bouton PDF - masqué pour les brouillons */}
               {quote.status !== QUOTE_STATUS.DRAFT && (
-                <UniversalPDFGenerator data={quote} type="quote">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    title="Télécharger en PDF"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Télécharger le PDF
-                  </Button>
-                </UniversalPDFGenerator>
+                <UniversalPDFGenerator data={quote} type="quote"/>
               )}
               <Button
                 variant="ghost"
@@ -407,23 +420,6 @@ export default function QuoteSidebar({
               </div>
             </div>
 
-            <Separator />
-
-            {/* Preview Thumbnail */}
-            <div className="space-y-3">
-              <h3 className="font-medium">Aperçu</h3>
-              <div
-                className="border w-[200px] rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => setIsPreviewOpen(true)}
-              >
-                <div className="aspect-[3/4] bg-white border rounded shadow-sm flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <Eye className="h-8 w-8 mx-auto mb-2" />
-                    <p className="text-xs">Cliquer pour voir l'aperçu</p>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Liste des factures liées */}
             {quote.status === QUOTE_STATUS.COMPLETED && (
@@ -441,30 +437,6 @@ export default function QuoteSidebar({
           <div className="border-t p-6 space-y-3">
             {/* Primary Actions */}
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsPreviewOpen(true)}
-                className="flex-1"
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Voir
-              </Button>
-
-              {/* Bouton PDF avec UniversalPDFGenerator - masqué pour les brouillons */}
-              {quote.status !== QUOTE_STATUS.DRAFT && (
-                <UniversalPDFGenerator data={quote} type="quote">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    title="Télécharger en PDF"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    PDF
-                  </Button>
-                </UniversalPDFGenerator>
-              )}
 
               {quote.status === QUOTE_STATUS.DRAFT && (
                 <Button
@@ -588,22 +560,6 @@ export default function QuoteSidebar({
           </div>
         </div>
       </div>
-
-      {/* Preview Dialog */}
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="w-full max-w-6xl h-[90vh] p-0 flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <DialogTitle className="text-xl font-semibold">
-              Aperçu du devis {quote.number || "Brouillon"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto bg-[#F9F9F9] dark:bg-[#1a1a1a] p-8">
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-4xl mx-auto">
-              <UniversalPreviewPDF data={quote} type="quote" />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

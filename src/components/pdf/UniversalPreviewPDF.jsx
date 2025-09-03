@@ -427,11 +427,11 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
         <div className="mb-6">
           <table className="w-full border-collapse text-xs">
             <thead>
-              <tr style={{ backgroundColor: data.appearance?.headerBgColor }}>
+              <tr style={{ backgroundColor: data.appearance?.headerBgColor || '#000000' }}>
                 <th
                   className="py-2 px-2 text-left text-[10px] font-medium"
                   style={{
-                    color: data.appearance?.headerTextColor,
+                    color: data.appearance?.headerTextColor || '#FFFFFF',
                     width: "46%",
                   }}
                 >
@@ -440,7 +440,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 <th
                   className="py-1 px-2 text-right text-[10px] font-medium"
                   style={{
-                    color: data.appearance?.headerTextColor,
+                    color: data.appearance?.headerTextColor || '#FFFFFF',
                     width: "12%",
                   }}
                 >
@@ -449,7 +449,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 <th
                   className="py-1 px-2 text-right text-[10px] font-medium"
                   style={{
-                    color: data.appearance?.headerTextColor,
+                    color: data.appearance?.headerTextColor || '#FFFFFF',
                     width: "15%",
                   }}
                 >
@@ -458,7 +458,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 <th
                   className="py-1 px-2 text-right text-[10px] font-medium"
                   style={{
-                    color: data.appearance?.headerTextColor,
+                    color: data.appearance?.headerTextColor || '#FFFFFF',
                     width: "10%",
                   }}
                 >
@@ -467,7 +467,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 <th
                   className="py-1 px-2 text-right text-[10px] font-medium"
                   style={{
-                    color: data.appearance?.headerTextColor,
+                    color: data.appearance?.headerTextColor || '#FFFFFF',
                     width: "17%",
                   }}
                 >
