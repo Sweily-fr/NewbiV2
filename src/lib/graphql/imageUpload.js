@@ -90,7 +90,7 @@ export class CloudflareImageService {
       }
 
       // Exécuter la mutation GraphQL
-      const { data } = await apolloClient.mutate({
+      const { data, errors } = await apolloClient.mutate({
         mutation: UPLOAD_SIGNATURE_IMAGE,
         variables: {
           file,
@@ -101,8 +101,19 @@ export class CloudflareImageService {
         }
       });
 
+      if (errors && errors.length > 0) {
+        console.error('❌ Erreurs GraphQL:', errors);
+        throw new Error(`Erreur GraphQL: ${errors[0].message}`);
+      }
+
       if (onProgress) {
         onProgress(100);
+      }
+
+      console.log('📡 GraphQL response data:', data);
+
+      if (!data || !data.uploadSignatureImage) {
+        throw new Error('Réponse GraphQL invalide - uploadSignatureImage est null');
       }
 
       if (!data.uploadSignatureImage.success) {

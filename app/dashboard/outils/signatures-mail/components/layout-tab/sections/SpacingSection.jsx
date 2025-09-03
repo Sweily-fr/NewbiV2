@@ -11,6 +11,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
   const handleSpacingChange = (spacingKey, value) => {
     const numValue = parseInt(value) || 0;
     const clampedValue = Math.max(0, Math.min(30, numValue)); // Entre 0 et 30px
+    console.log(`Changement espacement ${spacingKey}:`, clampedValue);
     updateSignatureData('spacings', {
       ...signatureData.spacings,
       [spacingKey]: clampedValue
@@ -96,34 +97,34 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
           {/* Espacement sous la photo - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">
-              {signatureData.layout === 'vertical' ? 'Sous photo' : 'Image profil → Information'}
+              Image profil → Information
             </Label>
             <div className="flex items-center gap-3 w-30">
               <Input
                 className="h-8 w-12 px-2 py-1"
                 type="text"
                 inputMode="decimal"
-                value={signatureData.spacings?.photoBottom || 12}
-                onChange={(e) => handleSpacingChange('photoBottom', e.target.value)}
-                onBlur={(e) => handleSpacingChange('photoBottom', e.target.value)}
+                value={signatureData.spacings?.nameSpacing || 12}
+                onChange={(e) => handleSpacingChange('nameSpacing', e.target.value)}
+                onBlur={(e) => handleSpacingChange('nameSpacing', e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    handleSpacingChange('photoBottom', e.target.value);
+                    handleSpacingChange('nameSpacing', e.target.value);
                   }
                 }}
                 min={0}
                 max={30}
-                aria-label="Espacement photo"
+                aria-label="Espacement photo vers informations"
                 placeholder="12"
               />
               <Slider
                 className="grow"
-                value={[signatureData.spacings?.photoBottom || 12]}
-                onValueChange={(value) => handleSpacingChange('photoBottom', value[0])}
+                value={[signatureData.spacings?.nameSpacing || 12]}
+                onValueChange={(value) => handleSpacingChange('nameSpacing', value[0])}
                 min={0}
                 max={30}
                 step={2}
-                aria-label="Espacement photo"
+                aria-label="Espacement photo vers informations"
               />
             </div>
           </div>
@@ -235,40 +236,6 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
             </div>
           </div>
           
-          {/* Espacement sous l'entreprise - disponible pour les deux layouts */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">
-              {signatureData.layout === 'vertical' ? 'Sous entreprise' : 'Entreprise → Contact'}
-            </Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.companyBottom || 8}
-                onChange={(e) => handleSpacingChange('companyBottom', e.target.value)}
-                onBlur={(e) => handleSpacingChange('companyBottom', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('companyBottom', e.target.value);
-                  }
-                }}
-                min={0}
-                max={30}
-                aria-label="Espacement entreprise"
-                placeholder="8"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.companyBottom || 8]}
-                onValueChange={(value) => handleSpacingChange('companyBottom', value[0])}
-                min={0}
-                max={30}
-                step={2}
-                aria-label="Espacement entreprise"
-              />
-            </div>
-          </div>
           
           {/* Espacement entre téléphone et mobile - disponible pour les deux layouts */}
           <div className="flex items-center justify-between">
@@ -402,39 +369,6 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
             </div>
           </div>
           
-          {/* Espacement entre les contacts - disponible pour les deux layouts */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Entre contacts</Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.contactBottom || 6}
-                onChange={(e) => handleSpacingChange('contactBottom', e.target.value)}
-                onBlur={(e) => handleSpacingChange('contactBottom', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('contactBottom', e.target.value);
-                  }
-                }}
-                min={0}
-                max={30}
-                aria-label="Espacement entre contacts"
-                placeholder="6"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.contactBottom || 6]}
-                onValueChange={(value) => handleSpacingChange('contactBottom', value[0])}
-                min={0}
-                max={30}
-                step={2}
-                aria-label="Espacement entre contacts"
-              />
-            </div>
-          </div>
-          
           {/* Espacement au-dessus du séparateur */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Avant séparateur</Label>
@@ -463,9 +397,9 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
             </div>
           </div>
           
-          {/* Espacement logo entreprise -> logo réseaux sociaux */}
+          {/* Espacement après séparateur */}
           <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Logo entreprise → Logo réseaux sociaux</Label>
+            <Label className="text-xs text-muted-foreground">Après séparateur</Label>
             <div className="flex items-center gap-3 w-30">
               <Input
                 className="h-8 w-12 px-2 py-1"
@@ -473,10 +407,15 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 inputMode="decimal"
                 value={signatureData.spacings?.separatorBottom || 12}
                 onChange={(e) => handleSpacingChange('separatorBottom', e.target.value)}
+                onBlur={(e) => handleSpacingChange('separatorBottom', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('separatorBottom', e.target.value);
+                  }
+                }}
                 min={0}
                 max={30}
-
-                aria-label="Espacement logo entreprise vers réseaux sociaux"
+                aria-label="Espacement après séparateur"
                 placeholder="12"
               />
               <Slider
@@ -486,7 +425,40 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 min={0}
                 max={30}
                 step={2}
-                aria-label="Espacement logo vers réseaux"
+                aria-label="Espacement après séparateur"
+              />
+            </div>
+          </div>
+          
+          {/* Espacement logo entreprise → logo réseaux sociaux (horizontal uniquement) */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Logo entreprise → Logo réseaux sociaux</Label>
+            <div className="flex items-center gap-3 w-30">
+              <Input
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
+                value={signatureData.spacings?.logoToSocial || 12}
+                onChange={(e) => handleSpacingChange('logoToSocial', e.target.value)}
+                onBlur={(e) => handleSpacingChange('logoToSocial', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSpacingChange('logoToSocial', e.target.value);
+                  }
+                }}
+                min={0}
+                max={30}
+                aria-label="Espacement horizontal logo vers réseaux sociaux"
+                placeholder="12"
+              />
+              <Slider
+                className="grow"
+                value={[signatureData.spacings?.logoToSocial || 12]}
+                onValueChange={(value) => handleSpacingChange('logoToSocial', value[0])}
+                min={0}
+                max={30}
+                step={2}
+                aria-label="Espacement horizontal logo vers réseaux"
               />
             </div>
           </div>

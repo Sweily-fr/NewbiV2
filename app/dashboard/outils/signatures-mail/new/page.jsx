@@ -971,7 +971,13 @@ const generateCustomHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
         }
       }
       
-      const htmlSignature = await generateSignatureHTML(facebookImageUrl);
+      // Utiliser la fonction generateSignatureHTML compatible Gmail avec espacements
+      const { generateGmailSignatureHTML } = await import('../components/SignatureManager');
+      const signatureWithFacebookUrl = {
+        ...signatureData,
+        facebookImageUrl: facebookImageUrl
+      };
+      const htmlSignature = generateGmailSignatureHTML(signatureWithFacebookUrl);
       console.log('📝 HTML généré:', htmlSignature);
       
       // Utiliser l'API moderne du clipboard pour copier du HTML
