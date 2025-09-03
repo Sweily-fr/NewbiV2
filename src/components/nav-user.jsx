@@ -8,7 +8,7 @@ import {
   IconUserCircle,
 } from "@tabler/icons-react";
 
-import { CreditCard } from "lucide-react";
+import { CreditCard, Crown } from "lucide-react";
 
 import {
   Avatar,
@@ -30,6 +30,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/src/components/ui/sidebar";
+import { Badge } from "@/src/components/ui/badge";
+import { useSubscription } from "@/src/contexts/subscription-context";
 import Link from "next/link";
 import { ModeToggle } from "@/src/components/ui/mode-toggle";
 import { signOut } from "../lib/auth-client";
@@ -38,6 +40,8 @@ import { useRouter } from "next/navigation";
 
 export function NavUser({ user }) {
   const { isMobile } = useSidebar();
+  const { isActive } = useSubscription();
+
   const profileImage = user.avatar || "https://github.com/shadcn.png";
 
   const router = useRouter();
@@ -89,21 +93,34 @@ export function NavUser({ user }) {
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage
-                    className="object-cover"
-                    src={profileImage}
-                    alt={user.name}
-                  />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="text-muted-foreground truncate text-xs">
-                    {user.email}
-                  </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage
+                      className="object-cover"
+                      src={profileImage}
+                      alt={user.name}
+                    />
+                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-medium">{user.name}</span>
+                    <span className="text-muted-foreground truncate text-xs">
+                      {user.email}
+                    </span>
+                  </div>
                 </div>
+                <Badge
+                  variant="outline"
+                  className={`text-xs px-2 py-0.5 mr-1 mb-4 ${
+                    isActive()
+                      ? "bg-[#5b4fff]/10 text-[#5b4fff] border-[#5b4fff]/20"
+                      : "bg-gray-50 text-gray-600 border-gray-200"
+                  }`}
+                >
+                  <Crown className="w-3 h-3 mr-1" />
+                  {isActive() ? "Pro" : "Free"}
+                </Badge>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -114,7 +131,7 @@ export function NavUser({ user }) {
                   Compte
                 </DropdownMenuItem>
               </Link>
-              <Link href="/dashboard/account">
+              <Link href="/dashboard/subscribe">
                 <DropdownMenuItem className="cursor-pointer">
                   <CreditCard />
                   Gérer l’abonnement

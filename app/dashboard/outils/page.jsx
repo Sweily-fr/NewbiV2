@@ -12,11 +12,14 @@ import PricingModal from "@/src/components/pricing-modal";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSession } from "@/src/lib/auth-client";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 export default function Outils() {
   const searchParams = useSearchParams();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
-  const { isActive } = useSubscription();
+  const { isActive, loading } = useSubscription();
+  const { data: session } = useSession();
 
   // Ouvrir le modal de pricing si le paramètre pricing=true est présent ET que l'utilisateur n'a pas d'abonnement actif
   useEffect(() => {
@@ -24,6 +27,43 @@ export default function Outils() {
       setIsPricingModalOpen(true);
     }
   }, [searchParams, isActive]);
+
+  // Afficher le skeleton pendant le chargement
+  if (loading || !session?.user) {
+    return (
+      <div className="flex flex-col p-6 md:py-6">
+        <Skeleton className="h-8 w-32 mb-2 bg-[#EBEBEB] rounded-sm" />
+        <div className="flex flex-col gap-6 pt-8 w-full">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 w-full">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="border-0 shadow-sm p-2 rounded-lg">
+                <div className="flex flex-row h-full">
+                  <div className="flex flex-col p-2 flex-1 justify-between">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Skeleton className="h-7 w-7 bg-[#EBEBEB] rounded-md" />
+                      </div>
+                      <div className="space-y-3">
+                        <Skeleton className="h-5 w-24 bg-[#EBEBEB] rounded-sm" />
+                        <Skeleton className="h-4 w-32 bg-[#EBEBEB] rounded-sm" />
+                      </div>
+                    </div>
+                    <div className="pt-6">
+                      <Skeleton className="h-4 w-16 bg-[#EBEBEB] rounded-sm" />
+                    </div>
+                  </div>
+                  <div className="w-1/2 rounded-xl m-1 p-2">
+                    <Skeleton className="h-full w-full bg-[#EBEBEB] rounded-xl" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col p-6 md:py-6">
       {/* <h1 className="text-2xl font-semibold mb-6">Outils</h1> */}

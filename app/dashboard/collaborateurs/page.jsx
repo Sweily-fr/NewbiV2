@@ -11,6 +11,7 @@ import {
 } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { useSubscription } from "@/src/contexts/subscription-context";
 
 function CollaborateursContent() {
   const [dialogOpen, setDialogOpen] = useState(false);

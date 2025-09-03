@@ -37,6 +37,6 @@
     "src/components/ui/bento-grid.jsx",
     "src/components/ui/display-cards.jsx",
     "src/components/magicui/animated-beam-demo.jsx"
-, "app/(main)/page.jsx", "app/(main)/layout.jsx", "src/components/file-upload.jsx", "src/components/comp-333.jsx", "app/invit/page.jsx", "src/components/ui/typewriter-text.jsx", "src/components/otp-input.jsx"  ],
+, "app/(main)/page.jsx", "app/(main)/layout.jsx", "src/components/file-upload.jsx", "src/components/comp-333.jsx", "app/invit/page.jsx", "src/components/ui/typewriter-text.jsx", "src/components/otp-input.jsx", "app/dashboard/subscribe/page.jsx"  ],
   "exclude": ["node_modules"]
 }
