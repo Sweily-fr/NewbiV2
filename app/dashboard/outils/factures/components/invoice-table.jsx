@@ -266,13 +266,13 @@ export default function InvoiceTable() {
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <div className="flex-1 text-sm text-muted-foreground">
+        <div className="flex-1 text-sm font-normal text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center gap-2">
-            <p className="whitespace-nowrap text-sm font-medium">
+            <p className="whitespace-nowrap text-sm font-normal">
               Lignes par page
             </p>
             <Select
@@ -295,7 +295,7 @@ export default function InvoiceTable() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center whitespace-nowrap text-sm font-medium">
+          <div className="flex items-center whitespace-nowrap text-sm font-normal">
             Page {table.getState().pagination.pageIndex + 1} sur{" "}
             {table.getPageCount()}
           </div>

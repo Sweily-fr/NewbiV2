@@ -22,21 +22,6 @@ import InvoiceRowActions from "../components/invoice-row-actions";
 import { toast } from "@/src/components/ui/sonner";
 
 // Custom filter functions
-const multiColumnFilterFn = (row, columnId, filterValue) => {
-  const searchableContent = [
-    row.original.number,
-    row.original.client?.name,
-    row.original.client?.email,
-    INVOICE_STATUS_LABELS[row.original.status],
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-
-  const searchTerm = (filterValue ?? "").toLowerCase();
-  return searchableContent.includes(searchTerm);
-};
-
 const statusFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
   const status = row.getValue(columnId);
@@ -45,18 +30,95 @@ const statusFilterFn = (row, columnId, filterValue) => {
 
 // Mémoize filter functions to prevent recreation on each render
 const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
+  const invoice = row.original;
+  const clientName = invoice.client?.name || "";
+  const invoiceNumber = invoice.number || "";
+  
+  // Formater les dates dans différents formats pour la recherche
+  const formatDate = (dateValue) => {
+    if (!dateValue) return [];
+    
+    try {
+      // Gérer différents types de dates (string, nombre, Date)
+      let date;
+      if (typeof dateValue === 'string') {
+        // Si c'est un timestamp en millisecondes (string de chiffres)
+        if (/^\d+$/.test(dateValue)) {
+          date = new Date(parseInt(dateValue, 10));
+        } else {
+          date = new Date(dateValue);
+        }
+      } else if (typeof dateValue === 'number') {
+        date = new Date(dateValue);
+      } else if (dateValue instanceof Date) {
+        date = dateValue;
+      } else {
+        return [];
+      }
+
+      if (isNaN(date.getTime())) return [];
+      
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      
+      // Formats de date pour la recherche
+      return [
+        // Format d'affichage dans le tableau (JJ/MM/AAAA)
+        `${day}/${month}/${year}`,
+        // Format ISO (AAAA-MM-JJ)
+        `${year}-${month}-${day}`,
+        // Format avec tirets (JJ-MM-AAAA)
+        `${day}-${month}-${year}`,
+        // Format partiel (JJ/MM)
+        `${day}/${month}`,
+        // Format partiel avec tirets (JJ-MM)
+        `${day}-${month}`,
+        // Format jour uniquement (JJ)
+        `${day}`,
+        // Format mois/année (MM/AAAA)
+        `${month}/${year}`,
+        // Format mois-année avec tirets (MM-AAAA)
+        `${month}-${year}`,
+        // Format texte en français
+        date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+        date.toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' })
+      ].filter((value, index, self) => 
+        // Supprimer les doublons
+        value && self.indexOf(value) === index
+      );
+    } catch (error) {
+      console.error('Erreur de formatage de date:', error);
+      return [];
+    }
+  };
+
+  // Récupérer les dates formatées
+  const issueDates = invoice.issueDate ? formatDate(invoice.issueDate) : [];
+  const dueDates = invoice.dueDate ? formatDate(invoice.dueDate) : [];
+  
+  // Récupérer les autres données
+  const status = INVOICE_STATUS_LABELS[invoice.status] || "";
+  const amount = invoice.finalTotalTTC ? invoice.finalTotalTTC.toString() : "";
+  
+  // Préparer le contenu de recherche
   const searchableContent = [
-    row.original.number,
-    row.original.client?.name,
-    row.original.client?.email,
-    INVOICE_STATUS_LABELS[row.original.status],
+    clientName,
+    invoiceNumber,                        // Numéro de facture exact
+    ...issueDates,
+    ...dueDates,
+    status,
+    amount.replace(/\./g, ','),          // Montant avec virgule
+    amount.replace(/\./g, '')            // Montant sans séparateur
   ]
     .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+    .map(s => s.toString().toLowerCase().trim());
 
-  const searchTerm = (filterValue ?? "").toLowerCase();
-  return searchableContent.includes(searchTerm);
+  const searchTerm = (filterValue ?? "").toLowerCase().trim();
+  
+  // Vérifier si le terme de recherche correspond à l'un des éléments
+  return searchableContent.some(content => content.includes(searchTerm));
 };
 
 const memoizedStatusFilter = (row, columnId, filterValue) => {
