@@ -105,7 +105,64 @@ export function SignatureProvider({ children }) {
       verticalSeparatorLeft: 22, // Espacement gauche du séparateur vertical
       verticalSeparatorRight: 22, // Espacement droite du séparateur vertical
     },
-    // Typographie générale
+    // Typographie détaillée pour chaque champ
+    typography: {
+      firstName: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 16,
+        color: '#2563eb',
+        fontWeight: 'normal'
+      },
+      lastName: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 16,
+        color: '#2563eb',
+        fontWeight: 'normal'
+      },
+      position: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 14,
+        color: '#666666',
+        fontWeight: 'normal'
+      },
+      company: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 14,
+        color: '#2563eb',
+        fontWeight: 'normal'
+      },
+      email: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 12,
+        color: '#666666',
+        fontWeight: 'normal'
+      },
+      phone: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 12,
+        color: '#666666',
+        fontWeight: 'normal'
+      },
+      mobile: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 12,
+        color: '#666666',
+        fontWeight: 'normal'
+      },
+      website: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 12,
+        color: '#666666',
+        fontWeight: 'normal'
+      },
+      address: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 12,
+        color: '#666666',
+        fontWeight: 'normal'
+      }
+    },
+    // Typographie générale (conservée pour compatibilité)
     fontFamily: 'Arial, sans-serif', // Police par défaut
     fontSize: {
       name: 16, // Taille de police pour le nom
@@ -154,6 +211,10 @@ export function SignatureProvider({ children }) {
             fontSize: {
               ...defaultSignatureData.fontSize,
               ...(parsedData.fontSize || {})
+            },
+            typography: {
+              ...defaultSignatureData.typography,
+              ...(parsedData.typography || {})
             }
           };
           
@@ -181,7 +242,7 @@ export function SignatureProvider({ children }) {
   const updateSignatureData = (key, value) => {
     setSignatureData((prev) => {
       // Handle nested object updates for spacings, colors, etc.
-      if (key === 'spacings' || key === 'colors' || key === 'columnWidths' || key === 'fontSize' || key === 'verticalSeparator') {
+      if (key === 'spacings' || key === 'colors' || key === 'columnWidths' || key === 'fontSize' || key === 'verticalSeparator' || key === 'typography') {
         return {
           ...prev,
           [key]: {
@@ -224,6 +285,10 @@ export function SignatureProvider({ children }) {
       fontSize: {
         ...defaultSignatureData.fontSize,
         ...(editData.fontSize || {})
+      },
+      typography: {
+        ...defaultSignatureData.typography,
+        ...(editData.typography || {})
       }
     };
     setSignatureData(mergedData);

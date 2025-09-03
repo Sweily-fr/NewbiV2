@@ -346,15 +346,19 @@ const SignatureManager = () => {
           <tbody>
             <tr>
               <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.nameBottom || 2}px;">
-                <span style="font-size: ${signature.fontSize?.name || 16}px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
-                  ${signature.firstName || ''} ${signature.lastName || ''}
+                <span style="font-size: ${signature.typography?.firstName?.fontSize || signature.fontSize?.name || 16}px; font-weight: ${signature.typography?.firstName?.fontWeight || 'bold'}; color: ${signature.typography?.firstName?.color || primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.typography?.firstName?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                  ${signature.firstName || ''}
+                </span>
+                ${signature.firstName && signature.lastName ? ' ' : ''}
+                <span style="font-size: ${signature.typography?.lastName?.fontSize || signature.fontSize?.name || 16}px; font-weight: ${signature.typography?.lastName?.fontWeight || 'bold'}; color: ${signature.typography?.lastName?.color || primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.typography?.lastName?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                  ${signature.lastName || ''}
                 </span>
               </td>
             </tr>
             ${signature.position ? `
             <tr>
               <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.positionBottom || 2}px;">
-                <span style="font-size: ${signature.fontSize?.position || 14}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
+                <span style="font-size: ${signature.typography?.position?.fontSize || signature.fontSize?.position || 14}px; color: ${signature.typography?.position?.color || '#666666'}; font-weight: ${signature.typography?.position?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.position?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
                   ${signature.position}
                 </span>
               </td>
@@ -363,7 +367,7 @@ const SignatureManager = () => {
             ${signature.company ? `
             <tr>
               <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.companyBottom || 8}px;">
-                <span style="font-size: ${signature.fontSize?.company || 14}px; font-weight: bold; color: ${primaryColor}; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
+                <span style="font-size: ${signature.typography?.company?.fontSize || signature.fontSize?.company || 14}px; font-weight: ${signature.typography?.company?.fontWeight || 'bold'}; color: ${signature.typography?.company?.color || primaryColor}; margin: 0; padding: 0; font-family: ${signature.typography?.company?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
                   ${signature.company}
                 </span>
               </td>
@@ -379,8 +383,8 @@ const SignatureManager = () => {
                         <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
                       </td>
                       <td style="padding: 0; margin: 0; vertical-align: middle;">
-                        <span style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
-                          <a href="tel:${signature.phone}" style="color: #666666; text-decoration: none; margin: 0; padding: 0;">${signature.phone}</a>
+                        <span style="font-size: ${signature.typography?.phone?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.phone?.color || '#666666'}; font-weight: ${signature.typography?.phone?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.phone?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                          <a href="tel:${signature.phone}" style="color: ${signature.typography?.phone?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.phone}</a>
                         </span>
                       </td>
                     </tr>
@@ -399,8 +403,8 @@ const SignatureManager = () => {
                         <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
                       </td>
                       <td style="padding: 0; margin: 0; vertical-align: middle;">
-                        <span style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
-                          <a href="tel:${signature.mobile}" style="color: #666666; text-decoration: none; margin: 0; padding: 0;">${signature.mobile}</a>
+                        <span style="font-size: ${signature.typography?.mobile?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.mobile?.color || '#666666'}; font-weight: ${signature.typography?.mobile?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.mobile?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                          <a href="tel:${signature.mobile}" style="color: ${signature.typography?.mobile?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.mobile}</a>
                         </span>
                       </td>
                     </tr>
@@ -419,8 +423,8 @@ const SignatureManager = () => {
                         <img src="https://cdn-icons-png.flaticon.com/512/732/732200.png" alt="Email" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
                       </td>
                       <td style="padding: 0; margin: 0; vertical-align: middle;">
-                        <span style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
-                          <a href="mailto:${signature.email}" style="color: #666666; text-decoration: none; margin: 0; padding: 0;">${signature.email}</a>
+                        <span style="font-size: ${signature.typography?.email?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.email?.color || '#666666'}; font-weight: ${signature.typography?.email?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.email?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                          <a href="mailto:${signature.email}" style="color: ${signature.typography?.email?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.email}</a>
                         </span>
                       </td>
                     </tr>
@@ -439,8 +443,8 @@ const SignatureManager = () => {
                         <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Website" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
                       </td>
                       <td style="padding: 0; margin: 0; vertical-align: middle;">
-                        <span style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
-                          <a href="${signature.website}" style="color: #666666; text-decoration: none; margin: 0; padding: 0;">${signature.website}</a>
+                        <span style="font-size: ${signature.typography?.website?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.website?.color || '#666666'}; font-weight: ${signature.typography?.website?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.website?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                          <a href="${signature.website}" style="color: ${signature.typography?.website?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.website}</a>
                         </span>
                       </td>
                     </tr>
@@ -459,7 +463,7 @@ const SignatureManager = () => {
                         <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
                       </td>
                       <td style="padding: 0; margin: 0; vertical-align: middle;">
-                        <span style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
+                        <span style="font-size: ${signature.typography?.address?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.address?.color || '#666666'}; font-weight: ${signature.typography?.address?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.address?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
                           ${signature.address}
                         </span>
                       </td>
@@ -731,15 +735,19 @@ export const generateGmailSignatureHTML = (signature) => {
         <tbody>
           <tr>
             <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.nameBottom || 2}px;">
-              <span style="font-size: ${signature.fontSize?.name || 16}px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
-                ${signature.firstName || ''} ${signature.lastName || ''}
+              <span style="font-size: ${signature.typography?.firstName?.fontSize || signature.fontSize?.name || 16}px; font-weight: ${signature.typography?.firstName?.fontWeight || 'bold'}; color: ${signature.typography?.firstName?.color || primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.typography?.firstName?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                ${signature.firstName || ''}
+              </span>
+              ${signature.firstName && signature.lastName ? ' ' : ''}
+              <span style="font-size: ${signature.typography?.lastName?.fontSize || signature.fontSize?.name || 16}px; font-weight: ${signature.typography?.lastName?.fontWeight || 'bold'}; color: ${signature.typography?.lastName?.color || primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.typography?.lastName?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                ${signature.lastName || ''}
               </span>
             </td>
           </tr>
           ${signature.position ? `
           <tr>
             <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.positionBottom || 2}px;">
-              <span style="font-size: ${signature.fontSize?.position || 14}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
+              <span style="font-size: ${signature.typography?.position?.fontSize || signature.fontSize?.position || 14}px; color: ${signature.typography?.position?.color || '#666666'}; font-weight: ${signature.typography?.position?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.position?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
                 ${signature.position}
               </span>
             </td>
@@ -748,7 +756,7 @@ export const generateGmailSignatureHTML = (signature) => {
           ${signature.company ? `
           <tr>
             <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.companyBottom || 8}px;">
-              <span style="font-size: ${signature.fontSize?.company || 14}px; font-weight: bold; color: ${primaryColor}; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
+              <span style="font-size: ${signature.typography?.company?.fontSize || signature.fontSize?.company || 14}px; font-weight: ${signature.typography?.company?.fontWeight || 'bold'}; color: ${signature.typography?.company?.color || primaryColor}; margin: 0; padding: 0; font-family: ${signature.typography?.company?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
                 ${signature.company}
               </span>
             </td>
@@ -764,8 +772,8 @@ export const generateGmailSignatureHTML = (signature) => {
                       <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
                     </td>
                     <td style="padding: 0; margin: 0; vertical-align: middle;">
-                      <span style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
-                        <a href="tel:${signature.phone}" style="color: #666666; text-decoration: none; margin: 0; padding: 0;">${signature.phone}</a>
+                      <span style="font-size: ${signature.typography?.phone?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.phone?.color || '#666666'}; font-weight: ${signature.typography?.phone?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.phone?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                        <a href="tel:${signature.phone}" style="color: ${signature.typography?.phone?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.phone}</a>
                       </span>
                     </td>
                   </tr>
@@ -784,8 +792,8 @@ export const generateGmailSignatureHTML = (signature) => {
                       <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
                     </td>
                     <td style="padding: 0; margin: 0; vertical-align: middle;">
-                      <span style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
-                        <a href="tel:${signature.mobile}" style="color: #666666; text-decoration: none; margin: 0; padding: 0;">${signature.mobile}</a>
+                      <span style="font-size: ${signature.typography?.mobile?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.mobile?.color || '#666666'}; font-weight: ${signature.typography?.mobile?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.mobile?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                        <a href="tel:${signature.mobile}" style="color: ${signature.typography?.mobile?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.mobile}</a>
                       </span>
                     </td>
                   </tr>
@@ -804,8 +812,8 @@ export const generateGmailSignatureHTML = (signature) => {
                       <img src="https://cdn-icons-png.flaticon.com/512/732/732200.png" alt="Email" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
                     </td>
                     <td style="padding: 0; margin: 0; vertical-align: middle;">
-                      <span style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
-                        <a href="mailto:${signature.email}" style="color: #666666; text-decoration: none; margin: 0; padding: 0;">${signature.email}</a>
+                      <span style="font-size: ${signature.typography?.email?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.email?.color || '#666666'}; font-weight: ${signature.typography?.email?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.email?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                        <a href="mailto:${signature.email}" style="color: ${signature.typography?.email?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.email}</a>
                       </span>
                     </td>
                   </tr>
@@ -824,8 +832,8 @@ export const generateGmailSignatureHTML = (signature) => {
                       <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Website" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
                     </td>
                     <td style="padding: 0; margin: 0; vertical-align: middle;">
-                      <span style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
-                        <a href="${signature.website}" style="color: #666666; text-decoration: none; margin: 0; padding: 0;">${signature.website}</a>
+                      <span style="font-size: ${signature.typography?.website?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.website?.color || '#666666'}; font-weight: ${signature.typography?.website?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.website?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                        <a href="${signature.website}" style="color: ${signature.typography?.website?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.website}</a>
                       </span>
                     </td>
                   </tr>
@@ -844,7 +852,7 @@ export const generateGmailSignatureHTML = (signature) => {
                       <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
                     </td>
                     <td style="padding: 0; margin: 0; vertical-align: middle;">
-                      <span style="font-size: ${signature.fontSize?.contact || 12}px; color: #666666; margin: 0; padding: 0; font-family: ${signature.fontFamily || 'Arial, sans-serif'};">
+                      <span style="font-size: ${signature.typography?.address?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.address?.color || '#666666'}; font-weight: ${signature.typography?.address?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.address?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
                         ${signature.address}
                       </span>
                     </td>
