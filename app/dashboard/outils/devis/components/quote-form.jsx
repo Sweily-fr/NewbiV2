@@ -140,59 +140,64 @@ function ProductSearchCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between text-left font-normal",
-            !value && "text-muted-foreground",
+            "bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px] h-10",
             className
           )}
         >
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 shrink-0" />
-            <span className="truncate">{placeholder}</span>
-          </div>
-          <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span className={cn("truncate text-left", "text-muted-foreground")}>
+            {placeholder}
+          </span>
+          <ChevronDownIcon
+            size={16}
+            className="text-muted-foreground/80 shrink-0"
+            aria-hidden="true"
+          />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="start">
+      <PopoverContent
+        className="border-input w-full min-w-[var(--radix-popper-anchor-width)] p-0"
+        align="start"
+      >
         <Command>
           <CommandInput
             placeholder="Rechercher un produit..."
             onValueChange={handleSearchChange}
           />
           <CommandList>
-            {loading && <CommandEmpty>Recherche en cours...</CommandEmpty>}
-            {!loading && products.length === 0 && (
+            {loading ? (
+              <div className="flex items-center justify-center p-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-sm text-muted-foreground">
+                  Recherche en cours...
+                </span>
+              </div>
+            ) : error ? (
+              <div className="p-4 text-center text-red-600">
+                <span className="text-sm">
+                  Erreur lors du chargement des produits
+                </span>
+              </div>
+            ) : products.length === 0 ? (
               <CommandEmpty>Aucun produit trouvé.</CommandEmpty>
-            )}
-            {!loading && products.length > 0 && (
+            ) : (
               <CommandGroup>
                 {products.map((product) => (
                   <CommandItem
                     key={product.value}
                     value={product.value}
                     onSelect={handleSelect}
-                    className="flex flex-col items-start gap-1 p-3"
+                    className="flex items-center justify-between p-3 hover:bg-gray-50"
                   >
-                    <div className="flex items-center gap-2 w-full">
-                      <CheckIcon
-                        className={cn(
-                          "h-4 w-4",
-                          value === product.value ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">{product.label}</div>
-                        {product.description && (
-                          <div className="text-sm text-muted-foreground truncate">
-                            {product.description}
-                          </div>
-                        )}
-                        <div className="text-sm text-muted-foreground">
-                          {product.price
-                            ? `${product.price}€`
-                            : "Prix non défini"}{" "}
-                          • TVA {product.vatRate || 20}%
-                        </div>
-                      </div>
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{product.label}</span>
+                      {product.description && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                          {product.description}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {product.price ? `${product.price}€` : "Prix non défini"}
                     </div>
                   </CommandItem>
                 ))}

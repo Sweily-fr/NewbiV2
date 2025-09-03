@@ -16,6 +16,7 @@ import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { Button } from "@/src/components/ui/button";
+import { ColorPicker } from "@/src/components/ui/color-picker";
 
 // Fonction de validation de l'IBAN
 const validateIBAN = (value) => {
@@ -48,211 +49,336 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave }) {
   // Import automatique des coordonnées bancaires lors du chargement initial
   useEffect(() => {
     // Si showBankDetails est true et qu'il n'y a pas encore de données dans bankDetails
-    if (data.showBankDetails && (!data.bankDetails || !data.bankDetails.iban)) {
-      // Importer depuis companyInfo si disponible
-      if (data.companyInfo?.bankDetails) {
-        setValue("bankDetails", {
-          iban: data.companyInfo.bankDetails.iban || "",
-          bic: data.companyInfo.bankDetails.bic || "",
-          bankName: data.companyInfo.bankDetails.bankName || "",
+    // mais qu'il y a des données dans companyInfo.bankDetails (devis existant) ou userBankDetails (utilisateur actuel), les importer
+    if (
+      data.showBankDetails &&
+      !data.bankDetails?.iban &&
+      !data.bankDetails?.bic &&
+      !data.bankDetails?.bankName
+    ) {
+      // Priorité aux données du devis existant, sinon utiliser celles de l'utilisateur actuel
+      const sourceData =
+        data.companyInfo?.bankDetails &&
+        (data.companyInfo.bankDetails.iban ||
+          data.companyInfo.bankDetails.bic ||
+          data.companyInfo.bankDetails.bankName)
+          ? data.companyInfo.bankDetails
+          : data.userBankDetails;
+
+      if (
+        sourceData &&
+        (sourceData.iban || sourceData.bic || sourceData.bankName)
+      ) {
+        console.log(
+          "🏦 Import automatique des coordonnées bancaires lors du chargement:",
+          sourceData
+        );
+        setValue("bankDetails.iban", sourceData.iban || "", {
+          shouldDirty: true,
+        });
+        setValue("bankDetails.bic", sourceData.bic || "", {
+          shouldDirty: true,
+        });
+        setValue("bankDetails.bankName", sourceData.bankName || "", {
+          shouldDirty: true,
         });
       }
     }
-  }, [data.showBankDetails, data.companyInfo, data.bankDetails, setValue]);
-
-  const handleSave = () => {
-    if (onSave) {
-      onSave(data);
-    }
-  };
-
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    }
-  };
+  }, [
+    data.showBankDetails,
+    data.companyInfo?.bankDetails,
+    data.userBankDetails,
+    data.bankDetails,
+    setValue,
+  ]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="h-full flex flex-col">
       {/* Contenu scrollable */}
-      <div className="flex-1 overflow-y-auto pr-2 scrollbar-auto-hide">
-        <div className="space-y-6">
-          {/* Section Notes et bas de page */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto pl-2 pr-2 space-y-6">
+          {/* Coordonnées bancaires */}
           <Card className="shadow-none border-none bg-transparent">
-            <CardHeader className="p-0 pb-4">
-              <CardTitle className="flex items-center gap-2 font-medium text-lg">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+                Coordonnées bancaires
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              {/* Vérifier si des coordonnées bancaires sont disponibles */}
+              {data.userBankDetails?.iban || data.userBankDetails?.bic || data.userBankDetails?.bankName ? (
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="show-bank-details"
+                    checked={data.showBankDetails || false}
+                    onCheckedChange={(checked) => {
+                      setValue("showBankDetails", checked, { shouldDirty: true });
+                    }}
+                    disabled={!canEdit}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="show-bank-details"
+                      className="text-sm font-light leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Afficher les coordonnées bancaires
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Cochez pour inclure vos coordonnées bancaires sur le devis
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-md">
+                  <p className="mb-2">
+                    Aucune coordonnée bancaire n'est configurée pour votre entreprise.
+                  </p>
+                  <a 
+                    href="/dashboard/parametres/entreprise"
+                    className="text-primary hover:underline font-medium flex items-center gap-1"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Configurer les coordonnées bancaires dans les paramètres
+                  </a>
+                </div>
+              )}
+
+              {/* Afficher les détails bancaires si activé et disponibles */}
+              {data.showBankDetails && (data.userBankDetails?.iban || data.userBankDetails?.bic || data.userBankDetails?.bankName) && (
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  {/* Nom de la banque */}
+                  <div>
+                    <Label className="font-light">
+                      Nom de la banque
+                    </Label>
+                    <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                      <p className="text-sm">
+                        {data.bankDetails?.bankName || "Non spécifié"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* IBAN */}
+                  <div>
+                    <Label className="font-light">
+                      IBAN
+                    </Label>
+                    <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                      <p className="text-sm font-mono">
+                        {data.bankDetails?.iban || "Non spécifié"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* BIC/SWIFT */}
+                  <div>
+                    <Label className="font-light">
+                      BIC/SWIFT
+                    </Label>
+                    <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                      <p className="text-sm font-mono">
+                        {data.bankDetails?.bic || "Non spécifié"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Les coordonnées bancaires sont gérées dans les paramètres de votre entreprise.
+                  </p>
+
+                  {/* Alerte informative */}
+                  <Alert>
+                    <AlertDescription>
+                      Ces coordonnées bancaires apparaîtront sur votre devis
+                      pour faciliter les paiements de vos clients.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Separator />
+
+          {/* Section Apparence */}
+          <Card className="shadow-none border-none bg-transparent">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+                Apparence
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              {/* Couleurs côte à côte */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Couleur du texte */}
+                <div className="space-y-2">
+                  <Label htmlFor="text-color" className="font-light">
+                    Couleur du texte
+                  </Label>
+                  <ColorPicker
+                    className="w-full"
+                    color={data.appearance?.textColor || "#000000"}
+                    onChange={(color) => {
+                      setValue("appearance.textColor", color, {
+                        shouldDirty: true,
+                      });
+                    }}
+                    disabled={!canEdit}
+                  />
+                </div>
+
+                {/* Couleur des titres du header */}
+                <div className="space-y-2">
+                  <Label htmlFor="header-text-color" className="font-light">
+                    Couleur des titres du tableau
+                  </Label>
+                  <ColorPicker
+                    className="w-full"
+                    color={data.appearance?.headerTextColor || "#ffffff"}
+                    onChange={(color) => {
+                      setValue("appearance.headerTextColor", color, {
+                        shouldDirty: true,
+                      });
+                    }}
+                    disabled={!canEdit}
+                  />
+                </div>
+              </div>
+
+              {/* Couleur de fond du header */}
+              <div className="space-y-2">
+                <Label htmlFor="header-bg-color" className="font-light">
+                  Couleur de fond du tableau
+                </Label>
+                <ColorPicker
+                  className="w-full"
+                  color={data.appearance?.headerBgColor || "#1d1d1b"}
+                  onChange={(color) => {
+                    setValue("appearance.headerBgColor", color, {
+                      shouldDirty: true,
+                    });
+                  }}
+                  disabled={!canEdit}
+                />
+              </div>
+            </CardContent>
+          </Card>
+          <Separator />
+
+          {/* Notes et bas de page */}
+          <Card className="shadow-none border-none bg-transparent">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-normal text-lg">
                 <Tag className="h-5 w-5" />
                 Notes et bas de page
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 space-y-4">
+            <CardContent className="space-y-4 p-0">
               {/* Notes d'en-tête */}
-              <div className="space-y-2">
-                <Label htmlFor="headerNotes" className="text-sm font-medium">
+              <div>
+                <Label htmlFor="header-notes" className="font-light">
                   Notes d'en-tête
                 </Label>
-                <Textarea
-                  id="headerNotes"
-                  placeholder="Notes qui apparaîtront en haut du devis..."
-                  className="min-h-[80px] resize-none"
-                  disabled={!canEdit}
-                  {...register("headerNotes")}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Ces notes apparaîtront en haut de votre devis, après les informations client.
-                </p>
+                <div className="space-y-1">
+                  <Textarea
+                    id="header-notes"
+                    className={`mt-2 ${errors?.headerNotes ? "border-red-500" : ""}`}
+                    {...register("headerNotes", {
+                      maxLength: {
+                        value: 1000,
+                        message:
+                          "Les notes d'en-tête ne doivent pas dépasser 1000 caractères",
+                      },
+                    })}
+                    defaultValue={data.headerNotes || ""}
+                    placeholder="Notes qui apparaîtront en haut du devis..."
+                    rows={3}
+                    disabled={!canEdit}
+                  />
+                  {errors?.headerNotes && (
+                    <p className="text-xs text-red-500">
+                      {errors.headerNotes.message}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Notes de bas de page */}
-              <div className="space-y-2">
-                <Label htmlFor="footerNotes" className="text-sm font-medium">
+              <div>
+                <Label htmlFor="footer-notes" className="font-light">
                   Notes de bas de page
                 </Label>
-                <Textarea
-                  id="footerNotes"
-                  placeholder="Conditions générales, modalités de paiement..."
-                  className="min-h-[80px] resize-none"
-                  disabled={!canEdit}
-                  {...register("footerNotes")}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Ces notes apparaîtront en bas de votre devis, après le tableau des articles.
-                </p>
+                <div className="space-y-1">
+                  <Textarea
+                    id="footer-notes"
+                    className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
+                    {...register("footerNotes", {
+                      maxLength: {
+                        value: 1000,
+                        message:
+                          "Les notes de bas de page ne doivent pas dépasser 1000 caractères",
+                      },
+                    })}
+                    defaultValue={data.footerNotes || ""}
+                    placeholder="Notes qui apparaîtront en bas du devis..."
+                    rows={3}
+                    disabled={!canEdit}
+                  />
+                  {errors?.footerNotes && (
+                    <p className="text-xs text-red-500">
+                      {errors.footerNotes.message}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Conditions générales */}
-              <div className="space-y-2">
-                <Label htmlFor="termsAndConditions" className="text-sm font-medium">
+              <div>
+                <Label htmlFor="terms-conditions" className="font-light">
                   Conditions générales
                 </Label>
-                <Textarea
-                  id="termsAndConditions"
-                  placeholder="Conditions générales de vente, garanties..."
-                  className="min-h-[100px] resize-none"
-                  disabled={!canEdit}
-                  {...register("termsAndConditions")}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Conditions générales qui s'appliquent à ce devis.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Separator />
-
-          {/* Section Coordonnées bancaires */}
-          <Card className="shadow-none border-none bg-transparent">
-            <CardHeader className="p-0 pb-4">
-              <CardTitle className="flex items-center gap-2 font-medium text-lg">
-                <Settings className="h-5 w-5" />
-                Coordonnées bancaires
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 space-y-4">
-              {/* Checkbox pour afficher les coordonnées bancaires */}
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="showBankDetails"
-                  checked={data.showBankDetails || false}
-                  onCheckedChange={(checked) =>
-                    setValue("showBankDetails", checked)
-                  }
-                  disabled={!canEdit}
-                />
-                <Label htmlFor="showBankDetails" className="text-sm font-medium">
-                  Afficher les coordonnées bancaires sur le devis
-                </Label>
-              </div>
-
-              {/* Coordonnées bancaires conditionnelles */}
-              {data.showBankDetails && (
-                <div className="space-y-4 pl-6 border-l-2 border-muted">
-                  <Alert>
-                    <AlertDescription>
-                      Les coordonnées bancaires seront affichées en bas du devis pour faciliter les paiements.
-                    </AlertDescription>
-                  </Alert>
-
-                  {/* IBAN */}
-                  <div className="space-y-2">
-                    <Label htmlFor="bankDetails.iban" className="text-sm font-medium">
-                      IBAN <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="bankDetails.iban"
-                      placeholder="FR76 1234 5678 9012 3456 7890 123"
-                      disabled={!canEdit}
-                      {...register("bankDetails.iban", {
-                        required: data.showBankDetails ? "IBAN requis" : false,
-                        validate: validateIBAN,
-                      })}
-                      className={errors.bankDetails?.iban ? "border-red-500" : ""}
-                    />
-                    {errors.bankDetails?.iban && (
-                      <p className="text-sm text-red-500">
-                        {errors.bankDetails.iban.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* BIC */}
-                  <div className="space-y-2">
-                    <Label htmlFor="bankDetails.bic" className="text-sm font-medium">
-                      BIC/SWIFT <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="bankDetails.bic"
-                      placeholder="BNPAFRPPXXX"
-                      disabled={!canEdit}
-                      {...register("bankDetails.bic", {
-                        required: data.showBankDetails ? "BIC/SWIFT requis" : false,
-                        validate: validateBIC,
-                      })}
-                      className={errors.bankDetails?.bic ? "border-red-500" : ""}
-                    />
-                    {errors.bankDetails?.bic && (
-                      <p className="text-sm text-red-500">
-                        {errors.bankDetails.bic.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Nom de la banque */}
-                  <div className="space-y-2">
-                    <Label htmlFor="bankDetails.bankName" className="text-sm font-medium">
-                      Nom de la banque
-                    </Label>
-                    <Input
-                      id="bankDetails.bankName"
-                      placeholder="BNP Paribas"
-                      disabled={!canEdit}
-                      {...register("bankDetails.bankName")}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Nom de votre établissement bancaire (optionnel).
+                <div className="space-y-1">
+                  <Textarea
+                    id="terms-conditions"
+                    className={`mt-2 ${errors?.termsAndConditions ? "border-red-500" : ""}`}
+                    {...register("termsAndConditions", {
+                      maxLength: {
+                        value: 2000,
+                        message:
+                          "Les conditions générales ne doivent pas dépasser 2000 caractères",
+                      },
+                    })}
+                    defaultValue={data.termsAndConditions || ""}
+                    placeholder="Conditions générales de vente..."
+                    rows={4}
+                    disabled={!canEdit}
+                  />
+                  {errors?.termsAndConditions && (
+                    <p className="text-xs text-red-500">
+                      {errors.termsAndConditions.message}
                     </p>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Boutons d'action fixes en bas */}
-      <div className="flex-shrink-0 pt-6 border-t bg-background">
-        <div className="flex justify-end gap-3">
+      {/* Boutons fixes en bas */}
+      <div className="flex-shrink-0 border-t bg-background pt-4">
+        <div className="max-w-2xl mx-auto flex justify-end gap-3">
           <Button
             variant="outline"
-            onClick={handleCancel}
+            onClick={onCancel}
             disabled={!canEdit}
+            className="font-normal"
           >
             Annuler
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!canEdit}
+          <Button 
+            onClick={onSave} 
+            disabled={!canEdit} 
+            className="font-normal"
           >
             Enregistrer les modifications
           </Button>

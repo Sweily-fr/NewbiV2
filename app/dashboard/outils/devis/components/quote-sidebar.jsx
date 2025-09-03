@@ -591,14 +591,16 @@ export default function QuoteSidebar({
 
       {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-          <DialogHeader>
-            <DialogTitle className="pl-6 pt-6">
+        <DialogContent className="w-full max-w-6xl h-[90vh] p-0 flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <DialogTitle className="text-xl font-semibold">
               Aperçu du devis {quote.number || "Brouillon"}
             </DialogTitle>
           </DialogHeader>
-          <div className="mt-0">
-            <UniversalPreviewPDF data={quote} type="quote" />
+          <div className="flex-1 overflow-y-auto bg-[#F9F9F9] dark:bg-[#1a1a1a] p-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-4xl mx-auto">
+              <UniversalPreviewPDF data={quote} type="quote" />
+            </div>
           </div>
         </DialogContent>
       </Dialog>
