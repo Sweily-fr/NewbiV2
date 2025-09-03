@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Loading from "./loading.jsx";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Input } from "@/src/components/ui/input";
@@ -33,6 +34,18 @@ export default function SubscribePage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const { isActive, loading, subscription } = useSubscription();
   const { data: session } = useSession();
+
+  // Vérifier les paramètres URL pour afficher la notification de succès
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const cancelSuccess = urlParams.get("cancel_success");
+
+    if (cancelSuccess === "true") {
+      toast.success("Abonnement résilié avec succès");
+      // Nettoyer l'URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const handleUpgrade = async (plan) => {
     setIsLoading(true);
@@ -78,10 +91,44 @@ export default function SubscribePage() {
   const handleCancellation = async () => {
     setIsLoading(true);
     try {
-      // Logique de résiliation immédiate
-      toast.success("Abonnement résilié avec succès");
+      const { data: sessionData } = await authClient.getSession();
+
+      if (!sessionData?.session?.activeOrganizationId) {
+        toast.error("Aucune organisation active trouvée");
+        return;
+      }
+
+      if (!subscription?.id) {
+        toast.error("Aucun abonnement actif trouvé");
+        return;
+      }
+      console.log("Organization ID:", sessionData.session.activeOrganizationId);
+      console.log("Subscription ID:", subscription.id);
+      console.log("Subscription object:", subscription);
+
+      const { data, error } = await authClient.subscription.cancel({
+        subscriptionId: subscription.id,
+        referenceId: sessionData.session.activeOrganizationId,
+        returnUrl: `${window.location.origin}/dashboard/subscribe?cancel_success=true`,
+      });
+
+      if (error) {
+        console.error("Erreur lors de la résiliation:", error);
+        toast.error(
+          `Erreur lors de la résiliation: ${error.message || "Erreur inconnue"}`
+        );
+        return;
+      }
+
+      // La notification de succès sera affichée après la redirection depuis Stripe
       setShowCancelModal(false);
+
+      // Redirection vers Stripe Customer Portal - la notification s'affichera au retour
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (error) {
+      console.error("Exception lors de la résiliation:", error);
       toast.error("Erreur lors de la résiliation");
     } finally {
       setIsLoading(false);
@@ -96,12 +143,9 @@ export default function SubscribePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#5b4fff]" />
-      </div>
-    );
+  // Attendre que toutes les données soient chargées avant d'afficher le contenu
+  if (loading || (isActive() && !subscription)) {
+    return <Loading />;
   }
 
   // Fonction pour formater les dates
@@ -146,11 +190,11 @@ export default function SubscribePage() {
     },
     {
       name: "Pro",
-      price: "13,99 € par mois facturation annuelle",
-      monthlyPrice: "14,99 € facturation mensuelle",
+      price: "11,24 € par mois facturation annuelle",
+      monthlyPrice: "12,49 € facturation mensuelle",
       description: "Toutes les fonctionnalités pour développer votre activité",
       features: [
-        "Facturation complète (devis → factures, TVA, relances)",
+        "Facturation complète (devis → factures, TVA)",
         "Devis",
         "Connexion comptes bancaires",
         "Gestion de trésorerie",

@@ -44,6 +44,7 @@ import {
 import { getCurrentUser } from "../lib/auth/api";
 import { useUser } from "../lib/auth/hooks";
 import { TeamSwitcher } from "@/src/components/team-switcher";
+import { useSubscription } from "@/src/contexts/subscription-context";
 
 const data = {
   teams: [
@@ -181,6 +182,7 @@ const data = {
 
 export function AppSidebar({ ...props }) {
   const { session } = useUser();
+  const { loading: subscriptionLoading, isActive, subscription } = useSubscription();
   const [theme, setTheme] = React.useState("light");
 
   // Effet pour détecter le thème depuis localStorage au chargement du composant
@@ -228,7 +230,7 @@ export function AppSidebar({ ...props }) {
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent className="mt-1">
-        {session?.user ? (
+        {session?.user && !subscriptionLoading && !(isActive() && !subscription) ? (
           <>
             <NavMain items={data.navMain} />
             <NavDocuments items={data.documents} />
@@ -277,14 +279,14 @@ export function AppSidebar({ ...props }) {
         )}
       </SidebarContent>
       <SidebarFooter>
-        {session?.user ? (
+        {session?.user && !subscriptionLoading && !(isActive() && !subscription) ? (
           <SidebarTrialCard />
         ) : (
           <div className="mb-2 px-2">
             <Skeleton className="h-16 w-full bg-[#EBEBEB] rounded-md" />
           </div>
         )}
-        {session?.user ? (
+        {session?.user && !subscriptionLoading && !(isActive() && !subscription) ? (
           <NavUser user={session.user} />
         ) : (
           <div className="flex items-center gap-2 px-2 py-1.5">
