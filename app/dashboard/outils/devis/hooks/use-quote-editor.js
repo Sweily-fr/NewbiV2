@@ -39,6 +39,40 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   const form = useForm({
     defaultValues: getInitialFormData(mode, initialData, session),
     mode: "onChange",
+    resolver: (values) => {
+      const errors = {};
+      
+      // Validation de la date d'émission
+      if (values.issueDate) {
+        const issueDate = new Date(values.issueDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Réinitialiser l'heure à minuit pour la comparaison
+        
+        if (issueDate < today) {
+          errors.issueDate = {
+            type: 'validate',
+            message: 'La date d\'émission ne peut pas être antérieure à la date actuelle'
+          };
+        }
+        
+        // Validation de la date de validité
+        if (values.validUntil) {
+          const validUntilDate = new Date(values.validUntil);
+          
+          if (validUntilDate < issueDate) {
+            errors.validUntil = {
+              type: 'validate',
+              message: 'La date de validité ne peut pas être antérieure à la date d\'émission'
+            };
+          }
+        }
+      }
+      
+      return {
+        values,
+        errors: Object.keys(errors).length > 0 ? errors : {}
+      };
+    },
   });
 
   const { watch, setValue, getValues, reset } = form;
@@ -51,32 +85,29 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   // Initialize form data when quote loads
   useEffect(() => {
-    console.log("🔄 useEffect - Chargement des données de devis existant");
-    console.log("📋 existingQuote:", existingQuote);
-    console.log("🎯 mode:", mode);
-
     if (existingQuote && mode !== "create") {
-      console.log(
-        "✅ Conditions remplies - Transformation et reset du formulaire"
-      );
+      console.log("🔍 Données brutes du devis:", {
+        id: existingQuote.id,
+        issueDate: existingQuote.issueDate,
+        validUntil: existingQuote.validUntil,
+        status: existingQuote.status,
+        rawValidUntil: existingQuote.validUntil,
+        rawIssueDate: existingQuote.issueDate
+      });
+      
       const quoteData = transformQuoteToFormData(existingQuote);
-      console.log("📝 Données avant reset:", quoteData);
-      console.log("🔍 CLIENT dans les données:", quoteData.client);
-      console.log("🔍 ITEMS dans les données:", quoteData.items);
-      console.log("🔍 Nombre d'articles:", quoteData.items?.length || 0);
 
       reset(quoteData);
-      console.log("🎉 Reset du formulaire effectué");
 
       // Vérifier les données après reset
       setTimeout(() => {
         const currentFormData = getValues();
-        console.log("🔍 Données après reset:", currentFormData);
-        console.log("🔍 CLIENT après reset:", currentFormData.client);
-        console.log("🔍 ITEMS après reset:", currentFormData.items);
-        console.log("🔍 DATES après reset:");
-        console.log("  - issueDate:", currentFormData.issueDate);
-        console.log("  - validUntil:", currentFormData.validUntil);
+        console.log("🔍 Données après reset:", {
+          issueDate: currentFormData.issueDate,
+          validUntil: currentFormData.validUntil,
+          status: currentFormData.status,
+          client: currentFormData.client ? 'Client présent' : 'Aucun client'
+        });
       }, 100);
     } else {
       console.log("❌ Conditions non remplies pour le chargement:", {
@@ -98,10 +129,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   useEffect(() => {
     if (mode === "create" && session?.user?.company) {
       const userCompany = session.user.company;
-
-      console.log("🔍 DEBUG - Session complète:", session);
-      console.log("🔍 DEBUG - User company:", userCompany);
-      console.log("🔍 DEBUG - SIRET disponible:", userCompany?.siret);
 
       setValue("companyInfo.name", userCompany.name || "");
       setValue("companyInfo.email", userCompany.email || "");
@@ -133,10 +160,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           // Suppression explicite de __typename et autres métadonnées GraphQL
         };
         setValue("userBankDetails", cleanBankDetails);
-        console.log(
-          "🏦 Coordonnées bancaires utilisateur définies (nettoyées):",
-          cleanBankDetails
-        );
       }
     }
   }, [mode, session, setValue]);
@@ -149,7 +172,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
     // Vérifier le client
     if (!data.client?.id) {
-      console.log("❌ Validation Step 1 échouée: Aucun client sélectionné");
       return false;
     }
 
@@ -167,11 +189,31 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
     // Vérifier la date d'émission
     if (!data.issueDate) {
-      console.log("❌ Validation Step 1 échouée: Date d'émission manquante");
+      toast.error("La date d'émission est requise");
       return false;
     }
+    
+    // Vérifier que la date d'émission n'est pas antérieure à la date actuelle
+    const issueDate = new Date(data.issueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Réinitialiser l'heure à minuit pour la comparaison
+    
+    if (issueDate < today) {
+      toast.error("La date d'émission ne peut pas être antérieure à la date actuelle");
+      return false;
+    }
+    
+    // Vérifier la date de validité
+    if (data.validUntil) {
+      const validUntilDate = new Date(data.validUntil);
+      
+      // Vérifier que la date de validité n'est pas antérieure à la date d'émission
+      if (validUntilDate < issueDate) {
+        toast.error("La date de validité ne peut pas être antérieure à la date d'émission");
+        return false;
+      }
+    }
 
-    console.log("✅ Validation Step 1 réussie");
     return true;
   }, [getValues, session?.user?.company?.name]);
 
@@ -180,7 +222,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
     // Vérifier qu'il y a au moins un article
     if (!data.items || data.items.length === 0) {
-      console.log("❌ Validation Step 2 échouée: Aucun article");
       return false;
     }
 
@@ -188,22 +229,28 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     for (let i = 0; i < data.items.length; i++) {
       const item = data.items[i];
       if (!item.description || !item.quantity || !item.unitPrice) {
-        console.log(`❌ Validation Step 2 échouée: Article ${i + 1} incomplet`);
         return false;
       }
     }
 
-    console.log("✅ Validation Step 2 réussie");
     return true;
   }, [getValues]);
 
   // Save function (for drafts and updates)
   const handleSave = useCallback(
     async (isAutoSave = false) => {
-      console.log("💾 handleSave appelé avec isAutoSave:", isAutoSave);
       try {
         setSaving(true);
         const currentFormData = getValues();
+        
+        // Vérifier la validité du formulaire
+        if (!isAutoSave) {
+          if (!validateStep1()) {
+            toast.error("Veuillez corriger les erreurs avant d'enregistrer");
+            setSaving(false);
+            return false;
+          }
+        }
 
         if (!isAutoSave) {
           console.log("💾 Sauvegarde manuelle déclenchée");
@@ -212,13 +259,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         const input = transformFormDataToInput(
           currentFormData,
           existingQuote?.status,
-          session
+          session,
+          existingQuote
         );
         input.status = "DRAFT";
 
         let result;
         if (mode === "create" || !quoteId) {
-          console.log("📝 Création d'un nouveau devis (brouillon)");
           result = await createQuote(input);
 
           if (result?.id) {
@@ -226,28 +273,17 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             console.log("✅ Devis créé avec succès, ID:", newQuoteId);
 
             if (!isAutoSave) {
-              console.log(
-                "🎯 Redirection après création de brouillon - isAutoSave:",
-                isAutoSave
-              );
               toast.success("Brouillon sauvegardé");
-              console.log("🚀 Redirection vers /dashboard/outils/devis");
               router.push("/dashboard/outils/devis");
             } else {
               console.log("⏸️ Pas de redirection (auto-sauvegarde)");
             }
           }
         } else {
-          console.log("📝 Mise à jour du devis existant");
           result = await updateQuote(quoteId, input);
 
           if (!isAutoSave) {
-            console.log(
-              "🎯 Redirection après mise à jour de brouillon - isAutoSave:",
-              isAutoSave
-            );
             toast.success("Brouillon sauvegardé");
-            console.log("🚀 Redirection vers /dashboard/outils/devis");
             router.push("/dashboard/outils/devis");
           } else {
             console.log("⏸️ Pas de redirection (auto-sauvegarde)");
@@ -258,9 +294,12 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         if (!isAutoSave) {
           toast.error("Erreur lors de la sauvegarde");
         }
+        return false;
       } finally {
         setSaving(false);
       }
+      
+      return true;
     },
     [
       mode,
@@ -271,35 +310,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       updateQuote,
       router,
       session,
+      validateStep1
     ]
   );
-
-  // Auto-save functionality - DISABLED
-  // const scheduleAutoSave = useCallback(() => {
-  //   if (autosaveTimeoutRef.current) {
-  //     clearTimeout(autosaveTimeoutRef.current);
-  //   }
-  //
-  //   autosaveTimeoutRef.current = setTimeout(() => {
-  //     if (isDirty && formData.status === "DRAFT") {
-  //       console.log('💾 Auto-sauvegarde déclenchée');
-  //       handleSave(true);
-  //     }
-  //   }, AUTOSAVE_DELAY);
-  // }, [isDirty, formData.status, handleSave]);
-
-  // Schedule auto-save when form data changes - DISABLED
-  // useEffect(() => {
-  //   if (mode !== "create" && isDirty) {
-  //     scheduleAutoSave();
-  //   }
-  //
-  //   return () => {
-  //     if (autosaveTimeoutRef.current) {
-  //       clearTimeout(autosaveTimeoutRef.current);
-  //     }
-  //   };
-  // }, [formData, isDirty, mode, scheduleAutoSave]);
 
   // Submit function (for final quote creation)
   const handleSubmit = useCallback(
@@ -308,9 +321,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         setSaving(true);
         const currentFormData = formDataOverride || getValues();
 
-        console.log("🚀 Soumission finale du devis");
-
-        // Validation finale
         if (!validateStep1() || !validateStep2()) {
           toast.error("Veuillez corriger les erreurs avant de créer le devis");
           return;
@@ -319,31 +329,19 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         const input = transformFormDataToInput(
           currentFormData,
           existingQuote?.status,
-          session
+          session,
+          existingQuote
         );
         input.status = "PENDING";
 
-        console.log(
-          "🔍 DEBUG - Input envoyé à la mutation:",
-          JSON.stringify(input, null, 2)
-        );
-        console.log("🔍 DEBUG - Input.client:", input.client);
-        console.log("🔍 DEBUG - Input.items:", input.items);
-        console.log("🔍 DEBUG - Input.companyInfo:", input.companyInfo);
-        console.log("🔍 DEBUG - Session user:", session?.user);
-        console.log("🔍 DEBUG - Session company:", session?.user?.company);
-
         let result;
         if (existingQuote?.id) {
-          console.log("📝 Mise à jour d'un devis existant");
           result = await updateQuote(existingQuote.id, input);
         } else {
-          console.log("📝 Création d'un nouveau devis (final)");
           result = await createQuote(input);
         }
 
         if (result?.id) {
-          console.log("✅ Devis créé/mis à jour avec succès, ID:", result.id);
           toast.success(
             existingQuote?.id
               ? "Devis mis à jour avec succès"
@@ -429,9 +427,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 // Helper functions
 function getInitialFormData(mode, initialData, session) {
   const today = new Date().toISOString().split("T")[0];
-  const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0]; // 30 jours par défaut
+  
+  // Utiliser la valeur validUntil existante si elle est disponible
+  // sinon définir une date par défaut (aujourd'hui + 30 jours)
+  const validUntil = initialData?.validUntil || 
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const baseData = {
     // Informations du devis
@@ -526,53 +526,112 @@ function getInitialFormData(mode, initialData, session) {
 
 function transformQuoteToFormData(quote) {
   const transformDate = (dateValue, fieldName) => {
-    if (!dateValue) {
-      console.log(`⚠️ ${fieldName} est null/undefined`);
+    if (dateValue === null || dateValue === undefined) {
       return "";
     }
 
     try {
       let dateObj;
-      if (typeof dateValue === "string") {
-        if (dateValue.includes("T")) {
-          dateObj = new Date(dateValue);
+      
+      // Si c'est déjà une chaîne au format YYYY-MM-DD
+      if (typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        return dateValue;
+      }
+      
+      // Si c'est un timestamp numérique ou une chaîne de chiffres
+      if ((typeof dateValue === 'number' && !isNaN(dateValue)) || 
+          (typeof dateValue === 'string' && /^\d+$/.test(dateValue))) {
+        const timestamp = typeof dateValue === 'string' ? parseInt(dateValue, 10) : dateValue;
+        
+        // Vérifier si c'est un timestamp en secondes (10 chiffres) ou millisecondes (13 chiffres)
+        if (timestamp > 0) {
+          const timestampMs = timestamp.toString().length === 10 ? timestamp * 1000 : timestamp;
+          dateObj = new Date(timestampMs);
+          
+          if (isNaN(dateObj.getTime())) {
+            return "";
+          }
+          
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const day = String(dateObj.getDate()).padStart(2, '0');
+          const result = `${year}-${month}-${day}`;
+          
+          return result;
         } else {
-          const [year, month, day] = dateValue.split("-");
-          dateObj = new Date(year, month - 1, day);
+          return "";
         }
-      } else if (dateValue instanceof Date) {
+      }
+      // Si c'est une chaîne avec un timestamp ISO (2024-09-25T00:00:00.000Z)
+      else if (typeof dateValue === "string" && dateValue.includes("T")) {
+        // Extraire uniquement la partie date (YYYY-MM-DD)
+        const datePart = dateValue.split('T')[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+          return datePart;
+        }
+        dateObj = new Date(dateValue);
+      } 
+      // Si c'est déjà un objet Date
+      else if (dateValue instanceof Date) {
         dateObj = dateValue;
-      } else {
-        console.log(
-          `⚠️ Format de date non reconnu pour ${fieldName}:`,
-          dateValue
-        );
+      }
+      // Si c'est un objet avec des propriétés de date (comme venant d'un sélecteur de date)
+      else if (dateValue && typeof dateValue === 'object') {
+        
+        // Format avec year, month, day
+        if ('year' in dateValue && 'month' in dateValue && 'day' in dateValue) {
+          dateObj = new Date(dateValue.year, dateValue.month - 1, dateValue.day);
+        }
+        // Format avec getTime()
+        else if ('getTime' in dateValue) {
+          dateObj = new Date(dateValue.getTime());
+        }
+        // Autre format d'objet non reconnu
+        else {
+          return "";
+        }
+      }
+      // Format non reconnu
+      else {
         return "";
       }
 
+      // Vérifier que la date est valide
       if (isNaN(dateObj.getTime())) {
-        console.log(`⚠️ Date invalide pour ${fieldName}:`, dateValue);
         return "";
       }
 
-      const result = dateObj.toISOString().split("T")[0];
-      console.log(`✅ ${fieldName} transformé: ${dateValue} -> ${result}`);
+      // Formater en YYYY-MM-DD
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const result = `${year}-${month}-${day}`;
+      
       return result;
     } catch (error) {
-      console.error(
-        `❌ Erreur lors de la transformation de ${fieldName}:`,
-        error
-      );
+      console.error(`❌ Erreur lors de la transformation de ${fieldName}:`, error);
       return "";
     }
   };
 
+  const issueDate = transformDate(quote.issueDate, "issueDate");
+  
+  // Pour la date de validité, on la récupère directement depuis la base de données
+  // sans appliquer de logique conditionnelle qui pourrait la supprimer
+  let validUntil = "";
+  
+  if (quote.validUntil !== undefined && quote.validUntil !== null && quote.validUntil !== '') {
+    validUntil = transformDate(quote.validUntil, "validUntil");
+  } else {
+    console.log("ℹ️ Aucune date de validité trouvée dans le devis");
+  }
+  
   return {
     prefix: quote.prefix || "",
     number: quote.number || "",
     reference: quote.reference || "",
-    issueDate: transformDate(quote.issueDate, "issueDate"),
-    validUntil: transformDate(quote.validUntil, "validUntil"),
+    issueDate: issueDate,
+    validUntil: validUntil,
     status: quote.status || "DRAFT",
 
     client: quote.client
@@ -676,15 +735,9 @@ function transformQuoteToFormData(quote) {
 function transformFormDataToInput(
   formData,
   previousStatus = null,
-  session = null
+  session = null,
+  existingQuote = null // Ajouter existingQuote comme paramètre
 ) {
-  console.log("🔍 transformFormDataToInput - Données client reçues:", {
-    hasClient: !!formData.client,
-    clientId: formData.client?.id,
-    clientName: formData.client?.name,
-    clientEmail: formData.client?.email,
-    clientType: formData.client?.type,
-  });
 
   const cleanClient = formData.client
     ? {
@@ -718,13 +771,6 @@ function transformFormDataToInput(
           : null,
       }
     : null;
-
-  console.log("⚙️ transformFormDataToInput - Client nettoyé:", {
-    cleanClient,
-    hasId: !!cleanClient?.id,
-    finalName: cleanClient?.name,
-    finalEmail: cleanClient?.email,
-  });
 
   // Utiliser les informations de l'entreprise du formulaire ou de la session comme fallback
   const sessionCompany = session?.user?.company;
@@ -774,52 +820,241 @@ function transformFormDataToInput(
   let issueDate = formData.issueDate;
   if (previousStatus === "DRAFT" && formData.status === "PENDING") {
     issueDate = new Date().toISOString().split("T")[0];
-    console.log(
-      "📅 Date d'émission mise à jour automatiquement lors du passage DRAFT -> PENDING:",
-      issueDate
-    );
   }
 
   // S'assurer qu'on a toujours une date d'émission valide
   if (!issueDate) {
     issueDate = new Date().toISOString().split("T")[0];
-    console.log(
-      "⚠️ Date d'émission manquante, utilisation de la date actuelle:",
-      issueDate
-    );
+  } else {
+    // S'assurer que la date est au bon format
+    try {
+      const d = new Date(issueDate);
+      if (isNaN(d.getTime())) {
+        issueDate = new Date().toISOString().split("T")[0];
+      } else {
+        // Reformater pour s'assurer du format YYYY-MM-DD
+        issueDate = d.toISOString().split("T")[0];
+      }
+    } catch (e) {
+      console.error('Erreur lors de la validation de la date d\'émission:', e);
+      issueDate = new Date().toISOString().split("T")[0];
+    }
   }
 
-  const ensureValidDate = (dateValue, fieldName, fallbackDate = null) => {
-    if (!dateValue) {
-      const fallback = fallbackDate || issueDate;
-      console.log(
-        `⚠️ ${fieldName} est null/undefined, utilisation de la date de fallback:`,
-        fallback
-      );
-      return new Date(fallback);
+  const ensureValidDate = (dateValue, fieldName, fallbackDate = null, existingQuoteParam = null) => {
+    
+    // Fonction pour créer une date sans l'heure
+    const createDateWithoutTime = (date) => {
+      if (!date) return null;
+      const d = new Date(date);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    };
+    
+    // Si on a une date valide, on la retourne
+    if (dateValue) {
+      // Si c'est déjà une chaîne au format YYYY-MM-DD
+      if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        const [year, month, day] = dateValue.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return date;
+      }
+      
+      // Pour les autres formats de date
+      const date = new Date(dateValue);
+      if (!isNaN(date.getTime())) {
+        const formattedDate = date.toISOString().split('T')[0];
+        return createDateWithoutTime(date);
+      }
     }
-    return new Date(dateValue);
+    
+    // Si on est en mode édition et qu'il y a une date existante dans le devis, on la conserve
+    if (existingQuoteParam && existingQuoteParam.validUntil) {
+      const existingDate = createDateWithoutTime(existingQuoteParam.validUntil);
+      if (existingDate && !isNaN(existingDate.getTime())) {
+        return existingDate;
+      }
+    }
+    
+    // Si on est en mode édition et qu'il y a une date existante dans le formulaire, on la conserve
+    if (formData.id && formData.validUntil) {
+      const existingDate = createDateWithoutTime(formData.validUntil);
+      if (existingDate && !isNaN(existingDate.getTime())) {
+        return existingDate;
+      }
+    }
+    
+    // Sinon, on utilise la date de fallback fournie ou la date d'émission + 30 jours
+    let fallback;
+    if (fallbackDate) {
+      fallback = createDateWithoutTime(fallbackDate);
+    } else {
+      // Créer une date à partir de la date d'émission ou de la date actuelle
+      const baseDate = issueDate ? new Date(issueDate) : new Date();
+      fallback = createDateWithoutTime(baseDate);
+      // Ajouter 30 jours par défaut
+      fallback.setDate(fallback.getDate() + 30);
+    }
+    
+    return fallback;
   };
 
+  // Vérifier si on est en mode édition et si le devis existant a une date de validité
+  const isEditMode = !!existingQuote;
+  const existingValidUntil = existingQuote?.validUntil;
+    
+  // Déterminer la date de validité
+  let validUntilDate;
+  try {
+    if (isEditMode && existingValidUntil) {
+      validUntilDate = new Date(existingValidUntil);
+      // Vérifier que la date est valide
+      if (isNaN(validUntilDate.getTime())) {
+        validUntilDate = ensureValidDate(formData.validUntil, "validUntil", null, existingQuote);
+      }
+    } else {
+      validUntilDate = ensureValidDate(formData.validUntil, "validUntil", null, existingQuote);
+    }
+  } catch (e) {
+    console.error('Erreur lors de la récupération de la date de validité:', e);
+    validUntilDate = new Date(issueDate);
+    validUntilDate.setDate(validUntilDate.getDate() + 30); // 30 jours par défaut
+  }
+  
+  // Fonction pour créer une date sans l'heure pour la comparaison
+  const createDateWithoutTime = (date) => {
+    if (!date) return null;
+    try {
+      // Si c'est déjà une chaîne au format YYYY-MM-DD
+      if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const [year, month, day] = date.split('-').map(Number);
+        return new Date(year, month - 1, day);
+      }
+      
+      const d = new Date(date);
+      if (isNaN(d.getTime())) {
+        console.warn('Date invalide fournie à createDateWithoutTime:', date);
+        return null;
+      }
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    } catch (e) {
+      console.error('Erreur lors de la création de la date:', e, 'Valeur:', date);
+      return null;
+    }
+  };
+
+  // S'assurer que la date de validité est postérieure ou égale à la date d'émission
+  const issueDateForComparison = createDateWithoutTime(issueDate);
+  const validUntilDateNoTime = createDateWithoutTime(validUntilDate);
+  
+  // Vérifier que les dates sont valides avant de les utiliser
+  if (!issueDateForComparison || !validUntilDateNoTime) {
+    const errorMessage = `❌ Erreur: Date invalide détectée - ` +
+      `issueDate: ${issueDate} (${typeof issueDate}), ` +
+      `validUntilDate: ${validUntilDate} (${typeof validUntilDate})`;
+    console.error(errorMessage);
+    
+    // Utiliser des valeurs par défaut sécurisées
+    const today = new Date();
+    const defaultValidUntil = new Date(today);
+    defaultValidUntil.setDate(today.getDate() + 30);
+    
+    return {
+      ...formData,
+      issueDate: today.toISOString().split('T')[0],
+      validUntil: defaultValidUntil.toISOString().split('T')[0],
+      status: formData.status || "DRAFT"
+    };
+  }
+    
+  // Si la date de validité est antérieure à la date d'émission, on l'ajuste
+  if (validUntilDateNoTime < issueDateForComparison) {
+    // Utiliser la date d'émission + 1 jour comme date de validité minimale
+    validUntilDate = new Date(issueDateForComparison);
+    validUntilDate.setDate(validUntilDate.getDate() + 1);
+  }
+  
+  // Formater les dates finales en tenant compte du fuseau horaire local
+  const formatFinalDate = (date) => {
+    try {
+      if (!date) return null;
+      
+      // Si c'est déjà au format YYYY-MM-DD, le retourner tel quel
+      if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return date;
+      }
+      
+      // Créer une date locale sans décalage de fuseau horaire
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return null;
+      
+      // Formater manuellement pour éviter les problèmes de fuseau horaire
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (e) {
+      console.error('Erreur lors du formatage final de la date:', e);
+      return null;
+    }
+  };
+  
+  // Formater les dates finales en ignorant l'heure et le fuseau horaire
+  const today = new Date();
+  const defaultIssueDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  
+  const finalIssueDate = formatFinalDate(issueDate) || defaultIssueDate;
+  
+  // Pour la date de validité, on s'assure qu'elle est bien après la date d'émission
+  let finalValidUntil = formatFinalDate(validUntilDate);
+  if (!finalValidUntil) {
+    const d = new Date(finalIssueDate);
+    d.setDate(d.getDate() + 30);
+    finalValidUntil = formatFinalDate(d) || defaultIssueDate;
+  }
+  
+  // Vérifier que la date de validité n'est pas antérieure à la date d'émission
+  const finalIssueDateObj = new Date(finalIssueDate);
+  const validUntilObj = new Date(finalValidUntil);
+  
+  if (validUntilObj < finalIssueDateObj) {
+    const adjustedDate = new Date(finalIssueDateObj);
+    adjustedDate.setDate(adjustedDate.getDate() + 1);
+    finalValidUntil = formatFinalDate(adjustedDate) || defaultIssueDate;
+  }
+  
   return {
     prefix: formData.prefix || "",
     number: formData.number || "",
-    issueDate: new Date(issueDate),
-    validUntil: ensureValidDate(formData.validUntil, "validUntil"),
+    // Utiliser les dates formatées avec des valeurs par défaut sécurisées
+    issueDate: finalIssueDate,
+    validUntil: finalValidUntil,
     status: formData.status || "DRAFT",
     client: cleanClient,
     companyInfo: cleanCompanyInfo,
-    items:
-      formData.items?.map((item) => ({
+    items: formData.items?.map((item) => {
+      // Convertir vatRate en nombre et s'assurer qu'il est défini
+      const itemVatRate = parseFloat(item.vatRate || item.taxRate || 0) || 0;
+      
+      // Créer l'objet de base de l'article
+      const itemData = {
         description: item.description || "",
         quantity: parseFloat(item.quantity) || 0,
         unitPrice: parseFloat(item.unitPrice) || 0,
-        vatRate: parseFloat(item.vatRate || item.taxRate) || 0,
+        vatRate: itemVatRate,
         unit: item.unit || "pièce",
         discount: parseFloat(item.discount) || 0,
         discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
         details: item.details || "",
-      })) || [],
+      };
+
+      // Ajouter vatExemptionText uniquement si vatRate est 0
+      if (itemVatRate === 0) {
+        itemData.vatExemptionText = item.vatExemptionText || '';
+      }
+
+      return itemData;
+    }) || [],
     discount: parseFloat(formData.discount) || 0,
     discountType: (formData.discountType || "PERCENTAGE").toUpperCase(),
     headerNotes: formData.headerNotes || "",

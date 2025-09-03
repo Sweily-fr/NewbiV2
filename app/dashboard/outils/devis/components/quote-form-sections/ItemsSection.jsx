@@ -475,31 +475,87 @@ export default function ItemsSection({
                           </Label>
                           <Controller
                             name={`items.${index}.vatExemptionText`}
-                            render={({ field }) => (
-                              <Select
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                disabled={!canEdit}
-                              >
-                                <SelectTrigger className="h-10 w-full rounded-lg px-3 text-sm">
-                                  <SelectValue placeholder="Sélectionner une mention" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="art-293b-cgi">
-                                    TVA non applicable, art. 293 B du CGI
-                                  </SelectItem>
-                                  <SelectItem value="franchise-base">
-                                    Franchise en base de TVA, art. 293 B du CGI
-                                  </SelectItem>
-                                  <SelectItem value="auto-entrepreneur">
-                                    Auto-entrepreneur - TVA non applicable, art.
-                                    293 B du CGI
-                                  </SelectItem>
-                                  <SelectItem value="exonere">
-                                    Exonéré de TVA
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
+                            rules={{
+                              required: {
+                                value: watch(`items.${index}.vatRate`) === 0,
+                                message: 'La mention d\'exonération est obligatoire lorsque le taux de TVA est à 0%'
+                              },
+                              validate: (value) => {
+                                if (watch(`items.${index}.vatRate`) === 0) {
+                                  return value && value.trim().length > 0 || 'La mention d\'exonération est requise';
+                                }
+                                return true;
+                              }
+                            }}
+                            render={({ field, fieldState: { error } }) => (
+                              <div className="space-y-1">
+                                <Select
+                                  value={field.value || ''}
+                                  onValueChange={field.onChange}
+                                  disabled={!canEdit}
+                                >
+                                  <SelectTrigger className={`h-10 w-full rounded-lg px-3 text-sm ${
+                                    error ? 'border-red-500' : ''
+                                  }`}>
+                                    <SelectValue placeholder="Sélectionner une mention" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Article 259-1 du CGI">
+                                      Article 259-1 du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 259 B du CGI">
+                                      Article 259 B du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 261 du CGI">
+                                      Article 261 du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 261 D du CGI">
+                                      Article 261 D du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 261 D-4° du CGI">
+                                      Article 261 D-4° du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 261 2-4° du CGI">
+                                      Article 261 2-4° du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 261-4 du CGI">
+                                      Article 261-4 du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 261 4-4° du CGI">
+                                      Article 261 4-4° du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 262 du CGI">
+                                      Article 262 du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 262 ter-I du CGI">
+                                      Article 262 ter-I du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 275 du CGI">
+                                      Article 275 du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 283 du CGI">
+                                      Article 283 du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 283-2 du CGI">
+                                      Article 283-2 du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 293 B du CGI">
+                                      Article 293 B du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 298 sexies du CGI">
+                                      Article 298 sexies du CGI
+                                    </SelectItem>
+                                    <SelectItem value="Article 44 de la Directive 2006/112/CE">
+                                      Article 44 de la Directive 2006/112/CE
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {error && (
+                                  <p className="text-xs text-red-500">
+                                    {error.message}
+                                  </p>
+                                )}
+                              </div>
                             )}
                           />
                         </div>

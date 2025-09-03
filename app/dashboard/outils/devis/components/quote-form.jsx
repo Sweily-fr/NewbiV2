@@ -437,77 +437,93 @@ export default function QuoteForm({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Date d'émission</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !data.issueDate && "text-muted-foreground"
-                            )}
-                            disabled={!canEdit}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {data.issueDate
-                              ? format(new Date(data.issueDate), "PPP", {
-                                  locale: fr,
-                                })
-                              : "Sélectionner une date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={
-                              data.issueDate
-                                ? new Date(data.issueDate)
-                                : undefined
-                            }
-                            onSelect={(date) =>
-                              updateField("issueDate", date?.toISOString())
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <div className="space-y-1">
+                        <Label>Date d'émission</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !data.issueDate && "text-muted-foreground",
+                                errors?.issueDate && "border-destructive"
+                              )}
+                              disabled={!canEdit}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {data.issueDate
+                                ? format(new Date(data.issueDate), "PPP", {
+                                    locale: fr,
+                                  })
+                                : "Sélectionner une date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={
+                                data.issueDate
+                                  ? new Date(data.issueDate)
+                                  : undefined
+                              }
+                              onSelect={(date) =>
+                                updateField("issueDate", date?.toISOString())
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {errors?.issueDate && (
+                          <p className="text-sm font-medium text-destructive">
+                            {errors.issueDate.message}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Valide jusqu'au</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !data.validUntil && "text-muted-foreground"
-                            )}
-                            disabled={!canEdit}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {data.validUntil
-                              ? format(new Date(data.validUntil), "PPP", {
-                                  locale: fr,
-                                })
-                              : "Sélectionner une date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={
-                              data.validUntil
-                                ? new Date(data.validUntil)
-                                : undefined
-                            }
-                            onSelect={(date) =>
-                              updateField("validUntil", date?.toISOString())
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <div className="space-y-1">
+                        <Label>Valide jusqu'au</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !data.validUntil && "text-muted-foreground",
+                                errors?.validUntil && "border-destructive"
+                              )}
+                              disabled={!canEdit}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {data.validUntil
+                                ? format(new Date(data.validUntil), "PPP", {
+                                    locale: fr,
+                                  })
+                                : "Sélectionner une date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={
+                                data.validUntil
+                                  ? new Date(data.validUntil)
+                                  : undefined
+                              }
+                              onSelect={(date) =>
+                                updateField("validUntil", date?.toISOString())
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      {errors?.validUntil && (
+                        <p className="text-sm font-medium text-destructive mt-1">
+                          {errors.validUntil.message}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </CardContent>

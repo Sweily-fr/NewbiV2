@@ -199,11 +199,28 @@ export default function QuoteTable() {
                 Colonnes
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[150px]">
+            <DropdownMenuContent align="end" className="w-[180px]">
+              <DropdownMenuLabel>Colonnes visibles</DropdownMenuLabel>
+              <DropdownMenuSeparator />
               {table
                 .getAllColumns()
-                .filter((column) => column.getCanHide())
+                .filter(
+                  (column) =>
+                    typeof column.accessorFn !== "undefined" &&
+                    column.getCanHide()
+                )
                 .map((column) => {
+                  // Utiliser le libellé personnalisé s'il existe, sinon utiliser l'ID avec une mise en forme
+                  const getColumnLabel = () => {
+                    if (column.columnDef.meta?.label) {
+                      return column.columnDef.meta.label;
+                    }
+                    return column.id
+                      .split('.')
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join(' ');
+                  };
+                  
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
@@ -213,7 +230,7 @@ export default function QuoteTable() {
                         column.toggleVisibility(!!value)
                       }
                     >
-                      {column.id}
+                      {getColumnLabel()}
                     </DropdownMenuCheckboxItem>
                   );
                 })}
@@ -313,13 +330,13 @@ export default function QuoteTable() {
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <div className="flex-1 text-sm text-muted-foreground">
+        <div className="flex-1 text-sm font-normal text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center gap-2">
-            <p className="whitespace-nowrap text-sm font-medium">
+            <p className="whitespace-nowrap text-sm font-normal">
               Lignes par page
             </p>
             <Select
@@ -342,7 +359,7 @@ export default function QuoteTable() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center whitespace-nowrap text-sm font-medium">
+          <div className="flex items-center whitespace-nowrap text-sm font-normal">
             Page {table.getState().pagination.pageIndex + 1} sur{" "}
             {table.getPageCount()}
           </div>
