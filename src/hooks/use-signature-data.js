@@ -77,6 +77,14 @@ export function SignatureProvider({ children }) {
     separatorHorizontalWidth: 1, // Épaisseur du séparateur horizontal (sous l'adresse)
     // Taille du logo entreprise (en pixels)
     logoSize: 60, // Taille par défaut du logo
+    // Taille des logos sociaux (en pixels)
+    socialSize: 24, // Taille par défaut des logos sociaux
+    // Configuration du séparateur vertical
+    verticalSeparator: {
+      enabled: false, // Séparateur vertical désactivé par défaut
+      width: 2, // Épaisseur du séparateur vertical
+      color: '#000000', // Couleur du séparateur vertical
+    },
     // Espacements entre les éléments (en pixels)
     spacings: {
       global: 8, // Espacement global par défaut
@@ -92,8 +100,69 @@ export function SignatureProvider({ children }) {
       websiteToAddress: 4, // Espacement site web vers adresse
       separatorTop: 12, // Espacement au-dessus du séparateur
       separatorBottom: 12, // Espacement sous le séparateur
+      nameSpacing: 12, // Espacement entre photo et contenu
+      logoToSocial: 12, // Espacement entre logo et réseaux sociaux
+      verticalSeparatorLeft: 22, // Espacement gauche du séparateur vertical
+      verticalSeparatorRight: 22, // Espacement droite du séparateur vertical
     },
-    // Typographie générale
+    // Typographie détaillée pour chaque champ
+    typography: {
+      firstName: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 16,
+        color: '#2563eb',
+        fontWeight: 'normal'
+      },
+      lastName: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 16,
+        color: '#2563eb',
+        fontWeight: 'normal'
+      },
+      position: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 14,
+        color: '#666666',
+        fontWeight: 'normal'
+      },
+      company: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 14,
+        color: '#2563eb',
+        fontWeight: 'normal'
+      },
+      email: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 12,
+        color: '#666666',
+        fontWeight: 'normal'
+      },
+      phone: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 12,
+        color: '#666666',
+        fontWeight: 'normal'
+      },
+      mobile: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 12,
+        color: '#666666',
+        fontWeight: 'normal'
+      },
+      website: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 12,
+        color: '#666666',
+        fontWeight: 'normal'
+      },
+      address: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 12,
+        color: '#666666',
+        fontWeight: 'normal'
+      }
+    },
+    // Typographie générale (conservée pour compatibilité)
     fontFamily: 'Arial, sans-serif', // Police par défaut
     fontSize: {
       name: 16, // Taille de police pour le nom
@@ -135,9 +204,17 @@ export function SignatureProvider({ children }) {
               ...defaultSignatureData.spacings,
               ...(parsedData.spacings || {})
             },
+            verticalSeparator: {
+              ...defaultSignatureData.verticalSeparator,
+              ...(parsedData.verticalSeparator || {})
+            },
             fontSize: {
               ...defaultSignatureData.fontSize,
               ...(parsedData.fontSize || {})
+            },
+            typography: {
+              ...defaultSignatureData.typography,
+              ...(parsedData.typography || {})
             }
           };
           
@@ -163,7 +240,20 @@ export function SignatureProvider({ children }) {
   }, [isEditMode, defaultSignatureData]);
 
   const updateSignatureData = (key, value) => {
-    setSignatureData((prev) => ({ ...prev, [key]: value }));
+    setSignatureData((prev) => {
+      // Handle nested object updates for spacings, colors, etc.
+      if (key === 'spacings' || key === 'colors' || key === 'columnWidths' || key === 'fontSize' || key === 'verticalSeparator' || key === 'typography') {
+        return {
+          ...prev,
+          [key]: {
+            ...prev[key],
+            ...value
+          }
+        };
+      }
+      // Handle simple property updates
+      return { ...prev, [key]: value };
+    });
   };
 
   const resetSignatureData = () => {
@@ -188,9 +278,17 @@ export function SignatureProvider({ children }) {
         ...defaultSignatureData.spacings,
         ...(editData.spacings || {})
       },
+      verticalSeparator: {
+        ...defaultSignatureData.verticalSeparator,
+        ...(editData.verticalSeparator || {})
+      },
       fontSize: {
         ...defaultSignatureData.fontSize,
         ...(editData.fontSize || {})
+      },
+      typography: {
+        ...defaultSignatureData.typography,
+        ...(editData.typography || {})
       }
     };
     setSignatureData(mergedData);

@@ -6,9 +6,10 @@ import { gql } from "@apollo/client";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Trash2, Download, Star, StarOff, Loader2, AlertCircle } from "lucide-react";
+import { Trash2, Download, Star, StarOff, Loader2, AlertCircle, Copy } from "lucide-react";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import TemplateSelector from "./TemplateSelector";
+import { toast } from "@/src/components/ui/sonner";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
 const GET_MY_EMAIL_SIGNATURES = gql`
@@ -141,6 +142,7 @@ const GET_EMAIL_SIGNATURE = gql`
 const SignatureManager = () => {
   const { updateSignatureData, signatureData } = useSignatureData();
   const [isMounted, setIsMounted] = useState(false);
+  const [copyingId, setCopyingId] = useState(null);
   const client = useApolloClient();
 
   // Éviter l'erreur d'hydratation
@@ -322,6 +324,224 @@ const SignatureManager = () => {
     }
   };
 
+  // Fonction pour générer le HTML d'une signature compatible Gmail
+  const generateSignatureHTML = (signature) => {
+    const primaryColor = signature.primaryColor || "#3b82f6";
+    const photoSrc = signature.photo || "";
+    const logoSrc = signature.logo || "";
+    
+    // HTML optimisé pour Gmail - sans DOCTYPE ni balises HTML/HEAD/BODY
+    return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: ${signature.fontFamily || 'Arial, sans-serif'}; font-size: 14px; line-height: 1.4; margin: 0; padding: 0;">
+  <tbody>
+    <tr>
+      ${photoSrc ? `
+      <td style="padding: 0; margin: 0; vertical-align: top; width: ${signature.imageSize || 80}px;">
+        <img src="${photoSrc}" alt="Photo de profil" style="width: ${signature.imageSize || 80}px; height: ${signature.imageSize || 80}px; border-radius: ${signature.imageShape === 'square' ? '8px' : '50%'}; display: block; margin: 0; padding: 0; border: none;" />
+      </td>
+      <td style="width: ${signature.spacings?.nameSpacing || 12}px; padding: 0; margin: 0;">&nbsp;</td>
+      ` : ''}
+      
+      <td style="vertical-align: top; padding: 0; margin: 0;">
+        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+          <tbody>
+            <tr>
+              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.nameBottom || 2}px;">
+                <span style="font-size: ${signature.typography?.firstName?.fontSize || signature.fontSize?.name || 16}px; font-weight: ${signature.typography?.firstName?.fontWeight || 'bold'}; color: ${signature.typography?.firstName?.color || primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.typography?.firstName?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                  ${signature.firstName || ''}
+                </span>
+                ${signature.firstName && signature.lastName ? ' ' : ''}
+                <span style="font-size: ${signature.typography?.lastName?.fontSize || signature.fontSize?.name || 16}px; font-weight: ${signature.typography?.lastName?.fontWeight || 'bold'}; color: ${signature.typography?.lastName?.color || primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.typography?.lastName?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                  ${signature.lastName || ''}
+                </span>
+              </td>
+            </tr>
+            ${signature.position ? `
+            <tr>
+              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.positionBottom || 2}px;">
+                <span style="font-size: ${signature.typography?.position?.fontSize || signature.fontSize?.position || 14}px; color: ${signature.typography?.position?.color || '#666666'}; font-weight: ${signature.typography?.position?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.position?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                  ${signature.position}
+                </span>
+              </td>
+            </tr>
+            ` : ''}
+            ${signature.company ? `
+            <tr>
+              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.companyBottom || 8}px;">
+                <span style="font-size: ${signature.typography?.company?.fontSize || signature.fontSize?.company || 14}px; font-weight: ${signature.typography?.company?.fontWeight || 'bold'}; color: ${signature.typography?.company?.color || primaryColor}; margin: 0; padding: 0; font-family: ${signature.typography?.company?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                  ${signature.company}
+                </span>
+              </td>
+            </tr>
+            ` : ''}
+            ${signature.phone ? `
+            <tr>
+              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.phoneToMobile || 4}px;">
+                <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+                  <tbody>
+                    <tr>
+                      <td style="padding: 0; margin: 0; padding-right: 10px; vertical-align: middle; width: 20px;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
+                      </td>
+                      <td style="padding: 0; margin: 0; vertical-align: middle;">
+                        <span style="font-size: ${signature.typography?.phone?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.phone?.color || '#666666'}; font-weight: ${signature.typography?.phone?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.phone?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                          <a href="tel:${signature.phone}" style="color: ${signature.typography?.phone?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.phone}</a>
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            ` : ''}
+            ${signature.mobile ? `
+            <tr>
+              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.mobileToEmail || 4}px;">
+                <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+                  <tbody>
+                    <tr>
+                      <td style="padding: 0; margin: 0; padding-right: 10px; vertical-align: middle; width: 20px;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
+                      </td>
+                      <td style="padding: 0; margin: 0; vertical-align: middle;">
+                        <span style="font-size: ${signature.typography?.mobile?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.mobile?.color || '#666666'}; font-weight: ${signature.typography?.mobile?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.mobile?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                          <a href="tel:${signature.mobile}" style="color: ${signature.typography?.mobile?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.mobile}</a>
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            ` : ''}
+            ${signature.email ? `
+            <tr>
+              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.emailToWebsite || 4}px;">
+                <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+                  <tbody>
+                    <tr>
+                      <td style="padding: 0; margin: 0; padding-right: 10px; vertical-align: middle; width: 20px;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/732/732200.png" alt="Email" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
+                      </td>
+                      <td style="padding: 0; margin: 0; vertical-align: middle;">
+                        <span style="font-size: ${signature.typography?.email?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.email?.color || '#666666'}; font-weight: ${signature.typography?.email?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.email?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                          <a href="mailto:${signature.email}" style="color: ${signature.typography?.email?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.email}</a>
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            ` : ''}
+            ${signature.website ? `
+            <tr>
+              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.websiteToAddress || 4}px;">
+                <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+                  <tbody>
+                    <tr>
+                      <td style="padding: 0; margin: 0; padding-right: 10px; vertical-align: middle; width: 20px;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Website" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
+                      </td>
+                      <td style="padding: 0; margin: 0; vertical-align: middle;">
+                        <span style="font-size: ${signature.typography?.website?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.website?.color || '#666666'}; font-weight: ${signature.typography?.website?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.website?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                          <a href="${signature.website}" style="color: ${signature.typography?.website?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.website}</a>
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            ` : ''}
+            ${signature.address ? `
+            <tr>
+              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.addressBottom || 8}px;">
+                <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+                  <tbody>
+                    <tr>
+                      <td style="padding: 0; margin: 0; padding-right: 10px; vertical-align: middle; width: 20px;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
+                      </td>
+                      <td style="padding: 0; margin: 0; vertical-align: middle;">
+                        <span style="font-size: ${signature.typography?.address?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.address?.color || '#666666'}; font-weight: ${signature.typography?.address?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.address?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                          ${signature.address}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            ` : ''}
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    
+    ${signature.separator?.enabled ? `
+    <tr>
+      <td colspan="${photoSrc ? '3' : '1'}" style="padding: 0; margin: 0; padding-top: ${signature.spacings?.separatorTop || 8}px; padding-bottom: ${signature.spacings?.separatorBottom || 8}px;">
+        <div style="width: 100%; height: 1px; background-color: ${signature.separator?.color || '#e5e7eb'}; margin: 0; padding: 0;"></div>
+      </td>
+    </tr>
+    ` : ''}
+    
+    ${logoSrc ? `
+    <tr>
+      <td colspan="${photoSrc ? '3' : '1'}" style="padding: 0; margin: 0; padding-top: ${signature.spacings?.logoToSocial || 15}px; text-align: ${signature.logoAlignment || 'left'};">
+        ${signature.logoBackground?.enabled ? `
+        <span style="display: inline-block; background-color: ${signature.logoBackground?.color || '#f3f4f6'}; border-radius: ${signature.logoBackground?.shape === 'round' ? '50%' : '0'}; padding: 8px; margin: 0;">
+          <img src="${logoSrc}" alt="Logo entreprise" style="width: ${signature.logoSize || 60}px; height: auto; max-height: ${signature.logoSize || 60}px; display: block; margin: 0; padding: 0; border: none;" />
+        </span>
+        ` : `
+        <img src="${logoSrc}" alt="Logo entreprise" style="width: ${signature.logoSize || 60}px; height: auto; max-height: ${signature.logoSize || 60}px; margin: 0; padding: 0; border: none;" />
+        `}
+      </td>
+    </tr>
+    ` : ''}
+  </tbody>
+</table>`;
+  };
+
+  // Fonction pour copier une signature
+  const handleCopySignature = async (signature) => {
+    setCopyingId(signature.id);
+    
+    try {
+      // Debug: Afficher les espacements actuels
+      console.log('Espacements actuels:', signatureData.spacings);
+      console.log('HTML généré:', generateSignatureHTML(signatureData).substring(0, 500) + '...');
+      
+      // Utiliser signatureData actuel au lieu de la signature sauvegardée
+      const htmlSignature = generateSignatureHTML(signatureData);
+      
+      // Copier en tant que texte riche (HTML)
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([htmlSignature], { type: 'text/html' }),
+            'text/plain': new Blob([htmlSignature.replace(/<[^>]*>/g, '')], { type: 'text/plain' })
+          })
+        ]);
+        toast.success(`Signature "${signature.signatureName}" copiée avec le visuel !`);
+      } else {
+        // Fallback pour les navigateurs plus anciens
+        const textarea = document.createElement('textarea');
+        textarea.value = htmlSignature;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        toast.success(`Signature "${signature.signatureName}" copiée ! (format HTML)`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la copie:', error);
+      toast.error('Erreur lors de la copie de la signature');
+    } finally {
+      setCopyingId(null);
+    }
+  };
+
   // Ne pas rendre le composant côté serveur
   if (!isMounted) {
     return null;
@@ -400,6 +620,20 @@ const SignatureManager = () => {
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => handleCopySignature(signature)}
+                    disabled={copyingId === signature.id}
+                    className="p-2 text-blue-600 hover:text-blue-700"
+                    title="Copier la signature"
+                  >
+                    {copyingId === signature.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleSetDefault(signature.id)}
                     disabled={settingDefault || signature.isDefault}
                     className="p-2"
@@ -472,6 +706,231 @@ const SignatureManager = () => {
       )}
     </div>
   );
+};
+
+// Fonction exportée pour générer le HTML d'une signature compatible Gmail
+export const generateGmailSignatureHTML = (signature) => {
+  const primaryColor = signature.primaryColor || "#3b82f6";
+  const photoSrc = signature.photo || "";
+  const logoSrc = signature.logo || "";
+  
+  // HTML optimisé pour Gmail - sans DOCTYPE ni balises HTML/HEAD/BODY
+  return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: ${signature.fontFamily || 'Arial, sans-serif'}; font-size: 14px; line-height: 1.4; margin: 0; padding: 0;">
+<tbody>
+  <tr>
+    ${photoSrc ? `
+    <td style="padding: 0; margin: 0; vertical-align: top; width: ${signature.imageSize || 80}px;">
+      <div style="width: ${signature.imageSize || 80}px; height: ${signature.imageSize || 80}px; border-radius: ${signature.imageShape === 'square' ? '8px' : '50%'}; background: url('${photoSrc}') center center/cover no-repeat; display: block; margin: 0; padding: 0; border: none;"></div>
+    </td>
+    <td style="width: ${signature.spacings?.nameSpacing || 12}px; padding: 0; margin: 0; padding-left: ${signature.spacings?.nameSpacing || 12}px;">&nbsp;</td>
+    ${signature.verticalSeparator?.enabled ? `
+    <td style="width: ${signature.spacings?.verticalSeparatorLeft || 4}px; padding: 0; margin: 0; vertical-align: top;">&nbsp;</td>
+    <td style="width: ${signature.verticalSeparator?.width || 2}px; background-color: ${signature.verticalSeparator?.color || '#000000'}; padding: 0; margin: 0; vertical-align: top; height: 100%; min-height: 80px;">&nbsp;</td>
+    <td style="width: ${signature.spacings?.verticalSeparatorRight || 12}px; padding: 0; margin: 0; vertical-align: top;">&nbsp;</td>
+    ` : ''}
+    ` : ''}
+    
+    <td style="vertical-align: top; padding: 0; margin: 0;">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+        <tbody>
+          <tr>
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.nameBottom || 2}px;">
+              <span style="font-size: ${signature.typography?.firstName?.fontSize || signature.fontSize?.name || 16}px; font-weight: ${signature.typography?.firstName?.fontWeight || 'bold'}; color: ${signature.typography?.firstName?.color || primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.typography?.firstName?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                ${signature.firstName || ''}
+              </span>
+              ${signature.firstName && signature.lastName ? ' ' : ''}
+              <span style="font-size: ${signature.typography?.lastName?.fontSize || signature.fontSize?.name || 16}px; font-weight: ${signature.typography?.lastName?.fontWeight || 'bold'}; color: ${signature.typography?.lastName?.color || primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.typography?.lastName?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                ${signature.lastName || ''}
+              </span>
+            </td>
+          </tr>
+          ${signature.position ? `
+          <tr>
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.positionBottom || 2}px;">
+              <span style="font-size: ${signature.typography?.position?.fontSize || signature.fontSize?.position || 14}px; color: ${signature.typography?.position?.color || '#666666'}; font-weight: ${signature.typography?.position?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.position?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                ${signature.position}
+              </span>
+            </td>
+          </tr>
+          ` : ''}
+          ${signature.company ? `
+          <tr>
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.companyBottom || 8}px;">
+              <span style="font-size: ${signature.typography?.company?.fontSize || signature.fontSize?.company || 14}px; font-weight: ${signature.typography?.company?.fontWeight || 'bold'}; color: ${signature.typography?.company?.color || primaryColor}; margin: 0; padding: 0; font-family: ${signature.typography?.company?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                ${signature.company}
+              </span>
+            </td>
+          </tr>
+          ` : ''}
+          ${signature.phone ? `
+          <tr>
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.phoneToMobile || 4}px;">
+              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+                <tbody>
+                  <tr>
+                    <td style="padding: 0; margin: 0; padding-right: 10px; vertical-align: middle; width: 20px;">
+                      <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
+                    </td>
+                    <td style="padding: 0; margin: 0; vertical-align: middle;">
+                      <span style="font-size: ${signature.typography?.phone?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.phone?.color || '#666666'}; font-weight: ${signature.typography?.phone?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.phone?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                        <a href="tel:${signature.phone}" style="color: ${signature.typography?.phone?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.phone}</a>
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+          ${signature.mobile ? `
+          <tr>
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.mobileToEmail || 4}px;">
+              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+                <tbody>
+                  <tr>
+                    <td style="padding: 0; margin: 0; padding-right: 10px; vertical-align: middle; width: 20px;">
+                      <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
+                    </td>
+                    <td style="padding: 0; margin: 0; vertical-align: middle;">
+                      <span style="font-size: ${signature.typography?.mobile?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.mobile?.color || '#666666'}; font-weight: ${signature.typography?.mobile?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.mobile?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                        <a href="tel:${signature.mobile}" style="color: ${signature.typography?.mobile?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.mobile}</a>
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+          ${signature.email ? `
+          <tr>
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.emailToWebsite || 4}px;">
+              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+                <tbody>
+                  <tr>
+                    <td style="padding: 0; margin: 0; padding-right: 10px; vertical-align: middle; width: 20px;">
+                      <img src="https://cdn-icons-png.flaticon.com/512/732/732200.png" alt="Email" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
+                    </td>
+                    <td style="padding: 0; margin: 0; vertical-align: middle;">
+                      <span style="font-size: ${signature.typography?.email?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.email?.color || '#666666'}; font-weight: ${signature.typography?.email?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.email?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                        <a href="mailto:${signature.email}" style="color: ${signature.typography?.email?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.email}</a>
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+          ${signature.website ? `
+          <tr>
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.websiteToAddress || 4}px;">
+              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+                <tbody>
+                  <tr>
+                    <td style="padding: 0; margin: 0; padding-right: 10px; vertical-align: middle; width: 20px;">
+                      <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Website" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
+                    </td>
+                    <td style="padding: 0; margin: 0; vertical-align: middle;">
+                      <span style="font-size: ${signature.typography?.website?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.website?.color || '#666666'}; font-weight: ${signature.typography?.website?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.website?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                        <a href="${signature.website}" style="color: ${signature.typography?.website?.color || '#666666'}; text-decoration: none; margin: 0; padding: 0;">${signature.website}</a>
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+          ${signature.address ? `
+          <tr>
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.addressBottom || 8}px;">
+              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+                <tbody>
+                  <tr>
+                    <td style="padding: 0; margin: 0; padding-right: 10px; vertical-align: middle; width: 20px;">
+                      <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="16" height="16" style="width: 16px; height: 16px; display: block; margin: 0; padding: 0; border: none;" />
+                    </td>
+                    <td style="padding: 0; margin: 0; vertical-align: middle;">
+                      <span style="font-size: ${signature.typography?.address?.fontSize || signature.fontSize?.contact || 12}px; color: ${signature.typography?.address?.color || '#666666'}; font-weight: ${signature.typography?.address?.fontWeight || 'normal'}; margin: 0; padding: 0; font-family: ${signature.typography?.address?.fontFamily || signature.fontFamily || 'Arial, sans-serif'};">
+                        ${signature.address}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+        </tbody>
+      </table>
+    </td>
+  </tr>
+  
+  <tr>
+    <td colspan="${photoSrc ? (signature.verticalSeparator?.enabled ? '6' : '3') : '1'}" style="padding: 0; margin: 0; padding-top: ${signature.spacings?.separatorTop || 12}px; padding-bottom: ${signature.spacings?.separatorBottom || 12}px;">
+      <hr style="border: none; border-top: ${signature.separatorHorizontalWidth || 1}px solid ${signature.colors?.separatorHorizontal || '#e0e0e0'}; margin: 0; width: 100%;" />
+    </td>
+  </tr>
+  
+  ${logoSrc ? `
+  <tr>
+    <td colspan="${photoSrc ? (signature.verticalSeparator?.enabled ? '6' : '3') : '1'}" style="padding: 0; margin: 0; text-align: left;">
+      <img src="${logoSrc}" alt="Logo entreprise" style="width: ${signature.logoSize || 60}px; height: auto; max-height: ${signature.logoSize || 60}px; margin: 0; padding: 0; border: none;" />
+    </td>
+  </tr>
+  ` : ''}
+  
+  ${(signature.socialLinks?.linkedin || signature.socialLinks?.facebook || signature.socialLinks?.twitter || signature.socialLinks?.instagram) ? `
+  <tr>
+    <td colspan="${photoSrc ? (signature.verticalSeparator?.enabled ? '6' : '3') : '1'}" style="padding: 0; margin: 0; padding-top: ${signature.spacings?.logoToSocial || 15}px; text-align: left;">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
+        <tbody>
+          <tr>
+            ${signature.socialLinks?.linkedin ? `
+            <td style="padding: 0; margin: 0; padding-right: 8px;">
+              <a href="${signature.socialLinks.linkedin}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
+                <div style="display: inline-block; background-color: ${signature.socialBackground?.enabled ? (signature.socialBackground?.color || '#f3f4f6') : 'transparent'}; border-radius: ${signature.socialBackground?.enabled && signature.socialBackground?.shape === 'round' ? '50%' : '4px'}; padding: ${signature.socialBackground?.enabled ? '6px' : '0'}; margin: 0;">
+                  <img src="https://img.icons8.com/color/${signature.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
+                </div>
+              </a>
+            </td>
+            ` : ''}
+            ${signature.socialLinks?.facebook ? `
+            <td style="padding: 0; margin: 0; padding-right: 8px;">
+              <a href="${signature.socialLinks.facebook}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
+                <div style="display: inline-block; background-color: ${signature.socialBackground?.enabled ? (signature.socialBackground?.color || '#f3f4f6') : 'transparent'}; border-radius: ${signature.socialBackground?.enabled && signature.socialBackground?.shape === 'round' ? '50%' : '4px'}; padding: ${signature.socialBackground?.enabled ? '6px' : '0'}; margin: 0;">
+                  <img src="${signature.facebookImageUrl || 'https://img.icons8.com/fluency/' + (signature.socialSize || 24) + '/facebook-new.png'}" alt="Facebook" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
+                </div>
+              </a>
+            </td>
+            ` : ''}
+            ${signature.socialLinks?.twitter ? `
+            <td style="padding: 0; margin: 0; padding-right: 8px;">
+              <a href="${signature.socialLinks.twitter}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
+                <div style="display: inline-block; background-color: ${signature.socialBackground?.enabled ? (signature.socialBackground?.color || '#f3f4f6') : 'transparent'}; border-radius: ${signature.socialBackground?.enabled && signature.socialBackground?.shape === 'round' ? '50%' : '4px'}; padding: ${signature.socialBackground?.enabled ? '6px' : '0'}; margin: 0;">
+                  <img src="https://img.icons8.com/color/${signature.socialSize || 24}/x.png" alt="X (Twitter)" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
+                </div>
+              </a>
+            </td>
+            ` : ''}
+            ${signature.socialLinks?.instagram ? `
+            <td style="padding: 0; margin: 0;">
+              <a href="${signature.socialLinks.instagram}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
+                <div style="display: inline-block; background-color: ${signature.socialBackground?.enabled ? (signature.socialBackground?.color || '#f3f4f6') : 'transparent'}; border-radius: ${signature.socialBackground?.enabled && signature.socialBackground?.shape === 'round' ? '50%' : '4px'}; padding: ${signature.socialBackground?.enabled ? '6px' : '0'}; margin: 0;">
+                  <img src="https://img.icons8.com/fluency/${signature.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
+                </div>
+              </a>
+            </td>
+            ` : ''}
+          </tr>
+        </tbody>
+      </table>
+    </td>
+  </tr>
+  ` : ''}
+</tbody>
+</table>`;
 };
 
 export default SignatureManager;

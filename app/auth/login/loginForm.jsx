@@ -11,6 +11,50 @@ import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "../../../src/lib/auth-client";
 import { TwoFactorModal } from "./components/TwoFactorModal";
 
+// Fonction pour s'assurer qu'une organisation active est définie
+const ensureActiveOrganization = async () => {
+  try {
+    console.log("🏢 Vérification de l'organisation active après connexion...");
+    
+    // Récupérer les organisations de l'utilisateur
+    const { data: organizations, error: orgsError } = await authClient.organization.list();
+    
+    if (orgsError) {
+      console.error("Erreur lors de la récupération des organisations:", orgsError);
+      return;
+    }
+    
+    console.log("Organisations disponibles:", organizations);
+    
+    // Vérifier s'il y a déjà une organisation active
+    const { data: activeOrg } = await authClient.organization.getActive();
+    
+    if (activeOrg) {
+      console.log("✅ Organisation active déjà définie:", activeOrg);
+      return;
+    }
+    
+    // Si pas d'organisation active et qu'il y a des organisations disponibles
+    if (organizations && organizations.length > 0) {
+      console.log("🔄 Définition de l'organisation active:", organizations[0]);
+      
+      const { error: setActiveError } = await authClient.organization.setActive({
+        organizationId: organizations[0].id,
+      });
+      
+      if (setActiveError) {
+        console.error("Erreur lors de la définition de l'organisation active:", setActiveError);
+      } else {
+        console.log("✅ Organisation active définie avec succès");
+      }
+    } else {
+      console.log("⚠️ Aucune organisation disponible");
+    }
+  } catch (error) {
+    console.error("Erreur lors de la vérification de l'organisation active:", error);
+  }
+};
+
 const LoginForm = () => {
   const {
     register,
@@ -25,7 +69,7 @@ const LoginForm = () => {
 
   const onSubmit = async (formData) => {
     await authClient.signIn.email(formData, {
-      onSuccess: (ctx) => {
+      onSuccess: async (ctx) => {
         // Vérifier si l'utilisateur doit passer par la 2FA
         if (ctx.data.twoFactorRedirect) {
           console.log("🔐 2FA requise pour cet utilisateur");
@@ -41,6 +85,9 @@ const LoginForm = () => {
         const authToken = ctx.response.headers.get("set-auth-token");
         localStorage.setItem("bearer_token", authToken);
         toast.success("Connexion réussie");
+
+        // Définir l'organisation active après la connexion
+        await ensureActiveOrganization();
 
         // Vérifier s'il y a un callbackUrl dans les paramètres URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -92,6 +139,9 @@ const LoginForm = () => {
 
       console.log("2FA vérifiée avec succès:", data);
       toast.success("Connexion réussie");
+
+      // Définir l'organisation active après la vérification 2FA
+      await ensureActiveOrganization();
 
       // Redirection après vérification 2FA réussie
       const urlParams = new URLSearchParams(window.location.search);

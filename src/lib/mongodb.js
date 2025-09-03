@@ -12,12 +12,32 @@ if (!global._mongoClient) {
   client
     .connect()
     .then(() => {
+      console.log("✅ MongoDB connected successfully");
       global._mongoDb = client.db(dbName);
     })
     .catch((err) => {
-      console.error("MongoDB connection error:", err);
+      console.error("❌ MongoDB connection error:", err);
+      // Ne pas lancer d'erreur ici pour éviter de casser l'app
     });
+} else {
+  client = global._mongoClient;
 }
 
+// Fonction pour s'assurer que la connexion est établie
+const ensureConnection = async () => {
+  try {
+    if (!global._mongoDb) {
+      await client.connect();
+      global._mongoDb = client.db(dbName);
+      console.log("✅ MongoDB reconnected successfully");
+    }
+    return global._mongoDb;
+  } catch (error) {
+    console.error("❌ Failed to ensure MongoDB connection:", error);
+    throw error;
+  }
+};
+
 export const mongoClient = global._mongoClient || new MongoClient(uri);
-export const mongoDb = global._mongoDb || mongoClient.db(dbName);
+export const mongoDb = global._mongoDb || client?.db(dbName);
+export { ensureConnection };

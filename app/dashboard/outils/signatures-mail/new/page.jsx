@@ -202,7 +202,7 @@ const EmailPreview = ({ signatureData }) => {
   };
 
   // Fonction pour générer le HTML de la signature
-  const generateSignatureHTML = async () => {
+  const generateSignatureHTML = async (facebookImageUrl = null) => {
     const primaryColor = signatureData.primaryColor || '#2563eb';
     
     // Convertir les images en base64 si nécessaire
@@ -247,11 +247,11 @@ const EmailPreview = ({ signatureData }) => {
         htmlSignature = generateCustomHTML(signatureData, primaryColor, photoSrc, logoSrc);
         break;
       case 'horizontal':
-        htmlSignature = generateHorizontalHTML(signatureData, primaryColor, photoSrc, logoSrc);
+        htmlSignature = generateHorizontalHTML(signatureData, primaryColor, facebookImageUrl, photoSrc, logoSrc);
         break;
       case 'vertical':
       default:
-        htmlSignature = generateVerticalHTML(signatureData, primaryColor, photoSrc, logoSrc);
+        htmlSignature = generateVerticalHTML(signatureData, primaryColor, facebookImageUrl, photoSrc, logoSrc);
         break;
     }
     
@@ -263,7 +263,9 @@ const EmailPreview = ({ signatureData }) => {
 };
 
 // Fonction pour générer le HTML du layout vertical
-const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
+const generateVerticalHTML = (signatureData, primaryColor, facebookImageUrl = null, photoSrc, logoSrc) => {
+  // Ensure facebookImageUrl is properly handled
+  const facebookImgUrl = facebookImageUrl || '';
   const imageSize = signatureData.imageSize || 80;
   const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
   const separatorVerticalWidth = signatureData.separatorVerticalWidth || 1;
@@ -465,7 +467,9 @@ const generateVerticalHTML = (signatureData, primaryColor, photoSrc, logoSrc) =>
 };
 
 // Fonction pour générer le HTML du layout horizontal
-const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
+const generateHorizontalHTML = (signatureData, primaryColor, facebookImageUrl = null, photoSrc, logoSrc) => {
+  // Ensure facebookImageUrl is properly handled
+  const facebookImgUrl = facebookImageUrl || '';
   const imageSize = signatureData.imageSize || 80;
   const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
   const separatorHorizontalWidth = signatureData.separatorHorizontalWidth || 1;
@@ -484,13 +488,13 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
         <tr>
           <!-- Photo de profil à gauche -->
           ${photoSrc ? `
-            <td style="width: 80px; padding-right: ${spacings.photoBottom || 16}px; vertical-align: top;">
+            <td style="width: ${signatureData.columnWidths?.photo || 25}%; padding-right: ${spacings.photoBottom || 16}px; vertical-align: top;">
               <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center/cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;"></div>
             </td>
           ` : ''}
           
           <!-- Informations empilées verticalement à droite -->
-          <td style="vertical-align: top;">
+          <td style="width: ${signatureData.columnWidths?.content || 75}%; vertical-align: top;">
             <!-- Nom et prénom -->
             <div style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; margin-bottom: 2px;">
               ${signatureData.firstName} ${signatureData.lastName}
@@ -547,15 +551,87 @@ const generateHorizontalHTML = (signatureData, primaryColor, photoSrc, logoSrc) 
         <!-- Séparateur horizontal -->
         <tr>
           <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
-            <hr style="border: none; border-top: ${separatorHorizontalWidth}px solid #e0e0e0; margin: 0; width: 100%;" />
+            <hr style="border: none; border-top: ${separatorHorizontalWidth}px solid ${signatureData.colors?.separatorHorizontal || '#e0e0e0'}; margin: 0; width: 100%;" />
           </td>
         </tr>
         
         <!-- Logo entreprise après le séparateur -->
         ${logoSrc ? `
         <tr>
-          <td colspan="2" style="padding: ${spacings.logoBottom || 12}px 0 0 0; text-align: left;">
+          <td colspan="2" style="text-align: left;">
             <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
+          </td>
+        </tr>
+        ` : ''}
+        
+        <!-- Logos sociaux -->
+        ${(signatureData.socialLinks?.linkedin || signatureData.socialLinks?.facebook || signatureData.socialLinks?.twitter || signatureData.socialLinks?.instagram) ? `
+        <tr>
+          <td colspan="2" style="padding: ${spacings.separatorBottom || 15}px 0 0 0; text-align: left;">
+            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+              <tr>
+                ${signatureData.socialLinks?.linkedin ? `
+                <td style="padding-right: 8px;">
+                  <a href="${signatureData.socialLinks.linkedin}" target="_blank" rel="noopener noreferrer">
+                    ${signatureData.socialBackground?.enabled ? `
+                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || '#f3f4f6'}; border-radius: ${signatureData.socialBackground?.shape === 'round' ? '50%' : '4px'}; padding: 6px;">
+                      <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                    </div>
+                    ` : `
+                    <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                    `}
+                  </a>
+                </td>
+                ` : ''}
+                ${signatureData.socialLinks?.facebook ? `
+                <td style="padding-right: 8px;">
+                  <a href="${signatureData.socialLinks.facebook}" target="_blank" rel="noopener noreferrer">
+                    ${signatureData.socialBackground?.enabled ? `
+                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || '#f3f4f6'}; border-radius: ${signatureData.socialBackground?.shape === 'round' ? '50%' : '4px'}; padding: 6px;">
+                      ${facebookImgUrl ? `
+                      <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                      ` : `
+                      <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                      `}
+                    </div>
+                    ` : `
+                    ${facebookImgUrl ? `
+                    <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                    ` : `
+                    <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                    `}
+                    `}
+                  </a>
+                </td>
+                ` : ''}
+                ${signatureData.socialLinks?.twitter ? `
+                <td style="padding-right: 8px;">
+                  <a href="${signatureData.socialLinks.twitter}" target="_blank" rel="noopener noreferrer">
+                    ${signatureData.socialBackground?.enabled ? `
+                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || '#f3f4f6'}; border-radius: ${signatureData.socialBackground?.shape === 'round' ? '50%' : '4px'}; padding: 6px;">
+                      <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png" alt="X (Twitter)" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                    </div>
+                    ` : `
+                    <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png" alt="X (Twitter)" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                    `}
+                  </a>
+                </td>
+                ` : ''}
+                ${signatureData.socialLinks?.instagram ? `
+                <td>
+                  <a href="${signatureData.socialLinks.instagram}" target="_blank" rel="noopener noreferrer">
+                    ${signatureData.socialBackground?.enabled ? `
+                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || '#f3f4f6'}; border-radius: ${signatureData.socialBackground?.shape === 'round' ? '50%' : '4px'}; padding: 6px;">
+                      <img src="https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                    </div>
+                    ` : `
+                    <img src="https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                    `}
+                  </a>
+                </td>
+                ` : ''}
+              </tr>
+            </table>
           </td>
         </tr>
         ` : ''}
@@ -878,38 +954,54 @@ const generateCustomHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
     setIsCopying(true);
     
     try {
-      const htmlSignature = await generateSignatureHTML();
+      // Générer une PNG colorée pour Facebook si nécessaire
+      let facebookImageUrl = null;
+      if (signatureData.socialLinks?.facebook && signatureData.colors?.social) {
+        console.log('🎨 Génération PNG Facebook pour Gmail...');
+        try {
+          const { generateColoredSocialLogo } = await import('../utils/svgToPng');
+          facebookImageUrl = await generateColoredSocialLogo(
+            'facebook', 
+            signatureData.colors.social, 
+            signatureData.socialSize || 24
+          );
+          console.log('✅ PNG Facebook générée:', facebookImageUrl);
+        } catch (error) {
+          console.error('❌ Erreur génération PNG:', error);
+        }
+      }
+      
+      // Utiliser la fonction generateSignatureHTML compatible Gmail avec espacements
+      const SignatureManagerModule = await import('../components/SignatureManager');
+      const signatureWithFacebookUrl = {
+        ...signatureData,
+        facebookImageUrl: facebookImageUrl
+      };
+      const htmlSignature = SignatureManagerModule.generateGmailSignatureHTML(signatureWithFacebookUrl);
       console.log('📝 HTML généré:', htmlSignature);
       
-      // Fonction pour copier en tant que texte riche (HTML)
-      const copyAsRichText = async () => {
+      // Utiliser l'API moderne du clipboard pour copier du HTML
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([htmlSignature], { type: 'text/html' }),
+            'text/plain': new Blob([htmlSignature.replace(/<[^>]*>/g, '')], { type: 'text/plain' })
+          })
+        ]);
+        
+        toast.success('Signature copiée avec logo PNG pour Gmail !');
+      } catch (error) {
+        console.error('Erreur lors de la copie:', error);
+        // Fallback pour les navigateurs plus anciens
         try {
-          // Essayer avec la nouvelle API Clipboard
-          if (navigator.clipboard && window.ClipboardItem) {
-            await navigator.clipboard.write([
-              new ClipboardItem({
-                'text/html': new Blob([htmlSignature], { type: 'text/html' }),
-                'text/plain': new Blob([htmlSignature.replace(/<[^>]*>/g, '')], { type: 'text/plain' })
-              })
-            ]);
-            toast.success("Signature copiée avec le visuel !");
-          } else {
-            // Fallback pour les navigateurs plus anciens
-            const textarea = document.createElement('textarea');
-            textarea.value = htmlSignature;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            toast.success("Signature copiée ! (format HTML)");
-          }
-        } catch (error) {
-          console.error('❌ Erreur copie riche:', error);
-          throw error; // Propage l'erreur pour le bloc catch externe
+          await navigator.clipboard.writeText(htmlSignature);
+          toast.success('Signature copiée (texte brut) !');
+        } catch (fallbackError) {
+          console.error('Erreur fallback:', fallbackError);
+          toast.error('Erreur lors de la copie de la signature');
         }
-      };
+      }
       
-      await copyAsRichText();
       console.log('✅ Copie terminée avec succès');
     } catch (error) {
       console.error('❌ Erreur lors de la copie:', error);

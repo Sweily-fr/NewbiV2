@@ -20,6 +20,8 @@ import {
 } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
+import { useSubscription } from "@/src/contexts/subscription-context";
+import { Crown } from "lucide-react";
 
 // Fonction pour déterminer la couleur de l'icône en fonction du type d'outil
 function getIconColor(title) {
@@ -56,6 +58,7 @@ const cards = [
     status: "available",
     bgIconColor: "#8681FF",
     Image: "/images/utils/Factures.svg",
+    isPro: true,
   },
   {
     title: "Devis",
@@ -65,6 +68,7 @@ const cards = [
     status: "available",
     bgIconColor: "#FFC782",
     Image: "/images/utils/Devis.svg",
+    isPro: true,
   },
   {
     title: "KANBAN",
@@ -74,6 +78,7 @@ const cards = [
     status: "available",
     bgIconColor: "#FF7D65",
     Image: "/images/utils/Kanban.svg",
+    isPro: false,
   },
   {
     title: "Signatures de mail",
@@ -83,6 +88,7 @@ const cards = [
     status: "available",
     bgIconColor: "#8BA6FF",
     Image: "/images/utils/Signature.svg",
+    isPro: false,
   },
   {
     title: "Transfert de fichiers",
@@ -92,6 +98,7 @@ const cards = [
     status: "available",
     bgIconColor: "#FF9F65",
     Image: "/images/utils/Transfert.svg",
+    isPro: true,
   },
   {
     title: "Dépenses",
@@ -101,6 +108,7 @@ const cards = [
     status: "available",
     bgIconColor: "#5B4FFF",
     Image: "/images/utils/gestion-depenses.png",
+    isPro: true,
   },
   // {
   //   title: "Article SEO",
@@ -126,6 +134,8 @@ const cards = [
 ];
 
 export function SectionCards({ className }) {
+  const { isActive } = useSubscription();
+  
   return (
     <div
       className={cn(
@@ -135,23 +145,32 @@ export function SectionCards({ className }) {
     >
       {cards.map((card, index) => {
         const isAvailable = card.status === "available" || !card.status;
+        const hasAccess = !card.isPro || isActive();
 
         // La fonction getIconColor est maintenant définie en dehors du composant
 
         return (
-          <Card key={index} className="border-0 shadow-sm p-2">
+          <Card key={index} className={cn(
+            "border-0 shadow-sm p-2 relative",
+            !hasAccess && "opacity-60 cursor-not-allowed"
+          )}>
             <div className="flex flex-row h-full">
               {/* Partie gauche avec icône, titre, description et lien */}
               <div className="flex flex-col p-2 flex-1 justify-between">
                 <div className="space-y-4">
-                  <div
-                    className={cn(
-                      "p-2 rounded-md w-7 h-7 flex items-center justify-center",
-                      `bg-[${card.bgIconColor}]`
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={cn(
+                        "p-2 rounded-md w-7 h-7 flex items-center justify-center",
+                        `bg-[${card.bgIconColor}]`
+                      )}
+                      // style={{ backgroundColor: getIconColor(card.title) }}
+                    >
+                      <p className="text-white">{card.icon}</p>
+                    </div>
+                    {!hasAccess && (
+                      <Crown className="w-4 h-4 text-[#5b4fff]" />
                     )}
-                    // style={{ backgroundColor: getIconColor(card.title) }}
-                  >
-                    <p className="text-white">{card.icon}</p>
                   </div>
 
                   <div className="space-y-3">
@@ -163,7 +182,7 @@ export function SectionCards({ className }) {
                 </div>
 
                 <div className="pt-6">
-                  {isAvailable && (
+                  {isAvailable && hasAccess && (
                     <Link
                       href={card.href || "#"}
                       className="text-sm font-medium text-[#5B4FFF] hover:text-[#5B4FFF] flex items-center gap-2 no-underline"
@@ -171,18 +190,27 @@ export function SectionCards({ className }) {
                       Accéder <span className="text-sm">→</span>
                     </Link>
                   )}
+                  {!hasAccess && (
+                    <div className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                      Nécessite Pro
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Partie droite avec la visualisation - coins arrondis */}
               <div
-                className={`w-1/2 rounded-xl m-1 p-2 flex flex-col justify-center space-y-4 bg-[#5B4FFF]/4 bg-center bg-no-repeat bg-50% bg-blend-soft-light ${card.Image ? "" : "bg-none"}`}
+                className={cn(
+                  "w-1/2 rounded-xl m-1 p-2 flex flex-col justify-center space-y-4 bg-[#5B4FFF]/4 bg-center bg-no-repeat bg-50% bg-blend-soft-light",
+                  card.Image ? "" : "bg-none",
+                  !hasAccess && "grayscale"
+                )}
                 style={{
                   backgroundImage: card.Image ? `url(${card.Image})` : "none",
                   backgroundSize: "80%",
                   backgroundPosition: "center center",
                   backgroundRepeat: "no-repeat",
-                  opacity: 0.7,
+                  opacity: hasAccess ? 0.7 : 0.4,
                   objectFit: "cover",
                 }}
               >

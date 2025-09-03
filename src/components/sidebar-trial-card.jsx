@@ -48,7 +48,13 @@ export function SidebarTrialCard() {
   }, [isInTrial, isTrialExpired, isActive()]);
 
   // Ne pas afficher si loading, dismissed, ou si l'utilisateur a un abonnement actif
-  if (loading || dismissed || isActive()) {
+  // Attendre que les données soient complètement chargées avant d'afficher
+  if (loading || dismissed || (isActive() && !subscription)) {
+    return null;
+  }
+  
+  // Si l'utilisateur a un abonnement actif avec les données chargées, ne pas afficher
+  if (isActive() && subscription) {
     return null;
   }
 
