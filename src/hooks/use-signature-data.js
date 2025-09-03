@@ -77,6 +77,8 @@ export function SignatureProvider({ children }) {
     separatorHorizontalWidth: 1, // Épaisseur du séparateur horizontal (sous l'adresse)
     // Taille du logo entreprise (en pixels)
     logoSize: 60, // Taille par défaut du logo
+    // Taille des logos sociaux (en pixels)
+    socialSize: 24, // Taille par défaut des logos sociaux
     // Espacements entre les éléments (en pixels)
     spacings: {
       global: 8, // Espacement global par défaut
