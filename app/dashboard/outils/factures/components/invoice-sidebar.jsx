@@ -147,41 +147,47 @@ export default function InvoiceSidebar({
 
   return (
     <>
-      {/* Overlay with scroll */}
-      <div
-        className="fixed inset-0 bg-black/70 z-40 overflow-y-auto"
+      {/* Semi-transparent overlay */}
+      <div 
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
         onClick={onClose}
-        style={{
-          right: isOpen ? "500px" : "0",
-          transition: "right 0.2s ease-in-out",
-        }}
+      />
+      
+      {/* PDF Preview Panel */}
+      <div 
+        className={`fixed inset-y-0 left-0 right-[35%] z-50 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
-        {/* Preview Section - Floating on overlay */}
-        {isOpen && (
-          <div className="absolute left-[470px] top-8 bottom-4  transform -translate-x-1/2 z-45 w-[750px]">
+        <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-12 px-24">
+          <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
             <UniversalPreviewPDF data={invoice} type="invoice" />
           </div>
-        )}
+        </div>
       </div>
-
-      {/* Sidebar - Details Section */}
-      <div className="fixed right-0 top-0 h-full w-[500px] bg-card border-l shadow-lg z-50 flex flex-col">
+      
+      {/* Main Sidebar */}
+      <div 
+        className={`fixed inset-y-0 right-0 z-50 w-[35%] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-lg font-medium">Détails de la facture</h2>
           <div className="flex items-center gap-2">
             {/* Bouton PDF - masqué pour les brouillons */}
             {invoice.status !== INVOICE_STATUS.DRAFT && (
-              <UniversalPDFGenerator data={invoice} type="invoice">
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="h-8 px-3 font-normal cursor-pointer"
-                  title="Télécharger en PDF"
-                >
-                  {/* <Download className="h-4 w-4 mr-2" /> */}
-                  Télécharger en PDF
-                </Button>
+              <UniversalPDFGenerator 
+                data={invoice} 
+                type="invoice"
+                variant="default"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                Télécharger en PDF
               </UniversalPDFGenerator>
             )}
             <Button
@@ -382,14 +388,16 @@ export default function InvoiceSidebar({
 
       {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-          <DialogHeader>
-            <DialogTitle className="pl-6 pt-6">
+        <DialogContent className="w-full max-w-6xl h-[90vh] p-0 flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <DialogTitle className="text-xl font-semibold">
               Aperçu de la facture {invoice.number || "Brouillon"}
             </DialogTitle>
           </DialogHeader>
-          <div className="mt-0">
-            <UniversalPreviewPDF data={invoice} type="invoice" />
+          <div className="flex-1 overflow-y-auto bg-[#F9F9F9] dark:bg-[#1a1a1a] p-8">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-4xl mx-auto">
+              <UniversalPreviewPDF data={invoice} type="invoice" />
+            </div>
           </div>
         </DialogContent>
       </Dialog>

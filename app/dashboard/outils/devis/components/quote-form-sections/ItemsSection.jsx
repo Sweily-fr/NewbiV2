@@ -100,20 +100,24 @@ export default function ItemsSection({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-0">
-        {/* Recherche et ajout de produits */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <ProductSearchCombobox
-              onSelect={addItem}
-              placeholder="Rechercher un produit ou service..."
-              disabled={!canEdit}
-              className="flex-1"
-            />
+        {/* Bouton ajouter article */}
+        <div className="flex gap-3 items-stretch">
+          <div className="flex-1 min-w-0" style={{ flexBasis: "75%" }}>
+            <div className="h-full">
+              <ProductSearchCombobox
+                onSelect={addItem}
+                placeholder="Rechercher un produit ou service..."
+                disabled={!canEdit}
+                className="h-full"
+              />
+            </div>
+          </div>
+          <div className="flex-shrink-0" style={{ flexBasis: "25%" }}>
             <Button
-              type="button"
-              variant="outline"
               onClick={() => addItem()}
               disabled={!canEdit}
+              className="gap-2 w-full h-full min-h-10 font-normal"
+              size="lg"
             >
               <Plus />
               Ajouter un article

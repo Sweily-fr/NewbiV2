@@ -195,6 +195,7 @@ export default function QuoteRowActions({ row, onRefetch }) {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onRefetch={onRefetch}
+        isViewMode={true}
       />
     </>
   );

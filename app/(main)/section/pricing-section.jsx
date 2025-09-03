@@ -93,14 +93,14 @@ export default function PricingSection() {
             <p className="flex items-baseline justify-center text-5xl font-medium text-gray-900 mb-4">
               {billingCycle === "monthly" ? (
                 <>
-                  14,99{" "}
+                  12,49{" "}
                   <span className="text-base font-medium text-gray-500 ml-2">
                     EUR/mois
                   </span>
                 </>
               ) : (
                 <>
-                  13,49{" "}
+                  11,24{" "}
                   <span className="text-base font-medium text-gray-500 ml-2">
                     EUR/mois
                   </span>
@@ -109,10 +109,10 @@ export default function PricingSection() {
             </p>
             {billingCycle === "yearly" && (
               <p className="text-sm text-gray-600 mb-2">
-                Facturé 161,89€ annuellement
+                Facturé 134,88€ annuellement
                 <br />
                 <span className="text-[#5B4FFF] font-medium">
-                  Économisez 18€ par rapport au mensuel
+                  Économisez 15€ par rapport au mensuel
                 </span>
               </p>
             )}
@@ -120,7 +120,7 @@ export default function PricingSection() {
               href="#"
               className="block w-full bg-[#171717] text-white font-medium rounded-md px-6 py-3 mt-2 mb-3 transition"
             >
-              Commencer
+              Commencer maintenant !
             </a>
             <p className="text-xs text-gray-400 mt-1">
               Les factures et les reçus sont disponibles pour une utilisation

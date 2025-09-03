@@ -144,7 +144,7 @@ function ProductSearchCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between",
+            "w-full justify-between font-normal",
             !value && "text-muted-foreground",
             className
           )}
@@ -155,7 +155,7 @@ function ProductSearchCombobox({
           <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" style={{ width: 'var(--radix-popover-trigger-width)', minWidth: 'unset' }}>
         <Command>
           <CommandInput
             placeholder="Rechercher un produit..."
@@ -176,7 +176,7 @@ function ProductSearchCombobox({
                     className="flex flex-col items-start gap-1 p-3"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">{product.label}</span>
+                      <span className="font-normal">{product.label}</span>
                       <span className="text-sm text-muted-foreground">
                         {product.price ? `${product.price}€` : ""}
                       </span>
