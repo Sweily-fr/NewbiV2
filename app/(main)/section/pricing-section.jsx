@@ -9,7 +9,7 @@ import {
 } from "@/src/components/ui/tabs";
 
 export default function PricingSection() {
-  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [billingCycle, setBillingCycle] = useState("yearly");
   return (
     <section className="py-16" id="pricing">
       <div className="text-center mb-12">
@@ -58,18 +58,14 @@ export default function PricingSection() {
             <h4 className="font-medium text-[#5B4FFF] mb-4">
               Ce qui est inclus
             </h4>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-700">
+            <ul className="text-gray-700">
               <li className="flex items-center">
                 <CheckIcon />
                 <span className="text-sm">Accès à tous les outils</span>
               </li>
               <li className="flex items-center">
                 <CheckIcon />
-                <span className="text-sm">Facturation et devis illimités</span>
-              </li>
-              <li className="flex items-center">
-                <CheckIcon />
-                <span className="text-sm">Signatures email personnalisées</span>
+                <span className="text-sm">1 collaborateur gratuit</span>
               </li>
               <li className="flex items-center">
                 <CheckIcon />
@@ -93,40 +89,45 @@ export default function PricingSection() {
             <p className="flex items-baseline justify-center text-5xl font-medium text-gray-900 mb-4">
               {billingCycle === "monthly" ? (
                 <>
-                  12,49{" "}
-                  <span className="text-base font-medium text-gray-500 ml-2">
-                    EUR/mois
+                  <span className="relative text-xl line-through text-red-400">
+                    14,99€
+                  </span>
+                  <span className="ml-3">
+                    <span className="text-[#5B4FFF] text-5xl">12,49€</span>
+                    <span className="text-base text-[#5B4FFF] ml-1">/mois</span>
+                    <span className="block text-right text-xs text-gray-500 font-medium mt-1">La première année</span>
                   </span>
                 </>
               ) : (
                 <>
-                  11,24{" "}
-                  <span className="text-base font-medium text-gray-500 ml-2">
-                    EUR/mois
+                  <span className="relative text-xl line-through text-red-400">
+                    13,49€
+                  </span>
+                  <span className="ml-3">
+                    <span className="text-[#5B4FFF] text-5xl">11,24€</span>
+                    <span className="text-base text-[#5B4FFF] ml-1">/mois</span>
+                    <span className="block text-right text-xs text-gray-500 font-medium mt-1">La première année</span>
                   </span>
                 </>
               )}
             </p>
             {billingCycle === "yearly" && (
               <p className="text-sm text-gray-600 mb-2">
-                Facturé 134,88€ annuellement
-                <br />
-                <span className="text-[#5B4FFF] font-medium">
-                  Économisez 15€ par rapport au mensuel
+                <span className="relative mr-1 text-sm line-through text-gray-500">
+                  161,88€
                 </span>
+                <span className="text-[#5B4FFF] font-medium">134,88€</span> facturé annuellement
+                <br />
               </p>
             )}
             <a
-              href="#"
+              href="/auth/signup"
               className="block w-full bg-[#171717] text-white font-medium rounded-md px-6 py-3 mt-2 mb-3 transition"
             >
-              Commencer maintenant !
+              Commence GRATUITEMENT !
             </a>
             <p className="text-xs text-gray-400 mt-1">
-              Les factures et les reçus sont disponibles pour une utilisation
-              simple
-              <br />
-              pour les remboursements
+              Résiliation facile et sans condition à tout moment.
             </p>
           </div>
         </div>
