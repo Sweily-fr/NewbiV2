@@ -9,12 +9,12 @@ export function ProRouteGuard({ children, pageName }) {
   const { isActive, loading } = useSubscription();
   const router = useRouter();
 
-  // Rediriger vers /dashboard/outils si pas d'accès
-  useEffect(() => {
-    if (!loading && !isActive()) {
-      router.replace("/dashboard/outils");
-    }
-  }, [loading, isActive, router]);
+  // Ne pas rediriger automatiquement, laisser l'utilisateur sur la page courante
+  // useEffect(() => {
+  //   if (!loading && !isActive()) {
+  //     router.replace("/dashboard/outils");
+  //   }
+  // }, [loading, isActive, router]);
 
   if (loading) {
     return (

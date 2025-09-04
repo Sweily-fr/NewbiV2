@@ -27,11 +27,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
+import { Switch } from "@/src/components/ui/switch";
 
 export default function SubscribePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isAnnual, setIsAnnual] = useState(false);
   const { isActive, loading, subscription } = useSubscription();
   const { data: session } = useSession();
 
@@ -59,13 +61,28 @@ export default function SubscribePage() {
 
       const activeOrgId = sessionData.session.activeOrganizationId;
 
+      // Hardcoder temporairement les prix pour tester
+      const monthlyPriceId = "price_1S3XtUGhXtlcZkhKIAiLVtjE";
+      const yearlyPriceId = "price_1S3IT7GhXtlcZkhKnvOVR18y";
+
       const upgradeParams = {
         plan: plan,
+        annual: isAnnual,
         referenceId: activeOrgId,
         successUrl: `${window.location.origin}/dashboard`,
         cancelUrl: `${window.location.origin}/dashboard/subscribe`,
         disableRedirect: false,
       };
+
+      console.log("Debug pricing:", {
+        isAnnual,
+        monthlyPrice: process.env.STRIPE_PRICE_ID_MONTH,
+        yearlyPrice: process.env.STRIPE_PRICE_ID_YEARS,
+        selectedPrice: isAnnual
+          ? process.env.STRIPE_PRICE_ID_YEARS
+          : process.env.STRIPE_PRICE_ID_MONTH,
+        upgradeParams,
+      });
 
       const { data, error } =
         await authClient.subscription.upgrade(upgradeParams);
@@ -190,8 +207,14 @@ export default function SubscribePage() {
     },
     {
       name: "Pro",
-      price: "11,24 € par mois facturation annuelle",
-      monthlyPrice: "12,49 € facturation mensuelle",
+      annualPrice: "11,24 €",
+      monthlyPrice: "12,49 €",
+      annualTotal: "134,88 € la première année",
+      monthlyTotal: "12,49 € par mois la première année",
+      annualPriceAfter: "13,49 €",
+      monthlyPriceAfter: "14,99 €",
+      annualTotalAfter: "161,88 € par an",
+      monthlyTotalAfter: "14,99 € par mois",
       description: "Toutes les fonctionnalités pour développer votre activité",
       features: [
         "Facturation complète (devis → factures, TVA)",
@@ -292,7 +315,7 @@ export default function SubscribePage() {
                   {isLoading ? (
                     <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                   ) : (
-                    "Résilier"
+                    "Résilier votre abonnement"
                   )}
                 </Button>
               )}
@@ -321,12 +344,60 @@ export default function SubscribePage() {
                 )}
 
                 <div className="mb-3">
-                  <h3 className="text-lg font-semibold mb-1">{plan.name}</h3>
-                  <p className="text-sm text-[#5b50fe] font-medium">
-                    {plan.price}
-                  </p>
-                  {plan.monthlyPrice && (
-                    <p className="text-xs text-gray-500">{plan.monthlyPrice}</p>
+                  {/* Titre avec switch pour le plan Pro (seulement si pas d'abonnement actif) */}
+                  {plan.name === "Pro" && !isActive() ? (
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-semibold">{plan.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs ${!isAnnual ? "text-gray-900 dark:text-white font-medium" : "text-gray-500"}`}
+                        >
+                          Mensuel
+                        </span>
+                        <Switch
+                          checked={isAnnual}
+                          onCheckedChange={setIsAnnual}
+                          className="data-[state=checked]:bg-[#5b50fe] scale-75"
+                        />
+                        <span
+                          className={`text-xs ${isAnnual ? "text-gray-900 dark:text-white font-medium" : "text-gray-500"}`}
+                        >
+                          Annuel
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <h3 className="text-lg font-semibold mb-1">{plan.name}</h3>
+                  )}
+
+                  {/* Prix dynamique selon le switch */}
+                  {plan.name === "Pro" ? (
+                    <div>
+                      <p className="text-sm text-[#5b50fe] font-medium">
+                        {isAnnual ? plan.annualPrice : plan.monthlyPrice}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {isAnnual ? plan.annualTotal : plan.monthlyTotal}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Puis{" "}
+                        {isAnnual
+                          ? plan.annualTotalAfter
+                          : plan.monthlyTotalAfter}
+                      </p>
+                      {isAnnual && (
+                        <Badge
+                          variant="secondary"
+                          className="bg-green-100 text-green-800 text-xs mt-1"
+                        >
+                          Économisez 17% la première année
+                        </Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#5b50fe] font-medium">
+                      Gratuit
+                    </p>
                   )}
                 </div>
 
@@ -355,7 +426,7 @@ export default function SubscribePage() {
                     {isLoading ? (
                       <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                     ) : (
-                      "Passer à Pro"
+                      `Passer à Pro ${isAnnual ? "Annuel" : "Mensuel"}`
                     )}
                   </Button>
                 )}

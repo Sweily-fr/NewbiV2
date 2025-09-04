@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useSubscription } from '@/src/contexts/subscription-context';
-import { useSession } from '@/src/lib/auth-client';
-import { authClient } from '@/src/lib/auth-client';
+import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSession } from "@/src/lib/auth-client";
+import { authClient } from "@/src/lib/auth-client";
 import {
   Card,
   CardContent,
@@ -32,7 +32,8 @@ export default function BillingSection() {
 
   // Calculer les informations d'essai
   const getTrialInfo = () => {
-    if (!session?.user) return { isInTrial: false, isTrialExpired: false, trialDaysRemaining: 0 };
+    if (!session?.user)
+      return { isInTrial: false, isTrialExpired: false, trialDaysRemaining: 0 };
 
     const createdAt = new Date(session.user.createdAt);
     const now = new Date();
@@ -52,16 +53,16 @@ export default function BillingSection() {
 
   const handleUpgrade = async () => {
     try {
-      setProcessingAction('upgrade');
+      setProcessingAction("upgrade");
       const { data, error } = await authClient.stripe.createCheckout({
-        priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID || 'price_1234',
+        priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_MONTH || "price_1234",
         successUrl: `${window.location.origin}/dashboard/settings?tab=billing&success=true`,
         cancelUrl: `${window.location.origin}/dashboard/settings?tab=billing&canceled=true`,
-        referenceId: session?.session?.activeOrganizationId
+        referenceId: session?.session?.activeOrganizationId,
       });
 
       if (error) {
-        toast.error('Erreur lors de la création de la session de paiement');
+        toast.error("Erreur lors de la création de la session de paiement");
         return;
       }
 
@@ -69,7 +70,7 @@ export default function BillingSection() {
         window.location.href = data.url;
       }
     } catch (error) {
-      toast.error('Erreur lors de la redirection vers le paiement');
+      toast.error("Erreur lors de la redirection vers le paiement");
     } finally {
       setProcessingAction(null);
     }
@@ -77,13 +78,13 @@ export default function BillingSection() {
 
   const handleManageSubscription = async () => {
     try {
-      setProcessingAction('portal');
+      setProcessingAction("portal");
       const { data, error } = await authClient.stripe.createCustomerPortal({
-        returnUrl: `${window.location.origin}/dashboard/settings?tab=billing`
+        returnUrl: `${window.location.origin}/dashboard/settings?tab=billing`,
       });
 
       if (error) {
-        toast.error('Erreur lors de la création du portail client');
+        toast.error("Erreur lors de la création du portail client");
         return;
       }
 
@@ -91,7 +92,7 @@ export default function BillingSection() {
         window.location.href = data.url;
       }
     } catch (error) {
-      toast.error('Erreur lors de l\'ouverture du portail de gestion');
+      toast.error("Erreur lors de l'ouverture du portail de gestion");
     } finally {
       setProcessingAction(null);
     }

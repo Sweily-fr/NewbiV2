@@ -32,5 +32,6 @@ export const useKanbanBoard = (id) => {
     error,
     refetch,
     getTasksByColumn,
+    workspaceId,
   };
 };

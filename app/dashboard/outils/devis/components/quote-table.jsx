@@ -216,11 +216,13 @@ export default function QuoteTable() {
                       return column.columnDef.meta.label;
                     }
                     return column.id
-                      .split('.')
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                      .join(' ');
+                      .split(".")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
+                      .join(" ");
                   };
-                  
+
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}

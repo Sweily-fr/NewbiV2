@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSensors, useSensor, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
-export const useKanbanDnD = (moveTask, getTasksByColumn, boardId) => {
+export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId) => {
   const [activeTask, setActiveTask] = useState(null);
 
   // Configuration des capteurs pour le drag & drop
@@ -68,6 +68,7 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId) => {
             id: activeTask.id,
             columnId: newColumnId,
             position: newPosition,
+            workspaceId: workspaceId, // Ajouter workspaceId manquant
           },
           optimisticResponse: {
             moveTask: {

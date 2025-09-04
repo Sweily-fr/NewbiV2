@@ -92,7 +92,7 @@ export function CompanyInfoGuard({
 
   const handleCancel = () => {
     setShowAlert(false);
-    router.push("/dashboard/outils"); // Rediriger vers la page des outils
+    // Ne pas rediriger, rester sur la page courante
   };
 
   if (isLoading) {

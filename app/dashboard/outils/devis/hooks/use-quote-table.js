@@ -47,18 +47,18 @@ const statusFilterFn = (row, columnId, filterValue) => {
 // Formater les dates dans différents formats pour la recherche
 const formatDateForSearch = (dateValue) => {
   if (!dateValue) return [];
-  
+
   try {
     // Gérer différents types de dates (string, nombre, Date)
     let date;
-    if (typeof dateValue === 'string') {
+    if (typeof dateValue === "string") {
       // Si c'est un timestamp en millisecondes (string de chiffres)
       if (/^\d+$/.test(dateValue)) {
         date = new Date(parseInt(dateValue, 10));
       } else {
         date = new Date(dateValue);
       }
-    } else if (typeof dateValue === 'number') {
+    } else if (typeof dateValue === "number") {
       date = new Date(dateValue);
     } else if (dateValue instanceof Date) {
       date = dateValue;
@@ -67,11 +67,11 @@ const formatDateForSearch = (dateValue) => {
     }
 
     if (isNaN(date.getTime())) return [];
-    
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-    
+
     // Formats de date pour la recherche
     return [
       // Format d'affichage dans le tableau (JJ/MM/AAAA)
@@ -91,15 +91,20 @@ const formatDateForSearch = (dateValue) => {
       // Format mois-année avec tirets (MM-AAAA)
       `${month}-${year}`,
       // Format texte en français
-      date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
-      date.toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' })
-    ].filter((value, index, self) => 
-      // Supprimer les doublons et valeurs vides
-      value && self.indexOf(value) === index
+      date.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
+      date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
+      date.toLocaleDateString("fr-FR", { month: "2-digit", year: "numeric" }),
+    ].filter(
+      (value, index, self) =>
+        // Supprimer les doublons et valeurs vides
+        value && self.indexOf(value) === index
     );
   } catch (error) {
-    console.error('Erreur de formatage de date:', error);
+    console.error("Erreur de formatage de date:", error);
     return [];
   }
 };
@@ -107,23 +112,23 @@ const formatDateForSearch = (dateValue) => {
 // Formater le montant pour la recherche (supprime les espaces et convertit la virgule en point)
 const formatAmountForSearch = (amount) => {
   if (amount === null || amount === undefined || isNaN(amount)) return [];
-  
+
   // Convertir en nombre si ce n'est pas déjà le cas
-  const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+  const numAmount = typeof amount === "number" ? amount : parseFloat(amount);
   if (isNaN(numAmount)) return [];
-  
+
   // Formater avec 2 décimales et sans séparateur de milliers
-  const formattedWithComma = numAmount.toFixed(2).replace(/\.?0+$/, ''); // Enlève les zéros inutiles
-  
+  const formattedWithComma = numAmount.toFixed(2).replace(/\.?0+$/, ""); // Enlève les zéros inutiles
+
   // Retourner différents formats pour la recherche
   return [
-    formattedWithComma,                         // Format avec virgule (ex: "1234,56")
-    formattedWithComma.replace(',', '.'),       // Format avec point (ex: "1234.56")
-    formattedWithComma.replace(',', ''),        // Format sans séparateur (ex: "123456")
-    Math.floor(numAmount).toString(),           // Partie entière (ex: "1234")
-    numAmount.toString()                        // Représentation brute
-  ].filter((value, index, self) => 
-    value && self.indexOf(value) === index     // Supprimer les doublons
+    formattedWithComma, // Format avec virgule (ex: "1234,56")
+    formattedWithComma.replace(",", "."), // Format avec point (ex: "1234.56")
+    formattedWithComma.replace(",", ""), // Format sans séparateur (ex: "123456")
+    Math.floor(numAmount).toString(), // Partie entière (ex: "1234")
+    numAmount.toString(), // Représentation brute
+  ].filter(
+    (value, index, self) => value && self.indexOf(value) === index // Supprimer les doublons
   );
 };
 
@@ -131,22 +136,23 @@ const formatAmountForSearch = (amount) => {
 const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
   const quote = row.original;
   const searchableContent = [
-    quote.number,                         // Numéro de devis
-    quote.client?.name,                   // Nom du client
-    quote.client?.email,                  // Email du client
-    QUOTE_STATUS_LABELS[quote.status],    // Statut traduit
-    ...(quote.issueDate ? formatDateForSearch(quote.issueDate) : []),  // Dates d'émission
+    quote.number, // Numéro de devis
+    quote.client?.name, // Nom du client
+    quote.client?.email, // Email du client
+    QUOTE_STATUS_LABELS[quote.status], // Statut traduit
+    ...(quote.issueDate ? formatDateForSearch(quote.issueDate) : []), // Dates d'émission
     ...(quote.validUntil ? formatDateForSearch(quote.validUntil) : []), // Dates de validité
-    ...(quote.finalTotalTTC !== undefined && quote.finalTotalTTC !== null ? 
-      formatAmountForSearch(quote.finalTotalTTC) : []) // Montant TTC
+    ...(quote.finalTotalTTC !== undefined && quote.finalTotalTTC !== null
+      ? formatAmountForSearch(quote.finalTotalTTC)
+      : []), // Montant TTC
   ]
     .filter(Boolean)
-    .map(s => s.toString().toLowerCase().trim());
+    .map((s) => s.toString().toLowerCase().trim());
 
   const searchTerm = (filterValue ?? "").toLowerCase().trim();
-  
+
   // Vérifier si le terme de recherche correspond à l'un des éléments
-  return searchableContent.some(content => content.includes(searchTerm));
+  return searchableContent.some((content) => content.includes(searchTerm));
 };
 
 const memoizedStatusFilter = (row, columnId, filterValue) => {
@@ -190,70 +196,69 @@ export function useQuoteTable({ data = [], onRefetch }) {
         enableSorting: false,
         enableHiding: false,
         meta: {
-          label: "Sélection"
-        }
-      },
-      {
-        accessorKey: "number",
-        header: ({ column }) => (
-          <div className="flex items-center font-normal px-0 py-2">
-            <div
-              className="flex items-center cursor-pointer"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-            >
-              Numéro
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </div>
-          </div>
-        ),
-        meta: {
-          label: "Numéro de devis"
+          label: "Sélection",
         },
-        cell: ({ row }) => {
-          const quote = row.original;
-          return (
-            <div className="text-sm">
-              {quote.number || (
-                <span className="text-muted-foreground italic">Brouillon</span>
-              )}
-            </div>
-          );
-        },
-        size: 120,
-        filterFn: multiColumnFilterFn,
-        enableHiding: false,
       },
+      // {
+      //   accessorKey: "number",
+      //   header: ({ column }) => (
+      //     <div className="flex items-center font-normal px-0 py-2">
+      //       <div
+      //         className="flex items-center cursor-pointer"
+      //         onClick={() =>
+      //           column.toggleSorting(column.getIsSorted() === "asc")
+      //         }
+      //       >
+      //         Numéro
+      //         <ArrowUpDown className="ml-2 h-4 w-4" />
+      //       </div>
+      //     </div>
+      //   ),
+      //   meta: {
+      //     label: "Numéro de devis"
+      //   },
+      //   cell: ({ row }) => {
+      //     const quote = row.original;
+      //     return (
+      //       <div className="text-sm">
+      //         {quote.number || (
+      //           <span className="text-muted-foreground italic">Brouillon</span>
+      //         )}
+      //       </div>
+      //     );
+      //   },
+      //   size: 120,
+      //   filterFn: multiColumnFilterFn,
+      //   enableHiding: false,
+      // },
       {
         accessorKey: "client.name",
         header: ({ column }) => (
-          <div className="flex items-center font-normal px-0 py-2">
-            <div
-              className="flex items-center cursor-pointer"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-            >
-              Client
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </div>
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Client
+            <ArrowUpDown className="ml-2 h-4 w-4" />
           </div>
         ),
         meta: {
-          label: "Client"
+          label: "Client",
         },
         cell: ({ row }) => {
           const client = row.original.client;
-          if (!client) return <span className="text-muted-foreground">-</span>;
-
+          const quote = row.original;
           return (
             <div>
-              <div className="text-sm">{client.name}</div>
-              {client.email && (
-                <div className="text-xs text-muted-foreground">
-                  {client.email}
-                </div>
+              <div className="font-normal">
+                {client?.name || (
+                  <span className="text-muted-foreground italic">
+                    Non défini
+                  </span>
+                )}
+              </div>
+              {quote.number || (
+                <span className="text-muted-foreground italic">Brouillon</span>
               )}
             </div>
           );
@@ -277,7 +282,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
           </div>
         ),
         meta: {
-          label: "Date d'émission"
+          label: "Date d'émission",
         },
         cell: ({ row }) => {
           const dateString = row.getValue("issueDate");
@@ -301,7 +306,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
           </div>
         ),
         meta: {
-          label: "Date de validité"
+          label: "Date de validité",
         },
         cell: ({ row }) => {
           const dateValue = row.original.validUntil; // Accéder directement à la valeur originale
@@ -374,17 +379,16 @@ export function useQuoteTable({ data = [], onRefetch }) {
       {
         accessorKey: "status",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <div
+            className="flex items-center cursor-pointer font-normal"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-normal"
           >
             Statut
             <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </div>
         ),
         meta: {
-          label: "Statut"
+          label: "Statut",
         },
         cell: ({ row }) => {
           const status = row.getValue("status");
@@ -392,7 +396,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
           const colorClass = QUOTE_STATUS_COLORS[status] || "";
 
           return (
-            <Badge className={cn("text-sm font-normal", colorClass)}>{label}</Badge>
+            <Badge className={cn("font-normal", colorClass)}>{label}</Badge>
           );
         },
         size: 100,
@@ -411,13 +415,13 @@ export function useQuoteTable({ data = [], onRefetch }) {
           </Button>
         ),
         meta: {
-          label: "Montant TTC"
+          label: "Montant TTC",
         },
         cell: ({ row }) => {
           const amount = row.getValue("finalTotalTTC");
           if (!amount || isNaN(amount)) return "-";
           return (
-            <div className="text-sm">
+            <div className="font-normal">
               {new Intl.NumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
@@ -429,7 +433,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
       },
       {
         id: "actions",
-        header: () => <div className="text-right">Actions</div>,
+        header: () => <div className="text-right font-normal">Actions</div>,
         cell: ({ row }) => <QuoteRowActions row={row} onRefetch={onRefetch} />,
         size: 60,
         enableHiding: false,

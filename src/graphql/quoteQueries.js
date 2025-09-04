@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 // ==================== FRAGMENTS ====================
 
@@ -264,14 +264,18 @@ export const CONVERT_QUOTE_TO_INVOICE = gql`
 
 // ==================== HOOKS PERSONNALISÉS ====================
 
-import { useQuery, useMutation, useApolloClient } from '@apollo/client';
-import { useState, useMemo, useCallback } from 'react';
-import { toast } from 'sonner';
-import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
+import { useQuery, useMutation, useApolloClient } from "@apollo/client";
+import { useState, useMemo, useCallback } from "react";
+import { toast } from "@/src/components/ui/sonner";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 // Hook optimisé pour récupérer la liste des devis
 export const useQuotes = (filters = {}) => {
-  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
+  const {
+    workspaceId,
+    loading: workspaceLoading,
+    error: workspaceError,
+  } = useRequiredWorkspace();
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -280,11 +284,11 @@ export const useQuotes = (filters = {}) => {
       workspaceId,
       ...filters,
       page,
-      limit
+      limit,
     },
     skip: !workspaceId,
-    fetchPolicy: 'cache-and-network',
-    errorPolicy: 'all'
+    fetchPolicy: "cache-and-network",
+    errorPolicy: "all",
   });
 
   const quotes = useMemo(() => data?.quotes?.quotes || [], [data]);
@@ -295,23 +299,20 @@ export const useQuotes = (filters = {}) => {
     if (hasNextPage && !loading) {
       fetchMore({
         variables: {
-          page: page + 1
+          page: page + 1,
         },
         updateQuery: (prev, { fetchMoreResult }) => {
           if (!fetchMoreResult) return prev;
-          
+
           setPage(page + 1);
-          
+
           return {
             quotes: {
               ...fetchMoreResult.quotes,
-              quotes: [
-                ...prev.quotes.quotes,
-                ...fetchMoreResult.quotes.quotes
-              ]
-            }
+              quotes: [...prev.quotes.quotes, ...fetchMoreResult.quotes.quotes],
+            },
           };
-        }
+        },
       });
     }
   }, [hasNextPage, loading, fetchMore, page]);
@@ -328,62 +329,70 @@ export const useQuotes = (filters = {}) => {
     error: error || workspaceError,
     loadMore,
     refetch,
-    resetPage
+    resetPage,
   };
 };
 
 // Hook pour récupérer un devis spécifique
 export const useQuote = (id) => {
-  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
-  
+  const {
+    workspaceId,
+    loading: workspaceLoading,
+    error: workspaceError,
+  } = useRequiredWorkspace();
+
   const { data, loading, error, refetch } = useQuery(GET_QUOTE, {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
-    fetchPolicy: 'cache-and-network',
-    errorPolicy: 'all'
+    fetchPolicy: "cache-and-network",
+    errorPolicy: "all",
   });
 
   return {
     quote: data?.quote,
     loading: loading || workspaceLoading,
     error: error || workspaceError,
-    refetch
+    refetch,
   };
 };
 
 // Hook pour les statistiques des devis
 export const useQuoteStats = () => {
-  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
-  
+  const {
+    workspaceId,
+    loading: workspaceLoading,
+    error: workspaceError,
+  } = useRequiredWorkspace();
+
   const { data, loading, error, refetch } = useQuery(GET_QUOTE_STATS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: 'cache-and-network',
-    errorPolicy: 'all'
+    fetchPolicy: "cache-and-network",
+    errorPolicy: "all",
   });
 
   return {
     stats: data?.quoteStats,
     loading: loading || workspaceLoading,
     error: error || workspaceError,
-    refetch
+    refetch,
   };
 };
 
 // Hook pour récupérer le prochain numéro de devis
 export function useNextQuoteNumber(prefix, options = {}) {
   const { workspaceId } = useRequiredWorkspace();
-  
+
   const { data, loading, error } = useQuery(GET_NEXT_QUOTE_NUMBER, {
     variables: { workspaceId, prefix },
     skip: !workspaceId,
-    ...options
+    ...options,
   });
 
   return {
     nextNumber: data?.nextQuoteNumber,
     loading,
-    error
+    error,
   };
 }
 
@@ -391,29 +400,29 @@ export function useNextQuoteNumber(prefix, options = {}) {
 export const useCreateQuote = () => {
   const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
-  
+
   const [createQuoteMutation, { loading }] = useMutation(CREATE_QUOTE, {
     onCompleted: () => {
-      toast.success('Devis créé avec succès');
+      // toast.success("Devis créé avec succès");
       // Invalider le cache des listes
       client.refetchQueries({
-        include: [GET_QUOTES, GET_QUOTE_STATS]
+        include: [GET_QUOTES, GET_QUOTE_STATS],
       });
     },
     onError: (error) => {
-      console.error('Erreur lors de la création du devis:', error);
-      toast.error(error.message || 'Erreur lors de la création du devis');
-    }
+      console.error("Erreur lors de la création du devis:", error);
+      toast.error(error.message || "Erreur lors de la création du devis");
+    },
   });
 
   const createQuote = async (input) => {
     if (!workspaceId) {
-      throw new Error('Aucun workspace sélectionné');
+      throw new Error("Aucun workspace sélectionné");
     }
 
     try {
       const result = await createQuoteMutation({
-        variables: { workspaceId, input }
+        variables: { workspaceId, input },
       });
       return result.data.createQuote;
     } catch (error) {
@@ -427,31 +436,31 @@ export const useCreateQuote = () => {
 // Hook pour mettre à jour un devis
 export const useUpdateQuote = () => {
   const client = useApolloClient();
-  
+
   const [updateQuoteMutation, { loading }] = useMutation(UPDATE_QUOTE, {
     onCompleted: (data) => {
-      toast.success('Devis mis à jour avec succès');
+      toast.success("Devis mis à jour avec succès");
       // Mettre à jour le cache
       client.writeQuery({
         query: GET_QUOTE,
         variables: { id: data.updateQuote.id },
-        data: { quote: data.updateQuote }
+        data: { quote: data.updateQuote },
       });
       // Invalider les statistiques
       client.refetchQueries({
-        include: [GET_QUOTE_STATS]
+        include: [GET_QUOTE_STATS],
       });
     },
     onError: (error) => {
-      console.error('Erreur lors de la mise à jour du devis:', error);
-      toast.error(error.message || 'Erreur lors de la mise à jour du devis');
-    }
+      console.error("Erreur lors de la mise à jour du devis:", error);
+      toast.error(error.message || "Erreur lors de la mise à jour du devis");
+    },
   });
 
   const updateQuote = async (id, input) => {
     try {
       const result = await updateQuoteMutation({
-        variables: { id, input }
+        variables: { id, input },
       });
       return result.data.updateQuote;
     } catch (error) {
@@ -465,25 +474,25 @@ export const useUpdateQuote = () => {
 // Hook pour supprimer un devis
 export const useDeleteQuote = () => {
   const client = useApolloClient();
-  
+
   const [deleteQuoteMutation, { loading }] = useMutation(DELETE_QUOTE, {
     onCompleted: () => {
-      toast.success('Devis supprimé avec succès');
+      toast.success("Devis supprimé avec succès");
       // Invalider le cache
       client.refetchQueries({
-        include: [GET_QUOTES, GET_QUOTE_STATS]
+        include: [GET_QUOTES, GET_QUOTE_STATS],
       });
     },
     onError: (error) => {
-      console.error('Erreur lors de la suppression du devis:', error);
-      toast.error(error.message || 'Erreur lors de la suppression du devis');
-    }
+      console.error("Erreur lors de la suppression du devis:", error);
+      toast.error(error.message || "Erreur lors de la suppression du devis");
+    },
   });
 
   const deleteQuote = async (id) => {
     try {
       await deleteQuoteMutation({
-        variables: { id }
+        variables: { id },
       });
       return true;
     } catch (error) {
@@ -498,18 +507,18 @@ export const useDeleteQuote = () => {
 export const useSendQuote = () => {
   const [sendQuoteMutation, { loading }] = useMutation(SEND_QUOTE, {
     onCompleted: () => {
-      toast.success('Devis envoyé avec succès');
+      toast.success("Devis envoyé avec succès");
     },
     onError: (error) => {
-      console.error('Erreur lors de l\'envoi du devis:', error);
-      toast.error(error.message || 'Erreur lors de l\'envoi du devis');
-    }
+      console.error("Erreur lors de l'envoi du devis:", error);
+      toast.error(error.message || "Erreur lors de l'envoi du devis");
+    },
   });
 
   const sendQuote = async (id, email) => {
     try {
       await sendQuoteMutation({
-        variables: { id, email }
+        variables: { id, email },
       });
       return true;
     } catch (error) {
@@ -523,31 +532,31 @@ export const useSendQuote = () => {
 // Hook pour changer le statut d'un devis
 export const useChangeQuoteStatus = () => {
   const client = useApolloClient();
-  
+
   const [changeStatusMutation, { loading }] = useMutation(CHANGE_QUOTE_STATUS, {
     onCompleted: (data) => {
-      toast.success('Statut du devis mis à jour');
+      toast.success("Statut du devis mis à jour");
       // Mettre à jour le cache
       client.writeQuery({
         query: GET_QUOTE,
         variables: { id: data.changeQuoteStatus.id },
-        data: { quote: data.changeQuoteStatus }
+        data: { quote: data.changeQuoteStatus },
       });
       // Invalider les statistiques
       client.refetchQueries({
-        include: [GET_QUOTE_STATS]
+        include: [GET_QUOTE_STATS],
       });
     },
     onError: (error) => {
-      console.error('Erreur lors du changement de statut:', error);
-      toast.error(error.message || 'Erreur lors du changement de statut');
-    }
+      console.error("Erreur lors du changement de statut:", error);
+      toast.error(error.message || "Erreur lors du changement de statut");
+    },
   });
 
   const changeStatus = async (id, status) => {
     try {
       const result = await changeStatusMutation({
-        variables: { id, status }
+        variables: { id, status },
       });
       return result.data.changeQuoteStatus;
     } catch (error) {
@@ -561,30 +570,37 @@ export const useChangeQuoteStatus = () => {
 // Hook pour convertir un devis en facture
 export const useConvertQuoteToInvoice = () => {
   const client = useApolloClient();
-  
+
   const [convertMutation, { loading }] = useMutation(CONVERT_QUOTE_TO_INVOICE, {
     onCompleted: (data) => {
-      toast.success(`Devis converti en facture ${data.convertQuoteToInvoice.number}`);
+      toast.success(
+        `Devis converti en facture ${data.convertQuoteToInvoice.number}`
+      );
       // Invalider les caches
       client.refetchQueries({
-        include: [GET_QUOTES, GET_QUOTE_STATS, 'GetInvoices', 'GetInvoiceStats']
+        include: [
+          GET_QUOTES,
+          GET_QUOTE_STATS,
+          "GetInvoices",
+          "GetInvoiceStats",
+        ],
       });
     },
     onError: (error) => {
-      console.error('Erreur lors de la conversion:', error);
-      toast.error(error.message || 'Erreur lors de la conversion en facture');
-    }
+      console.error("Erreur lors de la conversion:", error);
+      toast.error(error.message || "Erreur lors de la conversion en facture");
+    },
   });
 
   const convertToInvoice = async (id, options = {}) => {
     try {
       const result = await convertMutation({
-        variables: { 
-          id, 
+        variables: {
+          id,
           distribution: options.distribution,
           isDeposit: options.isDeposit || false,
-          skipValidation: options.skipValidation || false
-        }
+          skipValidation: options.skipValidation || false,
+        },
       });
       return result.data.convertQuoteToInvoice;
     } catch (error) {
@@ -598,44 +614,44 @@ export const useConvertQuoteToInvoice = () => {
 // ==================== CONSTANTES ====================
 
 export const QUOTE_STATUS = {
-  DRAFT: 'DRAFT',
-  PENDING: 'PENDING',
-  COMPLETED: 'COMPLETED',
-  CANCELED: 'CANCELED'
+  DRAFT: "DRAFT",
+  PENDING: "PENDING",
+  COMPLETED: "COMPLETED",
+  CANCELED: "CANCELED",
 };
 
 export const DISCOUNT_TYPE = {
-  FIXED: 'FIXED',
-  PERCENTAGE: 'PERCENTAGE'
+  FIXED: "FIXED",
+  PERCENTAGE: "PERCENTAGE",
 };
 
 export const CLIENT_TYPE = {
-  INDIVIDUAL: 'INDIVIDUAL',
-  COMPANY: 'COMPANY'
+  INDIVIDUAL: "INDIVIDUAL",
+  COMPANY: "COMPANY",
 };
 
 // Libellés pour l'affichage
 export const QUOTE_STATUS_LABELS = {
-  [QUOTE_STATUS.DRAFT]: 'Brouillon',
-  [QUOTE_STATUS.PENDING]: 'En attente',
-  [QUOTE_STATUS.COMPLETED]: 'Accepté',
-  [QUOTE_STATUS.CANCELED]: 'Annulé'
+  [QUOTE_STATUS.DRAFT]: "Brouillon",
+  [QUOTE_STATUS.PENDING]: "En attente",
+  [QUOTE_STATUS.COMPLETED]: "Accepté",
+  [QUOTE_STATUS.CANCELED]: "Annulé",
 };
 
 export const DISCOUNT_TYPE_LABELS = {
-  [DISCOUNT_TYPE.FIXED]: 'Montant fixe',
-  [DISCOUNT_TYPE.PERCENTAGE]: 'Pourcentage'
+  [DISCOUNT_TYPE.FIXED]: "Montant fixe",
+  [DISCOUNT_TYPE.PERCENTAGE]: "Pourcentage",
 };
 
 export const CLIENT_TYPE_LABELS = {
-  [CLIENT_TYPE.INDIVIDUAL]: 'Particulier',
-  [CLIENT_TYPE.COMPANY]: 'Entreprise'
+  [CLIENT_TYPE.INDIVIDUAL]: "Particulier",
+  [CLIENT_TYPE.COMPANY]: "Entreprise",
 };
 
 // Couleurs pour les statuts
 export const QUOTE_STATUS_COLORS = {
-  [QUOTE_STATUS.DRAFT]: 'bg-gray-100 text-gray-800 border-gray-200',
-  [QUOTE_STATUS.PENDING]: 'bg-blue-100 text-blue-800 border-blue-200',
-  [QUOTE_STATUS.COMPLETED]: 'bg-green-100 text-green-800 border-green-200',
-  [QUOTE_STATUS.CANCELED]: 'bg-red-100 text-red-800 border-red-200'
+  [QUOTE_STATUS.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200",
+  [QUOTE_STATUS.PENDING]: "bg-blue-100 text-blue-800 border-blue-200",
+  [QUOTE_STATUS.COMPLETED]: "bg-green-100 text-green-800 border-green-200",
+  [QUOTE_STATUS.CANCELED]: "bg-red-100 text-red-800 border-red-200",
 };

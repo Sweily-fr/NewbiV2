@@ -1,28 +1,28 @@
-'use client';
+"use client";
 
-import React, { useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Download, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import UniversalPreviewPDF from './UniversalPreviewPDF';
+import React, { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Download, Loader2 } from "lucide-react";
+import { toast } from "@/src/components/ui/sonner";
+import UniversalPreviewPDF from "./UniversalPreviewPDF";
 
-const UniversalPDFGenerator = ({ 
-  data, 
-  type = 'invoice', // 'invoice' ou 'quote'
+const UniversalPDFGenerator = ({
+  data,
+  type = "invoice", // 'invoice' ou 'quote'
   filename,
   children,
   className = "",
   variant = "outline",
   size = "sm",
   disabled = false,
-  ...props 
+  ...props
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const previewRef = useRef(null);
 
   const generatePDF = async () => {
     if (!data) {
-      toast.error('Aucune donnée disponible pour générer le PDF');
+      toast.error("Aucune donnée disponible pour générer le PDF");
       return;
     }
 
@@ -30,44 +30,47 @@ const UniversalPDFGenerator = ({
 
     try {
       // Import dynamique pour optimiser le bundle
-      const html2canvas = (await import('html2canvas')).default;
-      const jsPDF = (await import('jspdf')).default;
+      const html2canvas = (await import("html2canvas")).default;
+      const jsPDF = (await import("jspdf")).default;
 
       // Configuration html2canvas optimisée
       const canvas = await html2canvas(previewRef.current, {
         scale: 2, // Haute résolution
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         removeContainer: true,
         imageTimeout: 15000,
         // Configuration pour éviter les erreurs oklch
         ignoreElements: (element) => {
           // Ignorer les éléments avec des styles problématiques
           const computedStyle = window.getComputedStyle(element);
-          return computedStyle.display === 'none';
+          return computedStyle.display === "none";
         },
         onclone: (clonedDoc) => {
           // Nettoyer les styles oklch dans le document cloné
-          const allElements = clonedDoc.querySelectorAll('*');
-          allElements.forEach(el => {
+          const allElements = clonedDoc.querySelectorAll("*");
+          allElements.forEach((el) => {
             const style = el.style;
             // Remplacer les couleurs oklch par des équivalents
-            if (style.color && style.color.includes('oklch')) {
-              style.color = '#000000';
+            if (style.color && style.color.includes("oklch")) {
+              style.color = "#000000";
             }
-            if (style.backgroundColor && style.backgroundColor.includes('oklch')) {
-              style.backgroundColor = '#ffffff';
+            if (
+              style.backgroundColor &&
+              style.backgroundColor.includes("oklch")
+            ) {
+              style.backgroundColor = "#ffffff";
             }
           });
-        }
+        },
       });
 
       // Configuration PDF A4
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
 
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -75,8 +78,8 @@ const UniversalPDFGenerator = ({
       const margin = 10;
 
       // Calculer les dimensions pour s'adapter à la page
-      const availableWidth = pageWidth - (margin * 2);
-      const availableHeight = pageHeight - (margin * 2);
+      const availableWidth = pageWidth - margin * 2;
+      const availableHeight = pageHeight - margin * 2;
 
       const imgWidth = availableWidth;
       const imgHeight = (canvas.height * availableWidth) / canvas.width;
@@ -87,20 +90,20 @@ const UniversalPDFGenerator = ({
 
       while (remainingHeight > 0) {
         const currentPageHeight = Math.min(remainingHeight, availableHeight);
-        
+
         pdf.addImage(
-          canvas.toDataURL('image/png'),
-          'PNG',
+          canvas.toDataURL("image/png"),
+          "PNG",
           margin,
           yPosition,
           imgWidth,
           currentPageHeight,
           undefined,
-          'FAST'
+          "FAST"
         );
 
         remainingHeight -= currentPageHeight;
-        
+
         if (remainingHeight > 0) {
           pdf.addPage();
           yPosition = margin;
@@ -108,20 +111,22 @@ const UniversalPDFGenerator = ({
       }
 
       // Générer le nom de fichier
-      const defaultFilename = type === 'invoice' 
-        ? `facture_${data.number || 'DRAFT'}_${new Date().toISOString().split('T')[0]}.pdf`
-        : `devis_${data.number || 'DRAFT'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const defaultFilename =
+        type === "invoice"
+          ? `facture_${data.number || "DRAFT"}_${new Date().toISOString().split("T")[0]}.pdf`
+          : `devis_${data.number || "DRAFT"}_${new Date().toISOString().split("T")[0]}.pdf`;
 
       const finalFilename = filename || defaultFilename;
 
       // Télécharger le PDF
       pdf.save(finalFilename);
 
-      toast.success(`${type === 'invoice' ? 'Facture' : 'Devis'} téléchargé avec succès`);
-
+      toast.success(
+        `${type === "invoice" ? "Facture" : "Devis"} téléchargé avec succès`
+      );
     } catch (error) {
-      console.error('Erreur lors de la génération du PDF:', error);
-      toast.error('Erreur lors de la génération du PDF');
+      console.error("Erreur lors de la génération du PDF:", error);
+      toast.error("Erreur lors de la génération du PDF");
     } finally {
       setIsGenerating(false);
     }
@@ -130,7 +135,7 @@ const UniversalPDFGenerator = ({
   return (
     <>
       {/* Composant de preview caché pour la capture */}
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+      <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
         <div ref={previewRef}>
           <UniversalPreviewPDF data={data} type={type} />
         </div>

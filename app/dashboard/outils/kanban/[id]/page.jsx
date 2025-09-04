@@ -93,6 +93,9 @@ export default function KanbanBoardPage({ params }) {
   // Hooks
   const { board, loading, error, refetch, getTasksByColumn } =
     useKanbanBoard(id);
+  
+  // Import workspaceId from useKanbanBoard hook
+  const { workspaceId } = useKanbanBoard(id);
 
   const {
     isAddColumnOpen,
@@ -154,7 +157,8 @@ export default function KanbanBoardPage({ params }) {
   const { activeTask, sensors, handleDragStart, handleDragEnd } = useKanbanDnD(
     moveTask,
     getTasksByColumn,
-    id
+    id,
+    workspaceId
   );
 
   const { searchQuery, setSearchQuery, filterTasks } = useKanbanSearch();

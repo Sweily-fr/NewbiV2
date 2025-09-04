@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { mongoDb, ensureConnection } from "./mongodb";
+import { mongoDb } from "./mongodb";
 import { resend } from "./resend";
 import {
   admin,
@@ -15,17 +15,8 @@ import Stripe from "stripe";
 // import { bearer } from "better-auth/plugins";
 
 export const auth = betterAuth({
-  database: mongodbAdapter(mongoDb, {
-    // Ajouter des options pour gérer les erreurs de connexion
-    onError: async (error) => {
-      console.error("❌ Database adapter error:", error);
-      try {
-        await ensureConnection();
-      } catch (reconnectError) {
-        console.error("❌ Failed to reconnect to database:", reconnectError);
-      }
-    }
-  }),
+  database: mongodbAdapter(mongoDb),
+  appName: "Newbi",
   plugins: [
     admin({
       adminUserIds: ["685ff0250e083b9a2987a0b9"],
@@ -233,8 +224,8 @@ export const auth = betterAuth({
           },
           {
             name: "pro",
-            priceId: process.env.STRIPE_PRICE_ID,
-            // annualDiscountPriceId: process.env.STRIPE_ANNUAL_PRICE_ID, // Optionnel - commenté car pas configuré
+            priceId: process.env.STRIPE_PRICE_ID_MONTH,
+            annualDiscountPriceId: process.env.STRIPE_PRICE_ID_YEARS,
             limits: {
               projects: 100,
               storage: 100,
@@ -723,7 +714,58 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    sendResetPassword: async ({ user, url }) => {
+    sendResetPassword: async ({ user, url, token }, request) => {
+      const htmlTemplate = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Réinitialisez votre mot de passe</title>
+        </head>
+        <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+          <div style="max-width: 500px; margin: 0 auto;">
+            
+            <!-- Logo -->
+            <div style="text-align: center; margin-bottom: 40px;">
+              <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+            </div>
+            
+            <!-- Titre principal -->
+            <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: center;">
+              Réinitialisez votre mot de passe
+            </h1>
+            
+            <!-- Message principal -->
+            <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: center;">
+              Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe pour votre compte Newbi.
+            </p>
+            
+            <!-- Bouton CTA -->
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${url}" style="display: inline-block; background-color: #5B4FFF; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+                Réinitialiser mon mot de passe
+              </a>
+            </div>
+            
+            <!-- Lien de secours -->
+            <p style="font-size: 11px; line-height: 1.4; color: #9ca3af; margin: 32px 0 0 0; text-align: center;">
+              Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+              <span style="color: #5B4FFF; word-break: break-all;">${url}</span>
+            </p>
+            
+            <!-- Footer -->
+            <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
+              <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                Ce lien expire dans 1 heure. Si vous n'avez pas demandé cette réinitialisation, ignorez cet e-mail.
+              </p>
+            </div>
+            
+          </div>
+        </body>
+        </html>
+      `;
+
       await resend.emails.send({
         to: user.email,
         subject: "Réinitialisez votre mot de passe - Newbi",
@@ -734,7 +776,58 @@ export const auth = betterAuth({
   },
 
   emailVerification: {
-    sendVerificationEmail: async ({ user, url }) => {
+    sendVerificationEmail: async ({ user, url, token }) => {
+      const htmlTemplate = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Vérifiez votre adresse e-mail</title>
+        </head>
+        <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+          <div style="max-width: 500px; margin: 0 auto;">
+            
+            <!-- Logo -->
+            <div style="text-align: center; margin-bottom: 40px;">
+              <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+            </div>
+            
+            <!-- Titre principal -->
+            <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: center;">
+              Vérifiez votre adresse e-mail
+            </h1>
+            
+            <!-- Message principal -->
+            <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: center;">
+              Cliquez sur le bouton ci-dessous pour vérifier votre adresse e-mail et finaliser votre inscription sur Newbi.
+            </p>
+            
+            <!-- Bouton CTA -->
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${url}" style="display: inline-block; background-color: #5B4FFF; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+                Vérifier mon e-mail
+              </a>
+            </div>
+            
+            <!-- Lien de secours -->
+            <p style="font-size: 11px; line-height: 1.4; color: #9ca3af; margin: 32px 0 0 0; text-align: center;">
+              Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+              <span style="color: #5B4FFF; word-break: break-all;">${url}</span>
+            </p>
+            
+            <!-- Footer -->
+            <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
+              <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                Ce lien expire dans 1 heure. Si vous n'avez pas créé de compte, ignorez cet e-mail.
+              </p>
+            </div>
+            
+          </div>
+        </body>
+        </html>
+      `;
+
       await resend.emails.send({
         to: user.email,
         subject: "Vérifiez votre adresse e-mail - Newbi",
