@@ -83,17 +83,15 @@ export default function InvoiceInfoSection({ canEdit }) {
       console.log("getFormattedNextNumber():", formattedNumber);
 
       if (hasExistingInvoices()) {
-        // Case 1: Existing invoices - force sequential number
-        console.log("Existing invoices found - forcing sequential number");
-        if (data.number !== formattedNumber) {
+        // Case 1: Existing invoices - set next sequential number
+        console.log("Existing invoices found - setting next sequential number");
+        if (!data.number || data.number === "") {
           console.log("Setting sequential invoice number to:", formattedNumber);
           setValue("number", formattedNumber, { shouldValidate: true });
         }
       } else {
-        // Case 2: No existing invoices - suggest 000001 but allow free choice
-        console.log(
-          "No existing invoices - suggesting default but allowing free choice"
-        );
+        // Case 2: No existing invoices - set to 000001
+        console.log("No existing invoices - setting default starting number");
         if (!data.number || data.number === "" || data.number === "1") {
           console.log("Setting default starting invoice number to: 000001");
           setValue("number", "000001", { shouldValidate: true });
@@ -305,10 +303,12 @@ export default function InvoiceInfoSection({ canEdit }) {
                     message: "Le numéro ne peut pas dépasser 6 chiffres",
                   },
                 })}
-                defaultValue={
-                  data.number ||
-                  (nextInvoiceNumber ? String(nextInvoiceNumber) : "")
-                }
+                value={data.number || (nextInvoiceNumber ? String(nextInvoiceNumber).padStart(6, '0') : '')}
+                onChange={(e) => {
+                  // Allow only numbers and update the value
+                  const value = e.target.value.replace(/\D/g, '');
+                  setValue('number', value, { shouldValidate: true });
+                }}
                 placeholder={
                   nextInvoiceNumber
                     ? String(nextInvoiceNumber).padStart(6, "0")
@@ -319,6 +319,10 @@ export default function InvoiceInfoSection({ canEdit }) {
                   // Format with leading zeros when leaving the field
                   if (e.target.value) {
                     const num = e.target.value.padStart(6, "0");
+                    setValue("number", num, { shouldValidate: true });
+                  } else if (nextInvoiceNumber) {
+                    // If field is empty, set to next invoice number
+                    const num = String(nextInvoiceNumber).padStart(6, "0");
                     setValue("number", num, { shouldValidate: true });
                   }
                 }}

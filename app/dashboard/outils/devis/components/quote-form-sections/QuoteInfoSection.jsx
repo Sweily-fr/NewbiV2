@@ -286,12 +286,20 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
                         return "Le numéro doit contenir entre 1 et 6 chiffres uniquement";
                       }
                       return true;
+                    },
+                    isSequential: (value) => {
+                      // Si ce n'est pas le premier devis, le numéro doit être généré automatiquement
+                      if (nextQuoteNumber && value !== nextQuoteNumber) {
+                        return "Le numéro de devis doit être généré automatiquement";
+                      }
+                      return true;
                     }
                   }
                 })}
-                defaultValue={data.number || ""}
-                placeholder="000001"
-                disabled={!canEdit}
+                value={nextQuoteNumber || data.number || ""}
+                placeholder={nextQuoteNumber || "000001"}
+                disabled={!canEdit || !!nextQuoteNumber}
+                readOnly={!!nextQuoteNumber}
                 onBlur={(e) => {
                   // Format with leading zeros when leaving the field
                   if (e.target.value && validateQuoteNumber(e.target.value)) {
