@@ -68,12 +68,18 @@ const HorizontalSignature = ({
   validateUrl,
   logoSrc 
 }) => {
+  // Debug pour vérifier la valeur du séparateur vertical
+  console.log('HorizontalSignature - separators?.vertical?.width:', signatureData.separators?.vertical?.width);
+  
   return (
     <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', maxWidth: '500px', fontFamily: 'Arial, sans-serif' }}>
       <tbody>
         <tr>
           {/* Photo de profil à gauche */}
-          <td style={{ width: `${signatureData.imageSize || 80}px`, verticalAlign: 'top' }}>
+          <td style={{ 
+            width: `${signatureData.imageSize || 80}px`, 
+            verticalAlign: 'top'
+          }}>
             {signatureData.photo ? (
               <div 
                 style={{
@@ -120,35 +126,29 @@ const HorizontalSignature = ({
             )}
           </td>
           
-          {/* Espacement gauche du séparateur vertical */}
-          {signatureData.verticalSeparator?.enabled && (
-            <td style={{ 
-              width: `${signatureData.spacings?.verticalSeparatorLeft || 22}px`,
-              minWidth: `${signatureData.spacings?.verticalSeparatorLeft || 22}px`,
-              maxWidth: `${signatureData.spacings?.verticalSeparatorLeft || 22}px`,
-              verticalAlign: 'top',
-            }}>&nbsp;</td>
+          {/* Espacement avant séparateur vertical */}
+          {signatureData.separators?.vertical?.enabled && (
+            <td style={{ width: `${signatureData.spacings?.verticalSeparatorLeft || 12}px` }}>&nbsp;</td>
           )}
           
           {/* Séparateur vertical si activé */}
-          {signatureData.verticalSeparator?.enabled && (
+          {signatureData.separators?.vertical?.enabled && (
             <td style={{ 
-              width: `${signatureData.verticalSeparator?.width || 2}px`,
-              backgroundColor: signatureData.verticalSeparator?.color || '#000000',
+              width: `${signatureData.separators?.vertical?.width !== undefined ? signatureData.separators.vertical.width : 1}px`,
+              backgroundColor: signatureData.separators?.vertical?.color || '#e0e0e0',
+              borderRadius: `${signatureData.separators?.vertical?.radius || 0}px`,
+              padding: '0px',
+              fontSize: '1px',
+              lineHeight: '1px',
               verticalAlign: 'top',
               height: '100%',
-              minHeight: '80px'
+              minHeight: '200px'
             }}>&nbsp;</td>
           )}
           
-          {/* Espacement droite du séparateur vertical */}
-          {signatureData.verticalSeparator?.enabled && (
-            <td style={{ 
-              width: `${signatureData.spacings?.verticalSeparatorRight || 22}px`,
-              minWidth: `${signatureData.spacings?.verticalSeparatorRight || 22}px`,
-              maxWidth: `${signatureData.spacings?.verticalSeparatorRight || 22}px`,
-              verticalAlign: 'top',
-            }}>&nbsp;</td>
+          {/* Espacement après séparateur vertical */}
+          {signatureData.separators?.vertical?.enabled && (
+            <td style={{ width: `${signatureData.spacings?.verticalSeparatorRight || 12}px` }}>&nbsp;</td>
           )}
           
           {/* Informations empilées verticalement à droite */}
@@ -158,72 +158,40 @@ const HorizontalSignature = ({
           }}>
             <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', tableLayout: 'auto', width: 'auto' }}>
               <tbody>
-                {/* Nom séparé en 2 cellules avec espacement contrôlé */}
+                {/* Nom complet unifié */}
                 <tr>
                   <td colSpan="2" style={{ 
                     textAlign: signatureData.nameAlignment || 'left',
                     paddingBottom: `${signatureData.spacings?.nameBottom || 2}px`
                   }}>
-                    <table cellPadding="0" cellSpacing="0" border="0" style={{ 
-                      borderCollapse: 'collapse',
-                      margin: signatureData.nameAlignment === 'center' ? '0 auto' : 
-                              signatureData.nameAlignment === 'right' ? '0 0 0 auto' : 
-                              '0 auto 0 0'
+                    <div style={{ 
+                      fontSize: `${signatureData.typography?.fullName?.fontSize || signatureData.fontSize?.name || 16}px`,
+                      fontWeight: signatureData.typography?.fullName?.fontWeight || 'bold',
+                      fontStyle: signatureData.typography?.fullName?.fontStyle || 'normal',
+                      textDecoration: signatureData.typography?.fullName?.textDecoration || 'none',
+                      color: signatureData.typography?.fullName?.color || signatureData.primaryColor || '#2563eb',
+                      lineHeight: '1.2',
+                      fontFamily: signatureData.typography?.fullName?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif'
                     }}>
-                      <tbody>
-                        <tr>
-                          <td style={{ 
-                            fontSize: `${signatureData.typography?.firstName?.fontSize || signatureData.fontSize?.name || 16}px`,
-                            fontWeight: signatureData.typography?.firstName?.fontWeight || 'bold',
-                            color: signatureData.typography?.firstName?.color || signatureData.colors?.name || signatureData.primaryColor || '#2563eb',
-                            lineHeight: '1.2',
-                            paddingRight: `${signatureData.nameSpacing || 4}px`,
-                            whiteSpace: 'nowrap',
-                            fontFamily: signatureData.typography?.firstName?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif'
-                          }}>
-                            <InlineEdit
-                              value={signatureData.firstName}
-                              onChange={(value) => handleFieldChange("firstName", value)}
-                              placeholder="Prénom"
-                              displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
-                              inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none !h-[1em] w-auto min-w-0 !leading-none"
-                              className="!p-0 !m-0 !rounded-none inline-block w-auto"
-                              style={{ 
-                                width: 'auto', 
-                                minWidth: '0', 
-                                height: '1em', 
-                                lineHeight: '1em',
-                                fontSize: `${signatureData.typography?.firstName?.fontSize || signatureData.fontSize?.name || 16}px`,
-                                color: signatureData.typography?.firstName?.color || signatureData.colors?.name || signatureData.primaryColor || '#2563eb',
-                                fontFamily: signatureData.typography?.firstName?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
-                                fontWeight: signatureData.typography?.firstName?.fontWeight || 'bold'
-                              }}
-                            />
-                            {signatureData.firstName && signatureData.lastName && (
-                              <span style={{ margin: '0 4px' }}> </span>
-                            )}
-                            <InlineEdit
-                              value={signatureData.lastName}
-                              onChange={(value) => handleFieldChange("lastName", value)}
-                              placeholder="Nom"
-                              displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
-                              inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none !h-[1em] w-auto min-w-0 !leading-none"
-                              className="!p-0 !m-0 !rounded-none inline-block w-auto"
-                              style={{ 
-                                width: 'auto', 
-                                minWidth: '0', 
-                                height: '1em', 
-                                lineHeight: '1em',
-                                fontSize: `${signatureData.typography?.lastName?.fontSize || signatureData.fontSize?.name || 16}px`,
-                                color: signatureData.typography?.lastName?.color || signatureData.colors?.name || signatureData.primaryColor || '#2563eb',
-                                fontFamily: signatureData.typography?.lastName?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
-                                fontWeight: signatureData.typography?.lastName?.fontWeight || 'bold'
-                              }}
-                            />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                      <InlineEdit
+                        value={signatureData.fullName}
+                        onChange={(value) => handleFieldChange("fullName", value)}
+                        placeholder="Nom complet"
+                        displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
+                        inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none !h-[1em] w-auto min-w-0 !leading-none"
+                        className="!p-0 !m-0 !rounded-none inline-block w-auto"
+                        style={{ 
+                          width: 'auto', 
+                          minWidth: '0', 
+                          height: '1em', 
+                          lineHeight: '1em',
+                          fontSize: `${signatureData.typography?.fullName?.fontSize || signatureData.fontSize?.name || 16}px`,
+                          color: signatureData.typography?.fullName?.color || signatureData.primaryColor || '#2563eb',
+                          fontFamily: signatureData.typography?.fullName?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
+                          fontWeight: signatureData.typography?.fullName?.fontWeight || 'normal'
+                        }}
+                      />
+                    </div>
                   </td>
                 </tr>
                
@@ -235,6 +203,8 @@ const HorizontalSignature = ({
                      color: signatureData.typography?.position?.color || signatureData.colors?.position || '#666666',
                      fontFamily: signatureData.typography?.position?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
                      fontWeight: signatureData.typography?.position?.fontWeight || 'normal',
+                     fontStyle: signatureData.typography?.position?.fontStyle || 'normal',
+                     textDecoration: signatureData.typography?.position?.textDecoration || 'none',
                      paddingTop: '2px',
                      paddingBottom: `${signatureData.spacings?.positionBottom || 4}px`
                    }}>
@@ -248,7 +218,9 @@ const HorizontalSignature = ({
                          color: signatureData.typography?.position?.color || signatureData.colors?.position || '#666666',
                          fontSize: `${signatureData.typography?.position?.fontSize || signatureData.fontSize?.position || 14}px`,
                          fontFamily: signatureData.typography?.position?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
-                         fontWeight: signatureData.typography?.position?.fontWeight || 'normal'
+                         fontWeight: signatureData.typography?.position?.fontWeight || 'normal',
+                         fontStyle: signatureData.typography?.position?.fontStyle || 'normal',
+                         textDecoration: signatureData.typography?.position?.textDecoration || 'none'
                        }}
                      />
                    </td>
@@ -263,6 +235,8 @@ const HorizontalSignature = ({
                       color: signatureData.typography?.company?.color || signatureData.colors?.company || '#2563eb',
                       fontFamily: signatureData.typography?.company?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
                       fontWeight: signatureData.typography?.company?.fontWeight || 'normal',
+                      fontStyle: signatureData.typography?.company?.fontStyle || 'normal',
+                      textDecoration: signatureData.typography?.company?.textDecoration || 'none',
                       paddingTop: '2px',
                       paddingBottom: `${signatureData.spacings?.companyBottom || 8}px`
                     }}>
@@ -276,7 +250,9 @@ const HorizontalSignature = ({
                           color: signatureData.typography?.company?.color || signatureData.colors?.company || '#2563eb',
                           fontSize: `${signatureData.typography?.company?.fontSize || signatureData.fontSize?.company || 14}px`,
                           fontFamily: signatureData.typography?.company?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
-                          fontWeight: signatureData.typography?.company?.fontWeight || 'normal'
+                          fontWeight: signatureData.typography?.company?.fontWeight || 'normal',
+                          fontStyle: signatureData.typography?.company?.fontStyle || 'normal',
+                          textDecoration: signatureData.typography?.company?.textDecoration || 'none'
                         }}
                       />
                     </td>
@@ -298,6 +274,8 @@ const HorizontalSignature = ({
                              color: signatureData.typography?.phone?.color || signatureData.colors?.contact || 'rgb(102,102,102)', 
                              fontFamily: signatureData.typography?.phone?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
                              fontWeight: signatureData.typography?.phone?.fontWeight || 'normal',
+                             fontStyle: signatureData.typography?.phone?.fontStyle || 'normal',
+                             textDecoration: signatureData.typography?.phone?.textDecoration || 'none',
                              verticalAlign: 'middle' 
                            }}>
                              <InlineEdit
@@ -311,7 +289,9 @@ const HorizontalSignature = ({
                                  color: signatureData.typography?.phone?.color || signatureData.colors?.contact || 'rgb(102,102,102)',
                                  fontSize: `${signatureData.typography?.phone?.fontSize || signatureData.fontSize?.contact || 12}px`,
                                  fontFamily: signatureData.typography?.phone?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
-                                 fontWeight: signatureData.typography?.phone?.fontWeight || 'normal'
+                                 fontWeight: signatureData.typography?.phone?.fontWeight || 'normal',
+                                 fontStyle: signatureData.typography?.phone?.fontStyle || 'normal',
+                                 textDecoration: signatureData.typography?.phone?.textDecoration || 'none'
                                }}
                              />
                            </td>
@@ -336,6 +316,8 @@ const HorizontalSignature = ({
                              color: signatureData.typography?.mobile?.color || signatureData.colors?.contact || 'rgb(102,102,102)', 
                              fontFamily: signatureData.typography?.mobile?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
                              fontWeight: signatureData.typography?.mobile?.fontWeight || 'normal',
+                             fontStyle: signatureData.typography?.mobile?.fontStyle || 'normal',
+                             textDecoration: signatureData.typography?.mobile?.textDecoration || 'none',
                              verticalAlign: 'middle' 
                            }}>
                              <InlineEdit
@@ -349,7 +331,9 @@ const HorizontalSignature = ({
                                  color: signatureData.typography?.mobile?.color || signatureData.colors?.contact || 'rgb(102,102,102)',
                                  fontSize: `${signatureData.typography?.mobile?.fontSize || signatureData.fontSize?.contact || 12}px`,
                                  fontFamily: signatureData.typography?.mobile?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
-                                 fontWeight: signatureData.typography?.mobile?.fontWeight || 'normal'
+                                 fontWeight: signatureData.typography?.mobile?.fontWeight || 'normal',
+                                 fontStyle: signatureData.typography?.mobile?.fontStyle || 'normal',
+                                 textDecoration: signatureData.typography?.mobile?.textDecoration || 'none'
                                }}
                              />
                            </td>
@@ -374,6 +358,8 @@ const HorizontalSignature = ({
                              color: signatureData.typography?.email?.color || signatureData.colors?.contact || 'rgb(102,102,102)', 
                              fontFamily: signatureData.typography?.email?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
                              fontWeight: signatureData.typography?.email?.fontWeight || 'normal',
+                             fontStyle: signatureData.typography?.email?.fontStyle || 'normal',
+                             textDecoration: signatureData.typography?.email?.textDecoration || 'none',
                              verticalAlign: 'middle' 
                            }}>
                              <InlineEdit
@@ -387,7 +373,9 @@ const HorizontalSignature = ({
                                  color: signatureData.typography?.email?.color || signatureData.colors?.contact || 'rgb(102,102,102)',
                                  fontSize: `${signatureData.typography?.email?.fontSize || signatureData.fontSize?.contact || 12}px`,
                                  fontFamily: signatureData.typography?.email?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
-                                 fontWeight: signatureData.typography?.email?.fontWeight || 'normal'
+                                 fontWeight: signatureData.typography?.email?.fontWeight || 'normal',
+                                 fontStyle: signatureData.typography?.email?.fontStyle || 'normal',
+                                 textDecoration: signatureData.typography?.email?.textDecoration || 'none'
                                }}
                              />
                            </td>
@@ -412,6 +400,8 @@ const HorizontalSignature = ({
                              color: signatureData.typography?.website?.color || signatureData.colors?.contact || 'rgb(102,102,102)', 
                              fontFamily: signatureData.typography?.website?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
                              fontWeight: signatureData.typography?.website?.fontWeight || 'normal',
+                             fontStyle: signatureData.typography?.website?.fontStyle || 'normal',
+                             textDecoration: signatureData.typography?.website?.textDecoration || 'none',
                              verticalAlign: 'middle' 
                            }}>
                              <InlineEdit
@@ -425,7 +415,9 @@ const HorizontalSignature = ({
                                  color: signatureData.typography?.website?.color || signatureData.colors?.contact || 'rgb(102,102,102)',
                                  fontSize: `${signatureData.typography?.website?.fontSize || signatureData.fontSize?.contact || 12}px`,
                                  fontFamily: signatureData.typography?.website?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
-                                 fontWeight: signatureData.typography?.website?.fontWeight || 'normal'
+                                 fontWeight: signatureData.typography?.website?.fontWeight || 'normal',
+                                 fontStyle: signatureData.typography?.website?.fontStyle || 'normal',
+                                 textDecoration: signatureData.typography?.website?.textDecoration || 'none'
                                }}
                              />
                            </td>
@@ -450,6 +442,8 @@ const HorizontalSignature = ({
                              color: signatureData.typography?.address?.color || signatureData.colors?.contact || 'rgb(102,102,102)', 
                              fontFamily: signatureData.typography?.address?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
                              fontWeight: signatureData.typography?.address?.fontWeight || 'normal',
+                             fontStyle: signatureData.typography?.address?.fontStyle || 'normal',
+                             textDecoration: signatureData.typography?.address?.textDecoration || 'none',
                              verticalAlign: 'top' 
                            }}>
                              <InlineEdit
@@ -475,19 +469,22 @@ const HorizontalSignature = ({
         </tr>
         
         {/* Séparateur horizontal */}
-        <tr>
-          <td colSpan={signatureData.verticalSeparator?.enabled ? "5" : "2"} style={{ 
-            paddingTop: `${signatureData.spacings?.separatorTop || 12}px`, 
-            paddingBottom: `${signatureData.spacings?.separatorBottom || 12}px` 
-          }}>
-            <hr style={{
-              border: 'none',
-              borderTop: `${signatureData.separatorHorizontalWidth || 1}px solid ${signatureData.colors?.separatorHorizontal || '#e0e0e0'}`,
-              margin: '0',
-              width: '100%'
-            }} />
-          </td>
-        </tr>
+        {signatureData.separators?.horizontal?.enabled && (
+          <tr>
+            <td colSpan={signatureData.separators?.vertical?.enabled ? "5" : "2"} style={{ 
+              paddingTop: `${signatureData.spacings?.separatorTop || 12}px`, 
+              paddingBottom: `${signatureData.spacings?.separatorBottom || 12}px` 
+            }}>
+              <hr style={{
+                border: 'none',
+                borderTop: `${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || '#e0e0e0'}`,
+                borderRadius: `${signatureData.separators?.horizontal?.radius || 0}px`,
+                margin: '0',
+                width: '100%'
+              }} />
+            </td>
+          </tr>
+        )}
         
         {/* Logo entreprise en bas à gauche */}
         <tr>
@@ -544,7 +541,7 @@ const HorizontalSignature = ({
         {/* Logos sociaux */}
         {(signatureData.socialLinks?.linkedin || signatureData.socialLinks?.facebook || signatureData.socialLinks?.twitter || signatureData.socialLinks?.instagram) && (
           <tr>
-            <td colSpan={signatureData.verticalSeparator?.enabled ? "5" : "2"} style={{ 
+            <td colSpan={signatureData.separators?.vertical?.enabled ? "5" : "2"} style={{ 
               paddingTop: `${signatureData.spacings?.logoToSocial || 15}px`,
               textAlign: 'left' 
             }}>

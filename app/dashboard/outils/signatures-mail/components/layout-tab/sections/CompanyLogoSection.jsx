@@ -4,6 +4,8 @@ import React from "react";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
+import { Button } from "@/src/components/ui/button";
+import { X, Upload } from "lucide-react";
 
 export default function CompanyLogoSection({ signatureData, updateSignatureData }) {
   // Gestion de la taille du logo
@@ -19,8 +21,48 @@ export default function CompanyLogoSection({ signatureData, updateSignatureData 
         {/* Upload du logo entreprise */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Image</Label>
-          <div className="flex items-center gap-3 w-30">
-            <span className="text-xs text-muted-foreground">Glisser ou cliquer</span>
+          <div className="flex items-center gap-2 w-30">
+            {signatureData.logo ? (
+              <>
+                <img 
+                  src={signatureData.logo} 
+                  alt="Logo entreprise" 
+                  className="w-8 h-8 object-contain rounded border bg-white"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => updateSignatureData('logo', null)}
+                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                  title="Supprimer le logo"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => updateSignatureData('logo', e.target.result);
+                      reader.readAsDataURL(file);
+                    }
+                  };
+                  input.click();
+                }}
+                className="h-7 px-2 text-xs flex items-center gap-1"
+              >
+                <Upload className="w-3 h-3" />
+                Ajouter
+              </Button>
+            )}
           </div>
         </div>
         

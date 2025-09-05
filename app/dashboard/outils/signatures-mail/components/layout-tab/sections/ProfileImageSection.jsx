@@ -4,8 +4,9 @@ import React from "react";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
+import { Button } from "@/src/components/ui/button";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
-import { Square } from "lucide-react";
+import { Square, X, Upload } from "lucide-react";
 
 export default function ProfileImageSection({ signatureData, updateSignatureData }) {
   // Gestion de l'espacement entre prénom et nom
@@ -32,8 +33,51 @@ export default function ProfileImageSection({ signatureData, updateSignatureData
         {/* Upload de la photo de profil */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Image</Label>
-          <div className="flex items-center gap-3 w-30">
-            <span className="text-xs text-muted-foreground">Glisser ou cliquer</span>
+          <div className="flex items-center gap-2 w-30">
+            {signatureData.photo ? (
+              <>
+                <img 
+                  src={signatureData.photo} 
+                  alt="Photo de profil" 
+                  className="w-8 h-8 object-cover rounded border"
+                  style={{
+                    borderRadius: signatureData.imageShape === 'square' ? '4px' : '50%'
+                  }}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => updateSignatureData('photo', null)}
+                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                  title="Supprimer la photo"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => updateSignatureData('photo', e.target.result);
+                      reader.readAsDataURL(file);
+                    }
+                  };
+                  input.click();
+                }}
+                className="h-7 px-2 text-xs flex items-center gap-1"
+              >
+                <Upload className="w-3 h-3" />
+                Ajouter
+              </Button>
+            )}
           </div>
         </div>
         
@@ -84,37 +128,6 @@ export default function ProfileImageSection({ signatureData, updateSignatureData
           />
         </div>
         
-        {/* Espacement nom */}
-        <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">Espacement nom</Label>
-          <div className="flex items-center gap-3 w-30">
-            <Input
-              className="h-8 w-12 px-2 py-1"
-              type="text"
-              inputMode="decimal"
-              value={signatureData.nameSpacing || 0}
-              onChange={(e) => handleNameSpacingChange(e.target.value)}
-              onBlur={(e) => handleNameSpacingChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleNameSpacingChange(e.target.value);
-                }
-              }}
-              aria-label="Espacement entre prénom et nom"
-              placeholder="0"
-            />
-            <Slider
-              className="grow"
-              value={[signatureData.nameSpacing || 0]}
-              onValueChange={(value) => handleNameSpacingChange(value[0])}
-              min={0}
-              max={20}
-              step={1}
-              aria-label="Espacement nom"
-            />
-            <span className="text-xs text-muted-foreground">px</span>
-          </div>
-        </div>
       </div>
     </div>
   );
