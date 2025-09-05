@@ -45,6 +45,17 @@ const SignatureSave = ({ existingSignatureId = null }) => {
   // Éviter l'erreur d'hydratation
   useEffect(() => {
     setIsMounted(true);
+    
+    // Écouter l'événement de sauvegarde global
+    const handleGlobalSave = () => {
+      setIsModalOpen(true);
+    };
+    
+    window.addEventListener('signature-save', handleGlobalSave);
+    
+    return () => {
+      window.removeEventListener('signature-save', handleGlobalSave);
+    };
   }, []);
 
   const [createSignature, { loading: creating }] = useMutation(CREATE_EMAIL_SIGNATURE, {

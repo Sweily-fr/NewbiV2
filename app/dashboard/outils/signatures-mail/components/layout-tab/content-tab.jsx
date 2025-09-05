@@ -11,7 +11,6 @@ import ProfileImageSection from "./sections/ProfileImageSection";
 import CompanyLogoSection from "./sections/CompanyLogoSection";
 import SocialNetworksSection from "./sections/SocialNetworksSection";
 import TypographySection from "./sections/TypographySection";
-import ColorsSection from "./sections/ColorsSection";
 import StructureSection from "./sections/StructureSection";
 import SpacingSection from "./sections/SpacingSection";
 import SaveSection from "./sections/SaveSection";
@@ -57,11 +56,6 @@ export default function ContentTab() {
       />
       <Separator />
       
-      <ColorsSection 
-        signatureData={signatureData} 
-        updateSignatureData={updateSignatureData} 
-      />
-      <Separator />
       
       <StructureSection 
         signatureData={signatureData} 

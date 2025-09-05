@@ -268,7 +268,7 @@ const generateVerticalHTML = (signatureData, primaryColor, facebookImageUrl = nu
   const facebookImgUrl = facebookImageUrl || '';
   const imageSize = signatureData.imageSize || 80;
   const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
-  const separatorVerticalWidth = signatureData.separatorVerticalWidth || 1;
+  const separatorVerticalWidth = signatureData.separators?.vertical?.width || signatureData.separatorVerticalWidth || 1;
   const separatorHorizontalWidth = signatureData.separatorHorizontalWidth || 1;
   const logoSize = signatureData.logoSize || 60;
   const spacings = signatureData.spacings || {};
@@ -299,15 +299,15 @@ const generateVerticalHTML = (signatureData, primaryColor, facebookImageUrl = nu
 
                   <tr>
                     <td style="padding-bottom: ${spacings.nameBottom || 8}px; text-align: left;">
-                      <div style="font-size: ${signatureData.fontSize?.name || 16}px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                        ${signatureData.firstName} ${signatureData.lastName}
+                      <div style="font-size: ${signatureData.typography?.fullName?.fontSize || signatureData.fontSize?.name || 16}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || 'bold'}; font-style: ${signatureData.typography?.fullName?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || 'none'}; color: ${signatureData.typography?.fullName?.color || primaryColor}; line-height: 1.2; font-family: ${signatureData.typography?.fullName?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif'};">
+                        ${signatureData.fullName || ''}
                       </div>
                     </td>
                   </tr>
                   ${signatureData.position ? `
                     <tr>
                       <td style="padding-bottom: ${spacings.positionBottom || 8}px; text-align: left;">
-                        <div style="font-size: ${signatureData.fontSize?.position || 14}px; color: rgb(102,102,102); font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                        <div style="font-size: ${signatureData.typography?.position?.fontSize || signatureData.fontSize?.position || 14}px; font-weight: ${signatureData.typography?.position?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.position?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.position?.textDecoration || 'none'}; color: ${signatureData.typography?.position?.color || 'rgb(102,102,102)'}; font-family: ${signatureData.typography?.position?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif'};">
                           ${signatureData.position}
                         </div>
                       </td>
@@ -327,9 +327,11 @@ const generateVerticalHTML = (signatureData, primaryColor, facebookImageUrl = nu
             </td>
             
             <!-- Séparateur vertical - Gmail compatible -->
-            <td style="width: ${separatorVerticalWidth}px; background-color: #e0e0e0; padding: 0; font-size: 1px; line-height: 1px;">
-              &nbsp;
-            </td>
+          ${signatureData.separators?.vertical?.enabled ? `
+          <td style="width: ${signatureData.separators?.vertical?.width || signatureData.separatorVerticalWidth || 1}px; background-color: ${signatureData.separators?.vertical?.color || '#e0e0e0'}; border-radius: ${signatureData.separators?.vertical?.radius || 0}px; padding: 0; vertical-align: top; height: 100%; min-height: 200px;">
+            &nbsp;
+          </td>
+          ` : ''}
             
             <!-- Colonne de droite : Informations de contact -->
             <td style="padding-left: 15px; vertical-align: top; width: 200px;">
@@ -344,8 +346,8 @@ const generateVerticalHTML = (signatureData, primaryColor, facebookImageUrl = nu
                               <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
                                 <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
                               </td>
-                              <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                                <a href="tel:${signatureData.phone}" style="color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; text-decoration: none; font-family: inherit;">${signatureData.phone}</a>
+                              <td style="font-size: ${signatureData.typography?.phone?.fontSize || 12}px; font-weight: ${signatureData.typography?.phone?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.phone?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.phone?.textDecoration || 'none'}; color: ${signatureData.typography?.phone?.color || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.typography?.phone?.fontFamily || 'Arial, sans-serif'};">
+                                <a href="tel:${signatureData.phone}" style="color: ${signatureData.typography?.phone?.color || 'rgb(102,102,102)'}; text-decoration: none; font-family: inherit;">${signatureData.phone}</a>
                               </td>
                             </tr>
                           </tbody>
@@ -362,8 +364,8 @@ const generateVerticalHTML = (signatureData, primaryColor, facebookImageUrl = nu
                               <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
                                 <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
                               </td>
-                              <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                                <a href="tel:${signatureData.mobile}" style="color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; text-decoration: none; font-family: inherit;">${signatureData.mobile}</a>
+                              <td style="font-size: ${signatureData.typography?.mobile?.fontSize || 12}px; font-weight: ${signatureData.typography?.mobile?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.mobile?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.mobile?.textDecoration || 'none'}; color: ${signatureData.typography?.mobile?.color || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.typography?.mobile?.fontFamily || 'Arial, sans-serif'};">
+                                <a href="tel:${signatureData.mobile}" style="color: ${signatureData.typography?.mobile?.color || 'rgb(102,102,102)'}; text-decoration: none; font-family: inherit;">${signatureData.mobile}</a>
                               </td>
                             </tr>
                           </tbody>
@@ -380,8 +382,8 @@ const generateVerticalHTML = (signatureData, primaryColor, facebookImageUrl = nu
                               <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
                                 <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
                               </td>
-                              <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                                <a href="mailto:${signatureData.email}" style="color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; text-decoration: none; font-family: inherit;">${signatureData.email}</a>
+                              <td style="font-size: ${signatureData.typography?.email?.fontSize || 12}px; font-weight: ${signatureData.typography?.email?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.email?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.email?.textDecoration || 'none'}; color: ${signatureData.typography?.email?.color || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.typography?.email?.fontFamily || 'Arial, sans-serif'};">
+                                <a href="mailto:${signatureData.email}" style="color: ${primaryColor}; text-decoration: none; font-family: inherit;">${signatureData.email}</a>
                               </td>
                             </tr>
                           </tbody>
@@ -398,8 +400,8 @@ const generateVerticalHTML = (signatureData, primaryColor, facebookImageUrl = nu
                               <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
                                 <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
                               </td>
-                              <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                                <a href="${signatureData.website && signatureData.website.startsWith('http') ? signatureData.website : 'https://' + (signatureData.website || '')}" style="color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; text-decoration: none; font-family: inherit;">${signatureData.website ? signatureData.website.replace(/^https?:\/\//, '') : ''}</a>
+                              <td style="font-size: ${signatureData.typography?.website?.fontSize || 12}px; font-weight: ${signatureData.typography?.website?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.website?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.website?.textDecoration || 'none'}; color: ${signatureData.typography?.website?.color || 'rgb(102,102,102)'}; vertical-align: middle; font-family: ${signatureData.typography?.website?.fontFamily || 'Arial, sans-serif'};">
+                                <a href="${signatureData.website && signatureData.website.startsWith('http') ? signatureData.website : 'https://' + (signatureData.website || '')}" style="color: ${primaryColor}; text-decoration: none; font-family: inherit;">${signatureData.website ? signatureData.website.replace(/^https?:\/\//, '') : ''}</a>
                               </td>
                             </tr>
                           </tbody>
@@ -416,8 +418,8 @@ const generateVerticalHTML = (signatureData, primaryColor, facebookImageUrl = nu
                               <td style="padding-right: 8px; vertical-align: top; width: 12px;">
                                 <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block; margin-top: 1px;" />
                               </td>
-                              <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: top; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
-                                <span style="font-family: inherit;">${signatureData.address.replace(/\n/g, '<br>')}</span>
+                              <td style="font-size: ${signatureData.typography?.address?.fontSize || 12}px; font-weight: ${signatureData.typography?.address?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.address?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.address?.textDecoration || 'none'}; color: ${signatureData.typography?.address?.color || 'rgb(102,102,102)'}; vertical-align: top; font-family: ${signatureData.typography?.address?.fontFamily || 'Arial, sans-serif'}; line-height: 1.4;">
+                                ${signatureData.address.replace(/\n/g, '<br>')}
                               </td>
                             </tr>
                           </tbody>
@@ -427,17 +429,13 @@ const generateVerticalHTML = (signatureData, primaryColor, facebookImageUrl = nu
                   ` : ''}
                   
                   <!-- Séparateur horizontal après tous les contacts -->
+                  ${signatureData.separators?.horizontal?.enabled ? `
                   <tr>
                     <td style="padding-top: ${spacings.separatorTop || 12}px; padding-bottom: ${spacings.separatorBottom || 12}px;">
-                      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
-                        <tbody>
-                          <tr>
-                            <td style="border-top: ${separatorHorizontalWidth}px solid ${signatureData.colors?.separatorHorizontal || '#e0e0e0'}; line-height: 1px; font-size: 1px;">&nbsp;</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <hr style="border: none; border-top: ${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || '#e0e0e0'}; border-radius: ${signatureData.separators?.horizontal?.radius || 0}px; margin: 0; width: 100%;" />
                     </td>
                   </tr>
+                  ` : ''}
                   
                   <!-- Logo entreprise après le séparateur -->
                   ${logoSrc ? `
@@ -472,7 +470,7 @@ const generateHorizontalHTML = (signatureData, primaryColor, facebookImageUrl = 
   const facebookImgUrl = facebookImageUrl || '';
   const imageSize = signatureData.imageSize || 80;
   const borderRadius = signatureData.imageShape === 'square' ? '8px' : '50%';
-  const separatorHorizontalWidth = signatureData.separatorHorizontalWidth || 1;
+  const separatorHorizontalWidth = signatureData.separators?.horizontal?.width || 1;
   const spacings = signatureData.spacings || {};
   const logoSize = signatureData.logoSize || 60;
   return `
@@ -496,48 +494,48 @@ const generateHorizontalHTML = (signatureData, primaryColor, facebookImageUrl = 
           <!-- Informations empilées verticalement à droite -->
           <td style="width: ${signatureData.columnWidths?.content || 75}%; vertical-align: top;">
             <!-- Nom et prénom -->
-            <div style="font-size: 16px; font-weight: bold; color: ${primaryColor}; line-height: 1.2; margin-bottom: 2px;">
-              ${signatureData.firstName} ${signatureData.lastName}
+            <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 16}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || 'bold'}; font-style: ${signatureData.typography?.fullName?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || 'none'}; color: ${signatureData.typography?.fullName?.color || primaryColor}; line-height: 1.2; margin-bottom: 2px; font-family: ${signatureData.typography?.fullName?.fontFamily || 'Arial, sans-serif'};">
+              ${signatureData.fullName || ''}
             </div>
             
             <!-- Profession -->
             ${signatureData.position ? `
-              <div style="font-size: 14px; color: rgb(102,102,102); margin-bottom: 4px;">
+              <div style="font-size: ${signatureData.typography?.position?.fontSize || 14}px; font-weight: ${signatureData.typography?.position?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.position?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.position?.textDecoration || 'none'}; color: ${signatureData.typography?.position?.color || 'rgb(102,102,102)'}; margin-bottom: 4px; font-family: ${signatureData.typography?.position?.fontFamily || 'Arial, sans-serif'};">
                 ${signatureData.position}
               </div>
             ` : ''}
             
             <!-- Contacts -->
             ${signatureData.phone ? `
-              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 1px;">
+              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.phone?.fontSize || 12}px; font-weight: ${signatureData.typography?.phone?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.phone?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.phone?.textDecoration || 'none'}; color: ${signatureData.typography?.phone?.color || 'rgb(102,102,102)'}; margin-bottom: 1px; font-family: ${signatureData.typography?.phone?.fontFamily || 'Arial, sans-serif'};">
                 <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
                 ${signatureData.phone}
               </div>
             ` : ''}
             
             ${signatureData.mobile ? `
-              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 1px;">
+              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.mobile?.fontSize || 12}px; font-weight: ${signatureData.typography?.mobile?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.mobile?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.mobile?.textDecoration || 'none'}; color: ${signatureData.typography?.mobile?.color || 'rgb(102,102,102)'}; margin-bottom: 1px; font-family: ${signatureData.typography?.mobile?.fontFamily || 'Arial, sans-serif'};">
                 <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
                 ${signatureData.mobile}
               </div>
             ` : ''}
             
             ${signatureData.email ? `
-              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 1px;">
+              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.email?.fontSize || 12}px; font-weight: ${signatureData.typography?.email?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.email?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.email?.textDecoration || 'none'}; color: ${signatureData.typography?.email?.color || 'rgb(102,102,102)'}; margin-bottom: 1px; font-family: ${signatureData.typography?.email?.fontFamily || 'Arial, sans-serif'};">
                 <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
                 <a href="mailto:${signatureData.email}" style="color: ${primaryColor}; text-decoration: none;">${signatureData.email}</a>
               </div>
             ` : ''}
             
             ${signatureData.website ? `
-              <div style="display: flex; align-items: center; font-size: 12px; color: rgb(102,102,102); margin-bottom: 1px;">
+              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.website?.fontSize || 12}px; font-weight: ${signatureData.typography?.website?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.website?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.website?.textDecoration || 'none'}; color: ${signatureData.typography?.website?.color || 'rgb(102,102,102)'}; margin-bottom: 1px; font-family: ${signatureData.typography?.website?.fontFamily || 'Arial, sans-serif'};">
                 <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
                 <a href="${signatureData.website.startsWith('http') ? signatureData.website : 'https://' + signatureData.website}" target="_blank" style="color: ${primaryColor}; text-decoration: none;">${signatureData.website.replace(/^https?:\/\//, '')}</a>
               </div>
             ` : ''}
             
             ${signatureData.address ? `
-              <div style="display: flex; align-items: flex-start; font-size: 12px; color: rgb(102,102,102); margin-bottom: 4px;">
+              <div style="display: flex; align-items: flex-start; font-size: ${signatureData.typography?.address?.fontSize || 12}px; font-weight: ${signatureData.typography?.address?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.address?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.address?.textDecoration || 'none'}; color: ${signatureData.typography?.address?.color || 'rgb(102,102,102)'}; margin-bottom: 4px; font-family: ${signatureData.typography?.address?.fontFamily || 'Arial, sans-serif'};">
                 <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
                 ${signatureData.address.replace(/\n/g, '<br>')}
               </div>
@@ -549,11 +547,13 @@ const generateHorizontalHTML = (signatureData, primaryColor, facebookImageUrl = 
         </tr>
         
         <!-- Séparateur horizontal -->
+        ${signatureData.separators?.horizontal?.enabled ? `
         <tr>
           <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
-            <hr style="border: none; border-top: ${separatorHorizontalWidth}px solid ${signatureData.colors?.separatorHorizontal || '#e0e0e0'}; margin: 0; width: 100%;" />
+            <hr style="border: none; border-top: ${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || '#e0e0e0'}; border-radius: ${signatureData.separators?.horizontal?.radius || 0}px; margin: 0; width: 100%;" />
           </td>
         </tr>
+        ` : ''}
         
         <!-- Logo entreprise après le séparateur -->
         ${logoSrc ? `
@@ -657,13 +657,13 @@ const generateObamaHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
       <!-- Informations à droite -->
       <td style="vertical-align: top; padding-bottom: 10px;">
         <!-- Nom complet -->
-        <div style="font-size: 22px; font-weight: bold; color: #2563eb; line-height: 1.2; margin-bottom: 5px; font-family: Arial, sans-serif;">
-          ${signatureData.firstName || ''} ${signatureData.lastName || ''}
+        <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 22}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || 'bold'}; font-style: ${signatureData.typography?.fullName?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || 'none'}; color: ${signatureData.typography?.fullName?.color || '#2563eb'}; line-height: 1.2; margin-bottom: 5px; font-family: ${signatureData.typography?.fullName?.fontFamily || 'Arial, sans-serif'};">
+          ${signatureData.fullName || ''}
         </div>
         
         <!-- Titre/Position -->
         ${(signatureData.position || signatureData.company) ? `
-        <div style="font-size: 14px; color: #666666; line-height: 1.3; margin-bottom: 15px; font-family: Arial, sans-serif;">
+        <div style="font-size: ${signatureData.typography?.position?.fontSize || 14}px; font-weight: ${signatureData.typography?.position?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.position?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.position?.textDecoration || 'none'}; color: ${signatureData.typography?.position?.color || '#666666'}; line-height: 1.3; margin-bottom: 15px; font-family: ${signatureData.typography?.position?.fontFamily || 'Arial, sans-serif'};">
           ${signatureData.position || ''}${signatureData.position && signatureData.company ? ' | ' : ''}${signatureData.company || ''}
         </div>
         ` : ''}
@@ -721,12 +721,12 @@ const generateRanganHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
       <!-- Informations à droite -->
       <td style="vertical-align: top; padding-bottom: 15px;">
         <!-- Nom complet -->
-        <div style="font-size: 24px; font-weight: bold; color: #1a1a1a; line-height: 1.2; margin-bottom: 4px; font-family: Arial, sans-serif;">
-          ${signatureData.firstName || ''} ${signatureData.lastName || ''}
+        <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 24}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || 'bold'}; font-style: ${signatureData.typography?.fullName?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || 'none'}; color: ${signatureData.typography?.fullName?.color || '#1a1a1a'}; line-height: 1.2; margin-bottom: 4px; font-family: ${signatureData.typography?.fullName?.fontFamily || 'Arial, sans-serif'};">
+          ${signatureData.fullName || ''}
         </div>
         
         <!-- Titre/Position -->
-        <div style="font-size: 16px; color: #666666; line-height: 1.3; margin-bottom: 12px; font-family: Arial, sans-serif;">
+        <div style="font-size: ${signatureData.typography?.position?.fontSize || 16}px; font-weight: ${signatureData.typography?.position?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.position?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.position?.textDecoration || 'none'}; color: ${signatureData.typography?.position?.color || '#666666'}; line-height: 1.3; margin-bottom: 12px; font-family: ${signatureData.typography?.position?.fontFamily || 'Arial, sans-serif'};">
           ${signatureData.position || ''}${signatureData.position && signatureData.company ? '<br>' : ''}${signatureData.company || ''}
         </div>
         
@@ -782,12 +782,12 @@ const generateShahHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
       <!-- Informations à gauche -->
       <td style="vertical-align: top; padding-right: 25px; padding-bottom: 15px; width: 300px;">
         <!-- Nom complet -->
-        <div style="font-size: 26px; font-weight: bold; color: #1a1a1a; line-height: 1.1; margin-bottom: 6px; font-family: Arial, sans-serif;">
-          ${signatureData.firstName || ''} ${signatureData.lastName || ''}
+        <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 26}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || 'bold'}; font-style: ${signatureData.typography?.fullName?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || 'none'}; color: ${signatureData.typography?.fullName?.color || '#1a1a1a'}; line-height: 1.1; margin-bottom: 6px; font-family: ${signatureData.typography?.fullName?.fontFamily || 'Arial, sans-serif'};">
+          ${signatureData.fullName || ''}
         </div>
         
         <!-- Titre/Position -->
-        <div style="font-size: 15px; color: #666666; line-height: 1.4; margin-bottom: 18px; font-family: Arial, sans-serif;">
+        <div style="font-size: ${signatureData.typography?.position?.fontSize || 15}px; font-weight: ${signatureData.typography?.position?.fontWeight || 'normal'}; font-style: ${signatureData.typography?.position?.fontStyle || 'normal'}; text-decoration: ${signatureData.typography?.position?.textDecoration || 'none'}; color: ${signatureData.typography?.position?.color || '#666666'}; line-height: 1.4; margin-bottom: 18px; font-family: ${signatureData.typography?.position?.fontFamily || 'Arial, sans-serif'};">
           ${signatureData.position || ''}${signatureData.position && signatureData.company ? ' at ' : ''}${signatureData.company || ''}
         </div>
         
@@ -851,7 +851,7 @@ const generateCustomHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
     cells: [
       { id: "cell-0-0", row: 0, col: 0, elements: [{ type: "photo", content: photoSrc, alignment: "center" }] },
       { id: "cell-0-1", row: 0, col: 1, elements: [
-        { type: "text", content: `${signatureData.firstName || ''} ${signatureData.lastName || ''}`, alignment: "left", styles: { fontSize: "18px", fontWeight: "bold", color: primaryColor } },
+        { type: "text", content: `${signatureData.fullName || ''}`, alignment: "left", styles: { fontSize: "18px", fontWeight: "bold", color: primaryColor } },
         { type: "text", content: signatureData.position || '', alignment: "left", styles: { fontSize: "14px", color: "#666", marginTop: "4px" } }
       ]},
       { id: "cell-1-0", row: 1, col: 0, elements: [{ type: "logo", content: logoSrc, alignment: "center" }] },
@@ -971,13 +971,8 @@ const generateCustomHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
         }
       }
       
-      // Utiliser la fonction generateSignatureHTML compatible Gmail avec espacements
-      const SignatureManagerModule = await import('../components/SignatureManager');
-      const signatureWithFacebookUrl = {
-        ...signatureData,
-        facebookImageUrl: facebookImageUrl
-      };
-      const htmlSignature = SignatureManagerModule.generateGmailSignatureHTML(signatureWithFacebookUrl);
+      // Générer le HTML selon l'orientation actuelle
+      const htmlSignature = await generateSignatureHTML(facebookImageUrl);
       console.log('📝 HTML généré:', htmlSignature);
       
       // Utiliser l'API moderne du clipboard pour copier du HTML
@@ -1198,10 +1193,6 @@ export default function NewSignaturePage() {
   return (
     <div className="p-12 h-[calc(100vh-64px)] flex items-center justify-center">
 
-      {/* Bouton de sauvegarde en haut à droite */}
-      <div className="absolute top-4 right-4 z-10">
-        <SignatureSave existingSignatureId={isEditMode ? editingSignatureId : null} />
-      </div>
       
       {/* Onglets Desktop/Mobile - Verticaux à gauche */}
       <Tabs

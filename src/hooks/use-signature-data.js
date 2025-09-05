@@ -24,8 +24,7 @@ export function SignatureProvider({ children }) {
   const defaultSignatureData = useMemo(() => ({
     signatureName: "Ma signature professionnelle",
     isDefault: true,
-    firstName: "Jean",
-    lastName: "Dupont",
+    fullName: "Jean Dupont",
     position: "Fondateur & CEO",
     email: "newbi@contact.fr",
     phone: "+33 7 34 64 06 18",
@@ -39,15 +38,6 @@ export function SignatureProvider({ children }) {
     website: "https://www.newbi.fr",
     address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
     primaryColor: "#2563eb",
-    // Couleurs des différents éléments
-    colors: {
-      name: "#2563eb", // Couleur du nom et prénom
-      position: "#666666", // Couleur du poste
-      company: "#2563eb", // Couleur du nom d'entreprise
-      contact: "#666666", // Couleur des informations de contact
-      separatorVertical: "#e0e0e0", // Couleur du séparateur vertical
-      separatorHorizontal: "#e0e0e0", // Couleur du séparateur horizontal
-    },
     // Espacement entre prénom et nom (en pixels)
     nameSpacing: 4,
     // Alignement du nom et prénom (left, center, right)
@@ -72,19 +62,28 @@ export function SignatureProvider({ children }) {
     imageSize: 80, // Taille par défaut de l'image de profil
     // Forme de l'image de profil (round ou square)
     imageShape: 'round', // Forme par défaut : ronde
-    // Épaisseur des séparateurs (en pixels)
-    separatorVerticalWidth: 1, // Épaisseur du séparateur vertical (entre colonnes)
+    // Configuration des séparateurs
+    separators: {
+      horizontal: {
+        enabled: true, // Séparateur horizontal activé par défaut
+        width: 1, // Épaisseur du séparateur horizontal
+        color: '#e0e0e0', // Couleur du séparateur horizontal
+        radius: 0, // Radius du séparateur horizontal
+      },
+      vertical: {
+        enabled: true, // Séparateur vertical activé par défaut
+        width: 1, // Épaisseur du séparateur vertical
+        color: '#e0e0e0', // Couleur du séparateur vertical
+        radius: 0, // Radius du séparateur vertical
+      }
+    },
+    // Épaisseur des séparateurs (en pixels) - DEPRECATED, utiliser separators
+    separatorVerticalWidth: 4, // Épaisseur du séparateur vertical (entre colonnes) - DEPRECATED
     separatorHorizontalWidth: 1, // Épaisseur du séparateur horizontal (sous l'adresse)
     // Taille du logo entreprise (en pixels)
     logoSize: 60, // Taille par défaut du logo
     // Taille des logos sociaux (en pixels)
     socialSize: 24, // Taille par défaut des logos sociaux
-    // Configuration du séparateur vertical
-    verticalSeparator: {
-      enabled: false, // Séparateur vertical désactivé par défaut
-      width: 2, // Épaisseur du séparateur vertical
-      color: '#000000', // Couleur du séparateur vertical
-    },
     // Espacements entre les éléments (en pixels)
     spacings: {
       global: 8, // Espacement global par défaut
@@ -107,13 +106,7 @@ export function SignatureProvider({ children }) {
     },
     // Typographie détaillée pour chaque champ
     typography: {
-      firstName: {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: 16,
-        color: '#2563eb',
-        fontWeight: 'normal'
-      },
-      lastName: {
+      fullName: {
         fontFamily: 'Arial, sans-serif',
         fontSize: 16,
         color: '#2563eb',
@@ -242,7 +235,7 @@ export function SignatureProvider({ children }) {
   const updateSignatureData = (key, value) => {
     setSignatureData((prev) => {
       // Handle nested object updates for spacings, colors, etc.
-      if (key === 'spacings' || key === 'colors' || key === 'columnWidths' || key === 'fontSize' || key === 'verticalSeparator' || key === 'typography') {
+      if (key === 'spacings' || key === 'colors' || key === 'columnWidths' || key === 'fontSize' || key === 'verticalSeparator' || key === 'typography' || key === 'separators') {
         return {
           ...prev,
           [key]: {

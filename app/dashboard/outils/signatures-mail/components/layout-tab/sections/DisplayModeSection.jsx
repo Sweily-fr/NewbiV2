@@ -28,23 +28,8 @@ export default function DisplayModeSection({ signatureData, updateSignatureData 
             ]}
             size="sm"
             className="w-30"
-            value={signatureData.layout}
-            onValueChange={(value) => updateSignatureData('layout', value)}
-          />
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">Disposition</Label>
-          <AlignmentSelector
-            items={[
-              { value: "left", icon: Columns2 },
-              { value: "center", icon: BetweenHorizontalStart },
-              { value: "right", icon: Table2 },
-            ]}
-            size="sm"
-            className="w-30"
-            value={signatureData.disposition}
-            onValueChange={(value) => updateSignatureData('disposition', value)}
+            value={signatureData.template}
+            onValueChange={(value) => updateSignatureData('template', value)}
           />
         </div>
         

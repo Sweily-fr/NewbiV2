@@ -72,6 +72,9 @@ const VerticalSignature = ({
   const maxTableWidth = 500;
   const photoWidthPx = Math.round((photoColumnWidth / 100) * maxTableWidth);
   const contentWidthPx = Math.round((contentColumnWidth / 100) * maxTableWidth);
+  
+  // Debug pour vérifier la valeur du séparateur vertical
+  console.log('VerticalSignature - separators?.vertical?.width:', signatureData.separators?.vertical?.width);
 
   return (
     <table cellPadding="0" cellSpacing="0" border="0" style={{ borderCollapse: 'collapse', maxWidth: '500px', fontFamily: 'Arial, sans-serif', width: '100%' }}>
@@ -141,32 +144,32 @@ const VerticalSignature = ({
                     textAlign: signatureData.nameAlignment || 'left'
                   }}>
                     <div style={{ 
-                      fontSize: `${signatureData.fontSize?.name || 16}px`,
-                      fontWeight: 'bold',
-                      color: signatureData.colors?.name || signatureData.primaryColor || '#2563eb',
+                      fontSize: `${signatureData.typography?.fullName?.fontSize || signatureData.fontSize?.name || 16}px`,
+                      fontWeight: signatureData.typography?.fullName?.fontWeight || 'bold',
+                      fontStyle: signatureData.typography?.fullName?.fontStyle || 'normal',
+                      textDecoration: signatureData.typography?.fullName?.textDecoration || 'none',
+                      color: signatureData.typography?.fullName?.color || signatureData.primaryColor || '#2563eb',
                       lineHeight: '1.2',
-                      fontFamily: signatureData.fontFamily || 'Arial, sans-serif'
+                      fontFamily: signatureData.typography?.fullName?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif'
                     }}>
                       <InlineEdit
-                        value={signatureData.firstName}
-                        onChange={(value) => handleFieldChange("firstName", value)}
-                        placeholder="Prénom"
+                        value={signatureData.fullName}
+                        onChange={(value) => handleFieldChange("fullName", value)}
+                        placeholder="Nom complet"
                         displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
                         inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none h-auto w-auto min-w-0"
                         className="!p-0 !m-0 !rounded-none inline-block w-auto"
-                        style={{ width: 'auto', minWidth: '0' }}
+                        style={{ 
+                          width: 'auto', 
+                          minWidth: '0',
+                          fontSize: `${signatureData.typography?.fullName?.fontSize || signatureData.fontSize?.name || 16}px`,
+                          color: signatureData.typography?.fullName?.color || signatureData.primaryColor || '#2563eb',
+                          fontFamily: signatureData.typography?.fullName?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
+                          fontWeight: signatureData.typography?.fullName?.fontWeight || 'normal',
+                          fontStyle: signatureData.typography?.fullName?.fontStyle || 'normal',
+                          textDecoration: signatureData.typography?.fullName?.textDecoration || 'none'
+                        }}
                       />
-                      <span style={{ marginLeft: `${signatureData.nameSpacing || 4}px` }}>
-                        <InlineEdit
-                          value={signatureData.lastName}
-                          onChange={(value) => handleFieldChange("lastName", value)}
-                          placeholder="Nom"
-                          displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
-                          inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none h-auto w-auto min-w-0"
-                          className="!p-0 !m-0 !rounded-none inline-block w-auto"
-                          style={{ width: 'auto', minWidth: '0' }}
-                        />
-                      </span>
                     </div>
                   </td>
                 </tr>
@@ -179,19 +182,26 @@ const VerticalSignature = ({
                       textAlign: signatureData.nameAlignment || 'left'
                     }}>
                       <div style={{ 
-                        fontSize: `${signatureData.fontSize?.position || 14}px`,
-                        color: signatureData.colors?.position || '#666666',
-                        fontFamily: signatureData.fontFamily || 'Arial, sans-serif'
+                        fontSize: `${signatureData.typography?.position?.fontSize || signatureData.fontSize?.position || 14}px`,
+                        color: signatureData.typography?.position?.color || '#666666',
+                        fontFamily: signatureData.typography?.position?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
+                        fontWeight: signatureData.typography?.position?.fontWeight || 'normal',
+                        fontStyle: signatureData.typography?.position?.fontStyle || 'normal',
+                        textDecoration: signatureData.typography?.position?.textDecoration || 'none'
                       }}>
                         <InlineEdit
                           value={signatureData.position}
                           onChange={(value) => handleFieldChange("position", value)}
                           placeholder="Votre poste"
-                          displayClassName="text-sm"
-                          inputClassName="text-sm border-0 shadow-none p-1 h-auto"
+                          displayClassName="border-0 shadow-none p-1 h-auto"
+                          inputClassName="border-0 shadow-none p-1 h-auto"
                           style={{
-                            color: signatureData.colors?.position || '#666666',
-                            fontSize: `${signatureData.fontSize?.position || 14}px`
+                            color: signatureData.typography?.position?.color || '#666666',
+                            fontSize: `${signatureData.typography?.position?.fontSize || signatureData.fontSize?.position || 14}px`,
+                            fontFamily: signatureData.typography?.position?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
+                            fontWeight: signatureData.typography?.position?.fontWeight || 'normal',
+                            fontStyle: signatureData.typography?.position?.fontStyle || 'normal',
+                            textDecoration: signatureData.typography?.position?.textDecoration || 'none'
                           }}
                         />
                       </div>
@@ -200,23 +210,30 @@ const VerticalSignature = ({
                 )}
                 
                 {/* Nom entreprise */}
-                {signatureData.companyName && (
+                {signatureData.company && (
                   <tr>
                     <td style={{ 
                       paddingBottom: `${signatureData.spacings?.companyBottom || 12}px`,
                       textAlign: signatureData.nameAlignment || 'left'
                     }}>
                       <div style={{ 
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        color: signatureData.colors?.company || signatureData.primaryColor || '#2563eb'
+                        fontSize: `${signatureData.typography?.company?.fontSize || 14}px`,
+                        fontWeight: signatureData.typography?.company?.fontWeight || 'normal',
+                        color: signatureData.typography?.company?.color || signatureData.primaryColor || '#2563eb',
+                        fontFamily: signatureData.typography?.company?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif'
                       }}>
                         <InlineEdit
-                          value={signatureData.companyName}
-                          onChange={(value) => handleFieldChange("companyName", value)}
+                          value={signatureData.company}
+                          onChange={(value) => handleFieldChange("company", value)}
                           placeholder="Nom entreprise"
-                          displayClassName="text-blue-600 font-semibold text-sm"
-                          inputClassName="text-blue-600 font-semibold text-sm border-0 shadow-none p-1 h-auto"
+                          displayClassName="border-0 shadow-none p-1 h-auto"
+                          inputClassName="border-0 shadow-none p-1 h-auto"
+                          style={{ 
+                            color: signatureData.typography?.company?.color || signatureData.primaryColor || '#2563eb',
+                            fontSize: `${signatureData.typography?.company?.fontSize || 14}px`,
+                            fontFamily: signatureData.typography?.company?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
+                            fontWeight: signatureData.typography?.company?.fontWeight || 'normal'
+                          }}
                         />
                       </div>
                     </td>
@@ -227,9 +244,21 @@ const VerticalSignature = ({
           </td>
 
           {/* Séparateur vertical - Gmail compatible */}
-          <td style={{ width: `${signatureData.separatorVerticalWidth || 1}px`, backgroundColor: signatureData.colors?.separatorVertical || '#e0e0e0', padding: '0', fontSize: '1px', lineHeight: '1px' }}>
-            &nbsp;
-          </td>
+          {signatureData.separators?.vertical?.enabled && (
+            <td style={{ 
+              width: `${signatureData.separators?.vertical?.width || signatureData.separatorVerticalWidth || 1}px`, 
+              backgroundColor: signatureData.separators?.vertical?.color || '#e0e0e0', 
+              borderRadius: `${signatureData.separators?.vertical?.radius || 0}px`,
+              padding: '0', 
+              fontSize: '1px', 
+              lineHeight: '1px',
+              verticalAlign: 'top',
+              height: '100%',
+              minHeight: '200px'
+            }}>
+              &nbsp;
+            </td>
+          )}
 
           {/* Colonne de droite : Informations de contact */}
           <td style={{ paddingLeft: '15px', verticalAlign: 'top', width: `${contentWidthPx}px` }}>
@@ -239,16 +268,21 @@ const VerticalSignature = ({
                 {signatureData.phone && (
                   <tr>
                     <td style={{ paddingBottom: signatureData.mobile ? `${signatureData.spacings?.phoneToMobile || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.typography?.phone?.fontSize || signatureData.fontSize?.contact || 12}px`, color: signatureData.typography?.phone?.color || 'rgb(102,102,102)', fontFamily: signatureData.typography?.phone?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.phone}
                           onChange={(value) => handleFieldChange("phone", value)}
                           placeholder="Téléphone fixe"
                           validation={validatePhone}
-                          displayClassName="text-xs"
-                          inputClassName="text-xs border-0 shadow-none p-1 h-auto"
-                          style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
+                          displayClassName="border-0 shadow-none p-1 h-auto"
+                          inputClassName="border-0 shadow-none p-1 h-auto"
+                          style={{ 
+                            color: signatureData.typography?.phone?.color || 'rgb(102,102,102)',
+                            fontSize: `${signatureData.typography?.phone?.fontSize || signatureData.fontSize?.contact || 12}px`,
+                            fontFamily: signatureData.typography?.phone?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
+                            fontWeight: signatureData.typography?.phone?.fontWeight || 'normal'
+                          }}
                         />
                       </div>
                     </td>
@@ -259,16 +293,21 @@ const VerticalSignature = ({
                 {signatureData.mobile && (
                   <tr>
                     <td style={{ paddingBottom: signatureData.email ? `${signatureData.spacings?.mobileToEmail || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.typography?.mobile?.fontSize || signatureData.fontSize?.contact || 12}px`, color: signatureData.typography?.mobile?.color || 'rgb(102,102,102)', fontFamily: signatureData.typography?.mobile?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.mobile}
                           onChange={(value) => handleFieldChange("mobile", value)}
                           placeholder="Téléphone mobile"
                           validation={validatePhone}
-                          displayClassName="text-xs"
-                          inputClassName="text-xs border-0 shadow-none p-1 h-auto"
-                          style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
+                          displayClassName="border-0 shadow-none p-1 h-auto"
+                          inputClassName="border-0 shadow-none p-1 h-auto"
+                          style={{ 
+                            color: signatureData.typography?.mobile?.color || 'rgb(102,102,102)',
+                            fontSize: `${signatureData.typography?.mobile?.fontSize || signatureData.fontSize?.contact || 12}px`,
+                            fontFamily: signatureData.typography?.mobile?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
+                            fontWeight: signatureData.typography?.mobile?.fontWeight || 'normal'
+                          }}
                         />
                       </div>
                     </td>
@@ -279,16 +318,21 @@ const VerticalSignature = ({
                 {signatureData.email && (
                   <tr>
                     <td style={{ paddingBottom: signatureData.website ? `${signatureData.spacings?.emailToWebsite || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.typography?.email?.fontSize || signatureData.fontSize?.contact || 12}px`, color: signatureData.typography?.email?.color || 'rgb(102,102,102)', fontFamily: signatureData.typography?.email?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.email}
                           onChange={(value) => handleFieldChange("email", value)}
                           placeholder="adresse@email.com"
                           validation={validateEmail}
-                          displayClassName="text-xs"
-                          inputClassName="text-xs border-0 shadow-none p-1 h-auto"
-                          style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
+                          displayClassName="border-0 shadow-none p-1 h-auto"
+                          inputClassName="border-0 shadow-none p-1 h-auto"
+                          style={{ 
+                            color: signatureData.typography?.email?.color || 'rgb(102,102,102)',
+                            fontSize: `${signatureData.typography?.email?.fontSize || signatureData.fontSize?.contact || 12}px`,
+                            fontFamily: signatureData.typography?.email?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
+                            fontWeight: signatureData.typography?.email?.fontWeight || 'normal'
+                          }}
                         />
                       </div>
                     </td>
@@ -299,16 +343,21 @@ const VerticalSignature = ({
                 {signatureData.website && (
                   <tr>
                     <td style={{ paddingBottom: signatureData.address ? `${signatureData.spacings?.websiteToAddress || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.typography?.website?.fontSize || signatureData.fontSize?.contact || 12}px`, color: signatureData.typography?.website?.color || 'rgb(102,102,102)', fontFamily: signatureData.typography?.website?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.website}
                           onChange={(value) => handleFieldChange("website", value)}
                           placeholder="www.monsite.com"
                           validation={validateUrl}
-                          displayClassName="text-xs"
-                          inputClassName="text-xs border-0 shadow-none p-1 h-auto"
-                          style={{ color: signatureData.colors?.contact || 'rgb(102,102,102)' }}
+                          displayClassName="border-0 shadow-none p-1 h-auto"
+                          inputClassName="border-0 shadow-none p-1 h-auto"
+                          style={{ 
+                            color: signatureData.typography?.website?.color || 'rgb(102,102,102)',
+                            fontSize: `${signatureData.typography?.website?.fontSize || signatureData.fontSize?.contact || 12}px`,
+                            fontFamily: signatureData.typography?.website?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
+                            fontWeight: signatureData.typography?.website?.fontWeight || 'normal'
+                          }}
                         />
                       </div>
                     </td>
@@ -319,15 +368,21 @@ const VerticalSignature = ({
                 {signatureData.address && (
                   <tr>
                     <td style={{ paddingBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', fontSize: `${signatureData.fontSize?.contact || 12}px`, color: signatureData.colors?.contact || 'rgb(102,102,102)', fontFamily: signatureData.fontFamily || 'Arial, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', fontSize: `${signatureData.typography?.address?.fontSize || signatureData.fontSize?.contact || 12}px`, color: signatureData.typography?.address?.color || 'rgb(102,102,102)', fontFamily: signatureData.typography?.address?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif' }}>
                         <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px', marginTop: '1px' }} />
                         <InlineEdit
                           value={signatureData.address}
                           onChange={(value) => handleFieldChange("address", value)}
                           placeholder="Adresse complète"
                           multiline={true}
-                          displayClassName="text-xs text-gray-600"
-                          inputClassName="text-xs text-gray-600 border-0 shadow-none p-1 min-h-[2rem] resize-none"
+                          displayClassName="border-0 shadow-none p-1 min-h-[2rem] resize-none"
+                          inputClassName="border-0 shadow-none p-1 min-h-[2rem] resize-none"
+                          style={{
+                            color: signatureData.typography?.address?.color || 'rgb(102,102,102)',
+                            fontSize: `${signatureData.typography?.address?.fontSize || signatureData.fontSize?.contact || 12}px`,
+                            fontFamily: signatureData.typography?.address?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
+                            fontWeight: signatureData.typography?.address?.fontWeight || 'normal'
+                          }}
                         />
                       </div>
                     </td>
@@ -340,12 +395,15 @@ const VerticalSignature = ({
                     paddingTop: `${signatureData.spacings?.separatorTop || 12}px`, 
                     paddingBottom: `${signatureData.spacings?.separatorBottom || 12}px` 
                   }}>
-                    <hr style={{
-                      border: 'none',
-                      borderTop: `${signatureData.separatorHorizontalWidth || 1}px solid ${signatureData.colors?.separatorHorizontal || '#e0e0e0'}`,
-                      margin: '0',
-                      width: '100%'
-                    }} />
+                    {signatureData.separators?.horizontal?.enabled && (
+                      <hr style={{
+                        border: 'none',
+                        borderTop: `${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || '#e0e0e0'}`,
+                        borderRadius: `${signatureData.separators?.horizontal?.radius || 0}px`,
+                        margin: '0',
+                        width: '100%'
+                      }} />
+                    )}
                   </td>
                 </tr>
                 

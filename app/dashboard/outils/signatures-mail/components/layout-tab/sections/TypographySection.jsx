@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Bold, Italic, Underline } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
 
 const fontOptions = [
   { value: 'Arial, sans-serif', label: 'Arial' },
@@ -17,10 +18,8 @@ const fontOptions = [
 ];
 
 const fieldLabels = {
-  firstName: 'Prénom',
-  lastName: 'Nom',
+  fullName: 'Nom complet',
   position: 'Poste',
-  company: 'Entreprise',
   email: 'Email',
   phone: 'Téléphone',
   mobile: 'Mobile',
@@ -113,6 +112,37 @@ function FieldTypographyControls({ fieldKey, fieldLabel, typography, updateTypog
                 onChange={(e) => updateField('color', e.target.value)}
                 placeholder="#000000"
               />
+            </div>
+          </div>
+          
+          {/* Effets de texte */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Effets</Label>
+            <div className="flex items-center gap-1">
+              <Button
+                variant={fieldTypo.fontWeight === 'bold' ? 'default' : 'outline'}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => updateField('fontWeight', fieldTypo.fontWeight === 'bold' ? 'normal' : 'bold')}
+              >
+                <Bold className="h-3 w-3" />
+              </Button>
+              <Button
+                variant={fieldTypo.fontStyle === 'italic' ? 'default' : 'outline'}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => updateField('fontStyle', fieldTypo.fontStyle === 'italic' ? 'normal' : 'italic')}
+              >
+                <Italic className="h-3 w-3" />
+              </Button>
+              <Button
+                variant={fieldTypo.textDecoration === 'underline' ? 'default' : 'outline'}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => updateField('textDecoration', fieldTypo.textDecoration === 'underline' ? 'none' : 'underline')}
+              >
+                <Underline className="h-3 w-3" />
+              </Button>
             </div>
           </div>
         </div>

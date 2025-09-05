@@ -30,9 +30,9 @@ export function TabSignature() {
           <TabsTrigger value="tab-3" className="group">
             <ScanEye size={16} aria-hidden="true" />
           </TabsTrigger>
-          <TabsTrigger value="tab-4" className="group">
+          {/* <TabsTrigger value="tab-4" className="group">
             <Columns3Cog size={16} aria-hidden="true" />
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
