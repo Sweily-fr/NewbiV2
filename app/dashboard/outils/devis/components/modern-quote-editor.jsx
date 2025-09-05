@@ -164,10 +164,8 @@ export default function ModernQuoteEditor({
 
         {/* Right Panel - Preview */}
         <div className="border-l flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-[#F9F9F9] dark:bg-[#1a1a1a]">
-          <div className="flex-1 overflow-y-auto p-8">
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-4xl mx-auto">
-              <UniversalPreviewPDF data={formData} type="quote" />
-            </div>
+          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-[calc(100vh-64px)]">
+            <UniversalPreviewPDF data={formData} type="quote" />
           </div>
         </div>
       </div>
