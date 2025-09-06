@@ -30,9 +30,5 @@ function CataloguesContent() {
 }
 
 export default function Catalogues() {
-  return (
-    <ProRouteGuard pageName="Catalogues">
-      <CataloguesContent />
-    </ProRouteGuard>
-  );
+  return <CataloguesContent />;
 }
