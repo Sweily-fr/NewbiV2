@@ -239,6 +239,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     step="0.01"
                     min="0"
                     placeholder="0.00"
+                    className="pr-8"
                     {...register("unitPrice", { 
                       required: "Le prix unitaire est requis",
                       min: {
@@ -247,7 +248,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                       }
                     })}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
                     €
                   </span>
                 </div>
