@@ -258,23 +258,34 @@ export default function TableProduct({ handleAddProduct }) {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Utilisation du hook pour récupérer les produits
+  // Utilisation du hook pour récupérer les produits (sans recherche côté serveur)
   const {
-    products,
+    products: allProducts,
     totalItems,
     currentPage,
     totalPages,
     loading,
     error,
     refetch,
-  } = useProducts(pagination.pageIndex + 1, pagination.pageSize, globalFilter);
+  } = useProducts(pagination.pageIndex + 1, pagination.pageSize, ""); // Pas de recherche côté serveur
 
   const { deleteProduct: deleteProductMain } = useDeleteProduct();
 
-  // Refetch quand la pagination ou les filtres changent
+  // Filtrage local des produits
+  const filteredProducts = useMemo(() => {
+    if (!globalFilter) return allProducts;
+    
+    const searchTerm = globalFilter.toLowerCase();
+    return allProducts.filter(product => {
+      const searchableContent = `${product.name} ${product.reference || ""} ${product.category || ""}`.toLowerCase();
+      return searchableContent.includes(searchTerm);
+    });
+  }, [allProducts, globalFilter]);
+
+  // Refetch quand la pagination change (mais pas pour les filtres)
   useEffect(() => {
     refetch();
-  }, [pagination.pageIndex, pagination.pageSize, globalFilter, refetch]);
+  }, [pagination.pageIndex, pagination.pageSize, refetch]);
 
   const [sorting, setSorting] = useState([
     {
@@ -282,14 +293,6 @@ export default function TableProduct({ handleAddProduct }) {
       desc: false,
     },
   ]);
-
-  // Effet pour gérer la recherche globale
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // La recherche est gérée par le hook useProducts
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [globalFilter]);
 
   const handleDeleteRows = async () => {
     const selectedRows = table.getSelectedRowModel().rows;
@@ -330,18 +333,18 @@ export default function TableProduct({ handleAddProduct }) {
   };
 
   const table = useReactTable({
-    data: products,
+    data: filteredProducts,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     enableSortingRemoval: false,
-    manualPagination: true,
-    pageCount: totalPages,
+    manualPagination: false, // Désactiver la pagination manuelle pour le filtrage local
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(), // Ajouter la pagination côté client
     getFacetedUniqueValues: getFacetedUniqueValues(),
     state: {
       sorting,
