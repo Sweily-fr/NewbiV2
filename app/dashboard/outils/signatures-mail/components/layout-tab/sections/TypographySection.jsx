@@ -4,31 +4,51 @@ import React, { useState } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Bold,
+  Italic,
+  Underline,
+  Plus,
+  Minus,
+} from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 
 const fontOptions = [
-  { value: 'Arial, sans-serif', label: 'Arial' },
-  { value: 'Helvetica, sans-serif', label: 'Helvetica' },
-  { value: 'Times New Roman, serif', label: 'Times New Roman' },
-  { value: 'Georgia, serif', label: 'Georgia' },
-  { value: 'Verdana, sans-serif', label: 'Verdana' },
-  { value: 'Calibri, sans-serif', label: 'Calibri' },
-  { value: 'Tahoma, sans-serif', label: 'Tahoma' }
+  { value: "Arial, sans-serif", label: "Arial" },
+  { value: "Helvetica, sans-serif", label: "Helvetica" },
+  { value: "Times New Roman, serif", label: "Times New Roman" },
+  { value: "Georgia, serif", label: "Georgia" },
+  { value: "Verdana, sans-serif", label: "Verdana" },
+  { value: "Calibri, sans-serif", label: "Calibri" },
+  { value: "Tahoma, sans-serif", label: "Tahoma" },
 ];
 
 const fieldLabels = {
-  firstName: 'Prénom',
-  lastName: 'Nom',
-  position: 'Poste',
-  company: 'Entreprise',
-  email: 'Email',
-  phone: 'Téléphone',
-  mobile: 'Mobile',
-  website: 'Site web',
-  address: 'Adresse'
+  fullName: "Nom complet",
+  position: "Poste",
+  email: "Email",
+  phone: "Téléphone",
+  mobile: "Mobile",
+  website: "Site web",
+  address: "Adresse",
 };
 
-function FieldTypographyControls({ fieldKey, fieldLabel, typography, updateTypography }) {
+function FieldTypographyControls({
+  fieldKey,
+  fieldLabel,
+  typography,
+  updateTypography,
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
   const fieldTypo = typography?.[fieldKey] || {};
 
@@ -37,82 +57,169 @@ function FieldTypographyControls({ fieldKey, fieldLabel, typography, updateTypog
       ...typography,
       [fieldKey]: {
         ...fieldTypo,
-        [property]: value
-      }
+        [property]: value,
+      },
     });
   };
 
   return (
-    <div className="border rounded-lg p-3 bg-gray-50/50">
-      <div 
+    <div className="border-b border-[#434343] p-3 bg-gray-50/50 dark:bg-[#212121] dark:border dark:rounded-md">
+      <div
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <Label className="text-sm font-medium">{fieldLabel}</Label>
+        <Label className="text-xs">{fieldLabel}</Label>
         <div className="flex items-center gap-2">
-          <div className="text-xs text-muted-foreground">
-            {fieldTypo.fontFamily?.split(',')[0] || 'Arial'} • {fieldTypo.fontSize || 12}px
+          <div className="text-[10px] text-muted-foreground">
+            {fieldTypo.fontFamily?.split(",")[0] || "Arial"} •{" "}
+            {fieldTypo.fontSize || 12}px
           </div>
-          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          {isExpanded ? (
+            <Minus className="h-3 w-3" />
+          ) : (
+            <Plus className="h-3 w-3" />
+          )}
         </div>
       </div>
-      
+
       {isExpanded && (
         <div className="mt-3 space-y-3">
           {/* Police */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Police</Label>
-            <select
-              value={fieldTypo.fontFamily || 'Arial, sans-serif'}
-              onChange={(e) => updateField('fontFamily', e.target.value)}
-              className="h-8 px-2 text-xs border rounded bg-white w-32"
-            >
-              {fontOptions.map(font => (
-                <option key={font.value} value={font.value}>{font.label}</option>
-              ))}
-            </select>
+            <div>
+              <Select
+                value={fieldTypo.fontFamily || "Arial, sans-serif"}
+                onValueChange={(value) => updateField("fontFamily", value)}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {fontOptions.map((font) => (
+                    <SelectItem key={font.value} value={font.value}>
+                      {font.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          
+
           {/* Taille */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Taille</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-30">
               <Input
-                className="h-8 w-12 px-2 py-1 text-xs"
-                type="number"
+                className="h-8 w-12 px-2 py-1"
+                type="text"
+                inputMode="decimal"
                 value={fieldTypo.fontSize || 12}
-                onChange={(e) => updateField('fontSize', parseInt(e.target.value) || 12)}
-                min={8}
-                max={32}
+                onChange={(e) =>
+                  updateField("fontSize", parseInt(e.target.value) || 12)
+                }
+                onBlur={(e) =>
+                  updateField("fontSize", parseInt(e.target.value) || 12)
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    updateField("fontSize", parseInt(e.target.value) || 12);
+                  }
+                }}
+                aria-label="Taille de la police"
+                placeholder="12"
               />
               <Slider
-                className="w-16"
+                className="grow h-4"
                 value={[fieldTypo.fontSize || 12]}
-                onValueChange={(value) => updateField('fontSize', value[0])}
+                onValueChange={(value) => updateField("fontSize", value[0])}
                 min={8}
                 max={32}
                 step={1}
+                aria-label="Taille police"
               />
               <span className="text-xs text-muted-foreground">px</span>
             </div>
           </div>
-          
+
           {/* Couleur */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Couleur</Label>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={fieldTypo.color || '#000000'}
-                onChange={(e) => updateField('color', e.target.value)}
-                className="w-8 h-8 rounded border cursor-pointer"
+            <div className="flex items-center gap-2 bg-[#efefef] rounded-md px-2 py-2 w-30">
+              <div
+                className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
+                style={{ backgroundColor: fieldTypo.color || "#000000" }}
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "color";
+                  input.value = fieldTypo.color || "#000000";
+                  input.onchange = (e) => {
+                    updateField("color", e.target.value);
+                  };
+                  input.click();
+                }}
+                title="Couleur du texte"
               />
-              <Input
-                className="h-8 w-20 px-2 py-1 text-xs font-mono"
-                value={fieldTypo.color || '#000000'}
-                onChange={(e) => updateField('color', e.target.value)}
-                placeholder="#000000"
-              />
+              <span className="text-xs text-gray-600 font-mono">
+                {(fieldTypo.color || "#000000").toUpperCase()}
+              </span>
+            </div>
+          </div>
+
+          {/* Effets de texte */}
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Effets</Label>
+            <div className="flex items-center gap-0 w-30 border border-input rounded-md">
+              <button
+                type="button"
+                className={`flex-1 h-8 px-2 flex items-center justify-center border-r border-input first:rounded-l-md last:rounded-r-md last:border-r-0 transition-colors ${
+                  fieldTypo.fontWeight === "bold"
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-accent/50"
+                }`}
+                onClick={() =>
+                  updateField(
+                    "fontWeight",
+                    fieldTypo.fontWeight === "bold" ? "normal" : "bold"
+                  )
+                }
+              >
+                <Bold className="h-3 w-3" />
+              </button>
+              <button
+                type="button"
+                className={`flex-1 h-8 px-2 flex items-center justify-center border-r border-input first:rounded-l-md last:rounded-r-md last:border-r-0 transition-colors ${
+                  fieldTypo.fontStyle === "italic"
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-accent/50"
+                }`}
+                onClick={() =>
+                  updateField(
+                    "fontStyle",
+                    fieldTypo.fontStyle === "italic" ? "normal" : "italic"
+                  )
+                }
+              >
+                <Italic className="h-3 w-3" />
+              </button>
+              <button
+                type="button"
+                className={`flex-1 h-8 px-2 flex items-center justify-center border-r border-input first:rounded-l-md last:rounded-r-md last:border-r-0 transition-colors ${
+                  fieldTypo.textDecoration === "underline"
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-accent/50"
+                }`}
+                onClick={() =>
+                  updateField(
+                    "textDecoration",
+                    fieldTypo.textDecoration === "underline"
+                      ? "none"
+                      : "underline"
+                  )
+                }
+              >
+                <Underline className="h-3 w-3" />
+              </button>
             </div>
           </div>
         </div>
@@ -121,9 +228,12 @@ function FieldTypographyControls({ fieldKey, fieldLabel, typography, updateTypog
   );
 }
 
-export default function TypographySection({ signatureData, updateSignatureData }) {
+export default function TypographySection({
+  signatureData,
+  updateSignatureData,
+}) {
   const updateTypography = (newTypography) => {
-    updateSignatureData('typography', newTypography);
+    updateSignatureData("typography", newTypography);
   };
 
   return (

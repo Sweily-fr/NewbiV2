@@ -1,10 +1,14 @@
 "use client";
-import { DataTable } from "@/src/components/data-table";
-import { useQuery, useMutation, useLazyQuery, gql, useApolloClient } from '@apollo/client';
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
-import { toast } from '@/src/components/ui/sonner';
-import { useRouter } from 'next/navigation';
+
+import { Suspense } from "react";
+import { Plus } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import SignatureTable from "./components/signature-table";
+import { useRouter } from "next/navigation";
+import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { gql } from "@apollo/client";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
 const GET_MY_EMAIL_SIGNATURES = gql`
@@ -127,307 +131,72 @@ const CREATE_EMAIL_SIGNATURE = gql`
   }
 `;
 
-export default function SignaturesMail() {
-  const [isMounted, setIsMounted] = useState(false);
+function SignaturesContent() {
   const router = useRouter();
-  const client = useApolloClient();
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const { data, loading, error, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
-    skip: !isMounted,
-    fetchPolicy: "cache-first",
-    notifyOnNetworkStatusChange: true,
-    onCompleted: (data) => {
-      console.log('✅ [QUERY] Signatures récupérées:', data.getMyEmailSignatures?.length);
-    },
-    onError: (error) => {
-      console.error('❌ [QUERY] Erreur:', error);
-    }
-  });
-
-  const signatures = data?.getMyEmailSignatures || [];
-
-  // Mutations
-  const [deleteSignature] = useMutation(DELETE_EMAIL_SIGNATURE, {
-    // Désactiver complètement le rechargement automatique
-    refetchQueries: [],
-    awaitRefetchQueries: false,
-    
-    // Mise à jour optimiste immédiate
-    update: (cache, { data }) => {
-      if (data?.deleteEmailSignature) {
-        // Lire les données actuelles du cache
-        const existingData = cache.readQuery({ query: GET_MY_EMAIL_SIGNATURES });
-        
-        if (existingData?.getMyEmailSignatures) {
-          // Filtrer la signature supprimée (l'ID est passé dans les variables de la mutation)
-          const newSignatures = existingData.getMyEmailSignatures.filter(
-            sig => sig.id !== data.deleteEmailSignature
-          );
-          
-          // Mettre à jour le cache sans déclencher de rechargement
-          cache.writeQuery({
-            query: GET_MY_EMAIL_SIGNATURES,
-            data: { getMyEmailSignatures: newSignatures }
-          });
-        }
-      }
-    },
-    onCompleted: () => {
-      toast.success('Signature supprimée avec succès');
-    },
-    onError: (error) => {
-      console.error('Erreur lors de la suppression:', error);
-      toast.error('Erreur lors de la suppression de la signature');
-    }
-  });
-
-  const [setDefaultSignature, { loading: settingDefault }] = useMutation(SET_DEFAULT_EMAIL_SIGNATURE, {
-    refetchQueries: ['GetMyEmailSignatures'],
-    onCompleted: (data) => {
-      toast.success('Signature définie comme défaut');
-    },
-    onError: (error) => {
-      console.error('❌ Erreur définition défaut:', error);
-      toast.error('Erreur lors de la définition par défaut');
-    }
-  });
-
-  const [getSignatureForEdit, { loading: loadingSignature }] = useLazyQuery(GET_EMAIL_SIGNATURE, {
-    onCompleted: (data) => {
-      console.log('📊 [EDIT] Données récupérées:', data);
-      console.log('📊 [EDIT] Signature complète:', data?.getEmailSignature);
-      
-      if (data?.getEmailSignature) {
-        const signatureData = data.getEmailSignature;
-        console.log('✅ [EDIT] Signature trouvée:', {
-          id: signatureData.id,
-          nom: signatureData.signatureName,
-          firstName: signatureData.firstName,
-          lastName: signatureData.lastName,
-          photo: signatureData.photo,
-          logo: signatureData.logo,
-          primaryColor: signatureData.primaryColor
-        });
-        
-        // Stocker les données dans localStorage pour l'éditeur
-        localStorage.setItem('editingSignature', JSON.stringify(signatureData));
-        console.log('💾 [EDIT] Données sauvegardées dans localStorage');
-        
-        // Rediriger vers l'éditeur
-        console.log("🔀 [EDIT] Redirection vers l'éditeur...");
-        router.push('/dashboard/outils/signatures-mail/new?edit=true');
-      } else {
-        console.error('❌ [EDIT] Aucune signature trouvée dans la réponse');
-        toast.error('Signature introuvable');
-      }
-    },
-    onError: (error) => {
-      console.error('❌ [EDIT] Erreur lors de la récupération:', error);
-      console.error('❌ [EDIT] Détails de l’erreur:', error.message, error.graphQLErrors);
-      toast.error('Erreur lors de la récupération de la signature');
-    }
-  });
-
-  const [createSignature, { loading: duplicating }] = useMutation(CREATE_EMAIL_SIGNATURE, {
-    refetchQueries: ['GetMyEmailSignatures'],
-    onCompleted: (data) => {
-      toast.success('Signature dupliquée avec succès');
-    },
-    onError: (error) => {
-      console.error('❌ Erreur duplication:', error);
-      toast.error('Erreur lors de la duplication de la signature');
-    }
-  });
-
-  // Transformer les données des signatures pour le format DataTable
-  const transformedData = useMemo(() => {
-    console.log('🔄 [FRONTEND] Recalcul des données transformées');
-    return signatures.map(signature => ({
-      id: signature.id,
-      header: signature.signatureName,
-      type: `${signature.firstName || ''} ${signature.lastName || ''}`.trim() || 'Sans nom',
-      status: signature.isDefault ? 'Par défaut' : 'Active',
-      target: signature.position || 'Non spécifié',
-      limit: signature.email || 'Non spécifié',
-      reviewer: signature.companyName || 'Non spécifié',
-    }));
-  }, [signatures]);
-
-  console.log('🔄 [FRONTEND] Données transformées pour DataTable:', transformedData.length, 'éléments');
-
-  // Handlers pour les actions
-  const handleEdit = async (rowData) => {
-    console.log('📝 [ACTION] Édition de la signature:', rowData.id);
-    console.log('📊 [EDIT] Données de la ligne:', rowData);
-    
-    try {
-      console.log('🔍 [EDIT] Récupération de la signature complète...');
-      const result = await getSignatureForEdit({ variables: { id: rowData.id } });
-      console.log('📊 [EDIT] Résultat de la query:', result);
-    } catch (error) {
-      console.error('❌ [EDIT] Erreur lors de l\'ouverture de l\'éditeur:', error);
-      console.error('❌ [EDIT] Détails:', error.message, error.graphQLErrors);
-    }
+  const handleCreateSignature = () => {
+    router.push("/dashboard/outils/signatures-mail/new");
   };
-
-  const handleDelete = async (rowData) => {
-    const signatureId = rowData?.id || rowData?.original?.id;
-    
-    if (!signatureId) {
-      toast.error('Erreur: Impossible de trouver l\'identifiant de la signature');
-      return;
-    }
-    
-    try {
-      await deleteSignature({
-        variables: { id: signatureId },
-        optimisticResponse: {
-          __typename: 'Mutation',
-          deleteEmailSignature: signatureId
-        },
-        update: (cache) => {
-          // Mise à jour immédiate du cache
-          const existingData = cache.readQuery({ query: GET_MY_EMAIL_SIGNATURES });
-          
-          if (existingData?.getMyEmailSignatures) {
-            const newSignatures = existingData.getMyEmailSignatures.filter(
-              sig => sig.id !== signatureId
-            );
-            
-            cache.writeQuery({
-              query: GET_MY_EMAIL_SIGNATURES,
-              data: { getMyEmailSignatures: newSignatures }
-            });
-          }
-        }
-      });
-      
-      toast.success('Signature supprimée avec succès');
-    } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
-      toast.error('Erreur lors de la suppression de la signature');
-    }
-  };
-
-  const handleDuplicate = async (rowData) => {
-    console.log('📋 [ACTION] Duplication de la signature:', rowData.id);
-    try {
-      // Récupérer d'abord la signature complète
-      const { data } = await getSignatureForEdit({ variables: { id: rowData.id } });
-      if (data?.getEmailSignature) {
-        const originalSignature = data.getEmailSignature;
-        
-        // Préparer les données pour la duplication (tous les champs disponibles)
-        const duplicateData = {
-          signatureName: `${originalSignature.signatureName} (Copie)`,
-          isDefault: false, // La copie ne peut pas être défaut
-          firstName: originalSignature.firstName,
-          lastName: originalSignature.lastName,
-          position: originalSignature.position,
-          email: originalSignature.email,
-          phone: originalSignature.phone,
-          mobile: originalSignature.mobile,
-          website: originalSignature.website,
-          address: originalSignature.address,
-          companyName: originalSignature.companyName,
-          showPhoneIcon: originalSignature.showPhoneIcon,
-          showMobileIcon: originalSignature.showMobileIcon,
-          showEmailIcon: originalSignature.showEmailIcon,
-          showAddressIcon: originalSignature.showAddressIcon,
-          showWebsiteIcon: originalSignature.showWebsiteIcon,
-          primaryColor: originalSignature.primaryColor,
-          nameSpacing: originalSignature.nameSpacing,
-          nameAlignment: originalSignature.nameAlignment,
-          layout: originalSignature.layout,
-          photo: originalSignature.photo,
-          photoKey: originalSignature.photoKey,
-          logo: originalSignature.logo,
-          logoKey: originalSignature.logoKey,
-          imageSize: originalSignature.imageSize,
-          imageShape: originalSignature.imageShape,
-          logoSize: originalSignature.logoSize,
-          separatorVerticalWidth: originalSignature.separatorVerticalWidth,
-          separatorHorizontalWidth: originalSignature.separatorHorizontalWidth,
-          fontFamily: originalSignature.fontFamily
-        };
-        
-        // Filtrer les valeurs null/undefined
-        const filteredData = Object.fromEntries(
-          Object.entries(duplicateData).filter(([_, value]) => 
-            value !== null && value !== undefined && value !== ''
-          )
-        );
-        
-        await createSignature({ variables: { input: filteredData } });
-      }
-    } catch (error) {
-      console.error('Erreur lors de la duplication:', error);
-      toast.error('Erreur lors de la duplication de la signature');
-    }
-  };
-
-  const handleToggleFavorite = async (rowData) => {
-    const isFavorite = rowData.status === 'Par défaut';
-    console.log(`⭐ [ACTION] ${isFavorite ? 'Retirer' : 'Définir'} comme défaut:`, rowData.id);
-    
-    if (!isFavorite) {
-      try {
-        await setDefaultSignature({ variables: { id: rowData.id } });
-      } catch (error) {
-        console.error('Erreur lors de la définition par défaut:', error);
-      }
-    } else {
-      toast.info('Cette signature est déjà définie comme défaut');
-    }
-  };
-
-  if (!isMounted) {
-    return null;
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        <span>Chargement des signatures...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center p-8 text-red-600">
-        <span>Erreur lors du chargement des signatures</span>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between p-6">
-        <div>
-          <h1 className="text-xl font-medium mb-2">
-            Gestion des Signatures Mail
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Gérez vos signatures mail et suivez les modifications
-          </p>
+    <CompanyInfoGuard>
+      <div className="space-y-6 p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-medium mb-2">Signatures Mail</h1>
+            <p className="text-muted-foreground text-sm">
+              Gérez vos signatures mail et suivez les modifications
+            </p>
+          </div>
+          <Button
+            onClick={handleCreateSignature}
+            className="gap-2 font-normal cursor-pointer"
+          >
+            Créer une signature
+          </Button>
+        </div>
+
+        {/* Table */}
+        <Suspense fallback={<SignatureTableSkeleton />}>
+          <SignatureTable />
+        </Suspense>
+      </div>
+    </CompanyInfoGuard>
+  );
+}
+
+export default function SignaturesPage() {
+  return (
+    <ProRouteGuard pageName="Signatures Mail">
+      <SignaturesContent />
+    </ProRouteGuard>
+  );
+}
+
+function SignatureTableSkeleton() {
+  return (
+    <div className="space-y-4 p-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-10 w-[300px]" />
+        <div className="flex gap-2">
+          <Skeleton className="h-10 w-[100px]" />
+          <Skeleton className="h-10 w-[100px]" />
         </div>
       </div>
-      <div className="w-full">
-        <DataTable
-          data={transformedData}
-          textButton="Ajouter une signature"
-          link="/dashboard/outils/signatures-mail/new"
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onDuplicate={handleDuplicate}
-          onToggleFavorite={handleToggleFavorite}
-        />
+      <div className="rounded-md border">
+        <div className="p-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center space-x-4 py-4">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-4 w-[150px]" />
+              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="h-4 w-[100px]" />
+              <Skeleton className="h-4 w-[80px]" />
+              <Skeleton className="h-4 w-[120px]" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

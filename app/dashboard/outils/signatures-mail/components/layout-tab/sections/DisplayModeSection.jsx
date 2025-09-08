@@ -14,7 +14,10 @@ import {
   AlignRight,
 } from "lucide-react";
 
-export default function DisplayModeSection({ signatureData, updateSignatureData }) {
+export default function DisplayModeSection({
+  signatureData,
+  updateSignatureData,
+}) {
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-sm font-medium">Mode d'affichage</h2>
@@ -28,27 +31,12 @@ export default function DisplayModeSection({ signatureData, updateSignatureData 
             ]}
             size="sm"
             className="w-30"
-            value={signatureData.layout}
-            onValueChange={(value) => updateSignatureData('layout', value)}
+            value={signatureData.template}
+            onValueChange={(value) => updateSignatureData("template", value)}
           />
         </div>
-        
-        <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">Disposition</Label>
-          <AlignmentSelector
-            items={[
-              { value: "left", icon: Columns2 },
-              { value: "center", icon: BetweenHorizontalStart },
-              { value: "right", icon: Table2 },
-            ]}
-            size="sm"
-            className="w-30"
-            value={signatureData.disposition}
-            onValueChange={(value) => updateSignatureData('disposition', value)}
-          />
-        </div>
-        
-        <div className="flex items-center justify-between">
+
+        {/* <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Alignement nom</Label>
           <AlignmentSelector
             items={[
@@ -61,7 +49,7 @@ export default function DisplayModeSection({ signatureData, updateSignatureData 
             value={signatureData.nameAlignment}
             onValueChange={(value) => updateSignatureData('nameAlignment', value)}
           />
-        </div>
+        </div> */}
       </div>
     </div>
   );

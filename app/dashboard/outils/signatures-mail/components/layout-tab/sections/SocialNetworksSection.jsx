@@ -5,27 +5,37 @@ import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
 import { Switch } from "@/src/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 
-export default function SocialNetworksSection({ signatureData, updateSignatureData }) {
+export default function SocialNetworksSection({
+  signatureData,
+  updateSignatureData,
+}) {
   // Gestion de la taille des logos sociaux
   const handleSocialSizeChange = (value) => {
     const numValue = parseInt(value) || 24;
-    updateSignatureData('socialSize', Math.max(16, Math.min(48, numValue))); // Entre 16 et 48px
+    updateSignatureData("socialSize", Math.max(16, Math.min(48, numValue))); // Entre 16 et 48px
   };
 
   // Gestion des liens sociaux
   const handleSocialLinkChange = (platform, value) => {
-    updateSignatureData('socialLinks', {
+    updateSignatureData("socialLinks", {
       ...signatureData.socialLinks,
-      [platform]: value
+      [platform]: value,
     });
   };
 
   // Gestion du background social
   const handleSocialBackgroundChange = (key, value) => {
-    updateSignatureData('socialBackground', {
+    updateSignatureData("socialBackground", {
       ...signatureData.socialBackground,
-      [key]: value
+      [key]: value,
     });
   };
 
@@ -38,43 +48,49 @@ export default function SocialNetworksSection({ signatureData, updateSignatureDa
           <Label className="text-xs text-muted-foreground">LinkedIn</Label>
           <div className="flex items-center gap-3 w-30">
             <Input
-              className="h-8 w-full px-2 py-1"
+              className="h-8 w-full px-2 py-1 text-xs placeholder:text-xs"
               type="url"
-              value={signatureData.socialLinks?.linkedin || ''}
-              onChange={(e) => handleSocialLinkChange('linkedin', e.target.value)}
-              placeholder="https://linkedin.com/in/..."
+              value={signatureData.socialLinks?.linkedin || ""}
+              onChange={(e) =>
+                handleSocialLinkChange("linkedin", e.target.value)
+              }
+              placeholder="linkedin.com/in/..."
             />
           </div>
         </div>
-        
+
         {/* Facebook */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Facebook</Label>
           <div className="flex items-center gap-3 w-30">
             <Input
-              className="h-8 w-full px-2 py-1"
+              className="h-8 w-full px-2 py-1 text-xs placeholder:text-xs"
               type="url"
-              value={signatureData.socialLinks?.facebook || ''}
-              onChange={(e) => handleSocialLinkChange('facebook', e.target.value)}
-              placeholder="https://facebook.com/..."
+              value={signatureData.socialLinks?.facebook || ""}
+              onChange={(e) =>
+                handleSocialLinkChange("facebook", e.target.value)
+              }
+              placeholder="facebook.com/..."
             />
           </div>
         </div>
-        
+
         {/* Twitter/X */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Twitter/X</Label>
           <div className="flex items-center gap-3 w-30">
             <Input
-              className="h-8 w-full px-2 py-1"
+              className="h-8 w-full px-2 py-1 text-xs placeholder:text-xs"
               type="url"
-              value={signatureData.socialLinks?.twitter || ''}
-              onChange={(e) => handleSocialLinkChange('twitter', e.target.value)}
-              placeholder="https://x.com/..."
+              value={signatureData.socialLinks?.twitter || ""}
+              onChange={(e) =>
+                handleSocialLinkChange("twitter", e.target.value)
+              }
+              placeholder="x.com/..."
             />
           </div>
         </div>
-        
+
         {/* Instagram */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Instagram</Label>
@@ -82,13 +98,15 @@ export default function SocialNetworksSection({ signatureData, updateSignatureDa
             <Input
               className="h-8 w-full px-2 py-1"
               type="url"
-              value={signatureData.socialLinks?.instagram || ''}
-              onChange={(e) => handleSocialLinkChange('instagram', e.target.value)}
-              placeholder="https://instagram.com/..."
+              value={signatureData.socialLinks?.instagram || ""}
+              onChange={(e) =>
+                handleSocialLinkChange("instagram", e.target.value)
+              }
+              placeholder="instagram.com/..."
             />
           </div>
         </div>
-        
+
         {/* Taille des logos sociaux */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Taille logos</Label>
@@ -120,49 +138,76 @@ export default function SocialNetworksSection({ signatureData, updateSignatureDa
             <span className="text-xs text-muted-foreground">px</span>
           </div>
         </div>
-        
+
         {/* Background social */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Arrière-plan</Label>
-          <div className="flex items-center gap-3 w-30">
+          <div className="flex items-center gap-3">
             <Switch
+              className="scale-75"
               checked={signatureData.socialBackground?.enabled || false}
-              onCheckedChange={(checked) => handleSocialBackgroundChange('enabled', checked)}
+              onCheckedChange={(checked) =>
+                handleSocialBackgroundChange("enabled", checked)
+              }
             />
           </div>
         </div>
-        
+
         {signatureData.socialBackground?.enabled && (
           <>
             {/* Couleur background */}
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Couleur fond</Label>
-              <div className="flex items-center gap-3 w-30">
-                <input
-                  type="color"
-                  value={signatureData.socialBackground?.color || "#f3f4f6"}
-                  onChange={(e) => handleSocialBackgroundChange('color', e.target.value)}
-                  className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+              <Label className="text-xs text-muted-foreground">
+                Couleur fond
+              </Label>
+              <div className="flex items-center gap-2 bg-[#efefef] rounded-md px-2 py-2 w-30">
+                <div
+                  className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
+                  style={{
+                    backgroundColor:
+                      signatureData.socialBackground?.color || "#f3f4f6",
+                  }}
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "color";
+                    input.value =
+                      signatureData.socialBackground?.color || "#f3f4f6";
+                    input.onchange = (e) => {
+                      handleSocialBackgroundChange("color", e.target.value);
+                    };
+                    input.click();
+                  }}
                   title="Couleur de l'arrière-plan social"
                 />
-                <span className="text-xs text-muted-foreground w-16 text-right">
-                  {signatureData.socialBackground?.color || "#f3f4f6"}
+                <span className="text-xs text-gray-600 font-mono">
+                  {(
+                    signatureData.socialBackground?.color || "#f3f4f6"
+                  ).toUpperCase()}
                 </span>
               </div>
             </div>
-            
+
             {/* Forme background */}
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Forme fond</Label>
-              <div className="flex items-center gap-3 w-30">
-                <select
+              <Label className="text-xs text-muted-foreground">
+                Forme fond
+              </Label>
+              <div className="flex items-center gap-3">
+                <Select
+                  className="w-full"
                   value={signatureData.socialBackground?.shape || "round"}
-                  onChange={(e) => handleSocialBackgroundChange('shape', e.target.value)}
-                  className="h-8 px-2 text-xs border rounded bg-white"
+                  onValueChange={(value) =>
+                    handleSocialBackgroundChange("shape", value)
+                  }
                 >
-                  <option value="round">Rond</option>
-                  <option value="square">Carré</option>
-                </select>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="round">Rond</SelectItem>
+                    <SelectItem value="square">Carré</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </>

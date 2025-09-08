@@ -35,12 +35,15 @@ export function SignatureSidebar({
   ...props
 }) {
   return (
-    <Sidebar side="right" collapsible="none" className="w-80 h-screen" {...props}>
-      <SidebarHeader className="p-4 flex-shrink-0">
+    <Sidebar
+      side="right"
+      collapsible="none"
+      className="w-80 h-screen"
+      {...props}
+    >
+      <SidebarContent className="p-0 h-full overflow-hidden">
         <TabSignature />
-      </SidebarHeader>
-
-      <SidebarContent className="p-4 space-y-4 overflow-y-auto flex-1 h-0"></SidebarContent>
+      </SidebarContent>
     </Sidebar>
   );
 }

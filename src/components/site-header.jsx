@@ -13,6 +13,27 @@ import {
 } from "@/src/components/ui/breadcrumb";
 import { usePathname } from "next/navigation";
 import { ModeToggle } from "@/src/components/ui/mode-toggle";
+import { Save } from "lucide-react";
+
+// Composant bouton de sauvegarde pour les signatures
+const SignatureSaveButton = () => {
+  const pathname = usePathname();
+  const isSignaturePage = pathname?.includes('/signatures-mail');
+  
+  if (!isSignaturePage) return null;
+  
+  const handleSave = () => {
+    // Déclencher l'événement de sauvegarde global
+    window.dispatchEvent(new CustomEvent('signature-save'));
+  };
+  
+  return (
+    <Button variant="outline" size="icon" className="h-7 w-7" onClick={handleSave}>
+      <Save className="h-[1rem] w-[1rem]" />
+      <span className="sr-only">Sauvegarder la signature</span>
+    </Button>
+  );
+};
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -67,6 +88,7 @@ export function SiteHeader() {
           <BreadcrumbList>{pathname !== "/" && breadcrumbs}</BreadcrumbList>
         </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
+          <SignatureSaveButton />
           <ModeToggle />
           {/* <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a

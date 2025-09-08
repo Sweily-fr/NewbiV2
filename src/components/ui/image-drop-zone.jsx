@@ -4,7 +4,6 @@ import React, { useState, useRef } from "react";
 import { Upload, X, User, Building } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 
-
 /**
  * Composant de zone de drop pour l'upload d'images
  * Supporte le drag & drop et la sélection de fichiers
@@ -28,8 +27,8 @@ export function ImageDropZone({
   const [localPreview, setLocalPreview] = useState(null);
 
   const sizeClasses = {
-    sm: "w-12 h-12",
-    md: "w-16 h-16", 
+    sm: type === "logo" ? "w-34 h-20" : "w-12 h-12",
+    md: "w-16 h-16",
     lg: "w-24 h-24",
   };
 
@@ -40,7 +39,7 @@ export function ImageDropZone({
   };
 
   const validateFile = (file) => {
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       return "Le fichier doit être une image";
     }
     if (file.size > maxSize) {
@@ -76,7 +75,7 @@ export function ImageDropZone({
     }
 
     setIsLoading(true);
-    
+
     // Simuler le traitement du fichier
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -103,11 +102,11 @@ export function ImageDropZone({
 
     setError("");
     setIsLoading(true);
-    
+
     // Créer une preview locale temporaire
     const previewUrl = URL.createObjectURL(file);
     setLocalPreview(previewUrl);
-    
+
     // Appeler la fonction d'upload
     try {
       await onImageChange?.(file);
@@ -116,9 +115,9 @@ export function ImageDropZone({
       setLocalPreview(null);
     } catch (error) {
       // En cas d'erreur, garder la preview locale
-      console.error('Erreur upload:', error);
+      console.error("Erreur upload:", error);
     }
-    
+
     setIsLoading(false);
   };
 
@@ -128,13 +127,13 @@ export function ImageDropZone({
 
   const handleRemoveImage = (e) => {
     e.stopPropagation();
-    
+
     // Nettoyer la preview locale si elle existe
     if (localPreview) {
       URL.revokeObjectURL(localPreview);
       setLocalPreview(null);
     }
-    
+
     // Supprimer l'image
     onImageChange?.(null);
     setError("");
@@ -144,12 +143,13 @@ export function ImageDropZone({
   // 1. Si currentImage existe (URL Cloudflare), l'utiliser en priorité
   // 2. Sinon, utiliser localPreview (preview locale temporaire pendant upload)
   const displayImage = currentImage || localPreview;
-  
+
   // Vérifier si l'image est une URL Cloudflare R2
-  const isCloudflareUrl = displayImage && 
-    (typeof displayImage === 'string') && 
-    (displayImage.startsWith('http') || displayImage.startsWith('https'));
-  
+  const isCloudflareUrl =
+    displayImage &&
+    typeof displayImage === "string" &&
+    (displayImage.startsWith("http") || displayImage.startsWith("https"));
+
   // Nettoyer la preview locale quand le composant se démonte
   React.useEffect(() => {
     return () => {
@@ -165,14 +165,15 @@ export function ImageDropZone({
       <div
         className={`
           ${sizeClasses[size]}
-          border-2 border-dashed rounded-lg
+          border border-dashed rounded-lg
           flex items-center justify-center
           cursor-pointer transition-all duration-200
-          ${isDragOver 
-            ? "border-blue-500 bg-blue-50" 
-            : displayImage 
-              ? "border-gray-200 bg-gray-50" 
-              : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+          ${
+            isDragOver
+              ? "border-blue-500 bg-blue-50"
+              : displayImage
+                ? "border-gray-200 bg-gray-50"
+                : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
           }
           ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
         `}
@@ -196,15 +197,17 @@ export function ImageDropZone({
             <img
               src={displayImage}
               alt="Preview"
-              className={`w-full h-full ${isCloudflareUrl ? 'object-contain' : 'object-cover'} rounded-lg`}
+              className={`w-full h-full ${isCloudflareUrl ? "object-contain" : "object-cover"} rounded-lg`}
               onError={(e) => {
-                console.error('Erreur de chargement de l\'image:', displayImage);
+                console.error("Erreur de chargement de l'image:", displayImage);
                 // Éviter la boucle infinie en masquant l'image défaillante
-                e.target.style.display = 'none';
+                e.target.style.display = "none";
                 // Afficher un message d'erreur à la place
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'flex items-center justify-center w-full h-full bg-gray-100 rounded-lg';
-                errorDiv.innerHTML = '<span class="text-gray-400 text-xs">Image non disponible</span>';
+                const errorDiv = document.createElement("div");
+                errorDiv.className =
+                  "flex items-center justify-center w-full h-full bg-gray-100 rounded-lg";
+                errorDiv.innerHTML =
+                  '<span class="text-gray-400 text-xs">Image non disponible</span>';
                 e.target.parentNode.appendChild(errorDiv);
               }}
             />
@@ -224,9 +227,9 @@ export function ImageDropZone({
             ) : (
               <>
                 <IconComponent className={iconSizes[size]} />
-                {size !== "sm" && (
+                {/* {size !== "sm" && (
                   <Upload className={`${iconSizes[size]} mt-1`} />
-                )}
+                )} */}
               </>
             )}
           </div>

@@ -7,11 +7,6 @@ import { useSignatureData } from "@/src/hooks/use-signature-data";
 // Import section components
 import DisplayModeSection from "./sections/DisplayModeSection";
 import ColumnWidthSection from "./sections/ColumnWidthSection";
-import ProfileImageSection from "./sections/ProfileImageSection";
-import CompanyLogoSection from "./sections/CompanyLogoSection";
-import SocialNetworksSection from "./sections/SocialNetworksSection";
-import TypographySection from "./sections/TypographySection";
-import ColorsSection from "./sections/ColorsSection";
 import StructureSection from "./sections/StructureSection";
 import SpacingSection from "./sections/SpacingSection";
 import SaveSection from "./sections/SaveSection";
@@ -20,62 +15,32 @@ export default function ContentTab() {
   const { signatureData, updateSignatureData } = useSignatureData();
 
   return (
-    <div className="mt-4 flex flex-col gap-10">
-      <DisplayModeSection 
-        signatureData={signatureData} 
-        updateSignatureData={updateSignatureData} 
+    <div className="flex flex-col gap-6">
+      <DisplayModeSection
+        signatureData={signatureData}
+        updateSignatureData={updateSignatureData}
       />
       <Separator />
-      
-      <ColumnWidthSection 
-        signatureData={signatureData} 
-        updateSignatureData={updateSignatureData} 
+
+      <ColumnWidthSection
+        signatureData={signatureData}
+        updateSignatureData={updateSignatureData}
       />
       <Separator />
-      
-      <ProfileImageSection 
-        signatureData={signatureData} 
-        updateSignatureData={updateSignatureData} 
+
+      <StructureSection
+        signatureData={signatureData}
+        updateSignatureData={updateSignatureData}
       />
       <Separator />
-      
-      <CompanyLogoSection 
-        signatureData={signatureData} 
-        updateSignatureData={updateSignatureData} 
+
+      <SpacingSection
+        signatureData={signatureData}
+        updateSignatureData={updateSignatureData}
       />
-      <Separator />
-      
-      <SocialNetworksSection 
-        signatureData={signatureData} 
-        updateSignatureData={updateSignatureData} 
-      />
-      <Separator />
-      
-      <TypographySection 
-        signatureData={signatureData} 
-        updateSignatureData={updateSignatureData} 
-      />
-      <Separator />
-      
-      <ColorsSection 
-        signatureData={signatureData} 
-        updateSignatureData={updateSignatureData} 
-      />
-      <Separator />
-      
-      <StructureSection 
-        signatureData={signatureData} 
-        updateSignatureData={updateSignatureData} 
-      />
-      <Separator />
-      
-      <SpacingSection 
-        signatureData={signatureData} 
-        updateSignatureData={updateSignatureData} 
-      />
-      <Separator />
-      
-      <SaveSection />
+      {/* <Separator /> */}
+
+      {/* <SaveSection /> */}
     </div>
   );
 }
@@ -127,7 +92,7 @@ export default function ContentTab() {
 //                           ←
 //                         </Button>
 //                       </div>
-                      
+
 //                       {/* Alignement de la cellule */}
 //                       <div className="space-y-1">
 //                         <Label className="text-xs text-muted-foreground">Alignement</Label>
@@ -158,7 +123,7 @@ export default function ContentTab() {
 //                           </Button>
 //                         </div>
 //                       </div>
-                      
+
 //                       {/* Dimensions de la cellule */}
 //                       <div className="space-y-2">
 //                         <Label className="text-xs text-muted-foreground">Dimensions</Label>
@@ -203,7 +168,7 @@ export default function ContentTab() {
 //                       <div className="text-xs font-medium text-center">
 //                         Cellule {cell.row + 1}-{cell.col + 1}
 //                       </div>
-                      
+
 //                       {/* Ajouter un élément */}
 //                       <div className="flex gap-1">
 //                         <Button
@@ -258,7 +223,7 @@ export default function ContentTab() {
 //                                   ×
 //                                 </Button>
 //                               </div>
-                              
+
 //                               {/* Contrôles des marges */}
 //                               <div className="space-y-2">
 //                                 <Label className="text-xs text-muted-foreground">Marges (px)</Label>
@@ -326,7 +291,7 @@ export default function ContentTab() {
 //           <Separator />
 //         </>
 //       )}
-      
+
 //       <div className="flex flex-col gap-3">
 //         <h2 className="text-sm font-medium">Photo de profil</h2>
 //         <div className="flex flex-col gap-3 ml-4">
@@ -336,9 +301,9 @@ export default function ContentTab() {
 //             <div className="flex items-center gap-3 w-30">
 //               {signatureData.photo ? (
 //                 <div className="flex items-center gap-3 w-30">
-//                   <img 
-//                     src={signatureData.photo} 
-//                     alt="Photo" 
+//                   <img
+//                     src={signatureData.photo}
+//                     alt="Photo"
 //                     className="w-8 h-8 object-cover rounded border"
 //                     style={{
 //                       borderRadius: signatureData.imageShape === 'square' ? '4px' : '50%'
@@ -399,7 +364,7 @@ export default function ContentTab() {
 //               )}
 //             </div>
 //           </div>
-          
+
 //           {/* Taille de la photo */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Taille</Label>
@@ -430,7 +395,7 @@ export default function ContentTab() {
 //               />
 //             </div>
 //           </div>
-          
+
 //           {/* Forme de la photo */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Forme</Label>
@@ -445,7 +410,7 @@ export default function ContentTab() {
 //               onValueChange={handleImageShapeChange}
 //             />
 //           </div>
-          
+
 //           {/* Alignement de la photo */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Alignement</Label>
@@ -464,47 +429,47 @@ export default function ContentTab() {
 //         </div>
 //       </div>
 //       <Separator />
-//       <ProfileImageSection 
-//         signatureData={signatureData} 
-//         updateSignatureData={updateSignatureData} 
+//       <ProfileImageSection
+//         signatureData={signatureData}
+//         updateSignatureData={updateSignatureData}
 //       />
 //       <Separator />
-//       <CompanyLogoSection 
-//         signatureData={signatureData} 
-//         updateSignatureData={updateSignatureData} 
+//       <CompanyLogoSection
+//         signatureData={signatureData}
+//         updateSignatureData={updateSignatureData}
 //       />
 //       <Separator />
-      
-//       <SocialNetworksSection 
-//         signatureData={signatureData} 
-//         updateSignatureData={updateSignatureData} 
+
+//       <SocialNetworksSection
+//         signatureData={signatureData}
+//         updateSignatureData={updateSignatureData}
 //       />
 //       <Separator />
-      
-//       <TypographySection 
-//         signatureData={signatureData} 
-//         updateSignatureData={updateSignatureData} 
+
+//       <TypographySection
+//         signatureData={signatureData}
+//         updateSignatureData={updateSignatureData}
 //       />
 //       <Separator />
-      
-//       <ColorsSection 
-//         signatureData={signatureData} 
-//         updateSignatureData={updateSignatureData} 
+
+//       <ColorsSection
+//         signatureData={signatureData}
+//         updateSignatureData={updateSignatureData}
 //       />
 //       <Separator />
-      
-//       <StructureSection 
-//         signatureData={signatureData} 
-//         updateSignatureData={updateSignatureData} 
+
+//       <StructureSection
+//         signatureData={signatureData}
+//         updateSignatureData={updateSignatureData}
 //       />
 //       <Separator />
-      
-//       <SpacingSection 
-//         signatureData={signatureData} 
-//         updateSignatureData={updateSignatureData} 
+
+//       <SpacingSection
+//         signatureData={signatureData}
+//         updateSignatureData={updateSignatureData}
 //       />
 //       <Separator />
-      
+
 //       <SaveSection />
 //     </div>
 //   );
@@ -537,7 +502,7 @@ export default function ContentTab() {
 //               />
 //             </div>
 //           </div>
-          
+
 //           {/* Espacement sous l'entreprise - disponible pour les deux layouts */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">
@@ -572,7 +537,7 @@ export default function ContentTab() {
 //               />
 //             </div>
 //           </div>
-          
+
 //           {/* Espacement entre téléphone et mobile - disponible pour les deux layouts */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">
@@ -607,7 +572,7 @@ export default function ContentTab() {
 //               />
 //             </div>
 //           </div>
-          
+
 //           {/* Espacement entre mobile et email - disponible pour les deux layouts */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">
@@ -642,7 +607,7 @@ export default function ContentTab() {
 //               />
 //             </div>
 //           </div>
-          
+
 //           {/* Espacement entre email et site web - disponible pour les deux layouts */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Email → Site web</Label>
@@ -675,7 +640,7 @@ export default function ContentTab() {
 //               />
 //             </div>
 //           </div>
-          
+
 //           {/* Espacement entre site web et adresse - disponible pour les deux layouts */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Site web → Adresse</Label>
@@ -708,7 +673,7 @@ export default function ContentTab() {
 //               />
 //             </div>
 //           </div>
-          
+
 //           {/* Espacement entre les contacts - disponible pour les deux layouts */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Entre contacts</Label>
@@ -741,7 +706,7 @@ export default function ContentTab() {
 //               />
 //             </div>
 //           </div>
-          
+
 //           {/* Espacement au-dessus du séparateur */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Avant séparateur</Label>
@@ -769,7 +734,7 @@ export default function ContentTab() {
 //               />
 //             </div>
 //           </div>
-          
+
 //           {/* Espacement sous le séparateur */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">
@@ -799,16 +764,16 @@ export default function ContentTab() {
 //               />
 //             </div>
 //           </div>
-          
+
 //         </div>
 //         )}
 //       </div>
-      
+
 //       <Separator />
 //       <div className="flex flex-col gap-3">
 //         <h2 className="text-sm font-medium">Couleurs</h2>
 //         <div className="flex flex-col gap-3 ml-4">
-          
+
 //           {/* Couleur du nom */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Nom et prénom</Label>
@@ -825,7 +790,7 @@ export default function ContentTab() {
 //               </span>
 //             </div>
 //           </div>
-          
+
 //           {/* Couleur du poste */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Poste</Label>
@@ -842,7 +807,7 @@ export default function ContentTab() {
 //               </span>
 //             </div>
 //           </div>
-          
+
 //           {/* Couleur de l'entreprise */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Entreprise</Label>
@@ -859,7 +824,7 @@ export default function ContentTab() {
 //               </span>
 //             </div>
 //           </div>
-          
+
 //           {/* Couleur des contacts */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Contacts</Label>
@@ -876,7 +841,7 @@ export default function ContentTab() {
 //               </span>
 //             </div>
 //           </div>
-          
+
 //           {/* Couleur du séparateur vertical - uniquement pour layout vertical */}
 //           {signatureData.layout === 'vertical' && (
 //           <div className="flex items-center justify-between">
@@ -895,7 +860,7 @@ export default function ContentTab() {
 //             </div>
 //           </div>
 //           )}
-          
+
 //           {/* Couleur du séparateur horizontal */}
 //           <div className="flex items-center justify-between">
 //             <Label className="text-xs text-muted-foreground">Séparateur horizontal</Label>
@@ -912,10 +877,10 @@ export default function ContentTab() {
 //               </span>
 //             </div>
 //           </div>
-          
+
 //         </div>
 //       </div>
-      
+
 //       {/* Bouton de sauvegarde */}
 //       <Separator />
 //       <div className="flex flex-col gap-3">

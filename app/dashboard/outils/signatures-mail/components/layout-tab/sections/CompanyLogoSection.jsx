@@ -4,12 +4,17 @@ import React from "react";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
+import { Button } from "@/src/components/ui/button";
+import { X, Upload } from "lucide-react";
 
-export default function CompanyLogoSection({ signatureData, updateSignatureData }) {
+export default function CompanyLogoSection({
+  signatureData,
+  updateSignatureData,
+}) {
   // Gestion de la taille du logo
   const handleLogoSizeChange = (value) => {
     const numValue = parseInt(value) || 60;
-    updateSignatureData('logoSize', Math.max(30, Math.min(120, numValue))); // Entre 30 et 120px
+    updateSignatureData("logoSize", Math.max(30, Math.min(120, numValue))); // Entre 30 et 120px
   };
 
   return (
@@ -19,11 +24,54 @@ export default function CompanyLogoSection({ signatureData, updateSignatureData 
         {/* Upload du logo entreprise */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Image</Label>
-          <div className="flex items-center gap-3 w-30">
-            <span className="text-xs text-muted-foreground">Glisser ou cliquer</span>
+          <div className="flex items-center gap-2 w-30">
+            {signatureData.logo ? (
+              <>
+                <img
+                  src={signatureData.logo}
+                  alt="Logo entreprise"
+                  className="w-8 h-8 object-contain rounded border bg-white"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => updateSignatureData("logo", null)}
+                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                  title="Supprimer le logo"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </>
+            ) : (
+              <div
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "image/*";
+                  input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) =>
+                        updateSignatureData("logo", e.target.result);
+                      reader.readAsDataURL(file);
+                    }
+                  };
+                  input.click();
+                }}
+                className="flex items-center w-full gap-2 bg-[#efefef] dark:bg-[#1F1F1F] dark:border-[#2F2F2F] dark:border rounded-md px-2 py-1 cursor-pointer hover:bg-[#efefef]/80 transition-colors"
+              >
+                <div className="w-6 h-6 pr-2 border-r flex items-center justify-center">
+                  <Upload className="w-3 h-3" />
+                </div>
+                <span className="text-xs text-gray-600 dark:text-white">
+                  Ajouter...
+                </span>
+              </div>
+            )}
           </div>
         </div>
-        
+
         {/* Taille du logo */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Taille</Label>
