@@ -112,9 +112,7 @@ export default function SectionAvantages() {
     <section className="bg-[#FDFDFD] dark:bg-gray-900">
       <div className="container mx-auto px-4">
         <h2 className="text-xl sm:text-3xl font-medium text-gray-900 mb-4">
-          Obtenez ce que vous méritez,
-          <br />
-          sans effort
+          Obtenez ce que vous méritez.
         </h2>
         <div className="mt-6 grid grid-cols-1 gap-3 sm:mt-10 lg:grid-cols-6 lg:grid-rows-2">
           <div className="max-lg:rounded-t-4xl lg:col-span-3 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
@@ -124,15 +122,15 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Des paiements sans retard
+                Tout est clair, tout de suite
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Automatisez toutes vos relances.
+                Simplicité radicale
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Fini les oublis : nos relances automatiques rappellent à vos
-                clients leurs factures dues, pour un encaissement rapide et sans
-                efforts de votre part.
+                Glissez, déposez vos cartes, changez de colonne, c’est fait. Pas
+                de superflu, juste une interface intuitive pour avancer sur
+                l’essentiel.
               </p>
             </div>
           </div>
@@ -144,15 +142,14 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Moins de paperasse, plus de liberté
+                Votre workflow, vos règles
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Dites adieu aux lourdeurs administratives.
+                Une personnalisation totale
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Créez, envoyez et suivez vos factures en quelques clics grâce à
-                une interface intuitive qui simplifie chaque étape et vous
-                libère du temps au quotidien.
+                Créez vos colonnes, labels et champs personnalisés. Adaptez
+                votre Kanban à votre manière de travailler, pas l’inverse.
               </p>
             </div>
           </div>
@@ -302,15 +299,14 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Plus pro, plus serein
+                Vos tâches dans votre agenda
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Des factures à votre image, pour marquer les esprits.
+                Synchronisez votre calendrier
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Projetez instantanément une image professionnelle avec des
-                documents personnalisés et soignés qui renforcent la confiance
-                de vos clients à chaque envoi.
+                Connectez votre agenda et voyez les échéances et priorités en
+                temps réel. Modifiez une date ici, elle s’actualise partout.
               </p>
             </div>
           </div>
@@ -322,15 +318,14 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Une vue claire sur vos revenus
+                Zéro tâche oubliée
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Gardez un œil sur votre trésorerie, en temps réel.
+                Rappels et relances automatiques
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Pilotez votre activité sans stress : visualisez vos factures,
-                paiements et relances en un coup d’œil, où que vous soyez, sur
-                ordinateur ou mobile.
+                Notifications intelligentes avant échéance, relances après.
+                Vous gardez le fil, même dans les périodes chargées.
               </p>
             </div>
           </div>
@@ -355,15 +350,15 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Conformité garantie
+                Plus de visibilité, plus d’impact
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Facturez en toute légalité, sans stress.
+                Un gain organisationnel immédiat
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Toutes vos factures respectent automatiquement les normes et
-                obligations légales, pour une tranquillité d’esprit totale au
-                quotidien.
+                Priorisez en un coup d’œil, limitez le travail en cours et
+                accélérez les livraisons. Résultat: plus de fluidité, plus de
+                résultats.
               </p>
             </div>
           </div>

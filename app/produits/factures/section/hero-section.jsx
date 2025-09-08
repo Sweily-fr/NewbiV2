@@ -24,8 +24,8 @@ export function HeroSection() {
                 <div className="bg-[#fff]/1 rounded-[10px] border p-0.5">
                   <Button size="lg" variant="default" className="group">
                     <>
-                      <a href="/auth/login" className="text-nowrap">
-                        Essayer
+                      <a href="/auth/signup" className="text-nowrap">
+                        Essayer GRATUITEMENT !
                       </a>
                       <ArrowRightIcon
                         className="-me-1 opacity-60 transition-transform group-hover:translate-x-0.5"

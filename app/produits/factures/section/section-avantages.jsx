@@ -112,7 +112,7 @@ export default function SectionAvantages() {
     <section className="bg-[#FDFDFD] dark:bg-gray-900">
       <div className="container mx-auto px-4">
         <h2 className="text-xl sm:text-3xl font-medium text-gray-900 mb-4">
-          Obtenez votre facture sans le moindre effort
+          Obtenez votre facture en quelques clics
         </h2>
         <div className="mt-6 grid grid-cols-1 gap-3 sm:mt-10 lg:grid-cols-6 lg:grid-rows-2">
           <div className="max-lg:rounded-t-4xl lg:col-span-3 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">

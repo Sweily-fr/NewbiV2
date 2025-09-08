@@ -71,13 +71,13 @@ const HeroAnimation = () => {
           <span className="text-[#2E2E2E] block">Les meilleurs outils</span>
           <span className="text-[#2E2E2E] block">pour être</span>
           <span className="bg-gradient-to-r from-[#171717] to-[#171717]/90 px-4 text-white rounded-lg inline-block my-4">
-            indépendant
+            indépendant,
           </span>
-          <span className="text-[#2E2E2E] block">et abordable</span>
+          <span className="text-[#2E2E2E] block">sans le prix fort</span>
         </h1>
 
         <span className="text-[#2E2E2E] block mt-6">
-          Créez votre business parfait en quelques clics
+          Créez votre business parfait en quelques clics.
         </span>
         {/* <div
           key={1}

@@ -112,9 +112,7 @@ export default function SectionAvantages() {
     <section className="bg-[#FDFDFD] dark:bg-gray-900">
       <div className="container mx-auto px-4">
         <h2 className="text-xl sm:text-3xl font-medium text-gray-900 mb-4">
-          Obtenez ce que vous méritez,
-          <br />
-          sans effort
+          L’image de votre marque, dans chaque e‑mail
         </h2>
         <div className="mt-6 grid grid-cols-1 gap-3 sm:mt-10 lg:grid-cols-6 lg:grid-rows-2">
           <div className="max-lg:rounded-t-4xl lg:col-span-3 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
@@ -124,15 +122,13 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Des paiements sans retard
+                Votre image, votre style
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Automatisez toutes vos relances.
+                Large choix de personnalisation
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Fini les oublis : nos relances automatiques rappellent à vos
-                clients leurs factures dues, pour un encaissement rapide et sans
-                efforts de votre part.
+                Changez les couleurs, typographies, bannières, boutons sociaux et champs dynamiques. Composez une signature qui reflète parfaitement votre marque, sans toucher au code.
               </p>
             </div>
           </div>
@@ -144,15 +140,15 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Moins de paperasse, plus de liberté
+                Une signature de mail pro en quelques minutes
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Dites adieu aux lourdeurs administratives.
+                Signature professionnelle, rapide et facile
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Créez, envoyez et suivez vos factures en quelques clics grâce à
-                une interface intuitive qui simplifie chaque étape et vous
-                libère du temps au quotidien.
+                Choisissez un modèle, ajoutez vos infos, validez. L’assistant
+                vous guide étape par étape pour obtenir une signature propre,
+                responsive et prête à l’emploi.
               </p>
             </div>
           </div>
@@ -302,15 +298,15 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Plus pro, plus serein
+                Une signature pour chacun, sans limites
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Des factures à votre image, pour marquer les esprits.
+                Signatures illimitées pour les collaborateurs
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Projetez instantanément une image professionnelle avec des
-                documents personnalisés et soignés qui renforcent la confiance
-                de vos clients à chaque envoi.
+                Créez et attribuez autant de signatures que nécessaire.
+                Centralisez les profils, appliquez des règles par équipe et
+                gardez une cohérence de marque à grande échelle.
               </p>
             </div>
           </div>
@@ -322,15 +318,15 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Une vue claire sur vos revenus
+                Changez d’avis, pas d’outil
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Gardez un œil sur votre trésorerie, en temps réel.
+                Refaite votre signature à tout moment
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Pilotez votre activité sans stress : visualisez vos factures,
-                paiements et relances en un coup d’œil, où que vous soyez, sur
-                ordinateur ou mobile.
+                Mettez à jour photo, poste, mentions légales ou campagne en un
+                clic. La nouvelle signature n’a plus qu’à être téléchargée et
+                ajoutée à votre mail.
               </p>
             </div>
           </div>
@@ -355,15 +351,16 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Conformité garantie
+                Compatible partout, sans surprise
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Facturez en toute légalité, sans stress.
+                Compatibilité totale
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Toutes vos factures respectent automatiquement les normes et
-                obligations légales, pour une tranquillité d’esprit totale au
-                quotidien.
+                Fonctionne avec Gmail, Outlook, Apple Mail et les principaux
+                clients sur desktop et mobile. Tests de rendu, mode sombre et
+                formats optimisés pour une signature impeccable, où que vous
+                écriviez.
               </p>
             </div>
           </div>

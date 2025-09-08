@@ -124,15 +124,17 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Des paiements sans retard
+                Payez, puis téléchargez — simple et sûr.
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Automatisez toutes vos relances.
+                Accès sécurisé par paiement du transfert.
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Fini les oublis : nos relances automatiques rappellent à vos
-                clients leurs factures dues, pour un encaissement rapide et sans
-                efforts de votre part.
+                Protégez vos documents sensibles derrière un paiement obligatoire.
+                Votre client reçoit un lien de téléchargement, débloqué
+                uniquement après règlement. Vous choisissez le montant, suivez
+                l’état (en attente, payé, téléchargé) et recevez des
+                notifications à chaque étape.
               </p>
             </div>
           </div>
@@ -144,20 +146,20 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Moins de paperasse, plus de liberté
+                Envoyez sans vous restreindre.
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Dites adieu aux lourdeurs administratives.
+                Jusqu’à 5 Go par envoi.
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Créez, envoyez et suivez vos factures en quelques clics grâce à
-                une interface intuitive qui simplifie chaque étape et vous
-                libère du temps au quotidien.
+                Partagez des fichiers lourds sans compresser ni fractionner.
+                Téléversement stable, reprise automatique en cas de coupure et
+                prise en charge des formats professionnels les plus courants.
               </p>
             </div>
           </div>
 
-          <div className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
+          <div className="lg:col-span-6 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative h-60 shrink-0">
               <div
                 aria-hidden="true"
@@ -302,68 +304,16 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Plus pro, plus serein
+                Un lien, du temps pour agir.
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Des factures à votre image, pour marquer les esprits.
+                Un lien actif jusqu’à 30 jours.
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Projetez instantanément une image professionnelle avec des
-                documents personnalisés et soignés qui renforcent la confiance
-                de vos clients à chaque envoi.
-              </p>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-60 shrink-0">
-              <div className="absolute inset-0 bg-[url(/images/lp-home/app.png)] bg-[length:auto_250%] bg-[position:left_5px_top_-80px] bg-no-repeat"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
-            </div>
-            <div className="relative p-6">
-              <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Une vue claire sur vos revenus
-              </h3>
-              <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Gardez un œil sur votre trésorerie, en temps réel.
-              </p>
-              <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Pilotez votre activité sans stress : visualisez vos factures,
-                paiements et relances en un coup d’œil, où que vous soyez, sur
-                ordinateur ou mobile.
-              </p>
-            </div>
-          </div>
-          <div className="lg:col-span-2 pt-2 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-60 shrink-0">
-              {/* Notifications en arrière-plan */}
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute inset-0 scale-90 opacity-100">
-                  <AnimatedList>
-                    {notifications.map((item, idx) => (
-                      <Notification {...item} key={idx} />
-                    ))}
-                  </AnimatedList>
-                </div>
-                {/* Effet de flou blanc en bas */}
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-white to-transparent dark:from-gray-800"></div>
-              </div>
-
-              {/* Image de fond originale */}
-              {/* <div className="absolute inset-0 bg-[url(/profile.png)] bg-[length:auto_100%] bg-[position:left_-20px_top_0px] bg-no-repeat opacity-60"></div> */}
-              <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
-            </div>
-            <div className="relative p-6">
-              <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Conformité garantie
-              </h3>
-              <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Facturez en toute légalité, sans stress.
-              </p>
-              <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Toutes vos factures respectent automatiquement les normes et
-                obligations légales, pour une tranquillité d’esprit totale au
-                quotidien.
+                Offrez à vos clients une fenêtre confortable pour télécharger.
+                Définissez la durée (jusqu’à 30 jours), avec rappel automatique
+                avant expiration et désactivation immédiate au terme pour éviter
+                les accès prolongés.
               </p>
             </div>
           </div>

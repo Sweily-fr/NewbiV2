@@ -125,11 +125,10 @@ export default function SectionAvantages() {
                 Création ultra-rapide de devis
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Créez un devis en quelques secondes.
+                Générez votre devis en quelques secondes.
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Remplissez les infos clés, sélectionnez vos produits, et créez
-                un devis prêt à envoyer en un rien de temps.
+                Remplissez les infos clés, sélectionnez vos produits et votre devis est prêt à être envoyé.
               </p>
             </div>
           </div>
@@ -147,8 +146,8 @@ export default function SectionAvantages() {
                 Un devis qui vous ressemble.
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Ajoutez logo et couleurs pour un document à l’image de votre
-                entreprise, sans effort.
+                Ajoutez logo et couleurs pour un devis à l’image de votre
+                entreprise.
               </p>
             </div>
           </div>
@@ -298,14 +297,13 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Envoi et signature dématérialisés
+                Un gain de temps grâce au catalogue produit
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Envoi et signature en ligne faciles.
+                Créez votre catalogue produit une seule fois
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Vos clients reçoivent, consultent et signent votre devis en
-                quelques clics depuis n’importe où.
+                Ajoutez services et produits instantanément. Les prix, TVA et remises s’appliquent sans effort.
               </p>
             </div>
           </div>
@@ -317,15 +315,13 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Une vue claire sur vos revenus
+              Un catalogue client intégré
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Gardez un œil sur votre trésorerie, en temps réel.
+              Retrouvez vos clients en un clic.
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Pilotez votre activité sans stress : visualisez vos factures,
-                paiements et relances en un coup d’œil, où que vous soyez, sur
-                ordinateur ou mobile.
+              Renseignez vos infos clients une seule fois ou retrouvez-les facilement.
               </p>
             </div>
           </div>
@@ -350,15 +346,13 @@ export default function SectionAvantages() {
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
-                Conformité garantie
+                Un suivi express de vos devis
               </h3>
               <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white">
-                Facturez en toute légalité, sans stress.
+                Voyez leur avancement, relancez, concluez
               </p>
               <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 dark:text-gray-400">
-                Toutes vos factures respectent automatiquement les normes et
-                obligations légales, pour une tranquillité d’esprit totale au
-                quotidien.
+                Suivez les ouvertures et statuts en temps réel. Relancez au bon moment pour accélérer la signature.
               </p>
             </div>
           </div>

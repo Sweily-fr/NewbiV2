@@ -32,17 +32,13 @@ export default function BusinessAgility() {
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
                 >
-                  Gagnez du temps
+                  Tous au même niveau
                 </h3>
                 <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 group-data-dark:text-white">
-                  Automatisation intelligente
+                  Ajoutez vos collaborateurs sans limites fonctionnelles
                 </p>
                 <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 group-data-dark:text-gray-400">
-                  Automatisez en toute simplicité vos tâches répétitives avec
-                  notre solution dédiée. Libérez-vous du temps au quotidien pour
-                  vous concentrer sur les activités stratégiques et
-                  véritablement importantes pour la croissance de votre
-                  entreprise.
+                  Invitez vos collègues en quelques clics et offrez-leur exactement les mêmes fonctionnalités que vous. Chacun peut créer, modifier, envoyer, suivre et sécuriser ses contenus sans passer par un administrateur. Droits clairs, onboarding express et visibilité partagée pour travailler vite et bien, ensemble.
                 </p>
               </div>
             </div>
@@ -61,16 +57,13 @@ export default function BusinessAgility() {
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
                 >
-                  Collaborez facilement
+                  Automatisation et workflow
                 </h3>
                 <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 group-data-dark:text-white">
-                  Partage simplifié
+                  Passez à la vitesse supérieur
                 </p>
                 <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 group-data-dark:text-gray-400">
-                  Travaillez en synergie avec vos équipes grâce à des outils de
-                  partage instantané. Échangez fichiers et retours en un clic
-                  pour garantir une collaboration fluide à chaque étape de vos
-                  projets.
+                  Gagnez des heures en automatisant les tâches répétitives (modèles, déploiements, rappels, expirations) et adaptez la plateforme à vos process plutôt que l’inverse. Workflows configurables, reprises automatiques, et une interface pensée pour aller droit au but: vous livrez plus, plus vite.
                 </p>
               </div>
             </div>
@@ -87,15 +80,13 @@ export default function BusinessAgility() {
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
                 >
-                  Sécurisez vos données
+                  Connectivité totale
                 </h3>
                 <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 group-data-dark:text-white">
-                  Protection renforcée
+                  Restez maître de votre écosystème digital
                 </p>
                 <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 group-data-dark:text-gray-400">
-                  Protégez vos données en continu grâce à une infrastructure
-                  sécurisée, conforme aux normes les plus strictes et à vos
-                  obligations réglementaires.
+                Faites circuler vos informations produits, clients et projets entre vos outils en toute fluidité. Connectez CRM, facturation, stockage et messagerie pour éviter les doubles saisies, garder des données à jour et déclencher des actions automatiques au bon moment.
                 </p>
               </div>
             </div>
@@ -112,17 +103,13 @@ export default function BusinessAgility() {
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
                 >
-                  Analysez & optimisez
+                  Sécurisez votre travail
                 </h3>
                 <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 group-data-dark:text-white">
-                  Pilotage par la donnée
+                  Ne courrez plus derrière vos règlements
                 </p>
                 <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 group-data-dark:text-gray-400">
-                  Accédez à des tableaux de bord clairs et détaillés pour suivre
-                  vos indicateurs de performance. Utilisez nos rapports
-                  approfondis afin d’identifier les leviers d’amélioration et
-                  prendre des décisions éclairées pour optimiser vos processus
-                  et vos résultats.
+                  Verrouillez l’accès à vos livrables derrière un paiement: vos clients paient, puis téléchargent. Fini la course aux règlements. Suivez l’état (en attente, payé, téléchargé), fixez le prix, la durée d’accès et, si besoin, révoquez en un clic. Vous sécurisez la valeur, vous gardez le contrôle.
                 </p>
               </div>
             </div>

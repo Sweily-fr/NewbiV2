@@ -16,8 +16,7 @@ export default function WorkflowIntegration() {
             data-dark="true"
             className="text-2xl sm:text-4xl font-medium text-gray-900 mb-4 data-dark:text-white"
           >
-            newbi s’adapte à votre workflow,
-            <br /> pas l’inverse.
+            Apportez de l'agilité à votre entreprise.
           </h3>
           <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-16 lg:grid-cols-6 lg:grid-rows-2">
             <div
@@ -33,17 +32,13 @@ export default function WorkflowIntegration() {
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
                 >
-                  Connectivité totale
+                  Tous au même niveau
                 </h3>
                 <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 group-data-dark:text-white">
-                  Restez maître de votre écosystème digital.
+                  Ajoutez vos collaborateurs sans limites fonctionnelles
                 </p>
                 <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 group-data-dark:text-gray-400">
-                  newbi s’intègre facilement à vos logiciels et services
-                  existants : gestion de projet, CRM, banques, outils
-                  collaboratifs… Centralisez vos données et vos documents pour
-                  fluidifier chaque étape de votre gestion, avec un minimum de
-                  double saisie.
+                  Invitez vos collègues en quelques clics et offrez-leur exactement les mêmes fonctionnalités que vous. Chacun peut créer, modifier, envoyer, suivre et sécuriser ses contenus sans passer par un administrateur. Droits clairs, onboarding express et visibilité partagée pour travailler vite et bien, ensemble.
                 </p>
               </div>
             </div>
@@ -62,16 +57,13 @@ export default function WorkflowIntegration() {
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
                 >
-                  Automatisation personnalisée
+                  Automatisation et workflow
                 </h3>
                 <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 group-data-dark:text-white">
-                  Créez vos propres raccourcis, sans code.
+                  Passez à la vitesse supérieur
                 </p>
                 <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 group-data-dark:text-gray-400">
-                  Créez des automatisations selon vos règles : relances à dates
-                  choisies, archivage ciblé, synchronisation agenda… newbi
-                  s’adapte à vos préférences pour vous faire gagner du temps,
-                  sans perdre le contrôle.
+                  Gagnez des heures en automatisant les tâches répétitives (modèles, déploiements, rappels, expirations) et adaptez la plateforme à vos process plutôt que l’inverse. Workflows configurables, reprises automatiques, et une interface pensée pour aller droit au but: vous livrez plus, plus vite.
                 </p>
               </div>
             </div>
@@ -88,17 +80,13 @@ export default function WorkflowIntegration() {
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
                 >
-                  Extensions et API
+                  Connectivité totale
                 </h3>
                 <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 group-data-dark:text-white">
-                  Passez à la vitesse supérieure.
+                  Restez maître de votre écosystème digital
                 </p>
                 <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 group-data-dark:text-gray-400">
-                  Développez votre propre intégration ou profitez d’un catalogue
-                  de connecteurs prêts à l’emploi (Zapier, Make, API REST...).
-                  Adaptez newbi à des besoins ultra-spécifiques ou automatisez
-                  vos tâches avec les outils que vous préférez. La flexibilité
-                  est au cœur de notre promesse.
+                Faites circuler vos informations produits, clients et projets entre vos outils en toute fluidité. Connectez CRM, facturation, stockage et messagerie pour éviter les doubles saisies, garder des données à jour et déclencher des actions automatiques au bon moment.
                 </p>
               </div>
             </div>
@@ -115,17 +103,13 @@ export default function WorkflowIntegration() {
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
                 >
-                  Permissions et collaborations fines
+                  Sécurisez votre travail
                 </h3>
                 <p className="mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 group-data-dark:text-white">
-                  Donnez à chaque membre le bon niveau d’accès.
+                  Ne courrez plus derrière vos règlements
                 </p>
                 <p className="mt-2 max-w-[600px] text-sm/6 text-gray-600 group-data-dark:text-gray-400">
-                  Définissez des rôles personnalisés pour votre équipe – de la
-                  simple consultation à la modification avancée. Gérez la
-                  validation, les droits d’édition ou d’envoi, afin que chacun
-                  ait la place qui lui convient, sans friction ni perte de
-                  temps.
+                  Verrouillez l’accès à vos livrables derrière un paiement: vos clients paient, puis téléchargent. Fini la course aux règlements. Suivez l’état (en attente, payé, téléchargé), fixez le prix, la durée d’accès et, si besoin, révoquez en un clic. Vous sécurisez la valeur, vous gardez le contrôle.
                 </p>
               </div>
             </div>
