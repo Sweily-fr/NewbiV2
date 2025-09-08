@@ -20,6 +20,22 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
     paymentMethod: "CARD",
   });
 
+  // Réinitialiser le formulaire quand le drawer se ferme
+  const handleOpenChange = (isOpen) => {
+    if (!isOpen) {
+      // Réinitialiser le formulaire
+      setFormData({
+        type: "EXPENSE",
+        amount: "",
+        category: "",
+        date: new Date().toISOString().split("T")[0],
+        description: "",
+        paymentMethod: "CARD",
+      });
+    }
+    onOpenChange(isOpen);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
@@ -32,7 +48,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
   const isIncome = formData.type === "INCOME";
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
+    <Drawer open={open} onOpenChange={handleOpenChange} direction="right">
       <DrawerContent>
         <DrawerHeader>
           <div className="flex items-center justify-between">
@@ -147,7 +163,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Annuler
             </Button>
             <Button type="submit" className="bg-primary hover:bg-primary/90">

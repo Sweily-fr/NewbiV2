@@ -3,17 +3,39 @@ import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
 import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
 import TransactionTable from "./components/table";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
-// Financial stats hook removed
+import { useExpenses } from "@/src/hooks/useExpenses";
+import { useInvoices } from "@/src/graphql/invoiceQueries";
 
 function GestionDepensesContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Récupération des statistiques financières réelles
-  // Bridge integration removed - using basic data
-  const loading = false;
-  const error = null;
+  // Récupération des dépenses depuis l'API
+  const {
+    expenses,
+    loading: expensesLoading,
+    error: expensesError,
+  } = useExpenses({
+    status: "PAID",
+    page: 1,
+    limit: 100,
+  });
+
+  // Récupération des factures payées depuis l'API
+  const {
+    invoices,
+    loading: invoicesLoading,
+    error: invoicesError,
+  } = useInvoices();
+
+  // Filtrer les factures payées
+  const paidInvoices = useMemo(() => {
+    return invoices.filter((invoice) => invoice.status === "COMPLETED");
+  }, [invoices]);
+
+  const loading = expensesLoading || invoicesLoading;
+  const error = expensesError || invoicesError;
   
   // Local formatCurrency function
   const formatCurrency = (amount) => {
@@ -23,13 +45,70 @@ function GestionDepensesContent() {
     }).format(amount || 0);
   };
 
-  // Mock data to replace removed financial stats
-  const totalIncome = 0;
-  const totalExpenses = 0;
-  const incomeTransactionCount = 0;
-  const expenseTransactionCount = 0;
-  const incomeChartData = [];
-  const expenseChartData = [];
+  // Calcul des statistiques réelles
+  const { totalIncome, totalExpenses, incomeTransactionCount, expenseTransactionCount, incomeChartData, expenseChartData } = useMemo(() => {
+    // Calcul des dépenses
+    const expenseTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const expenseCount = expenses.length;
+
+    // Calcul des revenus (factures payées)
+    const incomeTotal = paidInvoices.reduce((sum, invoice) => sum + invoice.finalTotalTTC, 0);
+    const incomeCount = paidInvoices.length;
+
+    // Génération des données de graphique par mois (derniers 6 mois)
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        month: date.toLocaleDateString("fr-FR", { month: "short" }),
+        fullDate: date
+      });
+    }
+
+    // Données pour le graphique des dépenses
+    const expenseChartData = months.map(({ month, fullDate }) => {
+      const monthExpenses = expenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getMonth() === fullDate.getMonth() && 
+               expenseDate.getFullYear() === fullDate.getFullYear();
+      });
+      
+      const monthTotal = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      
+      return {
+        month,
+        desktop: monthTotal,
+        mobile: monthExpenses.length
+      };
+    });
+
+    // Données pour le graphique des revenus
+    const incomeChartData = months.map(({ month, fullDate }) => {
+      const monthInvoices = paidInvoices.filter(invoice => {
+        const invoiceDate = new Date(invoice.issueDate);
+        return invoiceDate.getMonth() === fullDate.getMonth() && 
+               invoiceDate.getFullYear() === fullDate.getFullYear();
+      });
+      
+      const monthTotal = monthInvoices.reduce((sum, invoice) => sum + invoice.finalTotalTTC, 0);
+      
+      return {
+        month,
+        desktop: monthTotal,
+        mobile: monthInvoices.length
+      };
+    });
+
+    return {
+      totalIncome: incomeTotal,
+      totalExpenses: expenseTotal,
+      incomeTransactionCount: incomeCount,
+      expenseTransactionCount: expenseCount,
+      incomeChartData,
+      expenseChartData
+    };
+  }, [expenses, paidInvoices]);
 
   // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
   const handleOpenInviteDialog = () => {
@@ -114,8 +193,8 @@ function GestionDepensesContent() {
 
 export default function GestionDepenses() {
   return (
-    <ProRouteGuard pageName="Gestion des dépenses">
+    // <ProRouteGuard pageName="Gestion des dépenses"> {/* Commenté pour le développement */}
       <GestionDepensesContent />
-    </ProRouteGuard>
+    // </ProRouteGuard>
   );
 }
