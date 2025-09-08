@@ -101,6 +101,7 @@ import { AddTransactionDrawer } from "./add-transaction-drawer";
 import { ReceiptUploadDrawer } from "./receipt-upload-drawer";
 import {
   useExpenses,
+  useCreateExpense,
   useDeleteExpense,
   useDeleteMultipleExpenses,
 } from "@/src/hooks/useExpenses";
@@ -159,9 +160,19 @@ const columns = [
     header: "Date",
     accessorKey: "date",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("date"));
+      const dateValue = row.getValue("date");
+      console.log("DEBUG - Date value:", dateValue, "Type:", typeof dateValue);
+      
+      // Forcer la conversion si c'est un timestamp
+      if (typeof dateValue === 'number' || (typeof dateValue === 'string' && /^\d{10,13}$/.test(dateValue))) {
+        const date = new Date(Number(dateValue));
+        const formatted = date.toISOString().split('T')[0];
+        console.log("DEBUG - Converted timestamp to:", formatted);
+        return <div className="font-normal">{formatted}</div>;
+      }
+      
       return (
-        <div className="font-normal">{date.toLocaleDateString("fr-FR")}</div>
+        <div className="font-normal">{dateValue}</div>
       );
     },
     size: 120,
@@ -455,7 +466,8 @@ export default function TransactionTable() {
     limit: 100, // Récupérer plus de données pour la pagination côté client
   });
 
-  // Hooks pour la suppression
+  // Hooks pour la création et suppression
+  const { createExpense, loading: createLoading } = useCreateExpense();
   const { deleteExpense, loading: deleteLoading } = useDeleteExpense();
   const { deleteMultipleExpenses, loading: deleteMultipleLoading } =
     useDeleteMultipleExpenses();
@@ -489,12 +501,19 @@ export default function TransactionTable() {
 
   // Mapper les dépenses et factures vers le format attendu par le tableau
   const transactions = useMemo(() => {
+    console.log("DEBUG - Raw expenses:", expenses);
+    
     // Mapper les dépenses (SORTIES D'ARGENT)
-    const expenseTransactions = expenses.map((expense) => ({
-      id: expense.id,
-      date: expense.date,
-      type: "EXPENSE", // Dépense = Sortie d'argent
-      subType:
+    const expenseTransactions = expenses.map((expense) => {
+      console.log("DEBUG - Processing expense date:", expense.date, "Type:", typeof expense.date);
+      const formattedDate = typeof expense.date === 'string' ? expense.date : new Date(expense.date).toISOString().split('T')[0];
+      console.log("DEBUG - Formatted date:", formattedDate);
+      
+      return {
+        id: expense.id,
+        date: formattedDate,
+        type: "EXPENSE", // Dépense = Sortie d'argent
+        subType:
         expense.category === "TRAVEL"
           ? "transport"
           : expense.category === "MEALS"
@@ -523,12 +542,13 @@ export default function TransactionTable() {
       createdAt: expense.createdAt,
       updatedAt: expense.updatedAt,
       source: "expense", // Identifier la source
-    }));
+      };
+    });
 
     // Mapper les factures payées (ENTRÉES D'ARGENT)
     const invoiceTransactions = paidInvoices.map((invoice) => ({
       id: `invoice-${invoice.id}`,
-      date: invoice.issueDate,
+      date: typeof invoice.issueDate === 'string' ? invoice.issueDate : new Date(invoice.issueDate).toISOString().split('T')[0],
       type: "INCOME", // Facture = Entrée d'argent
       category: "SERVICES", // Catégorie par défaut pour les factures
       amount: invoice.finalTotalTTC,
@@ -556,9 +576,14 @@ export default function TransactionTable() {
     }));
 
     // Combiner et trier par date (plus récent en premier)
-    return [...expenseTransactions, ...invoiceTransactions].sort(
-      (a, b) => new Date(b.date) - new Date(a.date)
-    );
+    const allTransactions = [...expenseTransactions, ...invoiceTransactions];
+    
+    // Trier sans convertir les dates en timestamps
+    return allTransactions.sort((a, b) => {
+      const dateA = typeof a.date === 'string' ? a.date : new Date(a.date).toISOString().split('T')[0];
+      const dateB = typeof b.date === 'string' ? b.date : new Date(b.date).toISOString().split('T')[0];
+      return dateB.localeCompare(dateA);
+    });
   }, [expenses, paidInvoices]);
 
   const totalItems = totalCount;
@@ -672,10 +697,62 @@ export default function TransactionTable() {
     setEditingTransaction(null);
   };
 
-  const handleAddTransaction = (transaction) => {
-    setIsAddTransactionDrawerOpen(false);
-    // Simulation d'ajout (à remplacer par une mutation GraphQL)
-    toast.success("Transaction ajoutée");
+  const handleAddTransaction = async (transaction) => {
+    try {
+      // Mapper les données du formulaire vers le format attendu par l'API
+      const expenseInput = {
+        title: transaction.description || "Dépense manuelle",
+        description: transaction.description,
+        amount: parseFloat(transaction.amount),
+        currency: "EUR",
+        category: mapCategoryToEnum(transaction.category),
+        date: transaction.date, // Format YYYY-MM-DD déjà correct
+        paymentMethod: mapPaymentMethodToEnum(transaction.paymentMethod),
+        status: "PAID", // Les dépenses manuelles sont considérées comme payées
+        isVatDeductible: true, // Valeur par défaut
+        notes: transaction.description
+      };
+
+      console.log("Données envoyées à l'API:", expenseInput);
+
+      const result = await createExpense(expenseInput);
+      
+      if (result.success) {
+        setIsAddTransactionDrawerOpen(false);
+        // Le toast de succès est géré dans le hook
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'ajout de la transaction:", error);
+      // Le toast d'erreur est géré dans le hook
+    }
+  };
+
+  // Fonction pour mapper les catégories du formulaire vers les enums de l'API
+  const mapCategoryToEnum = (category) => {
+    const categoryMap = {
+      "Transport": "TRAVEL",
+      "Repas": "MEALS", 
+      "Bureau": "OFFICE_SUPPLIES",
+      "Prestation": "SERVICES",
+      "Alimentation": "MEALS",
+      "Logement": "RENT",
+      "Salaire": "SALARIES",
+      "Freelance": "SERVICES"
+    };
+    
+    return categoryMap[category] || "OTHER";
+  };
+
+  // Fonction pour mapper les méthodes de paiement du formulaire vers les enums de l'API
+  const mapPaymentMethodToEnum = (paymentMethod) => {
+    const paymentMethodMap = {
+      "CARD": "CREDIT_CARD",
+      "CASH": "CASH",
+      "TRANSFER": "BANK_TRANSFER",
+      "CHECK": "CHECK"
+    };
+    
+    return paymentMethodMap[paymentMethod] || "BANK_TRANSFER";
   };
 
   const handleReceiptUploadSuccess = (receiptData) => {

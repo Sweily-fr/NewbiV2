@@ -18,6 +18,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 export default function Outils() {
   const searchParams = useSearchParams();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("outline");
   const { isActive, loading } = useSubscription();
   const { data: session } = useSession();
 
@@ -72,9 +73,10 @@ export default function Outils() {
         Accédez à tous nos outils pour optimiser le développement de votre activité
       </p>
       <div className="flex flex-col gap-6 pt-8 w-full">
-        {/* <div className="flex items-center justify-between gap-4 w-full">
+        <div className="flex items-center justify-between gap-4 w-full">
           <Tabs
-            defaultValue="outline"
+            value={activeTab}
+            onValueChange={setActiveTab}
             className="flex-1 flex-col justify-start gap-6"
           >
             <TabsList>
@@ -86,12 +88,12 @@ export default function Outils() {
                 Marketing <Badge variant="secondary">2</Badge>
               </TabsTrigger>
               <TabsTrigger value="focus-documents">
-                Automatisation <Badge variant="secondary">2</Badge>
+                Automatisation <Badge variant="secondary">1</Badge>
               </TabsTrigger>
             </TabsList>
           </Tabs>
-        </div> */}
-        <SectionCards />
+        </div>
+        <SectionCards activeFilter={activeTab} />
       </div>
       <PricingModal
         isOpen={isPricingModalOpen}

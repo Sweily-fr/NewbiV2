@@ -59,6 +59,7 @@ const cards = [
     bgIconColor: "#8681FF",
     Image: "/images/utils/Factures.svg",
     isPro: true,
+    category: "financier",
   },
   {
     title: "Devis",
@@ -69,36 +70,7 @@ const cards = [
     bgIconColor: "#FFC782",
     Image: "/images/utils/Devis.svg",
     isPro: true,
-  },
-  {
-    title: "KANBAN",
-    subtitle: "Créez et gérez vos tâches.",
-    icon: <IconLayoutKanban size={15} />,
-    href: "/dashboard/outils/kanban",
-    status: "available",
-    bgIconColor: "#FF7D65",
-    Image: "/images/utils/Kanban.svg",
-    isPro: false,
-  },
-  {
-    title: "Signatures de mail",
-    subtitle: "Créez et gérez vos signatures de mail.",
-    icon: <IconMailForward size={15} />,
-    href: "/dashboard/outils/signatures-mail",
-    status: "available",
-    bgIconColor: "#8BA6FF",
-    Image: "/images/utils/Signature.svg",
-    isPro: false,
-  },
-  {
-    title: "Transfert de fichiers",
-    subtitle: "Transférez vos fichiers.",
-    icon: <IconTransfer size={15} />,
-    href: "/dashboard/outils/transferts-fichiers",
-    status: "available",
-    bgIconColor: "#FF9F65",
-    Image: "/images/utils/Transfert.svg",
-    isPro: true,
+    category: "financier",
   },
   {
     title: "Dépenses",
@@ -109,6 +81,40 @@ const cards = [
     bgIconColor: "#5B4FFF",
     Image: "/images/utils/gestion-depenses.png",
     isPro: true,
+    category: "financier",
+  },
+  {
+    title: "Signatures de mail",
+    subtitle: "Créez et gérez vos signatures de mail.",
+    icon: <IconMailForward size={15} />,
+    href: "/dashboard/outils/signatures-mail",
+    status: "available",
+    bgIconColor: "#8BA6FF",
+    Image: "/images/utils/Signature.svg",
+    isPro: false,
+    category: "marketing",
+  },
+  {
+    title: "Transfert de fichiers",
+    subtitle: "Transférez vos fichiers.",
+    icon: <IconTransfer size={15} />,
+    href: "/dashboard/outils/transferts-fichiers",
+    status: "available",
+    bgIconColor: "#FF9F65",
+    Image: "/images/utils/Transfert.svg",
+    isPro: true,
+    category: "marketing",
+  },
+  {
+    title: "KANBAN",
+    subtitle: "Créez et gérez vos tâches.",
+    icon: <IconLayoutKanban size={15} />,
+    href: "/dashboard/outils/kanban",
+    status: "available",
+    bgIconColor: "#FF7D65",
+    Image: "/images/utils/Kanban.svg",
+    isPro: false,
+    category: "automatisation",
   },
   // {
   //   title: "Article SEO",
@@ -133,8 +139,17 @@ const cards = [
   // },
 ];
 
-export function SectionCards({ className }) {
+export function SectionCards({ className, activeFilter = "outline" }) {
   const { isActive } = useSubscription();
+  
+  // Filtrer les cartes selon l'onglet actif
+  const filteredCards = cards.filter(card => {
+    if (activeFilter === "outline") return true; // Afficher toutes les cartes
+    if (activeFilter === "past-performance") return card.category === "financier";
+    if (activeFilter === "key-personnel") return card.category === "marketing";
+    if (activeFilter === "focus-documents") return card.category === "automatisation";
+    return true;
+  });
   
   return (
     <div
@@ -143,9 +158,10 @@ export function SectionCards({ className }) {
         className
       )}
     >
-      {cards.map((card, index) => {
+      {filteredCards.map((card, index) => {
         const isAvailable = card.status === "available" || !card.status;
-        const hasAccess = !card.isPro || isActive();
+        // const hasAccess = !card.isPro || isActive(); // Commenté pour le développement
+        const hasAccess = true; // Accès libre pour le développement
 
         // La fonction getIconColor est maintenant définie en dehors du composant
 

@@ -32,8 +32,8 @@ function TransfertsContent() {
 
 export default function TransfertsFichiers() {
   return (
-    <ProRouteGuard pageName="Transferts de fichiers">
+    // <ProRouteGuard pageName="Transferts de fichiers"> {/* Commenté pour le développement */}
       <TransfertsContent />
-    </ProRouteGuard>
+    // </ProRouteGuard>
   );
 }
