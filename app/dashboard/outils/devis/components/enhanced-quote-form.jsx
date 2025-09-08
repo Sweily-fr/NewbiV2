@@ -210,6 +210,8 @@ export default function EnhancedQuoteForm({
   readOnly,
   errors,
   nextQuoteNumber,
+  validateQuoteNumber,
+  hasExistingQuotes,
 }) {
   const { watch, setValue, getValues, control } = useFormContext();
   const data = watch();
@@ -323,6 +325,8 @@ export default function EnhancedQuoteForm({
               <QuoteInfoSection
                 canEdit={canEdit}
                 nextQuoteNumber={nextQuoteNumber}
+                validateQuoteNumber={validateQuoteNumber}
+                hasExistingQuotes={hasExistingQuotes}
               />
               <Separator />
 

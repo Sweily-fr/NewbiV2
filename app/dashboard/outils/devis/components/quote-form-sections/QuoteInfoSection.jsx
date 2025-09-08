@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import { Calendar as CalendarIcon, Clock, Info } from "lucide-react";
 import { format } from "date-fns";
@@ -32,51 +32,20 @@ const VALIDITY_PERIOD_SUGGESTIONS = [
   { value: 90, label: "90 jours" }
 ];
 
-export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = null }) {
-  const { watch, setValue, register, formState: { errors }, trigger } = useFormContext();
-  const data = watch();
+export default function QuoteInfoSection({ 
+  canEdit = true, 
+  nextQuoteNumber = null,
+  validateQuoteNumber: validateQuoteNumberProp = null,
+  hasExistingQuotes = false 
+}) {
+  const { setValue, register, formState: { errors }, getValues } = useFormContext();
   
-  // Calculer la période de validité en jours
-  const calculateValidityPeriod = useCallback(() => {
-    if (!data.issueDate || !data.validUntil) return null;
-    
-    try {
-      const issueDate = new Date(data.issueDate);
-      const validUntil = new Date(data.validUntil);
-      
-      if (isNaN(issueDate.getTime()) || isNaN(validUntil.getTime())) {
-        return null;
-      }
-      
-      // Calculer la différence en jours
-      const diffTime = validUntil - issueDate;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      // Vérifier si la différence correspond à l'une des périodes suggérées
-      const matchingPeriod = VALIDITY_PERIOD_SUGGESTIONS.find(
-        period => period.value === diffDays
-      );
-      
-      return matchingPeriod ? matchingPeriod.value.toString() : null;
-    } catch (error) {
-      console.error('Erreur lors du calcul de la période de validité:', error);
-      return null;
-    }
-  }, [data.issueDate, data.validUntil]);
+  // Use getValues instead of watch to prevent re-renders
+  const [, forceUpdate] = useState({});
+  const data = getValues();
   
-  // Mettre à jour la période sélectionnée lorsque les dates changent
+  // Simple state for selected period without complex calculations
   const [selectedPeriod, setSelectedPeriod] = useState(null);
-  
-  useEffect(() => {
-    console.log('🔄 Mise à jour de la période sélectionnée', { 
-      validUntil: data.validUntil,
-      issueDate: data.issueDate 
-    });
-    
-    const period = calculateValidityPeriod();
-    console.log('📅 Période calculée:', period);
-    setSelectedPeriod(period);
-  }, [calculateValidityPeriod, data.validUntil, data.issueDate]);
 
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {
@@ -110,22 +79,25 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
     setValue("prefix", value, { shouldValidate: true });
   };
 
-  // Set default prefix and dates on component mount
+  // Initialize defaults only once on mount
+  const [initialized, setInitialized] = useState(false);
+  
   useEffect(() => {
-    // Set default prefix if not already set
-    if (!data.prefix) {
-      setValue("prefix", generateQuotePrefix(), { shouldValidate: true });
+    if (initialized) return;
+    
+    setInitialized(true);
+    
+    // Initialize without causing re-renders
+    const currentData = getValues();
+    if (!currentData.prefix) {
+      setValue("prefix", generateQuotePrefix(), { shouldValidate: false, shouldDirty: false });
     }
     
-    // Set default issue date to today if not already set
-    if (!data.issueDate) {
+    if (!currentData.issueDate) {
       const today = new Date();
-      setValue('issueDate', today.toISOString().split('T')[0], { shouldValidate: true });
+      setValue('issueDate', today.toISOString().split('T')[0], { shouldValidate: false, shouldDirty: false });
     }
-    
-    // Ne pas définir de date de validité par défaut si déjà définie
-    // La date de validité doit être gérée par le hook parent useQuoteEditor
-  }, [data.prefix, data.issueDate, setValue]);
+  }, []);
 
   // Fonction utilitaire pour créer une date sans l'heure
   const createDateWithoutTime = (dateString) => {
@@ -200,18 +172,9 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
               <Label htmlFor="quote-prefix" className="text-sm font-medium">
                 Préfixe de devis
               </Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="w-64">
-                    <p className="w-full">
-                      Astuce : Tapez <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">MM</span> pour le mois ou <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">AAAA</span> pour l'année
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <span title="Astuce : Tapez MM pour le mois ou AAAA pour l'année">
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </span>
             </div>
             <div className="space-y-1">
               <div className="relative">
@@ -262,18 +225,9 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
               <Label htmlFor="quote-number" className="text-sm font-medium">
                 Numéro de devis
               </Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="w-64">
-                    <p className="w-full">
-                      Numéro séquentiel du devis. Il sera automatiquement formaté avec des zéros en préfixe (ex: 000001).
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <span title="Numéro séquentiel du devis. Il sera automatiquement formaté avec des zéros en préfixe (ex: 000001).">
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </span>
             </div>
             <div className="space-y-1">
               <Input
@@ -282,25 +236,35 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
                   required: "Le numéro de devis est requis",
                   validate: {
                     isValid: (value) => {
+                      // Skip validation for DRAFT- prefixed numbers
+                      if (value && value.startsWith('DRAFT-')) {
+                        return true;
+                      }
+                      
+                      // Use the new validation function if provided
+                      if (validateQuoteNumberProp) {
+                        const validation = validateQuoteNumberProp(value);
+                        return validation.isValid || validation.message;
+                      }
+                      
+                      // Fallback to old validation
                       if (!validateQuoteNumber(value)) {
                         return "Le numéro doit contenir entre 1 et 6 chiffres uniquement";
-                      }
-                      return true;
-                    },
-                    isSequential: (value) => {
-                      // Si ce n'est pas le premier devis, le numéro doit être généré automatiquement
-                      if (nextQuoteNumber && value !== nextQuoteNumber) {
-                        return "Le numéro de devis doit être généré automatiquement";
                       }
                       return true;
                     }
                   }
                 })}
-                value={nextQuoteNumber || data.number || ""}
-                placeholder={nextQuoteNumber || "000001"}
-                disabled={!canEdit || !!nextQuoteNumber}
-                readOnly={!!nextQuoteNumber}
+                value={data.number || ""}
+                placeholder="000001"
+                disabled={!canEdit}
+                readOnly={data.number && data.number.startsWith('DRAFT-')}
                 onBlur={(e) => {
+                  // Don't format DRAFT- numbers
+                  if (e.target.value && e.target.value.startsWith('DRAFT-')) {
+                    return;
+                  }
+                  
                   // Format with leading zeros when leaving the field
                   if (e.target.value && validateQuoteNumber(e.target.value)) {
                     const formattedNum = formatQuoteNumber(e.target.value);
@@ -313,6 +277,11 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
                   {errors.number.message}
                 </p>
               )}
+              {data.number && data.number.startsWith('DRAFT-') && (
+                <p className="text-xs text-blue-600">
+                  Numéro de brouillon - sera remplacé lors de la validation
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -323,18 +292,9 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
             <Label htmlFor="project-reference" className="text-sm font-medium">
               Référence projet
             </Label>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="w-64">
-                  <p className="w-full">
-                    Référence du projet associé à ce devis (optionnel). Utile pour le suivi et l'organisation.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <span title="Référence du projet associé à ce devis (optionnel). Utile pour le suivi et l'organisation.">
+              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+            </span>
           </div>
           <div className="relative">
             <Input
@@ -354,18 +314,9 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
               <Label className="text-sm font-medium">
                 Date d'émission *
               </Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="w-64">
-                    <p className="w-full">
-                      Date à laquelle le devis est émis. Par défaut, c'est la date d'aujourd'hui.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <span title="Date à laquelle le devis est émis. Par défaut, c'est la date d'aujourd'hui.">
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </span>
             </div>
             <input
               type="hidden"
@@ -423,18 +374,9 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
               <Label className="text-sm font-medium">
                 Valide jusqu'au *
               </Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="w-64">
-                    <p className="w-full">
-                      Date limite de validité du devis. Après cette date, le devis ne sera plus valable.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <span title="Date limite de validité du devis. Après cette date, le devis ne sera plus valable.">
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-2 w-full">
               <input
@@ -572,33 +514,29 @@ export default function QuoteInfoSection({ canEdit = true, nextQuoteNumber = nul
                   />
                 </PopoverContent>
               </Popover>
-              <Select
-                onValueChange={(value) => {
-                  if (value === 'custom') return; // Ne rien faire si l'option par défaut est sélectionnée
+              <select
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value || value === 'custom') return;
                   const days = parseInt(value);
                   const issueDate = new Date(data.issueDate || new Date());
                   const validUntil = new Date(issueDate);
                   validUntil.setDate(validUntil.getDate() + days);
-                  setValue("validUntil", validUntil.toISOString().split('T')[0], { shouldDirty: true });
+                  
+                  setValue("validUntil", validUntil.toISOString().split('T')[0], { shouldDirty: true, shouldValidate: false });
                   setSelectedPeriod(value);
                 }}
                 disabled={!canEdit}
                 value={selectedPeriod || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionnez une valeur" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="custom" disabled>
-                    Sélectionnez une valeur
-                  </SelectItem>
-                  {VALIDITY_PERIOD_SUGGESTIONS.map((period) => (
-                    <SelectItem key={period.value} value={period.value.toString()}>
-                      {period.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Sélectionnez une valeur</option>
+                {VALIDITY_PERIOD_SUGGESTIONS.map((period) => (
+                  <option key={period.value} value={period.value.toString()}>
+                    {period.label}
+                  </option>
+                ))}
+              </select>
             </div>
             {errors?.validUntil && (
               <p className="text-xs text-red-500">

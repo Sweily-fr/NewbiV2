@@ -8,8 +8,8 @@ import {
   useCreateQuote,
   useUpdateQuote,
   useQuote,
-  useNextQuoteNumber,
 } from "@/src/graphql/quoteQueries";
+import { useQuoteNumber } from "./use-quote-number";
 import { useUser } from "@/src/lib/auth/hooks";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
@@ -24,13 +24,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // GraphQL hooks
   const { quote: existingQuote, loading: loadingQuote } = useQuote(quoteId);
 
-  const { data: nextNumberData } = useNextQuoteNumber(
-    null, // On passe null comme préfixe pour utiliser la valeur par défaut
-    {
-      skip: mode !== "create",
-      isDraft: true, // Toujours true pour la création car on commence toujours par un brouillon
-    }
-  );
+  // Use the new quote numbering hook that mirrors invoice logic
+  const {
+    nextQuoteNumber,
+    validateQuoteNumber,
+    isLoading: numberLoading,
+    hasExistingQuotes
+  } = useQuoteNumber();
 
   const { createQuote, loading: creating } = useCreateQuote();
   const { updateQuote, loading: updating } = useUpdateQuote();
@@ -119,11 +119,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   // Set next quote number for new quotes
   useEffect(() => {
-    if (mode === "create" && nextNumberData?.nextQuoteNumber) {
-      setValue("prefix", nextNumberData.nextQuoteNumber.prefix);
-      setValue("number", nextNumberData.nextQuoteNumber.number);
+    if (mode === "create") {
+      // Set the next sequential number or 000001 for first quote
+      const numberToUse = nextQuoteNumber || 1;
+      const formattedNumber = String(numberToUse).padStart(6, '0');
+      setValue("number", formattedNumber);
     }
-  }, [mode, nextNumberData, setValue]);
+  }, [mode, nextQuoteNumber, setValue]);
 
   // Auto-remplir companyInfo quand la session devient disponible
   useEffect(() => {
@@ -393,7 +395,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     formData,
 
     // Loading states
-    loading: loadingQuote || creating || updating || saving,
+    loading: loadingQuote || creating || updating || saving || numberLoading,
     saving,
 
     // Validation
@@ -418,7 +420,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
     // Data
     existingQuote,
-    nextQuoteNumber: nextNumberData?.nextQuoteNumber,
+    nextQuoteNumber,
+    validateQuoteNumber,
+    hasExistingQuotes,
     canEdit:
       !loadingQuote && (mode === "create" || existingQuote?.status === "DRAFT"),
   };
@@ -862,7 +866,6 @@ function transformFormDataToInput(
       // Pour les autres formats de date
       const date = new Date(dateValue);
       if (!isNaN(date.getTime())) {
-        const formattedDate = date.toISOString().split('T')[0];
         return createDateWithoutTime(date);
       }
     }

@@ -31,6 +31,8 @@ export default function ModernQuoteEditor({
     isDirty,
     errors,
     nextQuoteNumber,
+    validateQuoteNumber,
+    hasExistingQuotes,
   } = useQuoteEditor({
     mode,
     quoteId,
@@ -155,6 +157,8 @@ export default function ModernQuoteEditor({
                     setFormData={setFormData}
                     canEdit={!isReadOnly}
                     nextQuoteNumber={nextQuoteNumber}
+                    validateQuoteNumber={validateQuoteNumber}
+                    hasExistingQuotes={hasExistingQuotes}
                   />
                 )}
               </FormProvider>

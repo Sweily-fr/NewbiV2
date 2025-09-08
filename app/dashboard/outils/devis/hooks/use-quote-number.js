@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_INVOICES, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
+import { GET_QUOTES, QUOTE_STATUS } from "@/src/graphql/quoteQueries";
 import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
 
-export const useInvoiceNumber = () => {
-  const [lastInvoiceNumber, setLastInvoiceNumber] = useState(null);
+export const useQuoteNumber = () => {
+  const [lastQuoteNumber, setLastQuoteNumber] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   
   // Récupérer le workspace actuel
   const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
 
-  // Fetch all invoices to determine the current sequential state
-  const { data, loading, error: queryError } = useQuery(GET_INVOICES, {
+  // Fetch all quotes to determine the current sequential state
+  const { data, loading, error: queryError } = useQuery(GET_QUOTES, {
     variables: { 
       workspaceId,
       limit: 1000
@@ -22,28 +22,28 @@ export const useInvoiceNumber = () => {
   });
 
   useEffect(() => {
-    if (data?.invoices?.invoices) {
-      // Filter invoices to only include non-draft ones (PENDING, COMPLETED, CANCELED)
-      const finalizedInvoices = data.invoices.invoices
-        .filter(invoice => {
-          const isNotDraft = invoice.status !== INVOICE_STATUS.DRAFT;
-          const hasNumber = invoice.number && invoice.number.trim() !== '';
+    if (data?.quotes?.quotes) {
+      // Filter quotes to only include non-draft ones (PENDING, COMPLETED, CANCELED)
+      const finalizedQuotes = data.quotes.quotes
+        .filter(quote => {
+          const isNotDraft = quote.status !== QUOTE_STATUS.DRAFT;
+          const hasNumber = quote.number && quote.number.trim() !== '';
           return isNotDraft && hasNumber;
         });
       
-      // Extract numeric invoice numbers only
-      const numbers = finalizedInvoices
-        .map(invoice => {
-          // Only consider purely numeric invoice numbers
-          if (/^\d+$/.test(invoice.number)) {
-            return parseInt(invoice.number, 10);
+      // Extract numeric quote numbers only
+      const numbers = finalizedQuotes
+        .map(quote => {
+          // Only consider purely numeric quote numbers
+          if (/^\d+$/.test(quote.number)) {
+            return parseInt(quote.number, 10);
           }
           return null;
         })
         .filter(num => num !== null && num > 0);
       
       const highestNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
-      setLastInvoiceNumber(highestNumber);
+      setLastQuoteNumber(highestNumber);
     }
     
     if (queryError) {
@@ -54,12 +54,12 @@ export const useInvoiceNumber = () => {
   }, [data, loading, queryError, workspaceLoading]);
 
   // Generate the next sequential number
-  const getNextInvoiceNumber = () => {
-    if (lastInvoiceNumber === null || lastInvoiceNumber === undefined) {
+  const getNextQuoteNumber = () => {
+    if (lastQuoteNumber === null || lastQuoteNumber === undefined) {
       return 1;
     }
     
-    const lastNumber = typeof lastInvoiceNumber === 'number' ? lastInvoiceNumber : parseInt(lastInvoiceNumber, 10);
+    const lastNumber = typeof lastQuoteNumber === 'number' ? lastQuoteNumber : parseInt(lastQuoteNumber, 10);
     
     if (isNaN(lastNumber)) {
       return 1;
@@ -68,8 +68,8 @@ export const useInvoiceNumber = () => {
     return lastNumber + 1;
   };
 
-  // Validate invoice number using frontend logic that matches backend rules
-  const validateInvoiceNumber = (number) => {
+  // Validate quote number using frontend logic that matches backend rules
+  const validateQuoteNumber = (number) => {
     // Basic validation: must be a positive number
     const num = parseInt(number, 10);
     if (isNaN(num) || num <= 0) {
@@ -79,13 +79,13 @@ export const useInvoiceNumber = () => {
       };
     }
     
-    // Rule 1: If no existing invoices, allow any number (user can choose starting number)
-    if (!hasExistingInvoices()) {
+    // Rule 1: If no existing quotes, allow any number (user can choose starting number)
+    if (!hasExistingQuotes()) {
       return { isValid: true };
     }
     
     // Rule 2 & 3: Sequential validation
-    const lastNum = typeof lastInvoiceNumber === 'number' ? lastInvoiceNumber : parseInt(lastInvoiceNumber, 10);
+    const lastNum = typeof lastQuoteNumber === 'number' ? lastQuoteNumber : parseInt(lastQuoteNumber, 10);
     
     if (isNaN(lastNum)) {
       return { isValid: true };
@@ -110,24 +110,24 @@ export const useInvoiceNumber = () => {
     return { isValid: true };
   };
 
-  // Check if there are existing invoices
-  const hasExistingInvoices = () => {
-    return lastInvoiceNumber !== null && lastInvoiceNumber !== undefined && lastInvoiceNumber > 0;
+  // Check if there are existing quotes
+  const hasExistingQuotes = () => {
+    return lastQuoteNumber !== null && lastQuoteNumber !== undefined && lastQuoteNumber > 0;
   };
 
   return {
-    lastInvoiceNumber,
-    nextInvoiceNumber: getNextInvoiceNumber(),
-    validateInvoiceNumber,
+    lastQuoteNumber,
+    nextQuoteNumber: getNextQuoteNumber(),
+    validateQuoteNumber,
     isLoading,
     error,
-    hasExistingInvoices,
+    hasExistingQuotes,
     // Helper function to get the next number as a formatted string
     getFormattedNextNumber: () => {
-      const nextNum = getNextInvoiceNumber();
+      const nextNum = getNextQuoteNumber();
       return String(nextNum).padStart(6, '0');
     }
   };
 };
 
-export default useInvoiceNumber;
+export default useQuoteNumber;
