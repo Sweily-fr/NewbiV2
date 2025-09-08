@@ -37,7 +37,7 @@ export function SignatureProvider({ children }) {
     companyName: "",
     website: "https://www.newbi.fr",
     address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
-    primaryColor: "#2563eb",
+    primaryColor: "#171717",
     // Espacement entre prénom et nom (en pixels)
     nameSpacing: 4,
     // Alignement du nom et prénom (left, center, right)
@@ -109,7 +109,7 @@ export function SignatureProvider({ children }) {
       fullName: {
         fontFamily: 'Arial, sans-serif',
         fontSize: 16,
-        color: '#2563eb',
+        color: '#171717',
         fontWeight: 'normal'
       },
       position: {
@@ -121,7 +121,7 @@ export function SignatureProvider({ children }) {
       company: {
         fontFamily: 'Arial, sans-serif',
         fontSize: 14,
-        color: '#2563eb',
+        color: '#171717',
         fontWeight: 'normal'
       },
       email: {

@@ -11,9 +11,9 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
   const handleSpacingChange = (spacingKey, value) => {
     const numValue = parseInt(value) || 0;
     const clampedValue = Math.max(0, Math.min(30, numValue)); // Entre 0 et 30px
-    updateSignatureData('spacings', {
+    updateSignatureData("spacings", {
       ...signatureData.spacings,
-      [spacingKey]: clampedValue
+      [spacingKey]: clampedValue,
     });
   };
 
@@ -21,7 +21,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
   const handleGlobalSpacingChange = (value) => {
     const numValue = parseInt(value) || 0;
     const clampedValue = Math.max(0, Math.min(30, numValue));
-    
+
     // Applique l'espacement global à tous les espacements pour les deux layouts
     const updated = {
       ...signatureData.spacings,
@@ -42,8 +42,8 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
       verticalSeparatorLeft: 4, // Plus proche de la photo
       verticalSeparatorRight: clampedValue,
     };
-    
-    updateSignatureData('spacings', updated);
+
+    updateSignatureData("spacings", updated);
   };
 
   return (
@@ -54,18 +54,23 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
           <Label className="text-xs text-muted-foreground">Détaillé</Label>
           <div className="relative inline-flex items-center">
             <Switch
+              className="scale-75"
               checked={signatureData.detailedSpacing || false}
-              onCheckedChange={(checked) => updateSignatureData('detailedSpacing', checked)}
+              onCheckedChange={(checked) =>
+                updateSignatureData("detailedSpacing", checked)
+              }
             />
           </div>
         </div>
       </div>
-      
-      <div className="flex flex-col gap-3 ml-4">
+
+      <div className="flex flex-col gap-3">
         {!signatureData.detailedSpacing ? (
           // Mode espacement global
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Espacement global</Label>
+          <div className="flex items-center justify-between ml-4">
+            <Label className="text-xs text-muted-foreground">
+              Espacement global
+            </Label>
             <div className="flex items-center gap-3 w-30">
               <Input
                 className="h-8 w-12 px-2 py-1"
@@ -83,7 +88,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 placeholder="12"
               />
               <Slider
-                className="grow"
+                className="grow h-4"
                 value={[signatureData.spacings?.global || 12]}
                 onValueChange={(value) => handleGlobalSpacingChange(value[0])}
                 min={0}
@@ -96,446 +101,571 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
         ) : (
           // Mode espacement détaillé
           <div className="flex flex-col gap-3 ml-4">
-          {/* Espacement sous la photo - disponible pour les deux layouts */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">
-              Image profil → Information
-            </Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.nameSpacing ?? ''}
-                onChange={(e) => handleSpacingChange('nameSpacing', e.target.value)}
-                onBlur={(e) => handleSpacingChange('nameSpacing', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('nameSpacing', e.target.value);
+            {/* Espacement sous la photo - disponible pour les deux layouts */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Img profil → Information
+              </Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  className="h-8 w-12 px-2 py-1"
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.nameSpacing ?? ""}
+                  onChange={(e) =>
+                    handleSpacingChange("nameSpacing", e.target.value)
                   }
-                }}
-                min={0}
-                max={30}
-                aria-label="Espacement photo vers informations"
-                placeholder="12"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.nameSpacing || 12]}
-                onValueChange={(value) => handleSpacingChange('nameSpacing', value[0])}
-                min={0}
-                max={30}
-                step={2}
-                aria-label="Espacement photo vers informations"
-              />
-            </div>
-          </div>
-          
-          {/* Espacement sous le logo - uniquement pour layout vertical */}
-          {signatureData.layout === 'vertical' && (
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">
-              Sous logo
-            </Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.logoBottom ?? ''}
-                onChange={(e) => handleSpacingChange('logoBottom', e.target.value)}
-                onBlur={(e) => handleSpacingChange('logoBottom', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('logoBottom', e.target.value);
+                  onBlur={(e) =>
+                    handleSpacingChange("nameSpacing", e.target.value)
                   }
-                }}
-                min={0}
-                max={30}
-                aria-label="Espacement logo"
-                placeholder="12"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.logoBottom || 12]}
-                onValueChange={(value) => handleSpacingChange('logoBottom', value[0])}
-                min={0}
-                max={30}
-                step={2}
-                aria-label="Espacement logo"
-              />
-            </div>
-          </div>
-          )}
-          
-          {/* Espacement sous le nom - disponible pour les deux layouts */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">
-              {signatureData.layout === 'vertical' ? 'Sous nom' : 'Nom → Poste'}
-            </Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.nameBottom ?? ''}
-                onChange={(e) => handleSpacingChange('nameBottom', e.target.value)}
-                onBlur={(e) => handleSpacingChange('nameBottom', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('nameBottom', e.target.value);
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSpacingChange("nameSpacing", e.target.value);
+                    }
+                  }}
+                  min={0}
+                  max={30}
+                  aria-label="Espacement photo vers informations"
+                  placeholder="12"
+                />
+                <Slider
+                  className="grow h-4"
+                  value={[signatureData.spacings?.nameSpacing || 12]}
+                  onValueChange={(value) =>
+                    handleSpacingChange("nameSpacing", value[0])
                   }
-                }}
-                min={0}
-                max={30}
-                aria-label="Espacement nom"
-                placeholder="8"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.nameBottom || 8]}
-                onValueChange={(value) => handleSpacingChange('nameBottom', value[0])}
-                min={0}
-                max={30}
-                step={2}
-                aria-label="Espacement nom"
-              />
+                  min={0}
+                  max={30}
+                  step={2}
+                  aria-label="Espacement photo vers informations"
+                />
+              </div>
             </div>
-          </div>
-          
-          {/* Espacement sous le poste - disponible pour les deux layouts */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">
-              {signatureData.layout === 'vertical' ? 'Sous poste' : 'Poste → Entreprise'}
-            </Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.positionBottom ?? ''}
-                onChange={(e) => handleSpacingChange('positionBottom', e.target.value)}
-                onBlur={(e) => handleSpacingChange('positionBottom', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('positionBottom', e.target.value);
-                  }
-                }}
-                min={0}
-                max={30}
-                aria-label="Espacement poste"
-                placeholder="8"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.positionBottom || 8]}
-                onValueChange={(value) => handleSpacingChange('positionBottom', value[0])}
-                min={0}
-                max={30}
-                step={2}
-                aria-label="Espacement poste"
-              />
-            </div>
-          </div>
-          
-          
-          {/* Espacement entre téléphone et mobile - disponible pour les deux layouts */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Téléphone → Téléphone 2</Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.phoneToMobile ?? ''}
-                onChange={(e) => handleSpacingChange('phoneToMobile', e.target.value)}
-                onBlur={(e) => handleSpacingChange('phoneToMobile', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('phoneToMobile', e.target.value);
-                  }
-                }}
-                min={0}
-                max={20}
-                aria-label="Espacement téléphone vers mobile"
-                placeholder="4"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.phoneToMobile || 4]}
-                onValueChange={(value) => handleSpacingChange('phoneToMobile', value[0])}
-                min={0}
-                max={20}
-                step={1}
-                aria-label="Espacement téléphone vers mobile"
-              />
-            </div>
-          </div>
-          
-          {/* Espacement entre mobile et email - disponible pour les deux layouts */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Mobile → Email</Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.mobileToEmail ?? ''}
-                onChange={(e) => handleSpacingChange('mobileToEmail', e.target.value)}
-                onBlur={(e) => handleSpacingChange('mobileToEmail', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('mobileToEmail', e.target.value);
-                  }
-                }}
-                min={0}
-                max={20}
-                aria-label="Espacement mobile vers email"
-                placeholder="4"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.mobileToEmail || 4]}
-                onValueChange={(value) => handleSpacingChange('mobileToEmail', value[0])}
-                min={0}
-                max={20}
-                step={1}
-                aria-label="Espacement mobile vers email"
-              />
-            </div>
-          </div>
-          
-          {/* Espacement entre email et site web - disponible pour les deux layouts */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Email → Site web</Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.emailToWebsite ?? ''}
-                onChange={(e) => handleSpacingChange('emailToWebsite', e.target.value)}
-                onBlur={(e) => handleSpacingChange('emailToWebsite', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('emailToWebsite', e.target.value);
-                  }
-                }}
-                min={0}
-                max={20}
-                aria-label="Espacement email vers site web"
-                placeholder="4"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.emailToWebsite || 4]}
-                onValueChange={(value) => handleSpacingChange('emailToWebsite', value[0])}
-                min={0}
-                max={20}
-                step={1}
-                aria-label="Espacement email vers site web"
-              />
-            </div>
-          </div>
-          
-          {/* Espacement entre site web et adresse - disponible pour les deux layouts */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Site web → Adresse</Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.websiteToAddress ?? ''}
-                onChange={(e) => handleSpacingChange('websiteToAddress', e.target.value)}
-                onBlur={(e) => handleSpacingChange('websiteToAddress', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('websiteToAddress', e.target.value);
-                  }
-                }}
-                min={0}
-                max={20}
-                aria-label="Espacement site web vers adresse"
-                placeholder="4"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.websiteToAddress || 4]}
-                onValueChange={(value) => handleSpacingChange('websiteToAddress', value[0])}
-                min={0}
-                max={20}
-                step={1}
-                aria-label="Espacement site web vers adresse"
-              />
-            </div>
-          </div>
-          
-          {/* Espacement au-dessus du séparateur */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Avant séparateur</Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.separatorTop ?? ''}
-                onChange={(e) => handleSpacingChange('separatorTop', e.target.value)}
-                min={0}
-                max={30}
 
-                aria-label="Espacement avant le séparateur"
-                placeholder="12"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.separatorTop || 12]}
-                onValueChange={(value) => handleSpacingChange('separatorTop', value[0])}
-                min={0}
-                max={30}
-                step={2}
-                aria-label="Espacement avant séparateur"
-              />
-            </div>
-          </div>
-          
-          {/* Espacement après séparateur */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Après séparateur</Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.separatorBottom ?? ''}
-                onChange={(e) => handleSpacingChange('separatorBottom', e.target.value)}
-                onBlur={(e) => handleSpacingChange('separatorBottom', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('separatorBottom', e.target.value);
-                  }
-                }}
-                min={0}
-                max={30}
-                aria-label="Espacement après séparateur"
-                placeholder="12"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.separatorBottom || 12]}
-                onValueChange={(value) => handleSpacingChange('separatorBottom', value[0])}
-                min={0}
-                max={30}
-                step={2}
-                aria-label="Espacement après séparateur"
-              />
-            </div>
-          </div>
-          
-          {/* Espacement logo entreprise → logo réseaux sociaux (horizontal uniquement) */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Logo entreprise → Logo réseaux sociaux</Label>
-            <div className="flex items-center gap-3 w-30">
-              <Input
-                className="h-8 w-12 px-2 py-1"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.logoToSocial ?? ''}
-                onChange={(e) => handleSpacingChange('logoToSocial', e.target.value)}
-                onBlur={(e) => handleSpacingChange('logoToSocial', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSpacingChange('logoToSocial', e.target.value);
-                  }
-                }}
-                min={0}
-                max={30}
-                aria-label="Espacement horizontal logo vers réseaux sociaux"
-                placeholder="12"
-              />
-              <Slider
-                className="grow"
-                value={[signatureData.spacings?.logoToSocial || 12]}
-                onValueChange={(value) => handleSpacingChange('logoToSocial', value[0])}
-                min={0}
-                max={30}
-                step={2}
-                aria-label="Espacement horizontal logo vers réseaux"
-              />
-            </div>
-          </div>
-          
-          {/* Espacements du séparateur vertical (horizontal layout uniquement) */}
-          {signatureData.layout === 'horizontal' && signatureData.verticalSeparator?.enabled && (
-            <>
-              {/* Espacement gauche du séparateur vertical */}
+            {/* Espacement sous le logo - uniquement pour layout vertical */}
+            {signatureData.layout === "vertical" && (
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-muted-foreground">Séparateur vertical - Gauche</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Sous logo
+                </Label>
                 <div className="flex items-center gap-3 w-30">
                   <Input
                     className="h-8 w-12 px-2 py-1"
                     type="text"
                     inputMode="decimal"
-                    value={signatureData.spacings?.verticalSeparatorLeft ?? ''}
-                    onChange={(e) => handleSpacingChange('verticalSeparatorLeft', e.target.value)}
-                    onBlur={(e) => handleSpacingChange('verticalSeparatorLeft', e.target.value)}
+                    value={signatureData.spacings?.logoBottom ?? ""}
+                    onChange={(e) =>
+                      handleSpacingChange("logoBottom", e.target.value)
+                    }
+                    onBlur={(e) =>
+                      handleSpacingChange("logoBottom", e.target.value)
+                    }
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
-                        handleSpacingChange('verticalSeparatorLeft', e.target.value);
+                        handleSpacingChange("logoBottom", e.target.value);
                       }
                     }}
                     min={0}
                     max={30}
-                    aria-label="Espacement gauche séparateur vertical"
-                    placeholder="22"
+                    aria-label="Espacement logo"
+                    placeholder="12"
                   />
                   <Slider
-                    className="grow"
-                    value={[signatureData.spacings?.verticalSeparatorLeft || 22]}
-                    onValueChange={(value) => handleSpacingChange('verticalSeparatorLeft', value[0])}
+                    className="grow h-4"
+                    value={[signatureData.spacings?.logoBottom || 12]}
+                    onValueChange={(value) =>
+                      handleSpacingChange("logoBottom", value[0])
+                    }
                     min={0}
                     max={30}
                     step={2}
-                    aria-label="Espacement gauche séparateur vertical"
+                    aria-label="Espacement logo"
                   />
                 </div>
               </div>
-              
-              {/* Espacement droite du séparateur vertical */}
-              <div className="flex items-center justify-between">
-                <Label className="text-xs text-muted-foreground">Séparateur vertical - Droite</Label>
-                <div className="flex items-center gap-3 w-30">
-                  <Input
-                    className="h-8 w-12 px-2 py-1"
-                    type="text"
-                    inputMode="decimal"
-                    value={signatureData.spacings?.verticalSeparatorRight ?? ''}
-                    onChange={(e) => handleSpacingChange('verticalSeparatorRight', e.target.value)}
-                    onBlur={(e) => handleSpacingChange('verticalSeparatorRight', e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleSpacingChange('verticalSeparatorRight', e.target.value);
-                      }
-                    }}
-                    min={0}
-                    max={30}
-                    aria-label="Espacement droite séparateur vertical"
-                    placeholder="22"
-                  />
-                  <Slider
-                    className="grow"
-                    value={[signatureData.spacings?.verticalSeparatorRight || 22]}
-                    onValueChange={(value) => handleSpacingChange('verticalSeparatorRight', value[0])}
-                    min={0}
-                    max={30}
-                    step={2}
-                    aria-label="Espacement droite séparateur vertical"
-                  />
-                </div>
+            )}
+
+            {/* Espacement sous le nom - disponible pour les deux layouts */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                {signatureData.layout === "vertical"
+                  ? "Sous nom"
+                  : "Nom → Poste"}
+              </Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  className="h-8 w-12 px-2 py-1"
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.nameBottom ?? ""}
+                  onChange={(e) =>
+                    handleSpacingChange("nameBottom", e.target.value)
+                  }
+                  onBlur={(e) =>
+                    handleSpacingChange("nameBottom", e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSpacingChange("nameBottom", e.target.value);
+                    }
+                  }}
+                  min={0}
+                  max={30}
+                  aria-label="Espacement nom"
+                  placeholder="8"
+                />
+                <Slider
+                  className="grow h-4"
+                  value={[signatureData.spacings?.nameBottom || 8]}
+                  onValueChange={(value) =>
+                    handleSpacingChange("nameBottom", value[0])
+                  }
+                  min={0}
+                  max={30}
+                  step={2}
+                  aria-label="Espacement nom"
+                />
               </div>
-            </>
-          )}
-          
+            </div>
+
+            {/* Espacement sous le poste - disponible pour les deux layouts */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                {signatureData.layout === "vertical"
+                  ? "Sous poste"
+                  : "Poste → Entreprise"}
+              </Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  className="h-8 w-12 px-2 py-1"
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.positionBottom ?? ""}
+                  onChange={(e) =>
+                    handleSpacingChange("positionBottom", e.target.value)
+                  }
+                  onBlur={(e) =>
+                    handleSpacingChange("positionBottom", e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSpacingChange("positionBottom", e.target.value);
+                    }
+                  }}
+                  min={0}
+                  max={30}
+                  aria-label="Espacement poste"
+                  placeholder="8"
+                />
+                <Slider
+                  className="grow h-4"
+                  value={[signatureData.spacings?.positionBottom || 8]}
+                  onValueChange={(value) =>
+                    handleSpacingChange("positionBottom", value[0])
+                  }
+                  min={0}
+                  max={30}
+                  step={2}
+                  aria-label="Espacement poste"
+                />
+              </div>
+            </div>
+
+            {/* Espacement entre téléphone et mobile - disponible pour les deux layouts */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Téléphone → Téléphone 2
+              </Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  className="h-8 w-12 px-2 py-1"
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.phoneToMobile ?? ""}
+                  onChange={(e) =>
+                    handleSpacingChange("phoneToMobile", e.target.value)
+                  }
+                  onBlur={(e) =>
+                    handleSpacingChange("phoneToMobile", e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSpacingChange("phoneToMobile", e.target.value);
+                    }
+                  }}
+                  min={0}
+                  max={20}
+                  aria-label="Espacement téléphone vers mobile"
+                  placeholder="4"
+                />
+                <Slider
+                  className="grow h-4"
+                  value={[signatureData.spacings?.phoneToMobile || 4]}
+                  onValueChange={(value) =>
+                    handleSpacingChange("phoneToMobile", value[0])
+                  }
+                  min={0}
+                  max={20}
+                  step={1}
+                  aria-label="Espacement téléphone vers mobile"
+                />
+              </div>
+            </div>
+
+            {/* Espacement entre mobile et email - disponible pour les deux layouts */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Mobile → Email
+              </Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  className="h-8 w-12 px-2 py-1"
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.mobileToEmail ?? ""}
+                  onChange={(e) =>
+                    handleSpacingChange("mobileToEmail", e.target.value)
+                  }
+                  onBlur={(e) =>
+                    handleSpacingChange("mobileToEmail", e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSpacingChange("mobileToEmail", e.target.value);
+                    }
+                  }}
+                  min={0}
+                  max={20}
+                  aria-label="Espacement mobile vers email"
+                  placeholder="4"
+                />
+                <Slider
+                  className="grow h-4"
+                  value={[signatureData.spacings?.mobileToEmail || 4]}
+                  onValueChange={(value) =>
+                    handleSpacingChange("mobileToEmail", value[0])
+                  }
+                  min={0}
+                  max={20}
+                  step={1}
+                  aria-label="Espacement mobile vers email"
+                />
+              </div>
+            </div>
+
+            {/* Espacement entre email et site web - disponible pour les deux layouts */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Email → Site web
+              </Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  className="h-8 w-12 px-2 py-1"
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.emailToWebsite ?? ""}
+                  onChange={(e) =>
+                    handleSpacingChange("emailToWebsite", e.target.value)
+                  }
+                  onBlur={(e) =>
+                    handleSpacingChange("emailToWebsite", e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSpacingChange("emailToWebsite", e.target.value);
+                    }
+                  }}
+                  min={0}
+                  max={20}
+                  aria-label="Espacement email vers site web"
+                  placeholder="4"
+                />
+                <Slider
+                  className="grow h-4"
+                  value={[signatureData.spacings?.emailToWebsite || 4]}
+                  onValueChange={(value) =>
+                    handleSpacingChange("emailToWebsite", value[0])
+                  }
+                  min={0}
+                  max={20}
+                  step={1}
+                  aria-label="Espacement email vers site web"
+                />
+              </div>
+            </div>
+
+            {/* Espacement entre site web et adresse - disponible pour les deux layouts */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Site web → Adresse
+              </Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  className="h-8 w-12 px-2 py-1"
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.websiteToAddress ?? ""}
+                  onChange={(e) =>
+                    handleSpacingChange("websiteToAddress", e.target.value)
+                  }
+                  onBlur={(e) =>
+                    handleSpacingChange("websiteToAddress", e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSpacingChange("websiteToAddress", e.target.value);
+                    }
+                  }}
+                  min={0}
+                  max={20}
+                  aria-label="Espacement site web vers adresse"
+                  placeholder="4"
+                />
+                <Slider
+                  className="grow h-4"
+                  value={[signatureData.spacings?.websiteToAddress || 4]}
+                  onValueChange={(value) =>
+                    handleSpacingChange("websiteToAddress", value[0])
+                  }
+                  min={0}
+                  max={20}
+                  step={1}
+                  aria-label="Espacement site web vers adresse"
+                />
+              </div>
+            </div>
+
+            {/* Espacement au-dessus du séparateur */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Avant séparateur
+              </Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  className="h-8 w-12 px-2 py-1"
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.separatorTop ?? ""}
+                  onChange={(e) =>
+                    handleSpacingChange("separatorTop", e.target.value)
+                  }
+                  min={0}
+                  max={30}
+                  aria-label="Espacement avant le séparateur"
+                  placeholder="12"
+                />
+                <Slider
+                  className="grow h-4"
+                  value={[signatureData.spacings?.separatorTop || 12]}
+                  onValueChange={(value) =>
+                    handleSpacingChange("separatorTop", value[0])
+                  }
+                  min={0}
+                  max={30}
+                  step={2}
+                  aria-label="Espacement avant séparateur"
+                />
+              </div>
+            </div>
+
+            {/* Espacement après séparateur */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Après séparateur
+              </Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  className="h-8 w-12 px-2 py-1"
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.separatorBottom ?? ""}
+                  onChange={(e) =>
+                    handleSpacingChange("separatorBottom", e.target.value)
+                  }
+                  onBlur={(e) =>
+                    handleSpacingChange("separatorBottom", e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSpacingChange("separatorBottom", e.target.value);
+                    }
+                  }}
+                  min={0}
+                  max={30}
+                  aria-label="Espacement après séparateur"
+                  placeholder="12"
+                />
+                <Slider
+                  className="grow h-4"
+                  value={[signatureData.spacings?.separatorBottom || 12]}
+                  onValueChange={(value) =>
+                    handleSpacingChange("separatorBottom", value[0])
+                  }
+                  min={0}
+                  max={30}
+                  step={2}
+                  aria-label="Espacement après séparateur"
+                />
+              </div>
+            </div>
+
+            {/* Espacement logo entreprise → logo réseaux sociaux (horizontal uniquement) */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Logo entreprise → Logo réseaux sociaux
+              </Label>
+              <div className="flex items-center gap-3 w-30">
+                <Input
+                  className="h-8 w-12 px-2 py-1"
+                  type="text"
+                  inputMode="decimal"
+                  value={signatureData.spacings?.logoToSocial ?? ""}
+                  onChange={(e) =>
+                    handleSpacingChange("logoToSocial", e.target.value)
+                  }
+                  onBlur={(e) =>
+                    handleSpacingChange("logoToSocial", e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSpacingChange("logoToSocial", e.target.value);
+                    }
+                  }}
+                  min={0}
+                  max={30}
+                  aria-label="Espacement horizontal logo vers réseaux sociaux"
+                  placeholder="12"
+                />
+                <Slider
+                  className="grow h-4"
+                  value={[signatureData.spacings?.logoToSocial || 12]}
+                  onValueChange={(value) =>
+                    handleSpacingChange("logoToSocial", value[0])
+                  }
+                  min={0}
+                  max={30}
+                  step={2}
+                  aria-label="Espacement horizontal logo vers réseaux"
+                />
+              </div>
+            </div>
+
+            {/* Espacements du séparateur vertical (horizontal layout uniquement) */}
+            {signatureData.layout === "horizontal" &&
+              signatureData.verticalSeparator?.enabled && (
+                <>
+                  {/* Espacement gauche du séparateur vertical */}
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">
+                      Séparateur vertical - Gauche
+                    </Label>
+                    <div className="flex items-center gap-3 w-30">
+                      <Input
+                        className="h-8 w-12 px-2 py-1"
+                        type="text"
+                        inputMode="decimal"
+                        value={
+                          signatureData.spacings?.verticalSeparatorLeft ?? ""
+                        }
+                        onChange={(e) =>
+                          handleSpacingChange(
+                            "verticalSeparatorLeft",
+                            e.target.value
+                          )
+                        }
+                        onBlur={(e) =>
+                          handleSpacingChange(
+                            "verticalSeparatorLeft",
+                            e.target.value
+                          )
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleSpacingChange(
+                              "verticalSeparatorLeft",
+                              e.target.value
+                            );
+                          }
+                        }}
+                        min={0}
+                        max={30}
+                        aria-label="Espacement gauche séparateur vertical"
+                        placeholder="22"
+                      />
+                      <Slider
+                        className="grow h-4"
+                        value={[
+                          signatureData.spacings?.verticalSeparatorLeft || 22,
+                        ]}
+                        onValueChange={(value) =>
+                          handleSpacingChange("verticalSeparatorLeft", value[0])
+                        }
+                        min={0}
+                        max={30}
+                        step={2}
+                        aria-label="Espacement gauche séparateur vertical"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Espacement droite du séparateur vertical */}
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">
+                      Séparateur vertical - Droite
+                    </Label>
+                    <div className="flex items-center gap-3 w-30">
+                      <Input
+                        className="h-8 w-12 px-2 py-1"
+                        type="text"
+                        inputMode="decimal"
+                        value={
+                          signatureData.spacings?.verticalSeparatorRight ?? ""
+                        }
+                        onChange={(e) =>
+                          handleSpacingChange(
+                            "verticalSeparatorRight",
+                            e.target.value
+                          )
+                        }
+                        onBlur={(e) =>
+                          handleSpacingChange(
+                            "verticalSeparatorRight",
+                            e.target.value
+                          )
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleSpacingChange(
+                              "verticalSeparatorRight",
+                              e.target.value
+                            );
+                          }
+                        }}
+                        min={0}
+                        max={30}
+                        aria-label="Espacement droite séparateur vertical"
+                        placeholder="22"
+                      />
+                      <Slider
+                        className="grow h-4"
+                        value={[
+                          signatureData.spacings?.verticalSeparatorRight || 22,
+                        ]}
+                        onValueChange={(value) =>
+                          handleSpacingChange(
+                            "verticalSeparatorRight",
+                            value[0]
+                          )
+                        }
+                        min={0}
+                        max={30}
+                        step={2}
+                        aria-label="Espacement droite séparateur vertical"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
           </div>
         )}
       </div>

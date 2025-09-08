@@ -6,24 +6,27 @@ import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
-import { Square, X, Upload } from "lucide-react";
+import { Square, X, Upload, Circle } from "lucide-react";
 
-export default function ProfileImageSection({ signatureData, updateSignatureData }) {
+export default function ProfileImageSection({
+  signatureData,
+  updateSignatureData,
+}) {
   // Gestion de l'espacement entre prénom et nom
   const handleNameSpacingChange = (value) => {
     const numValue = parseInt(value) || 0;
-    updateSignatureData('nameSpacing', Math.max(0, Math.min(20, numValue))); // Entre 0 et 20px
+    updateSignatureData("nameSpacing", Math.max(0, Math.min(20, numValue))); // Entre 0 et 20px
   };
 
   // Gestion de la taille de l'image de profil
   const handleImageSizeChange = (value) => {
     const numValue = parseInt(value) || 80;
-    updateSignatureData('imageSize', Math.max(40, Math.min(150, numValue))); // Entre 40 et 150px
+    updateSignatureData("imageSize", Math.max(40, Math.min(150, numValue))); // Entre 40 et 150px
   };
 
   // Gestion de la forme de l'image de profil
   const handleImageShapeChange = (shape) => {
-    updateSignatureData('imageShape', shape);
+    updateSignatureData("imageShape", shape);
   };
 
   return (
@@ -36,18 +39,19 @@ export default function ProfileImageSection({ signatureData, updateSignatureData
           <div className="flex items-center gap-2 w-30">
             {signatureData.photo ? (
               <>
-                <img 
-                  src={signatureData.photo} 
-                  alt="Photo de profil" 
+                <img
+                  src={signatureData.photo}
+                  alt="Photo de profil"
                   className="w-8 h-8 object-cover rounded border"
                   style={{
-                    borderRadius: signatureData.imageShape === 'square' ? '4px' : '50%'
+                    borderRadius:
+                      signatureData.imageShape === "square" ? "4px" : "50%",
                   }}
                 />
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => updateSignatureData('photo', null)}
+                  onClick={() => updateSignatureData("photo", null)}
                   className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                   title="Supprimer la photo"
                 >
@@ -55,32 +59,35 @@ export default function ProfileImageSection({ signatureData, updateSignatureData
                 </Button>
               </>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
+              <div
                 onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*';
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "image/*";
                   input.onchange = (e) => {
                     const file = e.target.files[0];
                     if (file) {
                       const reader = new FileReader();
-                      reader.onload = (e) => updateSignatureData('photo', e.target.result);
+                      reader.onload = (e) =>
+                        updateSignatureData("photo", e.target.result);
                       reader.readAsDataURL(file);
                     }
                   };
                   input.click();
                 }}
-                className="h-7 px-2 text-xs flex items-center gap-1"
+                className="flex items-center w-full gap-2 bg-[#efefef] dark:bg-[#1F1F1F] dark:border-[#2F2F2F] dark:border rounded-md px-2 py-1 cursor-pointer hover:bg-[#efefef]/80 transition-colors"
               >
-                <Upload className="w-3 h-3" />
-                Ajouter
-              </Button>
+                <div className="w-6 h-6 pr-2 border-r flex items-center justify-center">
+                  <Upload className="w-3 h-3" />
+                </div>
+                <span className="text-xs text-gray-600 dark:text-white">
+                  Ajouter...
+                </span>
+              </div>
             )}
           </div>
         </div>
-        
+
         {/* Taille de l'image */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Taille</Label>
@@ -112,22 +119,24 @@ export default function ProfileImageSection({ signatureData, updateSignatureData
             <span className="text-xs text-muted-foreground">px</span>
           </div>
         </div>
-        
+
         {/* Forme de l'image */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Forme</Label>
           <AlignmentSelector
             items={[
-              { value: "round", icon: () => <div className="w-4 h-4 bg-current rounded-full" /> },
+              {
+                value: "round",
+                icon: Circle,
+              },
               { value: "square", icon: Square },
             ]}
             size="sm"
             className="w-30"
-            value={signatureData.imageShape || 'round'}
+            value={signatureData.imageShape || "round"}
             onValueChange={handleImageShapeChange}
           />
         </div>
-        
       </div>
     </div>
   );

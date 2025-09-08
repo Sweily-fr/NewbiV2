@@ -148,7 +148,7 @@ const VerticalSignature = ({
                       fontWeight: signatureData.typography?.fullName?.fontWeight || 'bold',
                       fontStyle: signatureData.typography?.fullName?.fontStyle || 'normal',
                       textDecoration: signatureData.typography?.fullName?.textDecoration || 'none',
-                      color: signatureData.typography?.fullName?.color || signatureData.primaryColor || '#2563eb',
+                      color: signatureData.typography?.fullName?.color || signatureData.primaryColor || '#171717',
                       lineHeight: '1.2',
                       fontFamily: signatureData.typography?.fullName?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif'
                     }}>
@@ -163,7 +163,7 @@ const VerticalSignature = ({
                           width: 'auto', 
                           minWidth: '0',
                           fontSize: `${signatureData.typography?.fullName?.fontSize || signatureData.fontSize?.name || 16}px`,
-                          color: signatureData.typography?.fullName?.color || signatureData.primaryColor || '#2563eb',
+                          color: signatureData.typography?.fullName?.color || signatureData.primaryColor || '#171717',
                           fontFamily: signatureData.typography?.fullName?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif',
                           fontWeight: signatureData.typography?.fullName?.fontWeight || 'normal',
                           fontStyle: signatureData.typography?.fullName?.fontStyle || 'normal',
@@ -269,7 +269,7 @@ const VerticalSignature = ({
                   <tr>
                     <td style={{ paddingBottom: signatureData.mobile ? `${signatureData.spacings?.phoneToMobile || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
                       <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.typography?.phone?.fontSize || signatureData.fontSize?.contact || 12}px`, color: signatureData.typography?.phone?.color || 'rgb(102,102,102)', fontFamily: signatureData.typography?.phone?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif' }}>
-                        <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNtYXJ0cGhvbmUtaWNvbiBsdWNpZGUtc21hcnRwaG9uZSI+PHJlY3Qgd2lkdGg9IjE0IiBoZWlnaHQ9IjIwIiB4PSI1IiB5PSIyIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNMTIgMThoLjAxIi8+PC9zdmc+" alt="Téléphone" width="14" height="14" style={{ width: '14px', height: '14px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.phone}
                           onChange={(value) => handleFieldChange("phone", value)}
@@ -294,7 +294,7 @@ const VerticalSignature = ({
                   <tr>
                     <td style={{ paddingBottom: signatureData.email ? `${signatureData.spacings?.mobileToEmail || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
                       <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.typography?.mobile?.fontSize || signatureData.fontSize?.contact || 12}px`, color: signatureData.typography?.mobile?.color || 'rgb(102,102,102)', fontFamily: signatureData.typography?.mobile?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif' }}>
-                        <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXBob25lLWljb24gbHVjaWRlLXBob25lIj48cGF0aCBkPSJNMTMuODMyIDE2LjU2OGExIDEgMCAwIDAgMS4yMTMtLjMwM2wuMzU1LS40NjVBMiAyIDAgMCAxIDE3IDE1aDNhMiAyIDAgMCAxIDIgMnYzYTIgMiAwIDAgMS0yIDJBMTggMTggMCAwIDEgMiA0YTIgMiAwIDAgMSAyLTJoM2EyIDIgMCAwIDEgMiAydjNhMiAyIDAgMCAxLS44IDEuNmwtLjQ2OC4zNTFhMSAxIDAgMCAwLS4yOTIgMS4yMzMgMTQgMTQgMCAwIDAgNi4zOTIgNi4zODQiLz48L3N2Zz4=" alt="Mobile" width="14" height="14" style={{ width: '14px', height: '14px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.mobile}
                           onChange={(value) => handleFieldChange("mobile", value)}
@@ -319,7 +319,7 @@ const VerticalSignature = ({
                   <tr>
                     <td style={{ paddingBottom: signatureData.website ? `${signatureData.spacings?.emailToWebsite || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
                       <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.typography?.email?.fontSize || signatureData.fontSize?.contact || 12}px`, color: signatureData.typography?.email?.color || 'rgb(102,102,102)', fontFamily: signatureData.typography?.email?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif' }}>
-                        <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW1haWwtaWNvbiBsdWNpZGUtbWFpbCI+PHBhdGggZD0ibTIyIDctOC45OTEgNS43MjdhMiAyIDAgMCAxLTIuMDA5IDBMMiA3Ii8+PHJlY3QgeD0iMiIgeT0iNCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjE2IiByeD0iMiIvPjwvc3ZnPg==" alt="Email" width="14" height="14" style={{ width: '14px', height: '14px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.email}
                           onChange={(value) => handleFieldChange("email", value)}
@@ -344,7 +344,7 @@ const VerticalSignature = ({
                   <tr>
                     <td style={{ paddingBottom: signatureData.address ? `${signatureData.spacings?.websiteToAddress || 4}px` : `${signatureData.spacings?.contactBottom || 6}px` }}>
                       <div style={{ display: 'flex', alignItems: 'center', fontSize: `${signatureData.typography?.website?.fontSize || signatureData.fontSize?.contact || 12}px`, color: signatureData.typography?.website?.color || 'rgb(102,102,102)', fontFamily: signatureData.typography?.website?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif' }}>
-                        <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px' }} />
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWdsb2JlLWljb24gbHVjaWRlLWdsb2JlIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIvPjxwYXRoIGQ9Ik0xMiAyYTE0LjUgMTQuNSAwIDAgMCAwIDIwIDE0LjUgMTQuNSAwIDAgMCAwLTIwIi8+PHBhdGggZD0iTTIgMTJoMjAiLz48L3N2Zz4=" alt="Site web" width="14" height="14" style={{ width: '14px', height: '14px', marginRight: '8px' }} />
                         <InlineEdit
                           value={signatureData.website}
                           onChange={(value) => handleFieldChange("website", value)}
@@ -369,7 +369,7 @@ const VerticalSignature = ({
                   <tr>
                     <td style={{ paddingBottom: '12px' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', fontSize: `${signatureData.typography?.address?.fontSize || signatureData.fontSize?.contact || 12}px`, color: signatureData.typography?.address?.color || 'rgb(102,102,102)', fontFamily: signatureData.typography?.address?.fontFamily || signatureData.fontFamily || 'Arial, sans-serif' }}>
-                        <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style={{ width: '12px', height: '12px', marginRight: '8px', marginTop: '1px' }} />
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW1hcC1waW4taWNvbiBsdWNpZGUtbWFwLXBpbiI+PHBhdGggZD0iTTIwIDEwYzAgNC45OTMtNS41MzkgMTAuMTkzLTcuMzk5IDExLjc5OWExIDEgMCAwIDEtMS4yMDIgMEM5LjUzOSAyMC4xOTMgNCAxNC45OTMgNCAxMGE4IDggMCAwIDEgMTYgMCIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTAiIHI9IjMiLz48L3N2Zz4=" alt="Adresse" width="14" height="14" style={{ width: '14px', height: '14px', marginRight: '8px', marginTop: '1px' }} />
                         <InlineEdit
                           value={signatureData.address}
                           onChange={(value) => handleFieldChange("address", value)}

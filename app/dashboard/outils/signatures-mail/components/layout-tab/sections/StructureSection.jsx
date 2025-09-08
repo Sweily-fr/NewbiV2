@@ -6,54 +6,64 @@ import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
 import { Switch } from "@/src/components/ui/switch";
-import {
-  CircleOff,
-  Minus,
-  Dot,
-  Slash,
-} from "lucide-react";
+import { CircleOff, Minus, Dot, Slash } from "lucide-react";
 
-export default function StructureSection({ signatureData, updateSignatureData }) {
+export default function StructureSection({
+  signatureData,
+  updateSignatureData,
+}) {
   // Gestion de l'épaisseur du séparateur vertical - DEPRECATED
   const handleSeparatorVerticalWidthChange = (value) => {
     const numValue = parseInt(value) || 1;
-    updateSignatureData('separatorVerticalWidth', Math.max(1, Math.min(5, numValue))); // Entre 1 et 5px
+    updateSignatureData(
+      "separatorVerticalWidth",
+      Math.max(1, Math.min(5, numValue))
+    ); // Entre 1 et 5px
   };
 
   // Gestion de l'épaisseur du séparateur horizontal - DEPRECATED
   const handleSeparatorHorizontalWidthChange = (value) => {
     const numValue = parseInt(value) || 1;
-    updateSignatureData('separatorHorizontalWidth', Math.max(1, Math.min(5, numValue))); // Entre 1 et 5px
+    updateSignatureData(
+      "separatorHorizontalWidth",
+      Math.max(1, Math.min(5, numValue))
+    ); // Entre 1 et 5px
   };
 
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-sm font-medium">Structure</h2>
       <div className="flex flex-col gap-3 ml-4">
-        
         {/* Séparateur vertical */}
         <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">Séparateur vertical</Label>
-          <div className="flex items-center gap-3 w-30">
+          <Label className="text-xs text-muted-foreground">
+            Séparateur vertical
+          </Label>
+          <div className="flex items-center gap-3">
             <Switch
               checked={signatureData.separators?.vertical?.enabled || false}
-              onCheckedChange={(checked) => updateSignatureData('separators', {
-                ...signatureData.separators,
-                vertical: {
-                  ...signatureData.separators?.vertical,
-                  enabled: checked
-                }
-              })}
+              onCheckedChange={(checked) =>
+                updateSignatureData("separators", {
+                  ...signatureData.separators,
+                  vertical: {
+                    ...signatureData.separators?.vertical,
+                    enabled: checked,
+                  },
+                })
+              }
+              className="scale-75"
             />
           </div>
         </div>
-        
+
         {/* Contrôles du séparateur vertical si activé */}
         {signatureData.separators?.vertical?.enabled && (
           <>
             {/* Épaisseur du séparateur vertical */}
-            <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Épaisseur verticale</Label>
+            {/* <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Épaisseur verticale
+              </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
                   className="h-8 w-12 px-2 py-1"
@@ -62,12 +72,12 @@ export default function StructureSection({ signatureData, updateSignatureData })
                   value={signatureData.separators?.vertical?.width || 1}
                   onChange={(e) => {
                     const numValue = parseInt(e.target.value) || 1;
-                    updateSignatureData('separators', {
+                    updateSignatureData("separators", {
                       ...signatureData.separators,
                       vertical: {
                         ...signatureData.separators?.vertical,
-                        width: Math.max(1, Math.min(5, numValue))
-                      }
+                        width: Math.max(1, Math.min(5, numValue)),
+                      },
                     });
                   }}
                   aria-label="Épaisseur du séparateur vertical"
@@ -76,47 +86,66 @@ export default function StructureSection({ signatureData, updateSignatureData })
                 <Slider
                   className="grow"
                   value={[signatureData.separators?.vertical?.width || 1]}
-                  onValueChange={(value) => updateSignatureData('separators', {
-                    ...signatureData.separators,
-                    vertical: {
-                      ...signatureData.separators?.vertical,
-                      width: value[0]
-                    }
-                  })}
+                  onValueChange={(value) =>
+                    updateSignatureData("separators", {
+                      ...signatureData.separators,
+                      vertical: {
+                        ...signatureData.separators?.vertical,
+                        width: value[0],
+                      },
+                    })
+                  }
                   min={1}
                   max={5}
                   step={1}
                   aria-label="Épaisseur séparateur vertical"
                 />
               </div>
-            </div>
-            
+            </div> */}
+
             {/* Couleur du séparateur vertical */}
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Couleur verticale</Label>
-              <div className="flex items-center gap-3 w-30">
-                <input
-                  type="color"
-                  value={signatureData.separators?.vertical?.color || "#e0e0e0"}
-                  onChange={(e) => updateSignatureData('separators', {
-                    ...signatureData.separators,
-                    vertical: {
-                      ...signatureData.separators?.vertical,
-                      color: e.target.value
-                    }
-                  })}
-                  className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+              <Label className="text-xs text-muted-foreground">
+                Couleur verticale
+              </Label>
+              <div className="flex items-center gap-2 bg-[#efefef] dark:bg-[#1F1F1F] dark:border-[#2F2F2F] dark:border rounded-md px-2 py-2">
+                <div
+                  className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
+                  style={{
+                    backgroundColor:
+                      signatureData.separators?.vertical?.color || "#e0e0e0",
+                  }}
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "color";
+                    input.value =
+                      signatureData.separators?.vertical?.color || "#e0e0e0";
+                    input.onchange = (e) => {
+                      updateSignatureData("separators", {
+                        ...signatureData.separators,
+                        vertical: {
+                          ...signatureData.separators?.vertical,
+                          color: e.target.value,
+                        },
+                      });
+                    };
+                    input.click();
+                  }}
                   title="Couleur du séparateur vertical"
                 />
-                <span className="text-xs text-muted-foreground w-16 text-right">
-                  {signatureData.separators?.vertical?.color || "#e0e0e0"}
+                <span className="text-xs text-gray-600 dark:text-white font-mono">
+                  {(
+                    signatureData.separators?.vertical?.color || "#e0e0e0"
+                  ).toUpperCase()}
                 </span>
               </div>
             </div>
-            
+
             {/* Radius du séparateur vertical */}
-            <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Radius vertical</Label>
+            {/* <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Radius vertical
+              </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
                   className="h-8 w-12 px-2 py-1"
@@ -125,12 +154,12 @@ export default function StructureSection({ signatureData, updateSignatureData })
                   value={signatureData.separators?.vertical?.radius || 0}
                   onChange={(e) => {
                     const numValue = parseInt(e.target.value) || 0;
-                    updateSignatureData('separators', {
+                    updateSignatureData("separators", {
                       ...signatureData.separators,
                       vertical: {
                         ...signatureData.separators?.vertical,
-                        radius: Math.max(0, Math.min(10, numValue))
-                      }
+                        radius: Math.max(0, Math.min(10, numValue)),
+                      },
                     });
                   }}
                   aria-label="Radius du séparateur vertical"
@@ -139,45 +168,52 @@ export default function StructureSection({ signatureData, updateSignatureData })
                 <Slider
                   className="grow"
                   value={[signatureData.separators?.vertical?.radius || 0]}
-                  onValueChange={(value) => updateSignatureData('separators', {
-                    ...signatureData.separators,
-                    vertical: {
-                      ...signatureData.separators?.vertical,
-                      radius: value[0]
-                    }
-                  })}
+                  onValueChange={(value) =>
+                    updateSignatureData("separators", {
+                      ...signatureData.separators,
+                      vertical: {
+                        ...signatureData.separators?.vertical,
+                        radius: value[0],
+                      },
+                    })
+                  }
                   min={0}
                   max={10}
                   step={1}
                   aria-label="Radius séparateur vertical"
                 />
               </div>
-            </div>
+            </div> */}
           </>
         )}
-        
+
         {/* Séparateur horizontal */}
         <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">Séparateur horizontal</Label>
-          <div className="flex items-center gap-3 w-30">
+          <Label className="text-xs text-muted-foreground">
+            Séparateur horizontal
+          </Label>
+          <div className="flex items-center gap-3">
             <Switch
               checked={signatureData.separators?.horizontal?.enabled || false}
-              onCheckedChange={(checked) => updateSignatureData('separators', {
-                ...signatureData.separators,
-                horizontal: {
-                  ...signatureData.separators?.horizontal,
-                  enabled: checked
-                }
-              })}
+              onCheckedChange={(checked) =>
+                updateSignatureData("separators", {
+                  ...signatureData.separators,
+                  horizontal: {
+                    ...signatureData.separators?.horizontal,
+                    enabled: checked,
+                  },
+                })
+              }
+              className="scale-75"
             />
           </div>
         </div>
-        
+
         {/* Contrôles du séparateur horizontal si activé */}
         {signatureData.separators?.horizontal?.enabled && (
           <>
             {/* Épaisseur du séparateur horizontal */}
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <Label className="text-xs text-muted-foreground">Épaisseur horizontale</Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
@@ -214,34 +250,51 @@ export default function StructureSection({ signatureData, updateSignatureData })
                   aria-label="Épaisseur séparateur horizontal"
                 />
               </div>
-            </div>
-            
+            </div> */}
+
             {/* Couleur du séparateur horizontal */}
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Couleur horizontale</Label>
-              <div className="flex items-center gap-3 w-30">
-                <input
-                  type="color"
-                  value={signatureData.separators?.horizontal?.color || "#e0e0e0"}
-                  onChange={(e) => updateSignatureData('separators', {
-                    ...signatureData.separators,
-                    horizontal: {
-                      ...signatureData.separators?.horizontal,
-                      color: e.target.value
-                    }
-                  })}
-                  className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+              <Label className="text-xs text-muted-foreground">
+                Couleur horizontale
+              </Label>
+              <div className="flex items-center gap-2 bg-[#efefef] dark:bg-[#1F1F1F] dark:border-[#2F2F2F] dark:border rounded-md px-2 py-2">
+                <div
+                  className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
+                  style={{
+                    backgroundColor:
+                      signatureData.separators?.horizontal?.color || "#e0e0e0",
+                  }}
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "color";
+                    input.value =
+                      signatureData.separators?.horizontal?.color || "#e0e0e0";
+                    input.onchange = (e) => {
+                      updateSignatureData("separators", {
+                        ...signatureData.separators,
+                        horizontal: {
+                          ...signatureData.separators?.horizontal,
+                          color: e.target.value,
+                        },
+                      });
+                    };
+                    input.click();
+                  }}
                   title="Couleur du séparateur horizontal"
                 />
-                <span className="text-xs text-muted-foreground w-16 text-right">
-                  {signatureData.separators?.horizontal?.color || "#e0e0e0"}
+                <span className="text-xs text-gray-600 dark:text-white font-mono">
+                  {(
+                    signatureData.separators?.horizontal?.color || "#e0e0e0"
+                  ).toUpperCase()}
                 </span>
               </div>
             </div>
-            
+
             {/* Radius du séparateur horizontal */}
-            <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Radius horizontal</Label>
+            {/* <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                Radius horizontal
+              </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
                   className="h-8 w-12 px-2 py-1"
@@ -250,12 +303,12 @@ export default function StructureSection({ signatureData, updateSignatureData })
                   value={signatureData.separators?.horizontal?.radius || 0}
                   onChange={(e) => {
                     const numValue = parseInt(e.target.value) || 0;
-                    updateSignatureData('separators', {
+                    updateSignatureData("separators", {
                       ...signatureData.separators,
                       horizontal: {
                         ...signatureData.separators?.horizontal,
-                        radius: Math.max(0, Math.min(10, numValue))
-                      }
+                        radius: Math.max(0, Math.min(10, numValue)),
+                      },
                     });
                   }}
                   aria-label="Radius du séparateur horizontal"
@@ -264,20 +317,22 @@ export default function StructureSection({ signatureData, updateSignatureData })
                 <Slider
                   className="grow"
                   value={[signatureData.separators?.horizontal?.radius || 0]}
-                  onValueChange={(value) => updateSignatureData('separators', {
-                    ...signatureData.separators,
-                    horizontal: {
-                      ...signatureData.separators?.horizontal,
-                      radius: value[0]
-                    }
-                  })}
+                  onValueChange={(value) =>
+                    updateSignatureData("separators", {
+                      ...signatureData.separators,
+                      horizontal: {
+                        ...signatureData.separators?.horizontal,
+                        radius: value[0],
+                      },
+                    })
+                  }
                   min={0}
                   max={10}
                   step={1}
                   aria-label="Radius séparateur horizontal"
                 />
               </div>
-            </div>
+            </div> */}
           </>
         )}
       </div>

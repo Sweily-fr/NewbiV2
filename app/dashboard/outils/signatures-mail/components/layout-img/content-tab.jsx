@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
+import { ImageIcon } from "lucide-react";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
@@ -91,8 +92,9 @@ export default function SpacingSection() {
   };
 
   return (
-    <div className="mt-4 flex flex-col gap-10">
-      
+    <div className="mt-4 flex items-center justify-center flex-col gap-4 h-64">
+      <ImageIcon className="w-10 h-10" />
+      <h2 className="text-lg font-medium">À venir...</h2>
     </div>
   );
 }

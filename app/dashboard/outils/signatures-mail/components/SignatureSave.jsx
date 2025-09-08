@@ -38,59 +38,67 @@ const SignatureSave = ({ existingSignatureId = null }) => {
   const { signatureData } = useSignatureData();
   const [isMounted, setIsMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [signatureName, setSignatureName] = useState(signatureData.signatureName || "");
+  const [signatureName, setSignatureName] = useState(
+    signatureData.signatureName || ""
+  );
   const [isDefault, setIsDefault] = useState(signatureData.isDefault || false);
   const [saveStatus, setSaveStatus] = useState(null); // null, 'success', 'error'
 
   // Éviter l'erreur d'hydratation
   useEffect(() => {
     setIsMounted(true);
-    
+
     // Écouter l'événement de sauvegarde global
     const handleGlobalSave = () => {
       setIsModalOpen(true);
     };
-    
-    window.addEventListener('signature-save', handleGlobalSave);
-    
+
+    window.addEventListener("signature-save", handleGlobalSave);
+
     return () => {
-      window.removeEventListener('signature-save', handleGlobalSave);
+      window.removeEventListener("signature-save", handleGlobalSave);
     };
   }, []);
 
-  const [createSignature, { loading: creating }] = useMutation(CREATE_EMAIL_SIGNATURE, {
-    refetchQueries: ['GetMyEmailSignatures'],
-    onCompleted: (data) => {
-      console.log("✅ Signature créée:", data.createEmailSignature);
-      setSaveStatus('success');
-      setTimeout(() => {
-        setIsModalOpen(false);
-        setSaveStatus(null);
-      }, 2000);
-    },
-    onError: (error) => {
-      console.error("❌ Erreur création signature:", error);
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus(null), 3000);
+  const [createSignature, { loading: creating }] = useMutation(
+    CREATE_EMAIL_SIGNATURE,
+    {
+      refetchQueries: ["GetMyEmailSignatures"],
+      onCompleted: (data) => {
+        console.log("✅ Signature créée:", data.createEmailSignature);
+        setSaveStatus("success");
+        setTimeout(() => {
+          setIsModalOpen(false);
+          setSaveStatus(null);
+        }, 2000);
+      },
+      onError: (error) => {
+        console.error("❌ Erreur création signature:", error);
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus(null), 3000);
+      },
     }
-  });
+  );
 
-  const [updateSignature, { loading: updating }] = useMutation(UPDATE_EMAIL_SIGNATURE, {
-    refetchQueries: ['GetMyEmailSignatures'],
-    onCompleted: (data) => {
-      console.log("✅ Signature mise à jour:", data.updateEmailSignature);
-      setSaveStatus('success');
-      setTimeout(() => {
-        setIsModalOpen(false);
-        setSaveStatus(null);
-      }, 2000);
-    },
-    onError: (error) => {
-      console.error("❌ Erreur mise à jour signature:", error);
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus(null), 3000);
+  const [updateSignature, { loading: updating }] = useMutation(
+    UPDATE_EMAIL_SIGNATURE,
+    {
+      refetchQueries: ["GetMyEmailSignatures"],
+      onCompleted: (data) => {
+        console.log("✅ Signature mise à jour:", data.updateEmailSignature);
+        setSaveStatus("success");
+        setTimeout(() => {
+          setIsModalOpen(false);
+          setSaveStatus(null);
+        }, 2000);
+      },
+      onError: (error) => {
+        console.error("❌ Erreur mise à jour signature:", error);
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus(null), 3000);
+      },
     }
-  });
+  );
 
   const isLoading = creating || updating;
 
@@ -124,7 +132,8 @@ const SignatureSave = ({ existingSignatureId = null }) => {
         company: signatureData.colors?.company || "#2563eb",
         contact: signatureData.colors?.contact || "#666666",
         separatorVertical: signatureData.colors?.separatorVertical || "#e0e0e0",
-        separatorHorizontal: signatureData.colors?.separatorHorizontal || "#e0e0e0"
+        separatorHorizontal:
+          signatureData.colors?.separatorHorizontal || "#e0e0e0",
       },
       // Configuration layout
       nameSpacing: signatureData.nameSpacing || 4,
@@ -132,7 +141,7 @@ const SignatureSave = ({ existingSignatureId = null }) => {
       layout: signatureData.layout || "horizontal",
       columnWidths: {
         photo: signatureData.columnWidths?.photo || 25,
-        content: signatureData.columnWidths?.content || 75
+        content: signatureData.columnWidths?.content || 75,
       },
       // Images
       photo: signatureData.photo || null,
@@ -159,63 +168,70 @@ const SignatureSave = ({ existingSignatureId = null }) => {
         emailToWebsite: signatureData.spacings?.emailToWebsite || 4,
         websiteToAddress: signatureData.spacings?.websiteToAddress || 4,
         separatorTop: signatureData.spacings?.separatorTop || 12,
-        separatorBottom: signatureData.spacings?.separatorBottom || 12
+        separatorBottom: signatureData.spacings?.separatorBottom || 12,
       },
       // Typographie
       fontFamily: signatureData.fontFamily || "Arial, sans-serif",
       fontSize: {
         name: signatureData.fontSize?.name || 16,
         position: signatureData.fontSize?.position || 14,
-        contact: signatureData.fontSize?.contact || 12
-      }
+        contact: signatureData.fontSize?.contact || 12,
+      },
     };
   };
 
   const handleSave = async () => {
     console.log("🚀 Début de la sauvegarde");
-    
+
     // Utiliser la fonction prepareSignatureData qui contient TOUS les champs avancés
     const completeData = prepareSignatureData();
-    
+
     // Remplacer le nom et le statut par défaut avec les valeurs du modal
     const finalData = {
       ...completeData,
       signatureName: signatureName || "Ma signature",
-      isDefault: isDefault || false
+      isDefault: isDefault || false,
     };
-    
+
     console.log("📝 Données complètes pour sauvegarde:", finalData);
     console.log("🎨 Couleurs incluses:", finalData.colors);
     console.log("📏 Largeurs colonnes incluses:", finalData.columnWidths);
     console.log("📎 Espacements inclus:", finalData.spacings);
     console.log("🔤 Tailles police incluses:", finalData.fontSize);
-    
+
     try {
       if (existingSignatureId) {
         // Mise à jour d'une signature existante
-        console.log("📝 Mise à jour de la signature existante:", existingSignatureId);
+        console.log(
+          "📝 Mise à jour de la signature existante:",
+          existingSignatureId
+        );
         await updateSignature({
           variables: {
             input: {
               id: existingSignatureId,
-              ...finalData
-            }
-          }
+              ...finalData,
+            },
+          },
         });
       } else {
         // Création d'une nouvelle signature
-        console.log("✨ Création d'une nouvelle signature avec TOUS les champs avancés");
+        console.log(
+          "✨ Création d'une nouvelle signature avec TOUS les champs avancés"
+        );
         const result = await createSignature({
           variables: {
-            input: finalData
-          }
+            input: finalData,
+          },
         });
-        console.log("✅ Signature créée avec succès:", result.data.createEmailSignature);
+        console.log(
+          "✅ Signature créée avec succès:",
+          result.data.createEmailSignature
+        );
       }
-      
     } catch (error) {
       console.error("❌ Erreur lors de la sauvegarde:", error);
-      setSaveStatus('error');
+      setSaveStatus("error");
     }
   };
 
@@ -247,9 +263,11 @@ const SignatureSave = ({ existingSignatureId = null }) => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-semibold mb-4">
-              {existingSignatureId ? "Mettre à jour la signature" : "Sauvegarder la signature"}
+              {existingSignatureId
+                ? "Mettre à jour la signature"
+                : "Sauvegarder la signature"}
             </h3>
-            
+
             <div className="space-y-4">
               {/* Nom de la signature */}
               <div>
@@ -270,18 +288,20 @@ const SignatureSave = ({ existingSignatureId = null }) => {
                   checked={isDefault}
                   onCheckedChange={setIsDefault}
                 />
-                <Label htmlFor="isDefault">Définir comme signature par défaut</Label>
+                <Label htmlFor="isDefault">
+                  Définir comme signature par défaut
+                </Label>
               </div>
 
               {/* Status de sauvegarde */}
-              {saveStatus === 'success' && (
+              {saveStatus === "success" && (
                 <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-md">
                   <Check className="w-4 h-4" />
                   <span>Signature sauvegardée avec succès !</span>
                 </div>
               )}
 
-              {saveStatus === 'error' && (
+              {saveStatus === "error" && (
                 <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-md">
                   <AlertCircle className="w-4 h-4" />
                   <span>Erreur lors de la sauvegarde</span>
