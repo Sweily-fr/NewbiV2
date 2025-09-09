@@ -24,23 +24,28 @@ export function useCompanyInfoGuard(redirectPath = "/dashboard/profile/company")
       return;
     }
 
-    const company = session.user.company;
+    const organization = session.user.organization;
     
     // Vérifier si les informations essentielles de l'entreprise sont présentes
+    // Utilise la structure de données réelle de Better Auth (champs aplatis)
     const isComplete = !!(
-      company?.name &&
-      company?.email &&
-      company?.address?.street &&
-      company?.address?.city &&
-      company?.address?.postalCode &&
-      company?.address?.country
+      organization?.companyName &&
+      organization?.companyEmail &&
+      organization?.addressStreet &&
+      organization?.addressCity &&
+      organization?.addressZipCode &&
+      organization?.addressCountry
     );
 
     console.log('🏢 Vérification informations entreprise:', {
-      hasCompany: !!company,
-      name: company?.name,
-      email: company?.email,
-      address: company?.address,
+      hasOrganization: !!organization,
+      fullOrganization: organization,
+      companyName: organization?.companyName,
+      companyEmail: organization?.companyEmail,
+      addressStreet: organization?.addressStreet,
+      addressCity: organization?.addressCity,
+      addressZipCode: organization?.addressZipCode,
+      addressCountry: organization?.addressCountry,
       isComplete
     });
 
@@ -56,20 +61,20 @@ export function useCompanyInfoGuard(redirectPath = "/dashboard/profile/company")
   return {
     isCompanyInfoComplete,
     isLoading,
-    company: session?.user?.company
+    organization: session?.user?.organization
   };
 }
 
 /**
  * Fonction utilitaire pour vérifier si les informations d'entreprise sont complètes
  */
-export function isCompanyInfoComplete(company) {
+export function isCompanyInfoComplete(organization) {
   return !!(
-    company?.name &&
-    company?.email &&
-    company?.address?.street &&
-    company?.address?.city &&
-    company?.address?.postalCode &&
-    company?.address?.country
+    organization?.companyName &&
+    organization?.companyEmail &&
+    organization?.addressStreet &&
+    organization?.addressCity &&
+    organization?.addressZipCode &&
+    organization?.addressCountry
   );
 }

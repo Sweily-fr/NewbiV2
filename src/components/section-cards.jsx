@@ -21,7 +21,15 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { useSubscription } from "@/src/contexts/subscription-context";
-import { Crown } from "lucide-react";
+import { Crown, Lock } from "lucide-react";
+import { useCompanyInfoGuard, isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import { useSession } from "@/src/lib/auth-client";
+import { useActiveOrganization } from "@/src/lib/organization-client";
 
 // Fonction pour déterminer la couleur de l'icône en fonction du type d'outil
 function getIconColor(title) {
@@ -135,6 +143,21 @@ const cards = [
 
 export function SectionCards({ className }) {
   const { isActive } = useSubscription();
+  const { data: session } = useSession();
+  const { organization, loading: orgLoading } = useActiveOrganization();
+  
+  // Check if company information is complete using fresh organization data
+  const companyInfoComplete = organization ? isCompanyInfoComplete(organization) : false;
+  
+  // Debug logging for company info validation
+  console.log('🔍 SectionCards - Company Info Debug:', {
+    hasSession: !!session,
+    hasUser: !!session?.user,
+    hasOrganization: !!organization,
+    organization: organization,
+    companyInfoComplete,
+    orgLoading
+  });
   
   return (
     <div
@@ -146,19 +169,24 @@ export function SectionCards({ className }) {
       {cards.map((card, index) => {
         const isAvailable = card.status === "available" || !card.status;
         const hasAccess = !card.isPro || isActive();
+        
+        // Check if this tool requires company info (invoices and quotes)
+        const requiresCompanyInfo = card.title === "Factures" || card.title === "Devis";
+        const hasCompanyInfoAccess = !requiresCompanyInfo || companyInfoComplete;
+        
+        // Final access check: must have subscription access AND company info access (if required)
+        const canAccess = hasAccess && hasCompanyInfoAccess;
 
-        // La fonction getIconColor est maintenant définie en dehors du composant
-
-        return (
+        const cardContent = (
           <Card key={index} className={cn(
             "border-0 shadow-sm p-2 relative",
-            !hasAccess && "opacity-60 cursor-not-allowed"
+            !canAccess && "opacity-60 cursor-not-allowed"
           )}>
             <div className="flex flex-row h-full">
               {/* Partie gauche avec icône, titre, description et lien */}
               <div className="flex flex-col p-2 flex-1 justify-between">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <div
                       className={cn(
                         "p-2 rounded-md w-7 h-7 flex items-center justify-center",
@@ -168,9 +196,14 @@ export function SectionCards({ className }) {
                     >
                       <p className="text-white">{card.icon}</p>
                     </div>
-                    {!hasAccess && (
-                      <Crown className="w-4 h-4 text-[#5b4fff]" />
-                    )}
+                    <div className="flex items-center gap-1">
+                      {!hasAccess && (
+                        <Crown className="w-4 h-4 text-[#5b4fff]" />
+                      )}
+                      {hasAccess && requiresCompanyInfo && !companyInfoComplete && (
+                        <Lock className="w-4 h-4 text-[#5b4fff]" />
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-3">
@@ -182,17 +215,23 @@ export function SectionCards({ className }) {
                 </div>
 
                 <div className="pt-6">
-                  {isAvailable && hasAccess && (
+                  {isAvailable && canAccess && (
                     <Link
                       href={card.href || "#"}
-                      className="text-sm font-medium text-[#5B4FFF] hover:text-[#5B4FFF] flex items-center gap-2 no-underline"
+                      className="text-sm font-normal text-[#5B4FFF] hover:text-[#5B4FFF] flex items-center gap-2 no-underline"
                     >
                       Accéder <span className="text-sm">→</span>
                     </Link>
                   )}
                   {!hasAccess && (
-                    <div className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                    <div className="text-sm font-normal text-gray-400 flex items-center gap-2">
                       Nécessite Pro
+                    </div>
+                  )}
+                  {hasAccess && requiresCompanyInfo && !companyInfoComplete && (
+                    <div className="text-sm font-normal text-[#5b4fff] flex items-center gap-2">
+                      <Lock className="w-3 h-3 text-[#5b4fff]" />
+                      Configuration requise
                     </div>
                   )}
                 </div>
@@ -203,14 +242,14 @@ export function SectionCards({ className }) {
                 className={cn(
                   "w-1/2 rounded-xl m-1 p-2 flex flex-col justify-center space-y-4 bg-[#5B4FFF]/4 bg-center bg-no-repeat bg-50% bg-blend-soft-light",
                   card.Image ? "" : "bg-none",
-                  !hasAccess && "grayscale"
+                  !canAccess && "grayscale"
                 )}
                 style={{
                   backgroundImage: card.Image ? `url(${card.Image})` : "none",
                   backgroundSize: "80%",
                   backgroundPosition: "center center",
                   backgroundRepeat: "no-repeat",
-                  opacity: hasAccess ? 0.7 : 0.4,
+                  opacity: canAccess ? 0.7 : 0.4,
                   objectFit: "cover",
                 }}
               >
@@ -251,6 +290,26 @@ export function SectionCards({ className }) {
             </div>
           </Card>
         );
+
+        // Wrap the entire card with tooltip when company info is required but incomplete
+        return hasAccess && requiresCompanyInfo && !companyInfoComplete ? (
+          <Tooltip key={index}>
+            <TooltipTrigger asChild>
+              {cardContent}
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="space-y-2">
+                <p>Complétez les informations de votre entreprise pour accéder à cet outil</p>
+                <Link 
+                  href="/dashboard/settings" 
+                  className="text-xs text-[#5b4fff] hover:text-[#5b4fff] block"
+                >
+                  Aller aux paramètres entreprise →
+                </Link>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        ) : cardContent;
       })}
     </div>
   );
