@@ -69,7 +69,16 @@ function GestionDepensesContent() {
     // Données pour le graphique des dépenses
     const expenseChartData = months.map(({ month, fullDate }) => {
       const monthExpenses = expenses.filter(expense => {
-        const expenseDate = new Date(expense.date);
+        // Gérer les dates qui peuvent être des timestamps ou des chaînes
+        let expenseDate;
+        if (typeof expense.date === 'string') {
+          expenseDate = new Date(expense.date);
+        } else if (typeof expense.date === 'number') {
+          expenseDate = new Date(expense.date);
+        } else {
+          expenseDate = new Date(expense.date);
+        }
+        
         return expenseDate.getMonth() === fullDate.getMonth() && 
                expenseDate.getFullYear() === fullDate.getFullYear();
       });
@@ -86,7 +95,16 @@ function GestionDepensesContent() {
     // Données pour le graphique des revenus
     const incomeChartData = months.map(({ month, fullDate }) => {
       const monthInvoices = paidInvoices.filter(invoice => {
-        const invoiceDate = new Date(invoice.issueDate);
+        // Gérer les dates qui peuvent être des timestamps ou des chaînes
+        let invoiceDate;
+        if (typeof invoice.issueDate === 'string') {
+          invoiceDate = new Date(invoice.issueDate);
+        } else if (typeof invoice.issueDate === 'number') {
+          invoiceDate = new Date(invoice.issueDate);
+        } else {
+          invoiceDate = new Date(invoice.issueDate);
+        }
+        
         return invoiceDate.getMonth() === fullDate.getMonth() && 
                invoiceDate.getFullYear() === fullDate.getFullYear();
       });

@@ -96,7 +96,7 @@ export const useCreateExpense = () => {
         variables: {
           status: 'PAID',
           page: 1,
-          limit: 100
+          limit: 1000
         }
       }
     ],
