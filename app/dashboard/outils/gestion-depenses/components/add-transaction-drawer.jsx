@@ -12,7 +12,7 @@ import { Badge } from "@/src/components/ui/badge";
 
 export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
   const [formData, setFormData] = useState({
-    type: "EXPENSE",
+    type: "INCOME", // Changer le défaut à INCOME pour tester
     amount: "",
     category: "",
     date: new Date().toISOString().split("T")[0],
@@ -25,7 +25,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
     if (!isOpen) {
       // Réinitialiser le formulaire
       setFormData({
-        type: "EXPENSE",
+        type: "INCOME", // Changer aussi ici pour la cohérence
         amount: "",
         category: "",
         date: new Date().toISOString().split("T")[0],
@@ -38,6 +38,8 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("🚀 Formulaire soumis avec type:", formData.type);
+    console.log("🚀 FormData complet:", formData);
     onSubmit(formData);
   };
 

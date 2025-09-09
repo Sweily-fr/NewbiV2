@@ -105,7 +105,7 @@ import {
   useDeleteExpense,
   useDeleteMultipleExpenses,
 } from "@/src/hooks/useExpenses";
-import { useInvoices } from "@/src/graphql/invoiceQueries";
+import { useInvoices, useCreateInvoice } from "@/src/graphql/invoiceQueries";
 // Bridge integration removed
 import { Plus } from "lucide-react";
 import {
@@ -161,13 +161,11 @@ const columns = [
     accessorKey: "date",
     cell: ({ row }) => {
       const dateValue = row.getValue("date");
-      console.log("DEBUG - Date value:", dateValue, "Type:", typeof dateValue);
       
       // Forcer la conversion si c'est un timestamp
       if (typeof dateValue === 'number' || (typeof dateValue === 'string' && /^\d{10,13}$/.test(dateValue))) {
         const date = new Date(Number(dateValue));
         const formatted = date.toISOString().split('T')[0];
-        console.log("DEBUG - Converted timestamp to:", formatted);
         return <div className="font-normal">{formatted}</div>;
       }
       
@@ -216,33 +214,48 @@ const columns = [
           };
         }
 
-        // Dépenses manuelles - Sorties d'argent (rouge) avec sous-type
-        if (type === "EXPENSE" && source === "expense") {
-          const subType = row.original.subType;
-          let subLabel = "Dépense";
+        // Entrées manuelles - Entrées d'argent (vert) basées sur les notes
+        if (source === "expense") {
+          const notes = row.original.notes;
+          const isVatDeductible = row.original.isVatDeductible;
+          const isIncome = (notes && notes.includes('[INCOME]')) || isVatDeductible === false;
+          
+          console.log(`🔍 Type check pour ${row.original.id}: notes="${notes}", isVatDeductible=${isVatDeductible}, isIncome=${isIncome}`);
+          
+          if (isIncome) {
+            return {
+              className: "bg-transparent border-green-300 text-green-800 font-normal",
+              icon: <ArrowUpIcon size={12} />,
+              label: "Entrée",
+            };
+          } else {
+            // Dépenses manuelles - Sorties d'argent (rouge) avec sous-type
+            const subType = row.original.subType;
+            let subLabel = "Dépense";
 
-          switch (subType) {
-            case "transport":
-              subLabel = "Transport";
-              break;
-            case "repas":
-              subLabel = "Repas";
-              break;
-            case "bureau":
-              subLabel = "Bureau";
-              break;
-            case "prestation":
-              subLabel = "Prestation";
-              break;
-            default:
-              subLabel = "Dépense";
+            switch (subType) {
+              case "transport":
+                subLabel = "Transport";
+                break;
+              case "repas":
+                subLabel = "Repas";
+                break;
+              case "bureau":
+                subLabel = "Bureau";
+                break;
+              case "prestation":
+                subLabel = "Prestation";
+                break;
+              default:
+                subLabel = "Dépense";
+            }
+
+            return {
+              className: "bg-transparent border-red-300 text-red-800 font-normal",
+              icon: <ArrowDownIcon size={12} />,
+              label: subLabel,
+            };
           }
-
-          return {
-            className: "bg-transparent border-red-300 text-red-800 font-normal",
-            icon: <ArrowDownIcon size={12} />,
-            label: subLabel,
-          };
         }
 
         // Fallback
@@ -468,6 +481,7 @@ export default function TransactionTable() {
 
   // Hooks pour la création et suppression
   const { createExpense, loading: createLoading } = useCreateExpense();
+  const { createInvoice, loading: createInvoiceLoading } = useCreateInvoice();
   const { deleteExpense, loading: deleteLoading } = useDeleteExpense();
   const { deleteMultipleExpenses, loading: deleteMultipleLoading } =
     useDeleteMultipleExpenses();
@@ -699,31 +713,72 @@ export default function TransactionTable() {
 
   const handleAddTransaction = async (transaction) => {
     try {
-      // Mapper les données du formulaire vers le format attendu par l'API
-      const expenseInput = {
-        title: transaction.description || "Dépense manuelle",
-        description: transaction.description,
-        amount: parseFloat(transaction.amount),
-        currency: "EUR",
-        category: mapCategoryToEnum(transaction.category),
-        date: transaction.date, // Format YYYY-MM-DD déjà correct
-        paymentMethod: mapPaymentMethodToEnum(transaction.paymentMethod),
-        status: "PAID", // Les dépenses manuelles sont considérées comme payées
-        isVatDeductible: true, // Valeur par défaut
-        notes: transaction.description
-      };
-
-      console.log("Données envoyées à l'API:", expenseInput);
-
-      const result = await createExpense(expenseInput);
+      console.log("Type de transaction:", transaction.type);
+      console.log("Données complètes de la transaction:", transaction);
       
-      if (result.success) {
-        setIsAddTransactionDrawerOpen(false);
-        // Le toast de succès est géré dans le hook
+      if (transaction.type === "INCOME") {
+        // Pour les revenus, créer une dépense avec montant positif
+        const expenseInput = {
+          title: transaction.description || "Revenu manuel",
+          description: transaction.description,
+          amount: parseFloat(transaction.amount), // Montant positif pour les revenus
+          currency: "EUR",
+          category: mapCategoryToEnum(transaction.category),
+          date: transaction.date,
+          paymentMethod: mapPaymentMethodToEnum(transaction.paymentMethod),
+          status: "PAID",
+          isVatDeductible: false, // Les revenus ne sont généralement pas déductibles
+          notes: `[INCOME] ${transaction.description}`
+          // Retirer le champ type car il n'existe pas dans le modèle Expense
+        };
+
+        console.log("Données revenu envoyées à l'API:", expenseInput);
+        console.log("isVatDeductible pour revenu:", expenseInput.isVatDeductible);
+
+        const result = await createExpense(expenseInput);
+        console.log("Résultat création revenu:", result);
+        console.log("Expense créée avec isVatDeductible:", result.expense?.isVatDeductible);
+        console.log("🔍 Vérification notes dans result:", result.expense?.notes);
+        
+        if (result.success) {
+          setIsAddTransactionDrawerOpen(false);
+          // Forcer le refetch des données pour mettre à jour les graphiques
+          setTimeout(() => {
+            refetchExpenses();
+            console.log("✅ Revenu créé avec succès, refetch déclenché avec délai");
+          }, 500);
+        }
+        
+      } else {
+        // Pour les dépenses, utiliser l'API existante
+        const expenseInput = {
+          title: transaction.description || "Dépense manuelle",
+          description: transaction.description,
+          amount: parseFloat(transaction.amount),
+          currency: "EUR",
+          category: mapCategoryToEnum(transaction.category),
+          date: transaction.date,
+          paymentMethod: mapPaymentMethodToEnum(transaction.paymentMethod),
+          status: "PAID",
+          isVatDeductible: true,
+          notes: `[EXPENSE] ${transaction.description}`
+          // Retirer le champ type car il n'existe pas dans le modèle Expense
+        };
+
+        console.log("Données dépense envoyées à l'API:", expenseInput);
+
+        const result = await createExpense(expenseInput);
+        console.log("Résultat création dépense:", result);
+        
+        if (result.success) {
+          setIsAddTransactionDrawerOpen(false);
+          // Forcer le refetch des données pour mettre à jour les graphiques
+          refetchExpenses();
+          console.log("✅ Dépense créée avec succès, refetch déclenché");
+        }
       }
     } catch (error) {
       console.error("Erreur lors de l'ajout de la transaction:", error);
-      // Le toast d'erreur est géré dans le hook
     }
   };
 
@@ -737,7 +792,8 @@ export default function TransactionTable() {
       "Alimentation": "MEALS",
       "Logement": "RENT",
       "Salaire": "SALARIES",
-      "Freelance": "SERVICES"
+      "Freelance": "SERVICES",
+      "": "OTHER" // Catégorie vide par défaut
     };
     
     return categoryMap[category] || "OTHER";
