@@ -7,6 +7,7 @@ import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
 import { Separator } from "@/src/components/ui/separator";
+import { Slider } from "@/src/components/ui/slider";
 import { Plus, Euro } from "lucide-react";
 
 export default function CreateLinkedInvoicePopover({ 
@@ -16,6 +17,7 @@ export default function CreateLinkedInvoicePopover({
 }) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
+  const [percentage, setPercentage] = useState([50]); // Slider pour le pourcentage
   const [isDeposit, setIsDeposit] = useState(false);
 
   // Calculer le montant restant à facturer
@@ -97,12 +99,31 @@ export default function CreateLinkedInvoicePopover({
     // Permettre seulement les nombres avec jusqu'à 2 décimales
     if (value === "" || /^\d*\.?\d{0,2}$/.test(value)) {
       setAmount(value);
+      // Mettre à jour le slider en fonction du montant saisi
+      updatePercentageFromAmount(value);
     }
   };
 
   const setQuickAmount = (percentage) => {
     const quickAmount = (remainingAmount * percentage / 100).toFixed(2);
     setAmount(quickAmount);
+    setPercentage([percentage]); // Synchroniser le slider
+  };
+
+  // Gérer le changement du slider de pourcentage
+  const handlePercentageChange = (value) => {
+    const newPercentage = value[0];
+    setPercentage([newPercentage]);
+    const calculatedAmount = (remainingAmount * newPercentage / 100).toFixed(2);
+    setAmount(calculatedAmount);
+  };
+
+  // Mettre à jour le slider quand le montant change manuellement
+  const updatePercentageFromAmount = (amountValue) => {
+    if (amountValue && !isNaN(parseFloat(amountValue)) && remainingAmount > 0) {
+      const calculatedPercentage = Math.round((parseFloat(amountValue) / remainingAmount) * 100);
+      setPercentage([Math.min(100, Math.max(0, calculatedPercentage))]);
+    }
   };
 
   if (!canCreateInvoice) {
@@ -115,7 +136,7 @@ export default function CreateLinkedInvoicePopover({
         <Button 
           variant="outline" 
           size="sm" 
-          className="w-full"
+          className="w-full font-normal text-sm"
           disabled={isLoading}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -125,7 +146,7 @@ export default function CreateLinkedInvoicePopover({
       <PopoverContent className="w-80" align="end">
         <div className="space-y-4">
           <div className="space-y-2">
-            <h4 className="font-medium leading-none">Créer une facture liée</h4>
+            <h4 className="font-medium leading-none">Créer une facture liée au devis</h4>
             <p className="text-sm text-muted-foreground">
               Créez une facture partielle à partir de ce devis
             </p>
@@ -173,6 +194,35 @@ export default function CreateLinkedInvoicePopover({
                   </span>
                 )}
               </Label>
+              
+              {/* Slider de pourcentage - caché pour la dernière facture */}
+              {!isLastInvoice && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm text-muted-foreground">
+                      Pourcentage du reste à facturer
+                    </Label>
+                    <span className="text-sm font-medium text-primary">
+                      {percentage[0]}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={percentage}
+                    onValueChange={handlePercentageChange}
+                    max={100}
+                    min={1}
+                    step={1}
+                    className="w-full"
+                    showTooltip={true}
+                    tooltipContent={(value) => `${value}%`}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>1%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+              )}
+              
               <div className="relative">
                 <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -213,7 +263,7 @@ export default function CreateLinkedInvoicePopover({
                     variant="outline"
                     size="sm"
                     className="text-xs px-2 py-1 h-auto"
-                    onClick={() => setAmount(remainingAmount.toFixed(2))}
+                    onClick={() => setQuickAmount(100)}
                   >
                     Tout
                   </Button>

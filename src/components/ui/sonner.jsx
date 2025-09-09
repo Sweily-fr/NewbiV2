@@ -94,6 +94,7 @@ const toast = {
   success: (message) => sonnerToast.custom(() => <SuccessToast message={message} />),
   error: (message) => sonnerToast.custom(() => <ErrorToast message={message} />),
   info: (message) => sonnerToast.custom(() => <InfoToast message={message} />),
+  warning: (message) => sonnerToast.custom(() => <InfoToast message={message} />), // Utilise InfoToast pour les warnings
   // Conserver les méthodes originales de sonner si nécessaire
   dismiss: sonnerToast.dismiss,
   promise: sonnerToast.promise

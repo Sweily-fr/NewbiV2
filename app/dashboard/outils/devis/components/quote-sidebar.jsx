@@ -197,6 +197,13 @@ export default function QuoteSidebar({
       console.log("Appel du hook createLinkedInvoice...");
       const result = await createLinkedInvoice(quoteId, amount, isDeposit);
       console.log("Résultat de createLinkedInvoice:", result);
+      
+      // Naviguer vers l'éditeur de facture brouillon
+      if (result?.invoice?.id) {
+        router.push(`/dashboard/outils/factures/${result.invoice.id}/editer`);
+        onClose(); // Fermer la sidebar
+      }
+      
       if (onRefetch) onRefetch();
       return result;
     } catch (error) {
@@ -549,7 +556,7 @@ export default function QuoteSidebar({
                     variant="outline"
                     onClick={handleConvertToInvoice}
                     disabled={isLoading}
-                    className="w-full"
+                    className="w-full font-normal text-sm"
                   >
                     <FileCheck className="h-4 w-4 mr-2" />
                     Conversion complète

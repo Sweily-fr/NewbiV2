@@ -258,11 +258,13 @@ export const CHANGE_INVOICE_STATUS = gql`
 export const CREATE_LINKED_INVOICE = gql`
   mutation CreateLinkedInvoice(
     $quoteId: ID!
+    $workspaceId: ID!
     $amount: Float!
     $isDeposit: Boolean!
   ) {
     createLinkedInvoice(
       quoteId: $quoteId
+      workspaceId: $workspaceId
       amount: $amount
       isDeposit: $isDeposit
     ) {
@@ -555,7 +557,7 @@ export const useCreateInvoice = () => {
   const { workspaceId } = useRequiredWorkspace();
 
   const [createInvoiceMutation, { loading }] = useMutation(CREATE_INVOICE, {
-    onCompleted: (data) => {
+    onCompleted: () => {
       toast.success("Facture créée avec succès");
       // Invalider le cache des factures pour forcer un refetch
       client.refetchQueries({
@@ -784,57 +786,47 @@ export const useChangeInvoiceStatus = () => {
 // Hook pour créer une facture liée à un devis
 export const useCreateLinkedInvoice = () => {
   const client = useApolloClient();
+  const { workspaceId } = useRequiredWorkspace();
 
   const [createLinkedInvoiceMutation, { loading }] = useMutation(
-    CREATE_LINKED_INVOICE,
-    {
-      onCompleted: (data) => {
-        const invoiceNumber = data.createLinkedInvoice.invoice.number;
-        const isDeposit = data.createLinkedInvoice.invoice.isDeposit;
-        const message = isDeposit
-          ? `Facture d'acompte ${invoiceNumber} créée avec succès`
-          : `Facture ${invoiceNumber} créée avec succès`;
-        toast.success(message);
-
-        // Invalider les caches pour rafraîchir les données
-        client.refetchQueries({
-          include: [GET_INVOICES, GET_INVOICE_STATS],
-        });
-
-        // Invalider aussi les requêtes de devis (import nécessaire)
-        client.refetchQueries({
-          include: ["GetQuotes", "GetQuote"],
-        });
-      },
-      onError: (error) => {
-        console.error("Erreur lors de la création de la facture liée:", error);
-        toast.error(
-          error.message || "Erreur lors de la création de la facture liée"
-        );
-      },
-    }
+    CREATE_LINKED_INVOICE
   );
 
   const createLinkedInvoice = async (quoteId, amount, isDeposit) => {
+    if (!workspaceId) {
+      throw new Error("Aucun workspace sélectionné");
+    }
+
     console.log("Hook createLinkedInvoice appelé avec:", {
       quoteId,
       amount,
       isDeposit,
+      workspaceId,
     });
+    
     try {
       console.log("Exécution de la mutation GraphQL...");
       const result = await createLinkedInvoiceMutation({
         variables: {
           quoteId,
+          workspaceId,
           amount,
           isDeposit,
         },
       });
       console.log("Résultat de la mutation GraphQL:", result);
 
-      // Vérifier que les informations SIRET et TVA sont bien présentes dans la réponse
+      // Afficher la notification de succès
       const invoice = result.data?.createLinkedInvoice?.invoice;
       if (invoice) {
+        const invoiceNumber = invoice.number;
+        const isDeposit = invoice.isDeposit;
+        const message = isDeposit
+          ? `Facture d'acompte ${invoiceNumber} créée avec succès`
+          : `Facture ${invoiceNumber} créée avec succès`;
+        toast.success(message);
+
+        // Vérifier que les informations SIRET et TVA sont bien présentes dans la réponse
         const siret = invoice.companyInfo?.siret;
         const vatNumber = invoice.companyInfo?.vatNumber;
 
@@ -849,6 +841,21 @@ export const useCreateLinkedInvoice = () => {
             description:
               "Certaines informations légales (SIRET ou TVA) sont manquantes dans la facture. Vérifiez vos paramètres d'entreprise.",
           });
+        }
+
+        // Invalider les caches pour rafraîchir les données
+        try {
+          await client.refetchQueries({
+            include: [GET_INVOICES, GET_INVOICE_STATS],
+          });
+
+          // Invalider aussi les requêtes de devis
+          await client.refetchQueries({
+            include: ["GetQuotes", "GetQuote"],
+          });
+        } catch (refetchError) {
+          console.warn("Erreur lors du rafraîchissement des données:", refetchError);
+          // Ne pas faire échouer toute l'opération pour une erreur de refetch
         }
       }
 
