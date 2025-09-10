@@ -194,13 +194,17 @@ export default function Settings() {
 
         // Coordonnées bancaires (champs aplatis)
         bankName:
-          sanitizedFormData.bankDetails?.bankName ||
-          existingOrgData.bankName ||
-          "",
+          sanitizedFormData.bankDetails?.bankName !== undefined
+            ? sanitizedFormData.bankDetails.bankName
+            : existingOrgData.bankName || "",
         bankIban:
-          sanitizedFormData.bankDetails?.iban || existingOrgData.bankIban || "",
+          sanitizedFormData.bankDetails?.iban !== undefined
+            ? sanitizedFormData.bankDetails.iban
+            : existingOrgData.bankIban || "",
         bankBic:
-          sanitizedFormData.bankDetails?.bic || existingOrgData.bankBic || "",
+          sanitizedFormData.bankDetails?.bic !== undefined
+            ? sanitizedFormData.bankDetails.bic
+            : existingOrgData.bankBic || "",
       };
 
       console.log("🔄 Données existantes organisation:", existingOrgData);
@@ -213,7 +217,8 @@ export default function Settings() {
           toast.success(
             "Informations de l'entreprise mises à jour avec succès"
           );
-          refetchOrg();
+          // Ne pas refetch immédiatement pour éviter de remettre les anciennes valeurs
+          // Le useEffect se chargera de la synchronisation quand les nouvelles données arriveront
         },
         onError: (error) => {
           toast.error("Erreur lors de la mise à jour");

@@ -246,7 +246,6 @@ export const validateSettingsForm = (formData) => {
   const hasCommercialActivity = formData.legal?.hasCommercialActivity || false;
   
   const requiredFields = getRequiredFields(legalForm, isVatSubject, hasCommercialActivity);
-  const visibleFields = getVisibleFields(legalForm, isVatSubject, hasCommercialActivity);
   
   // Validation des champs entreprise
   if (formData.name) {
@@ -315,34 +314,61 @@ export const validateSettingsForm = (formData) => {
     else sanitizedData.address = sanitizedAddress;
   }
 
-  // Validation informations bancaires
+  // Validation informations bancaires avec logique conditionnelle
   if (formData.bankDetails) {
     const bankErrors = {};
     const sanitizedBank = {};
 
-    if (formData.bankDetails.iban) {
-      const validation = validateField(formData.bankDetails.iban, "iban", true);
-      if (!validation.isValid) bankErrors.iban = validation.message;
-      else sanitizedBank.iban = validation.sanitizedValue;
-    }
+    // Vérifier si au moins un champ bancaire est rempli
+    const hasIban = formData.bankDetails.iban && formData.bankDetails.iban.trim() !== "";
+    const hasBic = formData.bankDetails.bic && formData.bankDetails.bic.trim() !== "";
+    const hasBankName = formData.bankDetails.bankName && formData.bankDetails.bankName.trim() !== "";
+    
+    const hasAnyBankField = hasIban || hasBic || hasBankName;
 
-    if (formData.bankDetails.bic) {
-      const validation = validateField(formData.bankDetails.bic, "bic", true);
-      if (!validation.isValid) bankErrors.bic = validation.message;
-      else sanitizedBank.bic = validation.sanitizedValue;
-    }
+    // Si aucun champ n'est rempli, c'est valide (on peut avoir des coordonnées bancaires vides)
+    if (!hasAnyBankField) {
+      sanitizedData.bankDetails = {
+        iban: "",
+        bic: "",
+        bankName: ""
+      };
+    } else {
+      // Si au moins un champ est rempli, tous les 3 champs deviennent obligatoires
+      
+      // Validation IBAN (obligatoire si au moins un champ bancaire est rempli)
+      const ibanValidation = validateField(formData.bankDetails.iban, "iban", hasAnyBankField);
+      if (!ibanValidation.isValid) {
+        bankErrors.iban = hasAnyBankField && (!formData.bankDetails.iban || formData.bankDetails.iban.trim() === "") 
+          ? "L'IBAN est requis si vous renseignez des coordonnées bancaires" 
+          : ibanValidation.message;
+      } else if (ibanValidation.sanitizedValue) {
+        sanitizedBank.iban = ibanValidation.sanitizedValue;
+      }
 
-    if (formData.bankDetails.bankName) {
-      const validation = validateField(
-        formData.bankDetails.bankName,
-        "bankName"
-      );
-      if (!validation.isValid) bankErrors.bankName = validation.message;
-      else sanitizedBank.bankName = validation.sanitizedValue;
-    }
+      // Validation BIC (obligatoire si au moins un champ bancaire est rempli)
+      const bicValidation = validateField(formData.bankDetails.bic, "bic", hasAnyBankField);
+      if (!bicValidation.isValid) {
+        bankErrors.bic = hasAnyBankField && (!formData.bankDetails.bic || formData.bankDetails.bic.trim() === "") 
+          ? "Le BIC est requis si vous renseignez des coordonnées bancaires" 
+          : bicValidation.message;
+      } else if (bicValidation.sanitizedValue) {
+        sanitizedBank.bic = bicValidation.sanitizedValue;
+      }
 
-    if (Object.keys(bankErrors).length > 0) errors.bankDetails = bankErrors;
-    else sanitizedData.bankDetails = sanitizedBank;
+      // Validation nom de banque (obligatoire si au moins un champ bancaire est rempli)
+      const bankNameValidation = validateField(formData.bankDetails.bankName, "bankName", hasAnyBankField);
+      if (!bankNameValidation.isValid) {
+        bankErrors.bankName = hasAnyBankField && (!formData.bankDetails.bankName || formData.bankDetails.bankName.trim() === "") 
+          ? "Le nom de la banque est requis si vous renseignez des coordonnées bancaires" 
+          : bankNameValidation.message;
+      } else if (bankNameValidation.sanitizedValue) {
+        sanitizedBank.bankName = bankNameValidation.sanitizedValue;
+      }
+
+      if (Object.keys(bankErrors).length > 0) errors.bankDetails = bankErrors;
+      else sanitizedData.bankDetails = sanitizedBank;
+    }
   }
 
   // Validation informations légales avec logique conditionnelle
