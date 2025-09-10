@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { useFileTransfer } from "../hooks/useFileTransfer";
+import { useFileTransferR2 } from "../hooks/useFileTransferR2";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
-import { useUser } from "@/src/lib/auth/hooks";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
+import { useUser } from "@/src/lib/auth/hooks";
 import {
   AlertCircleIcon,
   FileArchiveIcon,
@@ -89,31 +89,56 @@ export default function FileUploadNew() {
   const maxFiles = 10;
 
   // Hooks
-  const { user } = useUser();
+  const { session: user } = useUser();
   const {
     isConnected: stripeConnected,
     canReceivePayments,
     isLoading: stripeLoading,
-  } = useStripeConnect(user?.id);
+    stripeAccount,
+  } = useStripeConnect(user?.user?.id);
 
-  // Use the file transfer hook
+  // Debug: Afficher les détails du compte Stripe
+  console.log("Stripe Connect Debug:", {
+    isConnected: stripeConnected,
+    canReceivePayments,
+    stripeAccount,
+    userId: user?.user?.id,
+    user: user,
+  });
+
+  // Utilisation directe de R2 comme stockage unique
   const {
     selectedFiles,
-    transferOptions,
     isUploading,
     uploadProgress,
     transferResult,
     addFiles,
     removeFile,
-    updateTransferOptions,
     createTransfer,
-    formatFileSize,
-  } = useFileTransfer();
+  } = useFileTransferR2();
+
+  // Options de transfert
+  const [transferOptions, setTransferOptions] = useState({
+    expiryDays: 7,
+    isPaymentRequired: false,
+    paymentAmount: 0,
+    paymentCurrency: "EUR",
+    recipientEmail: "",
+    message: "",
+  });
 
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState([]);
   const [showStripeOnboarding, setShowStripeOnboarding] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Fonction pour mettre à jour les options de transfert
+  const updateTransferOptions = (updates) => {
+    setTransferOptions((prev) => ({ ...prev, ...updates }));
+  };
+
+  // Fonction pour formater la taille des fichiers
+  const formatFileSize = (bytes) => formatBytes(bytes);
 
   const validateFile = (file) => {
     if (file.size > maxSize) {
@@ -157,7 +182,7 @@ export default function FileUploadNew() {
 
   const handleCreateTransfer = async () => {
     try {
-      await createTransfer();
+      await createTransfer(transferOptions);
     } catch (error) {
       console.error("Error creating transfer:", error);
     }
@@ -201,7 +226,9 @@ export default function FileUploadNew() {
       className={`${selectedFiles.length > 0 ? "grid grid-cols-1 lg:grid-cols-2 gap-8" : "flex flex-col"}`}
     >
       {/* Upload Section */}
-      <div className="flex flex-col gap-2">
+      <div
+        className={`flex flex-col gap-2 ${selectedFiles.length > 0 ? "lg:sticky lg:top-6 lg:self-start lg:max-h-screen lg:overflow-y-auto" : ""}`}
+      >
         {/* Drop area */}
         <div
           role="button"
@@ -306,21 +333,13 @@ export default function FileUploadNew() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Options d'envoi</h3>
-            <Button
-              onClick={handleCreateTransfer}
-              disabled={isUploading}
-              className="flex items-center gap-2"
-            >
-              <IconSend className="size-4" />
-              {isUploading ? "Création..." : "Créer le transfert"}
-            </Button>
           </div>
 
           {/* Expiration */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <IconClock className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-medium">Durée de validité</Label>
+              <Label className="text-sm font-normal">Durée de validité</Label>
             </div>
             <Select
               value={transferOptions.expiration}
@@ -344,7 +363,7 @@ export default function FileUploadNew() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <IconMail className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-medium">
+              <Label className="text-sm font-normal">
                 Email du destinataire
               </Label>
             </div>
@@ -367,17 +386,24 @@ export default function FileUploadNew() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <IconCreditCard className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-medium">Paiement requis</Label>
+              <Label className="text-sm font-normal">Paiement requis</Label>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Label className="text-sm">Demander un paiement</Label>
+                  <Label className="text-sm font-normal">
+                    Demander un paiement
+                  </Label>
                   {!stripeConnected && (
-                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
-                      Stripe requis
-                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowStripeOnboarding(true)}
+                      className="text-xs h-6 px-2 border-[#5b4fff]/20 text-[#5b4fff] hover:bg-[#5b4fff]/5"
+                    >
+                      Connecter Stripe
+                    </Button>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -395,7 +421,7 @@ export default function FileUploadNew() {
                   }
                   handleOptionChange("requirePayment", checked);
                 }}
-                disabled={!stripeConnected && transferOptions.requirePayment}
+                disabled={!user}
               />
             </div>
 
@@ -403,7 +429,7 @@ export default function FileUploadNew() {
               <div className="space-y-4 pt-4 border-t">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-sm">Montant</Label>
+                    <Label className="text-sm font-normal">Montant</Label>
                     <Input
                       type="number"
                       min="0"
@@ -419,7 +445,7 @@ export default function FileUploadNew() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm">Devise</Label>
+                    <Label className="text-sm font-normal">Devise</Label>
                     <Select
                       value={transferOptions.currency}
                       onValueChange={(value) =>
@@ -470,12 +496,14 @@ export default function FileUploadNew() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <IconShield className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-medium">Sécurité</Label>
+              <Label className="text-sm font-normal">Sécurité</Label>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label className="text-sm">Protection par mot de passe</Label>
+                <Label className="text-sm font-normal">
+                  Protection par mot de passe
+                </Label>
                 <p className="text-xs text-muted-foreground">
                   Ajouter une couche de sécurité supplémentaire
                 </p>
@@ -499,7 +527,7 @@ export default function FileUploadNew() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label className="text-sm">
+                <Label className="text-sm font-normal">
                   Notification de téléchargement
                 </Label>
                 <p className="text-xs text-muted-foreground">
@@ -519,7 +547,7 @@ export default function FileUploadNew() {
 
           {/* Custom Message */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Message personnalisé</Label>
+            <Label className="text-sm font-normal">Message personnalisé</Label>
             <Textarea
               placeholder="Ajoutez un message pour le destinataire..."
               value={transferOptions.customMessage}
@@ -529,6 +557,18 @@ export default function FileUploadNew() {
               rows={3}
             />
           </div>
+
+          {/* Create Transfer Button - Bottom Right */}
+          <div className="flex justify-end pt-4">
+            <Button
+              onClick={handleCreateTransfer}
+              disabled={isUploading}
+              className="flex items-center gap-2 font-normal"
+            >
+              <IconSend className="size-4" />
+              {isUploading ? "Création..." : "Créer le transfert"}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -536,8 +576,8 @@ export default function FileUploadNew() {
       <StripeConnectOnboarding
         isOpen={showStripeOnboarding}
         onClose={() => setShowStripeOnboarding(false)}
-        userId={user?.id}
-        userEmail={user?.email}
+        userId={user?.user?.id}
+        userEmail={user?.user?.email}
         onSuccess={() => {
           setShowStripeOnboarding(false);
           // Optionnel: afficher une notification de succès

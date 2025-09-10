@@ -299,7 +299,7 @@ const FileUpload = ({ className }) => {
           <Button
             onClick={handleUpload}
             disabled={selectedFiles.length === 0}
-            className="min-w-32"
+            className="min-w-32 font-normal"
           >
             <IconUpload size={16} className="mr-2" />
             Créer le transfert

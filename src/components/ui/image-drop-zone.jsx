@@ -27,7 +27,7 @@ export function ImageDropZone({
   const [localPreview, setLocalPreview] = useState(null);
 
   const sizeClasses = {
-    sm: type === "logo" ? "w-34 h-20" : "w-12 h-12",
+    sm: type === "logo" ? "w-12 h-12" : "w-22 h-22",
     md: "w-16 h-16",
     lg: "w-24 h-24",
   };

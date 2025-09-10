@@ -6,13 +6,14 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Copy, Monitor, Smartphone } from "lucide-react";
+import { Copy, Monitor, Smartphone, Check } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
 import { useImageUpload } from "../hooks/useImageUpload";
+import "@/src/styles/signature-text-selection.css";
 import VerticalSignature from "../components/VerticalSignature";
 import HorizontalSignature from "../components/HorizontalSignature";
 import TemplateObama from "../components/templates/TemplateObama";
@@ -34,6 +35,7 @@ const EmailPreview = ({ signatureData }) => {
   const { updateSignatureData } = useSignatureData();
   const { uploadImageFile, getImageUrl, isUploading, error } = useImageUpload();
   const [isCopying, setIsCopying] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const [imageStatus, setImageStatus] = useState({
     photo: "idle",
     logo: "idle",
@@ -1321,12 +1323,16 @@ const EmailPreview = ({ signatureData }) => {
         ]);
 
         toast.success("Signature copiée avec logo PNG pour Gmail !");
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
       } catch (error) {
         console.error("Erreur lors de la copie:", error);
         // Fallback pour les navigateurs plus anciens
         try {
           await navigator.clipboard.writeText(htmlSignature);
           toast.success("Signature copiée (texte brut) !");
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
         } catch (fallbackError) {
           console.error("Erreur fallback:", fallbackError);
           toast.error("Erreur lors de la copie de la signature");
@@ -1426,8 +1432,16 @@ const EmailPreview = ({ signatureData }) => {
           disabled={isCopying}
           className="text-xs font-normal cursor-pointer"
         >
-          <Copy className="w-3 h-3 mr-1" />
-          {isCopying ? "Copie en cours..." : "Copier la signature"}
+          {isCopied ? (
+            <Check className="w-3 h-3 mr-1 text-green-600" />
+          ) : (
+            <Copy className="w-3 h-3 mr-1" />
+          )}
+          {isCopying
+            ? "Copie en cours..."
+            : isCopied
+              ? "Copiée !"
+              : "Copier la signature"}
         </Button>
       </div>
 
@@ -1484,25 +1498,247 @@ const EmailPreview = ({ signatureData }) => {
   );
 };
 
-// Composant de preview mobile (placeholder)
+// Composant de preview mobile avec signature responsive
 const MobilePreview = ({ signatureData }) => {
   return (
-    <div className="rounded-lg border w-[320px] h-[600px] bg-gray-50">
-      <div className="bg-gray-800 text-white px-4 py-2 rounded-t-lg flex items-center justify-between">
+    <div className="rounded-lg border w-[320px] h-[600px] bg-white overflow-hidden">
+      {/* Header mobile */}
+      <div className="bg-[#171717] text-white px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
             <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
           </div>
-          <span className="text-sm">Mobile - À venir</span>
+          <span className="text-sm">Mobile Preview</span>
         </div>
       </div>
-      <div className="p-8 flex items-center justify-center h-64">
-        <div className="text-center text-gray-500">
-          <Smartphone className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium">Preview Mobile</p>
-          <p className="text-sm">À venir prochainement...</p>
+
+      {/* Contenu de l'email mobile */}
+      <div className="p-4 bg-white h-full overflow-y-auto">
+        <div className="bg-gray-50 rounded-lg p-3 mb-4">
+          <div className="text-xs text-gray-600 mb-2">
+            <strong>De:</strong> {signatureData.email || "email@exemple.com"}
+          </div>
+          <div className="text-xs text-gray-600 mb-2">
+            <strong>À:</strong> contact@client.com
+          </div>
+          <div className="text-xs text-gray-600 mb-3">
+            <strong>Objet:</strong> Votre demande de renseignements
+          </div>
+          <div className="text-sm text-gray-800 mb-4">
+            Bonjour,
+            <br />
+            <br />
+            Merci pour votre message. Je reviens vers vous rapidement.
+            <br />
+            <br />
+            Cordialement,
+          </div>
+        </div>
+
+        {/* Signature mobile - Version compacte et verticale */}
+        <div className="border-t pt-4">
+          <div
+            className="space-y-3"
+            style={{
+              fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+              fontSize: "14px",
+            }}
+          >
+            {/* Photo et nom - Centré pour mobile */}
+            <div className="text-center">
+              {signatureData.photo && (
+                <div className="mb-3">
+                  <img
+                    src={signatureData.photo}
+                    alt="Photo de profil"
+                    className="w-16 h-16 rounded-full mx-auto object-cover"
+                  />
+                </div>
+              )}
+
+              {signatureData.fullName && (
+                <div
+                  className="font-semibold mb-1"
+                  style={{
+                    fontSize: "16px",
+                    color:
+                      signatureData.typography?.fullName?.color ||
+                      signatureData.primaryColor ||
+                      "#171717",
+                  }}
+                >
+                  {signatureData.fullName}
+                </div>
+              )}
+
+              {signatureData.position && (
+                <div
+                  className="text-gray-600 mb-1"
+                  style={{
+                    fontSize: "14px",
+                    color:
+                      signatureData.typography?.position?.color || "#666666",
+                  }}
+                >
+                  {signatureData.position}
+                </div>
+              )}
+
+              {signatureData.company && (
+                <div
+                  className="font-medium mb-3"
+                  style={{
+                    fontSize: "14px",
+                    color:
+                      signatureData.typography?.company?.color ||
+                      signatureData.primaryColor ||
+                      "#2563eb",
+                  }}
+                >
+                  {signatureData.company}
+                </div>
+              )}
+            </div>
+
+            {/* Informations de contact - Compactes pour mobile */}
+            <div className="space-y-2 text-sm">
+              {signatureData.phone && (
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-blue-600">📞</span>
+                  <a
+                    href={`tel:${signatureData.phone}`}
+                    className="text-gray-700 hover:text-blue-600"
+                  >
+                    {signatureData.phone}
+                  </a>
+                </div>
+              )}
+
+              {signatureData.mobile && (
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-blue-600">📱</span>
+                  <a
+                    href={`tel:${signatureData.mobile}`}
+                    className="text-gray-700 hover:text-blue-600"
+                  >
+                    {signatureData.mobile}
+                  </a>
+                </div>
+              )}
+
+              {signatureData.email && (
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-blue-600">✉️</span>
+                  <a
+                    href={`mailto:${signatureData.email}`}
+                    className="text-gray-700 hover:text-blue-600"
+                  >
+                    {signatureData.email}
+                  </a>
+                </div>
+              )}
+
+              {signatureData.website && (
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-blue-600">🌐</span>
+                  <a
+                    href={signatureData.website}
+                    className="text-gray-700 hover:text-blue-600"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {signatureData.website}
+                  </a>
+                </div>
+              )}
+
+              {signatureData.address && (
+                <div className="flex items-start justify-center gap-2">
+                  <span className="text-blue-600">📍</span>
+                  <div className="text-gray-700 text-center text-xs leading-relaxed">
+                    {signatureData.address}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Logo entreprise - Centré et plus petit pour mobile */}
+            {signatureData.logo && (
+              <div className="text-center pt-3 border-t border-gray-200">
+                <img
+                  src={signatureData.logo}
+                  alt="Logo entreprise"
+                  className="mx-auto"
+                  style={{
+                    maxWidth: "120px",
+                    maxHeight: "40px",
+                    objectFit: "contain",
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Réseaux sociaux - Compacts pour mobile */}
+            {(signatureData.socialLinks?.linkedin ||
+              signatureData.socialLinks?.facebook ||
+              signatureData.socialLinks?.twitter ||
+              signatureData.socialLinks?.instagram) && (
+              <div className="flex justify-center gap-3 pt-3">
+                {signatureData.socialLinks?.linkedin && (
+                  <a
+                    href={signatureData.socialLinks.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      src={`https://img.icons8.com/color/20/linkedin.png`}
+                      alt="LinkedIn"
+                      className="w-5 h-5"
+                    />
+                  </a>
+                )}
+                {signatureData.socialLinks?.facebook && (
+                  <a
+                    href={signatureData.socialLinks.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">f</span>
+                    </div>
+                  </a>
+                )}
+                {signatureData.socialLinks?.twitter && (
+                  <a
+                    href={signatureData.socialLinks.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      src={`https://img.icons8.com/color/20/x.png`}
+                      alt="X (Twitter)"
+                      className="w-5 h-5"
+                    />
+                  </a>
+                )}
+                {signatureData.socialLinks?.instagram && (
+                  <a
+                    href={signatureData.socialLinks.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      src={`https://img.icons8.com/fluency/20/instagram-new.png`}
+                      alt="Instagram"
+                      className="w-5 h-5"
+                    />
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

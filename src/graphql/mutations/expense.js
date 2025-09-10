@@ -24,6 +24,7 @@ export const CREATE_EXPENSE = gql`
       paymentDate
       notes
       tags
+      isVatDeductible
       files {
         id
         filename

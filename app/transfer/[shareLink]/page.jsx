@@ -5,6 +5,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { GET_TRANSFER_BY_LINK } from "@/app/dashboard/outils/transferts-fichiers/graphql/mutations";
 import { Button } from "@/src/components/ui/button";
+import { Typewriter } from "@/src/components/ui/typewriter-text";
+import { CircleArrowUp, File, Download, Timer } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -12,12 +14,6 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import {
-  IconDownload,
-  IconFile,
-  IconClock,
-  IconUser,
-} from "@tabler/icons-react";
 import { toast } from "@/src/components/ui/sonner";
 import { motion } from "framer-motion";
 import React from "react";
@@ -42,30 +38,51 @@ export default function TransferPage() {
 
   const transfer = data?.getFileTransferByLink;
 
+  // Debug: Afficher la structure de la réponse
+  console.log("🔍 Debug - Réponse complète:", data);
+  console.log("🔍 Debug - Transfer:", transfer);
+  console.log("🔍 Debug - FileTransfer:", transfer?.fileTransfer);
+  console.log("🔍 Debug - Files:", transfer?.fileTransfer?.files);
+
   // Fonction pour télécharger un fichier
   const downloadFile = async (fileId, fileName) => {
     setIsDownloading(true);
     try {
-      // Ici, vous devrez implémenter l'endpoint de téléchargement
-      const response = await fetch(
-        `/api/transfer/download/${fileId}?shareLink=${shareLink}&accessKey=${accessKey}`
-      );
+      console.log("Début téléchargement:", {
+        fileId,
+        fileName,
+        shareLink,
+        accessKey,
+      });
+
+      const downloadUrl = `/api/transfer/download/${fileId}?shareLink=${shareLink}&accessKey=${accessKey}`;
+      console.log("URL de téléchargement:", downloadUrl);
+
+      // Faire une requête fetch pour récupérer le fichier
+      const response = await fetch(downloadUrl);
 
       if (!response.ok) {
         throw new Error("Erreur lors du téléchargement");
       }
 
+      // Créer un blob à partir de la réponse
       const blob = await response.blob();
+
+      // Créer une URL temporaire pour le blob
       const url = window.URL.createObjectURL(blob);
+
+      // Créer un lien de téléchargement et le déclencher
       const a = document.createElement("a");
       a.href = url;
       a.download = fileName;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
 
-      toast.success("Fichier téléchargé avec succès !");
+      // Nettoyer
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Fichier téléchargé avec succès");
     } catch (error) {
       console.error("Erreur lors du téléchargement:", error);
       toast.error("Erreur lors du téléchargement du fichier");
@@ -160,71 +177,70 @@ export default function TransferPage() {
     );
   }
 
-  const isExpired = new Date(transfer.expiryDate) < new Date();
+  const isExpired = new Date(transfer?.fileTransfer?.expiryDate) < new Date();
 
   return (
-    <AuroraBackground>
-      <motion.div
-        initial={{ opacity: 0.0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{
-          delay: 0.3,
-          duration: 0.8,
-          ease: "easeInOut",
-        }}
-        className="relative flex flex-col gap-4 items-center justify-center px-4 z-10"
-      >
-        <div className="container mx-auto py-10 px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold mb-2">Transfert de fichiers</h1>
-              <p className="text-gray-600">
-                Téléchargez les fichiers partagés avec vous
-              </p>
-            </div>
+    <div className="flex h-screen">
+      <div className="w-1/2 flex items-center justify-center p-2">
+        <div className="mx-auto sm:max-w-xl w-full">
+          <div className="mb-8">
+            <h1 className="text-xl font-medium mb-2">
+              Téléchargez les fichiers partagés avec vous
+            </h1>
+            <p className="text-sm text-gray-600">
+              Téléchargez les fichiers partagés avec vous
+            </p>
+          </div>
 
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Informations du transfert</span>
-                  <Badge variant={isExpired ? "destructive" : "default"}>
+          <Card className="mb-6 shadow-none border-none">
+            <CardHeader className="px-0">
+              <CardTitle className="flex items-center justify-between font-normal">
+                <span>Informations du transfert</span>
+                <Badge
+                  className="bg-[#5b4fff]/20 border-[#5b4fff]/70"
+                  variant={isExpired ? "destructive" : "default"}
+                >
+                  <span className="text-[#5b4fff]/90">
                     {isExpired ? "Expiré" : "Actif"}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <IconFile size={20} className="text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      {transfer.files?.length || 0} fichier(s)
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <IconClock size={20} className="text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      Expire le {formatDate(transfer.expiryDate)}
-                    </span>
-                  </div>
-                  {transfer.recipientEmail && (
-                    <div className="flex items-center space-x-2">
-                      <IconUser size={20} className="text-gray-500" />
-                      <span className="text-sm text-gray-600">
-                        Pour: {transfer.recipientEmail}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center space-x-2">
-                    <IconDownload size={20} className="text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      {transfer.downloadCount || 0} téléchargement(s)
-                    </span>
-                  </div>
+                  </span>
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <File size={16} className="text-gray-500" />
+                  <span className="text-xs text-gray-600">
+                    {transfer?.fileTransfer?.files?.length || 0} fichier(s)
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex items-center space-x-2">
+                  <Timer size={16} className="text-gray-500" />
+                  <span className="text-xs text-gray-600">
+                    Expire le {formatDate(transfer?.fileTransfer?.expiryDate)}
+                  </span>
+                </div>
+                {transfer?.fileTransfer?.recipientEmail && (
+                  <div className="flex items-center space-x-2">
+                    <IconUser size={16} className="text-gray-500" />
+                    <span className="text-xs text-gray-600">
+                      Pour: {transfer?.fileTransfer?.recipientEmail}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center space-x-2">
+                  <Download size={16} className="text-gray-500" />
+                  <span className="text-xs text-gray-600">
+                    {transfer?.fileTransfer?.downloadCount || 0}{" "}
+                    téléchargement(s)
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            {transfer.isPaymentRequired && !transfer.isPaid && (
+          {transfer?.fileTransfer?.isPaymentRequired &&
+            !transfer?.fileTransfer?.isPaid && (
               <Card className="mb-6 border-orange-200 bg-orange-50">
                 <CardContent className="pt-6">
                   <div className="text-center">
@@ -233,7 +249,8 @@ export default function TransferPage() {
                     </h3>
                     <p className="text-orange-700 mb-4">
                       Ce transfert nécessite un paiement de{" "}
-                      {transfer.paymentAmount} {transfer.paymentCurrency}
+                      {transfer?.fileTransfer?.paymentAmount}{" "}
+                      {transfer?.fileTransfer?.paymentCurrency}
                     </p>
                     <Button className="bg-orange-600 hover:bg-orange-700">
                       Procéder au paiement
@@ -243,71 +260,104 @@ export default function TransferPage() {
               </Card>
             )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Fichiers ({transfer.files?.length || 0})</span>
-                  {transfer.files?.length > 1 && !isExpired && (
-                    <Button
-                      onClick={downloadAllFiles}
-                      disabled={isDownloading}
-                      className="ml-4"
-                    >
-                      <IconDownload size={16} className="mr-2" />
-                      {isDownloading ? "Téléchargement..." : "Tout télécharger"}
-                    </Button>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {transfer.files?.length > 0 ? (
-                  <div className="space-y-3">
-                    {transfer.files.map((file, index) => (
-                      <div
-                        key={file.id || index}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <IconFile size={24} className="text-gray-500" />
-                          <div>
-                            <p className="font-medium">{file.originalName}</p>
-                            <p className="text-sm text-gray-500">
-                              {formatFileSize(file.size)} • {file.mimeType}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() =>
-                            downloadFile(file.id, file.originalName)
-                          }
-                          disabled={isDownloading || isExpired}
-                          size="sm"
-                        >
-                          <IconDownload size={16} className="mr-2" />
-                          Télécharger
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-gray-500 py-8">
-                    Aucun fichier disponible
-                  </p>
+          <Card className="shadow-none border-none">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center font-normal justify-between">
+                <span>
+                  Fichiers ({transfer?.fileTransfer?.files?.length || 0})
+                </span>
+                {transfer?.fileTransfer?.files?.length > 1 && !isExpired && (
+                  <Button
+                    onClick={downloadAllFiles}
+                    disabled={isDownloading}
+                    className="ml-4 font-normal cursor-pointer bg-[#5b4fff]/80 border-[#5b4fff]/80 hover:bg-[#5b4fff]/90"
+                  >
+                    {isDownloading ? "Téléchargement..." : "Tout télécharger"}
+                    <Download size={16} />
+                  </Button>
                 )}
-              </CardContent>
-            </Card>
-
-            {isExpired && (
-              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-center">
-                  Ce transfert a expiré et n'est plus disponible au
-                  téléchargement.
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {transfer?.fileTransfer?.files?.length > 0 ? (
+                <div className="space-y-3">
+                  {transfer?.fileTransfer?.files.map((file, index) => (
+                    <div
+                      key={file.id || index}
+                      className="flex items-center justify-between p-4 border rounded-xl hover:bg-gray-50"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <File size={16} className="text-gray-500" />
+                        <div>
+                          <p className="font-normal text-sm">
+                            {file.originalName}
+                          </p>
+                          <p className="text-xs font-normal text-gray-500">
+                            {formatFileSize(file.size)} • {file.mimeType}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        onClick={() => downloadFile(file.id, file.originalName)}
+                        disabled={isDownloading || isExpired}
+                        size="sm"
+                      >
+                        <Download size={16} className="cursor-pointer" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 py-8">
+                  Aucun fichier disponible
                 </p>
-              </div>
-            )}
-          </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {isExpired && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-center">
+                Ce transfert a expiré et n'est plus disponible au
+                téléchargement.
+              </p>
+            </div>
+          )}
         </div>
-      </motion.div>
-    </AuroraBackground>
+      </div>
+      <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
+        <div
+          className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
+          style={{ backgroundImage: "url('/BackgroundAuth.svg')" }}
+        >
+          <div className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto">
+            <div className="text-lg min-h-[27px] flex items-center justify-between">
+              <div className="flex-1">
+                <Typewriter
+                  text={[
+                    "Téléchargez vos fichiers en toute sécurité.",
+                    "Partagez facilement avec vos collaborateurs.",
+                    "Accédez à vos documents où que vous soyez.",
+                  ]}
+                  speed={30}
+                  deleteSpeed={30}
+                  delay={2000}
+                  loop={true}
+                  className="font-medium text-left text-[#1C1C1C] text-[15px]"
+                />
+              </div>
+              <CircleArrowUp className="ml-4 text-[#1C1C1C] flex-shrink-0" />
+            </div>
+          </div>
+          <img
+            src="/ni.svg"
+            alt="Newbi Logo"
+            className="absolute bottom-2 right-3 w-5 h-auto filter brightness-0 invert"
+            style={{ opacity: 0.9 }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }

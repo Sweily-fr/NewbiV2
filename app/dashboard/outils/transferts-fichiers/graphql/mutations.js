@@ -29,30 +29,88 @@ export const UPLOAD_FILE_CHUNK = gql`
   }
 `;
 
+export const UPLOAD_FILE_CHUNK_TO_R2 = gql`
+  mutation UploadFileChunkToR2(
+    $chunk: Upload!
+    $fileId: String!
+    $chunkIndex: Int!
+    $totalChunks: Int!
+    $fileName: String!
+    $fileSize: Int!
+  ) {
+    uploadFileChunkToR2(
+      chunk: $chunk
+      fileId: $fileId
+      chunkIndex: $chunkIndex
+      totalChunks: $totalChunks
+      fileName: $fileName
+      fileSize: $fileSize
+    ) {
+      chunkReceived
+      fileCompleted
+      fileId
+      fileName
+      filePath
+      fileTransferId
+      storageType
+    }
+  }
+`;
+
 // Étape 2 : Créer le transfert avec les IDs de fichiers
 export const CREATE_FILE_TRANSFER_WITH_IDS = gql`
-  mutation CreateFileTransferWithIds(
-    $fileIds: [String!]!
-    $input: FileTransferInput
-  ) {
+  mutation CreateFileTransferWithIds($fileIds: [String!]!, $input: FileTransferInput) {
     createFileTransferWithIds(fileIds: $fileIds, input: $input) {
       fileTransfer {
         id
+        files {
+          originalName
+          fileName
+          filePath
+          mimeType
+          size
+        }
+        totalSize
         shareLink
         accessKey
         expiryDate
-        status
         isPaymentRequired
         paymentAmount
         paymentCurrency
-        totalSize
+        status
+        createdAt
+      }
+      shareLink
+      accessKey
+    }
+  }
+`;
+
+export const CREATE_FILE_TRANSFER_WITH_IDS_R2 = gql`
+  mutation CreateFileTransferWithIdsR2($fileIds: [String!]!, $input: FileTransferInput) {
+    createFileTransferWithIdsR2(fileIds: $fileIds, input: $input) {
+      fileTransfer {
+        id
         files {
-          id
-          fileName
           originalName
-          size
+          displayName
+          fileName
+          filePath
+          r2Key
           mimeType
+          size
+          storageType
+          fileId
         }
+        totalSize
+        shareLink
+        accessKey
+        expiryDate
+        isPaymentRequired
+        paymentAmount
+        paymentCurrency
+        status
+        createdAt
       }
       shareLink
       accessKey
@@ -169,8 +227,12 @@ export const GET_TRANSFER_BY_LINK = gql`
           originalName
           fileName
           filePath
+          downloadUrl
           mimeType
           size
+          storageType
+          r2Key
+          fileId
         }
         totalSize
         expiryDate

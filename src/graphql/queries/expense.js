@@ -45,6 +45,7 @@ export const GET_EXPENSES = gql`
         paymentDate
         notes
         tags
+        isVatDeductible
         files {
           id
           filename
@@ -97,6 +98,7 @@ export const GET_EXPENSE = gql`
       paymentDate
       notes
       tags
+      isVatDeductible
       files {
         id
         filename
