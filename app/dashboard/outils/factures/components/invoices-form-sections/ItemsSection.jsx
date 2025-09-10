@@ -681,20 +681,9 @@ export default function ItemsSection({
           </Accordion>
         )}
 
-        {/* État vide */}
-        {items.length === 0 && (
-          <div className="text-center py-12">
-            <Package className="h-16 w-16 mx-auto mb-4 opacity-30" />
-            <h3 className="text-lg font-medium mb-2">Aucun article ajouté</h3>
-            <p className="text-sm mb-4">
-              Commencez par ajouter un article à votre facture
-            </p>
-          </div>
-        )}
-
         {/* Total HT des articles */}
         {items.length > 0 && (
-          <div className="border-t pt-4">
+          <div className="border-t">
             <div className="flex justify-between items-center">
               <span className="text-sm font-normal">
                 Total HT des articles :

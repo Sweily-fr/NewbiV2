@@ -763,7 +763,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="client-type"
-                        className="text-sm font-medium"
+                        className="text-sm font-normal"
                       >
                         Type de client
                       </Label>
@@ -833,7 +833,7 @@ export default function ClientSelector({
                         <div className="space-y-2">
                           <Label
                             htmlFor="client-name"
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Nom de l'entreprise
                           </Label>
@@ -858,7 +858,7 @@ export default function ClientSelector({
                         <div className="space-y-2">
                           <Label
                             htmlFor="client-firstname"
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Prénom
                           </Label>
@@ -879,7 +879,7 @@ export default function ClientSelector({
                         <div className="space-y-2">
                           <Label
                             htmlFor="client-lastname"
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Nom
                           </Label>
@@ -905,7 +905,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="client-email"
-                        className="text-sm font-medium"
+                        className="text-sm font-normal"
                       >
                         Email
                       </Label>
@@ -929,7 +929,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="client-phone"
-                        className="text-sm font-medium"
+                        className="text-sm font-normal"
                       >
                         Téléphone
                       </Label>
@@ -956,7 +956,7 @@ export default function ClientSelector({
                       <div className="space-y-2">
                         <Label
                           htmlFor="client-siret"
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           SIRET
                         </Label>
@@ -981,7 +981,7 @@ export default function ClientSelector({
                       <div className="space-y-2">
                         <Label
                           htmlFor="client-vat"
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           N° TVA
                         </Label>
@@ -1007,7 +1007,7 @@ export default function ClientSelector({
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
                       <div className="h-px bg-gray-200 flex-1"></div>
-                      <span className="text-sm font-medium text-gray-600">
+                      <span className="text-sm font-normal text-gray-600">
                         Adresse de facturation
                       </span>
                       <div className="h-px bg-gray-200 flex-1"></div>
@@ -1016,7 +1016,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="client-street"
-                        className="text-sm font-medium"
+                        className="text-sm font-normal"
                       >
                         Adresse
                       </Label>
@@ -1041,7 +1041,7 @@ export default function ClientSelector({
                       <div className="space-y-2">
                         <Label
                           htmlFor="client-postal-code"
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           Code postal
                         </Label>
@@ -1065,7 +1065,7 @@ export default function ClientSelector({
                       <div className="space-y-2 md:col-span-2">
                         <Label
                           htmlFor="client-city"
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           Ville
                         </Label>
@@ -1090,7 +1090,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="client-country"
-                        className="text-sm font-medium"
+                        className="text-sm font-normal"
                       >
                         Pays
                       </Label>
@@ -1166,7 +1166,7 @@ export default function ClientSelector({
                         />
                         <Label
                           htmlFor="different-shipping-address"
-                          className="text-sm font-medium cursor-pointer"
+                          className="text-sm font-normal cursor-pointer"
                         >
                           Utiliser une adresse de livraison différente
                         </Label>
@@ -1180,7 +1180,7 @@ export default function ClientSelector({
 
                       {newClientForm.hasDifferentShippingAddress && (
                         <div className="space-y-4 px-6 pt-2 border-l-2 border-gray-200">
-                          <Label className="text-sm font-medium text-gray-700">
+                          <Label className="text-sm font-normal text-gray-700">
                             Adresse de livraison
                           </Label>
 
@@ -1188,7 +1188,7 @@ export default function ClientSelector({
                           <div className="space-y-2">
                             <Label
                               htmlFor="shipping-street"
-                              className="text-sm font-medium"
+                              className="text-sm font-normal"
                             >
                               Rue
                             </Label>
@@ -1216,7 +1216,7 @@ export default function ClientSelector({
                             <div className="space-y-2">
                               <Label
                                 htmlFor="shipping-postal-code"
-                                className="text-sm font-medium"
+                                className="text-sm font-normal"
                               >
                                 Code postal
                               </Label>
@@ -1242,7 +1242,7 @@ export default function ClientSelector({
                             <div className="space-y-2">
                               <Label
                                 htmlFor="shipping-city"
-                                className="text-sm font-medium"
+                                className="text-sm font-normal"
                               >
                                 Ville
                               </Label>
@@ -1270,7 +1270,7 @@ export default function ClientSelector({
                           <div className="space-y-2">
                             <Label
                               htmlFor="shipping-country"
-                              className="text-sm font-medium"
+                              className="text-sm font-normal"
                             >
                               Pays
                             </Label>

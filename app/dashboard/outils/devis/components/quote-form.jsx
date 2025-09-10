@@ -538,7 +538,7 @@ export default function QuoteForm({
               {/* Section 2: Sélection d'un client */}
               <Card className="shadow-none border-none p-2 bg-transparent">
                 <CardHeader className="p-0">
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 font-normal text-lg">
                     <Building className="h-5 w-5" />
                     Sélection d'un client
                   </CardTitle>

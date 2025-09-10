@@ -216,18 +216,35 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
     return date.toLocaleDateString("fr-FR", options);
   };
 
-  // Formatage des adresses - identique au PDF
+  // Formatage des adresses - gère à la fois les chaînes et les objets
   const formatAddress = (address) => {
-    if (address && typeof address === "object") {
-      const parts = [];
-      if (address.street) parts.push(address.street);
-      if (address.postalCode && address.city) {
-        parts.push(`${address.postalCode} ${address.city}`);
-      }
-      if (address.country) parts.push(address.country);
-      return parts.join("\n");
+    if (!address) return "";
+    
+    // Si c'est une chaîne, on la retourne telle quelle
+    if (typeof address === "string") {
+      return address;
     }
-    return "";
+    
+    // Si c'est un objet, on construit l'adresse à partir des propriétés
+    if (typeof address === "object" && address !== null) {
+      try {
+        const parts = [];
+        if (address.street) parts.push(String(address.street));
+        if (address.postalCode && address.city) {
+          parts.push(`${String(address.postalCode)} ${String(address.city)}`);
+        } else if (address.city) {
+          parts.push(String(address.city));
+        }
+        if (address.country) parts.push(String(address.country));
+        return parts.join("\n") || "";
+      } catch (error) {
+        console.error("Error formatting address:", error, address);
+        return "";
+      }
+    }
+    
+    // Fallback pour tout autre type
+    return String(address || "");
   };
 
   // Déterminer le titre du document comme dans le PDF
@@ -284,7 +301,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
             <div className="space-y-1">
               <div className="flex justify-end" style={{ fontSize: "10px" }}>
                 <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
-                  Numéro de facture:
+                  {type === 'quote' ? 'Numéro de devis' : 'Numéro de facture'}:
                 </span>
                 <span className="dark:text-[#0A0A0A]">
                   {data.prefix && data.number
@@ -313,10 +330,10 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
             )}
             <div className="flex justify-end" style={{ fontSize: "10px" }}>
               <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
-                Date d'échéance:
+                {type === "quote" ? "Date de validité:" : "Date d'échéance:"}
               </span>
               <span className="dark:text-[#0A0A0A]">
-                {formatDate(data.dueDate) ||
+                {formatDate(type === "quote" ? data.validUntil : data.dueDate) ||
                   formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}
               </span>
             </div>
@@ -345,19 +362,51 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
               {data.companyInfo?.name || "Sweily"}
             </div>
             <div className="font-normal" style={{ fontSize: "10px" }}>
-              {data.companyInfo?.address && (
-                <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                  {formatAddress(data.companyInfo.address) ||
-                    "229 Rue Saint-Honoré\n75001 Paris, FR"}
+              {/* Adresse de l'entreprise */}
+              {data.companyInfo?.address ? (
+                <div className="whitespace-pre-line dark:text-[#0A0A0A] mb-1">
+                  {formatAddress(data.companyInfo.address)}
+                </div>
+              ) : (
+                <div className="whitespace-pre-line dark:text-[#0A0A0A] mb-1">
+                  229 Rue Saint-Honoré\n75001 Paris, FR
                 </div>
               )}
-              <span className="dark:text-[#0A0A0A]">
-                {data.companyInfo?.email && <div>{data.companyInfo.email}</div>}
-              </span>
-              <span className="dark:text-[#0A0A0A]">
-                {data.companyInfo?.siret && <div>SIRET: {data.companyInfo.siret}</div>}
-                {data.companyInfo?.vatNumber && <div>N° TVA: {data.companyInfo.vatNumber}</div>}
-              </span>
+              
+              {/* Email */}
+              {data.companyInfo?.email && (
+                <div className="dark:text-[#0A0A0A] mb-0.5">
+                  {data.companyInfo.email}
+                </div>
+              )}
+              
+              {/* Téléphone */}
+              {data.companyInfo?.phone && (
+                <div className="dark:text-[#0A0A0A] mb-0.5">
+                  {data.companyInfo.phone}
+                </div>
+              )}
+              
+              {/* Site web */}
+              {data.companyInfo?.website && (
+                <div className="dark:text-[#0A0A0A] mb-0.5">
+                  {data.companyInfo.website}
+                </div>
+              )}
+              
+              {/* SIRET et numéro de TVA */}
+              <div className="space-y-0.5 mt-1">
+                {data.companyInfo?.siret && (
+                  <div className="dark:text-[#0A0A0A]">
+                    SIRET: {data.companyInfo.siret}
+                  </div>
+                )}
+                {data.companyInfo?.vatNumber && (
+                  <div className="dark:text-[#0A0A0A]">
+                    N° TVA: {data.companyInfo.vatNumber}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -382,7 +431,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
               <div className="font-normal" style={{ fontSize: "10px" }}>
                 {data.client?.address && (
                   <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                    {formatAddress(data.client.address)}
+                    {formatAddress(data.client.address) || ""}
                   </div>
                 )}
                 <span className="dark:text-[#0A0A0A]">
@@ -414,8 +463,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
               </div>
               <div className="font-normal" style={{ fontSize: "10px" }}>
                 <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                  {formatAddress(data.client.shippingAddress) ||
-                    "Aucune adresse de livraison spécifiée"}
+                  {(formatAddress(data.client.shippingAddress) || 
+                    "Aucune adresse de livraison spécifiée")}
                 </div>
               </div>
             </div>
@@ -682,10 +731,10 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
             {/* 7. Champs personnalisés */}
             {data.customFields && data.customFields.length > 0 && data.customFields.map((field, index) => (
               <div key={`custom-field-${index}`} className="flex justify-between py-1 px-3 text-[10px]">
-                <span className="dark:text-[#0A0A0A]">
+                <span className="dark:text-[#0A0A0A] font-medium">
                   {field.name}
                 </span>
-                <span className="dark:text-[#0A0A0A] font-medium">
+                <span className="dark:text-[#0A0A0A] font-normal">
                   {field.value}
                 </span>
               </div>

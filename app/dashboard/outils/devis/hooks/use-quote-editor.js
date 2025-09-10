@@ -141,26 +141,61 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           console.log("🔍 Debug - Organisation récupérée:", organization);
           
           if (organization) {
-            // Utiliser directement les couleurs de l'organisation pour l'apparence par défaut
+            // Mettre à jour les informations de l'entreprise
+            setValue("companyInfo.name", organization.companyName || "");
+            setValue("companyInfo.email", organization.companyEmail || "");
+            setValue("companyInfo.phone", organization.companyPhone || "");
+            setValue("companyInfo.website", organization.website || "");
+            setValue("companyInfo.siret", organization.siret || "");
+            setValue("companyInfo.vatNumber", organization.vatNumber || "");
+            
+            // Gérer l'adresse de l'entreprise
+            if (organization.address) {
+              if (typeof organization.address === "string") {
+                setValue("companyInfo.address", organization.address);
+              } else {
+                const addressString = [
+                  organization.address.street,
+                  organization.address.additional,
+                  `${organization.address.postalCode || ''} ${organization.address.city || ''}`.trim(),
+                  organization.address.country
+                ].filter(Boolean).join('\n');
+                setValue("companyInfo.address", addressString);
+              }
+            }
+            
+            // Mettre à jour les paramètres d'apparence
             setValue("appearance.textColor", organization.documentTextColor || "#000000");
             setValue("appearance.headerTextColor", organization.documentHeaderTextColor || "#ffffff");
             setValue("appearance.headerBgColor", organization.documentHeaderBgColor || "#1d1d1b");
             
-            // Utiliser les notes et conditions spécifiques aux devis
+            // Mettre à jour les notes et conditions
             setValue("headerNotes", organization.quoteHeaderNotes || organization.documentHeaderNotes || "");
             setValue("footerNotes", organization.quoteFooterNotes || organization.documentFooterNotes || "");
             setValue("termsAndConditions", organization.quoteTermsAndConditions || organization.documentTermsAndConditions || "");
-            setValue("showBankDetails", organization.showBankDetails || false);
             
-            // Ajouter les coordonnées bancaires dans companyInfo
-            setValue("companyInfo.bankName", organization.bankName || "");
-            setValue("companyInfo.bankIban", organization.bankIban || "");
-            setValue("companyInfo.bankBic", organization.bankBic || "");
+            // Mettre à jour les coordonnées bancaires
+            setValue("showBankDetails", organization.showBankDetails || false);
+            setValue("companyInfo.bankDetails", {
+              bankName: organization.bankName || "",
+              iban: organization.bankIban || "",
+              bic: organization.bankBic || ""
+            });
             
             console.log("🔍 Debug - Données d'organisation appliquées:", {
-              bankName: organization.bankName,
-              bankIban: organization.bankIban,
-              bankBic: organization.bankBic
+              companyInfo: {
+                name: organization.companyName,
+                email: organization.companyEmail,
+                phone: organization.companyPhone,
+                siret: organization.siret,
+                vatNumber: organization.vatNumber,
+                address: organization.address
+              },
+              bankDetails: {
+                bankName: organization.bankName,
+                iban: organization.bankIban,
+                bic: organization.bankBic
+              }
             });
           }
         } catch (error) {
@@ -172,44 +207,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }
   }, [mode, setValue]);
 
-  // Auto-remplir companyInfo quand la session devient disponible
-  useEffect(() => {
-    if (mode === "create" && session?.user?.company) {
-      const userCompany = session.user.company;
-
-      setValue("companyInfo.name", userCompany.name || "");
-      setValue("companyInfo.email", userCompany.email || "");
-      setValue("companyInfo.phone", userCompany.phone || "");
-      setValue("companyInfo.website", userCompany.website || "");
-      setValue("companyInfo.siret", userCompany.siret || "");
-      setValue("companyInfo.vatNumber", userCompany.vatNumber || "");
-
-      // Gérer l'adresse de l'entreprise
-      if (userCompany.address) {
-        if (typeof userCompany.address === "string") {
-          setValue("companyInfo.address", userCompany.address);
-        } else {
-          const addressString =
-            `${userCompany.address.street || ""}, ${userCompany.address.city || ""}, ${userCompany.address.country || ""}`.replace(
-              /^,\s*|,\s*$/g,
-              ""
-            );
-          setValue("companyInfo.address", addressString);
-        }
-      }
-
-      // Gérer les coordonnées bancaires (nettoyer les métadonnées GraphQL)
-      if (userCompany.bankDetails) {
-        const cleanBankDetails = {
-          iban: userCompany.bankDetails.iban || "",
-          bic: userCompany.bankDetails.bic || "",
-          bankName: userCompany.bankDetails.bankName || "",
-          // Suppression explicite de __typename et autres métadonnées GraphQL
-        };
-        setValue("userBankDetails", cleanBankDetails);
-      }
-    }
-  }, [mode, session, setValue]);
+  // Ne plus utiliser les données de la session utilisateur pour les informations de l'entreprise
+  // car elles sont maintenant gérées par la récupération des données de l'organisation active
+  // via getActiveOrganization() dans l'effet précédent
 
   // Validation functions
   const validateStep1 = useCallback(() => {
@@ -770,15 +770,30 @@ function transformQuoteToFormData(quote) {
       website: quote.companyInfo?.website || "",
       siret: quote.companyInfo?.siret || "",
       vatNumber: quote.companyInfo?.vatNumber || "",
-      address: quote.companyInfo?.address
-        ? typeof quote.companyInfo.address === "string"
-          ? quote.companyInfo.address
-          : `${quote.companyInfo.address.street || ""}, ${quote.companyInfo.address.city || ""}, ${quote.companyInfo.address.country || ""}`.replace(
-              /^,\s*|,\s*$/g,
-              ""
-            )
-        : "",
-      bankDetails: quote.companyInfo?.bankDetails || null,
+      // Formatage cohérent de l'adresse pour l'affichage dans le PDF
+      address: (() => {
+        if (!quote.companyInfo?.address) return "";
+        
+        if (typeof quote.companyInfo.address === "string") {
+          return quote.companyInfo.address;
+        }
+        
+        // Créer un tableau avec les parties de l'adresse et filtrer les vides
+        const addressParts = [
+          quote.companyInfo.address.street,
+          quote.companyInfo.address.additional,
+          quote.companyInfo.address.postalCode ? quote.companyInfo.address.postalCode + ' ' + (quote.companyInfo.address.city || '') : quote.companyInfo.address.city,
+          quote.companyInfo.address.country
+        ].filter(Boolean); // Enlève les valeurs vides du tableau
+        
+        return addressParts.join('\n');
+      })(),
+      // Assurer que bankDetails a toujours la même structure
+      bankDetails: quote.companyInfo?.bankDetails ? {
+        bankName: quote.companyInfo.bankDetails.bankName || "",
+        iban: quote.companyInfo.bankDetails.iban || "",
+        bic: quote.companyInfo.bankDetails.bic || ""
+      } : null,
     },
 
     items:

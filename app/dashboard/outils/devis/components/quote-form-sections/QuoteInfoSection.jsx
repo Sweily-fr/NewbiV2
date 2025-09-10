@@ -159,7 +159,7 @@ export default function QuoteInfoSection({
   return (
     <Card className="shadow-none p-2 border-none bg-transparent">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+        <CardTitle className="flex items-center gap-2 font-normal text-lg">
           {/* <Clock className="h-5 w-5" /> */}
           Informations du devis
         </CardTitle>
@@ -169,7 +169,7 @@ export default function QuoteInfoSection({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label htmlFor="quote-prefix" className="text-sm font-medium">
+              <Label htmlFor="quote-prefix" className="text-sm font-normal">
                 Préfixe de devis
               </Label>
               <span title="Astuce : Tapez MM pour le mois ou AAAA pour l'année">
@@ -222,7 +222,7 @@ export default function QuoteInfoSection({
           </div>
           <div className="md:col-span-2 space-y-2">
             <div className="flex items-center gap-2">
-              <Label htmlFor="quote-number" className="text-sm font-medium">
+              <Label htmlFor="quote-number" className="text-sm font-normal">
                 Numéro de devis
               </Label>
               <span title="Numéro séquentiel du devis. Il sera automatiquement formaté avec des zéros en préfixe (ex: 000001).">
@@ -289,7 +289,7 @@ export default function QuoteInfoSection({
         {/* Référence projet */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Label htmlFor="project-reference" className="text-sm font-medium">
+            <Label htmlFor="project-reference" className="text-sm font-normal">
               Référence projet
             </Label>
             <span title="Référence du projet associé à ce devis (optionnel). Utile pour le suivi et l'organisation.">
@@ -311,7 +311,7 @@ export default function QuoteInfoSection({
         <div className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label className="text-sm font-medium">
+              <Label className="text-sm font-normal">
                 Date d'émission *
               </Label>
               <span title="Date à laquelle le devis est émis. Par défaut, c'est la date d'aujourd'hui.">
@@ -371,7 +371,7 @@ export default function QuoteInfoSection({
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label className="text-sm font-medium">
+              <Label className="text-sm font-normal">
                 Valide jusqu'au *
               </Label>
               <span title="Date limite de validité du devis. Après cette date, le devis ne sera plus valable.">
@@ -514,9 +514,9 @@ export default function QuoteInfoSection({
                   />
                 </PopoverContent>
               </Popover>
-              <select
-                onChange={(e) => {
-                  const value = e.target.value;
+              <Select
+                value={selectedPeriod || ''}
+                onValueChange={(value) => {
                   if (!value || value === 'custom') return;
                   const days = parseInt(value);
                   const issueDate = new Date(data.issueDate || new Date());
@@ -527,16 +527,18 @@ export default function QuoteInfoSection({
                   setSelectedPeriod(value);
                 }}
                 disabled={!canEdit}
-                value={selectedPeriod || ''}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Sélectionnez une valeur</option>
-                {VALIDITY_PERIOD_SUGGESTIONS.map((period) => (
-                  <option key={period.value} value={period.value.toString()}>
-                    {period.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Sélectionnez une valeur" />
+                </SelectTrigger>
+                <SelectContent>
+                  {VALIDITY_PERIOD_SUGGESTIONS.map((period) => (
+                    <SelectItem key={period.value} value={period.value.toString()}>
+                      {period.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             {errors?.validUntil && (
               <p className="text-xs text-red-500">

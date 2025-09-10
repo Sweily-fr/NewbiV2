@@ -596,12 +596,26 @@ function transformInvoiceToFormData(invoice) {
     companyInfo: invoice.companyInfo
       ? {
           name: invoice.companyInfo.name || "",
-          address: invoice.companyInfo.address
-            ? `${invoice.companyInfo.address.street || ""}, ${invoice.companyInfo.address.city || ""}, ${invoice.companyInfo.address.postalCode || ""}, ${invoice.companyInfo.address.country || ""}`
-                .replace(/^,\s*|,\s*$/g, "")
-                .replace(/,\s*,/g, ",")
-                .trim()
-            : "",
+          // Formatage cohérent de l'adresse avec les devis
+          address: (() => {
+            if (!invoice.companyInfo.address) return "";
+            
+            if (typeof invoice.companyInfo.address === "string") {
+              return invoice.companyInfo.address;
+            }
+            
+            // Créer un tableau avec les parties de l'adresse et filtrer les vides
+            const addressParts = [
+              invoice.companyInfo.address.street,
+              invoice.companyInfo.address.additional,
+              invoice.companyInfo.address.postalCode ? 
+                `${invoice.companyInfo.address.postalCode} ${invoice.companyInfo.address.city || ''}`.trim() : 
+                invoice.companyInfo.address.city,
+              invoice.companyInfo.address.country
+            ].filter(Boolean); // Enlève les valeurs vides du tableau
+            
+            return addressParts.join('\n');
+          })(),
           email: invoice.companyInfo.email || "",
           phone: invoice.companyInfo.phone || "",
           siret: invoice.companyInfo.siret || "",

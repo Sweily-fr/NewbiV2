@@ -16,12 +16,11 @@ export default function DiscountsAndTotalsSection({
   const data = watch();
 
   return (
-    <Card className="shadow-none border-none bg-transparent p-4 overflow-visible">
+    <Card className="border-0 shadow-none bg-transparent mb-0 p-0">
       <CardContent className="space-y-6 p-0">
         <div className="flex items-center gap-2 my-8">
           <Separator className="flex-1" />
-          <div className="flex items-center gap-2 px-3 text-sm font-medium text-muted-foreground">
-            {/* <Percent className="h-4 w-4" /> */}
+          <div className="flex items-center gap-2 px-3 text-sm font-normal text-foreground">
             Remises et totaux
           </div>
           <Separator className="flex-1" />
@@ -30,7 +29,7 @@ export default function DiscountsAndTotalsSection({
         {/* Configuration de la remise globale */}
         <div className="flex gap-4">
           <div className="w-1/2 space-y-2">
-            <Label className="text-sm font-medium">
+            <Label className="text-sm font-normal">
               Type de remise globale
             </Label>
             <div className="space-y-1">
@@ -44,7 +43,7 @@ export default function DiscountsAndTotalsSection({
                 }}
                 disabled={!canEdit}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Pourcentage" />
                 </SelectTrigger>
                 <SelectContent>
@@ -61,7 +60,7 @@ export default function DiscountsAndTotalsSection({
           </div>
           
           <div className="w-1/2 space-y-2">
-            <Label htmlFor="discount-value" className="text-sm font-medium">
+            <Label htmlFor="discount-value" className="text-sm font-normal">
               Valeur de la remise
             </Label>
             <div className="space-y-1">
@@ -101,22 +100,16 @@ export default function DiscountsAndTotalsSection({
         {/* Champs personnalisés */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">
+            <Label className="text-sm font-normal">
               Champs personnalisés
             </Label>
-            <span className="text-xs text-muted-foreground">
-              Informations supplémentaires à afficher sur le devis
-            </span>
           </div>
           
           {data.customFields && data.customFields.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {data.customFields.map((field, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 rounded-lg">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Nom du champ
-                    </Label>
+                <div key={index} className="flex flex-col md:flex-row gap-4 w-full items-center">
+                  <div className="w-full md:w-1/2">
                     <Input
                       value={field.name || ""}
                       onChange={(e) => {
@@ -126,54 +119,49 @@ export default function DiscountsAndTotalsSection({
                       }}
                       placeholder="Ex: Référence projet"
                       disabled={!canEdit}
-                      className="h-10 rounded-lg text-sm"
+                      className="h-10 rounded-lg text-sm w-full"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Valeur
-                    </Label>
-                    <div className="flex gap-2">
-                      <div className="space-y-1 flex-1">
-                        <Input
-                          {...register(`customFields.${index}.value`, {
-                            required: "La valeur du champ est requise",
-                            maxLength: {
-                              value: 100,
-                              message: "La valeur ne doit pas dépasser 100 caractères"
-                            }
-                          })}
-                          defaultValue={field.value || ""}
-                          onChange={(e) => {
-                            const newFields = [...(data.customFields || [])];
-                            newFields[index] = { ...newFields[index], value: e.target.value };
-                            setValue("customFields", newFields, { shouldDirty: true, shouldValidate: true });
-                          }}
-                          placeholder="Ex: PROJ-2024-001"
-                          disabled={!canEdit}
-                          className={`h-10 rounded-lg text-sm ${
-                            errors?.customFields?.[index]?.value ? 'border-red-500' : ''
-                          }`}
-                        />
-                        {errors?.customFields?.[index]?.value && (
-                          <p className="text-xs text-red-500">
-                            {errors.customFields[index].value.message}
-                          </p>
-                        )}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const newFields = data.customFields.filter((_, i) => i !== index);
-                          setValue("customFields", newFields, { shouldDirty: true });
+                  <div className="w-full md:w-1/2 flex items-end gap-2">
+                    <div className="flex-1">
+                      <Input
+                        {...register(`customFields.${index}.value`, {
+                          required: "La valeur du champ est requise",
+                          maxLength: {
+                            value: 100,
+                            message: "La valeur ne doit pas dépasser 100 caractères"
+                          }
+                        })}
+                        defaultValue={field.value || ""}
+                        onChange={(e) => {
+                          const newFields = [...(data.customFields || [])];
+                          newFields[index] = { ...newFields[index], value: e.target.value };
+                          setValue("customFields", newFields, { shouldDirty: true, shouldValidate: true });
                         }}
+                        placeholder="Ex: PROJ-2024-001"
                         disabled={!canEdit}
-                        className="h-10 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        className={`h-10 rounded-lg text-sm w-full ${
+                          errors?.customFields?.[index]?.value ? 'border-red-500' : ''
+                        }`}
+                      />
+                      {errors?.customFields?.[index]?.value && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.customFields[index].value.message}
+                        </p>
+                      )}
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newFields = data.customFields.filter((_, i) => i !== index);
+                        setValue("customFields", newFields, { shouldDirty: true });
+                      }}
+                      disabled={!canEdit}
+                      className="h-10 w-10 flex-shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
