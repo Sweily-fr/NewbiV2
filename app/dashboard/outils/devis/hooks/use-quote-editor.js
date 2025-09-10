@@ -4,13 +4,10 @@ import { useEffect, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
-import {
-  useCreateQuote,
-  useUpdateQuote,
-  useQuote,
-} from "@/src/graphql/quoteQueries";
-import { useQuoteNumber } from "./use-quote-number";
+import { getActiveOrganization, updateOrganization } from "@/src/lib/organization-client";
 import { useUser } from "@/src/lib/auth/hooks";
+import { useCreateQuote, useUpdateQuote, useQuote } from "@/src/graphql/quoteQueries";
+import { useQuoteNumber } from "./use-quote-number";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -91,11 +88,18 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         issueDate: existingQuote.issueDate,
         validUntil: existingQuote.validUntil,
         status: existingQuote.status,
+        appearance: existingQuote.appearance,
+        appearanceDetails: {
+          textColor: existingQuote.appearance?.textColor,
+          headerBgColor: existingQuote.appearance?.headerBgColor,
+          headerTextColor: existingQuote.appearance?.headerTextColor
+        },
         rawValidUntil: existingQuote.validUntil,
         rawIssueDate: existingQuote.issueDate
       });
       
       const quoteData = transformQuoteToFormData(existingQuote);
+      console.log("🎨 Données d'apparence transformées:", quoteData.appearance);
 
       reset(quoteData);
 
@@ -106,6 +110,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           issueDate: currentFormData.issueDate,
           validUntil: currentFormData.validUntil,
           status: currentFormData.status,
+          appearance: currentFormData.appearance,
           client: currentFormData.client ? 'Client présent' : 'Aucun client'
         });
       }, 100);
@@ -126,6 +131,46 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       setValue("number", formattedNumber);
     }
   }, [mode, nextQuoteNumber, setValue]);
+
+  // Effet pour charger les données d'organisation au démarrage
+  useEffect(() => {
+    if (mode === "create") {
+      const loadOrganizationData = async () => {
+        try {
+          const organization = await getActiveOrganization();
+          console.log("🔍 Debug - Organisation récupérée:", organization);
+          
+          if (organization) {
+            // Utiliser directement les couleurs de l'organisation pour l'apparence par défaut
+            setValue("appearance.textColor", organization.documentTextColor || "#000000");
+            setValue("appearance.headerTextColor", organization.documentHeaderTextColor || "#ffffff");
+            setValue("appearance.headerBgColor", organization.documentHeaderBgColor || "#1d1d1b");
+            
+            // Utiliser les notes et conditions spécifiques aux devis
+            setValue("headerNotes", organization.quoteHeaderNotes || organization.documentHeaderNotes || "");
+            setValue("footerNotes", organization.quoteFooterNotes || organization.documentFooterNotes || "");
+            setValue("termsAndConditions", organization.quoteTermsAndConditions || organization.documentTermsAndConditions || "");
+            setValue("showBankDetails", organization.showBankDetails || false);
+            
+            // Ajouter les coordonnées bancaires dans companyInfo
+            setValue("companyInfo.bankName", organization.bankName || "");
+            setValue("companyInfo.bankIban", organization.bankIban || "");
+            setValue("companyInfo.bankBic", organization.bankBic || "");
+            
+            console.log("🔍 Debug - Données d'organisation appliquées:", {
+              bankName: organization.bankName,
+              bankIban: organization.bankIban,
+              bankBic: organization.bankBic
+            });
+          }
+        } catch (error) {
+          console.error("❌ Erreur lors de la récupération de l'organisation:", error);
+        }
+      };
+      
+      loadOrganizationData();
+    }
+  }, [mode, setValue]);
 
   // Auto-remplir companyInfo quand la session devient disponible
   useEffect(() => {
@@ -265,6 +310,21 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           existingQuote
         );
         input.status = "DRAFT";
+        
+        console.log("💾 Données à sauvegarder (appearance):", {
+          formDataAppearance: currentFormData.appearance,
+          formDataAppearanceDetails: {
+            textColor: currentFormData.appearance?.textColor,
+            headerBgColor: currentFormData.appearance?.headerBgColor,
+            headerTextColor: currentFormData.appearance?.headerTextColor
+          },
+          inputAppearance: input.appearance,
+          inputAppearanceDetails: {
+            textColor: input.appearance?.textColor,
+            headerBgColor: input.appearance?.headerBgColor,
+            headerTextColor: input.appearance?.headerTextColor
+          }
+        });
 
         let result;
         if (mode === "create" || !quoteId) {
@@ -389,6 +449,30 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     [setValue]
   );
 
+  // Fonction pour sauvegarder les paramètres dans l'organisation
+  const saveSettingsToOrganization = useCallback(async () => {
+    try {
+      const currentFormData = getValues();
+      const activeOrganization = await getActiveOrganization();
+      
+      const organizationData = {
+        documentTextColor: currentFormData.appearance?.textColor || "#000000",
+        documentHeaderTextColor: currentFormData.appearance?.headerTextColor || "#ffffff",
+        documentHeaderBgColor: currentFormData.appearance?.headerBgColor || "#1d1d1b",
+        quoteHeaderNotes: currentFormData.headerNotes || "",
+        quoteFooterNotes: currentFormData.footerNotes || "",
+        quoteTermsAndConditions: currentFormData.termsAndConditions || "",
+        showBankDetails: currentFormData.showBankDetails || false,
+      };
+
+      await updateOrganization(activeOrganization.id, organizationData);
+      console.log("✅ Paramètres sauvegardés dans l'organisation:", organizationData);
+    } catch (error) {
+      console.error("❌ Erreur lors de la sauvegarde des paramètres:", error);
+      throw error;
+    }
+  }, [getValues]);
+
   return {
     // Form methods
     form,
@@ -425,6 +509,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     hasExistingQuotes,
     canEdit:
       !loadingQuote && (mode === "create" || existingQuote?.status === "DRAFT"),
+    
+    // Organization settings
+    saveSettingsToOrganization,
   };
 }
 
@@ -484,10 +571,22 @@ function getInitialFormData(mode, initialData, session) {
       bankName: "",
     },
     userBankDetails: null,
+
+    // Paramètres d'apparence
+    appearance: {
+      textColor: "#000000",
+      headerTextColor: "#ffffff",
+      headerBgColor: "#1d1d1b",
+    },
+
+    // Paramètres d'organisation (pour les valeurs par défaut)
+    organizationSettings: null,
   };
+
 
   if (mode === "create" && session?.user?.company) {
     const userCompany = session.user.company;
+    
     baseData.companyInfo = {
       name: userCompany.name || "",
       email: userCompany.email || "",
@@ -504,6 +603,10 @@ function getInitialFormData(mode, initialData, session) {
                 ""
               )
             : "",
+      // Coordonnées bancaires directement dans companyInfo
+      bankName: userCompany.bankName || "",
+      bankIban: userCompany.bankIban || "",
+      bankBic: userCompany.bankBic || "",
       // Nettoyer les métadonnées GraphQL des coordonnées bancaires
       bankDetails: userCompany.bankDetails
         ? {
@@ -733,6 +836,17 @@ function transformQuoteToFormData(quote) {
           // Suppression explicite de __typename et autres métadonnées GraphQL
         }
       : null,
+
+    // Paramètres d'apparence depuis le devis existant
+    appearance: quote.appearance ? {
+      textColor: quote.appearance.textColor || "#000000",
+      headerTextColor: quote.appearance.headerTextColor || "#ffffff",
+      headerBgColor: quote.appearance.headerBgColor || "#1d1d1b",
+    } : {
+      textColor: "#000000",
+      headerTextColor: "#ffffff",
+      headerBgColor: "#1d1d1b",
+    },
   };
 }
 
@@ -1062,12 +1176,20 @@ function transformFormDataToInput(
     discountType: (formData.discountType || "PERCENTAGE").toUpperCase(),
     headerNotes: formData.headerNotes || "",
     footerNotes: formData.footerNotes || "",
-    termsAndConditions: formData.terms || "",
+    termsAndConditions: formData.terms || formData.termsAndConditions || "",
     customFields:
       formData.customFields?.map((field) => ({
         key: field.name,
         value: field.value,
       })) || [],
+    // Inclure les paramètres d'apparence
+    appearance: {
+      textColor: formData.appearance?.textColor || "#000000",
+      headerTextColor: formData.appearance?.headerTextColor || "#ffffff", 
+      headerBgColor: formData.appearance?.headerBgColor || "#1d1d1b",
+    },
+    // Inclure les paramètres des coordonnées bancaires
+    showBankDetails: formData.showBankDetails || false,
   };
 }
 

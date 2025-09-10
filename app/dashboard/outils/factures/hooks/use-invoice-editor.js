@@ -11,19 +11,17 @@ import {
   useNextInvoiceNumber,
 } from "@/src/graphql/invoiceQueries";
 import { useUser } from "@/src/lib/auth/hooks";
-import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
-export function useInvoiceEditor({ mode, invoiceId, initialData }) {
+export function useInvoiceEditor({ mode, invoiceId, initialData, organization }) {
   const router = useRouter();
   // const autosaveTimeoutRef = useRef(null); // DISABLED - Auto-save removed
 
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
   
-  // Hook pour récupérer les données de l'organisation
-  const { organization } = useWorkspace();
 
   // GraphQL hooks
   const { invoice: existingInvoice, loading: loadingInvoice } =
@@ -144,8 +142,33 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     }
   }, [mode, organization, setValue]);
 
-  // Stocker les coordonnées bancaires de l'organisation (disponible en création et édition)
+  // Charger les données d'organisation pour les nouvelles factures
   useEffect(() => {
+    if (mode === "create" && organization) {
+      // Utiliser directement les couleurs de l'organisation pour l'apparence par défaut
+      setValue("appearance.textColor", organization.documentTextColor || "#000000");
+      setValue("appearance.headerTextColor", organization.documentHeaderTextColor || "#ffffff");
+      setValue("appearance.headerBgColor", organization.documentHeaderBgColor || "#1d1d1b");
+      
+      // Utiliser les notes et conditions spécifiques aux factures
+      setValue("headerNotes", organization.invoiceHeaderNotes || organization.documentHeaderNotes || "");
+      setValue("footerNotes", organization.invoiceFooterNotes || organization.documentFooterNotes || "");
+      setValue("termsAndConditions", organization.invoiceTermsAndConditions || organization.documentTermsAndConditions || "");
+      setValue("showBankDetails", organization.showBankDetails || false);
+      
+      // Ajouter les coordonnées bancaires dans companyInfo
+      setValue("companyInfo.bankName", organization.bankName || "");
+      setValue("companyInfo.bankIban", organization.bankIban || "");
+      setValue("companyInfo.bankBic", organization.bankBic || "");
+      
+      console.log("🔍 Debug - Données d'organisation appliquées aux factures:", {
+        bankName: organization.bankName,
+        bankIban: organization.bankIban,
+        bankBic: organization.bankBic
+      });
+    }
+    
+    // Stocker les coordonnées bancaires de l'organisation (disponible en création et édition)
     if (organization?.bankIban) {
       const userBankDetails = {
         iban: organization.bankIban || "",
@@ -158,7 +181,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
         userBankDetails
       );
     }
-  }, [organization, setValue]);
+  }, [mode, organization, setValue]);
 
   // Auto-save handler - DISABLED
   // const handleAutoSave = useCallback(async () => {
@@ -340,6 +363,30 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     formState.errors,
   ]);
 
+  // Fonction pour sauvegarder les paramètres dans l'organisation
+  const saveSettingsToOrganization = useCallback(async () => {
+    try {
+      const currentFormData = getValues();
+      const activeOrganization = await getActiveOrganization();
+      
+      const organizationData = {
+        documentTextColor: currentFormData.appearance?.textColor || "#000000",
+        documentHeaderTextColor: currentFormData.appearance?.headerTextColor || "#ffffff",
+        documentHeaderBgColor: currentFormData.appearance?.headerBgColor || "#1d1d1b",
+        invoiceHeaderNotes: currentFormData.headerNotes || "",
+        invoiceFooterNotes: currentFormData.footerNotes || "",
+        invoiceTermsAndConditions: currentFormData.termsAndConditions || "",
+        showBankDetails: currentFormData.showBankDetails || false,
+      };
+
+      await updateOrganization(activeOrganization.id, organizationData);
+      console.log("✅ Paramètres sauvegardés dans l'organisation:", organizationData);
+    } catch (error) {
+      console.error("❌ Erreur lors de la sauvegarde des paramètres:", error);
+      throw error;
+    }
+  }, [getValues]);
+
   return {
     form,
     formData,
@@ -363,6 +410,7 @@ export function useInvoiceEditor({ mode, invoiceId, initialData }) {
     // handleAutoSave, // DISABLED
     isDirty,
     errors,
+    saveSettingsToOrganization,
   };
 }
 
@@ -413,6 +461,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     paymentMethod: null,
     isDepositInvoice: false,
     purchaseOrderNumber: "",
+    // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: false,
     bankDetails: {
       iban: "",
@@ -430,6 +479,29 @@ function getInitialFormData(mode, initialData, session, organization) {
       headerBgColor: "#1d1d1b",
     },
   };
+
+  // Utiliser les paramètres par défaut de l'organisation si disponibles
+  if (mode === "create" && organization) {
+    // Paramètres d'apparence par défaut
+    if (organization.defaultTextColor || organization.defaultHeaderTextColor || organization.defaultHeaderBgColor) {
+      defaultData.appearance = {
+        textColor: organization.defaultTextColor || "#000000",
+        headerTextColor: organization.defaultHeaderTextColor || "#ffffff",
+        headerBgColor: organization.defaultHeaderBgColor || "#1d1d1b",
+      };
+    }
+    
+    // Paramètres de contenu par défaut
+    if (organization.defaultHeaderNotes) {
+      defaultData.headerNotes = organization.defaultHeaderNotes;
+    }
+    if (organization.defaultFooterNotes) {
+      defaultData.footerNotes = organization.defaultFooterNotes;
+    }
+    if (organization.defaultTermsAndConditions) {
+      defaultData.termsAndConditions = organization.defaultTermsAndConditions;
+    }
+  }
 
   if (initialData) {
     return transformInvoiceToFormData(initialData);

@@ -247,10 +247,18 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
     fromOrganization: organization?.logo,
     finalLogo: companyLogo,
   });
+  console.log("🎨 Appearance data détaillé:", {
+    appearance: data.appearance,
+    textColor: data.appearance?.textColor,
+    headerBgColor: data.appearance?.headerBgColor,
+    headerTextColor: data.appearance?.headerTextColor,
+    hasAppearance: !!data.appearance,
+    dataKeys: Object.keys(data),
+  });
   return (
     <div
       className="w-full bg-white shadow-lg relative min-h-screen flex flex-col"
-      style={{ color: data.appearance?.textColor }}
+      style={{ color: data.appearance?.textColor || '#000000' }}
     >
       {/* CONTENU PRINCIPAL */}
       <div className="px-14 pt-10 pb-32 relative flex-grow">
@@ -712,8 +720,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
 
       {/* FOOTER - DÉTAILS BANCAIRES */}
       <div className="bg-[#F3F3F3] pt-8 pb-8 px-14 w-full">
-        {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai */}
-        {(data.showBankDetails === undefined || data.showBankDetails === true) && (
+        {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un devis */}
+        {(data.showBankDetails === undefined || data.showBankDetails === true) && type !== "quote" && (
           <div className="mb-3">
             <div className="font-medium text-xs mb-2 dark:text-[#0A0A0A]">
               Détails du paiement

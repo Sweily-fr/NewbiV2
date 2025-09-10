@@ -18,6 +18,7 @@ import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
 import InvoiceSettingsView from "./invoice-settings-view";
 import { toast } from "@/src/components/ui/sonner";
+import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -26,6 +27,21 @@ export default function ModernInvoiceEditor({
 }) {
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
+  const [organization, setOrganization] = useState(null);
+
+  // Récupérer l'organisation au chargement
+  useEffect(() => {
+    const fetchOrganization = async () => {
+      try {
+        const org = await getActiveOrganization();
+        setOrganization(org);
+      } catch (error) {
+        console.error("Erreur lors de la récupération de l'organisation:", error);
+      }
+    };
+    fetchOrganization();
+  }, []);
+
   const {
     form,
     formData,
@@ -37,10 +53,12 @@ export default function ModernInvoiceEditor({
     handleAutoSave,
     isDirty,
     errors,
+    saveSettingsToOrganization,
   } = useInvoiceEditor({
     mode,
     invoiceId,
     initialData,
+    organization,
   });
 
   const isReadOnly = mode === "view";
@@ -138,7 +156,17 @@ export default function ModernInvoiceEditor({
                   <InvoiceSettingsView
                     canEdit={!isReadOnly}
                     onCancel={handleCloseSettings}
-                    onSave={handleSave}
+                    onSave={async () => {
+                      try {
+                        // Sauvegarder les paramètres dans l'organisation
+                        await saveSettingsToOrganization();
+                        handleCloseSettings();
+                        toast.success("Paramètres sauvegardés dans l'organisation");
+                      } catch (error) {
+                        console.error("Erreur lors de la sauvegarde:", error);
+                        toast.error("Erreur lors de la sauvegarde des paramètres");
+                      }
+                    }}
                   />
                 ) : (
                   <EnhancedInvoiceForm
