@@ -45,6 +45,7 @@ export const useFileTransfer = () => {
   } = useQuery(GET_MY_TRANSFERS, {
     variables: { page: 1, limit: 10 },
     fetchPolicy: "cache-and-network",
+    notifyOnNetworkStatusChange: true,
   });
 
   // Fonction pour découper un fichier en chunks
@@ -268,11 +269,11 @@ export const useFileTransfer = () => {
         setTransferResult(result);
         toast.success("Transfert créé avec succès !");
 
-        // Rafraîchir la liste des transferts
-        refetchTransfers();
-
         // Réinitialiser les fichiers sélectionnés
         setSelectedFiles([]);
+
+        // Forcer le refetch pour s'assurer que les données sont à jour
+        await refetchTransfers();
 
         return result;
       } else {
@@ -316,8 +317,8 @@ export const useFileTransfer = () => {
   }, [
     selectedFiles,
     transferOptions,
-    uploadFileChunkMutation,
     createFileTransferWithIdsMutation,
+    uploadFileInChunks,
     refetchTransfers,
   ]);
 
@@ -376,12 +377,22 @@ export const useFileTransfer = () => {
     toast.success("Lien copié dans le presse-papiers !");
   }, []);
 
-  // Extraire les transferts de la réponse GraphQL
-  const transfers = transfersData?.myFileTransfers?.items || [];
+  // Extraire les transferts de la réponse GraphQL et dédupliquer par ID
+  const rawTransfers = transfersData?.myFileTransfers?.items || [];
+  
+  // Déduplication des transferts par ID
+  const transfers = rawTransfers.reduce((acc, transfer) => {
+    const existingIndex = acc.findIndex(t => t.id === transfer.id);
+    if (existingIndex === -1) {
+      acc.push(transfer);
+    }
+    return acc;
+  }, []);
   
   // Ajouter des logs pour déboguer
   console.log("Données de transferts reçues:", transfersData);
-  console.log("Transferts extraits:", transfers);
+  console.log("Transferts bruts:", rawTransfers.length);
+  console.log("Transferts après déduplication:", transfers.length);
 
   return {
     // États
