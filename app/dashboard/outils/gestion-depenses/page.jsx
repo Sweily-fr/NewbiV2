@@ -166,6 +166,7 @@ function GestionDepensesContent() {
     <div className="flex flex-col gap-2 py-4 md:gap-6 md:py-6 p-6">
       <div className="w-full">
         <h1 className="text-xl font-medium">Gestion des dépenses</h1>
+        <p className="text-gray-600 mt-2">Gérer vos dépenses en toute simplicité avec la lecture OCR de vos reçus</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Graphique des entrées avec vraies données */}

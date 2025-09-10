@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useFileTransfer } from "../hooks/useFileTransfer";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { useUser } from "@/src/lib/auth/hooks";
@@ -89,6 +90,7 @@ export default function FileUploadNew() {
   const maxFiles = 10;
 
   // Hooks
+  const router = useRouter();
   const { user } = useUser();
   const {
     isConnected: stripeConnected,
@@ -157,7 +159,11 @@ export default function FileUploadNew() {
 
   const handleCreateTransfer = async () => {
     try {
-      await createTransfer();
+      const result = await createTransfer();
+      // Rediriger vers la page de liste des transferts après création réussie
+      if (result && result.success) {
+        router.push("/dashboard/outils/transferts-fichiers");
+      }
     } catch (error) {
       console.error("Error creating transfer:", error);
     }

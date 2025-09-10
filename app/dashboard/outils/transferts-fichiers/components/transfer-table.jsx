@@ -145,13 +145,19 @@ export default function TransferTable() {
   const handleDeleteSelected = async () => {
     setIsDeleting(true);
     try {
-      // Ici on supprimerait vraiment les transferts sélectionnés
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulation
+      // Supprimer vraiment les transferts sélectionnés
+      const deletePromises = selectedTransfers.map(transferId => 
+        deleteTransfer(transferId)
+      );
+      
+      await Promise.all(deletePromises);
+      
       toast.success(
         `${selectedTransfers.length} transfert(s) supprimé(s) avec succès`
       );
       setSelectedTransfers([]);
     } catch (error) {
+      console.error("Erreur lors de la suppression multiple:", error);
       toast.error("Erreur lors de la suppression");
     } finally {
       setIsDeleting(false);
@@ -182,12 +188,12 @@ export default function TransferTable() {
     const searchLower = searchTerm.toLowerCase();
     return (
       transfer.files.some((file) =>
-        file.name.toLowerCase().includes(searchLower)
+        file.originalName?.toLowerCase().includes(searchLower)
       ) ||
       (transfer.recipientEmail &&
         transfer.recipientEmail.toLowerCase().includes(searchLower)) ||
       TRANSFER_STATUS_LABELS[transfer.status]
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchLower)
     );
   });
@@ -290,6 +296,7 @@ export default function TransferTable() {
                 />
               </TableHead>
               <TableHead>Fichiers</TableHead>
+              <TableHead>Destinataire</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead>Expiration</TableHead>
               <TableHead>Téléchargements</TableHead>
@@ -332,13 +339,17 @@ export default function TransferTable() {
                         <div className="text-sm text-muted-foreground">
                           {formatFileSize(totalSize)}
                         </div>
-                        {transfer.recipientEmail && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <IconUser size={14} />
-                            {transfer.recipientEmail}
-                          </div>
-                        )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {transfer.recipientEmail ? (
+                        <div className="flex items-center gap-1">
+                          <IconUser size={14} className="text-muted-foreground" />
+                          <span className="text-sm">{transfer.recipientEmail}</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -349,12 +360,12 @@ export default function TransferTable() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {transfer.expiresAt ? (
+                      {transfer.expiryDate ? (
                         <div
                           className={`flex items-center gap-1 ${isExpired ? "text-red-600" : ""}`}
                         >
                           <IconCalendar size={14} />
-                          {formatDate(transfer.expiresAt)}
+                          {formatDate(transfer.expiryDate)}
                         </div>
                       ) : (
                         <span className="text-muted-foreground">Jamais</span>
@@ -419,7 +430,7 @@ export default function TransferTable() {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   {searchTerm
                     ? "Aucun transfert trouvé."
                     : "Aucun transfert disponible."}

@@ -92,8 +92,11 @@ function DashboardContent() {
   // Debug: Vérifier si les données sont récentes
   const today = new Date().toISOString().split("T")[0];
   const todayIncomes = expenses.filter(e => {
-    const expenseDate = new Date(e.date).toISOString().split("T")[0];
-    return expenseDate === today && e.notes && e.notes.startsWith('[INCOME]');
+    if (!e.date) return false;
+    const expenseDate = new Date(e.date);
+    if (isNaN(expenseDate.getTime())) return false;
+    const expenseDateStr = expenseDate.toISOString().split("T")[0];
+    return expenseDateStr === today && e.notes && e.notes.startsWith('[INCOME]');
   });
   console.log("🗓️ Revenus d'aujourd'hui:", todayIncomes);
   
@@ -131,6 +134,8 @@ function DashboardContent() {
 
       // Filter income expenses for this day (using isVatDeductible as indicator)
       const dayIncomeExpenses = expenses.filter((expense) => {
+        if (!expense.date) return false;
+        
         let expenseDate;
         if (typeof expense.date === 'string') {
           expenseDate = new Date(expense.date);
@@ -139,6 +144,9 @@ function DashboardContent() {
         } else {
           expenseDate = new Date(expense.date);
         }
+        
+        // Vérifier si la date est valide
+        if (isNaN(expenseDate.getTime())) return false;
         
         const isCorrectDate = expenseDate.toISOString().split("T")[0] === dateStr;
         // Utiliser UNIQUEMENT les notes pour identifier les revenus (ignorer isVatDeductible)
@@ -184,6 +192,8 @@ function DashboardContent() {
 
       // Filter expenses for this day - only real expenses (isVatDeductible: true or undefined)
       const dayExpenses = expenses.filter((expense) => {
+        if (!expense.date) return false;
+        
         let expenseDate;
         if (typeof expense.date === 'string') {
           expenseDate = new Date(expense.date);
@@ -192,6 +202,9 @@ function DashboardContent() {
         } else {
           expenseDate = new Date(expense.date);
         }
+        
+        // Vérifier si la date est valide
+        if (isNaN(expenseDate.getTime())) return false;
         
         const isCorrectDate = expenseDate.toISOString().split("T")[0] === dateStr;
         // Filtrer seulement les vraies dépenses (exclure les revenus identifiés par [INCOME])
