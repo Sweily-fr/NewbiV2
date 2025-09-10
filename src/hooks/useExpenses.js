@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_EXPENSES, GET_EXPENSE_STATS } from '../graphql/queries/expense';
-import { DELETE_EXPENSE, DELETE_MULTIPLE_EXPENSES } from '../graphql/mutations/expense';
+import { CREATE_EXPENSE, DELETE_EXPENSE, DELETE_MULTIPLE_EXPENSES } from '../graphql/mutations/expense';
 import { toast } from '@/src/components/ui/sonner';
 
 /**
@@ -81,6 +81,62 @@ export const useDeleteExpense = () => {
 
   return {
     deleteExpense,
+    loading
+  };
+};
+
+/**
+ * Hook pour créer une dépense
+ */
+export const useCreateExpense = () => {
+  const [createExpenseMutation, { loading }] = useMutation(CREATE_EXPENSE, {
+    refetchQueries: [
+      {
+        query: GET_EXPENSES,
+        variables: {
+          status: 'PAID',
+          page: 1,
+          limit: 1000
+        }
+      }
+    ],
+    awaitRefetchQueries: true
+  });
+
+  const createExpense = async (input) => {
+    try {
+      console.log('Hook createExpense - input reçu:', input);
+      
+      const result = await createExpenseMutation({
+        variables: { input }
+      });
+
+      if (result.data?.createExpense) {
+        toast.success('Dépense créée avec succès');
+        return { success: true, expense: result.data.createExpense };
+      } else {
+        throw new Error('Erreur lors de la création de la dépense');
+      }
+    } catch (error) {
+      console.error('Erreur création dépense:', error);
+      console.error('Détails de l\'erreur:', error.graphQLErrors);
+      console.error('Erreur réseau:', error.networkError);
+      
+      // Extraire le message d'erreur le plus pertinent
+      let errorMessage = 'Erreur lors de la création de la dépense';
+      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        errorMessage = error.graphQLErrors[0].message;
+      } else if (error.networkError) {
+        errorMessage = 'Erreur de connexion au serveur';
+      }
+      
+      toast.error(errorMessage);
+      return { success: false, error };
+    }
+  };
+
+  return {
+    createExpense,
     loading
   };
 };

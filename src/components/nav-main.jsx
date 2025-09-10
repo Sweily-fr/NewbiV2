@@ -21,7 +21,7 @@ export function NavMain({ items }) {
   const { isActive } = useSubscription();
   
   // Définir les onglets qui nécessitent un abonnement Pro
-  const proTabs = ["Tableau de bord", "Clients", "Catalogues"];
+  const proTabs = ["Tableau de bord", "Clients"]; // "Catalogues" retiré
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2 pt-2">

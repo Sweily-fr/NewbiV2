@@ -14,6 +14,9 @@ import {
 import { usePathname } from "next/navigation";
 import { ModeToggle } from "@/src/components/ui/mode-toggle";
 import { Save } from "lucide-react";
+import { useQuery } from "@apollo/client";
+import { GET_BOARD } from "@/src/graphql/kanbanQueries";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 // Composant bouton de sauvegarde pour les signatures
 const SignatureSaveButton = () => {
@@ -42,6 +45,21 @@ const SignatureSaveButton = () => {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const { workspaceId } = useWorkspace();
+
+  // Détecter si on est sur une page Kanban avec ID
+  const isKanbanPage = pathname?.includes('/kanban/') && pathname?.split('/').length >= 4;
+  const kanbanId = isKanbanPage ? pathname.split('/').pop() : null;
+
+  // Récupérer les données du tableau Kanban si nécessaire
+  const { data: kanbanData } = useQuery(GET_BOARD, {
+    variables: { 
+      id: kanbanId,
+      workspaceId 
+    },
+    skip: !kanbanId || kanbanId === 'new' || !workspaceId,
+    errorPolicy: 'ignore'
+  });
 
   // Utilisation de useMemo pour éviter les recalculs inutiles et les boucles infinies
   const breadcrumbs = React.useMemo(() => {
@@ -51,9 +69,13 @@ export function SiteHeader() {
 
     return segments.map((segment, index) => {
       const href = "/" + segments.slice(0, index + 1).join("/");
-      const formattedSegment =
-        segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
+      let formattedSegment = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
+      
+      // Si c'est le dernier segment et qu'on est sur une page Kanban, utiliser le nom du tableau
       const isLastSegment = index === segments.length - 1;
+      if (isLastSegment && isKanbanPage && kanbanData?.board?.title) {
+        formattedSegment = kanbanData.board.title;
+      }
 
       // Pour le dernier segment, on retourne juste un BreadcrumbItem avec BreadcrumbPage
       if (isLastSegment) {
@@ -79,7 +101,7 @@ export function SiteHeader() {
         </React.Fragment>
       );
     });
-  }, [pathname]); // Dépendance uniquement sur pathname
+  }, [pathname, kanbanData]); // Dépendance sur pathname et kanbanData
 
   return (
     <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">

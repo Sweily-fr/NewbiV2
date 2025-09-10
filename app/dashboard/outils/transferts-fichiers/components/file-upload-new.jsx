@@ -282,7 +282,6 @@ export default function FileUploadNew() {
           </div>
         )}
 
-
         {/* File list */}
         {selectedFiles.length > 0 && (
           <div className="space-y-2">
