@@ -96,7 +96,7 @@ export default function SocialNetworksSection({
           <Label className="text-xs text-muted-foreground">Instagram</Label>
           <div className="flex items-center gap-3 w-30">
             <Input
-              className="h-8 w-full px-2 py-1"
+              className="h-8 w-full px-2 py-1 placeholder:text-xs"
               type="url"
               value={signatureData.socialLinks?.instagram || ""}
               onChange={(e) =>

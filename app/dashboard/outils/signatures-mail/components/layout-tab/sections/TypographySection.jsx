@@ -63,7 +63,7 @@ function FieldTypographyControls({
   };
 
   return (
-    <div className="border-b border-[#434343] p-3 bg-gray-50/50 dark:bg-[#212121] dark:border dark:rounded-md">
+    <div className="border-b border-[#E5E5E5] p-3 bg-gray-50/50 dark:bg-[#212121] dark:border dark:border-[#434343] dark:rounded-md">
       <div
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}

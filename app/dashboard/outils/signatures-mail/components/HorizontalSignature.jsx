@@ -5,6 +5,7 @@ import Image from "next/image";
 import DynamicSocialLogo from "./DynamicSocialLogo";
 import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
+import "@/src/styles/signature-text-selection.css";
 
 // Fonction utilitaire pour convertir hex en HSL et calculer la rotation de teinte
 const hexToHsl = (hex) => {
@@ -253,9 +254,8 @@ const HorizontalSignature = ({
                           handleFieldChange("fullName", value)
                         }
                         placeholder="Nom complet"
-                        displayClassName="!p-0 !m-0 !rounded-none font-semibold inline-block w-auto"
-                        inputClassName="!p-0 !m-0 !rounded-none font-semibold border-0 shadow-none !h-[1em] w-auto min-w-0 !leading-none"
-                        className="!p-0 !m-0 !rounded-none inline-block w-auto"
+                        displayClassName="border-0 shadow-none p-1 h-auto"
+                        inputClassName="border-0 shadow-none p-1 h-auto"
                         style={{
                           width: "auto",
                           minWidth: "0",

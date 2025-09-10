@@ -97,8 +97,8 @@ const SIGNATURE_STATUS_LABELS = {
 };
 
 const SIGNATURE_STATUS_COLORS = {
-  DEFAULT: "bg-green-100 text-green-800 border-green-200",
-  ACTIVE: "bg-blue-100 text-blue-800 border-blue-200",
+  DEFAULT: "bg-green-100 font-normal text-green-800 border-green-200",
+  ACTIVE: "bg-blue-100 font-normal text-blue-800 border-blue-200",
 };
 
 export default function SignatureTable() {
@@ -365,7 +365,7 @@ function useSignatureTable({ data, onRefetch, actions }) {
         accessorKey: "signatureName",
         header: "Nom de la signature",
         cell: ({ row }) => (
-          <div className="font-medium">{row.getValue("signatureName")}</div>
+          <div className="font-normal">{row.getValue("signatureName")}</div>
         ),
       },
       {

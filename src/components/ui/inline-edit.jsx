@@ -25,7 +25,7 @@ export function InlineEdit({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
   const [error, setError] = useState("");
-  const [inputWidth, setInputWidth] = useState('auto');
+  const [inputWidth, setInputWidth] = useState("auto");
   const inputRef = useRef(null);
   const measureRef = useRef(null);
   const displayRef = useRef(null);
@@ -44,16 +44,16 @@ export function InlineEdit({
       measureRef.current.style.fontWeight = computedStyle.fontWeight;
       measureRef.current.style.letterSpacing = computedStyle.letterSpacing;
       measureRef.current.style.textTransform = computedStyle.textTransform;
-      
+
       // Utiliser le texte exact ou le placeholder
       const textToMeasure = text || placeholder;
       measureRef.current.textContent = textToMeasure;
-      
+
       // Obtenir les dimensions exactes du texte affiché
       const rect = displayRef.current.getBoundingClientRect();
-      return Math.max(rect.width, 30) + 'px';
+      return Math.max(rect.width, 30) + "px";
     }
-    return 'auto';
+    return "auto";
   };
 
   useEffect(() => {
@@ -72,12 +72,12 @@ export function InlineEdit({
 
   const handleStartEdit = () => {
     if (disabled) return;
-    
+
     // Pré-calculer la largeur exacte avant d'entrer en mode édition
     // pour garantir zéro décalage visuel
     const initialWidth = calculateTextWidth(value || "");
     setInputWidth(initialWidth);
-    
+
     setIsEditing(true);
     setEditValue(value || "");
     setError("");
@@ -131,30 +131,32 @@ export function InlineEdit({
 
   if (isEditing) {
     const InputComponent = multiline ? Textarea : Input;
-    
+
     return (
-      <span style={{ 
-        display: 'inline-block',
-        verticalAlign: 'baseline',
-        position: 'relative'
-      }}>
+      <span
+        style={{
+          display: "inline-block",
+          verticalAlign: "baseline",
+          position: "relative",
+        }}
+      >
         {/* Élément invisible pour mesurer la largeur du texte */}
         <span
           ref={measureRef}
           style={{
-            position: 'absolute',
-            visibility: 'hidden',
-            whiteSpace: 'pre',
-            fontSize: 'inherit',
-            fontFamily: 'inherit',
-            fontWeight: 'inherit',
-            letterSpacing: 'inherit',
-            textTransform: 'inherit',
-            padding: '0',
-            border: '0',
-            margin: '0',
-            overflow: 'hidden',
-            top: '-9999px'
+            position: "absolute",
+            visibility: "hidden",
+            whiteSpace: "pre",
+            fontSize: "inherit",
+            fontFamily: "inherit",
+            fontWeight: "inherit",
+            letterSpacing: "inherit",
+            textTransform: "inherit",
+            padding: "0",
+            border: "0",
+            margin: "0",
+            overflow: "hidden",
+            top: "-9999px",
           }}
         >
           {editValue || placeholder}
@@ -167,17 +169,25 @@ export function InlineEdit({
           }}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
-          className={`${inputClassName} ${error ? "border-red-500" : ""}`}
-          style={{ 
-            width: inputWidth, 
-            minWidth: '60px',
-            fontSize: 'inherit',
-            fontFamily: 'inherit',
-            fontWeight: 'inherit',
-            color: 'inherit',
-            lineHeight: 'inherit',
-            verticalAlign: 'baseline',
-            display: 'inline-block'
+          className={`${inputClassName} ${error ? "border-red-500 shadow-red-100" : "border-blue-200 shadow-blue-50"} 
+            transition-all duration-200 ease-in-out
+            focus:border-blue-400 focus:shadow-blue-100 focus:shadow-md
+            hover:border-blue-300 hover:shadow-blue-50 hover:shadow-sm
+            bg-white/80 backdrop-blur-sm
+            rounded-md px-2 py-1
+            selection:bg-[#5b4fff]/50 selection:bg-[#5b4fff]/50`}
+          style={{
+            width: inputWidth,
+            minWidth: "60px",
+            fontSize: "inherit",
+            fontFamily: "inherit",
+            fontWeight: "inherit",
+            color: "inherit",
+            lineHeight: "inherit",
+            verticalAlign: "baseline",
+            display: "inline-block",
+            outline: "none",
+            border: "1px solid",
           }}
           maxLength={maxLength}
           rows={multiline ? 3 : undefined}
@@ -202,11 +212,23 @@ export function InlineEdit({
         ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
       `}
       style={{
-        margin: '0',
-        padding: '0',
-        border: 'none',
-        outline: 'none',
-        background: 'transparent'
+        margin: "0",
+        padding: "2px 4px",
+        border: "none",
+        outline: "none",
+        background: "transparent",
+        borderRadius: "4px",
+        transition: "all 0.15s ease-in-out",
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled && !isEditing) {
+          e.target.style.backgroundColor = "rgba(91, 79, 255, 0.15)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!disabled && !isEditing) {
+          e.target.style.backgroundColor = "transparent";
+        }
       }}
       title={disabled ? "" : "Cliquez pour éditer"}
     >

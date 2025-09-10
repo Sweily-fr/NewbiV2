@@ -20,12 +20,12 @@ export default function ContentTab() {
         signatureData={signatureData}
         updateSignatureData={updateSignatureData}
       />
-      <Separator />
+      {/* <Separator />
 
       <ColumnWidthSection
         signatureData={signatureData}
         updateSignatureData={updateSignatureData}
-      />
+      /> */}
       <Separator />
 
       <StructureSection

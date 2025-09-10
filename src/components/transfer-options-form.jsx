@@ -1,32 +1,44 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card';
-import { Button } from '@/src/components/ui/button';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/src/components/ui/select';
-import { Switch } from '@/src/components/ui/switch';
-import { Textarea } from '@/src/components/ui/textarea';
-import { IconClock, IconCreditCard, IconMail, IconShield } from '@tabler/icons-react';
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { Switch } from "@/src/components/ui/switch";
+import { Textarea } from "@/src/components/ui/textarea";
+import {
+  IconClock,
+  IconCreditCard,
+  IconMail,
+  IconShield,
+} from "@tabler/icons-react";
 
-const TransferOptionsForm = ({ 
-  options, 
-  onOptionsChange, 
-  className 
-}) => {
+const TransferOptionsForm = ({ options, onOptionsChange, className }) => {
   const handleChange = (field, value) => {
     onOptionsChange({
       ...options,
-      [field]: value
+      [field]: value,
     });
   };
 
   const expirationOptions = [
-    { value: '24h', label: '24 heures' },
-    { value: '48h', label: '48 heures' },
-    { value: '7d', label: '7 jours' },
-    { value: '30d', label: '30 jours' }
+    { value: "24h", label: "24 heures" },
+    { value: "48h", label: "48 heures" },
+    { value: "7d", label: "7 jours" },
+    { value: "30d", label: "30 jours" },
   ];
 
   return (
@@ -44,7 +56,7 @@ const TransferOptionsForm = ({
             <Label htmlFor="expiration">Expiration du lien</Label>
             <Select
               value={options.expiration}
-              onValueChange={(value) => handleChange('expiration', value)}
+              onValueChange={(value) => handleChange("expiration", value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner la durée" />
@@ -80,7 +92,9 @@ const TransferOptionsForm = ({
             <Switch
               id="requirePayment"
               checked={options.requirePayment}
-              onCheckedChange={(checked) => handleChange('requirePayment', checked)}
+              onCheckedChange={(checked) =>
+                handleChange("requirePayment", checked)
+              }
             />
           </div>
 
@@ -95,7 +109,12 @@ const TransferOptionsForm = ({
                     min="0"
                     step="0.01"
                     value={options.paymentAmount}
-                    onChange={(e) => handleChange('paymentAmount', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handleChange(
+                        "paymentAmount",
+                        parseFloat(e.target.value) || 0
+                      )
+                    }
                     placeholder="0.00"
                   />
                 </div>
@@ -103,7 +122,7 @@ const TransferOptionsForm = ({
                   <Label htmlFor="currency">Devise</Label>
                   <Select
                     value={options.currency}
-                    onValueChange={(value) => handleChange('currency', value)}
+                    onValueChange={(value) => handleChange("currency", value)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -116,13 +135,17 @@ const TransferOptionsForm = ({
                   </Select>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="paymentDescription">Description du paiement</Label>
+                <Label htmlFor="paymentDescription">
+                  Description du paiement
+                </Label>
                 <Textarea
                   id="paymentDescription"
                   value={options.paymentDescription}
-                  onChange={(e) => handleChange('paymentDescription', e.target.value)}
+                  onChange={(e) =>
+                    handleChange("paymentDescription", e.target.value)
+                  }
                   placeholder="Décrivez ce pour quoi l'utilisateur paie..."
                   rows={3}
                 />
@@ -142,12 +165,14 @@ const TransferOptionsForm = ({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="recipientEmail">Email du destinataire (optionnel)</Label>
+            <Label htmlFor="recipientEmail">
+              Email du destinataire (optionnel)
+            </Label>
             <Input
               id="recipientEmail"
               type="email"
               value={options.recipientEmail}
-              onChange={(e) => handleChange('recipientEmail', e.target.value)}
+              onChange={(e) => handleChange("recipientEmail", e.target.value)}
               placeholder="destinataire@exemple.com"
             />
             <p className="text-xs text-muted-foreground">
@@ -157,7 +182,9 @@ const TransferOptionsForm = ({
 
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label htmlFor="notifyOnDownload">Notification de téléchargement</Label>
+              <Label htmlFor="notifyOnDownload">
+                Notification de téléchargement
+              </Label>
               <p className="text-sm text-muted-foreground">
                 Recevoir un email quand les fichiers sont téléchargés
               </p>
@@ -165,7 +192,9 @@ const TransferOptionsForm = ({
             <Switch
               id="notifyOnDownload"
               checked={options.notifyOnDownload}
-              onCheckedChange={(checked) => handleChange('notifyOnDownload', checked)}
+              onCheckedChange={(checked) =>
+                handleChange("notifyOnDownload", checked)
+              }
             />
           </div>
         </CardContent>
@@ -182,7 +211,9 @@ const TransferOptionsForm = ({
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label htmlFor="passwordProtected">Protection par mot de passe</Label>
+              <Label htmlFor="passwordProtected">
+                Protection par mot de passe
+              </Label>
               <p className="text-sm text-muted-foreground">
                 Ajouter un mot de passe supplémentaire pour accéder aux fichiers
               </p>
@@ -190,7 +221,9 @@ const TransferOptionsForm = ({
             <Switch
               id="passwordProtected"
               checked={options.passwordProtected}
-              onCheckedChange={(checked) => handleChange('passwordProtected', checked)}
+              onCheckedChange={(checked) =>
+                handleChange("passwordProtected", checked)
+              }
             />
           </div>
 
@@ -201,20 +234,24 @@ const TransferOptionsForm = ({
                 id="password"
                 type="password"
                 value={options.password}
-                onChange={(e) => handleChange('password', e.target.value)}
+                onChange={(e) => handleChange("password", e.target.value)}
                 placeholder="Entrez un mot de passe"
               />
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="maxDownloads">Nombre maximum de téléchargements</Label>
+            <Label htmlFor="maxDownloads">
+              Nombre maximum de téléchargements
+            </Label>
             <Input
               id="maxDownloads"
               type="number"
               min="1"
               value={options.maxDownloads}
-              onChange={(e) => handleChange('maxDownloads', parseInt(e.target.value) || 1)}
+              onChange={(e) =>
+                handleChange("maxDownloads", parseInt(e.target.value) || 1)
+              }
               placeholder="Illimité"
             />
             <p className="text-xs text-muted-foreground">
@@ -235,7 +272,7 @@ const TransferOptionsForm = ({
             <Textarea
               id="customMessage"
               value={options.customMessage}
-              onChange={(e) => handleChange('customMessage', e.target.value)}
+              onChange={(e) => handleChange("customMessage", e.target.value)}
               placeholder="Ajoutez un message personnalisé qui sera affiché au destinataire..."
               rows={4}
             />

@@ -1,0 +1,55 @@
+/* Styles de sélection uniformes pour tous les textes des signatures */
+
+/* Sélection globale en bleu pour tous les éléments */
+* {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+*::selection {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: rgb(30, 64, 175);
+  text-shadow: none;
+}
+
+*::-moz-selection {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: rgb(30, 64, 175);
+  text-shadow: none;
+}
+
+/* Styles spécifiques pour les inputs et textareas */
+input::selection,
+textarea::selection {
+  background-color: rgba(59, 130, 246, 0.25);
+  color: rgb(30, 64, 175);
+}
+
+input::-moz-selection,
+textarea::-moz-selection {
+  background-color: rgba(59, 130, 246, 0.25);
+  color: rgb(30, 64, 175);
+}
+
+/* Styles pour les éléments de signature spécifiquement */
+.signature-container *::selection {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: rgb(30, 64, 175);
+  text-shadow: none;
+}
+
+.signature-container *::-moz-selection {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: rgb(30, 64, 175);
+  text-shadow: none;
+}
+
+/* Désactiver la sélection pour les éléments non-éditables si nécessaire */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
