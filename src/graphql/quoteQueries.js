@@ -88,6 +88,12 @@ export const QUOTE_FRAGMENT = gql`
       key
       value
     }
+    appearance {
+      textColor
+      headerTextColor
+      headerBgColor
+    }
+    showBankDetails
     createdBy {
       id
       email

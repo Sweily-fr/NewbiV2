@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { FormProvider } from "react-hook-form";
-import { ArrowLeft, FileText, Send, Copy, Settings, X } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  Send,
+  CreditCard,
+  Settings,
+  X,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useRouter } from "next/navigation";
@@ -11,6 +18,7 @@ import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedQuoteForm from "./enhanced-quote-form";
 import QuoteSettingsView from "./quote-settings-view";
 import { toast } from "@/src/components/ui/sonner";
+import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -33,6 +41,7 @@ export default function ModernQuoteEditor({
     nextQuoteNumber,
     validateQuoteNumber,
     hasExistingQuotes,
+    saveSettingsToOrganization,
   } = useQuoteEditor({
     mode,
     quoteId,
@@ -138,10 +147,16 @@ export default function ModernQuoteEditor({
                     formData={formData}
                     setFormData={setFormData}
                     onCancel={handleCloseSettings}
-                    onSave={(data) => {
-                      setFormData(data);
-                      handleCloseSettings();
-                      toast.success("Paramètres sauvegardés");
+                    onSave={async () => {
+                      try {
+                        // Sauvegarder les paramètres dans l'organisation
+                        await saveSettingsToOrganization();
+                        handleCloseSettings();
+                        toast.success("Paramètres sauvegardés dans l'organisation");
+                      } catch (error) {
+                        console.error("Erreur lors de la sauvegarde:", error);
+                        toast.error("Erreur lors de la sauvegarde des paramètres");
+                      }
                     }}
                     canEdit={!isReadOnly}
                   />

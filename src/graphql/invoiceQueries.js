@@ -93,6 +93,11 @@ export const INVOICE_FRAGMENT = gql`
       key
       value
     }
+    appearance {
+      textColor
+      headerTextColor
+      headerBgColor
+    }
     createdBy {
       id
       email
