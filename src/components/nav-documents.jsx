@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   IconDots,
   IconFolder,
@@ -41,9 +41,20 @@ export function NavDocuments({ items }) {
   const { isActive } = useSubscription();
   // Initialiser avec seulement Factures par défaut
   const [pinnedApps, setPinnedApps] = useState(items || []);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Outils qui nécessitent un abonnement Pro
   const proTools = ["Factures", "Devis", "Transferts de fichiers", "Dépenses"];
+
+  // Icon mapping for localStorage serialization
+  const iconMap = {
+    'IconReceipt': IconReceipt,
+    'IconFileText': IconFileText,
+    'IconLayoutKanban': IconLayoutKanban,
+    'IconMail': IconMail,
+    'IconFileUpload': IconFileUpload,
+    'IconCreditCard': IconCreditCard,
+  };
 
   // Available tools that can be pinned
   const availableTools = [
@@ -51,39 +62,90 @@ export function NavDocuments({ items }) {
       name: "Factures",
       url: "/dashboard/outils/factures",
       icon: IconReceipt,
+      iconName: 'IconReceipt',
       isPro: true,
     },
     {
       name: "Devis",
       url: "/dashboard/outils/devis",
       icon: IconFileText,
+      iconName: 'IconFileText',
       isPro: true,
     },
     {
       name: "Kanban",
       url: "/dashboard/outils/kanban",
       icon: IconLayoutKanban,
+      iconName: 'IconLayoutKanban',
       isPro: false,
     },
     {
       name: "Signatures de mail",
       url: "/dashboard/outils/signatures-mail",
       icon: IconMail,
+      iconName: 'IconMail',
       isPro: false,
     },
     {
       name: "Transferts de fichiers",
       url: "/dashboard/outils/transferts-fichiers",
       icon: IconFileUpload,
+      iconName: 'IconFileUpload',
       isPro: true,
     },
     {
       name: "Dépenses",
       url: "/dashboard/outils/gestion-depenses",
       icon: IconCreditCard,
+      iconName: 'IconCreditCard',
       isPro: true,
     },
   ];
+
+  // Load pinned apps from localStorage on component mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const savedApps = localStorage.getItem('newbi-pinned-apps');
+        if (savedApps) {
+          const parsedApps = JSON.parse(savedApps);
+          // Restore icon components from iconName
+          const validApps = parsedApps
+            .filter(app => app.name && app.url && app.iconName)
+            .map(app => ({
+              ...app,
+              icon: iconMap[app.iconName] || IconReceipt // fallback icon
+            }));
+          if (validApps.length > 0) {
+            setPinnedApps(validApps);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading pinned apps from localStorage:', error);
+        // Fallback to default items if localStorage is corrupted
+        setPinnedApps(items || []);
+      }
+      setIsLoaded(true);
+    }
+  }, [items]);
+
+  // Save pinned apps to localStorage whenever they change
+  useEffect(() => {
+    if (isLoaded && typeof window !== "undefined") {
+      try {
+        // Serialize apps with iconName instead of icon component
+        const appsToSave = pinnedApps.map(app => ({
+          name: app.name,
+          url: app.url,
+          iconName: app.iconName,
+          isPro: app.isPro
+        }));
+        localStorage.setItem('newbi-pinned-apps', JSON.stringify(appsToSave));
+      } catch (error) {
+        console.error('Error saving pinned apps to localStorage:', error);
+      }
+    }
+  }, [pinnedApps, isLoaded]);
 
   // Filter out already pinned apps
   const availableToPin = availableTools.filter(
