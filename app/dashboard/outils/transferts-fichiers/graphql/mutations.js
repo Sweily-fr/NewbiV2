@@ -239,8 +239,10 @@ export const GET_TRANSFER_BY_LINK = gql`
         isPaymentRequired
         paymentAmount
         paymentCurrency
+        isPaid
         status
         downloadCount
+        recipientEmail
       }
     }
   }

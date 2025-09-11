@@ -32,6 +32,7 @@ const StripeConnectOnboarding = ({
     error,
     connectStripe,
     openStripeDashboard,
+    checkAndUpdateAccountStatus,
     clearError,
   } = useStripeConnect(userId);
 
@@ -111,9 +112,9 @@ const StripeConnectOnboarding = ({
           {/* Avantages pour les nouveaux utilisateurs */}
           {!isConnected && (
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-xl">
+              <div className="flex items-center gap-4 p-4 bg-[#FAFAFA] dark:bg-gray-800/50 rounded-xl">
                 <div className="p-2 bg-blue-100 dark:bg-blue-800/50 rounded-lg">
-                  <Shield className="h-5 w-5 text-blue-600" />
+                  <Shield className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
                   <h4 className="font-medium text-sm">Paiements sécurisés</h4>
@@ -123,9 +124,9 @@ const StripeConnectOnboarding = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-xl">
+              <div className="flex items-center gap-4 p-4 bg-[#FAFAFA] dark:bg-gray-800/50 rounded-xl">
                 <div className="p-2 bg-green-100 dark:bg-green-800/50 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <DollarSign className="h-4 w-4 text-green-600" />
                 </div>
                 <div>
                   <h4 className="font-medium text-sm">
@@ -137,9 +138,9 @@ const StripeConnectOnboarding = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-xl">
+              <div className="flex items-center gap-4 p-4 bg-[#FAFAFA] dark:bg-gray-800/50 rounded-xl">
                 <div className="p-2 bg-purple-100 dark:bg-purple-800/50 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-purple-600" />
+                  <CheckCircle className="h-4 w-4 text-purple-600" />
                 </div>
                 <div>
                   <h4 className="font-medium text-sm">Configuration rapide</h4>
@@ -156,11 +157,28 @@ const StripeConnectOnboarding = ({
             {isConnected ? (
               <>
                 <Button
+                  onClick={checkAndUpdateAccountStatus}
+                  variant="outline"
+                  disabled={isLoading}
+                  className="border-blue-200 hover:bg-blue-50 text-blue-600 transition-colors"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2"></div>
+                      Vérification...
+                    </>
+                  ) : (
+                    "Vérifier le statut"
+                  )}
+                </Button>
+                <Button
                   onClick={openStripeDashboard}
                   className="flex-1 bg-gradient-to-r from-[#635BFF] to-[#5A54E5] hover:from-[#5A54E5] hover:to-[#4F46E5] text-white shadow-lg shadow-[#635BFF]/25 transition-all duration-200"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  Tableau de bord
+                  {canReceivePayments
+                    ? "Tableau de bord"
+                    : "Finaliser la config"}
                 </Button>
                 <Button
                   variant="outline"
@@ -175,7 +193,7 @@ const StripeConnectOnboarding = ({
                 <Button
                   onClick={handleConnect}
                   disabled={isLoading || !userEmail}
-                  className="flex-1 bg-gradient-to-r from-[#635BFF] to-[#5A54E5] hover:from-[#5A54E5] hover:to-[#4F46E5] text-white shadow-lg shadow-[#635BFF]/25 disabled:opacity-50 disabled:shadow-none transition-all duration-200"
+                  className="flex-1 cursor-pointer bg-gradient-to-r from-[#635BFF] to-[#5A54E5] hover:from-[#5A54E5] hover:to-[#4F46E5] text-white shadow-lg shadow-[#635BFF]/25 disabled:opacity-50 disabled:shadow-none transition-all duration-200"
                 >
                   {isLoading ? (
                     <>
@@ -186,7 +204,11 @@ const StripeConnectOnboarding = ({
                     "Connecter Stripe"
                   )}
                 </Button>
-                <Button variant="outline" onClick={handleClose}>
+                <Button
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={handleClose}
+                >
                   Annuler
                 </Button>
               </>

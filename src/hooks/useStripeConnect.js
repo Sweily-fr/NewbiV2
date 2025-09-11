@@ -52,7 +52,7 @@ export const useStripeConnect = (userId) => {
         }
 
         // 2. Générer le lien d'onboarding
-        const returnUrl = `${window.location.origin}/dashboard/settings?stripe_success=true`;
+        const returnUrl = `${window.location.origin}/dashboard/outils/transferts-fichiers/new?stripe_success=true`;
         const { data: linkData } = await generateOnboardingLink({
           variables: {
             accountId,
@@ -111,17 +111,6 @@ export const useStripeConnect = (userId) => {
     }
   }, [stripeStatusData, disconnectAccount, refetchStatus]);
 
-  // Fonction pour ouvrir le tableau de bord Stripe
-  const openStripeDashboard = useCallback(() => {
-    const accountId = stripeStatusData?.myStripeConnectAccount?.accountId;
-    if (accountId) {
-      window.open(
-        `https://dashboard.stripe.com/connect/accounts/${accountId}`,
-        "_blank"
-      );
-    }
-  }, [stripeStatusData]);
-
   // Calculer l'état de connexion
   const isConnected = !!stripeStatusData?.myStripeConnectAccount?.accountId;
   const isOnboarded =
@@ -130,6 +119,68 @@ export const useStripeConnect = (userId) => {
     stripeStatusData?.myStripeConnectAccount?.chargesEnabled || false;
   const accountStatus =
     stripeStatusData?.myStripeConnectAccount?.accountStatus || "not_connected";
+
+  // Fonction pour ouvrir le tableau de bord Stripe
+  const openStripeDashboard = useCallback(async () => {
+    const accountId = stripeStatusData?.myStripeConnectAccount?.accountId;
+    if (accountId) {
+      // Si le compte n'est pas encore configuré, générer un lien d'onboarding
+      if (!isOnboarded || !canReceivePayments) {
+        try {
+          const returnUrl = `${window.location.origin}/dashboard/outils/transferts-fichiers/new?stripe_success=true`;
+          const { data: linkData } = await generateOnboardingLink({
+            variables: {
+              accountId,
+              returnUrl,
+            },
+          });
+
+          if (linkData.generateStripeOnboardingLink.success) {
+            window.location.href = linkData.generateStripeOnboardingLink.url;
+            return;
+          }
+        } catch (err) {
+          console.error(
+            "Erreur lors de la génération du lien d'onboarding:",
+            err
+          );
+        }
+      }
+
+      // Sinon, ouvrir le dashboard normal
+      window.open(
+        `https://dashboard.stripe.com/connect/accounts/${accountId}`,
+        "_blank"
+      );
+    }
+  }, [
+    stripeStatusData,
+    isOnboarded,
+    canReceivePayments,
+    generateOnboardingLink,
+  ]);
+
+  // Fonction pour vérifier et synchroniser le statut du compte
+  const checkAndUpdateAccountStatus = useCallback(async () => {
+    const accountId = stripeStatusData?.myStripeConnectAccount?.accountId;
+    if (!accountId) return;
+
+    try {
+      setIsLoading(true);
+      const { data } = await checkAccountStatus({
+        variables: { accountId },
+      });
+
+      if (data.checkStripeConnectAccountStatus.success) {
+        // Rafraîchir les données après la vérification
+        await refetchStatus();
+      }
+    } catch (err) {
+      console.error("Erreur lors de la vérification du statut:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [stripeStatusData, checkAccountStatus, refetchStatus]);
 
   return {
     // États
@@ -147,6 +198,7 @@ export const useStripeConnect = (userId) => {
     connectStripe,
     disconnectStripe,
     openStripeDashboard,
+    checkAndUpdateAccountStatus,
     refetchStatus,
 
     // Utilitaires

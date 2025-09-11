@@ -8,7 +8,7 @@ import { Label } from "@/src/components/ui/label";
 import { registerUser, verifyEmail } from "../../../src/lib/auth/api";
 import { signUp } from "../../../src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAutoOrganization } from "@/src/hooks/useAutoOrganization";
 
 const RegisterForm = () => {
@@ -21,7 +21,12 @@ const RegisterForm = () => {
   } = useForm();
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { createAutoOrganization } = useAutoOrganization();
+
+  // Récupérer les paramètres d'invitation
+  const invitationId = searchParams.get('invitation');
+  const invitationEmail = searchParams.get('email');
 
   const onSubmit = async (formData) => {
     console.log(formData, "formData");
@@ -31,30 +36,60 @@ const RegisterForm = () => {
 
         console.log("Callback onSuccess - Context:", context);
 
-        // Créer automatiquement une organisation après l'inscription
-        console.log("Tentative de création automatique d'organisation...");
+        // Si c'est une inscription via invitation, accepter l'invitation automatiquement
+        if (invitationId) {
+          console.log("Inscription via invitation, tentative d'acceptation automatique...");
+          
+          setTimeout(async () => {
+            try {
+              const response = await fetch(`/api/invitations/${invitationId}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'accept' }),
+              });
 
-        // Attendre un peu pour que l'utilisateur soit bien créé et connecté
-        setTimeout(async () => {
-          // Passer l'utilisateur depuis le contexte si disponible
-          const user = context?.user || context?.data?.user;
-          console.log("Utilisateur depuis le contexte:", user);
+              if (response.ok) {
+                console.log("Invitation acceptée automatiquement après inscription");
+                toast.success("Invitation acceptée ! Redirection vers le dashboard...");
+                router.push("/dashboard");
+                return;
+              } else {
+                console.error("Erreur lors de l'acceptation automatique de l'invitation");
+              }
+            } catch (error) {
+              console.error("Erreur lors de l'acceptation de l'invitation:", error);
+            }
+            
+            // Fallback: redirection normale
+            router.push("/auth/login");
+          }, 2000);
+        } else {
+          // Créer automatiquement une organisation après l'inscription normale
+          console.log("Tentative de création automatique d'organisation...");
 
-          const result = await createAutoOrganization(user);
-          if (result.success) {
-            console.log("Organisation créée automatiquement après inscription");
-            toast.success("Organisation créée automatiquement");
-          } else {
-            console.error(
-              "Échec de la création automatique d'organisation:",
-              result.error
-            );
-            // Ne pas afficher d'erreur à l'utilisateur car l'inscription a réussi
-          }
-        }, 3000); // Attendre 3 secondes pour être sûr
+          setTimeout(async () => {
+            // Passer l'utilisateur depuis le contexte si disponible
+            const user = context?.user || context?.data?.user;
+            console.log("Utilisateur depuis le contexte:", user);
 
-        // Redirection vers la page de connexion après inscription
-        router.push("/auth/login");
+            const result = await createAutoOrganization(user);
+            if (result.success) {
+              console.log("Organisation créée automatiquement après inscription");
+              toast.success("Organisation créée automatiquement");
+            } else {
+              console.error(
+                "Échec de la création automatique d'organisation:",
+                result.error
+              );
+              // Ne pas afficher d'erreur à l'utilisateur car l'inscription a réussi
+            }
+          }, 3000);
+
+          // Redirection vers la page de connexion après inscription
+          router.push("/auth/login");
+        }
       },
       onError: (error) => {
         toast.error("Erreur lors de l'inscription");
@@ -82,6 +117,7 @@ const RegisterForm = () => {
           autoComplete="email"
           placeholder="Saisissez votre email"
           className="mt-2"
+          defaultValue={invitationEmail || ""}
           {...register("email", {
             required: "Email est requis",
             pattern: {

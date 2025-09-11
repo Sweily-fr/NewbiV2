@@ -42,7 +42,16 @@ export default function TransferPage() {
   // Mutation pour générer un lien de paiement
   const [generatePaymentLink, { loading: paymentLoading }] = useMutation(GENERATE_FILE_TRANSFER_PAYMENT_LINK);
 
-  const transfer = data?.getTransferByLink;
+  const transfer = data?.getFileTransferByLink?.fileTransfer;
+
+  // Debug: Afficher les données reçues
+  console.log('🔍 Debug transfer data:', {
+    hasData: !!data,
+    success: data?.getFileTransferByLink?.success,
+    transfer: transfer,
+    shareLink,
+    accessKey
+  });
 
   // Données de démonstration si pas de données réelles
   const demoTransfer = {
@@ -78,7 +87,7 @@ export default function TransferPage() {
 
   const isExpired = new Date(transferData.expiryDate) <= new Date();
   const isLimitReached = transferData.maxDownloads && transferData.downloadCount >= transferData.maxDownloads;
-  const canDownload = !isExpired && !isLimitReached && (!transferData.requirePayment || paymentCompleted);
+  const canDownload = !isExpired && !isLimitReached && (!transferData.isPaymentRequired || paymentCompleted);
 
   const handlePayment = async () => {
     try {
@@ -238,7 +247,7 @@ export default function TransferPage() {
         </Card>
 
         {/* Paiement requis */}
-        {transferData.requirePayment && !paymentCompleted && (
+        {transferData.isPaymentRequired && !paymentCompleted && (
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="p-6">
               <div className="flex items-center space-x-3 mb-4">

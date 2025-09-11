@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { GET_TRANSFER_BY_LINK } from "@/app/dashboard/outils/transferts-fichiers/graphql/mutations";
 import { Button } from "@/src/components/ui/button";
 import { Typewriter } from "@/src/components/ui/typewriter-text";
-import { CircleArrowUp, File, Download, Timer } from "lucide-react";
+import {
+  CircleArrowUp,
+  File,
+  Download,
+  Timer,
+  User as IconUser,
+} from "lucide-react";
+import { useStripePayment } from "@/src/hooks/useStripePayment";
 import {
   Card,
   CardContent,
@@ -14,18 +21,70 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { toast } from "@/src/components/ui/sonner";
 import { motion } from "framer-motion";
+import { Separator } from "@/src/components/ui/separator";
 import React from "react";
 import { AuroraBackground } from "./components/aura-background";
+import { Confetti } from "@/src/components/magicui/confetti";
 
 export default function TransferPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const shareLink = params.shareLink;
   const accessKey = searchParams.get("key");
+  const paymentStatus = searchParams.get("payment_status");
 
   const [isDownloading, setIsDownloading] = useState(false);
+  const confettiRef = useRef(null);
+
+  // Hook pour gérer les paiements Stripe
+  const { initiatePayment, isProcessing } = useStripePayment();
+
+  // Déclencher confetti si paiement réussi
+  useEffect(() => {
+    if (paymentStatus === "success") {
+      console.log("🎉 Paiement réussi détecté, déclenchement des confettis!");
+
+      // Délai pour laisser la page se charger
+      const timer = setTimeout(() => {
+        console.log("🔍 Debug confettiRef.current:", confettiRef.current);
+
+        if (confettiRef.current?.fire) {
+          console.log("✅ Déclenchement confetti avec fire()");
+          confettiRef.current.fire({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: [
+              "#5b4fff",
+              "#ff6b6b",
+              "#4ecdc4",
+              "#45b7d1",
+              "#96ceb4",
+              "#ffeaa7",
+            ],
+          });
+        } else {
+          console.log("❌ confettiRef.current?.fire non disponible");
+        }
+
+        // Toast de succès
+        toast.success(
+          "Paiement effectué avec succès! Vous pouvez maintenant télécharger vos fichiers."
+        );
+
+        // Nettoyer l'URL
+        const newUrl =
+          window.location.pathname +
+          window.location.search.replace(/[?&]payment_status=success/, "");
+        window.history.replaceState({}, document.title, newUrl);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [paymentStatus]);
 
   // Query pour récupérer les détails du transfert
   const { data, loading, error } = useQuery(GET_TRANSFER_BY_LINK, {
@@ -43,49 +102,116 @@ export default function TransferPage() {
   console.log("🔍 Debug - Transfer:", transfer);
   console.log("🔍 Debug - FileTransfer:", transfer?.fileTransfer);
   console.log("🔍 Debug - Files:", transfer?.fileTransfer?.files);
+  console.log(
+    "🔍 Debug - isPaymentRequired:",
+    transfer?.fileTransfer?.isPaymentRequired
+  );
+  console.log(
+    "🔍 Debug - paymentAmount:",
+    transfer?.fileTransfer?.paymentAmount
+  );
+  console.log(
+    "🔍 Debug - paymentCurrency:",
+    transfer?.fileTransfer?.paymentCurrency
+  );
+  console.log("🔍 Debug - isPaid:", transfer?.fileTransfer?.isPaid);
+
+  // Test temporaire: forcer l'affichage pour debug
+  console.log("🔧 Test - Condition d'affichage:", {
+    isPaymentRequired: transfer?.fileTransfer?.isPaymentRequired,
+    isPaid: transfer?.fileTransfer?.isPaid,
+    shouldShow:
+      transfer?.fileTransfer?.isPaymentRequired &&
+      !transfer?.fileTransfer?.isPaid,
+  });
 
   // Fonction pour télécharger un fichier
   const downloadFile = async (fileId, fileName) => {
     setIsDownloading(true);
+    const startTime = Date.now();
     try {
-      console.log("Début téléchargement:", {
-        fileId,
-        fileName,
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      console.log("🔐 Debug downloadFile appelé avec:", {
         shareLink,
         accessKey,
+        transferId: transfer?.fileTransfer?.id,
+        apiUrl: apiUrl,
+        recipientEmail: transfer?.fileTransfer?.recipientEmail,
+        fullUrl: `${apiUrl}/api/transfers/${transfer?.fileTransfer?.id}/authorize`,
       });
 
-      const downloadUrl = `/api/transfer/download/${fileId}?shareLink=${shareLink}&accessKey=${accessKey}`;
-      console.log("URL de téléchargement:", downloadUrl);
+      // Demander l'autorisation de téléchargement au serveur
+      const authResponse = await fetch(
+        `${apiUrl}/api/transfers/${transfer?.fileTransfer?.id}/authorize`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fileId,
+            email: "anonymous@user.com", // Email non important maintenant
+          }),
+        }
+      );
 
-      // Faire une requête fetch pour récupérer le fichier
-      const response = await fetch(downloadUrl);
+      console.log("Auth response status:", authResponse.status);
+      console.log("Auth response headers:", authResponse.headers);
 
-      if (!response.ok) {
-        throw new Error("Erreur lors du téléchargement");
+      if (!authResponse.ok) {
+        const errorText = await authResponse.text();
+        console.error("Auth response error:", errorText);
+        throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
       }
 
-      // Créer un blob à partir de la réponse
-      const blob = await response.blob();
+      const authData = await authResponse.json();
 
-      // Créer une URL temporaire pour le blob
-      const url = window.URL.createObjectURL(blob);
+      if (!authData.success) {
+        if (authData.requiresPayment) {
+          toast.error("Un paiement est requis pour télécharger ce fichier.");
+          return;
+        }
+        throw new Error(authData.error || "Autorisation refusée");
+      }
 
-      // Créer un lien de téléchargement et le déclencher
+      // Utiliser l'URL sécurisée fournie par le serveur
+      const downloadInfo = authData.downloads.find((d) => d.fileId === fileId);
+      if (!downloadInfo) {
+        throw new Error("URL de téléchargement non trouvée");
+      }
+
+      console.log("URL de téléchargement sécurisée:", downloadInfo.downloadUrl);
+
+      // Utiliser la route proxy du serveur pour un vrai téléchargement
+      const proxyUrl = `${apiUrl}/api/files/download/${transfer?.fileTransfer?.id}/${fileId}`;
+      console.log("URL proxy de téléchargement:", proxyUrl);
+
       const a = document.createElement("a");
-      a.href = url;
+      a.href = proxyUrl;
       a.download = fileName;
+      a.style.display = "none";
       document.body.appendChild(a);
       a.click();
-
-      // Nettoyer
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+
+      // Marquer le téléchargement comme terminé
+      if (downloadInfo.downloadEventId) {
+        await fetch(
+          `${apiUrl}/api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ duration: Date.now() - startTime }),
+          }
+        );
+      }
 
       toast.success("Fichier téléchargé avec succès");
     } catch (error) {
       console.error("Erreur lors du téléchargement:", error);
-      toast.error("Erreur lors du téléchargement du fichier");
+      toast.error(error.message || "Erreur lors du téléchargement du fichier");
     } finally {
       setIsDownloading(false);
     }
@@ -94,30 +220,105 @@ export default function TransferPage() {
   // Fonction pour télécharger tous les fichiers
   const downloadAllFiles = async () => {
     setIsDownloading(true);
+    const startTime = Date.now();
+
     try {
-      // Ici, vous devrez implémenter l'endpoint de téléchargement en ZIP
-      const response = await fetch(
-        `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}`
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+      // Demander l'autorisation de téléchargement pour tous les fichiers
+      const authResponse = await fetch(
+        `${apiUrl}/api/transfers/${transfer?.fileTransfer?.id}/authorize`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: "anonymous@user.com", // Email non important maintenant
+          }),
+        }
       );
 
-      if (!response.ok) {
-        throw new Error("Erreur lors du téléchargement");
+      console.log("Auth response status (bulk):", authResponse.status);
+
+      if (!authResponse.ok) {
+        const errorText = await authResponse.text();
+        console.error("Auth response error (bulk):", errorText);
+        throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `transfer-${shareLink}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const authData = await authResponse.json();
+
+      if (!authData.success) {
+        if (authData.requiresPayment) {
+          toast.error("Un paiement est requis pour télécharger ces fichiers.");
+          return;
+        }
+        throw new Error(authData.error || "Autorisation refusée");
+      }
+
+      // Si un seul fichier, télécharger directement
+      if (authData.downloads.length === 1) {
+        const downloadInfo = authData.downloads[0];
+        const response = await fetch(downloadInfo.downloadUrl);
+
+        if (!response.ok) {
+          throw new Error("Erreur lors du téléchargement");
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = downloadInfo.fileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        // Plusieurs fichiers : utiliser l'endpoint ZIP existant avec vérification
+        const response = await fetch(
+          `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Erreur lors du téléchargement");
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `transfer-${shareLink}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+
+      // Marquer les téléchargements comme terminés
+      const duration = Date.now() - startTime;
+      for (const downloadInfo of authData.downloads) {
+        if (downloadInfo.downloadEventId) {
+          await fetch(
+            `${apiUrl}/api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ duration }),
+            }
+          );
+        }
+      }
 
       toast.success("Fichiers téléchargés avec succès !");
     } catch (error) {
       console.error("Erreur lors du téléchargement:", error);
-      toast.error("Erreur lors du téléchargement des fichiers");
+      toast.error(
+        error.message || "Erreur lors du téléchargement des fichiers"
+      );
     } finally {
       setIsDownloading(false);
     }
@@ -156,9 +357,39 @@ export default function TransferPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-20 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p>Chargement du transfert...</p>
+      <div className="container mx-auto max-w-full px-10 py-20">
+        {/* Main Card Skeleton */}
+        <Skeleton className="h-full w-1/2 mb-2" />
+        <Skeleton className="h-full w-1/2" />
+        {/* <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div>
+                  <Skeleton className="h-6 w-32 mb-2" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-20" />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="text-center">
+                <Skeleton className="h-4 w-16 mx-auto mb-2" />
+                <Skeleton className="h-6 w-12 mx-auto" />
+              </div>
+              <div className="text-center">
+                <Skeleton className="h-4 w-20 mx-auto mb-2" />
+                <Skeleton className="h-6 w-16 mx-auto" />
+              </div>
+              <div className="text-center">
+                <Skeleton className="h-4 w-24 mx-auto mb-2" />
+                <Skeleton className="h-6 w-8 mx-auto" />
+              </div>
+            </div>
+          </CardContent>
+        </Card> */}
       </div>
     );
   }
@@ -180,8 +411,15 @@ export default function TransferPage() {
   const isExpired = new Date(transfer?.fileTransfer?.expiryDate) < new Date();
 
   return (
-    <div className="flex h-screen">
-      <div className="w-1/2 flex items-center justify-center p-2">
+    <div className="flex h-screen relative">
+      <div className="w-1/2 flex items-center justify-center p-2 relative">
+        {/* Confetti Canvas - limité à la partie gauche */}
+        {paymentStatus === "success" && (
+          <Confetti
+            ref={confettiRef}
+            className="absolute right-0 top-0 z-50 w-full h-full pointer-events-none"
+          />
+        )}
         <div className="mx-auto sm:max-w-xl w-full">
           <div className="mb-8">
             <h1 className="text-xl font-medium mb-2">
@@ -238,39 +476,57 @@ export default function TransferPage() {
               </div>
             </CardContent>
           </Card>
-
-          {transfer?.fileTransfer?.isPaymentRequired &&
+          <Separator />
+          {(transfer?.fileTransfer?.isPaymentRequired === true ||
+            (transfer?.fileTransfer?.paymentAmount &&
+              transfer?.fileTransfer?.paymentAmount > 0)) &&
             !transfer?.fileTransfer?.isPaid && (
-              <Card className="mb-6 border-orange-200 bg-orange-50">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-orange-800 mb-2">
-                      Paiement requis
-                    </h3>
-                    <p className="text-orange-700 mb-4">
-                      Ce transfert nécessite un paiement de{" "}
-                      {transfer?.fileTransfer?.paymentAmount}{" "}
-                      {transfer?.fileTransfer?.paymentCurrency}
-                    </p>
-                    <Button className="bg-orange-600 hover:bg-orange-700">
-                      Procéder au paiement
+              <Card className="mb-6 border-none shadow-none">
+                <CardContent className="p-0">
+                  <div className="flex item-center justify-between">
+                    <div className="flex flex-col">
+                      <h3 className="text-lg font-normal">Paiement requis</h3>
+                      <p className="mb-4 text-sm">
+                        Ce transfert nécessite un paiement de{" "}
+                        {transfer?.fileTransfer?.paymentAmount}{" "}
+                        {transfer?.fileTransfer?.paymentCurrency}
+                      </p>
+                    </div>
+                    <Button
+                      className="cursor-pointer bg-[#5b4fff]/80 hover:bg-[#5b4fff]/90"
+                      onClick={() =>
+                        initiatePayment(transfer?.fileTransfer?.id)
+                      }
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? "Redirection..." : "Procéder au paiement"}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             )}
-
+          <Separator />
+          {/* ici tu fais les mdifs */}
           <Card className="shadow-none border-none">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center font-normal justify-between">
-                <span>
-                  Fichiers ({transfer?.fileTransfer?.files?.length || 0})
+                <span className="flex items-center space-x-2">
+                  <span>
+                    Fichiers ({transfer?.fileTransfer?.files?.length || 0})
+                  </span>
+                  <div className="w-2 h-2 bg-[#5b4fff]/20 rounded-full"></div>
                 </span>
                 {transfer?.fileTransfer?.files?.length > 1 && !isExpired && (
                   <Button
                     onClick={downloadAllFiles}
-                    disabled={isDownloading}
-                    className="ml-4 font-normal cursor-pointer bg-[#5b4fff]/80 border-[#5b4fff]/80 hover:bg-[#5b4fff]/90"
+                    disabled={
+                      isDownloading ||
+                      ((transfer?.fileTransfer?.isPaymentRequired === true ||
+                        (transfer?.fileTransfer?.paymentAmount &&
+                          transfer?.fileTransfer?.paymentAmount > 0)) &&
+                        !transfer?.fileTransfer?.isPaid)
+                    }
+                    className="ml-4 font-normal cursor-pointer bg-[#5b4fff]/80 border-[#5b4fff]/80 hover:bg-[#5b4fff]/90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isDownloading ? "Téléchargement..." : "Tout télécharger"}
                     <Download size={16} />
@@ -281,32 +537,107 @@ export default function TransferPage() {
             <CardContent className="p-0">
               {transfer?.fileTransfer?.files?.length > 0 ? (
                 <div className="space-y-3">
-                  {transfer?.fileTransfer?.files.map((file, index) => (
-                    <div
-                      key={file.id || index}
-                      className="flex items-center justify-between p-4 border rounded-xl hover:bg-gray-50"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <File size={16} className="text-gray-500" />
-                        <div>
-                          <p className="font-normal text-sm">
-                            {file.originalName}
-                          </p>
-                          <p className="text-xs font-normal text-gray-500">
-                            {formatFileSize(file.size)} • {file.mimeType}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        onClick={() => downloadFile(file.id, file.originalName)}
-                        disabled={isDownloading || isExpired}
-                        size="sm"
+                  {transfer?.fileTransfer?.files.map((file, index) => {
+                    // Vérifier si paiement requis ET si l'utilisateur n'a pas encore payé
+                    const isPaymentRequired =
+                      (transfer?.fileTransfer?.isPaymentRequired === true ||
+                        (transfer?.fileTransfer?.paymentAmount &&
+                          transfer?.fileTransfer?.paymentAmount > 0)) &&
+                      !transfer?.fileTransfer?.isPaid;
+
+                    console.log("🔍 Debug fichier:", {
+                      fileName: file.originalName,
+                      isPaymentRequired:
+                        transfer?.fileTransfer?.isPaymentRequired,
+                      paymentAmount: transfer?.fileTransfer?.paymentAmount,
+                      isPaid: transfer?.fileTransfer?.isPaid,
+                      finalIsPaymentRequired: isPaymentRequired,
+                      fullTransferObject: transfer?.fileTransfer,
+                    });
+
+                    return (
+                      <div
+                        key={file.id || index}
+                        className={`flex items-center justify-between p-4 border rounded-xl transition-all duration-200 ${
+                          isPaymentRequired
+                            ? "border-gray-200 bg-gray-50/50"
+                            : "border-gray-200 hover:bg-[#5b4fff]/5 hover:border-[#5b4fff]/20"
+                        }`}
                       >
-                        <Download size={16} className="cursor-pointer" />
-                      </Button>
-                    </div>
-                  ))}
+                        <div className="flex items-center space-x-3">
+                          <div
+                            className={`p-2 rounded-lg ${
+                              isPaymentRequired
+                                ? "bg-gray-100"
+                                : "bg-[#5b4fff]/10"
+                            }`}
+                          >
+                            <File
+                              size={16}
+                              className={
+                                isPaymentRequired
+                                  ? "text-gray-400"
+                                  : "text-[#5b4fff]/70"
+                              }
+                            />
+                          </div>
+                          <div>
+                            <p
+                              className={`font-normal text-sm ${
+                                isPaymentRequired
+                                  ? "text-gray-400"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {file.originalName}
+                            </p>
+                            <p
+                              className={`text-xs font-normal ${
+                                isPaymentRequired
+                                  ? "text-gray-400"
+                                  : "text-gray-500"
+                              }`}
+                            >
+                              {formatFileSize(file.size)} • {file.mimeType}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          onClick={() =>
+                            downloadFile(file.id, file.originalName)
+                          }
+                          disabled={
+                            isDownloading || isExpired || isPaymentRequired
+                          }
+                          size="sm"
+                          className={`${
+                            isPaymentRequired
+                              ? "cursor-not-allowed opacity-50"
+                              : "hover:bg-[#5b4fff]/10 hover:text-[#5b4fff]"
+                          }`}
+                        >
+                          {isPaymentRequired ? (
+                            <svg
+                              className="w-4 h-4 text-gray-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                              />
+                            </svg>
+                          ) : (
+                            <Download size={16} className="cursor-pointer" />
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-center text-gray-500 py-8">
@@ -326,7 +657,7 @@ export default function TransferPage() {
           )}
         </div>
       </div>
-      <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
+      <div className="w-1/2 p-3 flex items-center min-h-screen justify-center">
         <div
           className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
           style={{ backgroundImage: "url('/BackgroundAuth.svg')" }}

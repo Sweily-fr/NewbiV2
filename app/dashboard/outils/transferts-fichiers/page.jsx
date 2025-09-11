@@ -5,8 +5,11 @@ import { Button } from "@/src/components/ui/button";
 import { IconPlus } from "@tabler/icons-react";
 import TransferTable from "./components/transfer-table";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { useFileTransfer } from "./hooks/useFileTransfer";
 
 function TransfertsContent() {
+  const { transfers, transfersLoading, refetchTransfers } = useFileTransfer();
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
@@ -25,7 +28,11 @@ function TransfertsContent() {
           </Button>
         </Link>
       </div>
-      <TransferTable />
+      <TransferTable 
+        transfers={transfers} 
+        onRefresh={refetchTransfers}
+        loading={transfersLoading}
+      />
     </div>
   );
 }

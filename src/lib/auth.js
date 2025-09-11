@@ -653,7 +653,7 @@ export const auth = betterAuth({
       "
     >
       <a 
-        href="${data.invitationUrl}" 
+        href="${inviteLink}" 
         style="
           display: block;
           width: 100%;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useFileTransferR2 } from "../hooks/useFileTransferR2";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
@@ -95,6 +95,8 @@ export default function FileUploadNew() {
     canReceivePayments,
     isLoading: stripeLoading,
     stripeAccount,
+    checkAndUpdateAccountStatus,
+    refetchStatus,
   } = useStripeConnect(user?.user?.id);
 
   // Debug: Afficher les détails du compte Stripe
@@ -120,6 +122,7 @@ export default function FileUploadNew() {
   // Options de transfert
   const [transferOptions, setTransferOptions] = useState({
     expiryDays: 7,
+    expiration: "7d", // Valeur par défaut pour le select
     isPaymentRequired: false,
     paymentAmount: 0,
     paymentCurrency: "EUR",
@@ -131,6 +134,114 @@ export default function FileUploadNew() {
   const [errors, setErrors] = useState([]);
   const [showStripeOnboarding, setShowStripeOnboarding] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Sauvegarder les fichiers sélectionnés avant la redirection Stripe
+  useEffect(() => {
+    if (selectedFiles.length > 0) {
+      const filesData = selectedFiles.map((fileObj) => ({
+        id: fileObj.id,
+        name: fileObj.file.name,
+        size: fileObj.file.size,
+        type: fileObj.file.type,
+        lastModified: fileObj.file.lastModified,
+      }));
+      sessionStorage.setItem(
+        "stripe_redirect_files",
+        JSON.stringify(filesData)
+      );
+    }
+  }, [selectedFiles]);
+
+  // Restaurer les fichiers au retour de Stripe
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("stripe_success") === "true") {
+      const savedFilesData = sessionStorage.getItem("stripe_redirect_files");
+      if (savedFilesData) {
+        try {
+          const filesData = JSON.parse(savedFilesData);
+          // Créer des objets File à partir des données sauvegardées
+          const restoredFiles = filesData.map((fileData) => {
+            // Créer un File object fictif avec les métadonnées
+            const file = new File([""], fileData.name, {
+              type: fileData.type,
+              lastModified: fileData.lastModified,
+            });
+            // Ajouter les propriétés de taille (non modifiable sur File)
+            Object.defineProperty(file, "size", {
+              value: fileData.size,
+              writable: false,
+            });
+            return file;
+          });
+
+          // Ajouter les fichiers restaurés
+          if (restoredFiles.length > 0) {
+            addFiles(restoredFiles);
+          }
+
+          // Nettoyer le sessionStorage
+          sessionStorage.removeItem("stripe_redirect_files");
+
+          // Nettoyer l'URL
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        } catch (error) {
+          console.error("Erreur lors de la restauration des fichiers:", error);
+          sessionStorage.removeItem("stripe_redirect_files");
+        }
+      }
+    }
+  }, [addFiles]);
+
+  // Vérifier automatiquement le statut Stripe au retour de redirection
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    console.log("🔍 Vérification URL params:", {
+      url: window.location.href,
+      search: window.location.search,
+      stripeSuccess: urlParams.get("stripe_success"),
+      userId: user?.user?.id,
+    });
+
+    // Vérifier si on vient de Stripe (même sans paramètre stripe_success)
+    // En vérifiant si on a des fichiers sauvegardés dans sessionStorage
+    const hasStripeRedirectFiles = sessionStorage.getItem(
+      "stripe_redirect_files"
+    );
+    const isFromStripe =
+      urlParams.get("stripe_success") === "true" || hasStripeRedirectFiles;
+
+    if (isFromStripe && user?.user?.id && stripeAccount?.accountId) {
+      console.log("✅ Retour de Stripe détecté, vérification du statut...");
+
+      const timer = setTimeout(async () => {
+        try {
+          // Vérifier et mettre à jour le statut du compte
+          console.log("📞 Appel checkAndUpdateAccountStatus...");
+          await checkAndUpdateAccountStatus();
+
+          // Refetch les données pour s'assurer qu'elles sont à jour
+          console.log("🔄 Refetch du statut...");
+          await refetchStatus();
+
+          console.log("✅ Statut Stripe mis à jour automatiquement");
+        } catch (error) {
+          console.error(
+            "❌ Erreur lors de la vérification automatique:",
+            error
+          );
+        }
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [
+    user?.user?.id,
+    stripeAccount?.accountId,
+    checkAndUpdateAccountStatus,
+    refetchStatus,
+  ]);
 
   // Fonction pour mettre à jour les options de transfert
   const updateTransferOptions = (updates) => {
@@ -182,7 +293,13 @@ export default function FileUploadNew() {
 
   const handleCreateTransfer = async () => {
     try {
-      await createTransfer(transferOptions);
+      console.log("🚀 Création transfert avec options:", transferOptions);
+      const result = await createTransfer(transferOptions);
+
+      // Rediriger vers la page des transferts après création réussie
+      if (result && result.success) {
+        window.location.href = "/dashboard/outils/transferts-fichiers";
+      }
     } catch (error) {
       console.error("Error creating transfer:", error);
     }
@@ -319,7 +436,12 @@ export default function FileUploadNew() {
             {/* Remove all files button */}
             {selectedFiles.length > 1 && (
               <div>
-                <Button size="sm" variant="outline" onClick={clearFiles}>
+                <Button
+                  size="sm"
+                  className="font-normal cursor-pointer"
+                  variant="destructive"
+                  onClick={clearFiles}
+                >
                   Supprimer tous les fichiers
                 </Button>
               </div>
@@ -332,7 +454,7 @@ export default function FileUploadNew() {
       {selectedFiles.length > 0 && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Options d'envoi</h3>
+            <h3 className="text-lg font-medium">Options d'envoi</h3>
           </div>
 
           {/* Expiration */}
@@ -346,7 +468,7 @@ export default function FileUploadNew() {
               onValueChange={(value) => handleOptionChange("expiration", value)}
             >
               <SelectTrigger className="w-full">
-                <SelectValue />
+                <SelectValue placeholder="7 jours" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="24h">24 heures</SelectItem>
@@ -427,9 +549,9 @@ export default function FileUploadNew() {
 
             {transferOptions.requirePayment && (
               <div className="space-y-4 pt-4 border-t">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-normal">Montant</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-normal">Montant</Label>
+                  <div className="relative">
                     <Input
                       type="number"
                       min="0"
@@ -442,25 +564,11 @@ export default function FileUploadNew() {
                         )
                       }
                       placeholder="0.00"
+                      className="pr-8"
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-normal">Devise</Label>
-                    <Select
-                      value={transferOptions.currency}
-                      onValueChange={(value) =>
-                        handleOptionChange("currency", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EUR">EUR (€)</SelectItem>
-                        <SelectItem value="USD">USD ($)</SelectItem>
-                        <SelectItem value="GBP">GBP (£)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <span className="text-muted-foreground text-sm">€</span>
+                    </div>
                   </div>
                 </div>
                 {stripeConnected && !canReceivePayments && (
@@ -493,7 +601,7 @@ export default function FileUploadNew() {
           <Separator />
 
           {/* Security */}
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             <div className="flex items-center gap-2">
               <IconShield className="size-4 text-muted-foreground" />
               <Label className="text-sm font-normal">Sécurité</Label>
@@ -545,7 +653,6 @@ export default function FileUploadNew() {
 
           <Separator />
 
-          {/* Custom Message */}
           <div className="space-y-3">
             <Label className="text-sm font-normal">Message personnalisé</Label>
             <Textarea

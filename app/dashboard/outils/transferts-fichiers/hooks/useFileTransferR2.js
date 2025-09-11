@@ -168,24 +168,38 @@ export const useFileTransferR2 = (refetchTransfers) => {
         // Préparer les options du transfert
         const inputData = {
           expiryDays: transferOptions.expiryDays || 7,
-          requirePayment: Boolean(transferOptions.isPaymentRequired) || false,
+          isPaymentRequired: Boolean(transferOptions.isPaymentRequired),
           paymentAmount: transferOptions.paymentAmount
             ? Number(transferOptions.paymentAmount)
             : 0,
-          currency: transferOptions.paymentCurrency || "EUR",
+          paymentCurrency: transferOptions.paymentCurrency || "EUR",
           recipientEmail: transferOptions.recipientEmail || null,
           message: transferOptions.message || "",
         };
 
         console.log(`⚙️ Création du transfert R2 avec options:`, inputData);
+        console.log(`🔍 Debug transferOptions reçues:`, transferOptions);
 
         // Créer le transfert avec les IDs des fichiers
-        const { data } = await createFileTransferWithIdsR2Mutation({
+        const { data, errors } = await createFileTransferWithIdsR2Mutation({
           variables: {
             fileIds: uploadedFileIds,
             input: inputData,
           },
         });
+
+        console.log(`🔍 Debug - Réponse GraphQL complète:`, { data, errors });
+        console.log(
+          `🔍 Debug - createFileTransferWithIdsR2:`,
+          data?.createFileTransferWithIdsR2
+        );
+
+        if (errors) {
+          console.error("❌ Erreurs GraphQL:", errors);
+          throw new Error(
+            `Erreurs GraphQL: ${errors.map((e) => e.message).join(", ")}`
+          );
+        }
 
         if (data?.createFileTransferWithIdsR2?.fileTransfer) {
           const fileTransfer = data.createFileTransferWithIdsR2.fileTransfer;

@@ -1,11 +1,62 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "@/src/components/ui/sonner";
-import { useFileTransfer } from "../hooks/useFileTransfer";
+import { useMemo, useState } from "react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
+  ArrowUpDown,
+  ChevronFirstIcon,
+  ChevronLastIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MoreHorizontal,
+  Download,
+  Eye,
+  Trash2,
+  Copy,
+  ExternalLink,
+  FileText,
+  User as IconUser,
+} from "lucide-react";
+import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
 import { Checkbox } from "@/src/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/src/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/src/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,428 +68,514 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/src/components/ui/table";
-import { Badge } from "@/src/components/ui/badge";
-import {
-  IconSearch,
-  IconFile,
-  IconDownload,
-  IconCalendar,
-  IconUser,
-  IconCopy,
-  IconEye,
-  IconTrash,
-  IconDotsVertical,
-} from "@tabler/icons-react";
+import { toast } from "@/src/components/ui/sonner";
+import { cn } from "@/src/lib/utils";
+import { useFileTransfer } from "../hooks/useFileTransfer";
 
-// Données de démonstration
-const demoTransfers = [
-  {
-    id: "1",
-    shareLink: "abc123",
-    status: "active",
-    files: [
-      { name: "document.pdf", size: 2048000, type: "application/pdf" },
-      { name: "image.jpg", size: 1024000, type: "image/jpeg" },
+export default function TransferTable({ transfers, onRefresh, loading }) {
+  const [globalFilter, setGlobalFilter] = useState("");
+  const { deleteTransfer, copyShareLink, formatFileSize } = useFileTransfer();
+
+  const data = useMemo(() => transfers || [], [transfers]);
+
+  // Define columns
+  const columns = useMemo(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Sélectionner tout"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Sélectionner la ligne"
+          />
+        ),
+        size: 28,
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "files",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Fichiers
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        ),
+        cell: ({ row }) => {
+          const transfer = row.original;
+          const totalSize = transfer.files.reduce(
+            (acc, file) => acc + (file.size || 0),
+            0
+          );
+          return (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <FileText size={16} className="text-muted-foreground" />
+                <span className="font-normal">
+                  {transfer.files.length} fichier
+                  {transfer.files.length > 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {formatFileSize(totalSize)}
+              </div>
+            </div>
+          );
+        },
+        size: 200,
+      },
+      {
+        accessorKey: "recipientEmail",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Destinataire
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        ),
+        cell: ({ row }) => {
+          const transfer = row.original;
+          return transfer.recipientEmail ? (
+            <div className="flex items-center gap-1">
+              <IconUser size={14} className="text-muted-foreground" />
+              <span className="text-sm font-normal">
+                {transfer.recipientEmail}
+              </span>
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground font-normal">-</span>
+          );
+        },
+        size: 200,
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Statut
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        ),
+        cell: ({ row }) => {
+          const transfer = row.original;
+          return (
+            <Badge
+              className={cn(
+                "font-normal",
+                transfer.status === "active"
+                  ? "bg-green-100 text-green-800 hover:bg-green-100"
+                  : transfer.status === "expired"
+                    ? "bg-red-100 text-red-800 hover:bg-red-100"
+                    : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+              )}
+            >
+              {transfer.status === "active"
+                ? "Actif"
+                : transfer.status === "expired"
+                  ? "Expiré"
+                  : "Inactif"}
+            </Badge>
+          );
+        },
+        size: 100,
+      },
+      {
+        accessorKey: "expiresAt",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Expiration
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        ),
+        cell: ({ row }) => {
+          const transfer = row.original;
+          if (!transfer.expiresAt) return "-";
+          const expirationDate = new Date(transfer.expiresAt);
+          const isExpired = expirationDate < new Date();
+          return (
+            <div className={cn(isExpired && "text-destructive font-normal")}>
+              <div className="font-normal">
+                {format(expirationDate, "dd/MM/yyyy", { locale: fr })}
+              </div>
+              {isExpired && <div className="text-xs">Expiré</div>}
+            </div>
+          );
+        },
+        size: 120,
+      },
+      {
+        accessorKey: "downloadCount",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Téléchargements
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        ),
+        cell: ({ row }) => {
+          const transfer = row.original;
+          return (
+            <span className="font-normal">{transfer.downloadCount || 0}</span>
+          );
+        },
+        size: 120,
+      },
+      {
+        accessorKey: "createdAt",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Créé le
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        ),
+        cell: ({ row }) => {
+          const transfer = row.original;
+          return (
+            <div className="font-normal">
+              {format(new Date(transfer.createdAt), "dd/MM/yyyy", {
+                locale: fr,
+              })}
+            </div>
+          );
+        },
+        size: 120,
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right font-normal">Actions</div>,
+        cell: ({ row }) => {
+          const transfer = row.original;
+          return (
+            <div className="flex justify-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Ouvrir le menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `${window.location.origin}/transfer/${transfer.shareLink}?key=${transfer.accessKey}`
+                      );
+                      toast.success("Lien copié dans le presse-papiers");
+                    }}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copier le lien
+                  </DropdownMenuItem>
+                  {/* <DropdownMenuItem
+                    onClick={() => {
+                      window.open(
+                        `/transfer/${transfer.shareLink}?key=${transfer.accessKey}`,
+                        "_blank"
+                      );
+                    }}
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Ouvrir
+                  </DropdownMenuItem> */}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleDeleteTransfer(transfer.id)}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Supprimer
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+        size: 60,
+        enableHiding: false,
+      },
     ],
-    recipientEmail: "user@example.com",
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    downloadCount: 3,
-    maxDownloads: 10,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    shareLink: "def456",
-    status: "expired",
-    files: [{ name: "archive.zip", size: 5120000, type: "application/zip" }],
-    recipientEmail: null,
-    expiresAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    downloadCount: 0,
-    maxDownloads: null,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+    []
+  );
 
-const TRANSFER_STATUS_LABELS = {
-  active: "Actif",
-  expired: "Expiré",
-  pending: "En attente",
-};
+  // Create table instance
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    state: {
+      globalFilter,
+    },
+    initialState: {
+      pagination: {
+        pageSize: 8,
+      },
+    },
+  });
 
-const TRANSFER_STATUS_COLORS = {
-  active: "bg-green-100 text-green-800",
-  expired: "bg-red-100 text-red-800",
-  pending: "bg-yellow-100 text-yellow-800",
-};
-
-export default function TransferTable() {
-  // Use the file transfer hook
-  const {
-    transfers,
-    transfersLoading,
-    transfersError,
-    deleteTransfer,
-    copyShareLink,
-    formatFileSize,
-    refetchTransfers,
-  } = useFileTransfer();
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedTransfers, setSelectedTransfers] = useState([]);
+  // Get selected rows
+  const selectedRows = table
+    .getFilteredSelectedRowModel()
+    .rows.map((row) => row.original);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Actions functions
   const viewTransfer = (shareLink) => {
     window.open(`/dashboard/outils/transferts-fichiers/${shareLink}`, "_blank");
   };
 
   const handleDeleteTransfer = async (transferId) => {
     if (confirm("Êtes-vous sûr de vouloir supprimer ce transfert ?")) {
+      setIsDeleting(true);
       try {
         await deleteTransfer(transferId);
+        toast.success("Transfert supprimé avec succès");
+        onRefresh?.();
       } catch (error) {
-        console.error("Error deleting transfer:", error);
+        console.error("Erreur lors de la suppression:", error);
+        toast.error("Erreur lors de la suppression du transfert");
+      } finally {
+        setIsDeleting(false);
       }
     }
   };
 
-  // Selection functions
-  const toggleSelectAll = () => {
-    if (selectedTransfers.length === filteredTransfers.length) {
-      setSelectedTransfers([]);
-    } else {
-      setSelectedTransfers(filteredTransfers.map((t) => t.id));
-    }
-  };
-
-  const toggleSelectTransfer = (transferId) => {
-    setSelectedTransfers((prev) =>
-      prev.includes(transferId)
-        ? prev.filter((id) => id !== transferId)
-        : [...prev, transferId]
-    );
-  };
-
   const handleDeleteSelected = async () => {
+    const selectedTransferIds = selectedRows.map((row) => row.id);
+    if (selectedTransferIds.length === 0) return;
+
     setIsDeleting(true);
     try {
-      // Supprimer vraiment les transferts sélectionnés
-      const deletePromises = selectedTransfers.map(transferId => 
+      const deletePromises = selectedTransferIds.map((transferId) =>
         deleteTransfer(transferId)
       );
-      
+
       await Promise.all(deletePromises);
-      
+
       toast.success(
-        `${selectedTransfers.length} transfert(s) supprimé(s) avec succès`
+        `${selectedTransferIds.length} transfert(s) supprimé(s) avec succès`
       );
-      setSelectedTransfers([]);
+      table.resetRowSelection();
+      onRefresh?.();
     } catch (error) {
-      console.error("Erreur lors de la suppression multiple:", error);
-      toast.error("Erreur lors de la suppression");
+      console.error("Erreur lors de la suppression:", error);
+      toast.error("Erreur lors de la suppression des transferts");
     } finally {
       setIsDeleting(false);
     }
   };
 
-  // Format date
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  // Filter transfers based on search term and status
-  const filteredTransfers = (transfers || []).filter((transfer) => {
-    // Status filter
-    if (statusFilter !== "all" && transfer.status !== statusFilter) {
-      return false;
-    }
-
-    // Search filter
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      transfer.files.some((file) =>
-        file.originalName?.toLowerCase().includes(searchLower)
-      ) ||
-      (transfer.recipientEmail &&
-        transfer.recipientEmail.toLowerCase().includes(searchLower)) ||
-      TRANSFER_STATUS_LABELS[transfer.status]
-        ?.toLowerCase()
-        .includes(searchLower)
-    );
-  });
-
-  // Show loading state
-  if (transfersLoading) {
-    return (
-      <div className="flex items-center justify-center h-32">
-        <div className="text-muted-foreground">
-          Chargement des transferts...
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (transfersError) {
-    return (
-      <div className="flex items-center justify-center h-32">
-        <div className="text-red-600">
-          Erreur lors du chargement des transferts
-        </div>
-      </div>
-    );
-  }
+  // ...
 
   return (
     <div className="space-y-4">
-      {/* Search and Filters */}
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1 max-w-sm">
-          <IconSearch
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-            size={16}
-          />
-          <Input
-            placeholder="Rechercher des transferts..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      {/* Actions en haut */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          {selectedRows.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" disabled={isDeleting}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Supprimer ({selectedRows.length})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                    transfert(s) ? Cette action est irréversible.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteSelected}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
-
-        {/* Status Filter */}
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filtrer par statut" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="active">Actif</SelectItem>
-            <SelectItem value="expired">Expiré</SelectItem>
-            <SelectItem value="pending">En attente</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Delete selected */}
-        {selectedTransfers.length > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" disabled={isDeleting}>
-                <IconTrash size={16} className="mr-2" />
-                {isDeleting
-                  ? "Suppression..."
-                  : `Supprimer (${selectedTransfers.length})`}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer {selectedTransfers.length}{" "}
-                  transfert(s) ? Cette action est irréversible.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteSelected}>
-                  Supprimer
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
       </div>
 
       {/* Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
-                <Checkbox
-                  checked={
-                    selectedTransfers.length === filteredTransfers.length &&
-                    filteredTransfers.length > 0
-                  }
-                  onCheckedChange={toggleSelectAll}
-                  aria-label="Sélectionner tout"
-                />
-              </TableHead>
-              <TableHead>Fichiers</TableHead>
-              <TableHead>Destinataire</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Expiration</TableHead>
-              <TableHead>Téléchargements</TableHead>
-              <TableHead>Créé le</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    style={{ width: header.getSize() }}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
           </TableHeader>
           <TableBody>
-            {filteredTransfers.length > 0 ? (
-              filteredTransfers.map((transfer) => {
-                const totalSize = transfer.files.reduce(
-                  (acc, file) => acc + (file.size || 0),
-                  0
-                );
-                const isExpired = new Date(transfer.expiresAt) < new Date();
-
-                return (
-                  <TableRow key={transfer.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedTransfers.includes(transfer.id)}
-                        onCheckedChange={() =>
-                          toggleSelectTransfer(transfer.id)
-                        }
-                        aria-label={`Sélectionner le transfert ${transfer.id}`}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <IconFile
-                            size={16}
-                            className="text-muted-foreground"
-                          />
-                          <span className="font-medium">
-                            {transfer.files.length} fichier
-                            {transfer.files.length > 1 ? "s" : ""}
-                          </span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {formatFileSize(totalSize)}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {transfer.recipientEmail ? (
-                        <div className="flex items-center gap-1">
-                          <IconUser size={14} className="text-muted-foreground" />
-                          <span className="text-sm">{transfer.recipientEmail}</span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
                       )}
                     </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={`font-medium ${TRANSFER_STATUS_COLORS[transfer.status] || ""}`}
-                      >
-                        {TRANSFER_STATUS_LABELS[transfer.status] ||
-                          transfer.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {transfer.expiryDate ? (
-                        <div
-                          className={`flex items-center gap-1 ${isExpired ? "text-red-600" : ""}`}
-                        >
-                          <IconCalendar size={14} />
-                          {formatDate(transfer.expiryDate)}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Jamais</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <IconDownload
-                          size={14}
-                          className="text-muted-foreground"
-                        />
-                        <span>
-                          {transfer.downloadCount}
-                          {transfer.maxDownloads &&
-                            ` / ${transfer.maxDownloads}`}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {formatDate(transfer.createdAt)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <IconDotsVertical size={16} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() =>
-                              copyShareLink(
-                                transfer.shareLink,
-                                transfer.accessKey
-                              )
-                            }
-                          >
-                            <IconCopy size={16} className="mr-2" />
-                            Copier le lien
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => viewTransfer(transfer.shareLink)}
-                          >
-                            <IconEye size={16} className="mr-2" />
-                            Voir le transfert
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteTransfer(transfer.id)}
-                            variant="destructive"
-                          >
-                            <IconTrash size={16} className="mr-2" />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+                  ))}
+                </TableRow>
+              ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  {searchTerm
-                    ? "Aucun transfert trouvé."
-                    : "Aucun transfert disponible."}
+                <TableCell
+                  colSpan={table.getAllColumns().length}
+                  className="h-24 text-center"
+                >
+                  Aucun transfert trouvé.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1 text-sm font-normal text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} sur{" "}
+          {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
+        </div>
+        <div className="flex items-center space-x-6 lg:space-x-8">
+          <div className="flex items-center gap-2">
+            <p className="whitespace-nowrap text-sm font-normal">
+              Lignes par page
+            </p>
+            <Select
+              value={`${table.getState().pagination.pageSize}`}
+              onValueChange={(value) => {
+                table.setPageSize(Number(value));
+              }}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue
+                  placeholder={table.getState().pagination.pageSize}
+                />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 20, 30, 40, 50].map((pageSize) => (
+                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center whitespace-nowrap text-sm font-normal">
+            Page {table.getState().pagination.pageIndex + 1} sur{" "}
+            {table.getPageCount()}
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="Go to first page"
+                >
+                  <ChevronFirstIcon size={16} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="Go to previous page"
+                >
+                  <ChevronLeftIcon size={16} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Go to next page"
+                >
+                  <ChevronRightIcon size={16} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.lastPage()}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Go to last page"
+                >
+                  <ChevronLastIcon size={16} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       </div>
     </div>
   );

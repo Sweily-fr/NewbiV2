@@ -5,42 +5,18 @@ export async function GET(request, { params }) {
   try {
     const { id } = await params;
 
-    // Récupérer la session utilisateur
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
     console.log("🔍 Recherche invitation avec ID:", id);
-    console.log(
-      "👤 Session utilisateur:",
-      session?.user?.email || "Pas de session"
-    );
 
-    if (!session) {
-      return Response.json({ error: "Non authentifié" }, { status: 401 });
-    }
+    // Accès direct à MongoDB pour récupérer l'invitation
+    const { mongoDb } = await import("@/src/lib/mongodb");
+    const { ObjectId } = await import("mongodb");
+    
+    // Récupérer l'invitation directement depuis MongoDB
+    const invitation = await mongoDb
+      .collection("invitation")
+      .findOne({ _id: new ObjectId(id) });
 
-    // Récupérer l'invitation spécifique par ID directement
-    // Utiliser l'API Better Auth côté client pour récupérer une invitation
-    const { data: invitation, error } = await auth.api.getInvitation({
-      headers: await headers(),
-      query: {
-        id: id,
-      },
-    });
-
-    if (error) {
-      console.log("❌ Erreur Better Auth:", error);
-      return Response.json(
-        {
-          error: "Erreur lors de la récupération de l'invitation",
-          details: error,
-        },
-        { status: 400 }
-      );
-    }
-
-    console.log("📋 Invitation récupérée:", invitation);
+    console.log("📋 Invitation récupérée depuis MongoDB:", invitation);
 
     if (!invitation) {
       console.log("❌ Invitation non trouvée pour ID:", id);
@@ -50,20 +26,33 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Vérifier que l'invitation appartient à l'utilisateur connecté
-    if (invitation.email !== session.user.email) {
-      console.log("❌ Invitation ne correspond pas à l'utilisateur:", {
-        invitationEmail: invitation.email,
-        userEmail: session.user.email,
-      });
-      return Response.json(
-        { error: "Invitation non autorisée" },
-        { status: 403 }
-      );
+    // Enrichir avec les données d'organisation
+    let organizationName = "Organisation inconnue";
+    if (invitation.organizationId) {
+      try {
+        const organization = await mongoDb
+          .collection("organization")
+          .findOne({ _id: invitation.organizationId });
+        
+        organizationName = organization?.name || organizationName;
+      } catch (orgError) {
+        console.warn("⚠️ Erreur récupération organisation:", orgError);
+      }
     }
 
-    console.log("✅ Invitation trouvée:", invitation);
-    return Response.json(invitation);
+    const enrichedInvitation = {
+      id: invitation._id.toString(),
+      email: invitation.email,
+      role: invitation.role,
+      status: invitation.status,
+      expiresAt: invitation.expiresAt,
+      organizationId: invitation.organizationId?.toString(),
+      organizationName,
+      inviterId: invitation.inviterId?.toString(),
+    };
+
+    console.log("✅ Invitation enrichie:", enrichedInvitation);
+    return Response.json(enrichedInvitation);
   } catch (error) {
     console.error("❌ Erreur lors de la récupération de l'invitation:", error);
     return Response.json(

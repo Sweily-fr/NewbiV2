@@ -123,7 +123,7 @@ export default function InviteMembers({
                     <SelectContent>
                       <SelectItem value="member">Membre</SelectItem>
                       <SelectItem value="admin">Administrateur</SelectItem>
-                      <SelectItem value="guest">Invité</SelectItem>
+                      {/* <SelectItem value="guest">Invité</SelectItem> */}
                     </SelectContent>
                   </Select>
                 )}
