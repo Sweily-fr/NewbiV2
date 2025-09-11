@@ -121,8 +121,10 @@ export function useActiveOrganization() {
 
     try {
       const result = await updateOrganization(organization.id, data, options);
-      // Recharger les données de l'organisation après mise à jour
-      await fetchOrganization();
+      // Mettre à jour l'état local avec les données envoyées pour éviter le refetch
+      // qui pourrait remettre d'anciennes valeurs
+      const updatedOrg = { ...organization, ...data };
+      setOrganization(updatedOrg);
       return result;
     } catch (error) {
       throw error;

@@ -8,26 +8,40 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { CreditCard, Building2, Hash } from "lucide-react";
+import { CreditCard, Building2, Hash, Info, Shield } from "lucide-react";
 import {
   VALIDATION_PATTERNS,
   sanitizeInput,
   detectInjectionAttempt,
 } from "@/src/lib/validation";
+import { Alert, AlertDescription } from "@/src/components/ui/alert";
 
-export default function BankSection({ register, errors }) {
+export default function BankSection({ register, errors, watch }) {
+  // Surveiller individuellement chaque champ pour une détection plus fiable
+  const ibanValue = watch("bankDetails.iban") || "";
+  const bicValue = watch("bankDetails.bic") || "";
+  const bankNameValue = watch("bankDetails.bankName") || "";
+  
+  const hasIban = ibanValue.trim() !== "";
+  const hasBic = bicValue.trim() !== "";
+  const hasBankName = bankNameValue.trim() !== "";
+  const hasAnyBankField = hasIban || hasBic || hasBankName;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card className="border-0 shadow-none backdrop-blur-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-lg font-medium">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <CreditCard className="h-5 w-5 text-blue-600" />
-            </div>
-            Coordonnées bancaires
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
+          {/* Information sur la validation conditionnelle */}
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Coordonnées bancaires optionnelles</strong>
+              <br />
+              Vous pouvez laisser tous les champs vides. Si vous renseignez une information bancaire, 
+              les trois champs (IBAN, BIC et nom de banque) deviennent obligatoires.
+            </AlertDescription>
+          </Alert>
+
           {/* IBAN */}
           <div className="space-y-2">
             <Label
@@ -35,19 +49,19 @@ export default function BankSection({ register, errors }) {
               className="flex items-center gap-2"
             >
               <Hash className="h-4 w-4" />
-              IBAN *
+              IBAN {hasAnyBankField && "*"}
             </Label>
             <Input
               id="bankDetails.iban"
               placeholder="FR76 1234 5678 9012 3456 7890 123"
               {...register("bankDetails.iban", {
-                required: "L'IBAN est requis",
+                required: hasAnyBankField ? "L'IBAN est requis si vous renseignez des coordonnées bancaires" : false,
                 pattern: {
                   value: VALIDATION_PATTERNS.iban.pattern,
                   message: VALIDATION_PATTERNS.iban.message,
                 },
                 validate: (value) => {
-                  if (detectInjectionAttempt(value)) {
+                  if (value && detectInjectionAttempt(value)) {
                     return "Caractères non autorisés détectés";
                   }
                   return true;
@@ -75,19 +89,19 @@ export default function BankSection({ register, errors }) {
               className="flex items-center gap-2"
             >
               <Building2 className="h-4 w-4" />
-              BIC/SWIFT *
+              BIC/SWIFT {hasAnyBankField && "*"}
             </Label>
             <Input
               id="bankDetails.bic"
               placeholder="BNPAFRPP"
               {...register("bankDetails.bic", {
-                required: "Le BIC est requis",
+                required: hasAnyBankField ? "Le BIC est requis si vous renseignez des coordonnées bancaires" : false,
                 pattern: {
                   value: VALIDATION_PATTERNS.bic.pattern,
                   message: VALIDATION_PATTERNS.bic.message,
                 },
                 validate: (value) => {
-                  if (detectInjectionAttempt(value)) {
+                  if (value && detectInjectionAttempt(value)) {
                     return "Caractères non autorisés détectés";
                   }
                   return true;
@@ -110,11 +124,14 @@ export default function BankSection({ register, errors }) {
 
           {/* Nom de la banque */}
           <div className="space-y-2">
-            <Label htmlFor="bankDetails.bankName">Nom de la banque</Label>
+            <Label htmlFor="bankDetails.bankName">
+              Nom de la banque {hasAnyBankField && "*"}
+            </Label>
             <Input
               id="bankDetails.bankName"
               placeholder="BNP Paribas"
               {...register("bankDetails.bankName", {
+                required: hasAnyBankField ? "Le nom de la banque est requis si vous renseignez des coordonnées bancaires" : false,
                 pattern: {
                   value: VALIDATION_PATTERNS.bankName.pattern,
                   message: VALIDATION_PATTERNS.bankName.message,
@@ -137,23 +154,16 @@ export default function BankSection({ register, errors }) {
           </div>
 
           {/* Information de sécurité */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 p-4 rounded-xl shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-sm">
-                <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h4 className="font-medium text-blue-900 dark:text-blue-100">
-                  Sécurité des données bancaires
-                </h4>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  Vos informations bancaires sont chiffrées et stockées de
-                  manière sécurisée. Elles ne seront utilisées que pour les
-                  virements et facturations.
-                </p>
-              </div>
-            </div>
-          </div>
+          <Alert>
+            <Shield className="h-4 w-4 text-green-600" />
+            <AlertDescription>
+              <strong>Sécurité des données bancaires</strong>
+              <br />
+              Vos informations bancaires sont chiffrées et stockées de
+              manière sécurisée. Elles ne seront utilisées que pour les
+              virements et facturations.
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     </div>

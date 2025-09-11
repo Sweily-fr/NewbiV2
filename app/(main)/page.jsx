@@ -9,7 +9,7 @@ import FAQ from "./section/faq";
 
 export default function Home() {
   return (
-    <div className="bg-[#FDFDFD]">
+    <div className="bg-[#FDFDFD] overflow-x-hidden">
       <HeroSection />
       <FeatureGrid />
       <BusinessAgility />

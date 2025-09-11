@@ -38,7 +38,7 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
   } = useFormContext();
   const data = watch();
   return (
-    <Card className="shadow-none border-none bg-transparent p-4 overflow-visible">
+    <Card className="border-0 shadow-none bg-transparent mb-0 p-0">
       <CardContent className="space-y-6 p-0">
         <div className="flex items-center gap-2 my-8">
           <Separator className="flex-1" />
@@ -142,11 +142,8 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
 
         {/* Champs personnalisés */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="mb-2">
             <Label className="text-sm font-normal">Champs personnalisés</Label>
-            <span className="text-xs text-muted-foreground">
-              *Informations supplémentaires à afficher sur la facture
-            </span>
           </div>
           {data.customFields && data.customFields.length > 0 ? (
             <div className="space-y-3">

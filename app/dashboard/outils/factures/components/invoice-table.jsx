@@ -142,10 +142,10 @@ export default function InvoiceTable() {
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="ml-auto">
+              <Button variant="outline" size="sm" className="ml-auto border-dashed font-normal">
                 <ListFilterIcon className="mr-2 h-4 w-4" />
                 Statut
-                {statusFilter && (
+                {statusFilter && INVOICE_STATUS_LABELS[statusFilter] && (
                   <Badge variant="secondary" className="ml-2">
                     {INVOICE_STATUS_LABELS[statusFilter]}
                   </Badge>
@@ -177,12 +177,12 @@ export default function InvoiceTable() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-        <div className="flex items-center space-x-2">
+          
+          {/* Bouton de suppression à côté du filtre de statut */}
           {selectedRows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
+                <Button variant="destructive" size="sm" className="ml-2">
                   <TrashIcon className="mr-2 h-4 w-4" />
                   Supprimer ({selectedRows.length})
                 </Button>
@@ -200,7 +200,7 @@ export default function InvoiceTable() {
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteSelected}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="bg-destructive text-white hover:bg-destructive/90"
                   >
                     Supprimer
                   </AlertDialogAction>
@@ -208,6 +208,8 @@ export default function InvoiceTable() {
               </AlertDialogContent>
             </AlertDialog>
           )}
+        </div>
+        <div className="flex items-center space-x-2">
         </div>
       </div>
 

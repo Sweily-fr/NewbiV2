@@ -4,13 +4,10 @@ import { useEffect, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
-import {
-  useCreateQuote,
-  useUpdateQuote,
-  useQuote,
-} from "@/src/graphql/quoteQueries";
-import { useQuoteNumber } from "./use-quote-number";
+import { getActiveOrganization, updateOrganization } from "@/src/lib/organization-client";
 import { useUser } from "@/src/lib/auth/hooks";
+import { useCreateQuote, useUpdateQuote, useQuote } from "@/src/graphql/quoteQueries";
+import { useQuoteNumber } from "./use-quote-number";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -91,11 +88,18 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         issueDate: existingQuote.issueDate,
         validUntil: existingQuote.validUntil,
         status: existingQuote.status,
+        appearance: existingQuote.appearance,
+        appearanceDetails: {
+          textColor: existingQuote.appearance?.textColor,
+          headerBgColor: existingQuote.appearance?.headerBgColor,
+          headerTextColor: existingQuote.appearance?.headerTextColor
+        },
         rawValidUntil: existingQuote.validUntil,
         rawIssueDate: existingQuote.issueDate
       });
       
       const quoteData = transformQuoteToFormData(existingQuote);
+      console.log("🎨 Données d'apparence transformées:", quoteData.appearance);
 
       reset(quoteData);
 
@@ -106,6 +110,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           issueDate: currentFormData.issueDate,
           validUntil: currentFormData.validUntil,
           status: currentFormData.status,
+          appearance: currentFormData.appearance,
           client: currentFormData.client ? 'Client présent' : 'Aucun client'
         });
       }, 100);
@@ -127,44 +132,84 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }
   }, [mode, nextQuoteNumber, setValue]);
 
-  // Auto-remplir companyInfo quand la session devient disponible
+  // Effet pour charger les données d'organisation au démarrage
   useEffect(() => {
-    if (mode === "create" && session?.user?.company) {
-      const userCompany = session.user.company;
-
-      setValue("companyInfo.name", userCompany.name || "");
-      setValue("companyInfo.email", userCompany.email || "");
-      setValue("companyInfo.phone", userCompany.phone || "");
-      setValue("companyInfo.website", userCompany.website || "");
-      setValue("companyInfo.siret", userCompany.siret || "");
-      setValue("companyInfo.vatNumber", userCompany.vatNumber || "");
-
-      // Gérer l'adresse de l'entreprise
-      if (userCompany.address) {
-        if (typeof userCompany.address === "string") {
-          setValue("companyInfo.address", userCompany.address);
-        } else {
-          const addressString =
-            `${userCompany.address.street || ""}, ${userCompany.address.city || ""}, ${userCompany.address.country || ""}`.replace(
-              /^,\s*|,\s*$/g,
-              ""
-            );
-          setValue("companyInfo.address", addressString);
+    if (mode === "create") {
+      const loadOrganizationData = async () => {
+        try {
+          const organization = await getActiveOrganization();
+          console.log("🔍 Debug - Organisation récupérée:", organization);
+          
+          if (organization) {
+            // Mettre à jour les informations de l'entreprise
+            setValue("companyInfo.name", organization.companyName || "");
+            setValue("companyInfo.email", organization.companyEmail || "");
+            setValue("companyInfo.phone", organization.companyPhone || "");
+            setValue("companyInfo.website", organization.website || "");
+            setValue("companyInfo.siret", organization.siret || "");
+            setValue("companyInfo.vatNumber", organization.vatNumber || "");
+            
+            // Gérer l'adresse de l'entreprise
+            if (organization.address) {
+              if (typeof organization.address === "string") {
+                setValue("companyInfo.address", organization.address);
+              } else {
+                const addressString = [
+                  organization.address.street,
+                  organization.address.additional,
+                  `${organization.address.postalCode || ''} ${organization.address.city || ''}`.trim(),
+                  organization.address.country
+                ].filter(Boolean).join('\n');
+                setValue("companyInfo.address", addressString);
+              }
+            }
+            
+            // Mettre à jour les paramètres d'apparence
+            setValue("appearance.textColor", organization.documentTextColor || "#000000");
+            setValue("appearance.headerTextColor", organization.documentHeaderTextColor || "#ffffff");
+            setValue("appearance.headerBgColor", organization.documentHeaderBgColor || "#1d1d1b");
+            
+            // Mettre à jour les notes et conditions
+            setValue("headerNotes", organization.quoteHeaderNotes || organization.documentHeaderNotes || "");
+            setValue("footerNotes", organization.quoteFooterNotes || organization.documentFooterNotes || "");
+            setValue("termsAndConditions", organization.quoteTermsAndConditions || organization.documentTermsAndConditions || "");
+            
+            // Mettre à jour les coordonnées bancaires
+            setValue("showBankDetails", organization.showBankDetails || false);
+            setValue("companyInfo.bankDetails", {
+              bankName: organization.bankName || "",
+              iban: organization.bankIban || "",
+              bic: organization.bankBic || ""
+            });
+            
+            console.log("🔍 Debug - Données d'organisation appliquées:", {
+              companyInfo: {
+                name: organization.companyName,
+                email: organization.companyEmail,
+                phone: organization.companyPhone,
+                siret: organization.siret,
+                vatNumber: organization.vatNumber,
+                address: organization.address
+              },
+              bankDetails: {
+                bankName: organization.bankName,
+                iban: organization.bankIban,
+                bic: organization.bankBic
+              }
+            });
+          }
+        } catch (error) {
+          console.error("❌ Erreur lors de la récupération de l'organisation:", error);
         }
-      }
-
-      // Gérer les coordonnées bancaires (nettoyer les métadonnées GraphQL)
-      if (userCompany.bankDetails) {
-        const cleanBankDetails = {
-          iban: userCompany.bankDetails.iban || "",
-          bic: userCompany.bankDetails.bic || "",
-          bankName: userCompany.bankDetails.bankName || "",
-          // Suppression explicite de __typename et autres métadonnées GraphQL
-        };
-        setValue("userBankDetails", cleanBankDetails);
-      }
+      };
+      
+      loadOrganizationData();
     }
-  }, [mode, session, setValue]);
+  }, [mode, setValue]);
+
+  // Ne plus utiliser les données de la session utilisateur pour les informations de l'entreprise
+  // car elles sont maintenant gérées par la récupération des données de l'organisation active
+  // via getActiveOrganization() dans l'effet précédent
 
   // Validation functions
   const validateStep1 = useCallback(() => {
@@ -265,6 +310,21 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           existingQuote
         );
         input.status = "DRAFT";
+        
+        console.log("💾 Données à sauvegarder (appearance):", {
+          formDataAppearance: currentFormData.appearance,
+          formDataAppearanceDetails: {
+            textColor: currentFormData.appearance?.textColor,
+            headerBgColor: currentFormData.appearance?.headerBgColor,
+            headerTextColor: currentFormData.appearance?.headerTextColor
+          },
+          inputAppearance: input.appearance,
+          inputAppearanceDetails: {
+            textColor: input.appearance?.textColor,
+            headerBgColor: input.appearance?.headerBgColor,
+            headerTextColor: input.appearance?.headerTextColor
+          }
+        });
 
         let result;
         if (mode === "create" || !quoteId) {
@@ -389,6 +449,30 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     [setValue]
   );
 
+  // Fonction pour sauvegarder les paramètres dans l'organisation
+  const saveSettingsToOrganization = useCallback(async () => {
+    try {
+      const currentFormData = getValues();
+      const activeOrganization = await getActiveOrganization();
+      
+      const organizationData = {
+        documentTextColor: currentFormData.appearance?.textColor || "#000000",
+        documentHeaderTextColor: currentFormData.appearance?.headerTextColor || "#ffffff",
+        documentHeaderBgColor: currentFormData.appearance?.headerBgColor || "#1d1d1b",
+        quoteHeaderNotes: currentFormData.headerNotes || "",
+        quoteFooterNotes: currentFormData.footerNotes || "",
+        quoteTermsAndConditions: currentFormData.termsAndConditions || "",
+        showBankDetails: currentFormData.showBankDetails || false,
+      };
+
+      await updateOrganization(activeOrganization.id, organizationData);
+      console.log("✅ Paramètres sauvegardés dans l'organisation:", organizationData);
+    } catch (error) {
+      console.error("❌ Erreur lors de la sauvegarde des paramètres:", error);
+      throw error;
+    }
+  }, [getValues]);
+
   return {
     // Form methods
     form,
@@ -425,6 +509,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     hasExistingQuotes,
     canEdit:
       !loadingQuote && (mode === "create" || existingQuote?.status === "DRAFT"),
+    
+    // Organization settings
+    saveSettingsToOrganization,
   };
 }
 
@@ -484,10 +571,22 @@ function getInitialFormData(mode, initialData, session) {
       bankName: "",
     },
     userBankDetails: null,
+
+    // Paramètres d'apparence
+    appearance: {
+      textColor: "#000000",
+      headerTextColor: "#ffffff",
+      headerBgColor: "#1d1d1b",
+    },
+
+    // Paramètres d'organisation (pour les valeurs par défaut)
+    organizationSettings: null,
   };
+
 
   if (mode === "create" && session?.user?.company) {
     const userCompany = session.user.company;
+    
     baseData.companyInfo = {
       name: userCompany.name || "",
       email: userCompany.email || "",
@@ -504,6 +603,10 @@ function getInitialFormData(mode, initialData, session) {
                 ""
               )
             : "",
+      // Coordonnées bancaires directement dans companyInfo
+      bankName: userCompany.bankName || "",
+      bankIban: userCompany.bankIban || "",
+      bankBic: userCompany.bankBic || "",
       // Nettoyer les métadonnées GraphQL des coordonnées bancaires
       bankDetails: userCompany.bankDetails
         ? {
@@ -667,15 +770,30 @@ function transformQuoteToFormData(quote) {
       website: quote.companyInfo?.website || "",
       siret: quote.companyInfo?.siret || "",
       vatNumber: quote.companyInfo?.vatNumber || "",
-      address: quote.companyInfo?.address
-        ? typeof quote.companyInfo.address === "string"
-          ? quote.companyInfo.address
-          : `${quote.companyInfo.address.street || ""}, ${quote.companyInfo.address.city || ""}, ${quote.companyInfo.address.country || ""}`.replace(
-              /^,\s*|,\s*$/g,
-              ""
-            )
-        : "",
-      bankDetails: quote.companyInfo?.bankDetails || null,
+      // Formatage cohérent de l'adresse pour l'affichage dans le PDF
+      address: (() => {
+        if (!quote.companyInfo?.address) return "";
+        
+        if (typeof quote.companyInfo.address === "string") {
+          return quote.companyInfo.address;
+        }
+        
+        // Créer un tableau avec les parties de l'adresse et filtrer les vides
+        const addressParts = [
+          quote.companyInfo.address.street,
+          quote.companyInfo.address.additional,
+          quote.companyInfo.address.postalCode ? quote.companyInfo.address.postalCode + ' ' + (quote.companyInfo.address.city || '') : quote.companyInfo.address.city,
+          quote.companyInfo.address.country
+        ].filter(Boolean); // Enlève les valeurs vides du tableau
+        
+        return addressParts.join('\n');
+      })(),
+      // Assurer que bankDetails a toujours la même structure
+      bankDetails: quote.companyInfo?.bankDetails ? {
+        bankName: quote.companyInfo.bankDetails.bankName || "",
+        iban: quote.companyInfo.bankDetails.iban || "",
+        bic: quote.companyInfo.bankDetails.bic || ""
+      } : null,
     },
 
     items:
@@ -733,6 +851,17 @@ function transformQuoteToFormData(quote) {
           // Suppression explicite de __typename et autres métadonnées GraphQL
         }
       : null,
+
+    // Paramètres d'apparence depuis le devis existant
+    appearance: quote.appearance ? {
+      textColor: quote.appearance.textColor || "#000000",
+      headerTextColor: quote.appearance.headerTextColor || "#ffffff",
+      headerBgColor: quote.appearance.headerBgColor || "#1d1d1b",
+    } : {
+      textColor: "#000000",
+      headerTextColor: "#ffffff",
+      headerBgColor: "#1d1d1b",
+    },
   };
 }
 
@@ -1062,12 +1191,20 @@ function transformFormDataToInput(
     discountType: (formData.discountType || "PERCENTAGE").toUpperCase(),
     headerNotes: formData.headerNotes || "",
     footerNotes: formData.footerNotes || "",
-    termsAndConditions: formData.terms || "",
+    termsAndConditions: formData.terms || formData.termsAndConditions || "",
     customFields:
       formData.customFields?.map((field) => ({
         key: field.name,
         value: field.value,
       })) || [],
+    // Inclure les paramètres d'apparence
+    appearance: {
+      textColor: formData.appearance?.textColor || "#000000",
+      headerTextColor: formData.appearance?.headerTextColor || "#ffffff", 
+      headerBgColor: formData.appearance?.headerBgColor || "#1d1d1b",
+    },
+    // Inclure les paramètres des coordonnées bancaires
+    showBankDetails: formData.showBankDetails || false,
   };
 }
 

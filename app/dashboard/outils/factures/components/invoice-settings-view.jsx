@@ -139,7 +139,7 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
                     Aucune coordonnée bancaire n'est configurée pour votre entreprise.
                   </p>
                   <a 
-                    href="/dashboard/parametres/entreprise"
+                    href="/dashboard/settings"
                     className="text-primary hover:underline font-medium flex items-center gap-1"
                   >
                     <Settings className="h-4 w-4" />

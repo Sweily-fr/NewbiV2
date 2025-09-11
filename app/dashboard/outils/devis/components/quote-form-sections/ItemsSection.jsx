@@ -92,9 +92,9 @@ export default function ItemsSection({
   };
 
   return (
-    <Card className="border-0 shadow-none bg-transparent">
+    <Card className="border-0 shadow-none bg-transparent mb-0">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+        <CardTitle className="flex items-center gap-2 font-normal text-lg">
           {/* <Package className="h-5 w-5" /> */}
           Articles et produits
         </CardTitle>
@@ -222,7 +222,7 @@ export default function ItemsSection({
                       <div className="space-y-2">
                         <Label
                           htmlFor={`item-description-${index}`}
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           Description de l'article
                         </Label>
@@ -262,7 +262,7 @@ export default function ItemsSection({
                       <div className="space-y-2">
                         <Label
                           htmlFor={`item-details-${index}`}
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           Détails supplémentaires (optionnel)
                         </Label>
@@ -281,7 +281,7 @@ export default function ItemsSection({
                         <div className="space-y-2">
                           <Label
                             htmlFor={`item-quantity-${index}`}
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Quantité
                           </Label>
@@ -336,7 +336,7 @@ export default function ItemsSection({
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Unité</Label>
+                          <Label className="text-sm font-normal">Unité</Label>
                           <Controller
                             name={`items.${index}.unit`}
                             defaultValue="unité"
@@ -377,7 +377,7 @@ export default function ItemsSection({
                         <div className="space-y-2">
                           <Label
                             htmlFor={`item-price-${index}`}
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Prix unitaire (€)
                           </Label>
@@ -431,7 +431,7 @@ export default function ItemsSection({
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">
+                          <Label className="text-sm font-normal">
                             Taux de TVA
                           </Label>
                           <Controller
@@ -473,7 +473,7 @@ export default function ItemsSection({
                         <div className="space-y-2">
                           <Label
                             htmlFor={`item-vat-exemption-${index}`}
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Texte d'exonération de TVA
                           </Label>
@@ -571,14 +571,14 @@ export default function ItemsSection({
                         <div className="space-y-4">
                           <div className="flex items-center gap-2">
                             <Percent className="h-4 w-4" />
-                            <Label className="text-sm font-medium">
+                            <span className="text-sm font-normal text-foreground">
                               Remise sur cet article
-                            </Label>
+                            </span>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label className="text-sm font-medium">
+                              <Label className="text-sm font-normal">
                                 Type de remise
                               </Label>
                               <Controller
@@ -608,7 +608,7 @@ export default function ItemsSection({
                             <div className="space-y-2">
                               <Label
                                 htmlFor={`item-discount-${index}`}
-                                className="text-sm font-medium"
+                                className="text-sm font-normal"
                               >
                                 {watch(`items.${index}.discountType`) ===
                                 "percentage"
@@ -689,25 +689,14 @@ export default function ItemsSection({
           </Accordion>
         )}
 
-        {/* État vide */}
-        {items.length === 0 && (
-          <div className="text-center py-12">
-            <Package className="h-16 w-16 mx-auto mb-4 opacity-30" />
-            <h3 className="text-lg font-medium mb-2">Aucun article ajouté</h3>
-            <p className="text-sm mb-4">
-              Commencez par ajouter un article à votre facture
-            </p>
-          </div>
-        )}
-
         {/* Total HT des articles */}
         {items.length > 0 && (
           <div className="border-t pt-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">
+              <span className="text-sm font-normal">
                 Total HT des articles :
               </span>
-              <span className="text-lg font-semibold">
+              <span className="text-lg font-normal">
                 {formatCurrency(
                   watchedItems.reduce((sum, item, index) => {
                     const quantity = item?.quantity || 1;

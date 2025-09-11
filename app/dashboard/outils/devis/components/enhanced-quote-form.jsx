@@ -331,9 +331,9 @@ export default function EnhancedQuoteForm({
               <Separator />
 
               {/* Section 2: Sélection d'un client */}
-              <Card className="shadow-none border-none p-2 bg-transparent">
+              <Card className="shadow-none gap-0 border-none p-2 bg-transparent">
                 <CardHeader className="p-0">
-                  <CardTitle className="flex items-center gap-2 font-medium text-lg">
+                  <CardTitle className="flex items-center gap-2 font-normal text-lg">
                     Sélection d'un client
                   </CardTitle>
                 </CardHeader>

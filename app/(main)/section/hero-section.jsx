@@ -19,7 +19,7 @@ export function HeroSection() {
                 variant="default"
                 className="px-5 text-sm cursor-pointer"
               >
-                <a href="/auth/login" className="text-nowrap">
+                <a href="/auth/signup" className="text-nowrap">
                   Commencez gratuitement
                 </a>
               </Button>

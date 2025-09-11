@@ -3,19 +3,29 @@ import { useState } from "react";
 
 const faqs = [
   {
-    question: "“Comment créer une signature de mail avec newbi ?",
+    question: "Comment créer une signature de mail avec Newbi ?",
     answer:
-      "Il vous suffit de remplir les champs requis sur notre interface en quelques clics. Tout est guidé !",
+      "Ouvrez l’outil signature de mail, créez une nouvelle signature, ajoutez le logo, les couleurs, la typographie de votre choix, les coordonnées, les boutons sociaux et champs dynamiques. Vous n’avez plus qu’à copier-coller votre signature et l'enregistrer",
+  },
+  {
+    question: "Puis-je créer des signatures de mail pour toute mon équipe ?",
+    answer:
+      "Oui, il est possible de créer des signatures de mail pour toute votre équipe.",
   },
   {
     question: "Puis-je personnaliser mes signatures de mail ?",
     answer:
-      "Oui, vous pouvez ajouter votre logo, personnaliser les couleurs et choisir parmi plusieurs modèles pour refléter l’image de votre entreprise.",
+      "Oui, vous pouvez modifier les couleurs, la police, les boutons sociaux, la disposition des champs pour créer la signature correspondant à votre image de marque.",
   },
   {
-    question: "Comment obtenir de l’aide si j’ai une question?",
+    question: "La signature générée est-elle responsive et compatible avec les principaux clients mail ?",
     answer:
-      "Notre support est disponible par email à contact@newbi.fr ou directement via le chat intégré à la plateforme.",
+      "Oui, optimisée pour Gmail, Outlook, Apple Mail et mobile.",
+  },
+  {
+    question: "Qui contacter si j’ai une question ou un problème avec mon outil ?",
+    answer:
+      "Rejoignez la communauté Newbi sur Whatsapp. Il suffit d’y accéder pour rejoindre les groupes thématiques et poser vos questions directement à la communauté et à l’équipe.",
   },
 ];
 
@@ -28,10 +38,10 @@ export default function FAQ() {
         Questions fréquentes
       </h2>
       <p className="mx-auto max-w-lg text-center text-base text-neutral-600 dark:text-neutral-50">
-        Nous sommes là pour vous aider avec toutes vos questions. Si vous ne
-        trouvez pas l'information recherchée, contactez-nous{" "}
+        Nous sommes là pour répondre à toutes vos questions. Si vous ne trouvez
+        pas l'information recherchée, contactez-nous{" "}
         <a href="mailto:support@newbi.fr" className="text-blue-500 underline">
-          support@newbi.fr
+          contact@newbi.fr
         </a>
       </p>
       <div className="mx-auto mt-10 w-full max-w-3xl">
@@ -78,7 +88,12 @@ export default function FAQ() {
                 </h3>
                 {open === idx && (
                   <div className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
-                    {faq.answer}
+                    {faq.answer.split('\n').map((line, lineIdx) => (
+                      <div key={lineIdx}>
+                        {line}
+                        {lineIdx < faq.answer.split('\n').length - 1 && <br />}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

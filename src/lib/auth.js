@@ -475,6 +475,76 @@ export const auth = betterAuth({
               input: true,
               required: false,
             },
+            // Document appearance settings
+            documentTextColor: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            documentHeaderTextColor: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            documentHeaderBgColor: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            // Document notes settings
+            documentHeaderNotes: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            documentFooterNotes: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            documentTermsAndConditions: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            // Notes séparées pour les devis
+            quoteHeaderNotes: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            quoteFooterNotes: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            quoteTermsAndConditions: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            // Notes séparées pour les factures
+            invoiceHeaderNotes: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            invoiceFooterNotes: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            invoiceTermsAndConditions: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            // Bank details display setting
+            showBankDetails: {
+              type: "boolean",
+              input: true,
+              required: false,
+            },
           },
         },
       },

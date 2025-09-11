@@ -3,31 +3,30 @@ import { useState } from "react";
 
 const faqs = [
   {
-    question: "Comment créer une facture avec newbi ?",
+    question: "Comment créer ma première facture avec Newbi ?",
     answer:
-      "Il vous suffit de remplir les champs requis sur notre interface et d’envoyer la facture à votre client en quelques clics. Tout est guidé !",
+      "Avec Newbi, deux façons s'offrent à vous pour créer et éditer vos factures.\n\n- Cliquez sur le bouton créer la facture -> l'éditeur de facture s'ouvre. Presque toutes les informations sont déjà préremplies. \n- Modifier au besoin vos conditions de paiement, échéance, remises, notes/mentions légales et numérotation. \n- Enregistrez, puis envoyez la facture par e‑mail.",
   },
   {
-    question: "Puis-je personnaliser mes factures ?",
+    question: "Puis-je personnaliser mes factures ?",
     answer:
-      "Oui, vous pouvez ajouter votre logo, personnaliser les couleurs et choisir parmi plusieurs modèles pour refléter l’image de votre entreprise.",
+      "Oui ! Le logo, les couleurs, les champs affichés, les conditions de vente, les mentions légales, le pied de page (pénalités de retard, indemnité forfaitaire, IBAN). Vous pouvez aussi définir le préfixe de numérotation (ex. FY25‑).",
   },
   {
-    question:
-      "Est-ce que les factures sont conformes à la législation française ?",
+    question: "Comment modifier mes informations entreprises clients ?",
     answer:
-      "Toutes les factures émises via newbi respectent les normes légales et fiscales en vigueur en France.",
+      "Pour modifier vos informations clients, rendez vous dans la page Clients > Sélectionnez le client > Modifier. Les changements s’appliquent aux prochaines factures. Les documents déjà émis restent inchangés pour assurer la traçabilité.",
   },
   {
-    question: "Comment suivre les paiements de mes factures ?",
+    question: "Est-ce que les factures sont conformes à la législation française ?",
     answer:
-      "Un tableau de bord intuitif vous permet de visualiser en temps réel le statut de chaque facture et d’envoyer des relances automatiques.",
+      "Newbi vous aide à respecter les exigences clés: numérotation continue et inaltérable, date d’émission, identité vendeur/acheteur, N° TVA quand applicable, détail des lignes, taux et montants de TVA, totaux HT/TVA/TTC, échéance, conditions de paiement, pénalités et indemnité forfaitaire, mentions spécifiques si exonération. L’export et l’archivage sont disponibles pour votre comptabilité.",
   },
   {
-    question: "Comment obtenir de l’aide si j’ai une question?",
+    question: "Qui contacter si j’ai une question ou un problème avec mon outil ?",
     answer:
-      "Notre support est disponible par email à contact@newbi.fr ou directement via le chat intégré à la plateforme.",
-  },
+      "Rejoignez la communauté Newbi sur Whatsapp. Il suffit d’y accéder pour rejoindre les groupes thématiques et poser vos questions directement à la communauté et à l’équipe.",
+  }
 ];
 
 export default function FAQ() {
@@ -39,10 +38,10 @@ export default function FAQ() {
         Questions fréquentes
       </h2>
       <p className="mx-auto max-w-lg text-center text-base text-neutral-600 dark:text-neutral-50">
-        Nous sommes là pour vous aider avec toutes vos questions. Si vous ne
-        trouvez pas l'information recherchée, contactez-nous{" "}
+        Nous sommes là pour répondre à toutes vos questions. Si vous ne trouvez
+        pas l'information recherchée, contactez-nous{" "}
         <a href="mailto:support@newbi.fr" className="text-blue-500 underline">
-          support@newbi.fr
+          contact@newbi.fr
         </a>
       </p>
       <div className="mx-auto mt-10 w-full max-w-3xl">
@@ -89,7 +88,12 @@ export default function FAQ() {
                 </h3>
                 {open === idx && (
                   <div className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
-                    {faq.answer}
+                    {faq.answer.split('\n').map((line, lineIdx) => (
+                      <div key={lineIdx}>
+                        {line}
+                        {lineIdx < faq.answer.split('\n').length - 1 && <br />}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

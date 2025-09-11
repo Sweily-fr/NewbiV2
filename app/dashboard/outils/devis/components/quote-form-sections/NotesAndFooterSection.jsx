@@ -141,7 +141,7 @@ export default function NotesAndFooterSection({ canEdit }) {
         {/* Coordonnées bancaires */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm font-medium">
+            <span className="text-sm font-normal">
               Coordonnées bancaires
             </span>
           </div>
@@ -171,7 +171,7 @@ export default function NotesAndFooterSection({ canEdit }) {
               }}
               disabled={!canEdit}
             />
-            <Label htmlFor="show-bank-details" className="text-sm font-medium">
+            <Label htmlFor="show-bank-details" className="text-sm font-normal">
               Afficher les coordonnées bancaires
             </Label>
           </div>
@@ -185,7 +185,7 @@ export default function NotesAndFooterSection({ canEdit }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 bg-green-500 rounded-full" />
-                  <span className="text-sm font-medium text-muted-foreground">
+                  <span className="text-sm font-normal text-muted-foreground">
                     Coordonnées bancaires configurées
                   </span>
                 </div>
@@ -199,20 +199,20 @@ export default function NotesAndFooterSection({ canEdit }) {
               
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium">IBAN</Label>
+                  <Label className="text-sm font-normal">IBAN</Label>
                   <div className="p-3 bg-muted/50 rounded-md border">
                     <p className="font-mono text-sm">{data.bankDetails?.iban || 'Non renseigné'}</p>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium">BIC/SWIFT</Label>
+                  <Label className="text-sm font-normal">BIC/SWIFT</Label>
                   <div className="p-3 bg-muted/50 rounded-md border">
                     <p className="font-mono text-sm">{data.bankDetails?.bic || 'Non renseigné'}</p>
                   </div>
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-sm font-medium">Nom de la banque</Label>
+                <Label className="text-sm font-normal">Nom de la banque</Label>
                 <div className="p-3 bg-muted/50 rounded-md border">
                   <p className="text-sm">{data.bankDetails?.bankName || 'Non renseigné'}</p>
                 </div>
