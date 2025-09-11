@@ -689,36 +689,6 @@ export default function ItemsSection({
           </Accordion>
         )}
 
-        {/* Total HT des articles */}
-        {items.length > 0 && (
-          <div className="border-t pt-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-normal">
-                Total HT des articles :
-              </span>
-              <span className="text-lg font-normal">
-                {formatCurrency(
-                  watchedItems.reduce((sum, item, index) => {
-                    const quantity = item?.quantity || 1;
-                    const unitPrice = item?.unitPrice || 0;
-                    const discount = item?.discount || 0;
-                    const discountType = item?.discountType || "percentage";
-
-                    return (
-                      sum +
-                      calculateItemTotal(
-                        quantity,
-                        unitPrice,
-                        discount,
-                        discountType
-                      )
-                    );
-                  }, 0)
-                )}
-              </span>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

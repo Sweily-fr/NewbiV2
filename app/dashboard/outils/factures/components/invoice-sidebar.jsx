@@ -16,6 +16,8 @@ import {
   Tag,
   Package,
   Percent,
+  Receipt,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -35,6 +37,7 @@ import {
   INVOICE_STATUS_LABELS,
   INVOICE_STATUS_COLORS,
 } from "@/src/graphql/invoiceQueries";
+import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
@@ -46,10 +49,24 @@ export default function InvoiceSidebar({
   onRefetch,
 }) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedCreditNote, setSelectedCreditNote] = useState(null);
+  const [isCreditNotePreviewOpen, setIsCreditNotePreviewOpen] = useState(false);
 
   const router = useRouter();
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
+  
+  // Fetch credit notes for this invoice
+  const { creditNotes, loading: loadingCreditNotes, error: creditNotesError } = useCreditNotesByInvoice(initialInvoice?.id);
+  
+  // Debug logging
+  console.log('InvoiceSidebar Debug:', {
+    invoiceId: initialInvoice?.id,
+    creditNotes,
+    loadingCreditNotes,
+    creditNotesError,
+    creditNotesLength: creditNotes?.length
+  });
 
   // Récupérer les données complètes de la facture
   const {
@@ -143,6 +160,16 @@ export default function InvoiceSidebar({
     }
   };
 
+  const handleCreateCreditNote = () => {
+    router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
+    onClose();
+  };
+
+  const handleViewCreditNote = (creditNote) => {
+    setSelectedCreditNote(creditNote);
+    setIsCreditNotePreviewOpen(true);
+  };
+
   const isLoading = markingAsPaid || changingStatus;
 
   return (
@@ -170,7 +197,7 @@ export default function InvoiceSidebar({
       
       {/* Main Sidebar */}
       <div 
-        className={`fixed inset-y-0 right-0 z-50 w-[35%] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 right-0 z-50 w-[35%] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -314,6 +341,92 @@ export default function InvoiceSidebar({
             </div>
           </div>
 
+          <Separator />
+
+          {/* Credit Notes Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-normal">Avoirs</h3>
+              {(invoice.status === INVOICE_STATUS.PENDING || invoice.status === INVOICE_STATUS.COMPLETED || invoice.status === INVOICE_STATUS.CANCELED) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCreateCreditNote}
+                  className="h-7 px-2 text-xs"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Créer un avoir
+                </Button>
+              )}
+            </div>
+            
+            {loadingCreditNotes ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            ) : creditNotesError ? (
+              <div className="text-sm text-red-500 py-2">
+                Erreur lors du chargement des avoirs: {creditNotesError.message}
+              </div>
+            ) : creditNotes && creditNotes.length > 0 ? (
+              <div className="space-y-2">
+                {creditNotes.map((creditNote) => (
+                  <div
+                    key={creditNote.id}
+                    className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div 
+                        className="flex flex-col cursor-pointer flex-1 min-w-0"
+                        onClick={() => handleViewCreditNote(creditNote)}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Receipt className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm font-medium truncate">{creditNote.number}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground ml-5">
+                          {formatDate(creditNote.issueDate)} • {formatCurrency(creditNote.finalTotalTTC || 0)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewCreditNote(creditNote);
+                          }}
+                          className="h-6 w-6 p-1 hover:bg-muted rounded flex-shrink-0"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </button>
+                        <UniversalPDFGenerator
+                          data={creditNote}
+                          type="creditNote"
+                          filename={`avoir-${creditNote.number}`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-sm text-muted-foreground">
+                {(invoice.status === INVOICE_STATUS.PENDING || invoice.status === INVOICE_STATUS.COMPLETED || invoice.status === INVOICE_STATUS.CANCELED) ? (
+                  <div>
+                    <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Aucun avoir créé</p>
+                    <p className="text-xs mt-1">Cliquez sur "Créer" pour ajouter un avoir</p>
+                  </div>
+                ) : (
+                  <div>
+                    <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Aucun avoir</p>
+                    <p className="text-xs mt-1">Les avoirs ne peuvent être créés que pour les factures en attente, terminées ou annulées</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* <Separator /> */}
 
           {/* Preview Thumbnail */}
@@ -401,6 +514,35 @@ export default function InvoiceSidebar({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Credit Note Preview Modal */}
+      {isCreditNotePreviewOpen && (
+        <div className="fixed inset-0 z-[100]">
+          {/* Fixed Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/80"
+            onClick={() => setIsCreditNotePreviewOpen(false)}
+          />
+          
+          {/* Fixed Close Button */}
+          <button
+            onClick={() => setIsCreditNotePreviewOpen(false)}
+            className="fixed top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          
+          {/* Scrollable Content Area */}
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="w-[210mm] mx-auto bg-white my-12">
+              {/* Credit Note Content */}
+              {selectedCreditNote && (
+                <UniversalPreviewPDF data={selectedCreditNote} type="creditNote" />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

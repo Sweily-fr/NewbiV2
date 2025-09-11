@@ -24,6 +24,9 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
   const { data: session } = useSession();
   const { organization } = useWorkspace();
   
+  // Déterminer si c'est un avoir (credit note)
+  const isCreditNote = type === "creditNote";
+  
   // Calcul des totaux basé sur les articles
   const calculateTotals = (items = []) => {
     let subtotal = 0;
@@ -126,13 +129,16 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
       }));
     
     return {
-      subtotal: Number(subtotal.toFixed(2)),
-      subtotalAfterItemDiscounts: Number(subtotalAfterItemDiscounts.toFixed(2)),
-      discount: Number(globalDiscountAmount.toFixed(2)),
-      totalAfterDiscount: Number(totalAfterDiscount.toFixed(2)),
-      totalTax: Number(totalTax.toFixed(2)),
-      total: Number(total.toFixed(2)),
-      taxDetails,
+      subtotal: Number((isCreditNote ? -Math.abs(subtotal) : subtotal).toFixed(2)),
+      subtotalAfterItemDiscounts: Number((isCreditNote ? -Math.abs(subtotalAfterItemDiscounts) : subtotalAfterItemDiscounts).toFixed(2)),
+      discount: Number((isCreditNote ? -Math.abs(globalDiscountAmount) : globalDiscountAmount).toFixed(2)),
+      totalAfterDiscount: Number((isCreditNote ? -Math.abs(totalAfterDiscount) : totalAfterDiscount).toFixed(2)),
+      totalTax: Number((isCreditNote ? -Math.abs(totalTax) : totalTax).toFixed(2)),
+      total: Number((isCreditNote ? -Math.abs(total) : total).toFixed(2)),
+      taxDetails: taxDetails.map(tax => ({
+        ...tax,
+        amount: isCreditNote ? -Math.abs(tax.amount) : tax.amount
+      })),
       discountType: data.discountType || 'PERCENTAGE',
       discountValue: data.discount || 0
     };
@@ -249,6 +255,9 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
 
   // Déterminer le titre du document comme dans le PDF
   const getDocumentTitle = () => {
+    if (isCreditNote) {
+      return "Avoir";
+    }
     if (data.isDepositInvoice) {
       return "Facture d'acompte";
     }
@@ -301,12 +310,12 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
             <div className="space-y-1">
               <div className="flex justify-end" style={{ fontSize: "10px" }}>
                 <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
-                  {type === 'quote' ? 'Numéro de devis' : 'Numéro de facture'}:
+                  {isCreditNote ? "Numéro d'avoir" : (type === 'quote' ? 'Numéro de devis' : 'Numéro de facture')}:
                 </span>
                 <span className="dark:text-[#0A0A0A]">
                   {data.prefix && data.number
                     ? `${data.prefix}-${data.number}`
-                    : data.number || "F-202507-001"}
+                    : data.number || (isCreditNote ? "AV-202507-001" : "F-202507-001")}
                 </span>
               </div>
               <div className="flex justify-end" style={{ fontSize: "10px" }}>
@@ -318,7 +327,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                     formatDate(new Date())}
                 </span>
               </div>
-              {data.executionDate && (
+              {!isCreditNote && data.executionDate && (
               <div className="flex justify-end" style={{ fontSize: "10px" }}>
                 <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
                   Date d'exécution:
@@ -328,6 +337,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 </span>
               </div>
             )}
+            {!isCreditNote && (
             <div className="flex justify-end" style={{ fontSize: "10px" }}>
               <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
                 {type === "quote" ? "Date de validité:" : "Date d'échéance:"}
@@ -337,6 +347,19 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                   formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}
               </span>
             </div>
+            )}
+            {isCreditNote && data.originalInvoice && (
+              <div className="flex justify-end" style={{ fontSize: "10px" }}>
+                <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                  Facture d'origine:
+                </span>
+                <span className="dark:text-[#0A0A0A]">
+                  {data.originalInvoice.prefix && data.originalInvoice.number
+                    ? `${data.originalInvoice.prefix}${data.originalInvoice.number}`
+                    : data.originalInvoice.number || data.originalInvoice}
+                </span>
+              </div>
+            )}
             {data.purchaseOrderNumber && (
               <div className="flex justify-end" style={{ fontSize: "10px" }}>
                 <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
@@ -471,8 +494,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
           )}
         </div>
 
-        {/* NOTES D'EN-TÊTE */}
-        {data.headerNotes && (
+        {/* NOTES D'EN-TÊTE - masquées pour les avoirs */}
+        {data.headerNotes && !isCreditNote && (
           <div className="mb-4" style={{ fontSize: "10px" }}>
             <div className="whitespace-pre-line dark:text-[#0A0A0A]">
               {data.headerNotes}
@@ -581,11 +604,16 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                       {item.discount > 0 ? (
                         <div className="flex flex-col items-end">
                           <span className="line-through text-gray-500 text-[9px] mb-[-2px]">
-                            {formatCurrency((item.quantity || 0) * (item.unitPrice || 0))}
+                            {formatCurrency(isCreditNote ? -Math.abs((item.quantity || 0) * (item.unitPrice || 0)) : (item.quantity || 0) * (item.unitPrice || 0))}
                           </span>
                           <span>
                             {formatCurrency(
-                              calculateItemTotal(
+                              isCreditNote ? -Math.abs(calculateItemTotal(
+                                item.quantity || 0,
+                                item.unitPrice || 0,
+                                item.discount || 0,
+                                item.discountType || 'percentage'
+                              )) : calculateItemTotal(
                                 item.quantity || 0,
                                 item.unitPrice || 0,
                                 item.discount || 0,
@@ -595,7 +623,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                           </span>
                         </div>
                       ) : (
-                        formatCurrency((item.quantity || 0) * (item.unitPrice || 0))
+                        formatCurrency(isCreditNote ? -Math.abs((item.quantity || 0) * (item.unitPrice || 0)) : (item.quantity || 0) * (item.unitPrice || 0))
                       )}
                     </td>
                   </tr>
@@ -757,8 +785,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
           </div>
         )}
         
-        {/* CONDITIONS GÉNÉRALES */}
-        {data.termsAndConditions && (
+        {/* CONDITIONS GÉNÉRALES - masquées pour les avoirs */}
+        {data.termsAndConditions && !isCreditNote && (
           <div className="mb-4 text-[10px] pt-4">
             <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
               {data.termsAndConditions}
@@ -769,8 +797,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
 
       {/* FOOTER - DÉTAILS BANCAIRES */}
       <div className="bg-[#F3F3F3] pt-8 pb-8 px-14 w-full">
-        {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un devis */}
-        {(data.showBankDetails === undefined || data.showBankDetails === true) && type !== "quote" && (
+        {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un devis NI un avoir */}
+        {(data.showBankDetails === undefined || data.showBankDetails === true) && type !== "quote" && !isCreditNote && (
           <div className="mb-3">
             <div className="font-medium text-xs mb-2 dark:text-[#0A0A0A]">
               Détails du paiement
@@ -808,8 +836,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
           </div>
         )}
 
-        {/* NOTES ET CONDITIONS */}
-        {data.footerNotes && (
+        {/* NOTES ET CONDITIONS - masquées pour les avoirs */}
+        {data.footerNotes && !isCreditNote && (
           <div className="mt-6 py-4 text-[10px]">
             <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
               {data.footerNotes}
@@ -817,7 +845,13 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
           </div>
         )}
 
-        <div className="text-[10px] dark:text-[#0A0A0A] border-t pt-2">
+        {/* Afficher le trait de séparation seulement si des coordonnées bancaires ou des notes sont présentes */}
+        <div className={`text-[10px] dark:text-[#0A0A0A] ${
+          ((data.showBankDetails === undefined || data.showBankDetails === true) && type !== "quote" && !isCreditNote) || 
+          (data.footerNotes && !isCreditNote) 
+            ? "border-t pt-2" 
+            : "pt-2"
+        }`}>
           <div>
             {data.companyInfo?.name || "Sweily"}
             {data.companyInfo?.legalForm && `, ${data.companyInfo.legalForm}`}

@@ -36,8 +36,11 @@ export const GET_PRODUCT = gql`
       reference
       createdBy {
         id
-        name
         email
+        profile {
+          firstName
+          lastName
+        }
       }
       createdAt
       updatedAt

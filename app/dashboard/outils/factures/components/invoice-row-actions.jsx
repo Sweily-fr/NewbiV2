@@ -11,6 +11,7 @@ import {
   CheckCircle,
   FileText,
   XCircle,
+  Receipt,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -92,6 +93,10 @@ export default function InvoiceRowActions({ row, onRefetch }) {
     }
   };
 
+  const handleCreateCreditNote = () => {
+    router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
+  };
+
   const isLoading = markingAsPaid || changingStatus || isDeleting;
 
   return (
@@ -137,23 +142,18 @@ export default function InvoiceRowActions({ row, onRefetch }) {
               </DropdownMenuItem>
             )}
 
-            {invoice.status === INVOICE_STATUS.PENDING && (
+            {(invoice.status === INVOICE_STATUS.PENDING ||
+              invoice.status === INVOICE_STATUS.COMPLETED) && (
               <>
-                <DropdownMenuItem
-                  onClick={handleMarkAsPaid}
-                  disabled={isLoading}
-                >
+                <DropdownMenuItem onClick={handleMarkAsPaid}>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Marquer comme payée
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                >
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Annuler la facture
+                <DropdownMenuItem onClick={handleCreateCreditNote}>
+                  <Receipt className="mr-2 h-4 w-4" />
+                  Créer un avoir
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
               </>
             )}
 
