@@ -81,14 +81,16 @@ export default function Outils() {
             className="flex-1 flex-col justify-start gap-6"
           >
             <TabsList>
-              <TabsTrigger value="outline">Tout</TabsTrigger>
-              <TabsTrigger value="past-performance">
+              <TabsTrigger value="outline" className="font-normal">
+                Tout
+              </TabsTrigger>
+              <TabsTrigger value="past-performance" className="font-normal">
                 Financier <Badge variant="secondary">3</Badge>
               </TabsTrigger>
-              <TabsTrigger value="key-personnel">
+              <TabsTrigger value="key-personnel" className="font-normal">
                 Marketing <Badge variant="secondary">2</Badge>
               </TabsTrigger>
-              <TabsTrigger value="focus-documents">
+              <TabsTrigger value="focus-documents" className="font-normal">
                 Automatisation <Badge variant="secondary">1</Badge>
               </TabsTrigger>
             </TabsList>

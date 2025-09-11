@@ -36,7 +36,7 @@ function GestionDepensesContent() {
 
   const loading = expensesLoading || invoicesLoading;
   const error = expensesError || invoicesError;
-  
+
   // Local formatCurrency function
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -46,13 +46,26 @@ function GestionDepensesContent() {
   };
 
   // Calcul des statistiques réelles
-  const { totalIncome, totalExpenses, incomeTransactionCount, expenseTransactionCount, incomeChartData, expenseChartData } = useMemo(() => {
+  const {
+    totalIncome,
+    totalExpenses,
+    incomeTransactionCount,
+    expenseTransactionCount,
+    incomeChartData,
+    expenseChartData,
+  } = useMemo(() => {
     // Calcul des dépenses
-    const expenseTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const expenseTotal = expenses.reduce(
+      (sum, expense) => sum + expense.amount,
+      0
+    );
     const expenseCount = expenses.length;
 
     // Calcul des revenus (factures payées)
-    const incomeTotal = paidInvoices.reduce((sum, invoice) => sum + invoice.finalTotalTTC, 0);
+    const incomeTotal = paidInvoices.reduce(
+      (sum, invoice) => sum + invoice.finalTotalTTC,
+      0
+    );
     const incomeCount = paidInvoices.length;
 
     // Génération des données de graphique par mois (derniers 6 mois)
@@ -62,59 +75,69 @@ function GestionDepensesContent() {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push({
         month: date.toLocaleDateString("fr-FR", { month: "short" }),
-        fullDate: date
+        fullDate: date,
       });
     }
 
     // Données pour le graphique des dépenses
     const expenseChartData = months.map(({ month, fullDate }) => {
-      const monthExpenses = expenses.filter(expense => {
+      const monthExpenses = expenses.filter((expense) => {
         // Gérer les dates qui peuvent être des timestamps ou des chaînes
         let expenseDate;
-        if (typeof expense.date === 'string') {
+        if (typeof expense.date === "string") {
           expenseDate = new Date(expense.date);
-        } else if (typeof expense.date === 'number') {
+        } else if (typeof expense.date === "number") {
           expenseDate = new Date(expense.date);
         } else {
           expenseDate = new Date(expense.date);
         }
-        
-        return expenseDate.getMonth() === fullDate.getMonth() && 
-               expenseDate.getFullYear() === fullDate.getFullYear();
+
+        return (
+          expenseDate.getMonth() === fullDate.getMonth() &&
+          expenseDate.getFullYear() === fullDate.getFullYear()
+        );
       });
-      
-      const monthTotal = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-      
+
+      const monthTotal = monthExpenses.reduce(
+        (sum, expense) => sum + expense.amount,
+        0
+      );
+
       return {
         month,
         desktop: monthTotal,
-        mobile: monthExpenses.length
+        mobile: monthExpenses.length,
       };
     });
 
     // Données pour le graphique des revenus
     const incomeChartData = months.map(({ month, fullDate }) => {
-      const monthInvoices = paidInvoices.filter(invoice => {
+      const monthInvoices = paidInvoices.filter((invoice) => {
         // Gérer les dates qui peuvent être des timestamps ou des chaînes
         let invoiceDate;
-        if (typeof invoice.issueDate === 'string') {
+        if (typeof invoice.issueDate === "string") {
           invoiceDate = new Date(invoice.issueDate);
-        } else if (typeof invoice.issueDate === 'number') {
+        } else if (typeof invoice.issueDate === "number") {
           invoiceDate = new Date(invoice.issueDate);
         } else {
           invoiceDate = new Date(invoice.issueDate);
         }
-        
-        return invoiceDate.getMonth() === fullDate.getMonth() && 
-               invoiceDate.getFullYear() === fullDate.getFullYear();
+
+        return (
+          invoiceDate.getMonth() === fullDate.getMonth() &&
+          invoiceDate.getFullYear() === fullDate.getFullYear()
+        );
       });
-      
-      const monthTotal = monthInvoices.reduce((sum, invoice) => sum + invoice.finalTotalTTC, 0);
-      
+
+      const monthTotal = monthInvoices.reduce(
+        (sum, invoice) => sum + invoice.finalTotalTTC,
+        0
+      );
+
       return {
         month,
         desktop: monthTotal,
-        mobile: monthInvoices.length
+        mobile: monthInvoices.length,
       };
     });
 
@@ -124,7 +147,7 @@ function GestionDepensesContent() {
       incomeTransactionCount: incomeCount,
       expenseTransactionCount: expenseCount,
       incomeChartData,
-      expenseChartData
+      expenseChartData,
     };
   }, [expenses, paidInvoices]);
 
@@ -165,8 +188,11 @@ function GestionDepensesContent() {
   return (
     <div className="flex flex-col gap-2 py-4 md:gap-6 md:py-6 p-6">
       <div className="w-full">
-        <h1 className="text-xl font-medium">Gestion des dépenses</h1>
-        <p className="text-gray-600 mt-2">Gérer vos dépenses en toute simplicité avec la lecture OCR de vos reçus</p>
+        <h1 className="text-2xl font-medium mb-2">Gestion des dépenses</h1>
+        <p className="text-muted-foreground text-sm">
+          Gérer vos dépenses en toute simplicité avec la lecture OCR de vos
+          reçus
+        </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Graphique des entrées avec vraies données */}
@@ -213,7 +239,7 @@ function GestionDepensesContent() {
 export default function GestionDepenses() {
   return (
     // <ProRouteGuard pageName="Gestion des dépenses"> {/* Commenté pour le développement */}
-      <GestionDepensesContent />
+    <GestionDepensesContent />
     // </ProRouteGuard>
   );
 }

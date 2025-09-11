@@ -9,13 +9,19 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Building2, Landmark } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { useState, useEffect } from "react";
+import { useExpenses } from "@/src/hooks/useExpenses";
+import { useInvoices } from "@/src/graphql/invoiceQueries";
+import { useState, useEffect, useMemo } from "react";
 
 export default function BankBalanceCard({ className }) {
   const { workspaceId } = useWorkspace();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Récupérer les dépenses et factures pour calculer le solde total
+  const { expenses, loading: expensesLoading } = useExpenses({ status: 'PAID', limit: 1000 });
+  const { invoices, loading: invoicesLoading } = useInvoices();
 
   const fetchAccounts = async () => {
     if (!workspaceId) return;
@@ -58,12 +64,32 @@ export default function BankBalanceCard({ className }) {
     }).format(amount || 0);
   };
 
-  const totalBalance = accounts.reduce(
+  // Calculer le solde bancaire
+  const bankBalance = accounts.reduce(
     (sum, account) => sum + (account.balance || 0),
     0
   );
+  
+  // Calculer le solde total incluant toutes les transactions
+  const totalBalance = useMemo(() => {
+    // Revenus des factures payées
+    const paidInvoices = invoices.filter(invoice => invoice.status === 'COMPLETED');
+    const invoiceIncome = paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || invoice.totalTTC || 0), 0);
+    
+    // Revenus et dépenses des expenses
+    const incomeExpenses = expenses.filter(e => e.notes && e.notes.includes('[INCOME]'));
+    const regularExpenses = expenses.filter(e => !e.notes || !e.notes.includes('[INCOME]'));
+    
+    const manualIncome = incomeExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+    const totalExpenses = regularExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+    
+    // Solde total = Solde bancaire + Revenus - Dépenses
+    return bankBalance + invoiceIncome + manualIncome - totalExpenses;
+  }, [accounts, expenses, invoices, bankBalance]);
 
-  if (loading) {
+  const isLoading = loading || expensesLoading || invoicesLoading;
+  
+  if (isLoading) {
     return (
       <Card className={className}>
         <CardContent className="px-6">
@@ -92,14 +118,41 @@ export default function BankBalanceCard({ className }) {
     );
   }
 
+  // Afficher le solde total même sans comptes bancaires
   if (accounts.length === 0) {
     return (
       <Card className={className}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-normal">Solde</CardTitle>
+          <CardTitle className="text-sm font-normal">Soldes</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">Aucun compte connecté</p>
+          {/* Solde total sans comptes bancaires */}
+          <div className="mb-6">
+            <div className="text-3xl font-medium mb-2">
+              {formatCurrency(totalBalance)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Solde global (revenus - dépenses)
+            </p>
+          </div>
+          
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600 text-center">
+              Aucun compte bancaire connecté
+            </p>
+          </div>
+
+          {/* Bouton de gestion - Désactivé temporairement */}
+          <Button
+            variant="outline"
+            className="w-full font-normal"
+            disabled
+            onClick={() => {
+              console.log("Intégration bancaire en cours de développement");
+            }}
+          >
+            Connexion bancaire (bientôt disponible)
+          </Button>
         </CardContent>
       </Card>
     );
@@ -112,9 +165,24 @@ export default function BankBalanceCard({ className }) {
       </CardHeader>
       <CardContent>
         {/* Solde total */}
-        <div className="text-3xl font-medium mb-6">
-          {formatCurrency(totalBalance)}
+        <div className="mb-6">
+          <div className="text-3xl font-medium mb-2">
+            {formatCurrency(totalBalance)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Solde global (comptes + revenus - dépenses)
+          </p>
         </div>
+        
+        {/* Solde bancaire si différent */}
+        {bankBalance !== totalBalance && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Solde bancaire</span>
+              <span className="text-sm font-medium">{formatCurrency(bankBalance)}</span>
+            </div>
+          </div>
+        )}
 
         {/* Liste des comptes */}
         <div className="space-y-4 mb-6">
@@ -136,16 +204,16 @@ export default function BankBalanceCard({ className }) {
           ))}
         </div>
 
-        {/* Bouton de gestion */}
+        {/* Bouton de gestion - Désactivé temporairement */}
         <Button
           variant="outline"
           className="w-full font-normal"
+          disabled
           onClick={() => {
-            // TODO: Naviguer vers la page de gestion des comptes
-            console.log("Gérer ses comptes bancaires");
+            console.log("Intégration bancaire en cours de développement");
           }}
         >
-          Gérer ses comptes bancaires
+          Connexion bancaire (bientôt disponible)
         </Button>
       </CardContent>
     </Card>

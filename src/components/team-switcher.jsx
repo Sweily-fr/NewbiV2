@@ -151,7 +151,7 @@ export function TeamSwitcher() {
                 <div className="flex size-5 items-center justify-center rounded-sm border bg-transparent">
                   <Plus className="size-3" />
                 </div>
-                <div className="text-muted-foreground text-xs font-normal">
+                <div className="text-xs font-normal">
                   Inviter un collaborateur
                 </div>
               </Link>

@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 /**
  * Mutations GraphQL pour l'OCR avec Mistral
@@ -33,6 +33,7 @@ export const PROCESS_DOCUMENT_OCR_FROM_URL = gql`
     $fileName: String!
     $mimeType: String!
     $fileSize: Int
+    $workspaceId: String!
     $options: OcrOptions
   ) {
     processDocumentOcrFromUrl(
@@ -40,6 +41,7 @@ export const PROCESS_DOCUMENT_OCR_FROM_URL = gql`
       fileName: $fileName
       mimeType: $mimeType
       fileSize: $fileSize
+      workspaceId: $workspaceId
       options: $options
     ) {
       success

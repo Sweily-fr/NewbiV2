@@ -307,7 +307,7 @@ export default function SubscribePage() {
               ) : (
                 <Button
                   variant="destructive"
-                  className="cursor-pointer"
+                  className="cursor-pointer font-normal"
                   size="sm"
                   onClick={openCancelModal}
                   disabled={isLoading}
@@ -337,7 +337,7 @@ export default function SubscribePage() {
                 }`}
               >
                 {index === 1 && (
-                  <Badge className="absolute -top-3 right-6 bg-[#5b50fe] text-white text-xs">
+                  <Badge className="absolute -top-3 right-6 bg-[#5b50fe] font-normal text-white text-xs">
                     <Crown className="w-3 h-3 mr-1" />
                     Recommandé
                   </Badge>
@@ -434,7 +434,7 @@ export default function SubscribePage() {
                 {index === 0 && !isActive() && (
                   <Button
                     variant="outline"
-                    className="w-full text-sm mt-auto"
+                    className="w-full text-sm mt-auto font-normal"
                     disabled
                   >
                     Forfait actuel
@@ -444,7 +444,7 @@ export default function SubscribePage() {
                 {index === 1 && isActive() && (
                   <Button
                     variant="outline"
-                    className="w-full text-sm mt-auto"
+                    className="w-full text-sm mt-auto font-normal"
                     disabled
                   >
                     Forfait actuel
@@ -453,7 +453,7 @@ export default function SubscribePage() {
 
                 {index === 0 && isActive() && (
                   <Button
-                    className="w-full text-sm mt-auto cursor-pointer"
+                    className="w-full text-sm mt-auto cursor-pointer font-normal"
                     onClick={openCancelModal}
                     disabled={isLoading}
                   >

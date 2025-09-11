@@ -120,6 +120,8 @@ function DashboardContent() {
 
       // Filter invoices for this day
       const dayInvoices = paidInvoices.filter((invoice) => {
+        if (!invoice.issueDate) return false;
+        
         let invoiceDate;
         if (typeof invoice.issueDate === 'string') {
           invoiceDate = new Date(invoice.issueDate);
@@ -127,6 +129,12 @@ function DashboardContent() {
           invoiceDate = new Date(invoice.issueDate);
         } else {
           invoiceDate = new Date(invoice.issueDate);
+        }
+        
+        // Vérifier si la date est valide
+        if (isNaN(invoiceDate.getTime())) {
+          console.warn('Date de facture invalide:', invoice.issueDate, 'pour la facture:', invoice.id);
+          return false;
         }
         
         return invoiceDate.toISOString().split("T")[0] === dateStr;
@@ -176,6 +184,10 @@ function DashboardContent() {
 
     console.log("📊 Données graphique revenus générées:", chartData.filter(d => d.desktop > 0).length, "jours avec revenus");
     console.log("📈 Sample données revenus:", chartData.slice(-7).map(d => ({date: d.date, amount: d.desktop})));
+    console.log("📋 Total chartData length:", chartData.length);
+    
+    // Pas de données de démonstration - utiliser uniquement les vraies données
+    
     return chartData;
   };
 
@@ -230,6 +242,10 @@ function DashboardContent() {
     }
 
     console.log("Données graphique dépenses générées:", chartData.filter(d => d.desktop > 0).length, "jours avec dépenses");
+    console.log("📋 Total expense chartData length:", chartData.length);
+    
+    // Pas de données de démonstration - utiliser uniquement les vraies données
+    
     return chartData;
   };
 
