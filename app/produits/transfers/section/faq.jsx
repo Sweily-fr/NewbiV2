@@ -3,14 +3,24 @@ import { useState } from "react";
 
 const faqs = [
   {
-    question: "Comment envoyer des fichiers avec newbi?",
+    question: "Comment fonctionne l’outil transfert de fichiers Newbi ?",
     answer:
-      "Pour simplifier, téléverse tes fichiers, sélectionne les options souhaitées, puis partage le lien avec ton client.",
+      "Glissez‑déposez vos fichiers, obtenez un lien sécurisé à partager au client. Vous pouvez définir un mot de passe, une date d’expiration et une limite de téléchargements. Notifications à chaque téléchargement.",
   },
   {
-    question: "Comment obtenir de l’aide si j’ai une question?",
+    question: "Quelle est la taille maximale possible par transfert ?",
     answer:
-      "Notre support est disponible par email à contact@newbi.fr ou directement via le chat intégré à la plateforme.",
+      "La taille maximale possible par transfert est de 5Go.",
+  },
+  {
+    question: "Que se passe-t-il si mon client n’a pas téléchargé les fichiers avant l’expiration du lien ?",
+    answer:
+      "Le lien devient inaccessible. Il faudra créer un nouveau lien avec une nouvelle date d’expiration.",
+  },
+  {
+    question: "Qui contacter si j’ai une question ou un problème avec mon outil ?",
+    answer:
+      "Rejoignez la communauté Newbi sur Whatsapp. Il suffit d’y accéder pour rejoindre les groupes thématiques et poser vos questions directement à la communauté et à l’équipe.",
   },
 ];
 
@@ -23,10 +33,10 @@ export default function FAQ() {
         Questions fréquentes
       </h2>
       <p className="mx-auto max-w-lg text-center text-base text-neutral-600 dark:text-neutral-50">
-        Nous sommes là pour vous aider avec toutes vos questions. Si vous ne
-        trouvez pas l'information recherchée, contactez-nous{" "}
+        Nous sommes là pour répondre à toutes vos questions. Si vous ne trouvez
+        pas l'information recherchée, contactez-nous{" "}
         <a href="mailto:support@newbi.fr" className="text-blue-500 underline">
-          support@newbi.fr
+          contact@newbi.fr
         </a>
       </p>
       <div className="mx-auto mt-10 w-full max-w-3xl">
@@ -73,7 +83,12 @@ export default function FAQ() {
                 </h3>
                 {open === idx && (
                   <div className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
-                    {faq.answer}
+                    {faq.answer.split('\n').map((line, lineIdx) => (
+                      <div key={lineIdx}>
+                        {line}
+                        {lineIdx < faq.answer.split('\n').length - 1 && <br />}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

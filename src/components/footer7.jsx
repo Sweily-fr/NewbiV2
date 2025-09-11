@@ -1,4 +1,6 @@
+"use client";
 import React from "react";
+import { useSession } from "@/src/lib/auth-client";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { Button } from "@/src/components/ui/button";
 
@@ -58,6 +60,13 @@ const Footer7 = ({
   copyright = "Conçu avec ❤️ en France par Sweily",
   legalLinks = defaultLegalLinks,
 }) => {
+  const { data: session } = useSession();
+  
+  // Helper function to get the appropriate link based on authentication
+  const getToolLink = (toolPath) => {
+    return session?.user ? `/dashboard/outils/${toolPath}` : "/auth/login";
+  };
+
   return (
     <div className="px-2 py-2 lg:px-2 bg-gradient-to-t from-[#fbd7d3] via-[#f6f7fc] to-[#cad8f7]">
       <div className="mx-auto w-full lg:px-8 rounded-[15px] md:rounded-[18px] lg:rounded-[18px] bg-white/50">
@@ -77,7 +86,7 @@ const Footer7 = ({
           </p>
           <div className="mt-6">
             <Button variant="default" asChild>
-              <a href="/auth/login">Essayez Gratuitement</a>
+              <a href="/auth/signup">Essayez Gratuitement</a>
             </Button>
           </div>
         </div>
@@ -110,7 +119,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href={getToolLink("factures")}
                     >
                       Facturation
                     </a>
@@ -118,7 +127,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href={getToolLink("devis")}
                     >
                       Devis
                     </a>
@@ -126,7 +135,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href={getToolLink("transferts-fichiers")}
                     >
                       Transferts fichiers
                     </a>
@@ -134,7 +143,31 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href={getToolLink("gestion-depenses")}
+                    >
+                      Gestion des dépenses
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href={getToolLink("kanban")}
+                    >
+                      Tableau Kanban
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href={getToolLink("signatures-mail")}
+                    >
+                      Signatures de mail
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href={session?.user ? "/dashboard/outils" : "/auth/login"}
                     >
                       Tous nos outils
                     </a>
@@ -149,7 +182,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href="/blog"
                     >
                       Blog
                     </a>
@@ -157,7 +190,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href="/faq"
                     >
                       FAQ
                     </a>
@@ -165,7 +198,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href="/#pricing"
                     >
                       Tarifs
                     </a>
@@ -180,7 +213,9 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href="https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL?mode=ems_copy_h_t"
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
                       Communauté
                     </a>
@@ -195,7 +230,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href="mentions-legales"
                     >
                       Mentions légales
                     </a>
@@ -203,7 +238,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href="politique-de-confidentialite"
                     >
                       Politique de confidentialité
                     </a>
@@ -211,7 +246,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href="cgv"
                     >
                       CGV
                     </a>
@@ -219,7 +254,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="#"
+                      href="cookies"
                     >
                       Cookies
                     </a>

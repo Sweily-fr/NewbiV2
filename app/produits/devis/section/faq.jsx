@@ -3,24 +3,29 @@ import { useState } from "react";
 
 const faqs = [
   {
-    question: "Comment créer une facture avec newbi ?",
+    question: "Comment créer un devis avec Newbi ?",
     answer:
-      "Il vous suffit de remplir les champs requis sur notre interface et d’envoyer le devis à votre client en quelques clics. Tout est guidé !",
+      "Pour créer un devis avec Newbi, ouvrez l’outil Devis. Cliquez sur “créer un devis”, si votre client se trouve dans votre annuaire client vous avez juste à le rechercher. Sinon, vous pouvez aussi le rechercher à partir de son numéro de SIREN ou SIRET. Remplissez les conditions, échéances, détails produits…",
   },
   {
     question: "Puis-je personnaliser mes devis ?",
     answer:
-      "Oui, vous pouvez ajouter votre logo, personnaliser les couleurs et choisir parmi plusieurs modèles pour refléter l’image de votre entreprise.",
+      "Oui ! Le logo, les couleurs, les champs affichés, les conditions de vente, les mentions légales, le pied de page (pénalités de retard, indemnité forfaitaire, IBAN). Vous pouvez aussi définir le préfixe de numérotation (ex. FY25‑).",
   },
   {
-    question: "Est-ce que les devis sont conformes à la législation française?",
+    question: "Est-ce que les devis sont conformes à la législation française ?",
     answer:
-      "Tout les devis émis via newbi respectent les normes légales et fiscales en vigueur en France.",
+      "Un devis n’est pas une facture mais doit comporter les informations essentielles: identité du prestataire et du client, les caractéristiques principales du bien ou du service, le prix, la TVA applicable, les conditions et durée de validité. Newbi pré remplit ces éléments et vous laisse ajouter vos clauses.",
   },
   {
-    question: "Comment obtenir de l’aide si j’ai une question?",
+    question: "Comment suivre le statut de votre devis ?",
     answer:
-      "Notre support est disponible par email à contact@newbi.fr ou directement via le chat intégré à la plateforme.",
+      "Lors de la création de votre devis, vous allez définir une date d’échéance. A partir de ce moment, des rappels automatiques peuvent être envoyés avant l’échéance. Passé la date, le devis passera en “expiré”. Vous pourrez également mettre à jour le statut de votre devis.",
+  },
+  {
+    question: "Qui contacter si j’ai une question ou un problème avec mon outil ?",
+    answer:
+      "Rejoignez la communauté Newbi sur Whatsapp. Il suffit d’y accéder pour rejoindre les groupes thématiques et poser vos questions directement à la communauté et à l’équipe.",
   },
 ];
 
@@ -33,10 +38,10 @@ export default function FAQ() {
         Questions fréquentes
       </h2>
       <p className="mx-auto max-w-lg text-center text-base text-neutral-600 dark:text-neutral-50">
-        Nous sommes là pour vous aider avec toutes vos questions. Si vous ne
-        trouvez pas l'information recherchée, contactez-nous{" "}
+        Nous sommes là pour répondre à toutes vos questions. Si vous ne trouvez
+        pas l'information recherchée, contactez-nous{" "}
         <a href="mailto:support@newbi.fr" className="text-blue-500 underline">
-          support@newbi.fr
+          contact@newbi.fr
         </a>
       </p>
       <div className="mx-auto mt-10 w-full max-w-3xl">
@@ -83,7 +88,12 @@ export default function FAQ() {
                 </h3>
                 {open === idx && (
                   <div className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
-                    {faq.answer}
+                    {faq.answer.split('\n').map((line, lineIdx) => (
+                      <div key={lineIdx}>
+                        {line}
+                        {lineIdx < faq.answer.split('\n').length - 1 && <br />}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

@@ -3,14 +3,14 @@ import { useState } from "react";
 
 const faqs = [
   {
-    question: "Créez et Priorisez vos tâches en toute simplicité avec Newbi !",
+    question: "Comment utiliser l'outil tableau Kanban ?",
     answer:
-      "Il vous suffit de remplir les champs requis sur notre interface et d’envoyer la facture à votre client en quelques clics. Tout est guidé !",
+      "Créez un tableau: \n- Outils Kanban > Créer un tableau > nommez-le.\n- Ouvrez-le en cliquant sur le tableau créé.\n- Structurez vos colonnes: À faire → En cours → Fait (ajoutez/renommez si besoin).\n- Ajoutez des tâches: bouton Nouvelle tâche (titre, description, échéance, responsable, priorité).\n- Mettez à jour: glissez-déposez les tâches entre les colonnes, modifiez statut/échéance/priorité.\n- Priorisez: placez les plus importantes en haut, utilisez étiquettes ou niveaux (P1/P2/P3).\n- Terminez: déplacez en Fait puis archivez pour garder l’historique propre.",
   },
   {
-    question: "Comment obtenir de l’aide si j’ai une question?",
+    question: "Qui contacter si j’ai une question ou un problème avec mon outil ?",
     answer:
-      "Notre support est disponible par email à contact@newbi.fr ou directement via le chat intégré à la plateforme.",
+      "Rejoignez la communauté Newbi sur Whatsapp. Il suffit d’y accéder pour rejoindre les groupes thématiques et poser vos questions directement à la communauté et à l’équipe.",
   },
 ];
 
@@ -23,10 +23,10 @@ export default function FAQ() {
         Questions fréquentes
       </h2>
       <p className="mx-auto max-w-lg text-center text-base text-neutral-600 dark:text-neutral-50">
-        Nous sommes là pour vous aider avec toutes vos questions. Si vous ne
-        trouvez pas l'information recherchée, contactez-nous{" "}
+        Nous sommes là pour répondre à toutes vos questions. Si vous ne trouvez
+        pas l'information recherchée, contactez-nous{" "}
         <a href="mailto:support@newbi.fr" className="text-blue-500 underline">
-          support@newbi.fr
+          contact@newbi.fr
         </a>
       </p>
       <div className="mx-auto mt-10 w-full max-w-3xl">
@@ -73,7 +73,12 @@ export default function FAQ() {
                 </h3>
                 {open === idx && (
                   <div className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
-                    {faq.answer}
+                    {faq.answer.split('\n').map((line, lineIdx) => (
+                      <div key={lineIdx}>
+                        {line}
+                        {lineIdx < faq.answer.split('\n').length - 1 && <br />}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

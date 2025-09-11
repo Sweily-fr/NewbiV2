@@ -32,7 +32,7 @@ const Freelance = () => {
                 <span aria-hidden="true" className="absolute -translate-x-full">
                   “
                 </span>
-                Simple et efficace pour gérer mes factures, j’adore !
+                  Newbi me fait gagner des heures: envoi simple, paiement avant téléchargement, zéro relance client.
                 <span aria-hidden="true" className="absolute">
                   ”
                 </span>
@@ -42,7 +42,7 @@ const Freelance = () => {
               <p className="text-sm font-medium text-white">Sofian Mtimet</p>
               <p className="text-sm font-medium">
                 <span className="bg-linear-to-r from-[#fff1be] from-28% via-[#ee87cb] via-70% to-[#b060ff] bg-clip-text text-transparent">
-                  Freelance Developer
+                  Photographe
                 </span>
               </p>
             </figcaption>
@@ -67,7 +67,7 @@ const Freelance = () => {
                 <span aria-hidden="true" className="absolute -translate-x-full">
                   “
                 </span>
-                Dashboard super clair : je sais toujours où j’en suis.
+                  J’envoie mes plans, maquettes, devis et factures au même endroit : c’est rapide et tellement facile.
                 <span aria-hidden="true" className="absolute">
                   ”
                 </span>
@@ -77,7 +77,7 @@ const Freelance = () => {
               <p className="text-sm font-medium text-white">Conor Neville</p>
               <p className="text-sm font-medium">
                 <span className="bg-linear-to-r from-[#fff1be] from-28% via-[#ee87cb] via-70% to-[#b060ff] bg-clip-text text-transparent">
-                  Head of Customer Success, TaxPal
+                  Architecte
                 </span>
               </p>
             </figcaption>
@@ -102,7 +102,7 @@ const Freelance = () => {
                 <span aria-hidden="true" className="absolute -translate-x-full">
                   “
                 </span>
-                L’outil m’a vraiment aidé à lancer mon activité sans stress.
+                  Un tableau Kanban simple pour piloter tous mes évènements, j’adore !
                 <span aria-hidden="true" className="absolute">
                   ”
                 </span>
@@ -112,7 +112,7 @@ const Freelance = () => {
               <p className="text-sm font-medium text-white">Amy Chase</p>
               <p className="text-sm font-medium">
                 <span className="bg-linear-to-r from-[#fff1be] from-28% via-[#ee87cb] via-70% to-[#b060ff] bg-clip-text text-transparent">
-                  Head of GTM, Pocket
+                  Organisateur événementiel
                 </span>
               </p>
             </figcaption>
@@ -137,7 +137,7 @@ const Freelance = () => {
                 <span aria-hidden="true" className="absolute -translate-x-full">
                   “
                 </span>
-                Réponses rapides du support, équipe au top !
+                  Une plateforme flexible, ultra simple, Newbi m’a vraiment aidé à lancer mon activité sans stress.
                 <span aria-hidden="true" className="absolute">
                   ”
                 </span>
@@ -147,7 +147,7 @@ const Freelance = () => {
               <p className="text-sm font-medium text-white">Veronica Winton</p>
               <p className="text-sm font-medium">
                 <span className="bg-linear-to-r from-[#fff1be] from-28% via-[#ee87cb] via-70% to-[#b060ff] bg-clip-text text-transparent">
-                  CSO, Planeteria
+                  Graphiste
                 </span>
               </p>
             </figcaption>
@@ -159,7 +159,7 @@ const Freelance = () => {
         >
           <img
             alt=""
-            src="/images/lp-home/testimonials/dillon-lenora.jpg"
+            src="/images/lp-home/artist3D.jpg"
             className="absolute inset-x-0 top-0 aspect-square w-full object-cover"
           />
           <div
@@ -172,7 +172,7 @@ const Freelance = () => {
                 <span aria-hidden="true" className="absolute -translate-x-full">
                   “
                 </span>
-                Je gagne un temps fou dans mon administratif avec Newbi.
+                  Un prix parfait pour démarrer mon activité sereinement.
                 <span aria-hidden="true" className="absolute">
                   ”
                 </span>
@@ -182,47 +182,12 @@ const Freelance = () => {
               <p className="text-sm font-medium text-white">Dillon Lenora</p>
               <p className="text-sm font-medium">
                 <span className="bg-linear-to-r from-[#fff1be] from-28% via-[#ee87cb] via-70% to-[#b060ff] bg-clip-text text-transparent">
-                  VP of Sales, Detax
+                  Artiste 3D
                 </span>
               </p>
             </figcaption>
           </figure>
-        </div>
-        <div
-          style={{ opacity: 1 }}
-          className="relative flex aspect-[3/4] w-72 shrink-0 snap-start scroll-ml-(--scroll-padding) flex-col justify-end overflow-hidden rounded-xl sm:aspect-[3/4] sm:w-96"
-        >
-          <img
-            alt=""
-            src="/images/lp-home/testimonials/harriet-arron.jpg"
-            className="absolute inset-x-0 top-0 aspect-square w-full object-cover"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 rounded-xl bg-gradient-to-t from-gray-900 from-[calc(7/16*100%)] ring-1 ring-gray-950/10 ring-inset sm:from-30%"
-          ></div>
-          <figure className="relative p-7">
-            <blockquote>
-              <p className="relative text-lg/6 text-white">
-                <span aria-hidden="true" className="absolute -translate-x-full">
-                  “
-                </span>
-                Trésorerie, devis, relances… tout est réuni, c’est parfait!
-                <span aria-hidden="true" className="absolute">
-                  ”
-                </span>
-              </p>
-            </blockquote>
-            <figcaption className="mt-4 border-t border-white/20 pt-4">
-              <p className="text-sm font-medium text-white">Harriet Arron</p>
-              <p className="text-sm font-medium">
-                <span className="bg-linear-to-r from-[#fce8e6] from-28% via-[#f8f9fc] via-70% to-[#f0f4ff] bg-clip-text text-transparent">
-                  Account Manager, Commit
-                </span>
-              </p>
-            </figcaption>
-          </figure>
-        </div>
+        </div>    
         <div className="w-2xl shrink-0 sm:w-216"></div>
       </div>
       <div className="mt-16 px-6 lg:px-8">
@@ -236,7 +201,7 @@ const Freelance = () => {
               <div className="mt-2">
                 <a
                   className="inline-flex items-center gap-2 text-sm/6 font-medium text-[#5B4FFF]"
-                  href="#"
+                  href="/auth/signup"
                 >
                   Commencer
                   <svg
@@ -254,39 +219,6 @@ const Freelance = () => {
                   </svg>
                 </a>
               </div>
-            </div>
-            <div className="hidden sm:flex sm:gap-2">
-              <button
-                aria-label="Scroll to testimonial from Tina Yards"
-                className="size-2.5 rounded-full border border-transparent bg-gray-300 transition data-active:bg-gray-400 data-hover:bg-gray-400"
-                type="button"
-              ></button>
-              <button
-                aria-label="Scroll to testimonial from Conor Neville"
-                className="size-2.5 rounded-full border border-transparent bg-gray-300 transition data-active:bg-gray-400 data-hover:bg-gray-400"
-                type="button"
-              ></button>
-              <button
-                aria-label="Scroll to testimonial from Amy Chase"
-                className="size-2.5 rounded-full border border-transparent bg-gray-300 transition data-active:bg-gray-400 data-hover:bg-gray-400"
-                type="button"
-              ></button>
-              <button
-                aria-label="Scroll to testimonial from Veronica Winton"
-                className="size-2.5 rounded-full border border-transparent bg-gray-300 transition data-active:bg-gray-400 data-hover:bg-gray-400"
-                type="button"
-                data-active="true"
-              ></button>
-              <button
-                aria-label="Scroll to testimonial from Dillon Lenora"
-                className="size-2.5 rounded-full border border-transparent bg-gray-300 transition data-active:bg-gray-400 data-hover:bg-gray-400"
-                type="button"
-              ></button>
-              <button
-                aria-label="Scroll to testimonial from Harriet Arron"
-                className="size-2.5 rounded-full border border-transparent bg-gray-300 transition data-active:bg-gray-400 data-hover:bg-gray-400"
-                type="button"
-              ></button>
             </div>
           </div>
         </div>
