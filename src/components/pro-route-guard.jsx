@@ -2,18 +2,36 @@
 
 import { useSubscription } from "@/src/contexts/subscription-context";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 export function ProRouteGuard({ children, pageName }) {
-  const { isActive, loading } = useSubscription();
+  const { isActive, loading, subscription, hasInitialized } = useSubscription();
   const router = useRouter();
+  const [hasChecked, setHasChecked] = useState(false);
 
   useEffect(() => {
-    if (!loading && !isActive()) {
-      router.replace("/dashboard/outils");
+    // Attendre que l'initialisation soit complète
+    if (!loading && hasInitialized && !hasChecked) {
+      setHasChecked(true);
+      
+      // Vérifier si l'utilisateur a un abonnement actif
+      const hasActiveSubscription = isActive();
+      
+      console.log("ProRouteGuard - Vérification finale:", {
+        loading,
+        hasInitialized,
+        hasActiveSubscription,
+        subscription,
+        pageName
+      });
+      
+      if (!hasActiveSubscription) {
+        console.log("Redirection vers /dashboard/outils - pas d'abonnement actif");
+        router.replace("/dashboard/outils");
+      }
     }
-  }, [loading, isActive, router]);
+  }, [loading, hasInitialized, subscription, router, isActive, hasChecked, pageName]);
 
   if (loading) {
     return (

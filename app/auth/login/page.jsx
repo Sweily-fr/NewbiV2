@@ -69,7 +69,16 @@ const signInWithProvider = async (provider) => {
         toast.success(`Vous etes connecté avec ${provider}`);
       },
       onError: (error) => {
-        toast.error(`Erreur lors de la connexion avec ${provider}`);
+        console.error(`Erreur de connexion ${provider}:`, error);
+        
+        // Vérifier si c'est une erreur de compte désactivé
+        if (error.message && error.message.includes("désactivé")) {
+          toast.error(error.message);
+        } else if (error.message && error.message.includes("réactivation")) {
+          toast.error(error.message);
+        } else {
+          toast.error(`Erreur lors de la connexion avec ${provider}`);
+        }
         throw error;
       },
     }

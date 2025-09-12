@@ -8,10 +8,12 @@ const SubscriptionContext = createContext();
 export function SubscriptionProvider({ children }) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const { data: session } = useSession();
 
   const fetchSubscription = async () => {
     if (!session?.session?.activeOrganizationId) {
+      console.log("Pas d'organisation active, subscription = null");
       setSubscription(null);
       setLoading(false);
       return;
@@ -51,11 +53,14 @@ export function SubscriptionProvider({ children }) {
       }
 
       setSubscription(activeSubscription || null);
+      console.log("Subscription définie dans le contexte:", activeSubscription || null);
     } catch (error) {
       console.error("Exception récupération abonnement:", error);
       setSubscription(null);
     } finally {
       setLoading(false);
+      setHasInitialized(true);
+      console.log("Loading terminé, hasInitialized = true");
     }
   };
 
@@ -79,14 +84,15 @@ export function SubscriptionProvider({ children }) {
   };
 
   const isActive = () => {
-    return (
-      subscription?.status === "active" || subscription?.status === "trialing"
-    );
+    const result = subscription?.status === "active" || subscription?.status === "trialing";
+    console.log("isActive() appelé:", { subscription, result });
+    return result;
   };
 
   const value = {
     subscription,
     loading,
+    hasInitialized,
     refreshSubscription,
     hasFeature,
     getLimit,

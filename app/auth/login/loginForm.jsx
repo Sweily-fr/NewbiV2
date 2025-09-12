@@ -130,7 +130,30 @@ const LoginForm = () => {
         }
       },
       onError: (error) => {
-        toast.error("Erreur lors de la connexion");
+        console.error("Erreur de connexion:", error);
+        console.error("Type d'erreur:", typeof error);
+        console.error("Propriétés de l'erreur:", Object.keys(error));
+        
+        // Essayer différents formats d'erreur
+        let errorMessage = null;
+        
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+        
+        console.error("Message d'erreur extrait:", errorMessage);
+        
+        // Vérifier si c'est une erreur de compte désactivé
+        if (errorMessage && (errorMessage.includes("désactivé") || errorMessage.includes("réactivation"))) {
+          toast.error(errorMessage);
+        } else {
+          // Erreur générique pour les autres cas
+          toast.error("Erreur lors de la connexion");
+        }
       },
     });
   };

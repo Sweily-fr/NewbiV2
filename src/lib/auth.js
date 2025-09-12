@@ -14,6 +14,76 @@ import { authClient } from "./auth-client";
 import Stripe from "stripe";
 // import { bearer } from "better-auth/plugins";
 
+// Fonction pour envoyer un email de réactivation
+async function sendReactivationEmail(user) {
+  const reactivationUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reactivate-account?email=${encodeURIComponent(user.email)}&token=${generateReactivationToken(user._id.toString())}`;
+  
+  const htmlTemplate = `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Réactivez votre compte</title>
+    </head>
+    <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+      <div style="max-width: 500px; margin: 0 auto;">
+        
+        <!-- Logo -->
+        <div style="text-align: center; margin-bottom: 40px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+        </div>
+        
+        <!-- Titre principal -->
+        <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: center;">
+          Réactivez votre compte
+        </h1>
+        
+        <!-- Message principal -->
+        <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: center;">
+          Votre compte a été désactivé. Cliquez sur le bouton ci-dessous pour le réactiver et retrouver l'accès à vos données.
+        </p>
+        
+        <!-- Bouton CTA -->
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${reactivationUrl}" style="display: inline-block; background-color: #5B4FFF; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+            Réactiver mon compte
+          </a>
+        </div>
+        
+        <!-- Lien de secours -->
+        <p style="font-size: 11px; line-height: 1.4; color: #9ca3af; margin: 32px 0 0 0; text-align: center;">
+          Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+          <span style="color: #5B4FFF; word-break: break-all;">${reactivationUrl}</span>
+        </p>
+        
+        <!-- Footer -->
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
+          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+            Ce lien expire dans 24 heures. Si vous n'avez pas demandé cette réactivation, ignorez cet e-mail.
+          </p>
+        </div>
+        
+      </div>
+    </body>
+    </html>
+  `;
+
+  await resend.emails.send({
+    to: user.email,
+    subject: "Réactivez votre compte - Newbi",
+    html: htmlTemplate,
+    from: "Newbi <noreply@newbi.sweily.fr>",
+  });
+}
+
+// Fonction pour générer un token de réactivation
+function generateReactivationToken(userId) {
+  // Simple token basé sur l'ID utilisateur et timestamp
+  const timestamp = Date.now();
+  return Buffer.from(`${userId}:${timestamp}`).toString('base64');
+}
+
 export const auth = betterAuth({
   database: mongodbAdapter(mongoDb),
   appName: "Newbi",
@@ -784,6 +854,26 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: false,
+    async signInRateLimit(request) {
+      return {
+        window: 60,
+        max: 5,
+      };
+    },
+    async beforeSignIn({ user }, request) {
+      // Vérifier si le compte est actif
+      if (user.isActive === false) {
+        console.log(`Tentative de connexion d'un compte désactivé: ${user.email}`);
+        
+        // Envoyer un email de réactivation
+        await sendReactivationEmail(user);
+        
+        throw new Error("Votre compte a été désactivé. Un email de réactivation vous a été envoyé.");
+      }
+      
+      return user;
+    },
     sendResetPassword: async ({ user, url, token }, request) => {
       const htmlTemplate = `
         <!DOCTYPE html>
@@ -943,6 +1033,11 @@ export const auth = betterAuth({
         required: false,
         defaultValue: "",
       },
+      isActive: {
+        type: "boolean",
+        required: false,
+        defaultValue: true,
+      },
     },
   },
   socialProviders: {
@@ -957,6 +1052,40 @@ export const auth = betterAuth({
   },
 
   hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/sign-in/email") {
+        return;
+      }
+
+      console.log("Hook before signIn email déclenché");
+      
+      const email = ctx.body?.email;
+      if (!email) {
+        console.log("Pas d'email trouvé dans la requête");
+        return;
+      }
+
+      console.log("Vérification du statut isActive pour:", email);
+
+      // Vérifier si l'utilisateur existe et s'il est actif
+      const { mongoDb } = await import("./mongodb");
+      const usersCollection = mongoDb.collection("user");
+      
+      const user = await usersCollection.findOne({ email: email });
+      
+      if (user && user.isActive === false) {
+        console.log("Utilisateur désactivé détecté, envoi de l'email de réactivation");
+        
+        // Envoyer l'email de réactivation
+        await sendReactivationEmail(user);
+        
+        // Bloquer la connexion
+        const { APIError } = await import("better-auth/api");
+        throw new APIError("BAD_REQUEST", {
+          message: "Votre compte a été désactivé. Un email de réactivation vous a été envoyé.",
+        });
+      }
+    }),
     after: createAuthMiddleware(async (ctx) => {
       // Filtrer uniquement les callbacks OAuth
       if (!ctx.path?.includes("/callback/")) {

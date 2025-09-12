@@ -35,17 +35,29 @@ export function DeactivateAccountModal({ isOpen, onClose, userEmail }) {
     }
 
     try {
-      // TODO: Implémenter l'API de désactivation de compte
       console.log("Désactivation du compte pour:", userEmail);
 
-      // Simulation d'un appel API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Appel à l'API de désactivation
+      const response = await fetch("/api/account/deactivate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: userEmail }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la désactivation");
+      }
 
       toast.success("Compte désactivé avec succès");
       onClose();
       reset();
 
-      // TODO: Rediriger vers la page de connexion ou d'accueil
+      // Rediriger vers la page de connexion après un délai
+      setTimeout(() => {
+        window.location.href = "/auth/login";
+      }, 2000);
     } catch (error) {
       console.error("Erreur lors de la désactivation:", error);
       toast.error("Erreur lors de la désactivation du compte");

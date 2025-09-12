@@ -155,7 +155,7 @@ export default function UnifiedTransactions({ limit = 5, className }) {
     } else if (transaction.type === "income") {
       return <ArrowDownLeft className="h-4 w-4" />;
     } else if (transaction.type === "invoice") {
-      return <FileText className="h-4 w-4 text-blue-500" />;
+      return <FileText className="h-4 w-4" />;
     }
     return <CreditCard className="h-4 w-4 text-gray-500" />;
   };
