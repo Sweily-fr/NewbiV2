@@ -148,7 +148,7 @@ export default function Settings() {
         companyPhone:
           sanitizedFormData.phone || existingOrgData.companyPhone || "",
         website: sanitizedFormData.website || existingOrgData.website || "",
-        logo: sanitizedFormData.logo || existingOrgData.logo || "",
+        logo: sanitizedFormData.logo !== undefined ? sanitizedFormData.logo : existingOrgData.logo || null,
 
         // Informations légales
         siret: sanitizedFormData.legal?.siret || existingOrgData.siret || "",
@@ -234,13 +234,16 @@ export default function Settings() {
   // Charger les données de l'organisation et du user dans le formulaire
   useEffect(() => {
     if (organization && session?.user) {
+      console.log("🔄 Mise à jour du formulaire avec organisation:", organization);
+      console.log("🔄 Logo de l'organisation:", organization.logo);
+      
       reset({
         name: organization.companyName || "",
         email: organization.companyEmail || "",
         phone: organization.companyPhone || "",
         website: organization.website || "",
         description: organization.description || "",
-        logo: organization.logo || "",
+        logo: organization.logo || null,
         address: {
           street: organization.addressStreet || "",
           city: organization.addressCity || "",

@@ -545,6 +545,12 @@ export const auth = betterAuth({
               input: true,
               required: false,
             },
+            // Company logo
+            logo: {
+              type: "string",
+              input: true,
+              required: false,
+            },
           },
         },
       },

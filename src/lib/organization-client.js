@@ -105,6 +105,9 @@ export function useActiveOrganization() {
       setLoading(true);
       setError(null);
       const org = await getActiveOrganization();
+      console.log("🔍 Organisation récupérée:", org);
+      console.log("🔍 Logo dans l'organisation:", org?.logo);
+      console.log("🔍 Organisation complète:", JSON.stringify(org, null, 2));
       setOrganization(org);
     } catch (err) {
       setError(err);
@@ -121,10 +124,25 @@ export function useActiveOrganization() {
 
     try {
       const result = await updateOrganization(organization.id, data, options);
-      // Mettre à jour l'état local avec les données envoyées pour éviter le refetch
-      // qui pourrait remettre d'anciennes valeurs
-      const updatedOrg = { ...organization, ...data };
-      setOrganization(updatedOrg);
+      
+      // Si on supprime le logo (data.logo === null), forcer le nettoyage complet
+      if (data.logo === null || data.logo === undefined) {
+        console.log("🧹 Suppression logo détectée - nettoyage forcé de l'état");
+        const cleanedOrg = { ...organization, ...data, logo: null };
+        setOrganization(cleanedOrg);
+        
+        // Forcer un refetch après un délai pour s'assurer de la synchronisation
+        setTimeout(() => {
+          console.log("🔄 Refetch forcé après suppression logo");
+          fetchOrganization();
+        }, 100);
+      } else {
+        // Mettre à jour l'état local avec les données envoyées pour éviter le refetch
+        // qui pourrait remettre d'anciennes valeurs
+        const updatedOrg = { ...organization, ...data };
+        setOrganization(updatedOrg);
+      }
+      
       return result;
     } catch (error) {
       throw error;

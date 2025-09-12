@@ -23,6 +23,7 @@ export const authClient = createAuthClient({
             companyEmail: { type: "string" },
             companyPhone: { type: "string" },
             website: { type: "string" },
+            logo: { type: "string" },
             // Legal information
             siret: { type: "string" },
             vatNumber: { type: "string" },
