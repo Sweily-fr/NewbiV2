@@ -38,6 +38,7 @@ import {
   INVOICE_STATUS_COLORS,
 } from "@/src/graphql/invoiceQueries";
 import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
+import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
@@ -169,6 +170,9 @@ export default function InvoiceSidebar({
     setSelectedCreditNote(creditNote);
     setIsCreditNotePreviewOpen(true);
   };
+
+  // Vérifier si la facture a atteint sa limite d'avoirs
+  const creditNoteLimitReached = hasReachedCreditNoteLimit(invoice, creditNotes);
 
   const isLoading = markingAsPaid || changingStatus;
 
@@ -347,7 +351,7 @@ export default function InvoiceSidebar({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-normal">Avoirs</h3>
-              {(invoice.status === INVOICE_STATUS.PENDING || invoice.status === INVOICE_STATUS.COMPLETED || invoice.status === INVOICE_STATUS.CANCELED) && (
+              {(invoice.status === INVOICE_STATUS.PENDING || invoice.status === INVOICE_STATUS.COMPLETED || invoice.status === INVOICE_STATUS.CANCELED) && !creditNoteLimitReached && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -404,8 +408,17 @@ export default function InvoiceSidebar({
                 {(invoice.status === INVOICE_STATUS.PENDING || invoice.status === INVOICE_STATUS.COMPLETED || invoice.status === INVOICE_STATUS.CANCELED) ? (
                   <div>
                     <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Aucun avoir créé</p>
-                    <p className="text-xs mt-1">Cliquez sur "Créer" pour ajouter un avoir</p>
+                    {creditNoteLimitReached ? (
+                      <>
+                        <p>Limite d'avoirs atteinte</p>
+                        <p className="text-xs mt-1">La somme des avoirs a atteint le montant de la facture</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>Aucun avoir créé</p>
+                        <p className="text-xs mt-1">Cliquez sur "Créer" pour ajouter un avoir</p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div>

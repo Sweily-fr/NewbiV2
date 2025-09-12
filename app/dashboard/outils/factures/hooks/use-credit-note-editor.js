@@ -8,6 +8,7 @@ import {
   useCreateCreditNote,
   useUpdateCreditNote,
   useCreditNote,
+  useCreditNotesByInvoice,
   CREDIT_TYPE,
   REFUND_METHOD,
 } from "@/src/graphql/creditNoteQueries";
@@ -32,6 +33,7 @@ export function useCreditNoteEditor({ mode, creditNoteId, invoiceId, initialData
   // GraphQL hooks
   const { creditNote: existingCreditNote, loading: loadingCreditNote } = useCreditNote(creditNoteId);
   const { invoice: originalInvoice, loading: loadingInvoice } = useInvoice(invoiceId);
+  const { creditNotes: existingCreditNotes, loading: loadingExistingCreditNotes } = useCreditNotesByInvoice(invoiceId);
 
   const { createCreditNote, loading: creating, workspaceId: debugWorkspaceId } = useCreateCreditNote();
   const { updateCreditNote, loading: updating } = useUpdateCreditNote();
@@ -74,6 +76,60 @@ export function useCreditNoteEditor({ mode, creditNoteId, invoiceId, initialData
       setValue("number", formattedNumber, { shouldDirty: false });
     }
   }, [mode, numberLoading, nextCreditNoteNumber, setValue]);
+
+  // Calculate totals
+  const calculateTotals = useCallback((items = [], discount = 0, discountType = "PERCENTAGE") => {
+    const itemTotals = items.reduce(
+      (acc, item) => {
+        const quantity = parseFloat(item.quantity) || 0;
+        const unitPrice = parseFloat(item.unitPrice) || 0;
+        const vatRate = parseFloat(item.vatRate) || 0;
+        const itemDiscount = parseFloat(item.discount) || 0;
+
+        let itemTotal = quantity * unitPrice;
+
+        // Apply item discount
+        if (itemDiscount > 0) {
+          if (item.discountType === "PERCENTAGE") {
+            itemTotal = itemTotal * (1 - itemDiscount / 100);
+          } else {
+            itemTotal = itemTotal - itemDiscount; // Permettre les valeurs négatives pour les avoirs
+          }
+        }
+
+        const vatAmount = itemTotal * (vatRate / 100);
+
+        return {
+          totalHT: acc.totalHT + itemTotal,
+          totalVAT: acc.totalVAT + vatAmount,
+        };
+      },
+      { totalHT: 0, totalVAT: 0 }
+    );
+
+    let finalTotalHT = itemTotals.totalHT;
+
+    // Apply global discount
+    if (discount > 0) {
+      if (discountType === "PERCENTAGE") {
+        finalTotalHT = finalTotalHT * (1 - discount / 100);
+      } else {
+        finalTotalHT = finalTotalHT - discount; // Permettre les valeurs négatives pour les avoirs
+      }
+    }
+
+    const discountAmount = itemTotals.totalHT - finalTotalHT;
+    const finalTotalTTC = finalTotalHT + itemTotals.totalVAT;
+
+    // Credit notes have negative amounts
+    return {
+      totalHT: -itemTotals.totalHT,
+      totalVAT: -itemTotals.totalVAT,
+      finalTotalHT: -finalTotalHT,
+      finalTotalTTC: -finalTotalTTC,
+      discountAmount: -discountAmount,
+    };
+  }, []);
 
   // Save function
   const save = useCallback(
@@ -151,9 +207,36 @@ export function useCreditNoteEditor({ mode, creditNoteId, invoiceId, initialData
         return;
       }
 
+      // Validate that credit note amount doesn't exceed remaining invoice amount
+      if (originalInvoice && existingCreditNotes) {
+        const totals = calculateTotals(data.items, data.discount, data.discountType);
+        const creditNoteAmount = Math.abs(totals.finalTotalTTC);
+        const invoiceAmount = originalInvoice.finalTotalTTC || 0;
+        
+        // Calculate existing credit notes total
+        const existingCreditNotesTotal = existingCreditNotes.reduce((sum, creditNote) => {
+          return sum + Math.abs(creditNote.finalTotalTTC || 0);
+        }, 0);
+        
+        const remainingAmount = invoiceAmount - existingCreditNotesTotal;
+        
+        console.log('Credit Note Validation:', {
+          creditNoteAmount,
+          invoiceAmount,
+          existingCreditNotesTotal,
+          remainingAmount,
+          wouldExceed: creditNoteAmount > remainingAmount
+        });
+        
+        if (creditNoteAmount > remainingAmount) {
+          toast.error(`Le montant de cet avoir (${creditNoteAmount.toFixed(2)}€) dépasse le montant restant disponible (${remainingAmount.toFixed(2)}€). La somme des avoirs ne peut pas dépasser le montant de la facture originale (${invoiceAmount.toFixed(2)}€).`);
+          return;
+        }
+      }
+
       return await save(data, { redirect });
     },
-    [getValues, save]
+    [getValues, save, originalInvoice, calculateTotals, existingCreditNotes]
   );
 
   // Finalize credit note (same as create since only CREATED status exists)
@@ -163,60 +246,6 @@ export function useCreditNoteEditor({ mode, creditNoteId, invoiceId, initialData
     },
     [createCreditNoteAction]
   );
-
-  // Calculate totals
-  const calculateTotals = useCallback((items = [], discount = 0, discountType = "PERCENTAGE") => {
-    const itemTotals = items.reduce(
-      (acc, item) => {
-        const quantity = parseFloat(item.quantity) || 0;
-        const unitPrice = parseFloat(item.unitPrice) || 0;
-        const vatRate = parseFloat(item.vatRate) || 0;
-        const itemDiscount = parseFloat(item.discount) || 0;
-
-        let itemTotal = quantity * unitPrice;
-
-        // Apply item discount
-        if (itemDiscount > 0) {
-          if (item.discountType === "PERCENTAGE") {
-            itemTotal = itemTotal * (1 - itemDiscount / 100);
-          } else {
-            itemTotal = itemTotal - itemDiscount; // Permettre les valeurs négatives pour les avoirs
-          }
-        }
-
-        const vatAmount = itemTotal * (vatRate / 100);
-
-        return {
-          totalHT: acc.totalHT + itemTotal,
-          totalVAT: acc.totalVAT + vatAmount,
-        };
-      },
-      { totalHT: 0, totalVAT: 0 }
-    );
-
-    let finalTotalHT = itemTotals.totalHT;
-
-    // Apply global discount
-    if (discount > 0) {
-      if (discountType === "PERCENTAGE") {
-        finalTotalHT = finalTotalHT * (1 - discount / 100);
-      } else {
-        finalTotalHT = finalTotalHT - discount; // Permettre les valeurs négatives pour les avoirs
-      }
-    }
-
-    const discountAmount = itemTotals.totalHT - finalTotalHT;
-    const finalTotalTTC = finalTotalHT + itemTotals.totalVAT;
-
-    // Credit notes have negative amounts
-    return {
-      totalHT: -itemTotals.totalHT,
-      totalVAT: -itemTotals.totalVAT,
-      finalTotalHT: -finalTotalHT,
-      finalTotalTTC: -finalTotalTTC,
-      discountAmount: -discountAmount,
-    };
-  }, []);
 
   // Update totals when items or discount change
   useEffect(() => {
@@ -237,7 +266,7 @@ export function useCreditNoteEditor({ mode, creditNoteId, invoiceId, initialData
     formData,
     originalInvoice,
     existingCreditNote,
-    loading: loadingCreditNote || loadingInvoice || creating || updating || saving || numberLoading,
+    loading: loadingCreditNote || loadingInvoice || creating || updating || saving || numberLoading || loadingExistingCreditNotes,
     isDirty,
     errors,
     save,
@@ -425,6 +454,9 @@ function transformFormDataToInput(formData, originalInvoiceId) {
   // Validate and clean items
   const items = (cleanedData.items || []).map(item => {
     const cleanedItem = { ...item };
+    
+    // Remove calculated fields that are not part of ItemInput schema
+    delete cleanedItem.total;
     
     // For credit notes, quantities can be negative (representing credits)
     // But we still need to ensure it's a valid number
