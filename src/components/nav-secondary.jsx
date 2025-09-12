@@ -113,10 +113,10 @@ function SettingsDropdownMenu() {
             className="cursor-pointer"
             asChild
           >
-            <Link href={"/dashboard/settings/delete-account"}>
+            <Link href={"/dashboard/account"}>
               <IconTrash />
               <span className="font-polysans font-light">
-                Supprimer le compte
+                Désactiver le compte
               </span>
             </Link>
           </DropdownMenuItem>

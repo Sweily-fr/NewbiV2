@@ -55,8 +55,9 @@ import { useQuery, useMutation } from "@apollo/client";
 import { KanbanBoardIllustration } from "@/src/components/kanban-board-illustration";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function KanbanPage() {
+function KanbanContent() {
   const {
     // State
     searchTerm,
@@ -411,5 +412,13 @@ export default function KanbanPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function KanbanPage() {
+  return (
+    <ProRouteGuard pageName="Tableaux Kanban">
+      <KanbanContent />
+    </ProRouteGuard>
   );
 }

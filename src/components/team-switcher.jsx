@@ -38,6 +38,10 @@ export function TeamSwitcher() {
   const handleSetActiveOrganization = async (organizationId) => {
     try {
       await authClient.organization.setActive({ organizationId });
+      
+      // Forcer la mise à jour des hooks Better Auth
+      // Utiliser window.location.reload() pour s'assurer que tout se met à jour
+      window.location.reload();
     } catch (error) {
       console.error("Erreur lors du changement d'organisation:", error);
     }

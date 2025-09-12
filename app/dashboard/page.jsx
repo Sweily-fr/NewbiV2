@@ -50,20 +50,37 @@ import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
 import LoadingSkeleton from "./loading";
 import { useState, useEffect, useMemo } from "react";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
+import { processInvoicesForCharts, processExpensesForCharts, getIncomeChartConfig, getExpenseChartConfig } from "@/src/utils/chartDataProcessors";
 
 function DashboardContent() {
   const { session } = useUser();
   const { workspaceId } = useWorkspace();
 
-  // Utilisation des données de dépenses et factures existantes
-  const { expenses, loading: expensesLoading, refetch: refetchExpenses } = useExpenses({ status: 'PAID', limit: 1000 });
+  // Utilisation des données de dépenses et factures existantes - sans paramètres pour éviter les problèmes
+  const { expenses, loading: expensesLoading, refetch: refetchExpenses } = useExpenses();
   const { invoices, loading: invoicesLoading } = useInvoices();
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
 
+  // Debug logs pour comprendre les données
+  console.log("🔍 Debug données dashboard:");
+  console.log("- Expenses:", expenses?.length || 0, expenses);
+  console.log("- Invoices:", invoices?.length || 0, invoices);
+  console.log("- ExpensesLoading:", expensesLoading);
+  console.log("- InvoicesLoading:", invoicesLoading);
+  console.log("- WorkspaceId:", workspaceId);
+
   // Filtrer les factures payées
   const paidInvoices = useMemo(() => {
-    return invoices.filter((invoice) => invoice.status === "COMPLETED");
+    const paid = invoices.filter((invoice) => invoice.status === "COMPLETED");
+    console.log("📋 Factures payées filtrées:", paid.length, paid);
+    // Debug des dates de factures
+    paid.forEach(invoice => {
+      console.log(`📅 Facture ${invoice.id}: issueDate=${invoice.issueDate}, finalTotalTTC=${invoice.finalTotalTTC}`);
+      const date = new Date(parseInt(invoice.issueDate));
+      console.log(`📅 Date convertie:`, date, date.toISOString());
+    });
+    return paid;
   }, [invoices]);
 
   const loading = expensesLoading || invoicesLoading || transactionsLoading;
@@ -81,187 +98,17 @@ function DashboardContent() {
     setTransactionsLoading(false);
   }, []);
 
-  // Process invoices data for income charts
-  const processInvoicesForCharts = () => {
-    console.log(" Traitement des revenus pour graphiques - Factures:", paidInvoices.length, "Dépenses type INCOME:", expenses.filter(e => e.notes && e.notes.startsWith('[INCOME]')).length);
-    console.log(" Revenus totaux calculés:", totalIncome);
-    console.log(" Dépenses totales calculées:", totalExpenses);
-    console.log(" Toutes les expenses:", expenses.map(e => ({id: e.id, notes: e.notes, amount: e.amount, isVatDeductible: e.isVatDeductible})));
-    console.log("🔍 Expenses filtrées pour revenus:", expenses.filter(e => e.notes && e.notes.startsWith('[INCOME]')));
+  // Utiliser les fonctions utilitaires importées
+
+  // Calculate totals from real data - uniquement factures payées et toutes les dépenses
+  const totalIncome = paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
+  const totalExpenses = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
   
-  // Debug: Vérifier si les données sont récentes
-  const today = new Date().toISOString().split("T")[0];
-  const todayIncomes = expenses.filter(e => {
-    if (!e.date) return false;
-    const expenseDate = new Date(e.date);
-    if (isNaN(expenseDate.getTime())) return false;
-    const expenseDateStr = expenseDate.toISOString().split("T")[0];
-    return expenseDateStr === today && e.notes && e.notes.startsWith('[INCOME]');
-  });
-  console.log("🗓️ Revenus d'aujourd'hui:", todayIncomes);
-  
-  // Debug: Forcer la vérification de TOUTES les expenses avec [INCOME]
-  const allIncomes = expenses.filter(e => e.notes && e.notes.includes('[INCOME]'));
-  console.log("💰 TOUTES les expenses avec [INCOME]:", allIncomes.map(e => ({
-    id: e.id, 
-    notes: e.notes, 
-    amount: e.amount, 
-    date: e.date,
-    isVatDeductible: e.isVatDeductible
-  })));
-    const now = new Date();
-    const chartData = [];
-
-    // Generate data for the last 90 days
-    for (let i = 89; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split("T")[0];
-
-      // Filter invoices for this day
-      const dayInvoices = paidInvoices.filter((invoice) => {
-        if (!invoice.issueDate) return false;
-        
-        let invoiceDate;
-        if (typeof invoice.issueDate === 'string') {
-          invoiceDate = new Date(invoice.issueDate);
-        } else if (typeof invoice.issueDate === 'number') {
-          invoiceDate = new Date(invoice.issueDate);
-        } else {
-          invoiceDate = new Date(invoice.issueDate);
-        }
-        
-        // Vérifier si la date est valide
-        if (isNaN(invoiceDate.getTime())) {
-          console.warn('Date de facture invalide:', invoice.issueDate, 'pour la facture:', invoice.id);
-          return false;
-        }
-        
-        return invoiceDate.toISOString().split("T")[0] === dateStr;
-      });
-
-      // Filter income expenses for this day (using isVatDeductible as indicator)
-      const dayIncomeExpenses = expenses.filter((expense) => {
-        if (!expense.date) return false;
-        
-        let expenseDate;
-        if (typeof expense.date === 'string') {
-          expenseDate = new Date(expense.date);
-        } else if (typeof expense.date === 'number') {
-          expenseDate = new Date(expense.date);
-        } else {
-          expenseDate = new Date(expense.date);
-        }
-        
-        // Vérifier si la date est valide
-        if (isNaN(expenseDate.getTime())) return false;
-        
-        const isCorrectDate = expenseDate.toISOString().split("T")[0] === dateStr;
-        // Utiliser UNIQUEMENT les notes pour identifier les revenus (ignorer isVatDeductible)
-        const isIncome = expense.notes && expense.notes.includes('[INCOME]');
-        
-        console.log(`🟢 Income check - Expense ${expense.id}: notes="${expense.notes}", isVatDeductible=${expense.isVatDeductible}, isIncome=${isIncome}, amount=${expense.amount}, date=${expense.date}`);
-        
-        return isCorrectDate && isIncome;
-      });
-
-      // Calculate income for this day (invoices + income expenses)
-      const dayInvoiceIncome = dayInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
-      const dayExpenseIncome = dayIncomeExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-      const dayIncome = dayInvoiceIncome + dayExpenseIncome;
-
-      if (dayIncome > 0) {
-        console.log(`📅 Date ${dateStr}: Revenus=${dayIncome} (Factures=${dayInvoiceIncome}, Revenus manuels=${dayExpenseIncome})`);
-        console.log(`📝 Détail revenus manuels pour ${dateStr}:`, dayIncomeExpenses.map(e => ({id: e.id, amount: e.amount, notes: e.notes})));
-      }
-
-      chartData.push({
-        date: dateStr,
-        desktop: dayIncome,
-        mobile: dayIncome,
-      });
-    }
-
-    console.log("📊 Données graphique revenus générées:", chartData.filter(d => d.desktop > 0).length, "jours avec revenus");
-    console.log("📈 Sample données revenus:", chartData.slice(-7).map(d => ({date: d.date, amount: d.desktop})));
-    console.log("📋 Total chartData length:", chartData.length);
-    
-    // Pas de données de démonstration - utiliser uniquement les vraies données
-    
-    return chartData;
-  };
-
-  const processExpensesForCharts = () => {
-    console.log("Traitement des dépenses pour graphiques - Nombre total:", expenses.length);
-    const now = new Date();
-    const chartData = [];
-
-    // Generate data for the last 90 days
-    for (let i = 89; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split("T")[0];
-
-      // Filter expenses for this day - only real expenses (isVatDeductible: true or undefined)
-      const dayExpenses = expenses.filter((expense) => {
-        if (!expense.date) return false;
-        
-        let expenseDate;
-        if (typeof expense.date === 'string') {
-          expenseDate = new Date(expense.date);
-        } else if (typeof expense.date === 'number') {
-          expenseDate = new Date(expense.date);
-        } else {
-          expenseDate = new Date(expense.date);
-        }
-        
-        // Vérifier si la date est valide
-        if (isNaN(expenseDate.getTime())) return false;
-        
-        const isCorrectDate = expenseDate.toISOString().split("T")[0] === dateStr;
-        // Filtrer seulement les vraies dépenses (exclure les revenus identifiés par [INCOME])
-        const isExpense = !expense.notes || !expense.notes.includes('[INCOME]');
-        
-        console.log(`🔴 Expense check - Expense ${expense.id}: notes="${expense.notes}", isVatDeductible=${expense.isVatDeductible}, isExpense=${isExpense}, amount=${expense.amount}`);
-        
-        return isCorrectDate && isExpense;
-      });
-
-      // Calculate expenses for this day
-      const dayExpenseAmount = dayExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-
-      if (dayExpenseAmount > 0) {
-        console.log(`Date ${dateStr}: Dépenses=${dayExpenseAmount}, Dépenses du jour=${dayExpenses.length}`);
-      }
-
-      chartData.push({
-        date: dateStr,
-        desktop: dayExpenseAmount,
-        mobile: dayExpenseAmount,
-      });
-    }
-
-    console.log("Données graphique dépenses générées:", chartData.filter(d => d.desktop > 0).length, "jours avec dépenses");
-    console.log("📋 Total expense chartData length:", chartData.length);
-    
-    // Pas de données de démonstration - utiliser uniquement les vraies données
-    
-    return chartData;
-  };
-
-  // Calculate totals from real data - utiliser includes au lieu de startsWith pour plus de robustesse
-  const incomeExpenses = expenses.filter(e => e.notes && e.notes.includes('[INCOME]'));
-  const regularExpenses = expenses.filter(e => !e.notes || !e.notes.includes('[INCOME]'));
-  
-  const totalIncome = paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0) + 
-                     incomeExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-  const totalExpenses = regularExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-  
-  console.log("🧮 Calcul totaux - Revenus expenses:", incomeExpenses.length, "Dépenses normales:", regularExpenses.length);
+  console.log("🧮 Calcul totaux - Revenus factures:", paidInvoices.length, "Dépenses totales:", expenses.length);
 
   // Force recalculation when expenses change
-  const incomeChartData = useMemo(() => processInvoicesForCharts(), [expenses, paidInvoices]);
-  const expenseChartData = useMemo(() => processExpensesForCharts(), [expenses]);
+  const incomeChartData = useMemo(() => processInvoicesForCharts(paidInvoices), [expenses, paidInvoices]);
+  const expenseChartData = useMemo(() => processExpensesForCharts(expenses), [expenses]);
 
   // Si les données sont en cours de chargement, afficher le skeleton
   if (loading) {
@@ -270,48 +117,9 @@ function DashboardContent() {
 
   // Note: Les transactions sont maintenant gérées par le composant BridgeTransactions
 
-  const expenseChartConfig = {
-    visitors: {
-      label: "Visitors",
-    },
-    desktop: {
-      label: "Montant",
-      color: "#ef4444", // Rouge pour les dépenses
-    },
-    mobile: {
-      label: "Nombre de transactions",
-      color: "#dc2626", // Rouge plus foncé
-    },
-  };
-
-  // Configuration des couleurs pour les graphiques
-  const expenseChartConfigs = {
-    visitors: {
-      label: "Visitors",
-    },
-    desktop: {
-      label: "Montant",
-      color: "#ef4444", // Rouge pour les dépenses
-    },
-    mobile: {
-      label: "Nombre de transactions",
-      color: "#dc2626", // Rouge plus foncé
-    },
-  };
-
-  const incomeChartConfig = {
-    visitors: {
-      label: "Visitors",
-    },
-    desktop: {
-      label: "Montant",
-      color: "#22c55e", // Vert pour les revenus
-    },
-    mobile: {
-      label: "Nombre de transactions",
-      color: "#16a34a", // Vert plus foncé
-    },
-  };
+  // Utiliser les configurations importées
+  const incomeChartConfig = getIncomeChartConfig();
+  const expenseChartConfig = getExpenseChartConfig();
 
   const balanceChartConfig = {
     visitors: {
@@ -418,7 +226,7 @@ function DashboardContent() {
           description={formatCurrency(totalExpenses)}
           height="250px"
           className="shadow-xs w-1/2"
-          config={expenseChartConfigs}
+          config={expenseChartConfig}
           data={expenseChartData}
           hideMobileCurve={true}
         />

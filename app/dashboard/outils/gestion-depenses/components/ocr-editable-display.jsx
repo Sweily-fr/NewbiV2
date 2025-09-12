@@ -222,9 +222,9 @@ export default function OcrEditableDisplay({
               Informations financières
             </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             {/* Type de transaction */}
-            <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                 Type de transaction
               </Label>
@@ -233,7 +233,7 @@ export default function OcrEditableDisplay({
                   value={editedData.type}
                   onValueChange={(value) => updateField("type", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -242,19 +242,14 @@ export default function OcrEditableDisplay({
                   </SelectContent>
                 </Select>
               ) : (
-                <Badge
-                  className="bg-[#5b4fff]/30 border-[#5b4fff]/50 text-[#5b4fff] ml-4 text-[10px]"
-                  //   variant={
-                  //     editedData.type === "expense" ? "destructive" : "default"
-                  //   }
-                >
+                <Badge className="bg-[#5b4fff]/30 border-[#5b4fff]/20 text-[#5b4fff] text-[10px]">
                   {editedData.type === "expense" ? "Dépense" : "Revenu"}
                 </Badge>
               )}
             </div>
 
             {/* Montant */}
-            <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                 Montant
               </Label>
@@ -267,7 +262,7 @@ export default function OcrEditableDisplay({
                     onChange={(e) =>
                       updateField("amount", parseFloat(e.target.value) || 0)
                     }
-                    className="flex-1"
+                    className="w-24"
                   />
                   <Select
                     value={editedData.currency}
@@ -289,11 +284,9 @@ export default function OcrEditableDisplay({
                 </div>
               )}
             </div>
-          </div>
 
-          {/* TVA */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+            {/* Montant TVA */}
+            <div className="flex items-center justify-between">
               <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                 Montant TVA
               </Label>
@@ -305,6 +298,7 @@ export default function OcrEditableDisplay({
                   onChange={(e) =>
                     updateField("tax_amount", parseFloat(e.target.value) || 0)
                   }
+                  className="w-32"
                 />
               ) : (
                 <div className="text-sm text-gray-600">
@@ -313,7 +307,8 @@ export default function OcrEditableDisplay({
               )}
             </div>
 
-            <div className="space-y-2">
+            {/* Taux TVA */}
+            <div className="flex items-center justify-between">
               <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                 Taux TVA (%)
               </Label>
@@ -325,6 +320,7 @@ export default function OcrEditableDisplay({
                   onChange={(e) =>
                     updateField("tax_rate", parseFloat(e.target.value) || 0)
                   }
+                  className="w-20"
                 />
               ) : (
                 <div className="text-sm text-gray-600">
@@ -343,8 +339,8 @@ export default function OcrEditableDisplay({
             <Calendar className="h-4 w-4 text-gray-600" />
             <span className="text-sm font-normal">Dates</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                 Date de transaction
               </Label>
@@ -355,15 +351,16 @@ export default function OcrEditableDisplay({
                   onChange={(e) =>
                     updateField("transaction_date", e.target.value)
                   }
+                  className="w-40"
                 />
               ) : (
-                <div className="text-sm">
+                <div className="text-sm text-gray-600">
                   {editedData.transaction_date || "Non détectée"}
                 </div>
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                 Date d'échéance
               </Label>
@@ -372,9 +369,10 @@ export default function OcrEditableDisplay({
                   type="date"
                   value={editedData.due_date}
                   onChange={(e) => updateField("due_date", e.target.value)}
+                  className="w-40"
                 />
               ) : (
-                <div className="text-sm">
+                <div className="text-sm text-gray-600">
                   {editedData.due_date || "Non définie"}
                 </div>
               )}
@@ -390,8 +388,8 @@ export default function OcrEditableDisplay({
             <Building className="h-4 w-4 text-gray-600" />
             <span className="text-sm font-normal">Fournisseur</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                 Nom du fournisseur
               </Label>
@@ -400,15 +398,16 @@ export default function OcrEditableDisplay({
                   value={editedData.vendor_name}
                   onChange={(e) => updateField("vendor_name", e.target.value)}
                   placeholder="Nom du fournisseur"
+                  className="w-48"
                 />
               ) : (
-                <div className="text-sm font-medium">
+                <div className="text-sm text-gray-600">
                   {editedData.vendor_name || "Non détecté"}
                 </div>
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                 Numéro de document
               </Label>
@@ -419,9 +418,10 @@ export default function OcrEditableDisplay({
                     updateField("document_number", e.target.value)
                   }
                   placeholder="Référence du document"
+                  className="w-48"
                 />
               ) : (
-                <div className="text-sm">
+                <div className="text-sm text-gray-600">
                   {editedData.document_number || "Non détecté"}
                 </div>
               )}
@@ -429,16 +429,17 @@ export default function OcrEditableDisplay({
           </div>
         </CardContent>
       </Card>
+      <Separator />
 
       {/* Catégorie et statut */}
-      <Card className="shadow-none border-none">
-        <CardContent className="pt-6 px-2 space-y-4">
+      <Card className="shadow-none border-none py-2">
+        <CardContent className="px-2 space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <Tag className="h-4 w-4 text-gray-600" />
             <span className="text-sm font-medium">Classification</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                 Catégorie
               </Label>
@@ -447,7 +448,7 @@ export default function OcrEditableDisplay({
                   value={editedData.category}
                   onValueChange={(value) => updateField("category", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -467,7 +468,7 @@ export default function OcrEditableDisplay({
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                 Statut
               </Label>
@@ -476,7 +477,7 @@ export default function OcrEditableDisplay({
                   value={editedData.status}
                   onValueChange={(value) => updateField("status", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -503,107 +504,75 @@ export default function OcrEditableDisplay({
                 </Badge>
               )}
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-              Moyen de paiement
-            </Label>
-            {isEditing ? (
-              <Select
-                value={editedData.payment_method}
-                onValueChange={(value) => updateField("payment_method", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="card">Carte</SelectItem>
-                  <SelectItem value="transfer">Virement</SelectItem>
-                  <SelectItem value="cash">Espèces</SelectItem>
-                  <SelectItem value="check">Chèque</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-gray-400" />
-                <span className="text-sm">
-                  {editedData.payment_method === "card"
-                    ? "Carte"
-                    : editedData.payment_method === "transfer"
-                      ? "Virement"
-                      : editedData.payment_method === "cash"
-                        ? "Espèces"
-                        : editedData.payment_method === "check"
-                          ? "Chèque"
-                          : "Non détecté"}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center justify-between">
+              <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                Moyen de paiement
+              </Label>
+              {isEditing ? (
+                <Select
+                  value={editedData.payment_method}
+                  onValueChange={(value) =>
+                    updateField("payment_method", value)
+                  }
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="card">Carte</SelectItem>
+                    <SelectItem value="transfer">Virement</SelectItem>
+                    <SelectItem value="cash">Espèces</SelectItem>
+                    <SelectItem value="check">Chèque</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm">
+                    {editedData.payment_method === "card"
+                      ? "Carte"
+                      : editedData.payment_method === "transfer"
+                        ? "Virement"
+                        : editedData.payment_method === "cash"
+                          ? "Espèces"
+                          : editedData.payment_method === "check"
+                            ? "Chèque"
+                            : "Non détecté"}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Description */}
       <Card className="shadow-none border-none py-2">
-        <CardContent className="px-2">
+        <CardContent className="px-2 space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-sm font-medium">Description</span>
           </div>
-          {isEditing ? (
-            <Textarea
-              value={editedData.description}
-              onChange={(e) => updateField("description", e.target.value)}
-              placeholder="Description de la transaction"
-              rows={3}
-            />
-          ) : (
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              {editedData.description || "Aucune description"}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Données brutes (optionnel) */}
-      <Card className="shadow-none border-none">
-        <CardContent className="pt-6 px-2">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Données techniques</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowRawData(!showRawData)}
-              className="cursor-pointer"
-            >
-              {showRawData ? "Masquer" : "Afficher"}
-            </Button>
-          </div>
-          {showRawData && (
-            <div className="space-y-3">
-              <div>
-                <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                  Texte extrait
-                </Label>
-                <div className="mt-1 p-3 bg-gray-50 dark:bg-gray-900 rounded text-xs font-mono max-h-40 overflow-y-auto">
-                  {ocrResult.extractedText || "Aucun texte extrait"}
-                </div>
+          <div className="flex items-start justify-between">
+            <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mt-1">
+              Description
+            </Label>
+            {isEditing ? (
+              <Textarea
+                value={editedData.description}
+                onChange={(e) => updateField("description", e.target.value)}
+                placeholder="Description de la transaction"
+                rows={3}
+                className="flex-1 ml-4"
+              />
+            ) : (
+              <div className="flex-1 ml-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {editedData.description || "Aucune description"}
+                </p>
               </div>
-
-              {financialAnalysis && (
-                <div>
-                  <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                    Analyse complète
-                  </Label>
-                  <div className="mt-1 p-3 bg-gray-50 dark:bg-gray-900 rounded text-xs font-mono max-h-40 overflow-y-auto">
-                    <pre>{JSON.stringify(financialAnalysis, null, 2)}</pre>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
 

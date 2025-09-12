@@ -32,6 +32,7 @@ export default function AcceptInvitationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [userExists, setUserExists] = useState(null);
 
   useEffect(() => {
     const fetchInvitation = async () => {
@@ -58,6 +59,34 @@ export default function AcceptInvitationPage() {
 
         console.log("✅ Invitation récupérée:", data);
         setInvitation(data);
+
+        // Vérifier si l'utilisateur existe déjà
+        if (data.email) {
+          try {
+            const userCheckResponse = await fetch("/api/users/check-email", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ email: data.email }),
+            });
+
+            if (userCheckResponse.ok) {
+              const userCheckData = await userCheckResponse.json();
+              setUserExists(userCheckData.exists);
+              console.log(
+                `✅ Vérification utilisateur: ${data.email} ${userCheckData.exists ? "existe" : "n'existe pas"}`
+              );
+            }
+          } catch (userCheckError) {
+            console.error(
+              "❌ Erreur lors de la vérification de l'utilisateur:",
+              userCheckError
+            );
+            // En cas d'erreur, on assume que l'utilisateur n'existe pas
+            setUserExists(false);
+          }
+        }
       } catch (err) {
         console.error("❌ Erreur:", err);
         setError(err.message);
@@ -74,8 +103,14 @@ export default function AcceptInvitationPage() {
   // Fonction pour accepter l'invitation
   const handleAcceptInvitation = async () => {
     if (!session?.user) {
-      // Rediriger vers la page de création de compte avec l'invitation en paramètre
-      window.location.href = `/auth/signup?invitation=${invitationId}&email=${encodeURIComponent(invitation.email)}`;
+      // Vérifier si l'utilisateur existe déjà pour décider de la redirection
+      if (userExists) {
+        // L'utilisateur existe mais n'est pas connecté -> rediriger vers login
+        window.location.href = `/auth/login?invitation=${invitationId}&email=${encodeURIComponent(invitation.email)}`;
+      } else {
+        // L'utilisateur n'existe pas -> rediriger vers signup
+        window.location.href = `/auth/signup?invitation=${invitationId}&email=${encodeURIComponent(invitation.email)}`;
+      }
       return;
     }
 
@@ -347,7 +382,11 @@ export default function AcceptInvitationPage() {
                       Traitement...
                     </>
                   ) : !session?.user ? (
-                    "Créer mon compte"
+                    userExists ? (
+                      "Se connecter"
+                    ) : (
+                      "Créer mon compte"
+                    )
                   ) : (
                     "Accepter l'invitation"
                   )}
@@ -363,12 +402,14 @@ export default function AcceptInvitationPage() {
                   {isAccepting ? "Traitement..." : "Refuser"}
                 </Button>
 
-                {/* {!session?.user && (
+                {!session?.user && (
                   <div className="p-3 bg-[#5b4fff]/10 rounded text-xs text-[#5b4fff]/80 rounded-md border border-[#5b4fff]/40">
-                    <strong>Info:</strong> Vous serez redirigé vers
-                    l'inscription avec vos informations pré-remplies.
+                    <strong>Info:</strong>{" "}
+                    {userExists
+                      ? "Vous serez redirigé vers la connexion pour accéder à votre compte existant."
+                      : "Vous serez redirigé vers l'inscription avec vos informations pré-remplies."}
                   </div>
-                )} */}
+                )}
               </div>
             </>
           )}

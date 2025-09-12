@@ -153,7 +153,7 @@ export default function UnifiedTransactions({ limit = 5, className }) {
     } else if (transaction.type === "expense") {
       return <DollarSign className="h-3 w-3" />;
     } else if (transaction.type === "income") {
-      return <ArrowDownLeft className="h-4 w-4 text-green-500" />;
+      return <ArrowDownLeft className="h-4 w-4" />;
     } else if (transaction.type === "invoice") {
       return <FileText className="h-4 w-4 text-blue-500" />;
     }

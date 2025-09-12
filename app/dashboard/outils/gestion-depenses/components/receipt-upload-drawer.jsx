@@ -320,7 +320,9 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                         return <IconComponent className="h-5 w-5" />;
                       })()}
                       <div>
-                        <p className="font-medium text-sm">{selectedFile.name}</p>
+                        <p className="font-medium text-sm">
+                          {selectedFile.name}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {formatFileSize(selectedFile.size)}
                         </p>
@@ -359,8 +361,8 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                         Prêt pour le traitement
                       </h4>
                       <p className="text-xs text-blue-700 dark:text-blue-300">
-                        Le fichier a été uploadé avec succès. Cliquez sur "Traiter
-                        le reçu" pour lancer l'analyse OCR.
+                        Le fichier a été uploadé avec succès. Cliquez sur
+                        "Traiter le reçu" pour lancer l'analyse OCR.
                       </p>
                     </div>
                   </div>

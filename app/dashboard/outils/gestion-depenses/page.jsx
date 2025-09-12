@@ -7,20 +7,17 @@ import { useState, useMemo } from "react";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useExpenses } from "@/src/hooks/useExpenses";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
+import { processInvoicesForCharts, processExpensesForCharts, getIncomeChartConfig, getExpenseChartConfig } from "@/src/utils/chartDataProcessors";
 
 function GestionDepensesContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Récupération des dépenses depuis l'API
+  // Récupération des dépenses depuis l'API - sans paramètres pour éviter les problèmes
   const {
     expenses,
     loading: expensesLoading,
     error: expensesError,
-  } = useExpenses({
-    status: "PAID",
-    page: 1,
-    limit: 100,
-  });
+  } = useExpenses();
 
   // Récupération des factures payées depuis l'API
   const {
@@ -45,145 +42,22 @@ function GestionDepensesContent() {
     }).format(amount || 0);
   };
 
-  // Calcul des statistiques réelles
-  const {
-    totalIncome,
-    totalExpenses,
-    incomeTransactionCount,
-    expenseTransactionCount,
-    incomeChartData,
-    expenseChartData,
-  } = useMemo(() => {
-    // Calcul des dépenses
-    const expenseTotal = expenses.reduce(
-      (sum, expense) => sum + expense.amount,
-      0
-    );
-    const expenseCount = expenses.length;
+  // Calcul des statistiques réelles avec les utilitaires
+  const totalIncome = paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
+  const totalExpenses = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
 
-    // Calcul des revenus (factures payées)
-    const incomeTotal = paidInvoices.reduce(
-      (sum, invoice) => sum + invoice.finalTotalTTC,
-      0
-    );
-    const incomeCount = paidInvoices.length;
-
-    // Génération des données de graphique par mois (derniers 6 mois)
-    const now = new Date();
-    const months = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({
-        month: date.toLocaleDateString("fr-FR", { month: "short" }),
-        fullDate: date,
-      });
-    }
-
-    // Données pour le graphique des dépenses
-    const expenseChartData = months.map(({ month, fullDate }) => {
-      const monthExpenses = expenses.filter((expense) => {
-        // Gérer les dates qui peuvent être des timestamps ou des chaînes
-        let expenseDate;
-        if (typeof expense.date === "string") {
-          expenseDate = new Date(expense.date);
-        } else if (typeof expense.date === "number") {
-          expenseDate = new Date(expense.date);
-        } else {
-          expenseDate = new Date(expense.date);
-        }
-
-        return (
-          expenseDate.getMonth() === fullDate.getMonth() &&
-          expenseDate.getFullYear() === fullDate.getFullYear()
-        );
-      });
-
-      const monthTotal = monthExpenses.reduce(
-        (sum, expense) => sum + expense.amount,
-        0
-      );
-
-      return {
-        month,
-        desktop: monthTotal,
-        mobile: monthExpenses.length,
-      };
-    });
-
-    // Données pour le graphique des revenus
-    const incomeChartData = months.map(({ month, fullDate }) => {
-      const monthInvoices = paidInvoices.filter((invoice) => {
-        // Gérer les dates qui peuvent être des timestamps ou des chaînes
-        let invoiceDate;
-        if (typeof invoice.issueDate === "string") {
-          invoiceDate = new Date(invoice.issueDate);
-        } else if (typeof invoice.issueDate === "number") {
-          invoiceDate = new Date(invoice.issueDate);
-        } else {
-          invoiceDate = new Date(invoice.issueDate);
-        }
-
-        return (
-          invoiceDate.getMonth() === fullDate.getMonth() &&
-          invoiceDate.getFullYear() === fullDate.getFullYear()
-        );
-      });
-
-      const monthTotal = monthInvoices.reduce(
-        (sum, invoice) => sum + invoice.finalTotalTTC,
-        0
-      );
-
-      return {
-        month,
-        desktop: monthTotal,
-        mobile: monthInvoices.length,
-      };
-    });
-
-    return {
-      totalIncome: incomeTotal,
-      totalExpenses: expenseTotal,
-      incomeTransactionCount: incomeCount,
-      expenseTransactionCount: expenseCount,
-      incomeChartData,
-      expenseChartData,
-    };
-  }, [expenses, paidInvoices]);
+  // Utiliser les fonctions utilitaires pour les données de graphique
+  const incomeChartData = useMemo(() => processInvoicesForCharts(paidInvoices), [paidInvoices]);
+  const expenseChartData = useMemo(() => processExpensesForCharts(expenses), [expenses]);
 
   // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
   const handleOpenInviteDialog = () => {
     setDialogOpen(true);
   };
 
-  // Configuration des couleurs pour les graphiques
-  const expenseChartConfig = {
-    visitors: {
-      label: "Visitors",
-    },
-    desktop: {
-      label: "Montant",
-      color: "#ef4444", // Rouge pour les dépenses
-    },
-    mobile: {
-      label: "Nombre de transactions",
-      color: "#dc2626", // Rouge plus foncé
-    },
-  };
-
-  const incomeChartConfig = {
-    visitors: {
-      label: "Visitors",
-    },
-    desktop: {
-      label: "Montant",
-      color: "#22c55e", // Vert pour les revenus
-    },
-    mobile: {
-      label: "Nombre de transactions",
-      color: "#16a34a", // Vert plus foncé
-    },
-  };
+  // Utiliser les configurations importées
+  const incomeChartConfig = getIncomeChartConfig();
+  const expenseChartConfig = getExpenseChartConfig();
 
   return (
     <div className="flex flex-col gap-2 py-4 md:gap-6 md:py-6 p-6">
@@ -238,8 +112,8 @@ function GestionDepensesContent() {
 
 export default function GestionDepenses() {
   return (
-    // <ProRouteGuard pageName="Gestion des dépenses"> {/* Commenté pour le développement */}
-    <GestionDepensesContent />
-    // </ProRouteGuard>
+    <ProRouteGuard pageName="Gestion des dépenses">
+      <GestionDepensesContent />
+    </ProRouteGuard>
   );
 }

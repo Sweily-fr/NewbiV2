@@ -89,9 +89,37 @@ const LoginForm = () => {
         // Définir l'organisation active après la connexion
         await ensureActiveOrganization();
 
-        // Vérifier s'il y a un callbackUrl dans les paramètres URL
+        // Vérifier s'il y a des paramètres d'invitation dans l'URL
         const urlParams = new URLSearchParams(window.location.search);
+        const invitationId = urlParams.get("invitation");
+        const invitationEmail = urlParams.get("email");
         const callbackUrl = urlParams.get("callbackUrl");
+
+        // Si c'est une connexion via invitation, accepter automatiquement l'invitation
+        if (invitationId && invitationEmail) {
+          console.log("🎯 Connexion via invitation détectée, acceptation automatique...");
+          try {
+            const response = await fetch(`/api/invitations/${invitationId}`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ action: "accept" }),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              console.log("✅ Invitation acceptée automatiquement:", result);
+              toast.success("Invitation acceptée ! Bienvenue dans l'organisation.");
+            } else {
+              console.error("❌ Erreur lors de l'acceptation automatique de l'invitation");
+              toast.error("Erreur lors de l'acceptation de l'invitation");
+            }
+          } catch (error) {
+            console.error("❌ Erreur lors de l'acceptation automatique:", error);
+            toast.error("Erreur lors de l'acceptation de l'invitation");
+          }
+        }
 
         if (callbackUrl) {
           console.log("🔄 Redirection vers callbackUrl:", callbackUrl);
@@ -145,7 +173,35 @@ const LoginForm = () => {
 
       // Redirection après vérification 2FA réussie
       const urlParams = new URLSearchParams(window.location.search);
+      const invitationId = urlParams.get("invitation");
+      const invitationEmail = urlParams.get("email");
       const callbackUrl = urlParams.get("callbackUrl");
+
+      // Si c'est une connexion via invitation, accepter automatiquement l'invitation
+      if (invitationId && invitationEmail) {
+        console.log("🎯 Connexion 2FA via invitation détectée, acceptation automatique...");
+        try {
+          const response = await fetch(`/api/invitations/${invitationId}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ action: "accept" }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log("✅ Invitation acceptée automatiquement après 2FA:", result);
+            toast.success("Invitation acceptée ! Bienvenue dans l'organisation.");
+          } else {
+            console.error("❌ Erreur lors de l'acceptation automatique de l'invitation après 2FA");
+            toast.error("Erreur lors de l'acceptation de l'invitation");
+          }
+        } catch (error) {
+          console.error("❌ Erreur lors de l'acceptation automatique après 2FA:", error);
+          toast.error("Erreur lors de l'acceptation de l'invitation");
+        }
+      }
 
       if (callbackUrl) {
         router.push(callbackUrl);

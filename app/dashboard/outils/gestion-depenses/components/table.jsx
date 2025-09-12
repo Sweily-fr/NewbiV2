@@ -36,6 +36,8 @@ import {
   PlusIcon,
   Landmark,
   TrashIcon,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
@@ -161,17 +163,18 @@ const columns = [
     accessorKey: "date",
     cell: ({ row }) => {
       const dateValue = row.getValue("date");
-      
+
       // Forcer la conversion si c'est un timestamp
-      if (typeof dateValue === 'number' || (typeof dateValue === 'string' && /^\d{10,13}$/.test(dateValue))) {
+      if (
+        typeof dateValue === "number" ||
+        (typeof dateValue === "string" && /^\d{10,13}$/.test(dateValue))
+      ) {
         const date = new Date(Number(dateValue));
-        const formatted = date.toISOString().split('T')[0];
+        const formatted = date.toISOString().split("T")[0];
         return <div className="font-normal">{formatted}</div>;
       }
-      
-      return (
-        <div className="font-normal">{dateValue}</div>
-      );
+
+      return <div className="font-normal">{dateValue}</div>;
     },
     size: 120,
     enableHiding: false,
@@ -207,9 +210,8 @@ const columns = [
         // Factures - Entrées d'argent (vert)
         if (type === "INCOME" && source === "invoice") {
           return {
-            className:
-              "bg-transparent border-green-300 text-green-800 font-normal",
-            icon: <ArrowUpIcon size={12} />,
+            className: "bg-transparent bg-green-50 text-green-800 font-normal",
+            icon: <TrendingUp size={12} />,
             label: "Facture",
           };
         }
@@ -218,14 +220,18 @@ const columns = [
         if (source === "expense") {
           const notes = row.original.notes;
           const isVatDeductible = row.original.isVatDeductible;
-          const isIncome = (notes && notes.includes('[INCOME]')) || isVatDeductible === false;
-          
-          console.log(`🔍 Type check pour ${row.original.id}: notes="${notes}", isVatDeductible=${isVatDeductible}, isIncome=${isIncome}`);
-          
+          const isIncome =
+            (notes && notes.includes("[INCOME]")) || isVatDeductible === false;
+
+          console.log(
+            `🔍 Type check pour ${row.original.id}: notes="${notes}", isVatDeductible=${isVatDeductible}, isIncome=${isIncome}`
+          );
+
           if (isIncome) {
             return {
-              className: "bg-transparent border-green-300 text-green-800 font-normal",
-              icon: <ArrowUpIcon size={12} />,
+              className:
+                "bg-transparent bg-green-50 text-green-800 font-normal",
+              icon: <TrendingUp size={12} />,
               label: "Entrée",
             };
           } else {
@@ -251,8 +257,8 @@ const columns = [
             }
 
             return {
-              className: "bg-transparent border-red-300 text-red-800 font-normal",
-              icon: <ArrowDownIcon size={12} />,
+              className: "bg-transparent bg-red-50 text-red-800 font-normal",
+              icon: <TrendingDown size={12} />,
               label: subLabel,
             };
           }
@@ -516,53 +522,66 @@ export default function TransactionTable() {
   // Mapper les dépenses et factures vers le format attendu par le tableau
   const transactions = useMemo(() => {
     console.log("DEBUG - Raw expenses:", expenses);
-    
+
     // Mapper les dépenses (SORTIES D'ARGENT)
     const expenseTransactions = expenses.map((expense) => {
-      console.log("DEBUG - Processing expense date:", expense.date, "Type:", typeof expense.date);
-      const formattedDate = typeof expense.date === 'string' ? expense.date : new Date(expense.date).toISOString().split('T')[0];
+      console.log(
+        "DEBUG - Processing expense date:",
+        expense.date,
+        "Type:",
+        typeof expense.date
+      );
+      const formattedDate =
+        typeof expense.date === "string"
+          ? expense.date
+          : new Date(expense.date).toISOString().split("T")[0];
       console.log("DEBUG - Formatted date:", formattedDate);
-      
+
       return {
         id: expense.id,
         date: formattedDate,
         type: "EXPENSE", // Dépense = Sortie d'argent
         subType:
-        expense.category === "TRAVEL"
-          ? "transport"
-          : expense.category === "MEALS"
-            ? "repas"
-            : expense.category === "OFFICE_SUPPLIES"
-              ? "bureau"
-              : expense.category === "SERVICES"
-                ? "prestation"
-                : "autre",
-      category: expense.category,
-      amount: expense.amount,
-      currency: expense.currency || "EUR",
-      description: expense.description || expense.title,
-      paymentMethod: expense.paymentMethod,
-      vendor: expense.vendor,
-      invoiceNumber: expense.invoiceNumber,
-      documentNumber: expense.documentNumber,
-      vatAmount: expense.vatAmount,
-      vatRate: expense.vatRate,
-      status: expense.status,
-      tags: expense.tags || [],
-      attachment:
-        expense.files && expense.files.length > 0 ? expense.files[0].url : null,
-      files: expense.files || [],
-      ocrMetadata: expense.ocrMetadata || null,
-      createdAt: expense.createdAt,
-      updatedAt: expense.updatedAt,
-      source: "expense", // Identifier la source
+          expense.category === "TRAVEL"
+            ? "transport"
+            : expense.category === "MEALS"
+              ? "repas"
+              : expense.category === "OFFICE_SUPPLIES"
+                ? "bureau"
+                : expense.category === "SERVICES"
+                  ? "prestation"
+                  : "autre",
+        category: expense.category,
+        amount: expense.amount,
+        currency: expense.currency || "EUR",
+        description: expense.description || expense.title,
+        paymentMethod: expense.paymentMethod,
+        vendor: expense.vendor,
+        invoiceNumber: expense.invoiceNumber,
+        documentNumber: expense.documentNumber,
+        vatAmount: expense.vatAmount,
+        vatRate: expense.vatRate,
+        status: expense.status,
+        tags: expense.tags || [],
+        attachment:
+          expense.files && expense.files.length > 0
+            ? expense.files[0].url
+            : null,
+        files: expense.files || [],
+        ocrMetadata: expense.ocrMetadata || null,
+        createdAt: expense.createdAt,
+        updatedAt: expense.updatedAt,
+        source: "expense", // Identifier la source
       };
     });
 
     // Mapper les factures payées (ENTRÉES D'ARGENT)
     const invoiceTransactions = paidInvoices.map((invoice) => ({
       id: `invoice-${invoice.id}`,
-      date: typeof invoice.issueDate === 'string' ? invoice.issueDate : new Date(invoice.issueDate).toISOString().split('T')[0],
+      date:
+        typeof invoice.issueDate === "string"
+          ? invoice.issueDate
+          : new Date(invoice.issueDate).toISOString().split("T")[0],
       type: "INCOME", // Facture = Entrée d'argent
       category: "SERVICES", // Catégorie par défaut pour les factures
       amount: invoice.finalTotalTTC,
@@ -591,11 +610,17 @@ export default function TransactionTable() {
 
     // Combiner et trier par date (plus récent en premier)
     const allTransactions = [...expenseTransactions, ...invoiceTransactions];
-    
+
     // Trier sans convertir les dates en timestamps
     return allTransactions.sort((a, b) => {
-      const dateA = typeof a.date === 'string' ? a.date : new Date(a.date).toISOString().split('T')[0];
-      const dateB = typeof b.date === 'string' ? b.date : new Date(b.date).toISOString().split('T')[0];
+      const dateA =
+        typeof a.date === "string"
+          ? a.date
+          : new Date(a.date).toISOString().split("T")[0];
+      const dateB =
+        typeof b.date === "string"
+          ? b.date
+          : new Date(b.date).toISOString().split("T")[0];
       return dateB.localeCompare(dateA);
     });
   }, [expenses, paidInvoices]);
@@ -634,7 +659,9 @@ export default function TransactionTable() {
     );
     const nonDeletableCount = invoiceRows.length;
     if (nonDeletableCount > 0) {
-      toast.warning(`${invoiceRows.length} facture(s) ignorée(s) (non supprimables)`);
+      toast.warning(
+        `${invoiceRows.length} facture(s) ignorée(s) (non supprimables)`
+      );
     }
 
     if (expenseRows.length === 0) {
@@ -715,7 +742,7 @@ export default function TransactionTable() {
     try {
       console.log("Type de transaction:", transaction.type);
       console.log("Données complètes de la transaction:", transaction);
-      
+
       if (transaction.type === "INCOME") {
         // Pour les revenus, créer une dépense avec montant positif
         const expenseInput = {
@@ -728,27 +755,37 @@ export default function TransactionTable() {
           paymentMethod: mapPaymentMethodToEnum(transaction.paymentMethod),
           status: "PAID",
           isVatDeductible: false, // Les revenus ne sont généralement pas déductibles
-          notes: `[INCOME] ${transaction.description}`
+          notes: `[INCOME] ${transaction.description}`,
           // Retirer le champ type car il n'existe pas dans le modèle Expense
         };
 
         console.log("Données revenu envoyées à l'API:", expenseInput);
-        console.log("isVatDeductible pour revenu:", expenseInput.isVatDeductible);
+        console.log(
+          "isVatDeductible pour revenu:",
+          expenseInput.isVatDeductible
+        );
 
         const result = await createExpense(expenseInput);
         console.log("Résultat création revenu:", result);
-        console.log("Expense créée avec isVatDeductible:", result.expense?.isVatDeductible);
-        console.log("🔍 Vérification notes dans result:", result.expense?.notes);
-        
+        console.log(
+          "Expense créée avec isVatDeductible:",
+          result.expense?.isVatDeductible
+        );
+        console.log(
+          "🔍 Vérification notes dans result:",
+          result.expense?.notes
+        );
+
         if (result.success) {
           setIsAddTransactionDrawerOpen(false);
           // Forcer le refetch des données pour mettre à jour les graphiques
           setTimeout(() => {
             refetchExpenses();
-            console.log("✅ Revenu créé avec succès, refetch déclenché avec délai");
+            console.log(
+              "✅ Revenu créé avec succès, refetch déclenché avec délai"
+            );
           }, 500);
         }
-        
       } else {
         // Pour les dépenses, utiliser l'API existante
         const expenseInput = {
@@ -761,7 +798,7 @@ export default function TransactionTable() {
           paymentMethod: mapPaymentMethodToEnum(transaction.paymentMethod),
           status: "PAID",
           isVatDeductible: true,
-          notes: `[EXPENSE] ${transaction.description}`
+          notes: `[EXPENSE] ${transaction.description}`,
           // Retirer le champ type car il n'existe pas dans le modèle Expense
         };
 
@@ -769,7 +806,7 @@ export default function TransactionTable() {
 
         const result = await createExpense(expenseInput);
         console.log("Résultat création dépense:", result);
-        
+
         if (result.success) {
           setIsAddTransactionDrawerOpen(false);
           // Forcer le refetch des données pour mettre à jour les graphiques
@@ -785,29 +822,29 @@ export default function TransactionTable() {
   // Fonction pour mapper les catégories du formulaire vers les enums de l'API
   const mapCategoryToEnum = (category) => {
     const categoryMap = {
-      "Transport": "TRAVEL",
-      "Repas": "MEALS", 
-      "Bureau": "OFFICE_SUPPLIES",
-      "Prestation": "SERVICES",
-      "Alimentation": "MEALS",
-      "Logement": "RENT",
-      "Salaire": "SALARIES",
-      "Freelance": "SERVICES",
-      "": "OTHER" // Catégorie vide par défaut
+      Transport: "TRAVEL",
+      Repas: "MEALS",
+      Bureau: "OFFICE_SUPPLIES",
+      Prestation: "SERVICES",
+      Alimentation: "MEALS",
+      Logement: "RENT",
+      Salaire: "SALARIES",
+      Freelance: "SERVICES",
+      "": "OTHER", // Catégorie vide par défaut
     };
-    
+
     return categoryMap[category] || "OTHER";
   };
 
   // Fonction pour mapper les méthodes de paiement du formulaire vers les enums de l'API
   const mapPaymentMethodToEnum = (paymentMethod) => {
     const paymentMethodMap = {
-      "CARD": "CREDIT_CARD",
-      "CASH": "CASH",
-      "TRANSFER": "BANK_TRANSFER",
-      "CHECK": "CHECK"
+      CARD: "CREDIT_CARD",
+      CASH: "CASH",
+      TRANSFER: "BANK_TRANSFER",
+      CHECK: "CHECK",
     };
-    
+
     return paymentMethodMap[paymentMethod] || "BANK_TRANSFER";
   };
 
@@ -1469,10 +1506,7 @@ function RowActions({ row, onEdit }) {
           className="text-destructive focus:text-destructive"
           onClick={() => setShowDeleteDialog(true)}
           variant="destructive"
-          disabled={
-            deleteLoading ||
-            transaction.source === "invoice"
-          }
+          disabled={deleteLoading || transaction.source === "invoice"}
         >
           <span>{deleteLoading ? "Suppression..." : "Supprimer"}</span>
           <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
