@@ -11,6 +11,7 @@ import {
   CheckCircle,
   FileText,
   XCircle,
+  Receipt,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,6 +27,8 @@ import {
   useInvoice,
   INVOICE_STATUS,
 } from "@/src/graphql/invoiceQueries";
+import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
+import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import InvoiceSidebar from "./invoice-sidebar";
 
@@ -38,6 +41,9 @@ export default function InvoiceRowActions({ row, onRefetch }) {
   const { invoice: fullInvoice, loading: loadingFullInvoice } = useInvoice(
     invoice.id
   );
+
+  // Récupération des avoirs pour cette facture
+  const { creditNotes, loading: loadingCreditNotes } = useCreditNotesByInvoice(invoice.id);
 
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
@@ -92,6 +98,14 @@ export default function InvoiceRowActions({ row, onRefetch }) {
     }
   };
 
+  const handleCreateCreditNote = () => {
+    router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
+  };
+
+  // Vérifier si la facture a atteint sa limite d'avoirs
+  const currentInvoice = fullInvoice || invoice;
+  const creditNoteLimitReached = hasReachedCreditNoteLimit(currentInvoice, creditNotes);
+
   const isLoading = markingAsPaid || changingStatus || isDeleting;
 
   return (
@@ -121,9 +135,8 @@ export default function InvoiceRowActions({ row, onRefetch }) {
               </DropdownMenuItem>
             )}
 
-            {/* Séparateur seulement s'il y a des actions de statut après les actions de base */}
-            {(invoice.status === INVOICE_STATUS.DRAFT ||
-              invoice.status === INVOICE_STATUS.PENDING) && (
+            {/* Séparateur seulement pour les brouillons qui ont des actions supplémentaires */}
+            {invoice.status === INVOICE_STATUS.DRAFT && (
               <DropdownMenuSeparator />
             )}
 
@@ -139,22 +152,39 @@ export default function InvoiceRowActions({ row, onRefetch }) {
 
             {invoice.status === INVOICE_STATUS.PENDING && (
               <>
-                <DropdownMenuItem
-                  onClick={handleMarkAsPaid}
-                  disabled={isLoading}
-                >
+                <DropdownMenuItem onClick={handleMarkAsPaid}>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Marquer comme payée
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
+                {!creditNoteLimitReached && (
+                  <DropdownMenuItem onClick={handleCreateCreditNote}>
+                    <Receipt className="mr-2 h-4 w-4" />
+                    Créer un avoir
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
                   onClick={handleCancel}
-                  disabled={isLoading}
+                  className="text-red-600 focus:text-red-600"
                 >
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Annuler la facture
+                  <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                  Annuler
                 </DropdownMenuItem>
               </>
+            )}
+
+            {invoice.status === INVOICE_STATUS.COMPLETED && !creditNoteLimitReached && (
+              <DropdownMenuItem onClick={handleCreateCreditNote}>
+                <Receipt className="mr-2 h-4 w-4" />
+                Créer un avoir
+              </DropdownMenuItem>
+            )}
+
+            {invoice.status === INVOICE_STATUS.CANCELED && !creditNoteLimitReached && (
+              <DropdownMenuItem onClick={handleCreateCreditNote}>
+                <Receipt className="mr-2 h-4 w-4" />
+                Créer un avoir
+              </DropdownMenuItem>
             )}
 
             {/* Séparateur seulement s'il y a l'action supprimer (factures brouillon uniquement) */}

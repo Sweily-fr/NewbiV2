@@ -44,11 +44,22 @@ const calculateItemTotal = (quantity, unitPrice, discount, discountType) => {
   return subtotal;
 };
 
-export default function ItemsSection({
-  formatCurrency,
-  canEdit,
-  ProductSearchCombobox,
-}) {
+// Fonction utilitaire pour formater les montants en euros
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount || 0);
+};
+
+export default function ItemsSection({ mode, canEdit, ProductSearchCombobox, isCreditNote = false }) {
+  // Déterminer si c'est un avoir
+  const isCreditNoteContext = isCreditNote || 
+                               (typeof window !== 'undefined' && window.location.pathname.includes('/avoir')) || 
+                               (typeof window !== 'undefined' && window.location.pathname.includes('/credit-note')) ||
+                               mode === "creditNote" || mode === "credit" || mode === "avoir";
   const {
     watch,
     setValue,
@@ -94,35 +105,53 @@ export default function ItemsSection({
       <CardContent className="space-y-6 p-0">
         {/* Bouton ajouter article */}
         <div className="flex gap-3 items-stretch">
-          <div className="flex-1 min-w-0" style={{ flexBasis: "75%" }}>
-            <div className="h-full">
-              <ProductSearchCombobox
-                onSelect={addItem}
-                placeholder="Rechercher un produit..."
+          {ProductSearchCombobox ? (
+            <>
+              <div className="flex-1 min-w-0" style={{ flexBasis: "75%" }}>
+                <div className="h-full">
+                  <ProductSearchCombobox
+                    onSelect={addItem}
+                    placeholder="Rechercher un produit..."
+                    disabled={!canEdit}
+                    className="h-full"
+                  />
+                </div>
+              </div>
+              <div className="flex-shrink-0" style={{ flexBasis: "25%" }}>
+                <Button
+                  onClick={() => addItem()}
+                  disabled={!canEdit}
+                  className="gap-2 w-full h-full min-h-10 font-normal"
+                  size="lg"
+                >
+                  <Plus className="h-4 w-4" />
+                  Ajouter un article
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="w-full">
+              <Button
+                onClick={() => addItem()}
                 disabled={!canEdit}
-                className="h-full"
-              />
+                className="gap-2 w-full h-full min-h-10 font-normal"
+                size="lg"
+              >
+                <Plus className="h-4 w-4" />
+                Ajouter un article
+              </Button>
             </div>
-          </div>
-          <div className="flex-shrink-0" style={{ flexBasis: "25%" }}>
-            <Button
-              onClick={() => addItem()}
-              disabled={!canEdit}
-              className="gap-2 w-full h-full min-h-10 font-normal"
-              size="lg"
-            >
-              Ajouter un article
-            </Button>
-          </div>
+          )}
         </div>
 
         {/* Liste des articles avec Accordion */}
         {items.length > 0 && (
-          <Accordion
-            type="single"
-            collapsible
-            className="w-full space-y-3 mb-6"
-          >
+          <div className="space-y-4 mb-6">
+            <Accordion
+              type="multiple"
+              defaultValue={[]}
+              className="w-full space-y-3"
+            >
             {items.map((item, index) => {
               // Utiliser les valeurs observées en temps réel
               const currentItem = watchedItems[index] || item;
@@ -283,11 +312,13 @@ export default function ItemsSection({
                               {...register(`items.${index}.quantity`, {
                                 valueAsNumber: true,
                                 required: "La quantité est requise",
-                                min: {
-                                  value: 0.01,
-                                  message:
-                                    "La quantité doit être supérieure à 0",
-                                },
+                                ...(isCreditNoteContext ? {} : {
+                                  min: {
+                                    value: 0.01,
+                                    message:
+                                      "La quantité doit être supérieure à 0",
+                                  },
+                                }),
                                 onChange: (e) => {
                                   const quantity =
                                     parseFloat(e.target.value) || 0;
@@ -310,7 +341,6 @@ export default function ItemsSection({
                                   });
                                 },
                               })}
-                              min="0"
                               step="0.01"
                               disabled={!canEdit}
                               className={`h-10 rounded-lg text-sm w-full ${
@@ -379,10 +409,6 @@ export default function ItemsSection({
                               {...register(`items.${index}.unitPrice`, {
                                 valueAsNumber: true,
                                 required: "Le prix est requis",
-                                min: {
-                                  value: 0,
-                                  message: "Le prix doit être positif ou nul",
-                                },
                                 onChange: (e) => {
                                   const unitPrice =
                                     parseFloat(e.target.value) || 0;
@@ -405,7 +431,6 @@ export default function ItemsSection({
                                   });
                                 },
                               })}
-                              min="0"
                               step="0.01"
                               disabled={!canEdit}
                               className={`h-10 rounded-lg text-sm w-full ${
@@ -632,8 +657,7 @@ export default function ItemsSection({
                                     return true;
                                   },
                                 })}
-                                min="0"
-                                max={watch(`items.${index}.discountType`) === "percentage" ? "100" : undefined}
+                                  max={watch(`items.${index}.discountType`) === "percentage" ? "100" : undefined}
                                 step="0.01"
                                 disabled={!canEdit}
                                 className={`w-full h-10 rounded-lg text-sm ${errors?.items?.[index]?.discount ? "border-red-500" : ""}`}
@@ -678,39 +702,10 @@ export default function ItemsSection({
                 </AccordionItem>
               );
             })}
-          </Accordion>
-        )}
-
-        {/* Total HT des articles */}
-        {items.length > 0 && (
-          <div className="border-t">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-normal">
-                Total HT des articles :
-              </span>
-              <span className="text-lg font-semibold">
-                {formatCurrency(
-                  watchedItems.reduce((sum, item, index) => {
-                    const quantity = item?.quantity || 1;
-                    const unitPrice = item?.unitPrice || 0;
-                    const discount = item?.discount || 0;
-                    const discountType = item?.discountType || "percentage";
-
-                    return (
-                      sum +
-                      calculateItemTotal(
-                        quantity,
-                        unitPrice,
-                        discount,
-                        discountType
-                      )
-                    );
-                  }, 0)
-                )}
-              </span>
-            </div>
+            </Accordion>
           </div>
         )}
+
 
         {/* Bouton ajouter article en bas */}
         {items.length > 0 && (
