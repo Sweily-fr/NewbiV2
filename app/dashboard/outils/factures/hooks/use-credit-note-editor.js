@@ -104,7 +104,7 @@ export function useCreditNoteEditor({ mode, creditNoteId, invoiceId, initialData
         }
 
         if (redirect && result) {
-          router.push(`/dashboard/outils/factures/${invoiceId}/avoir/${result.id}`);
+          router.push(`/dashboard/outils/factures`);
         }
 
         return result;
@@ -124,11 +124,16 @@ export function useCreditNoteEditor({ mode, creditNoteId, invoiceId, initialData
     async (redirect = true) => {
       const data = getValues();
       
-      // Check if reason is provided
-      if (!data.reason || !data.reason.trim()) {
-        toast.error("Veuillez indiquer la raison de l'avoir");
-        return;
-      }
+      // Debug logging to see what we're getting
+      console.log('DEBUG - Credit Note Form Data:', {
+        reason: data.reason,
+        reasonType: typeof data.reason,
+        reasonLength: data.reason?.length,
+        reasonTrimmed: data.reason?.trim(),
+        allFormData: data
+      });
+      
+      // Reason is optional - no validation needed
 
       // Basic validation - check if we have items
       if (!data.items || data.items.length === 0) {
@@ -253,7 +258,7 @@ function getInitialFormData(mode, initialData, originalInvoice, session, organiz
   }
 
   return {
-    prefix: "AV",
+    prefix: "AV-",
     number: nextNumber,
     creditType: CREDIT_TYPE.CORRECTION,
     reason: "",
@@ -289,7 +294,7 @@ function getInitialFormData(mode, initialData, originalInvoice, session, organiz
 
 function transformInvoiceToCreditNoteFormData(invoice, session, organization, nextNumber = "") {
   return {
-    prefix: "AV",
+    prefix: "AV-",
     number: nextNumber,
     creditType: CREDIT_TYPE.CORRECTION,
     reason: "",
@@ -331,7 +336,7 @@ function transformInvoiceToCreditNoteFormData(invoice, session, organization, ne
 
 function transformCreditNoteToFormData(creditNote) {
   return {
-    prefix: creditNote.prefix || "AV",
+    prefix: creditNote.prefix || "AV-",
     number: creditNote.number || "",
     creditType: creditNote.creditType || CREDIT_TYPE.CORRECTION,
     reason: creditNote.reason || "",

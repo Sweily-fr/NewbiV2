@@ -355,7 +355,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 </span>
                 <span className="dark:text-[#0A0A0A]">
                   {data.originalInvoice.prefix && data.originalInvoice.number
-                    ? `${data.originalInvoice.prefix}${data.originalInvoice.number}`
+                    ? `${data.originalInvoice.prefix}-${data.originalInvoice.number}`
                     : data.originalInvoice.number || data.originalInvoice}
                 </span>
               </div>

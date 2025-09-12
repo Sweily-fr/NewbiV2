@@ -384,20 +384,11 @@ export default function InvoiceSidebar({
                           <Receipt className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                           <span className="text-sm font-medium truncate">{creditNote.number}</span>
                         </div>
-                        <div className="text-xs text-muted-foreground ml-5">
+                        <div className="text-xs text-muted-foreground ml-9">
                           {formatDate(creditNote.issueDate)} • {formatCurrency(creditNote.finalTotalTTC || 0)}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewCreditNote(creditNote);
-                          }}
-                          className="h-6 w-6 p-1 hover:bg-muted rounded flex-shrink-0"
-                        >
-                          <Eye className="h-3 w-3" />
-                        </button>
                         <UniversalPDFGenerator
                           data={creditNote}
                           type="creditNote"

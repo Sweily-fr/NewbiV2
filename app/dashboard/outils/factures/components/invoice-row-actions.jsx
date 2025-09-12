@@ -126,9 +126,8 @@ export default function InvoiceRowActions({ row, onRefetch }) {
               </DropdownMenuItem>
             )}
 
-            {/* Séparateur seulement s'il y a des actions de statut après les actions de base */}
-            {(invoice.status === INVOICE_STATUS.DRAFT ||
-              invoice.status === INVOICE_STATUS.PENDING) && (
+            {/* Séparateur seulement pour les brouillons qui ont des actions supplémentaires */}
+            {invoice.status === INVOICE_STATUS.DRAFT && (
               <DropdownMenuSeparator />
             )}
 
@@ -142,8 +141,7 @@ export default function InvoiceRowActions({ row, onRefetch }) {
               </DropdownMenuItem>
             )}
 
-            {(invoice.status === INVOICE_STATUS.PENDING ||
-              invoice.status === INVOICE_STATUS.COMPLETED) && (
+            {invoice.status === INVOICE_STATUS.PENDING && (
               <>
                 <DropdownMenuItem onClick={handleMarkAsPaid}>
                   <CheckCircle className="mr-2 h-4 w-4" />
@@ -154,7 +152,28 @@ export default function InvoiceRowActions({ row, onRefetch }) {
                   Créer un avoir
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleCancel}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                  Annuler
+                </DropdownMenuItem>
               </>
+            )}
+
+            {invoice.status === INVOICE_STATUS.COMPLETED && (
+              <DropdownMenuItem onClick={handleCreateCreditNote}>
+                <Receipt className="mr-2 h-4 w-4" />
+                Créer un avoir
+              </DropdownMenuItem>
+            )}
+
+            {invoice.status === INVOICE_STATUS.CANCELED && (
+              <DropdownMenuItem onClick={handleCreateCreditNote}>
+                <Receipt className="mr-2 h-4 w-4" />
+                Créer un avoir
+              </DropdownMenuItem>
             )}
 
             {/* Séparateur seulement s'il y a l'action supprimer (factures brouillon uniquement) */}
