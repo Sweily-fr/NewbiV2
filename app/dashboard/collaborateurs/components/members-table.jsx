@@ -88,24 +88,50 @@ export default function MembersTable({
     }
   }, [refreshTrigger, orgLoading, organization]);
 
-  // Formater les données pour l'affichage
-  const formattedData = collaborators.map((item) => {
-    if (item.type === "member") {
-      return {
-        ...item,
-        email: item.user?.email,
-        name: item.user?.name || item.user?.email?.split("@")[0],
-        status: "active",
-      };
-    } else {
-      // invitation
-      return {
-        ...item,
-        name: item.email?.split("@")[0],
-        status: item.status || "pending",
-      };
-    }
-  });
+  // Formater les données pour l'affichage et déduplicater par email
+  const formattedData = (() => {
+    const emailMap = new Map();
+    
+    collaborators.forEach((item) => {
+      let formattedItem;
+      
+      if (item.type === "member") {
+        formattedItem = {
+          ...item,
+          email: item.user?.email,
+          name: item.user?.name || item.user?.email?.split("@")[0],
+          status: "active",
+          priority: 1, // Priorité la plus haute pour les membres actifs
+          createdAt: item.createdAt || new Date(),
+        };
+      } else {
+        // invitation
+        formattedItem = {
+          ...item,
+          name: item.email?.split("@")[0],
+          status: item.status || "pending",
+          priority: item.status === "accepted" ? 2 : 3, // Accepté > Pending/Canceled
+          createdAt: item.createdAt || new Date(),
+        };
+      }
+      
+      const email = formattedItem.email;
+      if (email) {
+        const existing = emailMap.get(email);
+        
+        // Garder l'entrée avec la priorité la plus haute (plus petit nombre)
+        // ou la plus récente si même priorité
+        if (!existing || 
+            formattedItem.priority < existing.priority ||
+            (formattedItem.priority === existing.priority && 
+             new Date(formattedItem.createdAt) > new Date(existing.createdAt))) {
+          emailMap.set(email, formattedItem);
+        }
+      }
+    });
+    
+    return Array.from(emailMap.values());
+  })();
 
   // Utiliser le hook de table avec les données formatées - TOUJOURS appelé
   const {

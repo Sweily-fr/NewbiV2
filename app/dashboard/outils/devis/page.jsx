@@ -41,9 +41,9 @@ function QuotesContent() {
 
 export default function QuotesPage() {
   return (
-    // <ProRouteGuard pageName="Devis"> {/* Commenté pour le développement */}
+    <ProRouteGuard pageName="Devis">
       <QuotesContent />
-    // </ProRouteGuard>
+    </ProRouteGuard>
   );
 }
 

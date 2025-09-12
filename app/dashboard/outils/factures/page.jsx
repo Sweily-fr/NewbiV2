@@ -41,9 +41,9 @@ function InvoicesContent() {
 
 export default function InvoicesPage() {
   return (
-    // <ProRouteGuard pageName="Factures"> {/* Commenté pour le développement */}
+    <ProRouteGuard pageName="Factures">
       <InvoicesContent />
-    // </ProRouteGuard>
+    </ProRouteGuard>
   );
 }
 
