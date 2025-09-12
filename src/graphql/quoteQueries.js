@@ -94,6 +94,18 @@ export const QUOTE_FRAGMENT = gql`
       headerTextColor
       headerBgColor
     }
+    shipping {
+      billShipping
+      shippingAddress {
+        fullName
+        street
+        city
+        postalCode
+        country
+      }
+      shippingAmountHT
+      shippingVatRate
+    }
     showBankDetails
     createdBy {
       id

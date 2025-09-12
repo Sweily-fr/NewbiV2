@@ -1216,6 +1216,18 @@ function transformFormDataToInput(
     },
     // Inclure les paramètres des coordonnées bancaires
     showBankDetails: formData.showBankDetails || false,
+    shipping: formData.shipping ? {
+      billShipping: formData.shipping.billShipping || false,
+      shippingAddress: formData.shipping.shippingAddress ? {
+        fullName: formData.shipping.shippingAddress.fullName || "",
+        street: formData.shipping.shippingAddress.street || "",
+        city: formData.shipping.shippingAddress.city || "",
+        postalCode: formData.shipping.shippingAddress.postalCode || "",
+        country: formData.shipping.shippingAddress.country || "",
+      } : null,
+      shippingAmountHT: parseFloat(formData.shipping.shippingAmountHT) || 0,
+      shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
+    } : null,
   };
 }
 

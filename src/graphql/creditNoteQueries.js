@@ -100,6 +100,18 @@ export const CREDIT_NOTE_FRAGMENT = gql`
       bic
       bankName
     }
+    shipping {
+      billShipping
+      shippingAddress {
+        fullName
+        street
+        city
+        postalCode
+        country
+      }
+      shippingAmountHT
+      shippingVatRate
+    }
     appearance {
       textColor
       headerTextColor
@@ -109,6 +121,18 @@ export const CREDIT_NOTE_FRAGMENT = gql`
       id
       number
       status
+      shipping {
+        billShipping
+        shippingAddress {
+          fullName
+          street
+          city
+          postalCode
+          country
+        }
+        shippingAmountHT
+        shippingVatRate
+      }
     }
     createdBy {
       id

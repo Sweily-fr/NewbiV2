@@ -119,7 +119,34 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
       }
     });
     
-    const total = totalAfterDiscount + totalTax;
+    // Ajouter les frais de livraison aux calculs si la livraison est facturée
+    let shippingAmountHT = 0;
+    let shippingTax = 0;
+    
+    // Pour les avoirs, utiliser les données shipping de la facture originale
+    const shippingData = isCreditNote ? data.originalInvoice?.shipping : data.shipping;
+    
+    if (shippingData?.billShipping && shippingData?.shippingAmountHT > 0) {
+      shippingAmountHT = parseFloat(shippingData.shippingAmountHT) || 0;
+      const shippingVatRate = parseFloat(shippingData.shippingVatRate) || 20;
+      
+      // Calcul de la TVA sur la livraison
+      shippingTax = shippingVatRate > 0 ? shippingAmountHT * (shippingVatRate / 100) : 0;
+      
+      // Ajouter la TVA de livraison au total des taxes
+      totalTax += shippingTax;
+      
+      // Ajouter la TVA de livraison au détail par taux si le taux est supérieur à 0
+      if (shippingVatRate > 0) {
+        if (!taxesByRate[shippingVatRate]) {
+          taxesByRate[shippingVatRate] = 0;
+        }
+        taxesByRate[shippingVatRate] += shippingTax;
+      }
+    }
+    
+    // Le total final inclut le montant après remise + TVA + livraison HT + TVA livraison
+    const total = totalAfterDiscount + totalTax + shippingAmountHT;
     
     const taxDetails = Object.entries(taxesByRate)
       .sort(([rateA], [rateB]) => parseFloat(rateB) - parseFloat(rateA))
@@ -476,23 +503,62 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
             </div>
           )}
 
-          {/* Adresse de livraison - Afficher seulement si différente de l'adresse de facturation */}
-          {data.client?.hasDifferentShippingAddress && data.client?.shippingAddress && (
-            <div>
-              <div
-                className="font-medium mb-2 dark:text-[#0A0A0A]"
-                style={{ fontSize: "10px" }}
-              >
-                Adresse de livraison
-              </div>
-              <div className="font-normal" style={{ fontSize: "10px" }}>
-                <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                  {(formatAddress(data.client.shippingAddress) || 
-                    "Aucune adresse de livraison spécifiée")}
+          {/* Adresse de livraison - Priorité aux informations de livraison du formulaire si facturée */}
+          {(() => {
+            // Pour les avoirs, utiliser les données shipping de la facture originale
+            // Pour les factures/devis, utiliser les données shipping seulement si billShipping est activé
+            const shippingData = isCreditNote ? data.originalInvoice?.shipping : data.shipping;
+            if (shippingData?.shippingAddress && (isCreditNote || shippingData?.billShipping)) {
+              return (
+                <div>
+                  <div
+                    className="font-medium mb-2 dark:text-[#0A0A0A]"
+                    style={{ fontSize: "10px" }}
+                  >
+                    Adresse de livraison
+                  </div>
+                  <div className="font-normal" style={{ fontSize: "10px" }}>
+                    <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                      {shippingData.shippingAddress.fullName && (
+                        <div className="font-medium">{shippingData.shippingAddress.fullName}</div>
+                      )}
+                      <div>{shippingData.shippingAddress.street}</div>
+                      <div>{shippingData.shippingAddress.postalCode} {shippingData.shippingAddress.city}</div>
+                      {shippingData.shippingAddress.country && (
+                        <div>{shippingData.shippingAddress.country}</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              );
+            }
+            // Sinon, utiliser l'adresse de livraison du client si elle existe (seulement pour factures/devis)
+            else if (!isCreditNote && data.client?.hasDifferentShippingAddress && data.client?.shippingAddress) {
+              return (
+                <div>
+                  <div
+                    className="font-medium mb-2 dark:text-[#0A0A0A]"
+                    style={{ fontSize: "10px" }}
+                  >
+                    Adresse de livraison
+                  </div>
+                  <div className="font-normal" style={{ fontSize: "10px" }}>
+                    <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                      {data.client.shippingAddress.fullName && (
+                        <div className="font-medium">{data.client.shippingAddress.fullName}</div>
+                      )}
+                      <div>{data.client.shippingAddress.street}</div>
+                      <div>{data.client.shippingAddress.postalCode} {data.client.shippingAddress.city}</div>
+                      {data.client.shippingAddress.country && (
+                        <div>{data.client.shippingAddress.country}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
 
         {/* NOTES D'EN-TÊTE - masquées pour les avoirs */}
@@ -506,7 +572,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
 
         {/* TABLEAU DES ARTICLES */}
         <div className="mb-6">
-          <table className="w-full border-collapse text-xs">
+          <table className="w-full border-collapse text-xs border-b border-[#CCCCCC]">
             <thead>
               <tr style={{ backgroundColor: data.appearance?.headerBgColor || '#000000' }}>
                 <th
@@ -661,6 +727,51 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                   </td>
                 </tr>
               )}
+              
+              {/* Ligne de livraison si facturée */}
+              {(() => {
+                const shippingData = isCreditNote ? data.originalInvoice?.shipping : data.shipping;
+                if (!shippingData || !shippingData.billShipping || !shippingData.shippingAmountHT || shippingData.shippingAmountHT <= 0) {
+                  return null;
+                }
+                
+                return (
+                  <tr className="border-b border-[#CCCCCC]">
+                    <td
+                      className="py-3 px-2 dark:text-[#0A0A0A]"
+                      style={{ width: "46%" }}
+                    >
+                      <div className="font-normal dark:text-[#0A0A0A]">
+                        Frais de livraison
+                      </div>
+                    </td>
+                    <td
+                      className="py-3 px-2 text-center dark:text-[#0A0A0A]"
+                      style={{ width: "12%" }}
+                    >
+                      {isCreditNote ? -1 : 1}
+                    </td>
+                    <td
+                      className="py-3 px-2 text-right dark:text-[#0A0A0A]"
+                      style={{ width: "15%" }}
+                    >
+                      {formatCurrency(isCreditNote ? -Math.abs(shippingData.shippingAmountHT) : shippingData.shippingAmountHT)}
+                    </td>
+                    <td
+                      className="py-3 px-2 text-right dark:text-[#0A0A0A]"
+                      style={{ width: "10%" }}
+                    >
+                      {shippingData.shippingVatRate || 20} %
+                    </td>
+                    <td
+                      className="py-3 px-2 text-right dark:text-[#0A0A0A]"
+                      style={{ width: "17%" }}
+                    >
+                      {formatCurrency(isCreditNote ? -Math.abs(shippingData.shippingAmountHT) : shippingData.shippingAmountHT)}
+                    </td>
+                  </tr>
+                );
+              })()}
             </tbody>
           </table>
         </div>
@@ -711,6 +822,24 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 {formatCurrency(totalAfterDiscount)}
               </span>
             </div>
+            
+            {/* 3.5. Frais de livraison */}
+            {(() => {
+              const shippingData = isCreditNote ? data.originalInvoice?.shipping : data.shipping;
+              return shippingData?.billShipping && shippingData?.shippingAmountHT > 0;
+            })() && (
+              <div className="flex justify-between py-1 px-3">
+                <span className="text-[10px] dark:text-[#0A0A0A]">
+                  Frais de livraison HT
+                </span>
+                <span className="dark:text-[#0A0A0A] text-[10px]">
+                  {(() => {
+                    const shippingData = isCreditNote ? data.originalInvoice?.shipping : data.shipping;
+                    return formatCurrency(isCreditNote ? -Math.abs(shippingData.shippingAmountHT) : shippingData.shippingAmountHT);
+                  })()}
+                </span>
+              </div>
+            )}
             
             {/* 4. Détail des TVA par taux */}
             {taxDetails.length > 0 ? (

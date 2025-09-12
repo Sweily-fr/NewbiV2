@@ -99,6 +99,18 @@ export const INVOICE_FRAGMENT = gql`
       headerTextColor
       headerBgColor
     }
+    shipping {
+      billShipping
+      shippingAddress {
+        fullName
+        street
+        city
+        postalCode
+        country
+      }
+      shippingAmountHT
+      shippingVatRate
+    }
     createdBy {
       id
       email

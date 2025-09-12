@@ -879,6 +879,18 @@ function transformFormDataToInput(formData, previousStatus = null) {
       headerTextColor: formData.appearance?.headerTextColor || "#ffffff",
       headerBgColor: formData.appearance?.headerBgColor || "#1d1d1b",
     },
+    shipping: formData.shipping ? {
+      billShipping: formData.shipping.billShipping || false,
+      shippingAddress: formData.shipping.shippingAddress ? {
+        fullName: formData.shipping.shippingAddress.fullName || "",
+        street: formData.shipping.shippingAddress.street || "",
+        city: formData.shipping.shippingAddress.city || "",
+        postalCode: formData.shipping.shippingAddress.postalCode || "",
+        country: formData.shipping.shippingAddress.country || "",
+      } : null,
+      shippingAmountHT: parseFloat(formData.shipping.shippingAmountHT) || 0,
+      shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
+    } : null,
   };
 }
 
