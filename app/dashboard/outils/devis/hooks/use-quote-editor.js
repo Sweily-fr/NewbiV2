@@ -888,6 +888,8 @@ function transformFormDataToInput(
         lastName: formData.client.lastName,
         siret: formData.client.siret,
         vatNumber: formData.client.vatNumber,
+        hasDifferentShippingAddress:
+          formData.client.hasDifferentShippingAddress,
         address: formData.client.address
           ? typeof formData.client.address === "string"
             ? parseAddressString(formData.client.address)
@@ -901,6 +903,15 @@ function transformFormDataToInput(
                 }
                 return addr;
               })()
+          : null,
+        shippingAddress: formData.client.shippingAddress
+          ? {
+              fullName: formData.client.shippingAddress.fullName,
+              street: formData.client.shippingAddress.street,
+              city: formData.client.shippingAddress.city,
+              postalCode: formData.client.shippingAddress.postalCode,
+              country: formData.client.shippingAddress.country,
+            }
           : null,
       }
     : null;

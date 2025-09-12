@@ -17,6 +17,7 @@ export const CREATE_CLIENT = gql`
       }
       hasDifferentShippingAddress
       shippingAddress {
+        fullName
         street
         city
         postalCode
@@ -45,6 +46,7 @@ export const UPDATE_CLIENT = gql`
       }
       hasDifferentShippingAddress
       shippingAddress {
+        fullName
         street
         city
         postalCode

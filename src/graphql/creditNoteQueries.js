@@ -48,6 +48,7 @@ export const CREDIT_NOTE_FRAGMENT = gql`
         country
       }
       shippingAddress {
+        fullName
         street
         city
         postalCode

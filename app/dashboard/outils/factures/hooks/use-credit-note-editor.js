@@ -488,11 +488,27 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     throw new Error('Un avoir doit contenir au moins un article');
   }
 
+  // Clean client data and ensure shippingAddress includes fullName
+  const cleanClient = cleanedData.client
+    ? {
+        ...cleanedData.client,
+        shippingAddress: cleanedData.client.shippingAddress
+          ? {
+              fullName: cleanedData.client.shippingAddress.fullName,
+              street: cleanedData.client.shippingAddress.street,
+              city: cleanedData.client.shippingAddress.city,
+              postalCode: cleanedData.client.shippingAddress.postalCode,
+              country: cleanedData.client.shippingAddress.country,
+            }
+          : null,
+      }
+    : null;
+
   return {
     originalInvoiceId,
     creditType: cleanedData.creditType,
     reason: reason,
-    client: cleanedData.client,
+    client: cleanClient,
     companyInfo: cleanedData.companyInfo,
     items: items,
     status: "CREATED", // Use CREATED status as per CreditNoteStatus enum

@@ -730,6 +730,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
           : null,
         shippingAddress: formData.client.shippingAddress
           ? {
+              fullName: formData.client.shippingAddress.fullName,
               street: formData.client.shippingAddress.street,
               city: formData.client.shippingAddress.city,
               postalCode: formData.client.shippingAddress.postalCode,

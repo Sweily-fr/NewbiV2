@@ -42,6 +42,7 @@ export const QUOTE_FRAGMENT = gql`
         country
       }
       shippingAddress {
+        fullName
         street
         city
         postalCode
@@ -129,6 +130,19 @@ export const QUOTE_LIST_FRAGMENT = gql`
       id
       name
       email
+      hasDifferentShippingAddress
+      shippingAddress {
+        fullName
+        street
+        city
+        postalCode
+        country
+      }
+    }
+    appearance {
+      textColor
+      headerTextColor
+      headerBgColor
     }
     createdAt
     updatedAt

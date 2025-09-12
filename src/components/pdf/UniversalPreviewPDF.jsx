@@ -235,6 +235,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
     if (typeof address === "object" && address !== null) {
       try {
         const parts = [];
+        if (address.fullName) parts.push(String(address.fullName));
         if (address.street) parts.push(String(address.street));
         if (address.postalCode && address.city) {
           parts.push(`${String(address.postalCode)} ${String(address.city)}`);
