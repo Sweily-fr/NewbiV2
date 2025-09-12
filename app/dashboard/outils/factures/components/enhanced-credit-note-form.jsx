@@ -339,7 +339,7 @@ export default function EnhancedCreditNoteForm({ mode, originalInvoice, organiza
                   {/* Credit Type and Refund Method - 50/50 */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Type d'avoir</Label>
+                      <Label className="font-normal">Type d'avoir</Label>
                       <Select
                         value={formData.creditType}
                         onValueChange={(value) => setValue("creditType", value)}
@@ -359,7 +359,7 @@ export default function EnhancedCreditNoteForm({ mode, originalInvoice, organiza
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Méthode de remboursement</Label>
+                      <Label className="font-normal">Méthode de remboursement</Label>
                       <Select
                         value={formData.refundMethod}
                         onValueChange={(value) => setValue("refundMethod", value)}
@@ -380,7 +380,7 @@ export default function EnhancedCreditNoteForm({ mode, originalInvoice, organiza
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="reason">Motif de l'avoir</Label>
+                    <Label htmlFor="reason" className="font-normal">Motif de l'avoir</Label>
                     <Textarea
                       id="reason"
                       {...register("reason")}
@@ -392,7 +392,7 @@ export default function EnhancedCreditNoteForm({ mode, originalInvoice, organiza
 
                   {/* Date d'émission */}
                   <div className="space-y-2">
-                    <Label>Date d'émission</Label>
+                    <Label className="font-normal">Date d'émission</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button

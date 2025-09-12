@@ -161,16 +161,7 @@ export default function ModernCreditNoteEditor({
 
         {/* Right Panel - PDF Preview */}
         <div className="bg-muted/30 border-l flex flex-col h-[calc(100vh-3.5rem)]">
-          <div className="p-6 border-b bg-background">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium">Aperçu</h2>
-              <div className="flex items-center gap-2">
-                <Receipt className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-[calc(100vh-64px)]">
+          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-[calc(100vh-3.5rem)]">
             <UniversalPreviewPDF data={{...formData, originalInvoice}} type="creditNote" />
           </div>
         </div>
