@@ -98,7 +98,7 @@ export default function ClientSelector({
     vatNumber: "",
     hasDifferentShippingAddress: false,
     address: { ...defaultAddress },
-    shippingAddress: { ...defaultAddress },
+    shippingAddress: { fullName: "", ...defaultAddress },
     notes: "",
   }));
   const inputRef = useRef(null);
@@ -348,6 +348,7 @@ export default function ClientSelector({
         // Ne pas inclure l'adresse de livraison si elle n'est pas utilisée
         ...(newClientForm.hasDifferentShippingAddress && {
           shippingAddress: {
+            fullName: newClientForm.shippingAddress.fullName || "",
             street: newClientForm.shippingAddress.street || "",
             postalCode: newClientForm.shippingAddress.postalCode || "",
             city: newClientForm.shippingAddress.city || "",
@@ -391,7 +392,7 @@ export default function ClientSelector({
       vatNumber: "",
       hasDifferentShippingAddress: false,
       address: { ...defaultAddress },
-      shippingAddress: { ...defaultAddress },
+      shippingAddress: { fullName: "", ...defaultAddress },
       notes: "",
     });
   };
@@ -1183,6 +1184,33 @@ export default function ClientSelector({
                           <Label className="text-sm font-normal text-gray-700">
                             Adresse de livraison
                           </Label>
+
+                          {/* Nom complet */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="shipping-fullname"
+                              className="text-sm font-normal"
+                            >
+                              Nom complet
+                            </Label>
+                            <Input
+                              id="shipping-fullname"
+                              value={
+                                newClientForm.shippingAddress?.fullName || ""
+                              }
+                              onChange={(e) =>
+                                setNewClientForm((prev) => ({
+                                  ...prev,
+                                  shippingAddress: {
+                                    ...prev.shippingAddress,
+                                    fullName: e.target.value,
+                                  },
+                                }))
+                              }
+                              placeholder="Nom complet du destinataire"
+                              className="h-10 rounded-lg text-sm w-full"
+                            />
+                          </div>
 
                           {/* Rue */}
                           <div className="space-y-2">

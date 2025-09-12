@@ -54,6 +54,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
         country: "",
       },
       shippingAddress: {
+        fullName: "",
         street: "",
         city: "",
         postalCode: "",
@@ -83,6 +84,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           country: client.address?.country || "",
         },
         shippingAddress: {
+          fullName: client.shippingAddress?.fullName || "",
           street: client.shippingAddress?.street || "",
           city: client.shippingAddress?.city || "",
           postalCode: client.shippingAddress?.postalCode || "",
@@ -107,6 +109,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           country: "",
         },
         shippingAddress: {
+          fullName: "",
           street: "",
           city: "",
           postalCode: "",
@@ -423,6 +426,25 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   <Label className="text-base font-medium">
                     Adresse de livraison
                   </Label>
+
+                  <div className="space-y-2">
+                    <Label>Nom complet</Label>
+                    <Input
+                      placeholder="Nom complet du destinataire"
+                      {...register("shippingAddress.fullName", {
+                        pattern: {
+                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,100}$/,
+                          message:
+                            "Le nom complet doit contenir entre 2 et 100 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                        },
+                      })}
+                    />
+                    {errors.shippingAddress?.fullName && (
+                      <p className="text-sm text-red-500">
+                        {errors.shippingAddress.fullName.message}
+                      </p>
+                    )}
+                  </div>
 
                   <div className="space-y-2">
                     <Label>Adresse</Label>

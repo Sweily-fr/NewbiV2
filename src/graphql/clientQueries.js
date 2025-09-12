@@ -29,6 +29,7 @@ export const CLIENT_FRAGMENT = gql`
     }
     hasDifferentShippingAddress
     shippingAddress {
+      fullName
       street
       city
       postalCode

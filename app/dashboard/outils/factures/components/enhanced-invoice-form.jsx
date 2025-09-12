@@ -51,6 +51,7 @@ import { Separator } from "@/src/components/ui/separator";
 import InvoiceInfoSection from "./invoices-form-sections/InvoiceInfoSection";
 import ItemsSection from "./invoices-form-sections/ItemsSection";
 import DiscountsAndTotalsSection from "./invoices-form-sections/DiscountsAndTotalsSection";
+import ShippingSection from "./invoices-form-sections/ShippingSection";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Calendar } from "@/src/components/ui/calendar";
 import {
@@ -468,7 +469,10 @@ export default function EnhancedInvoiceForm({
                 ProductSearchCombobox={ProductSearchCombobox}
               />
 
-              {/* Section 2: Remises et totaux */}
+              {/* Section 2: Facturation de livraison */}
+              <ShippingSection canEdit={canEdit} />
+
+              {/* Section 3: Remises et totaux */}
               <DiscountsAndTotalsSection canEdit={canEdit} />
             </>
           )}

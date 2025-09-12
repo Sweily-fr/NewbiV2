@@ -42,6 +42,7 @@ export const QUOTE_FRAGMENT = gql`
         country
       }
       shippingAddress {
+        fullName
         street
         city
         postalCode
@@ -93,6 +94,18 @@ export const QUOTE_FRAGMENT = gql`
       headerTextColor
       headerBgColor
     }
+    shipping {
+      billShipping
+      shippingAddress {
+        fullName
+        street
+        city
+        postalCode
+        country
+      }
+      shippingAmountHT
+      shippingVatRate
+    }
     showBankDetails
     createdBy {
       id
@@ -129,6 +142,19 @@ export const QUOTE_LIST_FRAGMENT = gql`
       id
       name
       email
+      hasDifferentShippingAddress
+      shippingAddress {
+        fullName
+        street
+        city
+        postalCode
+        country
+      }
+    }
+    appearance {
+      textColor
+      headerTextColor
+      headerBgColor
     }
     createdAt
     updatedAt

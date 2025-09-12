@@ -888,6 +888,8 @@ function transformFormDataToInput(
         lastName: formData.client.lastName,
         siret: formData.client.siret,
         vatNumber: formData.client.vatNumber,
+        hasDifferentShippingAddress:
+          formData.client.hasDifferentShippingAddress,
         address: formData.client.address
           ? typeof formData.client.address === "string"
             ? parseAddressString(formData.client.address)
@@ -901,6 +903,15 @@ function transformFormDataToInput(
                 }
                 return addr;
               })()
+          : null,
+        shippingAddress: formData.client.shippingAddress
+          ? {
+              fullName: formData.client.shippingAddress.fullName,
+              street: formData.client.shippingAddress.street,
+              city: formData.client.shippingAddress.city,
+              postalCode: formData.client.shippingAddress.postalCode,
+              country: formData.client.shippingAddress.country,
+            }
           : null,
       }
     : null;
@@ -1205,6 +1216,18 @@ function transformFormDataToInput(
     },
     // Inclure les paramètres des coordonnées bancaires
     showBankDetails: formData.showBankDetails || false,
+    shipping: formData.shipping ? {
+      billShipping: formData.shipping.billShipping || false,
+      shippingAddress: formData.shipping.shippingAddress ? {
+        fullName: formData.shipping.shippingAddress.fullName || "",
+        street: formData.shipping.shippingAddress.street || "",
+        city: formData.shipping.shippingAddress.city || "",
+        postalCode: formData.shipping.shippingAddress.postalCode || "",
+        country: formData.shipping.shippingAddress.country || "",
+      } : null,
+      shippingAmountHT: parseFloat(formData.shipping.shippingAmountHT) || 0,
+      shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
+    } : null,
   };
 }
 
