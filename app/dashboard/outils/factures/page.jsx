@@ -1,44 +1,41 @@
 "use client";
 
 import { Suspense } from "react";
-import { Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { Plus } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
 import { useRouter } from "next/navigation";
-import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
 function InvoicesContent() {
   const router = useRouter();
 
-  const handleCreateInvoice = () => {
+  const handleNewInvoice = () => {
     router.push("/dashboard/outils/factures/new");
   };
 
   return (
-    <CompanyInfoGuard>
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Factures clients</h1>
-            <p className="text-muted-foreground text-sm">
-              Gérez vos factures, devis et documents commerciaux
-            </p>
-          </div>
-          <Button onClick={handleCreateInvoice} className="gap-2 font-normal">
-            {/* <Plus className="h-4 w-4" /> */}
-            Créer une facture
-          </Button>
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Factures</h1>
+          <p className="text-muted-foreground">
+            Gérez vos factures et suivez vos paiements
+          </p>
         </div>
-
-        {/* Table */}
-        <Suspense fallback={<InvoiceTableSkeleton />}>
-          <InvoiceTable />
-        </Suspense>
+        <Button onClick={handleNewInvoice}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nouvelle facture
+        </Button>
       </div>
-    </CompanyInfoGuard>
+
+      {/* Table */}
+      <Suspense fallback={<InvoiceTableSkeleton />}>
+        <InvoiceTable />
+      </Suspense>
+    </div>
   );
 }
 

@@ -2,41 +2,40 @@
 
 import { Suspense } from "react";
 import { Button } from "@/src/components/ui/button";
+import { Plus } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
 import { useRouter } from "next/navigation";
-import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
 function QuotesContent() {
   const router = useRouter();
 
-  const handleCreateQuote = () => {
+  const handleNewQuote = () => {
     router.push("/dashboard/outils/devis/new");
   };
 
   return (
-    <CompanyInfoGuard>
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Devis clients</h1>
-            <p className="text-muted-foreground text-sm">
-              Gérez vos devis et propositions commerciales
-            </p>
-          </div>
-          <Button onClick={handleCreateQuote} className="gap-2 font-normal">
-            Créer un devis
-          </Button>
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Devis</h1>
+          <p className="text-muted-foreground">
+            Créez et gérez vos devis clients
+          </p>
         </div>
-
-        {/* Table */}
-        <Suspense fallback={<QuoteTableSkeleton />}>
-          <QuoteTable />
-        </Suspense>
+        <Button onClick={handleNewQuote}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nouveau devis
+        </Button>
       </div>
-    </CompanyInfoGuard>
+
+      {/* Table */}
+      <Suspense fallback={<QuoteTableSkeleton />}>
+        <QuoteTable />
+      </Suspense>
+    </div>
   );
 }
 

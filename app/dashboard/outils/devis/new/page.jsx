@@ -2,16 +2,13 @@
 
 import { Suspense } from "react";
 import ModernQuoteEditor from "../components/modern-quote-editor";
-import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 export default function NewQuotePage() {
   return (
-    <CompanyInfoGuard>
-      <Suspense fallback={<QuoteEditorSkeleton />}>
-        <ModernQuoteEditor mode="create" />
-      </Suspense>
-    </CompanyInfoGuard>
+    <Suspense fallback={<QuoteEditorSkeleton />}>
+      <ModernQuoteEditor mode="create" />
+    </Suspense>
   );
 }
 
