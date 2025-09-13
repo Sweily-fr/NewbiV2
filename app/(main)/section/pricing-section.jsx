@@ -11,29 +11,29 @@ import {
 export default function PricingSection() {
   const [billingCycle, setBillingCycle] = useState("yearly");
   return (
-    <section className="py-16" id="pricing">
-      <div className="text-center mb-12">
-        <h2 className="text-2xl sm:text-4xl font-medium text-gray-900 mb-4">
+    <section className="py-8 md:py-16 px-4 md:px-0" id="pricing">
+      <div className="text-center mb-8 md:mb-12">
+        <h2 className="text-xl md:text-2xl lg:text-4xl font-medium text-gray-900 mb-3 md:mb-4">
           Prix adaptés à tous
         </h2>
-        <p className="text-md text-gray-600 max-w-2xl mx-auto mb-6">
+        <p className="text-sm md:text-md text-gray-600 max-w-2xl mx-auto mb-4 md:mb-6 px-4 md:px-0">
           Inscrivez-vous gratuitement à Newbi avant de prendre un plan payant.
           <span className="text-[#5B4FFF]"> 14 jours d'essais offerts</span> et
           possibilité de résilier à tout moment sans condition.
         </p>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center px-4 md:px-0">
           <Tabs
             defaultValue="monthly"
             value={billingCycle}
             onValueChange={setBillingCycle}
             className="w-full max-w-xs mx-auto"
           >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="monthly">Mensuel</TabsTrigger>
-              <TabsTrigger value="yearly" className="relative">
+            <TabsList className="grid w-full grid-cols-2 h-10 md:h-auto">
+              <TabsTrigger value="monthly" className="text-sm md:text-base">Mensuel</TabsTrigger>
+              <TabsTrigger value="yearly" className="relative text-sm md:text-base">
                 Annuel
-                <span className="absolute -top-2 -right-2 bg-[#5B4FFF] text-white text-[10px] font-medium px-1.5 py-0.5 rounded-sm">
+                <span className="absolute -top-1 md:-top-2 -right-1 md:-right-2 bg-[#5B4FFF] text-white text-[8px] md:text-[10px] font-medium px-1 md:px-1.5 py-0.5 rounded-sm">
                   -10%
                 </span>
               </TabsTrigger>
@@ -42,11 +42,11 @@ export default function PricingSection() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-6 md:gap-0 bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+      <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-4 md:gap-0 bg-white p-4 md:p-8 rounded-2xl shadow-sm border border-gray-200 mx-4 md:mx-auto">
         {/* Left: Offer */}
         <div className="flex-1 pr-0 md:pr-8">
-          <h3 className="text-2xl font-medium text-gray-900 mb-4">Premium</h3>
-          <p className="text-gray-500 mb-6">
+          <h3 className="text-xl md:text-2xl font-medium text-gray-900 mb-3 md:mb-4">Premium</h3>
+          <p className="text-sm md:text-base text-gray-500 mb-4 md:mb-6">
             Inscrivez-vous gratuitement à Newbi avant de prendre un plan payant.
             <span className="text-[#5B4FFF]">
               {" "}
@@ -55,10 +55,10 @@ export default function PricingSection() {
             et possibilité de résilier à tout moment sans condition.
           </p>
           <div>
-            <h4 className="font-medium text-[#5B4FFF] mb-4">
+            <h4 className="font-medium text-[#5B4FFF] mb-3 md:mb-4 text-sm md:text-base">
               Ce qui est inclus
             </h4>
-            <ul className="text-gray-700">
+            <ul className="text-gray-700 space-y-2">
               <li className="flex items-center">
                 <CheckIcon />
                 <span className="text-sm">Accès à tous les outils</span>
@@ -76,9 +76,9 @@ export default function PricingSection() {
         </div>
 
         {/* Right: Price box */}
-        <div className="flex-1 mt-8 md:mt-0 md:ml-8 flex flex-col items-center justify-center bg-gray-50 border rounded-2xl border-gray-200 p-8">
-          <div className="text-center">
-            <p className="font-medium text-gray-700 mb-2">
+        <div className="flex-1 mt-4 md:mt-0 md:ml-8 flex flex-col items-center justify-center bg-gray-50 border rounded-2xl border-gray-200 p-4 md:p-8">
+          <div className="text-center w-full">
+            <p className="font-medium text-gray-700 mb-2 text-sm md:text-base">
               {billingCycle === "monthly"
                 ? "Abonnement mensuel"
                 : "Abonnement annuel"}
@@ -86,43 +86,50 @@ export default function PricingSection() {
                 <span className="ml-2 text-sm text-[#5B4FFF]">-10%</span>
               )}
             </p>
-            <p className="flex items-baseline justify-center text-5xl font-medium text-gray-900 mb-4">
+            <div className="flex flex-col items-center justify-center mb-3 md:mb-4">
               {billingCycle === "monthly" ? (
                 <>
-                  <span className="relative text-xl line-through text-red-400">
-                    14,99€
-                  </span>
-                  <span className="ml-3">
-                    <span className="text-[#5B4FFF] text-5xl">12,49€</span>
-                    <span className="text-base text-[#5B4FFF] ml-1">/mois</span>
-                    <span className="block text-right text-xs text-gray-500 font-medium mt-1">La première année</span>
-                  </span>
+                  <div className="flex items-baseline justify-center gap-2 md:gap-3">
+                    <span className="text-base md:text-xl line-through text-red-400">
+                      14,99€
+                    </span>
+                    <div className="flex flex-col items-center">
+                      <div className="flex items-baseline">
+                        <span className="text-[#5B4FFF] text-3xl md:text-5xl font-medium">12,49€</span>
+                        <span className="text-sm md:text-base text-[#5B4FFF] ml-1">/mois</span>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium mt-1">La première année</span>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
-                  <span className="relative text-xl line-through text-red-400">
-                    13,49€
-                  </span>
-                  <span className="ml-3">
-                    <span className="text-[#5B4FFF] text-5xl">11,24€</span>
-                    <span className="text-base text-[#5B4FFF] ml-1">/mois</span>
-                    <span className="block text-right text-xs text-gray-500 font-medium mt-1">La première année</span>
-                  </span>
+                  <div className="flex items-baseline justify-center gap-2 md:gap-3">
+                    <span className="text-base md:text-xl line-through text-red-400">
+                      13,49€
+                    </span>
+                    <div className="flex flex-col items-center">
+                      <div className="flex items-baseline">
+                        <span className="text-[#5B4FFF] text-3xl md:text-5xl font-medium">11,24€</span>
+                        <span className="text-sm md:text-base text-[#5B4FFF] ml-1">/mois</span>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium mt-1">La première année</span>
+                    </div>
+                  </div>
                 </>
               )}
-            </p>
+            </div>
             {billingCycle === "yearly" && (
-              <p className="text-sm text-gray-600 mb-2">
-                <span className="relative mr-1 text-sm line-through text-gray-500">
+              <p className="text-xs md:text-sm text-gray-600 mb-2">
+                <span className="relative mr-1 line-through text-gray-500">
                   161,88€
                 </span>
                 <span className="text-[#5B4FFF] font-medium">134,88€</span> facturé annuellement
-                <br />
               </p>
             )}
             <a
               href="/auth/signup"
-              className="block w-full bg-[#171717] text-white font-medium rounded-md px-6 py-3 mt-2 mb-3 transition"
+              className="block w-full bg-[#171717] text-white font-medium rounded-md px-4 md:px-6 py-3 mt-2 mb-3 transition text-sm md:text-base"
             >
               Commence GRATUITEMENT !
             </a>

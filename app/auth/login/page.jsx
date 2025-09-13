@@ -70,7 +70,7 @@ const signInWithProvider = async (provider) => {
       },
       onError: (error) => {
         console.error(`Erreur de connexion ${provider}:`, error);
-        
+
         // Vérifier si c'est une erreur de compte désactivé
         if (error.message && error.message.includes("désactivé")) {
           toast.error(error.message);
@@ -88,7 +88,8 @@ const signInWithProvider = async (provider) => {
 export default function LoginPage() {
   return (
     <main>
-      <div className="flex h-screen">
+      {/* Desktop Layout */}
+      <div className="hidden md:flex h-screen">
         <div className="w-1/2 flex items-center justify-center p-8">
           <div className="mx-auto sm:max-w-md w-full">
             <h3 className="text-3xl font-semibold text-foreground dark:text-foreground">
@@ -180,6 +181,62 @@ export default function LoginPage() {
               style={{ opacity: 0.9 }}
             />
           </div>
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden min-h-screen bg-background flex items-start justify-center pt-16 pb-8">
+        <div className="w-full max-w-sm px-6">
+          <h3 className="text-2xl font-semibold text-foreground mb-2">
+            Connectez-vous
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Vous n'avez pas de compte ?{" "}
+            <Link
+              href="/auth/signup"
+              className="font-medium text-primary hover:text-primary/90"
+            >
+              Inscription
+            </Link>
+          </p>
+
+          <div className="flex flex-col gap-3 mb-6">
+            <Button
+              variant="outline"
+              className="w-full items-center justify-center"
+              onClick={() => signInWithProvider("github")}
+            >
+              <GitHubIcon className="size-4 mr-2" aria-hidden={true} />
+              <span className="text-sm font-medium">GitHub</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full items-center justify-center cursor-pointer"
+              onClick={() => signInWithProvider("google")}
+            >
+              <GoogleIcon className="size-4 mr-2" aria-hidden={true} />
+              <span className="text-sm font-medium">Google</span>
+            </Button>
+          </div>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-muted-foreground">ou</span>
+            </div>
+          </div>
+
+          <LoginForm />
+          <p className="mt-4 text-sm text-muted-foreground text-center">
+            <Link
+              href="/auth/forget-password"
+              className="font-medium text-primary hover:text-primary/90"
+            >
+              Mot de passe oublié ?
+            </Link>
+          </p>
         </div>
       </div>
     </main>

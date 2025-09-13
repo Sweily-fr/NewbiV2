@@ -63,22 +63,25 @@ export default function MemberRowActions({ row, onRefetch }) {
             <DropdownMenuItem
               onClick={() => handleChangeRole("admin")}
               disabled={member.role === "admin"}
+              className="cursor-pointer"
             >
               Promouvoir admin
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => handleChangeRole("member")}
               disabled={member.role === "member"}
+              className="cursor-pointer"
             >
               Rétrograder membre
             </DropdownMenuItem>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <DropdownMenuItem
-                  className="text-red-600"
+                  variant="destructive"
+                  className="text-red-600 hover:bg-red-50 cursor-pointer"
                   onSelect={(e) => e.preventDefault()}
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4 text-red-600" />
                   Supprimer
                 </DropdownMenuItem>
               </AlertDialogTrigger>

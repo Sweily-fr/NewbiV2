@@ -41,7 +41,8 @@ export default function SignUpPage() {
 
   return (
     <main>
-      <div className="flex h-screen">
+      {/* Desktop Layout */}
+      <div className="hidden md:flex h-screen">
         <div className="w-1/2 flex items-center justify-center p-8">
           <div className="mx-auto sm:max-w-md w-full">
             <h3 className="text-3xl font-semibold text-foreground dark:text-foreground">
@@ -130,6 +131,54 @@ export default function SignUpPage() {
               style={{ opacity: 0.9 }}
             />
           </div>
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden min-h-screen bg-background flex items-start justify-center pt-16 pb-8">
+        <div className="w-full max-w-sm px-6">
+          <h3 className="text-2xl font-semibold text-foreground mb-2">
+            Inscrivez-vous
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Vous avez déjà un compte ?{" "}
+            <Link
+              href="/auth/login"
+              className="font-medium text-primary hover:text-primary/90"
+            >
+              Se connecter
+            </Link>
+          </p>
+
+          <div className="flex flex-col gap-3 mb-6">
+            <Button
+              variant="outline"
+              className="w-full items-center justify-center"
+              onClick={() => signInWithProvider("github")}
+            >
+              <GitHubIcon className="size-4 mr-2" aria-hidden={true} />
+              <span className="text-sm font-medium">GitHub</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full items-center justify-center cursor-pointer"
+              onClick={() => signInWithProvider("google")}
+            >
+              <GoogleIcon className="size-4 mr-2" aria-hidden={true} />
+              <span className="text-sm font-medium">Google</span>
+            </Button>
+          </div>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-muted-foreground">ou</span>
+            </div>
+          </div>
+
+          <RegisterForm />
         </div>
       </div>
     </main>

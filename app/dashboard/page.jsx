@@ -50,14 +50,23 @@ import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
 import LoadingSkeleton from "./loading";
 import { useState, useEffect, useMemo } from "react";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
-import { processInvoicesForCharts, processExpensesForCharts, getIncomeChartConfig, getExpenseChartConfig } from "@/src/utils/chartDataProcessors";
+import {
+  processInvoicesForCharts,
+  processExpensesForCharts,
+  getIncomeChartConfig,
+  getExpenseChartConfig,
+} from "@/src/utils/chartDataProcessors";
 
 function DashboardContent() {
   const { session } = useUser();
   const { workspaceId } = useWorkspace();
 
   // Utilisation des données de dépenses et factures existantes - sans paramètres pour éviter les problèmes
-  const { expenses, loading: expensesLoading, refetch: refetchExpenses } = useExpenses();
+  const {
+    expenses,
+    loading: expensesLoading,
+    refetch: refetchExpenses,
+  } = useExpenses();
   const { invoices, loading: invoicesLoading } = useInvoices();
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
@@ -75,8 +84,10 @@ function DashboardContent() {
     const paid = invoices.filter((invoice) => invoice.status === "COMPLETED");
     console.log("📋 Factures payées filtrées:", paid.length, paid);
     // Debug des dates de factures
-    paid.forEach(invoice => {
-      console.log(`📅 Facture ${invoice.id}: issueDate=${invoice.issueDate}, finalTotalTTC=${invoice.finalTotalTTC}`);
+    paid.forEach((invoice) => {
+      console.log(
+        `📅 Facture ${invoice.id}: issueDate=${invoice.issueDate}, finalTotalTTC=${invoice.finalTotalTTC}`
+      );
       const date = new Date(parseInt(invoice.issueDate));
       console.log(`📅 Date convertie:`, date, date.toISOString());
     });
@@ -101,14 +112,31 @@ function DashboardContent() {
   // Utiliser les fonctions utilitaires importées
 
   // Calculate totals from real data - uniquement factures payées et toutes les dépenses
-  const totalIncome = paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
-  const totalExpenses = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-  
-  console.log("🧮 Calcul totaux - Revenus factures:", paidInvoices.length, "Dépenses totales:", expenses.length);
+  const totalIncome = paidInvoices.reduce(
+    (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
+    0
+  );
+  const totalExpenses = expenses.reduce(
+    (sum, expense) => sum + (expense.amount || 0),
+    0
+  );
+
+  console.log(
+    "🧮 Calcul totaux - Revenus factures:",
+    paidInvoices.length,
+    "Dépenses totales:",
+    expenses.length
+  );
 
   // Force recalculation when expenses change
-  const incomeChartData = useMemo(() => processInvoicesForCharts(paidInvoices), [expenses, paidInvoices]);
-  const expenseChartData = useMemo(() => processExpensesForCharts(expenses), [expenses]);
+  const incomeChartData = useMemo(
+    () => processInvoicesForCharts(paidInvoices),
+    [expenses, paidInvoices]
+  );
+  const expenseChartData = useMemo(
+    () => processExpensesForCharts(expenses),
+    [expenses]
+  );
 
   // Si les données sont en cours de chargement, afficher le skeleton
   if (loading) {
@@ -138,85 +166,112 @@ function DashboardContent() {
   // Utiliser les vraies données financières
 
   return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
-      <div className="flex items-center justify-between w-full mb-6">
-        <p className="text-2xl font-medium">Bonjour {session?.user?.name},</p>
+    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-4 md:p-6">
+      <div className="flex items-center justify-between w-full mb-4 md:mb-6">
+        <p className="text-xl md:text-2xl font-medium">
+          Bonjour {session?.user?.name},
+        </p>
         {/* <BankingConnectButton /> */}
       </div>
       <div className="flex flex-col gap-3 w-full">
         <Comp333
-          className="w-full h-11 flex items-center"
+          className="w-full h-11 flex items-center text-xs md:text-xs placeholder:text-xs md:placeholder:text-xs"
           placeholder="Rechercher des transactions ou lancer une action"
           commandPlaceholder="Rechercher des transactions ou lancer une action"
         />
-        <div className="flex gap-3 w-full">
+        <div className="flex flex-wrap gap-2 md:gap-3 w-full">
           <Button
-            className="cursor-pointer font-polysans font-normal"
+            className="cursor-pointer font-polysans font-normal flex-1 min-w-0 md:flex-none"
             variant="outline"
             size="sm"
             asChild
           >
-            <a href="/dashboard/outils/gestion-depenses">
-              <CloudUpload />
-              Créer une transaction
+            <a
+              href="/dashboard/outils/gestion-depenses"
+              className="flex items-center gap-1 md:gap-2 justify-center"
+            >
+              <CloudUpload className="w-4 h-4" />
+              <span className="text-xs md:text-xs truncate">
+                Créer une transaction
+              </span>
             </a>
           </Button>
           <Button
-            className="cursor-pointer font-polysans font-normal"
+            className="cursor-pointer font-polysans font-normal flex-1 min-w-0 md:flex-none"
             variant="outline"
             size="sm"
             asChild
           >
-            <a href="/dashboard/outils/factures/new">
-              <FileCheck2 />
-              Créer une facture
+            <a
+              href="/dashboard/outils/factures/new"
+              className="flex items-center gap-1 md:gap-2 justify-center"
+            >
+              <FileCheck2 className="w-4 h-4" />
+              <span className="text-xs md:text-xs truncate">
+                Créer une facture
+              </span>
             </a>
           </Button>
           <Button
-            className="cursor-pointer font-polysans font-normal"
+            className="cursor-pointer font-polysans font-normal flex-1 min-w-0 md:flex-none"
             variant="outline"
             size="sm"
             asChild
           >
-            <a href="/dashboard/outils/gestion-depenses">
-              <Download />
-              Importer des reçus
+            <a
+              href="/dashboard/outils/gestion-depenses"
+              className="flex items-center gap-1 md:gap-2 justify-center"
+            >
+              <Download className="w-4 h-4" />
+              <span className="text-xs md:text-xs truncate">
+                Importer des reçus
+              </span>
             </a>
           </Button>
           <Button
-            className="cursor-pointer font-polysans font-normal"
+            className="cursor-pointer font-polysans font-normal flex-1 min-w-0 md:flex-none"
             variant="outline"
             size="sm"
             asChild
           >
-            <a href="/dashboard/outils/devis/new">
-              <FileClock />
-              Créer un devis
+            <a
+              href="/dashboard/outils/devis/new"
+              className="flex items-center gap-1 md:gap-2 justify-center"
+            >
+              <FileClock className="w-4 h-4" />
+              <span className="text-xs md:text-xs truncate">
+                Créer un devis
+              </span>
             </a>
           </Button>
           <Button
-            className="cursor-pointer font-polysans font-normal"
+            className="cursor-pointer font-polysans font-normal flex-1 min-w-0 md:flex-none"
             variant="outline"
             size="sm"
             asChild
           >
-            <a href="/dashboard/outils/factures/new">
-              <Download />
-              Importer des factures
+            <a
+              href="/dashboard/outils/factures/new"
+              className="flex items-center gap-1 md:gap-2 justify-center"
+            >
+              <Download className="w-4 h-4" />
+              <span className="text-xs md:text-xs truncate">
+                Importer des factures
+              </span>
             </a>
           </Button>
         </div>
       </div>
-      <div className="flex gap-6 w-full mt-4">
-        <BankBalanceCard className="shadow-xs w-1/2" />
-        <UnifiedTransactions limit={5} className="shadow-xs w-1/2" />
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full mt-4">
+        <BankBalanceCard className="shadow-xs w-full md:w-1/2" />
+        <UnifiedTransactions limit={5} className="shadow-xs w-full md:w-1/2" />
       </div>
-      <div className="flex gap-6 w-full">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
         <ChartAreaInteractive
           title="Entrées"
           description={formatCurrency(totalIncome)}
-          height="250px"
-          className="shadow-xs w-1/2"
+          height="200px"
+          className="shadow-xs w-full md:w-1/2"
           config={incomeChartConfig}
           data={incomeChartData}
           hideMobileCurve={true}
@@ -224,8 +279,8 @@ function DashboardContent() {
         <ChartAreaInteractive
           title="Sorties"
           description={formatCurrency(totalExpenses)}
-          height="250px"
-          className="shadow-xs w-1/2"
+          height="200px"
+          className="shadow-xs w-full md:w-1/2"
           config={expenseChartConfig}
           data={expenseChartData}
           hideMobileCurve={true}
