@@ -175,7 +175,7 @@ export function InlineEdit({
             hover:border-blue-300 hover:shadow-blue-50 hover:shadow-sm
             bg-white/80 backdrop-blur-sm
             rounded-md px-2 py-1
-            selection:bg-[#5b4fff]/50 selection:bg-[#5b4fff]/50`}
+            selection:bg-[#5b4fff]/50 selection:bg-[#5b4fff]/90`}
           style={{
             width: inputWidth,
             minWidth: "60px",

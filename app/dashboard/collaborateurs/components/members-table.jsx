@@ -82,8 +82,8 @@ export default function MembersTable({
       loadData();
     } else if (!orgLoading && !organization) {
       // Si pas d'organisation après le chargement, afficher un message d'erreur
-      console.error('Aucune organisation active trouvée');
-      toast.error('Aucune organisation active trouvée');
+      console.error("Aucune organisation active trouvée");
+      toast.error("Aucune organisation active trouvée");
       setLoading(false);
     }
   }, [refreshTrigger, orgLoading, organization]);
@@ -91,10 +91,10 @@ export default function MembersTable({
   // Formater les données pour l'affichage et déduplicater par email
   const formattedData = (() => {
     const emailMap = new Map();
-    
+
     collaborators.forEach((item) => {
       let formattedItem;
-      
+
       if (item.type === "member") {
         formattedItem = {
           ...item,
@@ -114,22 +114,24 @@ export default function MembersTable({
           createdAt: item.createdAt || new Date(),
         };
       }
-      
+
       const email = formattedItem.email;
       if (email) {
         const existing = emailMap.get(email);
-        
+
         // Garder l'entrée avec la priorité la plus haute (plus petit nombre)
         // ou la plus récente si même priorité
-        if (!existing || 
-            formattedItem.priority < existing.priority ||
-            (formattedItem.priority === existing.priority && 
-             new Date(formattedItem.createdAt) > new Date(existing.createdAt))) {
+        if (
+          !existing ||
+          formattedItem.priority < existing.priority ||
+          (formattedItem.priority === existing.priority &&
+            new Date(formattedItem.createdAt) > new Date(existing.createdAt))
+        ) {
           emailMap.set(email, formattedItem);
         }
       }
     });
-    
+
     return Array.from(emailMap.values());
   })();
 
@@ -156,7 +158,7 @@ export default function MembersTable({
           <Skeleton className="h-10 w-80" />
           <Skeleton className="h-10 w-32" />
         </div>
-        
+
         {/* Table skeleton */}
         <div className="rounded-md border">
           <Table>
@@ -208,7 +210,7 @@ export default function MembersTable({
             </TableBody>
           </Table>
         </div>
-        
+
         {/* Pagination skeleton */}
         <div className="flex items-center justify-between space-x-2 py-4">
           <Skeleton className="h-4 w-48" />
@@ -249,19 +251,21 @@ export default function MembersTable({
           {selectedRows.length > 0 && (
             <>
               <span className="text-sm text-muted-foreground">
-                {selectedRows.length} élément(s) sélectionné(s)
+                {/* {selectedRows.length} élément(s) sélectionné(s) */}
               </span>
               <Button
-                variant="destructive"
-                size="sm"
                 onClick={handleDeleteSelected}
+                className="font-normal cursor-pointer bg-red-100 border border-red-200 text-red-600 hover:bg-red-200"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Supprimer la sélection
               </Button>
             </>
           )}
-          <Button onClick={handleAddUser} className="font-normal">
+          <Button
+            onClick={handleAddUser}
+            className="font-normal cursor-pointer"
+          >
             Ajouter un collaborateur
           </Button>
         </div>

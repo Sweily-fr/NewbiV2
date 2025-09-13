@@ -231,19 +231,21 @@ export default function SubscribePage() {
   ];
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-lg font-medium">Gestion de l'abonnement</h1>
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-lg md:text-xl font-medium">
+          Gestion de l'abonnement
+        </h1>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Section Forfait actif */}
-        <div className="border border-gray-200 dark:bg-[#252525] dark:border-[#313131]/90 rounded-lg p-4">
-          <div className="flex items-start justify-between gap-4">
+        <div className="border border-gray-200 dark:bg-[#252525] dark:border-[#313131]/90 rounded-lg p-3 md:p-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-lg font-semibold">
+                <h3 className="text-base md:text-lg font-semibold">
                   {isActive() ? "Pro" : "Gratuit"}
                 </h3>
                 <Badge
@@ -257,7 +259,7 @@ export default function SubscribePage() {
                   {isActive() ? "Actuel" : "Actuel"}
                 </Badge>
               </div>
-              <p className="text-sm dark:text-gray-300 mb-3">
+              <p className="text-xs md:text-sm dark:text-gray-300 mb-3">
                 {isActive()
                   ? "Toutes les fonctionnalités pour développer votre activité"
                   : "Pour organiser tous les aspects de votre vie personnelle et professionnelle"}
@@ -284,16 +286,16 @@ export default function SubscribePage() {
                 </div>
               )}
             </div>
-            <div className="text-right flex-shrink-0">
+            <div className="text-left md:text-right flex-shrink-0">
               {!isActive() ? (
                 <>
-                  <p className="text-xs text-gray-400 mb-3 max-w-sm">
+                  <p className="text-xs text-gray-400 mb-3 md:max-w-sm">
                     Passez à un forfait supérieur pour débloquer plus de
                     fonctionnalités
                   </p>
                   <Button
                     size="sm"
-                    className="bg-[#5b50fe] hover:bg-[#5b50fe] cursor-pointer text-white"
+                    className="bg-[#5b50fe] hover:bg-[#5b50fe] cursor-pointer text-white w-full md:w-auto"
                     onClick={() => handleUpgrade("pro")}
                     disabled={isLoading}
                   >
@@ -307,8 +309,7 @@ export default function SubscribePage() {
               ) : (
                 <Button
                   variant="destructive"
-                  className="cursor-pointer font-normal"
-                  size="sm"
+                  className="font-normal cursor-pointer bg-red-100 border border-red-200 text-red-600 hover:bg-red-200 w-full md:w-auto"
                   onClick={openCancelModal}
                   disabled={isLoading}
                 >
@@ -325,19 +326,21 @@ export default function SubscribePage() {
 
         {/* Section Tous les forfaits */}
         <div>
-          <h2 className="text-lg font-medium mb-4">Tous les forfaits</h2>
+          <h2 className="text-base md:text-lg font-medium mb-3 md:mb-4">
+            Tous les forfaits
+          </h2>
 
           {/* Section Comparaison des forfaits */}
-          <div className="flex justify-between gap-4 mb-6">
+          <div className="flex flex-col md:flex-row justify-between gap-3 md:gap-4 mb-4 md:mb-6">
             {plans.map((plan, index) => (
               <div
                 key={index}
-                className={`flex-1 border border-gray-200 dark:border-[#313131]/90 dark:bg-[#252525] rounded-lg p-4 flex flex-col ${
+                className={`flex-1 border border-gray-200 dark:border-[#313131]/90 dark:bg-[#252525] rounded-lg p-3 md:p-4 flex flex-col ${
                   index === 1 ? "border-[#5b50fe] relative" : ""
                 }`}
               >
                 {index === 1 && (
-                  <Badge className="absolute -top-3 right-6 bg-[#5b50fe] font-normal text-white text-xs">
+                  <Badge className="absolute -top-3 right-3 md:right-6 bg-[#5b50fe] font-normal text-white text-xs">
                     <Crown className="w-3 h-3 mr-1" />
                     Recommandé
                   </Badge>
@@ -346,9 +349,11 @@ export default function SubscribePage() {
                 <div className="mb-3">
                   {/* Titre avec switch pour le plan Pro (seulement si pas d'abonnement actif) */}
                   {plan.name === "Pro" && !isActive() ? (
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-semibold">{plan.name}</h3>
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-2">
+                      <h3 className="text-base md:text-lg font-semibold">
+                        {plan.name}
+                      </h3>
+                      <div className="flex items-center gap-1 md:gap-2">
                         <span
                           className={`text-xs ${!isAnnual ? "text-gray-900 dark:text-white font-medium" : "text-gray-500"}`}
                         >
@@ -367,7 +372,9 @@ export default function SubscribePage() {
                       </div>
                     </div>
                   ) : (
-                    <h3 className="text-lg font-semibold mb-1">{plan.name}</h3>
+                    <h3 className="text-base md:text-lg font-semibold mb-1">
+                      {plan.name}
+                    </h3>
                   )}
 
                   {/* Prix dynamique selon le switch */}
@@ -401,18 +408,18 @@ export default function SubscribePage() {
                   )}
                 </div>
 
-                <div className="space-y-2 mb-4 flex-grow">
-                  {plan.features.slice(0, 5).map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center gap-2">
-                      <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-                      <span className="text-xs dark:text-gray-300">
+                <div className="space-y-1 md:space-y-2 mb-3 md:mb-4 flex-grow">
+                  {plan.features.slice(0, 4).map((feature, featureIndex) => (
+                    <div key={featureIndex} className="flex items-start gap-2">
+                      <Check className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-xs dark:text-gray-300 leading-tight">
                         {feature}
                       </span>
                     </div>
                   ))}
-                  {plan.features.length > 5 && (
+                  {plan.features.length > 4 && (
                     <p className="text-xs text-gray-500 ml-5">
-                      +{plan.features.length - 5} autres fonctionnalités
+                      +{plan.features.length - 4} autres fonctionnalités
                     </p>
                   )}
                 </div>

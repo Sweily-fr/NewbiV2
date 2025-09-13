@@ -65,40 +65,49 @@ const HeroAnimation = () => {
   }, []);
 
   return (
-    <div className="hidden md:block relative w-full">
-      <div className="absolute inset-0 flex flex-col items-center justify-center mt-6 z-10">
-        <h1 className="max-w-8xl text-center mx-auto text-balance font-medium text-6xl md:text-7xl xl:text-[3.2rem] font-['Poppins'] leading-tight">
-          <span className="text-[#2E2E2E] block">Les meilleurs outils</span>
-          <span className="text-[#2E2E2E] block">pour être</span>
-          <span className="bg-gradient-to-r from-[#171717] to-[#171717]/90 px-4 text-white rounded-lg inline-block my-4">
-            indépendant,
-          </span>
-          <span className="text-[#2E2E2E] block">sans le prix fort</span>
-        </h1>
+    <>
+      {/* Version Mobile */}
+      <div className="block md:hidden relative w-full">
+        <div className="flex flex-col items-center justify-center text-center px-6 py-8">
+          <h1 className="max-w-sm text-center mx-auto text-balance font-medium text-2xl sm:text-3xl font-['Poppins'] leading-tight">
+            <span className="text-[#2E2E2E] block mb-2">
+              Les meilleurs outils
+            </span>
+            <span className="bg-gradient-to-r from-[#171717] to-[#171717]/90 px-4 py-2 text-white rounded-lg inline-block my-3">
+              pour être indépendant,
+            </span>
+            <span className="text-[#2E2E2E] mt-2 block">sans le prix fort</span>
+          </h1>
 
-        <span className="text-[#2E2E2E] block mt-6">
-          Créez votre business parfait en quelques clics.
-        </span>
-        {/* <div
-          key={1}
-          className="bg-[#5B4FFF]/20 rounded-[10px] border p-0.5 mt-20"
-        >
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="px-5 text-sm text-[#5B4FFF]/70 cursor-pointer hover:text-[#5B4FFF]/80"
-          >
-            <span className="text-nowrap">Commencez gratuitement</span>
-          </Button>
-        </div> */}
-      </div>
-      <div className="w-full flex justify-center">
-        <div ref={svgRef} className="w-full p-20">
-          <MySVG />
+          <p className="text-[#2E2E2E] text-base sm:text-lg mt-6 max-w-sm mx-auto leading-relaxed">
+            Créez votre business parfait en quelques clics.
+          </p>
         </div>
       </div>
-    </div>
+
+      {/* Version Desktop */}
+      <div className="hidden md:block relative w-full">
+        <div className="absolute inset-0 flex flex-col items-center justify-center mt-6 z-10">
+          <h1 className="max-w-8xl text-center mx-auto text-balance font-medium text-6xl md:text-7xl xl:text-[3.2rem] font-['Poppins'] leading-tight">
+            <span className="text-[#2E2E2E] block">Les meilleurs outils</span>
+            <span className="text-[#2E2E2E] block">pour être</span>
+            <span className="bg-gradient-to-r from-[#171717] to-[#171717]/90 px-4 text-white rounded-lg inline-block my-4">
+              indépendant,
+            </span>
+            <span className="text-[#2E2E2E] block">sans le prix fort</span>
+          </h1>
+
+          <span className="text-[#2E2E2E] block mt-6">
+            Créez votre business parfait en quelques clics.
+          </span>
+        </div>
+        <div className="w-full flex justify-center">
+          <div ref={svgRef} className="w-full p-20">
+            <MySVG />
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 
