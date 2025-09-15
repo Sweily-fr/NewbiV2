@@ -6,6 +6,7 @@ import React, {
   useState,
   useEffect,
   useMemo,
+  Suspense,
 } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -21,8 +22,8 @@ export const useSignatureData = () => {
   return context;
 };
 
-// Provider pour les données de signature
-export function SignatureProvider({ children }) {
+// Provider content avec useSearchParams
+function SignatureProviderContent({ children }) {
   const searchParams = useSearchParams();
   const isEditMode = searchParams?.get("edit") === "true";
 
@@ -323,5 +324,14 @@ export function SignatureProvider({ children }) {
     <SignatureContext.Provider value={value}>
       {children}
     </SignatureContext.Provider>
+  );
+}
+
+// Provider principal avec Suspense
+export function SignatureProvider({ children }) {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <SignatureProviderContent>{children}</SignatureProviderContent>
+    </Suspense>
   );
 }
