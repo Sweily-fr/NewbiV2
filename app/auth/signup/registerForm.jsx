@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 import { useForm, FieldError } from "react-hook-form";
 import { SubmitButton } from "@/src/components/ui/submit-button";
 import { Input, InputPassword, InputEmail } from "@/src/components/ui/input";
@@ -11,7 +12,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAutoOrganization } from "@/src/hooks/useAutoOrganization";
 
-const RegisterForm = () => {
+const RegisterFormContent = () => {
   const {
     register,
     handleSubmit,
@@ -161,6 +162,14 @@ const RegisterForm = () => {
         S'inscrire
       </SubmitButton>
     </form>
+  );
+};
+
+const RegisterForm = () => {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <RegisterFormContent />
+    </Suspense>
   );
 };
 
