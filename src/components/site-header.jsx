@@ -17,6 +17,7 @@ import { Save } from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_BOARD } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { ReferralButton } from "@/src/components/referral/ReferralButton";
 
 // Composant bouton de sauvegarde pour les signatures
 const SignatureSaveButton = () => {
@@ -115,6 +116,7 @@ export function SiteHeader() {
           <BreadcrumbList>{pathname !== "/" && breadcrumbs}</BreadcrumbList>
         </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
+          <ReferralButton />
           {/* <SignatureSaveButton /> */}
           <ModeToggle />
           {/* <Button variant="ghost" asChild size="sm" className="hidden sm:flex">

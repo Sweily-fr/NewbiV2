@@ -24,12 +24,20 @@ const RegisterForm = () => {
   const searchParams = useSearchParams();
   const { createAutoOrganization } = useAutoOrganization();
 
-  // Récupérer les paramètres d'invitation
+  // Récupérer les paramètres d'invitation et de parrainage
   const invitationId = searchParams.get('invitation');
   const invitationEmail = searchParams.get('email');
+  const referralCode = searchParams.get('ref');
 
   const onSubmit = async (formData) => {
     console.log(formData, "formData");
+    
+    // Ajouter le code de parrainage aux données du formulaire si présent
+    if (referralCode) {
+      formData.referredBy = referralCode;
+      console.log("Code de parrainage détecté:", referralCode);
+    }
+    
     await signUp.email(formData, {
       onSuccess: async (context) => {
         toast.success("Vous avez reçu un email de verification");
