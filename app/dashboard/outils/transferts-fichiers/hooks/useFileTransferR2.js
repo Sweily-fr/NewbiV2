@@ -45,10 +45,6 @@ export const useFileTransferR2 = (refetchTransfers) => {
     const chunks = createFileChunks(file);
     const totalChunks = chunks.length;
 
-    console.log(
-      `📤 Upload R2 du fichier ${file.name} en ${totalChunks} chunks`
-    );
-
     try {
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
@@ -57,10 +53,6 @@ export const useFileTransferR2 = (refetchTransfers) => {
         const chunkFile = new File([chunk], `chunk-${i}`, {
           type: "application/octet-stream",
         });
-
-        console.log(
-          `📦 Upload chunk ${i + 1}/${totalChunks} pour ${file.name}`
-        );
 
         const { data } = await uploadFileChunkToR2Mutation({
           variables: {
@@ -81,13 +73,8 @@ export const useFileTransferR2 = (refetchTransfers) => {
         const progress = ((i + 1) / totalChunks) * 100;
         setUploadProgress(progress);
 
-        console.log(
-          `✅ Chunk ${i + 1}/${totalChunks} uploadé (${progress.toFixed(1)}%)`
-        );
-
         // Si c'est le dernier chunk et que le fichier est complet
         if (data.uploadFileChunkToR2.fileCompleted) {
-          console.log(`🎉 Fichier ${file.name} reconstruit avec succès sur R2`);
           return fileId;
         }
       }
@@ -110,18 +97,12 @@ export const useFileTransferR2 = (refetchTransfers) => {
       const fileData = files[i];
 
       try {
-        console.log(
-          `📁 Upload fichier ${i + 1}/${totalFiles}: ${fileData.file.name}`
-        );
-
         const fileId = await uploadFileInChunksToR2(fileData);
         uploadedFileIds.push(fileId);
 
         // Mettre à jour le progrès global
         const globalProgress = ((i + 1) / totalFiles) * 100;
         setUploadProgress(globalProgress);
-
-        console.log(`✅ Fichier ${i + 1}/${totalFiles} uploadé avec succès`);
       } catch (error) {
         console.error(`❌ Erreur upload fichier ${fileData.file.name}:`, error);
         throw error;
@@ -156,14 +137,8 @@ export const useFileTransferR2 = (refetchTransfers) => {
           throw new Error("Aucun fichier valide à uploader");
         }
 
-        console.log(
-          `🚀 Début de l'upload R2 de ${validFiles.length} fichier(s)`
-        );
-
         // Upload tous les fichiers en chunks vers R2
         const uploadedFileIds = await uploadMultipleFilesToR2(validFiles);
-
-        console.log(`📋 Fichiers uploadés sur R2:`, uploadedFileIds);
 
         // Préparer les options du transfert
         const inputData = {
@@ -177,9 +152,6 @@ export const useFileTransferR2 = (refetchTransfers) => {
           message: transferOptions.message || "",
         };
 
-        console.log(`⚙️ Création du transfert R2 avec options:`, inputData);
-        console.log(`🔍 Debug transferOptions reçues:`, transferOptions);
-
         // Créer le transfert avec les IDs des fichiers
         const { data, errors } = await createFileTransferWithIdsR2Mutation({
           variables: {
@@ -187,12 +159,6 @@ export const useFileTransferR2 = (refetchTransfers) => {
             input: inputData,
           },
         });
-
-        console.log(`🔍 Debug - Réponse GraphQL complète:`, { data, errors });
-        console.log(
-          `🔍 Debug - createFileTransferWithIdsR2:`,
-          data?.createFileTransferWithIdsR2
-        );
 
         if (errors) {
           console.error("❌ Erreurs GraphQL:", errors);
@@ -227,8 +193,6 @@ export const useFileTransferR2 = (refetchTransfers) => {
 
           // Réinitialiser les fichiers sélectionnés
           setSelectedFiles([]);
-
-          console.log(`🎉 Transfert R2 créé avec succès:`, result);
 
           return result;
         } else {
@@ -274,7 +238,6 @@ export const useFileTransferR2 = (refetchTransfers) => {
     }));
 
     setSelectedFiles((prev) => [...prev, ...newFiles]);
-    console.log(`📁 ${newFiles.length} fichier(s) ajouté(s) pour upload R2`);
   }, []);
 
   /**
@@ -282,7 +245,6 @@ export const useFileTransferR2 = (refetchTransfers) => {
    */
   const removeFile = useCallback((fileId) => {
     setSelectedFiles((prev) => prev.filter((f) => f.id !== fileId));
-    console.log(`🗑️ Fichier supprimé de la liste R2: ${fileId}`);
   }, []);
 
   /**

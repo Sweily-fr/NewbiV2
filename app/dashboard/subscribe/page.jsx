@@ -74,16 +74,6 @@ export default function SubscribePage() {
         disableRedirect: false,
       };
 
-      console.log("Debug pricing:", {
-        isAnnual,
-        monthlyPrice: process.env.STRIPE_PRICE_ID_MONTH,
-        yearlyPrice: process.env.STRIPE_PRICE_ID_YEARS,
-        selectedPrice: isAnnual
-          ? process.env.STRIPE_PRICE_ID_YEARS
-          : process.env.STRIPE_PRICE_ID_MONTH,
-        upgradeParams,
-      });
-
       const { data, error } =
         await authClient.subscription.upgrade(upgradeParams);
 
@@ -119,10 +109,6 @@ export default function SubscribePage() {
         toast.error("Aucun abonnement actif trouvé");
         return;
       }
-      console.log("Organization ID:", sessionData.session.activeOrganizationId);
-      console.log("Subscription ID:", subscription.id);
-      console.log("Subscription object:", subscription);
-
       const { data, error } = await authClient.subscription.cancel({
         subscriptionId: subscription.id,
         referenceId: sessionData.session.activeOrganizationId,

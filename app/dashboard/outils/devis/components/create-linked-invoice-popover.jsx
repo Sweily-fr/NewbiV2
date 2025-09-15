@@ -5,15 +5,19 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { Separator } from "@/src/components/ui/separator";
 import { Slider } from "@/src/components/ui/slider";
 import { Plus, Euro } from "lucide-react";
 
-export default function CreateLinkedInvoicePopover({ 
-  quote, 
-  onCreateLinkedInvoice, 
-  isLoading = false 
+export default function CreateLinkedInvoicePopover({
+  quote,
+  onCreateLinkedInvoice,
+  isLoading = false,
 }) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
@@ -25,27 +29,20 @@ export default function CreateLinkedInvoicePopover({
     if (!quote.linkedInvoices || quote.linkedInvoices.length === 0) {
       return quote.finalTotalTTC;
     }
-    
+
     const totalInvoiced = quote.linkedInvoices.reduce((sum, invoice) => {
       return sum + (invoice.finalTotalTTC || 0);
     }, 0);
-    
+
     return quote.finalTotalTTC - totalInvoiced;
   };
 
   const remainingAmount = calculateRemainingAmount();
-  const linkedInvoicesCount = quote.linkedInvoices ? quote.linkedInvoices.length : 0;
+  const linkedInvoicesCount = quote.linkedInvoices
+    ? quote.linkedInvoices.length
+    : 0;
   const canCreateInvoice = linkedInvoicesCount < 3 && remainingAmount > 0;
   const isLastInvoice = linkedInvoicesCount === 2; // 3ème et dernière facture
-
-  console.log('CreateLinkedInvoicePopover - État:', {
-    remainingAmount,
-    linkedInvoicesCount,
-    canCreateInvoice,
-    isLastInvoice,
-    quoteStatus: quote.status,
-    quoteFinalTotal: quote.finalTotalTTC
-  });
 
   // Si c'est la dernière facture, forcer le montant au reste à facturer
   React.useEffect(() => {
@@ -56,41 +53,29 @@ export default function CreateLinkedInvoicePopover({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    console.log('handleSubmit appelé avec:', { amount, isDeposit, quoteId: quote.id });
-    
+
     const invoiceAmount = parseFloat(amount);
     if (isNaN(invoiceAmount) || invoiceAmount <= 0) {
-      console.log('Montant invalide:', invoiceAmount);
       return;
     }
 
     if (invoiceAmount > remainingAmount) {
-      console.log('Montant supérieur au reste à facturer:', invoiceAmount, '>', remainingAmount);
       return;
     }
 
     try {
-      console.log('Appel de onCreateLinkedInvoice avec:', {
-        quoteId: quote.id,
-        amount: invoiceAmount,
-        isDeposit
-      });
-      
       await onCreateLinkedInvoice({
         quoteId: quote.id,
         amount: invoiceAmount,
-        isDeposit
+        isDeposit,
       });
 
-      console.log('Facture liée créée avec succès');
-      
       // Réinitialiser le formulaire et fermer le popover
       setAmount("");
       setIsDeposit(false);
       setOpen(false);
     } catch (error) {
-      console.error('Erreur lors de la création de la facture liée:', error);
+      console.error("Erreur lors de la création de la facture liée:", error);
     }
   };
 
@@ -105,7 +90,7 @@ export default function CreateLinkedInvoicePopover({
   };
 
   const setQuickAmount = (percentage) => {
-    const quickAmount = (remainingAmount * percentage / 100).toFixed(2);
+    const quickAmount = ((remainingAmount * percentage) / 100).toFixed(2);
     setAmount(quickAmount);
     setPercentage([percentage]); // Synchroniser le slider
   };
@@ -114,14 +99,18 @@ export default function CreateLinkedInvoicePopover({
   const handlePercentageChange = (value) => {
     const newPercentage = value[0];
     setPercentage([newPercentage]);
-    const calculatedAmount = (remainingAmount * newPercentage / 100).toFixed(2);
+    const calculatedAmount = ((remainingAmount * newPercentage) / 100).toFixed(
+      2
+    );
     setAmount(calculatedAmount);
   };
 
   // Mettre à jour le slider quand le montant change manuellement
   const updatePercentageFromAmount = (amountValue) => {
     if (amountValue && !isNaN(parseFloat(amountValue)) && remainingAmount > 0) {
-      const calculatedPercentage = Math.round((parseFloat(amountValue) / remainingAmount) * 100);
+      const calculatedPercentage = Math.round(
+        (parseFloat(amountValue) / remainingAmount) * 100
+      );
       setPercentage([Math.min(100, Math.max(0, calculatedPercentage))]);
     }
   };
@@ -133,9 +122,9 @@ export default function CreateLinkedInvoicePopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="w-full font-normal text-sm"
           disabled={isLoading}
         >
@@ -146,20 +135,24 @@ export default function CreateLinkedInvoicePopover({
       <PopoverContent className="w-80" align="end">
         <div className="space-y-4">
           <div className="space-y-2">
-            <h4 className="font-medium leading-none">Créer une facture liée au devis</h4>
+            <h4 className="font-medium leading-none">
+              Créer une facture liée au devis
+            </h4>
             <p className="text-sm text-muted-foreground">
               Créez une facture partielle à partir de ce devis
             </p>
           </div>
-          
+
           <Separator />
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Total du devis :</span>
-              <span className="font-medium">{quote.finalTotalTTC.toFixed(2)} €</span>
+              <span className="font-medium">
+                {quote.finalTotalTTC.toFixed(2)} €
+              </span>
             </div>
-            
+
             {linkedInvoicesCount > 0 && (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Déjà facturé :</span>
@@ -168,22 +161,22 @@ export default function CreateLinkedInvoicePopover({
                 </span>
               </div>
             )}
-            
+
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Reste à facturer :</span>
               <span className="font-semibold text-green-600">
                 {remainingAmount.toFixed(2)} €
               </span>
             </div>
-            
+
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Factures liées :</span>
               <span className="font-medium">{linkedInvoicesCount}/3</span>
             </div>
           </div>
-          
+
           <Separator />
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="amount">
@@ -194,7 +187,7 @@ export default function CreateLinkedInvoicePopover({
                   </span>
                 )}
               </Label>
-              
+
               {/* Slider de pourcentage - caché pour la dernière facture */}
               {!isLastInvoice && (
                 <div className="space-y-3">
@@ -222,7 +215,7 @@ export default function CreateLinkedInvoicePopover({
                   </div>
                 </div>
               )}
-              
+
               <div className="relative">
                 <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -236,7 +229,7 @@ export default function CreateLinkedInvoicePopover({
                   required
                 />
               </div>
-              
+
               {/* Boutons de montants rapides - cachés pour la dernière facture */}
               {!isLastInvoice && (
                 <div className="flex gap-1 mt-2">
@@ -269,15 +262,16 @@ export default function CreateLinkedInvoicePopover({
                   </Button>
                 </div>
               )}
-              
+
               {/* Message explicatif pour la dernière facture */}
               {isLastInvoice && (
                 <p className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
-                  ⚠️ Cette dernière facture doit obligatoirement être égale au montant restant à facturer.
+                  ⚠️ Cette dernière facture doit obligatoirement être égale au
+                  montant restant à facturer.
                 </p>
               )}
             </div>
-            
+
             {/* Checkbox "Facture d'acompte" seulement pour la première facture liée */}
             {linkedInvoicesCount === 0 && (
               <div className="flex items-center space-x-2">
@@ -286,15 +280,15 @@ export default function CreateLinkedInvoicePopover({
                   checked={isDeposit}
                   onCheckedChange={setIsDeposit}
                 />
-                <Label 
-                  htmlFor="isDeposit" 
+                <Label
+                  htmlFor="isDeposit"
                   className="text-sm font-normal cursor-pointer"
                 >
                   Facture d'acompte
                 </Label>
               </div>
             )}
-            
+
             <div className="flex gap-2 pt-2">
               <Button
                 type="button"
@@ -310,9 +304,9 @@ export default function CreateLinkedInvoicePopover({
                 size="sm"
                 className="flex-1"
                 disabled={
-                  isLoading || 
-                  !amount || 
-                  parseFloat(amount) <= 0 || 
+                  isLoading ||
+                  !amount ||
+                  parseFloat(amount) <= 0 ||
                   parseFloat(amount) > remainingAmount
                 }
               >

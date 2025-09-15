@@ -71,25 +71,12 @@ function DashboardContent() {
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
 
-  // Debug logs pour comprendre les données
-  console.log("🔍 Debug données dashboard:");
-  console.log("- Expenses:", expenses?.length || 0, expenses);
-  console.log("- Invoices:", invoices?.length || 0, invoices);
-  console.log("- ExpensesLoading:", expensesLoading);
-  console.log("- InvoicesLoading:", invoicesLoading);
-  console.log("- WorkspaceId:", workspaceId);
-
   // Filtrer les factures payées
   const paidInvoices = useMemo(() => {
     const paid = invoices.filter((invoice) => invoice.status === "COMPLETED");
-    console.log("📋 Factures payées filtrées:", paid.length, paid);
     // Debug des dates de factures
     paid.forEach((invoice) => {
-      console.log(
-        `📅 Facture ${invoice.id}: issueDate=${invoice.issueDate}, finalTotalTTC=${invoice.finalTotalTTC}`
-      );
       const date = new Date(parseInt(invoice.issueDate));
-      console.log(`📅 Date convertie:`, date, date.toISOString());
     });
     return paid;
   }, [invoices]);
@@ -119,13 +106,6 @@ function DashboardContent() {
   const totalExpenses = expenses.reduce(
     (sum, expense) => sum + (expense.amount || 0),
     0
-  );
-
-  console.log(
-    "🧮 Calcul totaux - Revenus factures:",
-    paidInvoices.length,
-    "Dépenses totales:",
-    expenses.length
   );
 
   // Force recalculation when expenses change

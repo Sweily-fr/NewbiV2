@@ -16,7 +16,6 @@ export async function loginUser(formData, rememberMe = false) {
           //   toast.success("Connexion reussie");
         },
         onError: (error) => {
-          console.log("error", error);
           toast.error(error.message);
         },
         // Vous pouvez ajouter des callbacks ici si nécessaire
@@ -35,7 +34,6 @@ export async function loginUser(formData, rememberMe = false) {
 
 export async function registerUser(formData) {
   try {
-    console.log(formData, "register");
     // Format selon la documentation Better Auth
     const { data, error } = await authClient.signUp.email({
       email: formData.email,
@@ -44,7 +42,6 @@ export async function registerUser(formData) {
       // Supprimer passwordConfirmation car non supporté par l'API
       callbackURL: "/dashboard",
     });
-    console.log(data, error);
 
     if (error) {
       throw new Error(error.message || "Erreur lors de l'inscription");
@@ -148,16 +145,13 @@ export const signInGithub = async () => {
  * @returns {Promise<{accessToken: string}>} - Token d'accès Google
  */
 export const getGoogleAccessToken = async (accountId) => {
-  console.log("accountId", accountId);
   try {
     const { accessToken } = await authClient.getAccessToken({
       providerId: "google",
       accountId: accountId, // Optionnel, si vous voulez récupérer le token pour un compte spécifique
     });
-    console.log("Token d'accès Google:", accessToken);
     return { accessToken };
   } catch (err) {
-    console.error("Erreur lors de la récupération du token Google:", err);
     throw new Error(err.message || "Impossible de récupérer le token Google");
   }
 };

@@ -23,7 +23,6 @@ export const useWorkspace = () => {
       organizations &&
       organizations.length > 0
     ) {
-      console.log("🏢 Définition de l'organisation active:", organizations[0]);
       authClient.organization.setActive({
         organizationId: organizations[0].id,
       });
@@ -31,32 +30,32 @@ export const useWorkspace = () => {
   }, [loading, activeOrganization, organizations]);
 
   // Debug logs
-  React.useEffect(() => {
-    console.log("🔍 useWorkspace state:", {
-      loading,
-      orgsLoading,
-      activeLoading,
-      organizationsCount: organizations?.length || 0,
-      activeOrganization: activeOrganization
-        ? {
-            id: activeOrganization.id,
-            name: activeOrganization.name,
-            companyName: activeOrganization.companyName,
-            companyEmail: activeOrganization.companyEmail,
-            addressStreet: activeOrganization.addressStreet,
-            addressCity: activeOrganization.addressCity,
-            siret: activeOrganization.siret,
-            vatNumber: activeOrganization.vatNumber,
-          }
-        : null,
-      workspaceId: activeOrganization?.id || null,
-      allOrganizations: organizations?.map(org => ({
-        id: org.id,
-        name: org.name,
-        companyName: org.companyName,
-      })),
-    });
-  }, [loading, orgsLoading, activeLoading, organizations, activeOrganization]);
+  // React.useEffect(() => {
+  //   console.log("🔍 useWorkspace state:", {
+  //     loading,
+  //     orgsLoading,
+  //     activeLoading,
+  //     organizationsCount: organizations?.length || 0,
+  //     activeOrganization: activeOrganization
+  //       ? {
+  //           id: activeOrganization.id,
+  //           name: activeOrganization.name,
+  //           companyName: activeOrganization.companyName,
+  //           companyEmail: activeOrganization.companyEmail,
+  //           addressStreet: activeOrganization.addressStreet,
+  //           addressCity: activeOrganization.addressCity,
+  //           siret: activeOrganization.siret,
+  //           vatNumber: activeOrganization.vatNumber,
+  //         }
+  //       : null,
+  //     workspaceId: activeOrganization?.id || null,
+  //     allOrganizations: organizations?.map(org => ({
+  //       id: org.id,
+  //       name: org.name,
+  //       companyName: org.companyName,
+  //     })),
+  //   });
+  // }, [loading, orgsLoading, activeLoading, organizations, activeOrganization]);
 
   return {
     workspaceId: activeOrganization?.id || null,
@@ -76,15 +75,15 @@ export const useRequiredWorkspace = () => {
   const error = !loading && !workspaceId ? "Aucun workspace sélectionné" : null;
 
   // Debug logs
-  React.useEffect(() => {
-    console.log("🔍 useRequiredWorkspace:", {
-      workspaceId,
-      hasOrganization: !!organization,
-      loading,
-      error,
-      organizationId: organization?.id,
-    });
-  }, [workspaceId, organization, loading, error]);
+  // React.useEffect(() => {
+  //   console.log("🔍 useRequiredWorkspace:", {
+  //     workspaceId,
+  //     hasOrganization: !!organization,
+  //     loading,
+  //     error,
+  //     organizationId: organization?.id,
+  //   });
+  // }, [workspaceId, organization, loading, error]);
 
   return {
     workspaceId,

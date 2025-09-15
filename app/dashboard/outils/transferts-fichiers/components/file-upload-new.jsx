@@ -99,15 +99,6 @@ export default function FileUploadNew() {
     refetchStatus,
   } = useStripeConnect(user?.user?.id);
 
-  // Debug: Afficher les détails du compte Stripe
-  console.log("Stripe Connect Debug:", {
-    isConnected: stripeConnected,
-    canReceivePayments,
-    stripeAccount,
-    userId: user?.user?.id,
-    user: user,
-  });
-
   // Utilisation directe de R2 comme stockage unique
   const {
     selectedFiles,
@@ -197,12 +188,6 @@ export default function FileUploadNew() {
   // Vérifier automatiquement le statut Stripe au retour de redirection
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    console.log("🔍 Vérification URL params:", {
-      url: window.location.href,
-      search: window.location.search,
-      stripeSuccess: urlParams.get("stripe_success"),
-      userId: user?.user?.id,
-    });
 
     // Vérifier si on vient de Stripe (même sans paramètre stripe_success)
     // En vérifiant si on a des fichiers sauvegardés dans sessionStorage
@@ -213,19 +198,13 @@ export default function FileUploadNew() {
       urlParams.get("stripe_success") === "true" || hasStripeRedirectFiles;
 
     if (isFromStripe && user?.user?.id && stripeAccount?.accountId) {
-      console.log("✅ Retour de Stripe détecté, vérification du statut...");
-
       const timer = setTimeout(async () => {
         try {
           // Vérifier et mettre à jour le statut du compte
-          console.log("📞 Appel checkAndUpdateAccountStatus...");
           await checkAndUpdateAccountStatus();
 
           // Refetch les données pour s'assurer qu'elles sont à jour
-          console.log("🔄 Refetch du statut...");
           await refetchStatus();
-
-          console.log("✅ Statut Stripe mis à jour automatiquement");
         } catch (error) {
           console.error(
             "❌ Erreur lors de la vérification automatique:",
@@ -293,7 +272,6 @@ export default function FileUploadNew() {
 
   const handleCreateTransfer = async () => {
     try {
-      console.log("🚀 Création transfert avec options:", transferOptions);
       const result = await createTransfer(transferOptions);
 
       // Rediriger vers la page des transferts après création réussie

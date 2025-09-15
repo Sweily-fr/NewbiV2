@@ -45,31 +45,8 @@ export default function TransferPage() {
   // Déclencher confetti si paiement réussi
   useEffect(() => {
     if (paymentStatus === "success") {
-      console.log("🎉 Paiement réussi détecté, déclenchement des confettis!");
-
       // Délai pour laisser la page se charger
       const timer = setTimeout(() => {
-        console.log("🔍 Debug confettiRef.current:", confettiRef.current);
-
-        if (confettiRef.current?.fire) {
-          console.log("✅ Déclenchement confetti avec fire()");
-          confettiRef.current.fire({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: [
-              "#5b4fff",
-              "#ff6b6b",
-              "#4ecdc4",
-              "#45b7d1",
-              "#96ceb4",
-              "#ffeaa7",
-            ],
-          });
-        } else {
-          console.log("❌ confettiRef.current?.fire non disponible");
-        }
-
         // Toast de succès
         toast.success(
           "Paiement effectué avec succès! Vous pouvez maintenant télécharger vos fichiers."
@@ -97,48 +74,12 @@ export default function TransferPage() {
 
   const transfer = data?.getFileTransferByLink;
 
-  // Debug: Afficher la structure de la réponse
-  console.log("🔍 Debug - Réponse complète:", data);
-  console.log("🔍 Debug - Transfer:", transfer);
-  console.log("🔍 Debug - FileTransfer:", transfer?.fileTransfer);
-  console.log("🔍 Debug - Files:", transfer?.fileTransfer?.files);
-  console.log(
-    "🔍 Debug - isPaymentRequired:",
-    transfer?.fileTransfer?.isPaymentRequired
-  );
-  console.log(
-    "🔍 Debug - paymentAmount:",
-    transfer?.fileTransfer?.paymentAmount
-  );
-  console.log(
-    "🔍 Debug - paymentCurrency:",
-    transfer?.fileTransfer?.paymentCurrency
-  );
-  console.log("🔍 Debug - isPaid:", transfer?.fileTransfer?.isPaid);
-
-  // Test temporaire: forcer l'affichage pour debug
-  console.log("🔧 Test - Condition d'affichage:", {
-    isPaymentRequired: transfer?.fileTransfer?.isPaymentRequired,
-    isPaid: transfer?.fileTransfer?.isPaid,
-    shouldShow:
-      transfer?.fileTransfer?.isPaymentRequired &&
-      !transfer?.fileTransfer?.isPaid,
-  });
-
   // Fonction pour télécharger un fichier
   const downloadFile = async (fileId, fileName) => {
     setIsDownloading(true);
     const startTime = Date.now();
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      console.log("🔐 Debug downloadFile appelé avec:", {
-        shareLink,
-        accessKey,
-        transferId: transfer?.fileTransfer?.id,
-        apiUrl: apiUrl,
-        recipientEmail: transfer?.fileTransfer?.recipientEmail,
-        fullUrl: `${apiUrl}/api/transfers/${transfer?.fileTransfer?.id}/authorize`,
-      });
 
       // Demander l'autorisation de téléchargement au serveur
       const authResponse = await fetch(
@@ -155,12 +96,8 @@ export default function TransferPage() {
         }
       );
 
-      console.log("Auth response status:", authResponse.status);
-      console.log("Auth response headers:", authResponse.headers);
-
       if (!authResponse.ok) {
         const errorText = await authResponse.text();
-        console.error("Auth response error:", errorText);
         throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
       }
 
@@ -180,11 +117,8 @@ export default function TransferPage() {
         throw new Error("URL de téléchargement non trouvée");
       }
 
-      console.log("URL de téléchargement sécurisée:", downloadInfo.downloadUrl);
-
       // Utiliser la route proxy du serveur pour un vrai téléchargement
       const proxyUrl = `${apiUrl}/api/files/download/${transfer?.fileTransfer?.id}/${fileId}`;
-      console.log("URL proxy de téléchargement:", proxyUrl);
 
       const a = document.createElement("a");
       a.href = proxyUrl;
@@ -239,11 +173,8 @@ export default function TransferPage() {
         }
       );
 
-      console.log("Auth response status (bulk):", authResponse.status);
-
       if (!authResponse.ok) {
         const errorText = await authResponse.text();
-        console.error("Auth response error (bulk):", errorText);
         throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
       }
 
@@ -411,8 +342,8 @@ export default function TransferPage() {
   const isExpired = new Date(transfer?.fileTransfer?.expiryDate) < new Date();
 
   return (
-    <div className="flex h-screen relative">
-      <div className="w-1/2 flex items-center justify-center p-2 relative">
+    <div className="flex flex-col lg:flex-row h-screen relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-2 relative">
         {/* Confetti Canvas - limité à la partie gauche */}
         {paymentStatus === "success" && (
           <Confetti
@@ -420,7 +351,7 @@ export default function TransferPage() {
             className="absolute right-0 top-0 z-50 w-full h-full pointer-events-none"
           />
         )}
-        <div className="mx-auto sm:max-w-xl w-full">
+        <div className="mx-auto w-full max-w-xl lg:max-w-xl">
           <div className="mb-8">
             <h1 className="text-xl font-medium mb-2">
               Téléchargez les fichiers partagés avec vous
@@ -445,7 +376,7 @@ export default function TransferPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="flex items-center space-x-2">
                   <File size={16} className="text-gray-500" />
                   <span className="text-xs text-gray-600">
@@ -509,7 +440,7 @@ export default function TransferPage() {
           {/* ici tu fais les mdifs */}
           <Card className="shadow-none border-none">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center font-normal justify-between">
+              <CardTitle className="flex flex-col lg:flex-row lg:items-center font-normal lg:justify-between gap-4">
                 <span className="flex items-center space-x-2">
                   <span>
                     Fichiers ({transfer?.fileTransfer?.files?.length || 0})
@@ -526,7 +457,7 @@ export default function TransferPage() {
                           transfer?.fileTransfer?.paymentAmount > 0)) &&
                         !transfer?.fileTransfer?.isPaid)
                     }
-                    className="ml-4 font-normal cursor-pointer bg-[#5b4fff]/80 border-[#5b4fff]/80 hover:bg-[#5b4fff]/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="font-normal cursor-pointer bg-[#5b4fff]/80 border-[#5b4fff]/80 hover:bg-[#5b4fff]/90 disabled:opacity-50 disabled:cursor-not-allowed w-full lg:w-auto"
                   >
                     {isDownloading ? "Téléchargement..." : "Tout télécharger"}
                     <Download size={16} />
@@ -544,16 +475,6 @@ export default function TransferPage() {
                         (transfer?.fileTransfer?.paymentAmount &&
                           transfer?.fileTransfer?.paymentAmount > 0)) &&
                       !transfer?.fileTransfer?.isPaid;
-
-                    console.log("🔍 Debug fichier:", {
-                      fileName: file.originalName,
-                      isPaymentRequired:
-                        transfer?.fileTransfer?.isPaymentRequired,
-                      paymentAmount: transfer?.fileTransfer?.paymentAmount,
-                      isPaid: transfer?.fileTransfer?.isPaid,
-                      finalIsPaymentRequired: isPaymentRequired,
-                      fullTransferObject: transfer?.fileTransfer,
-                    });
 
                     return (
                       <div
@@ -657,7 +578,7 @@ export default function TransferPage() {
           )}
         </div>
       </div>
-      <div className="w-1/2 p-3 flex items-center min-h-screen justify-center">
+      <div className="hidden lg:flex w-1/2 p-3 items-center min-h-screen justify-center">
         <div
           className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
           style={{ backgroundImage: "url('/BackgroundAuth.svg')" }}

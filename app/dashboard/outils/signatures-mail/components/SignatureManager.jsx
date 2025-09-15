@@ -313,7 +313,6 @@ const SignatureManager = () => {
           };
 
           updateSignatureData(mappedData);
-          console.log("✅ Signature chargée:", signature.signatureName);
         }
       },
       onError: (error) => {
@@ -366,14 +365,8 @@ const SignatureManager = () => {
     const logoSrc = signature.logo || "";
     const template = signature.template || signature.layout || "horizontal";
 
-    // Debug pour voir quelle orientation est détectée
-    console.log("🎯 Template détecté dans generateSignatureHTML:", template);
-    console.log("🎯 signature.template:", signature.template);
-    console.log("🎯 signature.layout:", signature.layout);
-
     // Générer selon l'orientation
     if (template === "vertical") {
-      console.log("📋 Génération HTML VERTICAL");
       return generateVerticalSignatureHTML(
         signature,
         primaryColor,
@@ -381,7 +374,6 @@ const SignatureManager = () => {
         logoSrc
       );
     } else {
-      console.log("📋 Génération HTML HORIZONTAL");
       return generateHorizontalSignatureHTML(
         signature,
         primaryColor,
@@ -836,17 +828,6 @@ const SignatureManager = () => {
     setCopyingId(signature.id);
 
     try {
-      // Debug: Afficher les espacements actuels et l'orientation
-      console.log("Signature à copier:", signature);
-      console.log(
-        "Template de la signature:",
-        signature.template || signature.layout
-      );
-      console.log(
-        "HTML généré:",
-        generateSignatureHTML(signature).substring(0, 500) + "..."
-      );
-
       // Utiliser la signature passée en paramètre (celle qu'on veut copier)
       const htmlSignature = generateSignatureHTML(signature);
 
@@ -908,14 +889,6 @@ const SignatureManager = () => {
 
   const signatures = data?.getMyEmailSignatures || [];
 
-  // Debug logs
-  console.log("🔍 [FRONTEND] État du composant SignatureManager:");
-  console.log("  - isMounted:", isMounted);
-  console.log("  - loading:", loading);
-  console.log("  - error:", error);
-  console.log("  - data:", data);
-  console.log("  - signatures:", signatures);
-  console.log("  - signatures.length:", signatures.length);
 
   // Fonction pour changer de template
   const handleTemplateChange = (templateId) => {

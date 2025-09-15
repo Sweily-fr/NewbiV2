@@ -5,21 +5,16 @@ export async function GET(request, { params }) {
   try {
     const { id } = await params;
 
-    console.log("🔍 Recherche invitation avec ID:", id);
-
     // Accès direct à MongoDB pour récupérer l'invitation
     const { mongoDb } = await import("@/src/lib/mongodb");
     const { ObjectId } = await import("mongodb");
-    
+
     // Récupérer l'invitation directement depuis MongoDB
     const invitation = await mongoDb
       .collection("invitation")
       .findOne({ _id: new ObjectId(id) });
 
-    console.log("📋 Invitation récupérée depuis MongoDB:", invitation);
-
     if (!invitation) {
-      console.log("❌ Invitation non trouvée pour ID:", id);
       return Response.json(
         { error: "Invitation non trouvée" },
         { status: 404 }
@@ -33,7 +28,7 @@ export async function GET(request, { params }) {
         const organization = await mongoDb
           .collection("organization")
           .findOne({ _id: invitation.organizationId });
-        
+
         organizationName = organization?.name || organizationName;
       } catch (orgError) {
         console.warn("⚠️ Erreur récupération organisation:", orgError);
@@ -51,7 +46,6 @@ export async function GET(request, { params }) {
       inviterId: invitation.inviterId?.toString(),
     };
 
-    console.log("✅ Invitation enrichie:", enrichedInvitation);
     return Response.json(enrichedInvitation);
   } catch (error) {
     console.error("❌ Erreur lors de la récupération de l'invitation:", error);
@@ -76,13 +70,9 @@ export async function POST(request, { params }) {
       return Response.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    console.log(`🎯 Action ${action} sur invitation:`, id);
-
     if (action === "accept") {
       // ÉTAPE 1: Créer l'organisation personnelle AVANT d'accepter l'invitation
       try {
-        console.log("🏢 Création de l'organisation personnelle...");
-
         const user = session.user;
         const personalOrgName = `${user.name || user.email.split("@")[0]} (Personnel)`;
         const personalSlug = `${user.id}-personal`;
@@ -96,8 +86,6 @@ export async function POST(request, { params }) {
             keepCurrentActiveOrganization: true, // CRUCIAL: ne pas changer l'orga active
           },
         });
-
-        console.log("✅ Organisation personnelle créée:", personalOrgResult);
       } catch (personalOrgError) {
         console.warn(
           "⚠️ Erreur création organisation personnelle (non bloquante):",
@@ -112,20 +100,13 @@ export async function POST(request, { params }) {
         body: { invitationId: id },
       });
 
-      console.log("✅ Invitation acceptée:", result);
-
       // ÉTAPE 3: S'assurer que l'organisation de l'owner reste active
       if (result && result.organizationId) {
         try {
-          console.log(
-            "🎯 Définition de l'organisation active (owner):",
-            result.organizationId
-          );
           await auth.api.setActiveOrganization({
             headers: await headers(),
             body: { organizationId: result.organizationId },
           });
-          console.log("✅ Organisation active définie avec succès");
         } catch (orgError) {
           console.error(
             "❌ Erreur lors de la définition de l'organisation active:",
@@ -141,7 +122,6 @@ export async function POST(request, { params }) {
         headers: await headers(),
         body: { invitationId: id },
       });
-      console.log("❌ Invitation rejetée:", result);
       return Response.json(result);
     } else {
       return Response.json({ error: "Action non valide" }, { status: 400 });

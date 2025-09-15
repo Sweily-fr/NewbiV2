@@ -162,10 +162,11 @@ const columns = [
     accessorKey: "type",
     cell: ({ row }) => {
       const type = row.getValue("type");
-      const colorClass = type === "COMPANY" 
-        ? "bg-purple-100 text-purple-800 border-purple-200"
-        : "bg-green-100 text-green-800 border-green-200";
-      
+      const colorClass =
+        type === "COMPANY"
+          ? "bg-purple-100 text-purple-800 border-purple-200"
+          : "bg-green-100 text-green-800 border-green-200";
+
       return (
         <Badge className={cn("font-normal", colorClass)}>
           {type === "INDIVIDUAL" ? "Particulier" : "Entreprise"}
@@ -409,7 +410,7 @@ export default function TableClients({ handleAddUser }) {
                   size={16}
                   aria-hidden="true"
                 />
-                Type
+                <span className="hidden sm:inline">Type</span>
                 {selectedTypes.length > 0 && (
                   <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
                     {selectedTypes.length}
@@ -456,7 +457,7 @@ export default function TableClients({ handleAddUser }) {
                   size={16}
                   aria-hidden="true"
                 />
-                Vue
+                <span className="hidden sm:inline">Vue</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -468,12 +469,12 @@ export default function TableClients({ handleAddUser }) {
                   // Traduction des noms de colonnes
                   const columnNames = {
                     name: "Nom",
-                    email: "Email", 
+                    email: "Email",
                     type: "Type",
                     address: "Adresse",
-                    siret: "SIRET"
+                    siret: "SIRET",
                   };
-                  
+
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}

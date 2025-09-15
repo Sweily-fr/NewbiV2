@@ -37,11 +37,6 @@ export default function AcceptInvitationPage() {
   useEffect(() => {
     const fetchInvitation = async () => {
       try {
-        console.log(
-          "🔍 Récupération invitation avec getInvitation:",
-          invitationId
-        );
-
         // Récupérer l'invitation via l'API route custom
         const response = await fetch(`/api/invitations/${invitationId}`);
 
@@ -57,7 +52,6 @@ export default function AcceptInvitationPage() {
           );
         }
 
-        console.log("✅ Invitation récupérée:", data);
         setInvitation(data);
 
         // Vérifier si l'utilisateur existe déjà
@@ -74,9 +68,6 @@ export default function AcceptInvitationPage() {
             if (userCheckResponse.ok) {
               const userCheckData = await userCheckResponse.json();
               setUserExists(userCheckData.exists);
-              console.log(
-                `✅ Vérification utilisateur: ${data.email} ${userCheckData.exists ? "existe" : "n'existe pas"}`
-              );
             }
           } catch (userCheckError) {
             console.error(

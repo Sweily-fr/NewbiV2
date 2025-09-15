@@ -1,9 +1,10 @@
 "use client";
 
 import { Suspense } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Monitor, Smartphone } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { Card, CardContent } from "@/src/components/ui/card";
 import SignatureTable from "./components/signature-table";
 import { useRouter } from "next/navigation";
 import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
@@ -140,7 +141,43 @@ function SignaturesContent() {
 
   return (
     <CompanyInfoGuard>
-      <div className="space-y-6 p-6">
+      {/* Mobile Desktop-Only Notice */}
+      <div className="block lg:hidden">
+        <div className="min-h-screen flex items-center justify-center p-6">
+          <Card className="w-full max-w-md mx-auto">
+            <CardContent className="p-8 text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="relative">
+                  <Monitor className="h-16 w-16 text-primary" />
+                  {/* <div className="absolute -bottom-2 -right-2 bg-background border-2 border-border rounded-full p-1">
+                    <Smartphone className="h-4 w-4 text-muted-foreground" />
+                  </div> */}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="text-xl font-semibold text-foreground">
+                  Fonctionnalité Desktop uniquement
+                </h2>
+                <p className="text-muted-foreground leading-relaxed">
+                  La création et gestion des signatures mail nécessite un écran
+                  plus large pour une expérience optimale.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <p className="text-sm text-muted-foreground">
+                  Veuillez utiliser un ordinateur pour accéder à cette
+                  fonctionnalité.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Desktop Content */}
+      <div className="hidden lg:block space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

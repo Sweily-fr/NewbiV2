@@ -72,28 +72,17 @@ export default function InvoiceInfoSection({ canEdit }) {
 
   // Set default invoice number when nextInvoiceNumber is available
   React.useEffect(() => {
-    console.log("=== InvoiceInfoSection useEffect ===");
-    console.log("nextInvoiceNumber:", nextInvoiceNumber);
-    console.log("data.number:", data.number);
-    console.log("isLoadingInvoiceNumber:", isLoadingInvoiceNumber);
-    console.log("hasExistingInvoices():", hasExistingInvoices());
-
     if (!isLoadingInvoiceNumber && nextInvoiceNumber) {
       const formattedNumber = getFormattedNextNumber();
-      console.log("getFormattedNextNumber():", formattedNumber);
 
       if (hasExistingInvoices()) {
         // Case 1: Existing invoices - set next sequential number
-        console.log("Existing invoices found - setting next sequential number");
         if (!data.number || data.number === "") {
-          console.log("Setting sequential invoice number to:", formattedNumber);
           setValue("number", formattedNumber, { shouldValidate: true });
         }
       } else {
         // Case 2: No existing invoices - set to 000001
-        console.log("No existing invoices - setting default starting number");
         if (!data.number || data.number === "" || data.number === "1") {
-          console.log("Setting default starting invoice number to: 000001");
           setValue("number", "000001", { shouldValidate: true });
         }
         // If user has already entered a number, don't override it
@@ -303,11 +292,16 @@ export default function InvoiceInfoSection({ canEdit }) {
                     message: "Le numéro ne peut pas dépasser 6 chiffres",
                   },
                 })}
-                value={data.number || (nextInvoiceNumber ? String(nextInvoiceNumber).padStart(6, '0') : '')}
+                value={
+                  data.number ||
+                  (nextInvoiceNumber
+                    ? String(nextInvoiceNumber).padStart(6, "0")
+                    : "")
+                }
                 onChange={(e) => {
                   // Allow only numbers and update the value
-                  const value = e.target.value.replace(/\D/g, '');
-                  setValue('number', value, { shouldValidate: true });
+                  const value = e.target.value.replace(/\D/g, "");
+                  setValue("number", value, { shouldValidate: true });
                 }}
                 placeholder={
                   nextInvoiceNumber
@@ -581,7 +575,7 @@ export default function InvoiceInfoSection({ canEdit }) {
                   dueDate.setDate(dueDate.getDate() + days);
                   setValue("dueDate", dueDate.toISOString().split("T")[0], {
                     shouldDirty: true,
-                    shouldValidate: true  // Ajout de la validation
+                    shouldValidate: true, // Ajout de la validation
                   });
                 }}
                 disabled={!canEdit}
@@ -600,9 +594,7 @@ export default function InvoiceInfoSection({ canEdit }) {
               </Select>
             </div>
             {errors?.dueDate && (
-              <p className="text-xs text-red-500">
-                {errors.dueDate.message}
-              </p>
+              <p className="text-xs text-red-500">{errors.dueDate.message}</p>
             )}
             <p className="text-xs">
               Utilisez le sélecteur "+" pour ajouter des jours automatiquement

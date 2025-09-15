@@ -24,7 +24,6 @@ export default function ResetPasswordPage() {
 
   const onSubmit = async (formData) => {
     const token = new URLSearchParams(window.location.search).get("token");
-    console.log(token);
     if (!token) {
       toast.error("Token invalide");
       return;

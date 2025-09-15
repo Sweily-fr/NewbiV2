@@ -89,7 +89,7 @@ export default function ClientSelector({
 
   // État pour suivre les erreurs de validation
   const [formErrors, setFormErrors] = useState({});
-  
+
   const [newClientForm, setNewClientForm] = useState(() => ({
     type: "INDIVIDUAL",
     name: "",
@@ -108,12 +108,6 @@ export default function ClientSelector({
 
   // Synchroniser selectedValue avec selectedClient prop
   useEffect(() => {
-    console.log("🔄 ClientSelector - Synchronisation selectedClient:", {
-      selectedClient,
-      selectedClientName: selectedClient?.name,
-      currentSelectedValue: selectedValue,
-    });
-
     if (selectedClient) {
       setSelectedValue(selectedClient.name);
     } else {
@@ -214,22 +208,8 @@ export default function ClientSelector({
   };
 
   const handleClientSelect = (client) => {
-    console.log("✅ ClientSelector - Client sélectionné (original):", {
-      client,
-      clientName: client.name,
-      clientEmail: client.email,
-      onSelectExists: !!onSelect,
-    });
-
     // Compléter les données manquantes
     const completedClient = completeClientData(client);
-
-    console.log("🔧 ClientSelector - Client complété:", {
-      completedClient,
-      address: completedClient.address,
-      firstName: completedClient.firstName,
-      lastName: completedClient.lastName,
-    });
 
     onSelect?.(completedClient);
     setSelectedValue(client.name);
@@ -242,31 +222,61 @@ export default function ClientSelector({
 
   const validateForm = () => {
     const errors = {};
-    
+
     // Validation des champs obligatoires
     const requiredFields = [
       { field: "name", label: "name", message: "Le nom est obligatoire" },
       { field: "email", label: "email", message: "L'email est obligatoire" },
-      { field: "address.street", label: "address.street", message: "La rue est obligatoire" },
-      { field: "address.postalCode", label: "address.postalCode", message: "Le code postal est obligatoire" },
-      { field: "address.city", label: "address.city", message: "La ville est obligatoire" },
-      
+      {
+        field: "address.street",
+        label: "address.street",
+        message: "La rue est obligatoire",
+      },
+      {
+        field: "address.postalCode",
+        label: "address.postalCode",
+        message: "Le code postal est obligatoire",
+      },
+      {
+        field: "address.city",
+        label: "address.city",
+        message: "La ville est obligatoire",
+      },
+
       // Champs conditionnels selon le type de client
-      ...(newClientForm.type === 'INDIVIDUAL' ? [
-        { field: "firstName", label: "firstName", message: "Le prénom est obligatoire" },
-        { field: "lastName", label: "lastName", message: "Le nom est obligatoire" }
-      ] : []),
-      
+      ...(newClientForm.type === "INDIVIDUAL"
+        ? [
+            {
+              field: "firstName",
+              label: "firstName",
+              message: "Le prénom est obligatoire",
+            },
+            {
+              field: "lastName",
+              label: "lastName",
+              message: "Le nom est obligatoire",
+            },
+          ]
+        : []),
+
       // Champs conditionnels pour les entreprises
-      ...(newClientForm.type === 'COMPANY' && newClientForm.siret ? [
-        { field: "siret", label: "siret", message: "Le SIRET est invalide (14 chiffres requis)" }
-      ] : [])
+      ...(newClientForm.type === "COMPANY" && newClientForm.siret
+        ? [
+            {
+              field: "siret",
+              label: "siret",
+              message: "Le SIRET est invalide (14 chiffres requis)",
+            },
+          ]
+        : []),
     ];
 
     // Validation des champs obligatoires
     requiredFields.forEach(({ field, label, message }) => {
-      const value = field.split('.').reduce((obj, key) => obj?.[key], newClientForm);
-      if (!value || (typeof value === 'string' && value.trim() === "")) {
+      const value = field
+        .split(".")
+        .reduce((obj, key) => obj?.[key], newClientForm);
+      if (!value || (typeof value === "string" && value.trim() === "")) {
         errors[label] = message;
       }
     });
@@ -283,41 +293,49 @@ export default function ClientSelector({
 
     // Validation des codes postaux
     const postalCodeRegex = /^\d{5}$/;
-    
+
     // Validation du code postal de facturation
     if (newClientForm.address?.postalCode) {
       if (!postalCodeRegex.test(newClientForm.address.postalCode)) {
-        errors['address.postalCode'] = "Le code postal doit contenir 5 chiffres";
+        errors["address.postalCode"] =
+          "Le code postal doit contenir 5 chiffres";
       }
     } else {
-      errors['address.postalCode'] = "Le code postal est obligatoire";
+      errors["address.postalCode"] = "Le code postal est obligatoire";
     }
-    
+
     // Validation de l'adresse de livraison (si différente)
     if (newClientForm.hasDifferentShippingAddress) {
       // Validation de la rue de livraison
       if (!newClientForm.shippingAddress?.street?.trim()) {
-        errors['shippingAddress.street'] = "La rue de livraison est obligatoire";
+        errors["shippingAddress.street"] =
+          "La rue de livraison est obligatoire";
       }
-      
+
       // Validation du code postal de livraison
       if (!newClientForm.shippingAddress?.postalCode?.trim()) {
-        errors['shippingAddress.postalCode'] = "Le code postal de livraison est obligatoire";
-      } else if (!postalCodeRegex.test(newClientForm.shippingAddress.postalCode)) {
-        errors['shippingAddress.postalCode'] = "Le code postal de livraison doit contenir 5 chiffres";
+        errors["shippingAddress.postalCode"] =
+          "Le code postal de livraison est obligatoire";
+      } else if (
+        !postalCodeRegex.test(newClientForm.shippingAddress.postalCode)
+      ) {
+        errors["shippingAddress.postalCode"] =
+          "Le code postal de livraison doit contenir 5 chiffres";
       }
-      
+
       // Validation de la ville de livraison
       if (!newClientForm.shippingAddress?.city?.trim()) {
-        errors['shippingAddress.city'] = "La ville de livraison est obligatoire";
+        errors["shippingAddress.city"] =
+          "La ville de livraison est obligatoire";
       }
     }
 
     // Validation du numéro de téléphone (optionnel mais doit être valide si renseigné)
-    if (newClientForm.phone && newClientForm.phone.trim() !== '') {
+    if (newClientForm.phone && newClientForm.phone.trim() !== "") {
       const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
       if (!phoneRegex.test(newClientForm.phone.trim())) {
-        errors.phone = "Format de téléphone invalide. Ex: 01 23 45 67 89 ou 0123456789";
+        errors.phone =
+          "Format de téléphone invalide. Ex: 01 23 45 67 89 ou 0123456789";
       }
     }
 
@@ -337,7 +355,8 @@ export default function ClientSelector({
     if (newClientForm.phone && newClientForm.phone.trim() !== "") {
       const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
       if (!phoneRegex.test(newClientForm.phone.trim())) {
-        errors.phone = "Le numéro de téléphone n'est pas valide (ex: 01 23 45 67 89)";
+        errors.phone =
+          "Le numéro de téléphone n'est pas valide (ex: 01 23 45 67 89)";
       }
     }
 
@@ -360,13 +379,18 @@ export default function ClientSelector({
       { field: "name", message: "Le nom est obligatoire" },
       { field: "email", message: "L'email est obligatoire" },
       { field: "address.street", message: "La rue est obligatoire" },
-      { field: "address.postalCode", message: "Le code postal est obligatoire" },
+      {
+        field: "address.postalCode",
+        message: "Le code postal est obligatoire",
+      },
       { field: "address.city", message: "La ville est obligatoire" },
     ];
 
     requiredFields.forEach(({ field, message }) => {
-      const value = field.split('.').reduce((obj, key) => obj?.[key], newClientForm);
-      if (!value || (typeof value === 'string' && value.trim() === "")) {
+      const value = field
+        .split(".")
+        .reduce((obj, key) => obj?.[key], newClientForm);
+      if (!value || (typeof value === "string" && value.trim() === "")) {
         toast.error(message);
         hasErrors = true;
       }
@@ -391,26 +415,29 @@ export default function ClientSelector({
         lastName: newClientForm.lastName || undefined,
         siret: newClientForm.siret || undefined,
         vatNumber: newClientForm.vatNumber || undefined,
-        hasDifferentShippingAddress: Boolean(newClientForm.hasDifferentShippingAddress),
+        hasDifferentShippingAddress: Boolean(
+          newClientForm.hasDifferentShippingAddress
+        ),
         address: {
           street: newClientForm.address.street,
           postalCode: newClientForm.address.postalCode,
           city: newClientForm.address.city,
           country: newClientForm.address.country || "France",
         },
-        ...(newClientForm.hasDifferentShippingAddress && newClientForm.shippingAddress && {
-          shippingAddress: {
-            fullName: newClientForm.shippingAddress.fullName,
-            street: newClientForm.shippingAddress.street,
-            postalCode: newClientForm.shippingAddress.postalCode,
-            city: newClientForm.shippingAddress.city,
-            country: newClientForm.shippingAddress.country || "France",
-          },
-        }),
+        ...(newClientForm.hasDifferentShippingAddress &&
+          newClientForm.shippingAddress && {
+            shippingAddress: {
+              fullName: newClientForm.shippingAddress.fullName,
+              street: newClientForm.shippingAddress.street,
+              postalCode: newClientForm.shippingAddress.postalCode,
+              city: newClientForm.shippingAddress.city,
+              country: newClientForm.shippingAddress.country || "France",
+            },
+          }),
       };
 
       // Nettoyage des champs undefined
-      Object.keys(clientData).forEach(key => {
+      Object.keys(clientData).forEach((key) => {
         if (clientData[key] === undefined) {
           delete clientData[key];
         }
@@ -427,33 +454,45 @@ export default function ClientSelector({
       }
     } catch (error) {
       console.error("Erreur lors de la création du client:", error);
-      
+
       // Gestion des erreurs avec des messages clairs pour l'utilisateur
-      let errorMessage = "Une erreur est survenue lors de la création du client";
-      
+      let errorMessage =
+        "Une erreur est survenue lors de la création du client";
+
       if (error.message.includes("Network Error")) {
-        errorMessage = "Erreur de connexion au serveur. Vérifiez votre connexion Internet.";
-      } else if (error.message.includes("400") || 
-                error.message.includes("Validation Error") ||
-                error.message.includes("ClientInput")) {
-        errorMessage = "Erreur de validation. Vérifiez que tous les champs sont correctement remplis.";
-      } else if (error.message.includes("409") || 
-                (error.extensions?.exception?.code === 'ALREADY_EXISTS')) {
-        errorMessage = "Un client avec cet email existe déjà. Veuillez utiliser un email différent ou sélectionner ce client dans la liste.";
-      } else if (error.message.includes("401") || error.message.includes("403")) {
-        errorMessage = "Vous n'avez pas les droits nécessaires pour effectuer cette action.";
+        errorMessage =
+          "Erreur de connexion au serveur. Vérifiez votre connexion Internet.";
+      } else if (
+        error.message.includes("400") ||
+        error.message.includes("Validation Error") ||
+        error.message.includes("ClientInput")
+      ) {
+        errorMessage =
+          "Erreur de validation. Vérifiez que tous les champs sont correctement remplis.";
+      } else if (
+        error.message.includes("409") ||
+        error.extensions?.exception?.code === "ALREADY_EXISTS"
+      ) {
+        errorMessage =
+          "Un client avec cet email existe déjà. Veuillez utiliser un email différent ou sélectionner ce client dans la liste.";
+      } else if (
+        error.message.includes("401") ||
+        error.message.includes("403")
+      ) {
+        errorMessage =
+          "Vous n'avez pas les droits nécessaires pour effectuer cette action.";
       } else if (error.message.includes("500")) {
         errorMessage = "Erreur serveur. Veuillez réessayer plus tard.";
       }
-      
+
       // Afficher le message d'erreur à l'utilisateur
       toast.error(errorMessage, {
         duration: 5000,
-        position: 'top-center',
+        position: "top-center",
         action: {
-          label: 'Fermer',
-          onClick: () => {}
-        }
+          label: "Fermer",
+          onClick: () => {},
+        },
       });
     }
   };
@@ -477,7 +516,6 @@ export default function ClientSelector({
   };
 
   const handleSwitchToNewClient = () => {
-    console.log("🔄 ClientSelector - Basculement vers nouveau client");
     setActiveTab("new");
     setOpen(false);
     setQuery("");
@@ -497,15 +535,13 @@ export default function ClientSelector({
 
   // Fonction pour sélectionner une entreprise de l'API Gouv
   const handleCompanySelect = (company) => {
-    console.log("🏢 Sélection entreprise API Gouv:", company);
-
     try {
       // Convertir l'entreprise en format client
       const clientData = convertCompanyToClient(company);
 
       // Remplir le formulaire avec les données de l'entreprise
       setNewClientForm(clientData);
-      
+
       // Effacer les erreurs existantes
       setFormErrors({});
 
@@ -918,7 +954,8 @@ export default function ClientSelector({
                             htmlFor="client-name"
                             className="text-sm font-medium"
                           >
-                            Nom de l'entreprise <span className="text-red-500">*</span>
+                            Nom de l'entreprise{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                           <div className="relative">
                             <Input
@@ -931,14 +968,19 @@ export default function ClientSelector({
                                 }));
                                 // Effacer l'erreur quand l'utilisateur commence à taper
                                 if (formErrors.name) {
-                                  setFormErrors(prev => ({...prev, name: null}));
+                                  setFormErrors((prev) => ({
+                                    ...prev,
+                                    name: null,
+                                  }));
                                 }
                               }}
                               placeholder="Nom de l'entreprise"
-                              className={`h-10 rounded-lg text-sm w-full ${formErrors.name ? 'border-red-500' : ''}`}
+                              className={`h-10 rounded-lg text-sm w-full ${formErrors.name ? "border-red-500" : ""}`}
                             />
                             {formErrors.name && (
-                              <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>
+                              <p className="text-xs text-red-500 mt-1">
+                                {formErrors.name}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -963,7 +1005,10 @@ export default function ClientSelector({
                               }));
                               // Effacer l'erreur du nom si elle existe
                               if (formErrors.name) {
-                                setFormErrors(prev => ({...prev, name: null}));
+                                setFormErrors((prev) => ({
+                                  ...prev,
+                                  name: null,
+                                }));
                               }
                             }}
                             placeholder="Prénom"
@@ -988,7 +1033,10 @@ export default function ClientSelector({
                               }));
                               // Effacer l'erreur du nom si elle existe
                               if (formErrors.name) {
-                                setFormErrors(prev => ({...prev, name: null}));
+                                setFormErrors((prev) => ({
+                                  ...prev,
+                                  name: null,
+                                }));
                               }
                             }}
                             placeholder="Nom"
@@ -1019,14 +1067,19 @@ export default function ClientSelector({
                             }));
                             // Effacer l'erreur quand l'utilisateur commence à taper
                             if (formErrors.email) {
-                              setFormErrors(prev => ({...prev, email: null}));
+                              setFormErrors((prev) => ({
+                                ...prev,
+                                email: null,
+                              }));
                             }
                           }}
                           placeholder="contact@exemple.com"
-                          className={`h-10 rounded-lg text-sm w-full ${formErrors.email ? 'border-red-500' : ''}`}
+                          className={`h-10 rounded-lg text-sm w-full ${formErrors.email ? "border-red-500" : ""}`}
                         />
                         {formErrors.email && (
-                          <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>
+                          <p className="text-xs text-red-500 mt-1">
+                            {formErrors.email}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -1049,18 +1102,20 @@ export default function ClientSelector({
                             }));
                             // Effacer l'erreur quand l'utilisateur commence à taper
                             if (formErrors.phone) {
-                              setFormErrors(prev => {
-                                const newErrors = {...prev};
+                              setFormErrors((prev) => {
+                                const newErrors = { ...prev };
                                 delete newErrors.phone;
                                 return newErrors;
                               });
                             }
                           }}
-                          className={`h-10 rounded-lg text-sm w-full ${formErrors.phone ? 'border-red-500' : ''}`}
+                          className={`h-10 rounded-lg text-sm w-full ${formErrors.phone ? "border-red-500" : ""}`}
                           placeholder="01 23 45 67 89"
                         />
                         {formErrors.phone && (
-                          <p className="text-xs text-red-500 mt-1">{formErrors.phone}</p>
+                          <p className="text-xs text-red-500 mt-1">
+                            {formErrors.phone}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -1149,19 +1204,21 @@ export default function ClientSelector({
                               },
                             }));
                             // Effacer l'erreur quand l'utilisateur commence à taper
-                            if (formErrors['address.street']) {
-                              setFormErrors(prev => {
-                                const newErrors = {...prev};
-                                delete newErrors['address.street'];
+                            if (formErrors["address.street"]) {
+                              setFormErrors((prev) => {
+                                const newErrors = { ...prev };
+                                delete newErrors["address.street"];
                                 return newErrors;
                               });
                             }
                           }}
                           placeholder="1 rue de l'exemple"
-                          className={`h-10 rounded-lg text-sm w-full ${formErrors['address.street'] ? 'border-red-500' : ''}`}
+                          className={`h-10 rounded-lg text-sm w-full ${formErrors["address.street"] ? "border-red-500" : ""}`}
                         />
-                        {formErrors['address.street'] && (
-                          <p className="text-xs text-red-500 mt-1">{formErrors['address.street']}</p>
+                        {formErrors["address.street"] && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {formErrors["address.street"]}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -1187,19 +1244,21 @@ export default function ClientSelector({
                                 },
                               }));
                               // Effacer l'erreur quand l'utilisateur commence à taper
-                              if (formErrors['address.postalCode']) {
-                                setFormErrors(prev => {
-                                  const newErrors = {...prev};
-                                  delete newErrors['address.postalCode'];
+                              if (formErrors["address.postalCode"]) {
+                                setFormErrors((prev) => {
+                                  const newErrors = { ...prev };
+                                  delete newErrors["address.postalCode"];
                                   return newErrors;
                                 });
                               }
                             }}
                             placeholder="75000"
-                            className={`h-10 rounded-lg text-sm w-full ${formErrors['address.postalCode'] ? 'border-red-500' : ''}`}
+                            className={`h-10 rounded-lg text-sm w-full ${formErrors["address.postalCode"] ? "border-red-500" : ""}`}
                           />
-                          {formErrors['address.postalCode'] && (
-                            <p className="text-xs text-red-500 mt-1">{formErrors['address.postalCode']}</p>
+                          {formErrors["address.postalCode"] && (
+                            <p className="text-xs text-red-500 mt-1">
+                              {formErrors["address.postalCode"]}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -1224,19 +1283,21 @@ export default function ClientSelector({
                                 },
                               }));
                               // Effacer l'erreur quand l'utilisateur commence à taper
-                              if (formErrors['address.city']) {
-                                setFormErrors(prev => {
-                                  const newErrors = {...prev};
-                                  delete newErrors['address.city'];
+                              if (formErrors["address.city"]) {
+                                setFormErrors((prev) => {
+                                  const newErrors = { ...prev };
+                                  delete newErrors["address.city"];
                                   return newErrors;
                                 });
                               }
                             }}
                             placeholder="Paris"
-                            className={`h-10 rounded-lg text-sm w-full ${formErrors['address.city'] ? 'border-red-500' : ''}`}
+                            className={`h-10 rounded-lg text-sm w-full ${formErrors["address.city"] ? "border-red-500" : ""}`}
                           />
-                          {formErrors['address.city'] && (
-                            <p className="text-xs text-red-500 mt-1">{formErrors['address.city']}</p>
+                          {formErrors["address.city"] && (
+                            <p className="text-xs text-red-500 mt-1">
+                              {formErrors["address.city"]}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -1312,7 +1373,6 @@ export default function ClientSelector({
                             newClientForm.hasDifferentShippingAddress || false
                           }
                           onCheckedChange={(checked) => {
-                            console.log("Checkbox changed:", checked);
                             setNewClientForm((prev) => ({
                               ...prev,
                               hasDifferentShippingAddress: Boolean(checked),
@@ -1326,12 +1386,6 @@ export default function ClientSelector({
                           Utiliser une adresse de livraison différente
                         </Label>
                       </div>
-
-                      {/* Debug: État de la checkbox */}
-                      {console.log(
-                        "hasDifferentShippingAddress:",
-                        newClientForm.hasDifferentShippingAddress
-                      )}
 
                       {newClientForm.hasDifferentShippingAddress && (
                         <div className="space-y-4 px-6 pt-2 border-l-2 border-gray-200">
@@ -1389,20 +1443,22 @@ export default function ClientSelector({
                                     },
                                   }));
                                   // Effacer l'erreur quand l'utilisateur commence à taper
-                                  if (formErrors['shippingAddress.street']) {
-                                    setFormErrors(prev => {
-                                      const newErrors = {...prev};
-                                      delete newErrors['shippingAddress.street'];
+                                  if (formErrors["shippingAddress.street"]) {
+                                    setFormErrors((prev) => {
+                                      const newErrors = { ...prev };
+                                      delete newErrors[
+                                        "shippingAddress.street"
+                                      ];
                                       return newErrors;
                                     });
                                   }
                                 }}
                                 placeholder="123 Rue de la Paix"
-                                className={`h-10 rounded-lg text-sm w-full ${formErrors['shippingAddress.street'] ? 'border-red-500' : ''}`}
+                                className={`h-10 rounded-lg text-sm w-full ${formErrors["shippingAddress.street"] ? "border-red-500" : ""}`}
                               />
-                              {formErrors['shippingAddress.street'] && (
+                              {formErrors["shippingAddress.street"] && (
                                 <p className="text-xs text-red-500 mt-1">
-                                  {formErrors['shippingAddress.street']}
+                                  {formErrors["shippingAddress.street"]}
                                 </p>
                               )}
                             </div>
@@ -1433,20 +1489,24 @@ export default function ClientSelector({
                                       },
                                     }));
                                     // Effacer l'erreur quand l'utilisateur commence à taper
-                                    if (formErrors['shippingAddress.postalCode']) {
-                                      setFormErrors(prev => {
-                                        const newErrors = {...prev};
-                                        delete newErrors['shippingAddress.postalCode'];
+                                    if (
+                                      formErrors["shippingAddress.postalCode"]
+                                    ) {
+                                      setFormErrors((prev) => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors[
+                                          "shippingAddress.postalCode"
+                                        ];
                                         return newErrors;
                                       });
                                     }
                                   }}
                                   placeholder="75001"
-                                  className={`h-10 rounded-lg text-sm w-full ${formErrors['shippingAddress.postalCode'] ? 'border-red-500' : ''}`}
+                                  className={`h-10 rounded-lg text-sm w-full ${formErrors["shippingAddress.postalCode"] ? "border-red-500" : ""}`}
                                 />
-                                {formErrors['shippingAddress.postalCode'] && (
+                                {formErrors["shippingAddress.postalCode"] && (
                                   <p className="text-xs text-red-500 mt-1">
-                                    {formErrors['shippingAddress.postalCode']}
+                                    {formErrors["shippingAddress.postalCode"]}
                                   </p>
                                 )}
                               </div>
@@ -1473,20 +1533,22 @@ export default function ClientSelector({
                                       },
                                     }));
                                     // Effacer l'erreur quand l'utilisateur commence à taper
-                                    if (formErrors['shippingAddress.city']) {
-                                      setFormErrors(prev => {
-                                        const newErrors = {...prev};
-                                        delete newErrors['shippingAddress.city'];
+                                    if (formErrors["shippingAddress.city"]) {
+                                      setFormErrors((prev) => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors[
+                                          "shippingAddress.city"
+                                        ];
                                         return newErrors;
                                       });
                                     }
                                   }}
                                   placeholder="Paris"
-                                  className={`h-10 rounded-lg text-sm w-full ${formErrors['shippingAddress.city'] ? 'border-red-500' : ''}`}
+                                  className={`h-10 rounded-lg text-sm w-full ${formErrors["shippingAddress.city"] ? "border-red-500" : ""}`}
                                 />
-                                {formErrors['shippingAddress.city'] && (
+                                {formErrors["shippingAddress.city"] && (
                                   <p className="text-xs text-red-500 mt-1">
-                                    {formErrors['shippingAddress.city']}
+                                    {formErrors["shippingAddress.city"]}
                                   </p>
                                 )}
                               </div>

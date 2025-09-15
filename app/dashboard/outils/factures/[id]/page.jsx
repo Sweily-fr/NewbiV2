@@ -26,8 +26,6 @@ export default function InvoiceDetailsPage() {
     router.push("/dashboard/outils/factures");
   };
 
-
-
   const handleSendEmail = () => {
     // TODO: Implement email sending
     console.log("Send email for invoice:", invoiceId);
@@ -78,8 +76,6 @@ export default function InvoiceDetailsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-
-          
           {!isDraft && (
             <Button
               variant="outline"
@@ -106,7 +102,7 @@ export default function InvoiceDetailsPage() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {isDraft && (
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="text-destructive"
                   onClick={() => console.log("Delete")}
                 >
@@ -120,8 +116,8 @@ export default function InvoiceDetailsPage() {
 
       {/* Editor */}
       <Suspense fallback={<InvoiceEditorSkeleton />}>
-        <ModernInvoiceEditor 
-          mode={canEdit ? "edit" : "view"} 
+        <ModernInvoiceEditor
+          mode={canEdit ? "edit" : "view"}
           invoiceId={invoiceId}
           initialData={invoice}
         />
@@ -178,7 +174,7 @@ function InvoiceEditorSkeleton() {
           </div>
         </div>
       </div>
-      
+
       {/* Preview skeleton */}
       <div className="rounded-lg border p-6">
         <Skeleton className="h-6 w-[100px] mb-4" />

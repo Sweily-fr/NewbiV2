@@ -44,12 +44,10 @@ export function ChangePhoneModal({ isOpen, onClose, currentPhone }) {
       });
 
       if (error) {
-        console.error("Erreur Better Auth:", error);
         toast.error(error.message || "Erreur lors de l'envoi du code");
         return;
       }
 
-      console.log("Code envoyé avec succès:", data);
       toast.success("Code de vérification envoyé par SMS");
       setStep(2);
     } catch (error) {
@@ -61,13 +59,10 @@ export function ChangePhoneModal({ isOpen, onClose, currentPhone }) {
   };
 
   const handleVerifyCodeWithValue = async (code) => {
-    console.log("handleVerifyCodeWithValue appelé avec code:", code);
     if (!code || code.length !== 6) {
-      console.log("Code invalide, longueur:", code?.length);
       return;
     }
 
-    console.log("Début de la vérification...");
     setIsLoading(true);
 
     try {
@@ -85,14 +80,12 @@ export function ChangePhoneModal({ isOpen, onClose, currentPhone }) {
         return;
       }
 
-      console.log("Numéro vérifié avec succès:", data);
       toast.success("Numéro de téléphone modifié avec succès");
       handleClose();
 
       // Optionnel: rafraîchir la session pour mettre à jour les données utilisateur
       window.location.reload();
     } catch (error) {
-      console.error("Erreur lors de la vérification:", error);
       toast.error("Code de vérification incorrect");
       setVerificationCode(""); // Réinitialiser le code en cas d'erreur
     } finally {
@@ -101,13 +94,10 @@ export function ChangePhoneModal({ isOpen, onClose, currentPhone }) {
   };
 
   const handleVerifyCode = async () => {
-    console.log("handleVerifyCode appelé avec code:", verificationCode);
     if (!verificationCode || verificationCode.length !== 6) {
-      console.log("Code invalide, longueur:", verificationCode?.length);
       return;
     }
 
-    console.log("Début de la vérification...");
     setIsLoading(true);
 
     try {
@@ -119,20 +109,17 @@ export function ChangePhoneModal({ isOpen, onClose, currentPhone }) {
       });
 
       if (error) {
-        console.error("Erreur de vérification:", error);
         toast.error(error.message || "Code de vérification incorrect");
         setVerificationCode(""); // Réinitialiser le code en cas d'erreur
         return;
       }
 
-      console.log("Numéro vérifié avec succès:", data);
       toast.success("Numéro de téléphone modifié avec succès");
       handleClose();
 
       // Optionnel: rafraîchir la session pour mettre à jour les données utilisateur
       window.location.reload();
     } catch (error) {
-      console.error("Erreur lors de la vérification:", error);
       toast.error("Code de vérification incorrect");
       setVerificationCode(""); // Réinitialiser le code en cas d'erreur
     } finally {
@@ -208,14 +195,10 @@ export function ChangePhoneModal({ isOpen, onClose, currentPhone }) {
           <OtpInput
             value={verificationCode}
             onChange={(value) => {
-              console.log("OTP onChange:", value, "length:", value.length);
               setVerificationCode(value);
               // Vérification automatique quand 6 chiffres sont saisis
-              console.log(value.length, "length");
               if (value.length === 6) {
-                console.log("Déclenchement de la vérification automatique");
                 setTimeout(() => {
-                  console.log("Exécution de handleVerifyCode avec code:", value);
                   // Utiliser directement la valeur reçue au lieu de verificationCode
                   handleVerifyCodeWithValue(value);
                 }, 100);

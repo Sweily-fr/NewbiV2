@@ -6,10 +6,10 @@ import {
 } from "better-auth/plugins";
 import { stripe } from "@better-auth/stripe";
 import Stripe from "stripe";
-import { 
-  sendSMSInDevelopment, 
-  send2FAEmail, 
-  sendOrganizationInvitationEmail 
+import {
+  sendSMSInDevelopment,
+  send2FAEmail,
+  sendOrganizationInvitationEmail,
 } from "./auth-utils";
 
 // Configuration du plugin Admin
@@ -21,8 +21,6 @@ export const adminPlugin = admin({
 // Configuration du plugin Phone Number
 export const phoneNumberPlugin = phoneNumber({
   sendOTP: async ({ phoneNumber, code }, request) => {
-    console.log(`[SMS] Envoi du code ${code} vers ${phoneNumber}`);
-
     // Pour le développement, on simule l'envoi
     // En production, vous devrez intégrer un service SMS comme Twilio, AWS SNS, etc.
     sendSMSInDevelopment(phoneNumber, code);
@@ -35,27 +33,13 @@ export const phoneNumberPlugin = phoneNumber({
 export const twoFactorPlugin = twoFactor({
   otpOptions: {
     async sendOTP({ user, otp, type }, request) {
-      console.log(
-        `[2FA PLUGIN] ========== FONCTION SENDOTP APPELÉE ==========`
-      );
-      console.log(
-        `[2FA] Envoi du code ${otp} vers ${user.email} (type: ${type})`
-      );
-      console.log(`🔐 CODE DE VÉRIFICATION 2FA: ${otp}`);
-      console.log(
-        `[DEBUG] Type reçu: "${type}" | User phoneNumber: "${user.phoneNumber}"`
-      );
 
       // Better Auth ne passe pas automatiquement type="sms"
       // Il faut détecter manuellement si l'utilisateur a un phoneNumber
-      const shouldUseSMS =
-        user.phoneNumber && user.phoneNumber.trim() !== "";
+      const shouldUseSMS = user.phoneNumber && user.phoneNumber.trim() !== "";
 
       if (shouldUseSMS) {
         // Envoi par SMS
-        console.log(
-          `[2FA SMS] Code de vérification pour ${user.phoneNumber}: ${otp}`
-        );
 
         sendSMSInDevelopment(user.phoneNumber, otp, "2FA SMS");
       } else {
@@ -81,15 +65,6 @@ export const stripePlugin = stripe({
       { user, session, referenceId, action },
       request
     ) => {
-      console.log(
-        `[STRIPE] Autorisation pour ${action} sur org ${referenceId} par user ${user.id}`
-      );
-
-      // Vérification des permissions selon la documentation Better Auth
-      console.log(`[STRIPE] Début de la vérification d'autorisation`);
-      console.log(`[STRIPE] User ID: ${user.id}`);
-      console.log(`[STRIPE] Reference ID (org): ${referenceId}`);
-      console.log(`[STRIPE] Action: ${action}`);
 
       // Vérifier si l'utilisateur a les permissions pour gérer les abonnements
       if (
@@ -112,24 +87,15 @@ export const stripePlugin = stripe({
               },
             });
 
-            console.log(`[STRIPE] Membre trouvé:`, member);
             const isOwner = member?.role === "owner";
-            console.log(`[STRIPE] Est owner: ${isOwner}`);
 
             return isOwner;
           } catch (error) {
-            console.error(
-              `[STRIPE] Erreur lors de la vérification du membre:`,
-              error
-            );
             return false;
           }
         }
 
         // Fallback: autoriser temporairement si l'adapter ne fonctionne pas
-        console.log(
-          `[STRIPE] Adapter non disponible - autorisation temporaire`
-        );
         return true;
       }
 
@@ -157,18 +123,9 @@ export const stripePlugin = stripe({
   },
   // Webhooks Stripe pour mettre à jour automatiquement le statut
   onEvent: async (event, adapter) => {
-    console.log(`[STRIPE WEBHOOK] Événement reçu: ${event.type}`);
 
     switch (event.type) {
       case "checkout.session.completed":
-        console.log(
-          `[STRIPE WEBHOOK] Checkout complété:`,
-          event.data.object
-        );
-        console.log(
-          `[STRIPE WEBHOOK] Métadonnées session:`,
-          event.data.object.metadata
-        );
         const session = event.data.object;
 
         if (session.subscription && session.metadata?.referenceId) {
@@ -177,10 +134,6 @@ export const stripePlugin = stripe({
             const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
             const subscription = await stripe.subscriptions.retrieve(
               session.subscription
-            );
-
-            console.log(
-              `[STRIPE WEBHOOK] Création abonnement pour org: ${session.metadata.referenceId}`
             );
 
             // Créer l'abonnement dans Better Auth
@@ -204,7 +157,6 @@ export const stripePlugin = stripe({
               },
             });
 
-            console.log(`[STRIPE WEBHOOK] Abonnement créé avec succès`);
           } catch (error) {
             console.error(
               `[STRIPE WEBHOOK] Erreur création abonnement:`,
@@ -215,10 +167,6 @@ export const stripePlugin = stripe({
         break;
 
       case "customer.subscription.updated":
-        console.log(
-          `[STRIPE WEBHOOK] Abonnement mis à jour:`,
-          event.data.object
-        );
         const updatedSub = event.data.object;
 
         try {
@@ -230,13 +178,10 @@ export const stripePlugin = stripe({
               currentPeriodStart: new Date(
                 updatedSub.current_period_start * 1000
               ),
-              currentPeriodEnd: new Date(
-                updatedSub.current_period_end * 1000
-              ),
+              currentPeriodEnd: new Date(updatedSub.current_period_end * 1000),
               updatedAt: new Date(),
             },
           });
-          console.log(`[STRIPE WEBHOOK] Abonnement mis à jour avec succès`);
         } catch (error) {
           console.error(
             `[STRIPE WEBHOOK] Erreur mise à jour abonnement:`,
@@ -246,10 +191,6 @@ export const stripePlugin = stripe({
         break;
 
       case "customer.subscription.deleted":
-        console.log(
-          `[STRIPE WEBHOOK] Abonnement annulé:`,
-          event.data.object
-        );
         const deletedSub = event.data.object;
 
         try {
@@ -261,7 +202,6 @@ export const stripePlugin = stripe({
               updatedAt: new Date(),
             },
           });
-          console.log(`[STRIPE WEBHOOK] Abonnement annulé avec succès`);
         } catch (error) {
           console.error(
             `[STRIPE WEBHOOK] Erreur annulation abonnement:`,
@@ -271,10 +211,8 @@ export const stripePlugin = stripe({
         break;
 
       case "invoice.paid":
-        console.log(`[STRIPE WEBHOOK] Facture payée:`, event.data.object);
         break;
       case "payment_intent.succeeded":
-        console.log(`[STRIPE WEBHOOK] Paiement réussi:`, event.data.object);
         break;
       default:
         console.log(`[STRIPE WEBHOOK] Événement non géré: ${event.type}`);

@@ -46,7 +46,6 @@ export async function send2FAEmail(user, otp) {
       html: emailTemplates.twoFactor(otp),
       from: "Newbi <noreply@newbi.sweily.fr>",
     });
-    console.log(`[2FA EMAIL] Code envoyé avec succès à ${user.email}`);
   } catch (error) {
     console.error(`[2FA EMAIL] Erreur lors de l'envoi:`, error);
     throw error;

@@ -16,16 +16,16 @@ function InvoicesContent() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-medium mb-2">Factures</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Gérez vos factures et suivez vos paiements
           </p>
         </div>
-        <Button onClick={handleNewInvoice}>
+        <Button onClick={handleNewInvoice} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Nouvelle facture
         </Button>

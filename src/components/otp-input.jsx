@@ -29,7 +29,6 @@ export function OtpInput({
         id={id}
         value={value}
         onChange={(newValue) => {
-          console.log("OTPInput onChange:", newValue);
           onChange(newValue);
         }}
         maxLength={maxLength}

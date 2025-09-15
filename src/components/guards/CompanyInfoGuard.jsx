@@ -42,18 +42,7 @@ export function CompanyInfoGuard({
   const [companyComplete, setCompanyComplete] = useState(false);
 
   useEffect(() => {
-    console.log("🔐 CompanyInfoGuard - État d'authentification:", {
-      isAuthenticated,
-      authLoading,
-      hasUser: !!user,
-      userId: user?.id,
-      timestamp: new Date().toISOString(),
-    });
-
     if (authLoading) {
-      console.log(
-        "⏳ CompanyInfoGuard: Authentification en cours de chargement..."
-      );
       setIsLoading(true);
       return;
     }
@@ -68,14 +57,6 @@ export function CompanyInfoGuard({
 
     const company = user?.company;
     const isComplete = isCompanyInfoComplete(company);
-
-    console.log("🏢 Vérification informations entreprise:", {
-      hasCompany: !!company,
-      name: company?.name,
-      email: company?.email,
-      address: company?.address,
-      isComplete,
-    });
 
     setCompanyComplete(isComplete);
     setIsLoading(false);

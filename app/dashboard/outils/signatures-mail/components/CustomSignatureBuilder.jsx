@@ -1,19 +1,51 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Plus, Trash2, Settings, GripVertical, Image, Type, User, Building } from 'lucide-react';
-import { Button } from '@/src/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/src/components/ui/select';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { Textarea } from '@/src/components/ui/textarea';
-import { Badge } from '@/src/components/ui/badge';
-import { cn } from '@/src/lib/utils';
+import React, { useState, useCallback } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  Plus,
+  Trash2,
+  Settings,
+  GripVertical,
+  Image,
+  Type,
+  User,
+  Building,
+} from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
+import { Badge } from "@/src/components/ui/badge";
+import { cn } from "@/src/lib/utils";
 
 // Composant pour un élément déplaçable
 const DraggableElement = ({ element, onUpdate, onDelete }) => {
@@ -34,11 +66,16 @@ const DraggableElement = ({ element, onUpdate, onDelete }) => {
 
   const getElementIcon = (type) => {
     switch (type) {
-      case 'photo': return <User className="w-4 h-4" />;
-      case 'logo': return <Building className="w-4 h-4" />;
-      case 'text': return <Type className="w-4 h-4" />;
-      case 'custom': return <Plus className="w-4 h-4" />;
-      default: return <Type className="w-4 h-4" />;
+      case "photo":
+        return <User className="w-4 h-4" />;
+      case "logo":
+        return <Building className="w-4 h-4" />;
+      case "text":
+        return <Type className="w-4 h-4" />;
+      case "custom":
+        return <Plus className="w-4 h-4" />;
+      default:
+        return <Type className="w-4 h-4" />;
     }
   };
 
@@ -58,7 +95,7 @@ const DraggableElement = ({ element, onUpdate, onDelete }) => {
       >
         <GripVertical className="w-4 h-4" />
       </div>
-      
+
       <div className="flex items-center gap-2 flex-1">
         {getElementIcon(element.type)}
         <span className="text-sm font-medium">{element.type}</span>
@@ -101,21 +138,20 @@ const GridCell = ({ cell, onElementsChange, onAddElement }) => {
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (active.id !== over.id) {
-      const oldIndex = cell.elements.findIndex(el => el.id === active.id);
-      const newIndex = cell.elements.findIndex(el => el.id === over.id);
+      const oldIndex = cell.elements.findIndex((el) => el.id === active.id);
+      const newIndex = cell.elements.findIndex((el) => el.id === over.id);
       const newElements = arrayMove(cell.elements, oldIndex, newIndex);
       onElementsChange(cell.id, newElements);
     }
   };
 
   const handleDeleteElement = (elementId) => {
-    const newElements = cell.elements.filter(el => el.id !== elementId);
+    const newElements = cell.elements.filter((el) => el.id !== elementId);
     onElementsChange(cell.id, newElements);
   };
 
   const handleUpdateElement = (element) => {
     // L'édition sera gérée dans le panneau de droite
-    console.log('Élément sélectionné pour édition:', element);
   };
 
   return (
@@ -143,7 +179,7 @@ const GridCell = ({ cell, onElementsChange, onAddElement }) => {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={cell.elements.map(el => el.id)}
+            items={cell.elements.map((el) => el.id)}
             strategy={verticalListSortingStrategy}
           >
             <div className="space-y-2">
@@ -174,11 +210,35 @@ const CustomSignatureBuilder = ({ signatureData, onLayoutChange }) => {
   const defaultLayout = {
     grid: { rows: 2, cols: 2 },
     cells: [
-      { id: "cell-0-0", row: 0, col: 0, elements: [], borders: { top: false, right: false, bottom: false, left: false } },
-      { id: "cell-0-1", row: 0, col: 1, elements: [], borders: { top: false, right: false, bottom: false, left: false } },
-      { id: "cell-1-0", row: 1, col: 0, elements: [], borders: { top: false, right: false, bottom: false, left: false } },
-      { id: "cell-1-1", row: 1, col: 1, elements: [], borders: { top: false, right: false, bottom: false, left: false } }
-    ]
+      {
+        id: "cell-0-0",
+        row: 0,
+        col: 0,
+        elements: [],
+        borders: { top: false, right: false, bottom: false, left: false },
+      },
+      {
+        id: "cell-0-1",
+        row: 0,
+        col: 1,
+        elements: [],
+        borders: { top: false, right: false, bottom: false, left: false },
+      },
+      {
+        id: "cell-1-0",
+        row: 1,
+        col: 0,
+        elements: [],
+        borders: { top: false, right: false, bottom: false, left: false },
+      },
+      {
+        id: "cell-1-1",
+        row: 1,
+        col: 1,
+        elements: [],
+        borders: { top: false, right: false, bottom: false, left: false },
+      },
+    ],
   };
 
   const layout = signatureData.customLayout || defaultLayout;
@@ -189,9 +249,9 @@ const CustomSignatureBuilder = ({ signatureData, onLayoutChange }) => {
   const updateCellElements = (cellId, elements) => {
     const newLayout = {
       ...layout,
-      cells: layout.cells.map(cell =>
+      cells: layout.cells.map((cell) =>
         cell.id === cellId ? { ...cell, elements } : cell
-      )
+      ),
     };
     onLayoutChange(newLayout);
   };
@@ -202,11 +262,11 @@ const CustomSignatureBuilder = ({ signatureData, onLayoutChange }) => {
       id: `element-${Date.now()}`,
       type: elementType,
       content: getDefaultContent(elementType),
-      alignment: 'left',
-      styles: getDefaultStyles(elementType)
+      alignment: "left",
+      styles: getDefaultStyles(elementType),
     };
 
-    const cell = layout.cells.find(c => c.id === cellId);
+    const cell = layout.cells.find((c) => c.id === cellId);
     if (cell) {
       updateCellElements(cellId, [...cell.elements, newElement]);
     }
@@ -215,20 +275,25 @@ const CustomSignatureBuilder = ({ signatureData, onLayoutChange }) => {
 
   const getDefaultContent = (type) => {
     switch (type) {
-      case 'photo': return signatureData.photo || '';
-      case 'logo': return signatureData.logo || '';
-      case 'text': return 'Nouveau texte';
-      case 'custom': return 'Contenu personnalisé';
-      default: return '';
+      case "photo":
+        return signatureData.photo || "";
+      case "logo":
+        return signatureData.logo || "";
+      case "text":
+        return "Nouveau texte";
+      case "custom":
+        return "Contenu personnalisé";
+      default:
+        return "";
     }
   };
 
   const getDefaultStyles = (type) => {
     switch (type) {
-      case 'text':
-        return { fontSize: '14px', color: '#000', fontWeight: 'normal' };
-      case 'custom':
-        return { fontSize: '14px', color: '#666' };
+      case "text":
+        return { fontSize: "14px", color: "#000", fontWeight: "normal" };
+      case "custom":
+        return { fontSize: "14px", color: "#666" };
       default:
         return {};
     }
@@ -239,11 +304,11 @@ const CustomSignatureBuilder = ({ signatureData, onLayoutChange }) => {
       {/* Configuration de grille déplacée dans le panneau de droite */}
 
       {/* Grille d'édition */}
-      <div 
+      <div
         className="grid gap-4"
         style={{
           gridTemplateRows: `repeat(${layout.grid.rows}, 1fr)`,
-          gridTemplateColumns: `repeat(${layout.grid.cols}, 1fr)`
+          gridTemplateColumns: `repeat(${layout.grid.cols}, 1fr)`,
         }}
       >
         {layout.cells.map((cell) => (
@@ -270,7 +335,7 @@ const CustomSignatureBuilder = ({ signatureData, onLayoutChange }) => {
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => addElement(selectedCellId, 'photo')}
+                  onClick={() => addElement(selectedCellId, "photo")}
                   className="h-20 flex-col"
                 >
                   <User className="w-6 h-6 mb-2" />
@@ -278,7 +343,7 @@ const CustomSignatureBuilder = ({ signatureData, onLayoutChange }) => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => addElement(selectedCellId, 'logo')}
+                  onClick={() => addElement(selectedCellId, "logo")}
                   className="h-20 flex-col"
                 >
                   <Building className="w-6 h-6 mb-2" />
@@ -286,7 +351,7 @@ const CustomSignatureBuilder = ({ signatureData, onLayoutChange }) => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => addElement(selectedCellId, 'text')}
+                  onClick={() => addElement(selectedCellId, "text")}
                   className="h-20 flex-col"
                 >
                   <Type className="w-6 h-6 mb-2" />
@@ -294,7 +359,7 @@ const CustomSignatureBuilder = ({ signatureData, onLayoutChange }) => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => addElement(selectedCellId, 'custom')}
+                  onClick={() => addElement(selectedCellId, "custom")}
                   className="h-20 flex-col"
                 >
                   <Plus className="w-6 h-6 mb-2" />

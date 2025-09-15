@@ -59,7 +59,6 @@ export default function MembersTable({
 
       if (result.success) {
         setCollaborators(result.data || []);
-        console.log("Collaborateurs chargés:", result.data);
       } else {
         console.error(
           "Erreur lors du chargement des collaborateurs:",
@@ -68,7 +67,6 @@ export default function MembersTable({
         toast.error("Erreur lors du chargement des collaborateurs");
       }
     } catch (error) {
-      console.error("Erreur lors du chargement des données:", error);
       toast.error("Erreur lors du chargement des données");
     } finally {
       setLoading(false);

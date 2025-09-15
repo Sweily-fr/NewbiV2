@@ -470,7 +470,6 @@ function useSignatureTable({ data, onRefetch, actions }) {
     setIsDeleting(true);
     try {
       // Logique de suppression multiple à implémenter
-      console.log("Suppression des signatures sélectionnées:", selectedRows);
       // await deleteMultipleSignatures(selectedRows);
       setSelectedRows([]);
       onRefetch?.();

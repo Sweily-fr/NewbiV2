@@ -30,7 +30,9 @@ export const useFileTransfer = () => {
 
   // Mutations
   const [uploadFileChunkMutation] = useMutation(UPLOAD_FILE_CHUNK);
-  const [createFileTransferWithIdsMutation] = useMutation(CREATE_FILE_TRANSFER_WITH_IDS);
+  const [createFileTransferWithIdsMutation] = useMutation(
+    CREATE_FILE_TRANSFER_WITH_IDS
+  );
   const [deleteFileTransferMutation] = useMutation(DELETE_FILE_TRANSFER);
   const [generatePaymentLinkMutation] = useMutation(
     GENERATE_FILE_TRANSFER_PAYMENT_LINK
@@ -93,7 +95,10 @@ export const useFileTransfer = () => {
 
   // Fonction pour calculer la taille totale des fichiers sélectionnés
   const getTotalSize = useCallback(() => {
-    return selectedFiles.reduce((total, file) => total + (file.file?.size || 0), 0);
+    return selectedFiles.reduce(
+      (total, file) => total + (file.file?.size || 0),
+      0
+    );
   }, [selectedFiles]);
 
   // Fonction pour formater la taille
@@ -107,7 +112,7 @@ export const useFileTransfer = () => {
 
   // Générer un ID unique pour un fichier
   const generateFileId = () => {
-    return 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return "file_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
   };
 
   // Fonction pour uploader un fichier en chunks via GraphQL
@@ -119,22 +124,15 @@ export const useFileTransfer = () => {
       const chunks = chunkFile(file);
       const fileId = generateFileId(); // Générer un ID unique pour le fichier
 
-      console.log(
-        `📁 Upload du fichier: ${file.name} (${file.size} bytes) en ${chunks.length} chunks`
-      );
-
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        console.log(
-          `📤 Upload du chunk ${i + 1}/${chunks.length} pour ${file.name}`
-        );
 
         try {
           // Créer un File à partir du Blob du chunk pour l'upload GraphQL
-          const chunkFile = new File([chunk.data], file.name, { type: file.type });
-          
-          console.log(`Envoi du chunk ${i + 1}/${chunks.length} pour ${file.name} (taille: ${chunk.data.size} bytes)`);
-          
+          const chunkFile = new File([chunk.data], file.name, {
+            type: file.type,
+          });
+
           const { data } = await uploadFileChunkMutation({
             variables: {
               chunk: chunkFile,
@@ -142,15 +140,12 @@ export const useFileTransfer = () => {
               chunkIndex: i,
               totalChunks: chunks.length,
               fileName: file.name,
-              fileSize: file.size
-            }
+              fileSize: file.size,
+            },
           });
-
-          console.log(`Chunk ${i + 1} uploadé:`, data.uploadFileChunk);
 
           // Si le fichier est complètement uploadé, sortir de la boucle
           if (data.uploadFileChunk.fileCompleted) {
-            console.log(`✅ Fichier ${file.name} complètement uploadé`);
             uploadedFileIds.push(data.uploadFileChunk.fileId);
             break;
           }
@@ -161,7 +156,6 @@ export const useFileTransfer = () => {
       }
     }
 
-    console.log(`🎉 Tous les fichiers uploadés. IDs:`, uploadedFileIds);
     return uploadedFileIds;
   };
 
@@ -177,21 +171,14 @@ export const useFileTransfer = () => {
       setUploadProgress(0);
 
       // Debug: Afficher les fichiers sélectionnés
-      console.log("Fichiers sélectionnés:", selectedFiles);
 
       // Vérifier que les fichiers sont bien des objets File valides
       const validFiles = selectedFiles.filter((f) => {
         const isValid =
           f && f.file && (f.file instanceof File || f.file instanceof Blob);
-        console.log(
-          `Fichier ${f?.name}: valide=${isValid}, type=${typeof f?.file}, constructor=${f?.file?.constructor?.name}`
-        );
+
         return isValid;
       });
-
-      console.log(
-        `${validFiles.length} fichiers valides sur ${selectedFiles.length}`
-      );
 
       if (validFiles.length === 0) {
         throw new Error(
@@ -200,39 +187,31 @@ export const useFileTransfer = () => {
       }
 
       // ÉTAPE 1: Uploader les fichiers en chunks
-      console.log("🚀 Début de l'upload réel en chunks...");
       const uploadedFileIds = await uploadFileInChunks(validFiles);
-      console.log("✅ Tous les fichiers ont été uploadés avec succès!");
 
       // ÉTAPE 2: Créer le transfert avec les IDs des fichiers
-      console.log("📄 Création du transfert avec les IDs de fichiers...");
-      
+
       // Préparer l'objet input selon la nouvelle structure backend
       // Essayons une structure alternative basée sur les mémoires
       const inputData = {
         // Champs obligatoires avec valeurs par défaut
         expiryDays: transferOptions.expiryDays || 7,
-        
+
         // Utiliser requirePayment au lieu de isPaymentRequired (selon certaines mémoires)
         requirePayment: Boolean(transferOptions.isPaymentRequired) || false,
-        
+
         // Champs conditionnels avec valeurs par défaut si nécessaire
-        paymentAmount: transferOptions.paymentAmount ? Number(transferOptions.paymentAmount) : 0,
+        paymentAmount: transferOptions.paymentAmount
+          ? Number(transferOptions.paymentAmount)
+          : 0,
         currency: transferOptions.paymentCurrency || "EUR", // Utiliser currency au lieu de paymentCurrency
-        
+
         // Champ optionnel
         recipientEmail: transferOptions.recipientEmail || null,
-        
-        // Ajouter un champ message vide (selon certaines mémoires)
-        message: ""
-      };
-      
-      // Vérification des valeurs pour le debug
-      console.log("transferOptions original:", transferOptions);
-      console.log("inputData formaté:", inputData);
 
-      console.log("Input data pour createFileTransferWithIds:", inputData);
-      console.log("File IDs:", uploadedFileIds);
+        // Ajouter un champ message vide (selon certaines mémoires)
+        message: "",
+      };
 
       // Utiliser la nouvelle mutation avec les IDs de fichiers
       const { data } = await createFileTransferWithIdsMutation({
@@ -242,8 +221,6 @@ export const useFileTransfer = () => {
         },
       });
 
-      console.log("Réponse GraphQL:", data);
-      
       // Vérifier que la réponse contient les données nécessaires
       if (data?.createFileTransferWithIds?.fileTransfer) {
         // Extraire les données du transfert créé
@@ -262,8 +239,6 @@ export const useFileTransfer = () => {
           status: fileTransfer.status,
           totalSize: fileTransfer.totalSize,
         };
-
-        console.log("Transfert créé avec succès:", result);
 
         // Mettre à jour l'état et notifier l'utilisateur
         setTransferResult(result);
@@ -284,31 +259,33 @@ export const useFileTransfer = () => {
       }
     } catch (error) {
       console.error("Erreur lors de l'upload:", error);
-      
+
       // Analyse détaillée de l'erreur pour un meilleur diagnostic
       if (error.graphQLErrors && error.graphQLErrors.length > 0) {
-        console.log("GraphQL errors:", error.graphQLErrors);
-        
         // Extraire les messages d'erreur spécifiques
-        const graphQLErrorMessages = error.graphQLErrors.map(err => {
-          console.log("Error details:", err);
-          return err.message || "Erreur GraphQL non spécifiée";
-        }).join(', ');
-        
+        const graphQLErrorMessages = error.graphQLErrors
+          .map((err) => {
+            return err.message || "Erreur GraphQL non spécifiée";
+          })
+          .join(", ");
+
         toast.error(`Erreur serveur: ${graphQLErrorMessages}`);
       } else if (error.networkError) {
-        console.log("Network error:", error.networkError);
-        toast.error(`Erreur réseau: ${error.networkError.message || "Problème de connexion au serveur"}`);
+        toast.error(
+          `Erreur réseau: ${error.networkError.message || "Problème de connexion au serveur"}`
+        );
       } else {
-        const errorMessage = error.message || "Une erreur est survenue lors de la création du transfert";
+        const errorMessage =
+          error.message ||
+          "Une erreur est survenue lors de la création du transfert";
         toast.error(errorMessage);
       }
-      
+
       setTransferResult({
         success: false,
         error: error.message || "Une erreur est survenue lors de l'upload",
       });
-      
+
       throw error;
     } finally {
       setIsUploading(false);
@@ -360,7 +337,10 @@ export const useFileTransfer = () => {
           throw new Error(data.generateFileTransferPaymentLink.message);
         }
       } catch (error) {
-        console.error("Erreur lors de la génération du lien de paiement:", error);
+        console.error(
+          "Erreur lors de la génération du lien de paiement:",
+          error
+        );
         toast.error(
           error.message || "Erreur lors de la génération du lien de paiement"
         );
@@ -379,20 +359,15 @@ export const useFileTransfer = () => {
 
   // Extraire les transferts de la réponse GraphQL et dédupliquer par ID
   const rawTransfers = transfersData?.myFileTransfers?.items || [];
-  
+
   // Déduplication des transferts par ID
   const transfers = rawTransfers.reduce((acc, transfer) => {
-    const existingIndex = acc.findIndex(t => t.id === transfer.id);
+    const existingIndex = acc.findIndex((t) => t.id === transfer.id);
     if (existingIndex === -1) {
       acc.push(transfer);
     }
     return acc;
   }, []);
-  
-  // Ajouter des logs pour déboguer
-  console.log("Données de transferts reçues:", transfersData);
-  console.log("Transferts bruts:", rawTransfers.length);
-  console.log("Transferts après déduplication:", transfers.length);
 
   return {
     // États

@@ -1,7 +1,11 @@
-import { useQuery, useMutation } from '@apollo/client';
-import { GET_EXPENSES, GET_EXPENSE_STATS } from '../graphql/queries/expense';
-import { CREATE_EXPENSE, DELETE_EXPENSE, DELETE_MULTIPLE_EXPENSES } from '../graphql/mutations/expense';
-import { toast } from '@/src/components/ui/sonner';
+import { useQuery, useMutation } from "@apollo/client";
+import { GET_EXPENSES, GET_EXPENSE_STATS } from "../graphql/queries/expense";
+import {
+  CREATE_EXPENSE,
+  DELETE_EXPENSE,
+  DELETE_MULTIPLE_EXPENSES,
+} from "../graphql/mutations/expense";
+import { toast } from "@/src/components/ui/sonner";
 
 /**
  * Hook pour récupérer les dépenses avec filtres et pagination
@@ -11,9 +15,9 @@ export const useExpenses = (filters = {}) => {
     variables: {
       page: 1,
       limit: 20,
-      ...filters
+      ...filters,
     },
-    fetchPolicy: 'cache-and-network'
+    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -22,7 +26,7 @@ export const useExpenses = (filters = {}) => {
     hasNextPage: data?.expenses?.hasNextPage || false,
     loading,
     error,
-    refetch
+    refetch,
   };
 };
 
@@ -32,13 +36,13 @@ export const useExpenses = (filters = {}) => {
 export const useExpenseStats = (dateRange = {}) => {
   const { data, loading, error } = useQuery(GET_EXPENSE_STATS, {
     variables: dateRange,
-    fetchPolicy: 'cache-and-network'
+    fetchPolicy: "cache-and-network",
   });
 
   return {
     stats: data?.expenseStats,
     loading,
-    error
+    error,
   };
 };
 
@@ -51,37 +55,43 @@ export const useDeleteExpense = () => {
       {
         query: GET_EXPENSES,
         variables: {
-          status: 'PAID',
+          status: "PAID",
           page: 1,
-          limit: 20
-        }
-      }
+          limit: 20,
+        },
+      },
     ],
-    awaitRefetchQueries: true
+    awaitRefetchQueries: true,
   });
 
   const deleteExpense = async (id) => {
     try {
       const result = await deleteExpenseMutation({
-        variables: { id }
+        variables: { id },
       });
 
       if (result.data?.deleteExpense?.success) {
-        toast.success(result.data.deleteExpense.message || 'Dépense supprimée avec succès');
+        toast.success(
+          result.data.deleteExpense.message || "Dépense supprimée avec succès"
+        );
         return { success: true };
       } else {
-        throw new Error(result.data?.deleteExpense?.message || 'Erreur lors de la suppression');
+        throw new Error(
+          result.data?.deleteExpense?.message || "Erreur lors de la suppression"
+        );
       }
     } catch (error) {
-      console.error('Erreur suppression dépense:', error);
-      toast.error(error.message || 'Erreur lors de la suppression de la dépense');
+      console.error("Erreur suppression dépense:", error);
+      toast.error(
+        error.message || "Erreur lors de la suppression de la dépense"
+      );
       return { success: false, error };
     }
   };
 
   return {
     deleteExpense,
-    loading
+    loading,
   };
 };
 
@@ -94,42 +104,40 @@ export const useCreateExpense = () => {
       {
         query: GET_EXPENSES,
         variables: {
-          status: 'PAID',
+          status: "PAID",
           page: 1,
-          limit: 1000
-        }
-      }
+          limit: 1000,
+        },
+      },
     ],
-    awaitRefetchQueries: true
+    awaitRefetchQueries: true,
   });
 
   const createExpense = async (input) => {
     try {
-      console.log('Hook createExpense - input reçu:', input);
-      
       const result = await createExpenseMutation({
-        variables: { input }
+        variables: { input },
       });
 
       if (result.data?.createExpense) {
-        toast.success('Dépense créée avec succès');
+        toast.success("Dépense créée avec succès");
         return { success: true, expense: result.data.createExpense };
       } else {
-        throw new Error('Erreur lors de la création de la dépense');
+        throw new Error("Erreur lors de la création de la dépense");
       }
     } catch (error) {
-      console.error('Erreur création dépense:', error);
-      console.error('Détails de l\'erreur:', error.graphQLErrors);
-      console.error('Erreur réseau:', error.networkError);
-      
+      console.error("Erreur création dépense:", error);
+      console.error("Détails de l'erreur:", error.graphQLErrors);
+      console.error("Erreur réseau:", error.networkError);
+
       // Extraire le message d'erreur le plus pertinent
-      let errorMessage = 'Erreur lors de la création de la dépense';
+      let errorMessage = "Erreur lors de la création de la dépense";
       if (error.graphQLErrors && error.graphQLErrors.length > 0) {
         errorMessage = error.graphQLErrors[0].message;
       } else if (error.networkError) {
-        errorMessage = 'Erreur de connexion au serveur';
+        errorMessage = "Erreur de connexion au serveur";
       }
-      
+
       toast.error(errorMessage);
       return { success: false, error };
     }
@@ -137,7 +145,7 @@ export const useCreateExpense = () => {
 
   return {
     createExpense,
-    loading
+    loading,
   };
 };
 
@@ -145,59 +153,69 @@ export const useCreateExpense = () => {
  * Hook pour supprimer plusieurs dépenses
  */
 export const useDeleteMultipleExpenses = () => {
-  const [deleteMultipleExpensesMutation, { loading }] = useMutation(DELETE_MULTIPLE_EXPENSES, {
-    refetchQueries: [
-      {
-        query: GET_EXPENSES,
-        variables: {
-          status: 'PAID',
-          page: 1,
-          limit: 20
-        }
-      }
-    ],
-    awaitRefetchQueries: true
-  });
+  const [deleteMultipleExpensesMutation, { loading }] = useMutation(
+    DELETE_MULTIPLE_EXPENSES,
+    {
+      refetchQueries: [
+        {
+          query: GET_EXPENSES,
+          variables: {
+            status: "PAID",
+            page: 1,
+            limit: 20,
+          },
+        },
+      ],
+      awaitRefetchQueries: true,
+    }
+  );
 
   const deleteMultipleExpenses = async (ids) => {
     try {
       const result = await deleteMultipleExpensesMutation({
-        variables: { ids }
+        variables: { ids },
       });
 
       const response = result.data?.deleteMultipleExpenses;
       if (response) {
-        const { success, deletedCount, failedCount, message, errors } = response;
-        
+        const { success, deletedCount, failedCount, message, errors } =
+          response;
+
         if (success) {
-          toast.success(message || `${deletedCount} dépense(s) supprimée(s) avec succès`);
+          toast.success(
+            message || `${deletedCount} dépense(s) supprimée(s) avec succès`
+          );
         } else {
           // Afficher un message d'avertissement si certaines suppressions ont échoué
           if (deletedCount > 0 && failedCount > 0) {
-            toast.warning(`${deletedCount} dépense(s) supprimée(s), ${failedCount} échec(s)`);
+            toast.warning(
+              `${deletedCount} dépense(s) supprimée(s), ${failedCount} échec(s)`
+            );
           } else if (failedCount > 0) {
             toast.error(`Aucune dépense supprimée. ${failedCount} échec(s)`);
           }
         }
-        
-        return { 
-          success, 
-          deletedCount, 
-          failedCount, 
-          errors: errors || [] 
+
+        return {
+          success,
+          deletedCount,
+          failedCount,
+          errors: errors || [],
         };
       } else {
-        throw new Error('Réponse invalide du serveur');
+        throw new Error("Réponse invalide du serveur");
       }
     } catch (error) {
-      console.error('Erreur suppression multiple dépenses:', error);
-      toast.error(error.message || 'Erreur lors de la suppression des dépenses');
+      console.error("Erreur suppression multiple dépenses:", error);
+      toast.error(
+        error.message || "Erreur lors de la suppression des dépenses"
+      );
       return { success: false, error };
     }
   };
 
   return {
     deleteMultipleExpenses,
-    loading
+    loading,
   };
 };

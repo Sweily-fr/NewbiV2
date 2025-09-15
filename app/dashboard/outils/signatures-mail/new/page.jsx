@@ -52,54 +52,33 @@ const EmailPreview = ({ signatureData }) => {
 
   // Fonction pour récupérer l'URL d'image (Cloudflare ou locale)
   const getImageSrc = async (imageUrl) => {
-    console.log("🔍 RÉCUPÉRATION URL IMAGE:");
-    console.log("  - URL reçue:", imageUrl);
-    console.log("  - Type URL:", typeof imageUrl);
-    console.log("  - URL vide?", !imageUrl);
-
     if (!imageUrl) {
-      console.log("⚠️ URL image vide ou null - ARRÊT");
       return null;
     }
 
     // Si c'est déjà une URL Cloudflare (https://), on la retourne directement
     if (imageUrl.startsWith("https://")) {
-      console.log("✅ URL Cloudflare détectée, utilisation directe");
       return imageUrl;
     }
 
     // Vérifier le cache pour les conversions blob
     if (imageCache.current.has(imageUrl)) {
-      console.log(
-        "💾 Image trouvée dans le cache:",
-        imageUrl.substring(0, 30) + "..."
-      );
       return imageCache.current.get(imageUrl);
     }
 
     // Si c'est déjà une URL publique (http/https), la retourner directement
     if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
-      console.log(
-        "🌐 URL publique détectée:",
-        imageUrl.substring(0, 50) + "..."
-      );
       imageCache.current.set(imageUrl, imageUrl);
       return imageUrl;
     }
 
     // Si c'est déjà du base64, le retourner directement
     if (imageUrl.startsWith("data:")) {
-      console.log("📄 Base64 détecté, retour direct");
       imageCache.current.set(imageUrl, imageUrl);
       return imageUrl;
     }
 
     try {
-      console.log(
-        "🔄 Conversion en base64 pour:",
-        imageUrl.substring(0, 50) + "..."
-      );
-
       // Vérifier si l'URL blob est valide
       if (!imageUrl.startsWith("blob:")) {
         console.error("❌ URL non reconnue:", imageUrl);
@@ -114,7 +93,6 @@ const EmailPreview = ({ signatureData }) => {
       }
 
       const blob = await response.blob();
-      console.log("📊 Taille du blob:", blob.size, "bytes, type:", blob.type);
 
       // Vérifier que c'est bien une image
       if (!blob.type.startsWith("image/")) {
@@ -165,11 +143,7 @@ const EmailPreview = ({ signatureData }) => {
                 ctx.drawImage(img, 0, 0, width, height);
 
                 const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-                console.log(
-                  "✅ Image compressée:",
-                  compressedBase64.length,
-                  "caractères"
-                );
+
                 resolve(compressedBase64);
               } catch (error) {
                 console.error("❌ Erreur compression:", error);
@@ -199,11 +173,7 @@ const EmailPreview = ({ signatureData }) => {
             reader.onloadend = () => {
               clearTimeout(timeout);
               const base64 = reader.result;
-              console.log(
-                "✅ Conversion base64 réussie:",
-                base64.length,
-                "caractères"
-              );
+
               resolve(base64);
             };
 
@@ -236,32 +206,10 @@ const EmailPreview = ({ signatureData }) => {
   const generateSignatureHTML = async (facebookImageUrl = null) => {
     const primaryColor = signatureData.primaryColor || "#171717";
 
-    // Convertir les images en base64 si nécessaire
-    console.log("🔍 Données avant conversion:");
-    console.log("  - Photo originale:", signatureData.photo);
-    console.log("  - Logo original:", signatureData.logo);
-
-    // Conversion directe des images
-    console.log("🖼️ Conversion des images pour la signature:");
-    console.log("  - Photo URL originale:", signatureData.photo);
-    console.log("  - Logo URL originale:", signatureData.logo);
-    console.log(
-      "  - URLs identiques?",
-      signatureData.photo === signatureData.logo
-    );
-    console.log("📊 ÉTAT COMPLET signatureData:");
-    console.log("  - photo:", signatureData.photo);
-    console.log("  - logo:", signatureData.logo);
-    console.log("  - companyName:", signatureData.companyName);
-
     try {
       // Utiliser directement les URLs des images (plus simple et efficace)
       const photoSrc = signatureData.photo;
       const logoSrc = signatureData.logo;
-
-      console.log("🖼️ Images utilisées:");
-      console.log("  - Photo URL:", photoSrc || "Aucune");
-      console.log("  - Logo URL:", logoSrc || "Aucun");
 
       // Générer le HTML selon le template sélectionné
       const template = signatureData.template || signatureData.layout;
@@ -1277,21 +1225,12 @@ const EmailPreview = ({ signatureData }) => {
 
   // Fonction pour copier la signature dans le presse-papier
   const handleCopySignature = async () => {
-    console.log("🚀 Début de la copie de signature");
-    console.log("📋 Données signature:", {
-      photo: signatureData.photo ? "Présente" : "Absente",
-      companyLogo: signatureData.logo ? "Présent" : "Absent",
-      firstName: signatureData.firstName,
-      lastName: signatureData.lastName,
-    });
-
     setIsCopying(true);
 
     try {
       // Générer une PNG colorée pour Facebook si nécessaire
       let facebookImageUrl = null;
       if (signatureData.socialLinks?.facebook && signatureData.colors?.social) {
-        console.log("🎨 Génération PNG Facebook pour Gmail...");
         try {
           const { generateColoredSocialLogo } = await import(
             "../utils/svgToPng"
@@ -1301,7 +1240,6 @@ const EmailPreview = ({ signatureData }) => {
             signatureData.colors.social,
             signatureData.socialSize || 24
           );
-          console.log("✅ PNG Facebook générée:", facebookImageUrl);
         } catch (error) {
           console.error("❌ Erreur génération PNG:", error);
         }
@@ -1309,7 +1247,6 @@ const EmailPreview = ({ signatureData }) => {
 
       // Générer le HTML selon l'orientation actuelle
       const htmlSignature = await generateSignatureHTML(facebookImageUrl);
-      console.log("📝 HTML généré:", htmlSignature);
 
       // Utiliser l'API moderne du clipboard pour copier du HTML
       try {
@@ -1338,8 +1275,6 @@ const EmailPreview = ({ signatureData }) => {
           toast.error("Erreur lors de la copie de la signature");
         }
       }
-
-      console.log("✅ Copie terminée avec succès");
     } catch (error) {
       console.error("❌ Erreur lors de la copie:", error);
       toast.error("Erreur lors de la copie de la signature");
@@ -1379,12 +1314,6 @@ const EmailPreview = ({ signatureData }) => {
   };
 
   const handleImageChange = async (field, file) => {
-    console.log("🖼️ UPLOAD IMAGE TO CLOUDFLARE:");
-    console.log("  - Field:", field);
-    console.log("  - File:", file?.name);
-    console.log("  - File type:", file?.type);
-    console.log("  - File size:", file?.size);
-
     if (!file) {
       // Si pas de fichier, on supprime l'image
       updateSignatureData(field, null);
@@ -1398,10 +1327,6 @@ const EmailPreview = ({ signatureData }) => {
 
       // Upload vers Cloudflare
       const result = await uploadImageFile(file, imageType);
-
-      console.log("✅ Image uploadée vers Cloudflare:");
-      console.log("  - URL:", result.url);
-      console.log("  - Key:", result.key);
 
       // Stocker l'URL publique et la clé Cloudflare
       updateSignatureData(field, result.url);

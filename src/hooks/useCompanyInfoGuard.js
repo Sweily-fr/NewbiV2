@@ -36,19 +36,11 @@ export function useCompanyInfoGuard(redirectPath = "/dashboard/profile/company")
       company?.address?.country
     );
 
-    console.log('🏢 Vérification informations entreprise:', {
-      hasCompany: !!company,
-      name: company?.name,
-      email: company?.email,
-      address: company?.address,
-      isComplete
-    });
 
     setIsCompanyInfoComplete(isComplete);
     setIsLoading(false);
 
     if (!isComplete) {
-      console.log('⚠️ Informations d\'entreprise incomplètes, redirection vers:', redirectPath);
       router.push(redirectPath);
     }
   }, [session, status, router, redirectPath]);

@@ -17,9 +17,7 @@ export async function POST(request) {
     try {
       const decoded = Buffer.from(token, "base64").toString("utf-8");
       [userId, timestamp] = decoded.split(":");
-      console.log("Token décodé:", { decoded, userId, timestamp });
     } catch (error) {
-      console.log("Erreur décodage token:", error);
       return NextResponse.json({ error: "Token invalide" }, { status: 400 });
     }
 
@@ -34,24 +32,18 @@ export async function POST(request) {
     // Trouver l'utilisateur via MongoDB directement
     const { mongoDb } = await import("@/src/lib/mongodb");
     const usersCollection = mongoDb.collection("user");
-    
-    console.log("Recherche utilisateur avec:", { userId, email });
-    
+
     // D'abord chercher l'utilisateur par email seulement
     const userByEmail = await usersCollection.findOne({ email: email });
-    console.log("Utilisateur trouvé par email:", userByEmail);
-    
+
     // Puis chercher avec les critères complets
     const user = await usersCollection.findOne({
       _id: new (await import("mongodb")).ObjectId(userId),
       email: email,
-      isActive: false // Vérifier que le compte est bien désactivé
+      isActive: false, // Vérifier que le compte est bien désactivé
     });
-    
-    console.log("Utilisateur trouvé avec critères complets:", user);
 
     if (!user) {
-      console.log("Aucun utilisateur trouvé avec les critères:", { id: userId, email, isActive: false });
       return NextResponse.json(
         { error: "Utilisateur non trouvé ou compte déjà actif" },
         { status: 404 }
@@ -61,15 +53,13 @@ export async function POST(request) {
     // Réactiver le compte via MongoDB
     await usersCollection.updateOne(
       { _id: new (await import("mongodb")).ObjectId(userId) },
-      { 
+      {
         $set: {
           isActive: true,
           updatedAt: new Date(),
-        }
+        },
       }
     );
-
-    console.log(`Compte réactivé pour l'utilisateur: ${email}`);
 
     return NextResponse.json({
       success: true,

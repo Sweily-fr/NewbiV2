@@ -14,36 +14,38 @@ import { TwoFactorModal } from "./components/TwoFactorModal";
 // Fonction pour s'assurer qu'une organisation active est définie
 const ensureActiveOrganization = async () => {
   try {
-    console.log("🏢 Vérification de l'organisation active après connexion...");
-    
     // Récupérer les organisations de l'utilisateur
-    const { data: organizations, error: orgsError } = await authClient.organization.list();
-    
+    const { data: organizations, error: orgsError } =
+      await authClient.organization.list();
+
     if (orgsError) {
-      console.error("Erreur lors de la récupération des organisations:", orgsError);
+      console.error(
+        "Erreur lors de la récupération des organisations:",
+        orgsError
+      );
       return;
     }
-    
-    console.log("Organisations disponibles:", organizations);
-    
+
     // Vérifier s'il y a déjà une organisation active
     const { data: activeOrg } = await authClient.organization.getActive();
-    
+
     if (activeOrg) {
-      console.log("✅ Organisation active déjà définie:", activeOrg);
       return;
     }
-    
+
     // Si pas d'organisation active et qu'il y a des organisations disponibles
     if (organizations && organizations.length > 0) {
-      console.log("🔄 Définition de l'organisation active:", organizations[0]);
-      
-      const { error: setActiveError } = await authClient.organization.setActive({
-        organizationId: organizations[0].id,
-      });
-      
+      const { error: setActiveError } = await authClient.organization.setActive(
+        {
+          organizationId: organizations[0].id,
+        }
+      );
+
       if (setActiveError) {
-        console.error("Erreur lors de la définition de l'organisation active:", setActiveError);
+        console.error(
+          "Erreur lors de la définition de l'organisation active:",
+          setActiveError
+        );
       } else {
         console.log("✅ Organisation active définie avec succès");
       }
@@ -51,7 +53,10 @@ const ensureActiveOrganization = async () => {
       console.log("⚠️ Aucune organisation disponible");
     }
   } catch (error) {
-    console.error("Erreur lors de la vérification de l'organisation active:", error);
+    console.error(
+      "Erreur lors de la vérification de l'organisation active:",
+      error
+    );
   }
 };
 
@@ -72,7 +77,6 @@ const LoginForm = () => {
       onSuccess: async (ctx) => {
         // Vérifier si l'utilisateur doit passer par la 2FA
         if (ctx.data.twoFactorRedirect) {
-          console.log("🔐 2FA requise pour cet utilisateur");
           setTwoFactorData(ctx.data);
           setShow2FA(true);
 
@@ -97,7 +101,6 @@ const LoginForm = () => {
 
         // Si c'est une connexion via invitation, accepter automatiquement l'invitation
         if (invitationId && invitationEmail) {
-          console.log("🎯 Connexion via invitation détectée, acceptation automatique...");
           try {
             const response = await fetch(`/api/invitations/${invitationId}`, {
               method: "POST",
@@ -109,46 +112,48 @@ const LoginForm = () => {
 
             if (response.ok) {
               const result = await response.json();
-              console.log("✅ Invitation acceptée automatiquement:", result);
-              toast.success("Invitation acceptée ! Bienvenue dans l'organisation.");
+              toast.success(
+                "Invitation acceptée ! Bienvenue dans l'organisation."
+              );
             } else {
-              console.error("❌ Erreur lors de l'acceptation automatique de l'invitation");
+              console.error(
+                "❌ Erreur lors de l'acceptation automatique de l'invitation"
+              );
               toast.error("Erreur lors de l'acceptation de l'invitation");
             }
           } catch (error) {
-            console.error("❌ Erreur lors de l'acceptation automatique:", error);
+            console.error(
+              "❌ Erreur lors de l'acceptation automatique:",
+              error
+            );
             toast.error("Erreur lors de l'acceptation de l'invitation");
           }
         }
 
         if (callbackUrl) {
-          console.log("🔄 Redirection vers callbackUrl:", callbackUrl);
           router.push(callbackUrl);
         } else {
-          console.log("🔄 Redirection vers dashboard par défaut");
           router.push("/dashboard");
         }
       },
       onError: (error) => {
-        console.error("Erreur de connexion:", error);
-        console.error("Type d'erreur:", typeof error);
-        console.error("Propriétés de l'erreur:", Object.keys(error));
-        
         // Essayer différents formats d'erreur
         let errorMessage = null;
-        
+
         if (error.message) {
           errorMessage = error.message;
         } else if (error.error && error.error.message) {
           errorMessage = error.error.message;
-        } else if (typeof error === 'string') {
+        } else if (typeof error === "string") {
           errorMessage = error;
         }
-        
-        console.error("Message d'erreur extrait:", errorMessage);
-        
+
         // Vérifier si c'est une erreur de compte désactivé
-        if (errorMessage && (errorMessage.includes("désactivé") || errorMessage.includes("réactivation"))) {
+        if (
+          errorMessage &&
+          (errorMessage.includes("désactivé") ||
+            errorMessage.includes("réactivation"))
+        ) {
           toast.error(errorMessage);
         } else {
           // Erreur générique pour les autres cas
@@ -163,15 +168,12 @@ const LoginForm = () => {
       const { data, error } = await authClient.twoFactor.sendOtp();
 
       if (error) {
-        console.error("Erreur envoi OTP:", error);
         toast.error("Erreur lors de l'envoi du code de vérification");
         return;
       }
 
-      console.log("OTP envoyé:", data);
       toast.success("Code de vérification envoyé");
     } catch (error) {
-      console.error("Erreur envoi OTP:", error);
       toast.error("Erreur lors de l'envoi du code de vérification");
     }
   };
@@ -183,12 +185,10 @@ const LoginForm = () => {
       });
 
       if (error) {
-        console.error("Erreur vérification 2FA:", error);
         toast.error("Code de vérification incorrect");
         return false;
       }
 
-      console.log("2FA vérifiée avec succès:", data);
       toast.success("Connexion réussie");
 
       // Définir l'organisation active après la vérification 2FA
@@ -202,7 +202,6 @@ const LoginForm = () => {
 
       // Si c'est une connexion via invitation, accepter automatiquement l'invitation
       if (invitationId && invitationEmail) {
-        console.log("🎯 Connexion 2FA via invitation détectée, acceptation automatique...");
         try {
           const response = await fetch(`/api/invitations/${invitationId}`, {
             method: "POST",
@@ -214,14 +213,14 @@ const LoginForm = () => {
 
           if (response.ok) {
             const result = await response.json();
-            console.log("✅ Invitation acceptée automatiquement après 2FA:", result);
-            toast.success("Invitation acceptée ! Bienvenue dans l'organisation.");
+
+            toast.success(
+              "Invitation acceptée ! Bienvenue dans l'organisation."
+            );
           } else {
-            console.error("❌ Erreur lors de l'acceptation automatique de l'invitation après 2FA");
             toast.error("Erreur lors de l'acceptation de l'invitation");
           }
         } catch (error) {
-          console.error("❌ Erreur lors de l'acceptation automatique après 2FA:", error);
           toast.error("Erreur lors de l'acceptation de l'invitation");
         }
       }
@@ -234,7 +233,6 @@ const LoginForm = () => {
 
       return true;
     } catch (error) {
-      console.error("Erreur vérification 2FA:", error);
       toast.error("Code de vérification incorrect");
       return false;
     }

@@ -159,7 +159,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           Ajouter un collaborateur
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex flex-col max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="flex flex-col max-h-[90vh] my-4 p-0 overflow-hidden">
         <div className="flex flex-col gap-2 p-6 pb-0">
           <DialogHeader>
             <DialogTitle className="text-left">

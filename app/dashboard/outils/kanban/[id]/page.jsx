@@ -181,57 +181,57 @@ export default function KanbanBoardPage({ params }) {
   return (
     <div className="w-full max-w-[100vw] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {/* Header */}
-      <div className="mx-auto pt-6 px-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {/* <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/dashboard/outils/kanban")}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button> */}
-            <div>
-              <h1 className="text-xl font-medium mb-2">{board.title}</h1>
-              <p className="text-muted-foreground text-sm">
-                {board.description}
-              </p>
-            </div>
+      <div className="mx-auto p-4 sm:pt-6 sm:px-6">
+        <div className="space-y-4">
+          {/* Title and description */}
+          <div>
+            <h1 className="text-xl font-medium mb-2">{board.title}</h1>
+            <p className="text-muted-foreground text-sm">
+              {board.description}
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            {collapsedColumnsCount > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={expandAll}
-                className="text-xs whitespace-nowrap"
-              >
-                Déplier toutes ({collapsedColumnsCount})
-              </Button>
-            )}
-            <div className="relative flex-1 max-w-md">
+          
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Search bar */}
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Rechercher des tâches (titre, description, tags, dates...)"
-                className="pl-10 w-full"
+                className="pl-10 w-full sm:w-64"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button
-              variant="default"
-              className="font-normal"
-              onClick={openAddModal}
-            >
-              Ajouter une colonne
-            </Button>
+            
+            {/* Action buttons */}
+            <div className="flex gap-2 sm:gap-4">
+              {collapsedColumnsCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={expandAll}
+                  className="text-xs whitespace-nowrap hidden sm:flex"
+                >
+                  Déplier toutes ({collapsedColumnsCount})
+                </Button>
+              )}
+              <Button
+                variant="default"
+                className="font-normal w-full sm:w-auto"
+                onClick={openAddModal}
+              >
+                <span className="sm:hidden">Ajouter</span>
+                <span className="hidden sm:inline">Ajouter une colonne</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Board Content */}
-      <div className="w-full overflow-x-auto px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="w-full overflow-x-auto px-4 sm:px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -246,7 +246,7 @@ export default function KanbanBoardPage({ params }) {
                 <div className="h-5 mb-4"></div>
 
                 <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                  <div className="flex gap-6 flex-nowrap items-start">
+                  <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
                     {board.columns.map((column) => {
                       const columnTasks = filterTasks(
                         getTasksByColumn(column.id)
@@ -274,7 +274,7 @@ export default function KanbanBoardPage({ params }) {
                     })}
 
                     {/* Add Column Button */}
-                    <Card className="w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors shadow-none cursor-pointer">
+                    <Card className="w-72 sm:w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors shadow-none cursor-pointer flex-shrink-0">
                       <CardContent className="p-3">
                         <Button
                           variant="ghost"

@@ -44,8 +44,6 @@ export default function InviteMembers({
   const { inviteMember, inviting } = useOrganizationInvitations();
 
   const onSubmit = async (formData) => {
-    console.log("Envoi d'invitation:", formData);
-
     const result = await inviteMember({
       email: formData.email,
       role: formData.role,

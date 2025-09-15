@@ -223,10 +223,6 @@ const columns = [
           const isIncome =
             (notes && notes.includes("[INCOME]")) || isVatDeductible === false;
 
-          console.log(
-            `🔍 Type check pour ${row.original.id}: notes="${notes}", isVatDeductible=${isVatDeductible}, isIncome=${isIncome}`
-          );
-
           if (isIncome) {
             return {
               className:
@@ -521,21 +517,12 @@ export default function TransactionTable() {
 
   // Mapper les dépenses et factures vers le format attendu par le tableau
   const transactions = useMemo(() => {
-    console.log("DEBUG - Raw expenses:", expenses);
-
     // Mapper les dépenses (SORTIES D'ARGENT)
     const expenseTransactions = expenses.map((expense) => {
-      console.log(
-        "DEBUG - Processing expense date:",
-        expense.date,
-        "Type:",
-        typeof expense.date
-      );
       const formattedDate =
         typeof expense.date === "string"
           ? expense.date
           : new Date(expense.date).toISOString().split("T")[0];
-      console.log("DEBUG - Formatted date:", formattedDate);
 
       return {
         id: expense.id,
@@ -740,9 +727,6 @@ export default function TransactionTable() {
 
   const handleAddTransaction = async (transaction) => {
     try {
-      console.log("Type de transaction:", transaction.type);
-      console.log("Données complètes de la transaction:", transaction);
-
       if (transaction.type === "INCOME") {
         // Pour les revenus, créer une dépense avec montant positif
         const expenseInput = {
@@ -759,31 +743,13 @@ export default function TransactionTable() {
           // Retirer le champ type car il n'existe pas dans le modèle Expense
         };
 
-        console.log("Données revenu envoyées à l'API:", expenseInput);
-        console.log(
-          "isVatDeductible pour revenu:",
-          expenseInput.isVatDeductible
-        );
-
         const result = await createExpense(expenseInput);
-        console.log("Résultat création revenu:", result);
-        console.log(
-          "Expense créée avec isVatDeductible:",
-          result.expense?.isVatDeductible
-        );
-        console.log(
-          "🔍 Vérification notes dans result:",
-          result.expense?.notes
-        );
 
         if (result.success) {
           setIsAddTransactionDrawerOpen(false);
           // Forcer le refetch des données pour mettre à jour les graphiques
           setTimeout(() => {
             refetchExpenses();
-            console.log(
-              "✅ Revenu créé avec succès, refetch déclenché avec délai"
-            );
           }, 500);
         }
       } else {
@@ -802,16 +768,12 @@ export default function TransactionTable() {
           // Retirer le champ type car il n'existe pas dans le modèle Expense
         };
 
-        console.log("Données dépense envoyées à l'API:", expenseInput);
-
         const result = await createExpense(expenseInput);
-        console.log("Résultat création dépense:", result);
 
         if (result.success) {
           setIsAddTransactionDrawerOpen(false);
           // Forcer le refetch des données pour mettre à jour les graphiques
           refetchExpenses();
-          console.log("✅ Dépense créée avec succès, refetch déclenché");
         }
       }
     } catch (error) {
@@ -853,20 +815,17 @@ export default function TransactionTable() {
 
     // Si une dépense a été créée, rafraîchir les données
     if (receiptData.createdExpense) {
-      console.log("Dépense créée:", receiptData.createdExpense);
       refetch(); // Rafraîchir la liste des dépenses
       toast.success(
         `Dépense créée avec succès: ${receiptData.createdExpense.title}`
       );
     } else {
-      console.log("Reçu traité:", receiptData);
       toast.success(`Reçu "${receiptData.fileName}" traité avec succès`);
     }
   };
 
   const handleSaveTransaction = async (updatedTransaction) => {
     // Simulation de sauvegarde (à remplacer par une mutation GraphQL)
-    console.log("Sauvegarde de la transaction:", updatedTransaction);
     handleCloseEditModal();
     toast.success("Transaction mise à jour");
   };
@@ -894,10 +853,6 @@ export default function TransactionTable() {
       document.body.removeChild(link);
 
       toast.success("Téléchargement du justificatif lancé");
-      console.log("✅ Téléchargement lancé pour:", {
-        transactionId: transaction.id,
-        cloudflareUrl: cloudflareUrl,
-      });
     } catch (error) {
       console.error("❌ Erreur lors du téléchargement:", error);
       toast.error("Erreur lors du téléchargement du justificatif");

@@ -37,28 +37,20 @@ export function PricingModal({ isOpen, onClose }) {
         disableRedirect: false,
       };
 
-      console.log(upgradeParams, "plan");
       const { data, error } =
         await authClient.subscription.upgrade(upgradeParams);
 
       // Vérifier l'abonnement après upgrade
       if (!error && data) {
-        console.log("=== VERIFICATION ABONNEMENT ===");
-
         // Attendre un peu pour laisser le temps aux webhooks
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
         const { data: subscriptions } = await authClient.subscription.list({
           referenceId: activeOrgId,
         });
-        console.log("Tous les abonnements:", subscriptions);
 
         // Si aucun abonnement trouvé, essayer de synchroniser manuellement
         if (!subscriptions || subscriptions.length === 0) {
-          console.log(
-            "Aucun abonnement trouvé, tentative de synchronisation manuelle..."
-          );
-
           try {
             // Appeler une API pour synchroniser l'abonnement depuis Stripe
             const syncResponse = await fetch("/api/auth/subscription/sync", {
@@ -68,13 +60,11 @@ export function PricingModal({ isOpen, onClose }) {
             });
 
             if (syncResponse.ok) {
-              console.log("Synchronisation manuelle réussie");
               // Rafraîchir les abonnements
               const { data: updatedSubscriptions } =
                 await authClient.subscription.list({
                   referenceId: activeOrgId,
                 });
-              console.log("Abonnements après sync:", updatedSubscriptions);
             }
           } catch (syncError) {
             console.error("Erreur synchronisation manuelle:", syncError);
@@ -84,13 +74,12 @@ export function PricingModal({ isOpen, onClose }) {
         const activeSubscription = subscriptions?.find(
           (sub) => sub.status === "active" || sub.status === "trialing"
         );
-        console.log("Abonnement actif:", activeSubscription);
 
-        if (activeSubscription) {
-          console.log("STATUT:", activeSubscription.status);
-          console.log("PLAN:", activeSubscription.planName);
-          console.log("LIMITES:", activeSubscription.limits);
-        }
+        // if (activeSubscription) {
+        //   console.log("STATUT:", activeSubscription.status);
+        //   console.log("PLAN:", activeSubscription.planName);
+        //   console.log("LIMITES:", activeSubscription.limits);
+        // }
       }
 
       if (error) {

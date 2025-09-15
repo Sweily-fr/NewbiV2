@@ -67,25 +67,6 @@ export default function QuoteSidebar({
   // Utiliser les données complètes si disponibles, sinon les données initiales
   const quote = fullQuote || initialQuote;
 
-  // Debug: Vérifier si les données complètes sont récupérées
-  console.log("Loading full quote:", loadingFullQuote);
-  console.log("Quote error:", quoteError);
-  console.log("Full quote:", fullQuote);
-  console.log("Final quote used:", quote);
-  console.log("Client address:", quote.client?.address);
-  console.log("Client address type:", typeof quote.client?.address);
-  console.log(
-    "Client address keys:",
-    quote.client?.address ? Object.keys(quote.client.address) : "No address"
-  );
-  console.log("Items:", quote.items);
-  console.log("Financial details:", {
-    totalHT: quote.totalHT,
-    finalTotalHT: quote.finalTotalHT,
-    totalVAT: quote.totalVAT,
-    finalTotalTTC: quote.finalTotalTTC,
-  });
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
@@ -188,22 +169,15 @@ export default function QuoteSidebar({
   };
 
   const handleCreateLinkedInvoice = async ({ quoteId, amount, isDeposit }) => {
-    console.log("handleCreateLinkedInvoice appelé avec:", {
-      quoteId,
-      amount,
-      isDeposit,
-    });
     try {
-      console.log("Appel du hook createLinkedInvoice...");
       const result = await createLinkedInvoice(quoteId, amount, isDeposit);
-      console.log("Résultat de createLinkedInvoice:", result);
-      
+
       // Naviguer vers l'éditeur de facture brouillon
       if (result?.invoice?.id) {
         router.push(`/dashboard/outils/factures/${result.invoice.id}/editer`);
         onClose(); // Fermer la sidebar
       }
-      
+
       if (onRefetch) onRefetch();
       return result;
     } catch (error) {
@@ -217,17 +191,17 @@ export default function QuoteSidebar({
   return (
     <>
       {/* Semi-transparent overlay */}
-      <div 
+      <div
         className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
       />
-      
+
       {/* PDF Preview Panel */}
-      <div 
+      <div
         className={`fixed inset-y-0 left-0 right-[35%] z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-12 px-24">
@@ -236,7 +210,7 @@ export default function QuoteSidebar({
           </div>
         </div>
       </div>
-      
+
       {/* Main Sidebar */}
       <div
         className={`fixed inset-y-0 right-0 z-50 w-[35%] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
@@ -272,7 +246,7 @@ export default function QuoteSidebar({
             <div className="flex items-center gap-2">
               {/* Bouton PDF - masqué pour les brouillons */}
               {quote.status !== QUOTE_STATUS.DRAFT && (
-                <UniversalPDFGenerator data={quote} type="quote"/>
+                <UniversalPDFGenerator data={quote} type="quote" />
               )}
               <Button
                 variant="ghost"
@@ -427,7 +401,6 @@ export default function QuoteSidebar({
               </div>
             </div>
 
-
             {/* Liste des factures liées */}
             {quote.status === QUOTE_STATUS.COMPLETED && (
               <div className="space-y-3">
@@ -444,7 +417,6 @@ export default function QuoteSidebar({
           <div className="border-t p-6 space-y-3">
             {/* Primary Actions */}
             <div className="flex gap-2">
-
               {quote.status === QUOTE_STATUS.DRAFT && (
                 <Button
                   variant="outline"
@@ -493,15 +465,6 @@ export default function QuoteSidebar({
             )}
 
             {(() => {
-              console.log("Vérification statut devis:", {
-                currentStatus: quote.status,
-                expectedStatus: QUOTE_STATUS.COMPLETED,
-                isCompleted: quote.status === QUOTE_STATUS.COMPLETED,
-                allStatuses: QUOTE_STATUS,
-                hasLinkedInvoices:
-                  quote.linkedInvoices && quote.linkedInvoices.length > 0,
-                linkedInvoicesCount: quote.linkedInvoices?.length || 0,
-              });
               return quote.status === QUOTE_STATUS.COMPLETED;
             })() && (
               <div className="space-y-3">

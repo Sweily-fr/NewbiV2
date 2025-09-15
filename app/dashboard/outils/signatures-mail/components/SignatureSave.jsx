@@ -65,7 +65,6 @@ const SignatureSave = ({ existingSignatureId = null }) => {
     {
       refetchQueries: ["GetMyEmailSignatures"],
       onCompleted: (data) => {
-        console.log("✅ Signature créée:", data.createEmailSignature);
         setSaveStatus("success");
         setTimeout(() => {
           setIsModalOpen(false);
@@ -85,7 +84,6 @@ const SignatureSave = ({ existingSignatureId = null }) => {
     {
       refetchQueries: ["GetMyEmailSignatures"],
       onCompleted: (data) => {
-        console.log("✅ Signature mise à jour:", data.updateEmailSignature);
         setSaveStatus("success");
         setTimeout(() => {
           setIsModalOpen(false);
@@ -181,8 +179,6 @@ const SignatureSave = ({ existingSignatureId = null }) => {
   };
 
   const handleSave = async () => {
-    console.log("🚀 Début de la sauvegarde");
-
     // Utiliser la fonction prepareSignatureData qui contient TOUS les champs avancés
     const completeData = prepareSignatureData();
 
@@ -193,19 +189,8 @@ const SignatureSave = ({ existingSignatureId = null }) => {
       isDefault: isDefault || false,
     };
 
-    console.log("📝 Données complètes pour sauvegarde:", finalData);
-    console.log("🎨 Couleurs incluses:", finalData.colors);
-    console.log("📏 Largeurs colonnes incluses:", finalData.columnWidths);
-    console.log("📎 Espacements inclus:", finalData.spacings);
-    console.log("🔤 Tailles police incluses:", finalData.fontSize);
-
     try {
       if (existingSignatureId) {
-        // Mise à jour d'une signature existante
-        console.log(
-          "📝 Mise à jour de la signature existante:",
-          existingSignatureId
-        );
         await updateSignature({
           variables: {
             input: {

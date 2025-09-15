@@ -47,14 +47,11 @@ const ConfettiComponent = forwardRef((props, ref) => {
   const fire = useCallback(
     async (opts = {}) => {
       try {
-        console.log("🎆 Fire appelé, instanceRef.current:", instanceRef.current);
         if (instanceRef.current) {
-          console.log("🎆 Exécution de instanceRef.current avec options:", { ...options, ...opts });
           return await instanceRef.current({ ...options, ...opts });
         } else {
-          console.log("❌ instanceRef.current est null, utilisation de fallback direct");
           // Fallback direct dans le composant
-          const confetti = await import('canvas-confetti');
+          const confetti = await import("canvas-confetti");
           return await confetti.default({ ...options, ...opts });
         }
       } catch (error) {

@@ -77,14 +77,12 @@ export function Setup2FAModal({ isOpen, onClose }) {
         });
 
         if (error) {
-          console.error("Erreur activation 2FA SMS:", error);
           toast.error(
             error.message || "Erreur lors de l'activation de la 2FA par SMS"
           );
           return;
         }
 
-        console.log("2FA SMS activée:", data);
         toast.success("Code de vérification envoyé par SMS");
       } else if (selectedMethod.id === "email") {
         // Activer la 2FA par email avec mot de passe requis
@@ -94,14 +92,12 @@ export function Setup2FAModal({ isOpen, onClose }) {
         });
 
         if (error) {
-          console.error("Erreur activation 2FA email:", error);
           toast.error(
             error.message || "Erreur lors de l'activation de la 2FA par email"
           );
           return;
         }
 
-        console.log("2FA email activée:", data);
         toast.success("Code de vérification envoyé par e-mail");
       } else {
         // Pour l'authenticator TOTP
@@ -111,12 +107,10 @@ export function Setup2FAModal({ isOpen, onClose }) {
         });
 
         if (error) {
-          console.error("Erreur activation 2FA TOTP:", error);
           toast.error(error.message || "Erreur lors de l'activation de la 2FA");
           return;
         }
 
-        console.log("2FA TOTP activée:", data);
         toast.success(
           "QR code généré pour votre application d'authentification"
         );
@@ -124,7 +118,6 @@ export function Setup2FAModal({ isOpen, onClose }) {
 
       setStep(3);
     } catch (error) {
-      console.error("Erreur configuration 2FA:", error);
       toast.error("Erreur lors de la configuration");
     } finally {
       setIsLoading(false);
@@ -143,17 +136,14 @@ export function Setup2FAModal({ isOpen, onClose }) {
       });
 
       if (error) {
-        console.error("Erreur vérification 2FA:", error);
         toast.error(error.message || "Code de vérification incorrect");
         setVerificationCode("");
         return;
       }
 
-      console.log("2FA vérifiée avec succès:", data);
       toast.success("Vérification en 2 étapes activée avec succès");
       handleClose();
     } catch (error) {
-      console.error("Erreur vérification 2FA:", error);
       toast.error("Code de vérification incorrect");
       setVerificationCode("");
     } finally {
@@ -176,17 +166,14 @@ export function Setup2FAModal({ isOpen, onClose }) {
       });
 
       if (error) {
-        console.error("Erreur vérification 2FA:", error);
         toast.error(error.message || "Code de vérification incorrect");
         setVerificationCode("");
         return;
       }
 
-      console.log("2FA vérifiée avec succès:", data);
       toast.success("Vérification en 2 étapes activée avec succès");
       handleClose();
     } catch (error) {
-      console.error("Erreur vérification 2FA:", error);
       toast.error("Code de vérification incorrect");
       setVerificationCode("");
     } finally {

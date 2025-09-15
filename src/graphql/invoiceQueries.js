@@ -823,15 +823,7 @@ export const useCreateLinkedInvoice = () => {
       throw new Error("Aucun workspace sélectionné");
     }
 
-    console.log("Hook createLinkedInvoice appelé avec:", {
-      quoteId,
-      amount,
-      isDeposit,
-      workspaceId,
-    });
-    
     try {
-      console.log("Exécution de la mutation GraphQL...");
       const result = await createLinkedInvoiceMutation({
         variables: {
           quoteId,
@@ -840,7 +832,6 @@ export const useCreateLinkedInvoice = () => {
           isDeposit,
         },
       });
-      console.log("Résultat de la mutation GraphQL:", result);
 
       // Afficher la notification de succès
       const invoice = result.data?.createLinkedInvoice?.invoice;
@@ -855,11 +846,6 @@ export const useCreateLinkedInvoice = () => {
         // Vérifier que les informations SIRET et TVA sont bien présentes dans la réponse
         const siret = invoice.companyInfo?.siret;
         const vatNumber = invoice.companyInfo?.vatNumber;
-
-        console.log("Informations légales dans la facture créée:", {
-          siret: siret || "Non renseigné",
-          vatNumber: vatNumber || "Non renseigné",
-        });
 
         // Si les informations légales sont manquantes, afficher un avertissement
         if (!siret || !vatNumber) {
@@ -880,7 +866,10 @@ export const useCreateLinkedInvoice = () => {
             include: ["GetQuotes", "GetQuote"],
           });
         } catch (refetchError) {
-          console.warn("Erreur lors du rafraîchissement des données:", refetchError);
+          console.warn(
+            "Erreur lors du rafraîchissement des données:",
+            refetchError
+          );
           // Ne pas faire échouer toute l'opération pour une erreur de refetch
         }
       }
@@ -943,16 +932,12 @@ export const useDeleteLinkedInvoice = () => {
   );
 
   const deleteLinkedInvoice = async (invoiceId) => {
-    console.log("Hook deleteLinkedInvoice appelé avec:", { invoiceId });
     try {
-      console.log("Exécution de la mutation GraphQL...");
       const result = await deleteLinkedInvoiceMutation({
         variables: { id: invoiceId },
       });
-      console.log("Résultat de la mutation GraphQL:", result);
       return result.data.deleteLinkedInvoice;
     } catch (error) {
-      console.error("Erreur dans la mutation GraphQL:", error);
       throw error;
     }
   };

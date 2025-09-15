@@ -13,14 +13,6 @@ export function useAuth() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    console.log('🔐 useAuth - État:', {
-      status,
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-      timestamp: new Date().toISOString()
-    });
-
     if (status === "loading") {
       setIsLoading(true);
       return;
@@ -28,16 +20,10 @@ export function useAuth() {
 
     // Vérifier si l'utilisateur est authentifié
     const authenticated = status === "authenticated" && !!session?.user;
-    
+
     setIsAuthenticated(authenticated);
     setUser(session?.user || null);
     setIsLoading(false);
-
-    console.log('✅ useAuth - Résultat:', {
-      isAuthenticated: authenticated,
-      hasUser: !!session?.user,
-      isLoading: false
-    });
   }, [session, status]);
 
   return {
@@ -45,6 +31,6 @@ export function useAuth() {
     isLoading,
     user,
     session,
-    status
+    status,
   };
 }

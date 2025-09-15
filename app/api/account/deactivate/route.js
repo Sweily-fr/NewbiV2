@@ -6,10 +6,7 @@ export async function POST(request) {
     const { email } = await request.json();
 
     if (!email) {
-      return NextResponse.json(
-        { error: "Email requis" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email requis" }, { status: 400 });
     }
 
     // Vérifier la session utilisateur
@@ -18,10 +15,7 @@ export async function POST(request) {
     });
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "Non authentifié" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     // Vérifier que l'email correspond à l'utilisateur connecté
@@ -35,19 +29,16 @@ export async function POST(request) {
     // Désactiver le compte (mettre isActive à false) via MongoDB directement
     const { mongoDb } = await import("@/src/lib/mongodb");
     const usersCollection = mongoDb.collection("user");
-    
+
     const updateResult = await usersCollection.updateOne(
       { _id: new (await import("mongodb")).ObjectId(session.user.id) },
-      { 
+      {
         $set: {
           isActive: false,
           updatedAt: new Date(),
-        }
+        },
       }
     );
-
-    console.log(`Résultat de la mise à jour:`, updateResult);
-    console.log(`Compte désactivé pour l'utilisateur: ${email}`);
 
     // Invalider toutes les sessions de l'utilisateur
     await auth.api.signOut({
@@ -58,7 +49,6 @@ export async function POST(request) {
       success: true,
       message: "Compte désactivé avec succès",
     });
-
   } catch (error) {
     console.error("Erreur lors de la désactivation du compte:", error);
     return NextResponse.json(

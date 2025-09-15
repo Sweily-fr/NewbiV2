@@ -1,6 +1,12 @@
 "use client";
 
-import { useQuery, useMutation, useLazyQuery, gql, useApolloClient } from "@apollo/client";
+import {
+  useQuery,
+  useMutation,
+  useLazyQuery,
+  gql,
+  useApolloClient,
+} from "@apollo/client";
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
@@ -176,26 +182,13 @@ export const useSignatureActions = () => {
     GET_EMAIL_SIGNATURE,
     {
       onCompleted: (data) => {
-        console.log("📊 [EDIT] Données récupérées:", data);
-        console.log("📊 [EDIT] Signature complète:", data?.getEmailSignature);
-
         if (data?.getEmailSignature) {
           const signatureData = data.getEmailSignature;
-          console.log("✅ [EDIT] Signature trouvée:", {
-            id: signatureData.id,
-            nom: signatureData.signatureName,
-            firstName: signatureData.firstName,
-            lastName: signatureData.lastName,
-            photo: signatureData.photo,
-            logo: signatureData.logo,
-            primaryColor: signatureData.primaryColor,
-          });
 
           localStorage.setItem(
             "editingSignature",
             JSON.stringify(signatureData)
           );
-          console.log("💾 [EDIT] Données sauvegardées dans localStorage");
 
           router.push("/dashboard/outils/signatures-mail/new?edit=true");
         } else {
@@ -231,15 +224,10 @@ export const useSignatureActions = () => {
 
   // Handlers pour les actions
   const handleEdit = async (signature) => {
-    console.log("📝 [ACTION] Édition de la signature:", signature.id);
-    console.log("📊 [EDIT] Données de la signature:", signature);
-
     try {
-      console.log("🔍 [EDIT] Récupération de la signature complète...");
       const result = await getSignatureForEdit({
         variables: { id: signature.id },
       });
-      console.log("📊 [EDIT] Résultat de la query:", result);
     } catch (error) {
       console.error(
         "❌ [EDIT] Erreur lors de l'ouverture de l'éditeur:",
@@ -292,7 +280,6 @@ export const useSignatureActions = () => {
   };
 
   const handleDuplicate = async (signature) => {
-    console.log("📋 [ACTION] Duplication de la signature:", signature.id);
     try {
       const { data } = await getSignatureForEdit({
         variables: { id: signature.id },
@@ -332,10 +319,6 @@ export const useSignatureActions = () => {
 
   const handleToggleFavorite = async (signature) => {
     const isFavorite = signature.isDefault;
-    console.log(
-      `⭐ [ACTION] ${isFavorite ? "Retirer" : "Définir"} comme défaut:`,
-      signature.id
-    );
 
     if (!isFavorite) {
       try {

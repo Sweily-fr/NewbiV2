@@ -15,7 +15,6 @@ const HeroAnimation = () => {
       const paths = svgRef.current.querySelectorAll(
         'path[stroke="rgb(255,255,255)"]'
       );
-      console.log("Chemins lumineux trouvés:", paths.length);
 
       paths.forEach((path, index) => {
         const dashArray = path.getAttribute("stroke-dasharray");

@@ -56,18 +56,13 @@ export default function InvoiceSidebar({
   const router = useRouter();
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
-  
+
   // Fetch credit notes for this invoice
-  const { creditNotes, loading: loadingCreditNotes, error: creditNotesError } = useCreditNotesByInvoice(initialInvoice?.id);
-  
-  // Debug logging
-  console.log('InvoiceSidebar Debug:', {
-    invoiceId: initialInvoice?.id,
+  const {
     creditNotes,
-    loadingCreditNotes,
-    creditNotesError,
-    creditNotesLength: creditNotes?.length
-  });
+    loading: loadingCreditNotes,
+    error: creditNotesError,
+  } = useCreditNotesByInvoice(initialInvoice?.id);
 
   // Récupérer les données complètes de la facture
   const {
@@ -172,24 +167,27 @@ export default function InvoiceSidebar({
   };
 
   // Vérifier si la facture a atteint sa limite d'avoirs
-  const creditNoteLimitReached = hasReachedCreditNoteLimit(invoice, creditNotes);
+  const creditNoteLimitReached = hasReachedCreditNoteLimit(
+    invoice,
+    creditNotes
+  );
 
   const isLoading = markingAsPaid || changingStatus;
 
   return (
     <>
       {/* Semi-transparent overlay */}
-      <div 
+      <div
         className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
       />
-      
+
       {/* PDF Preview Panel */}
-      <div 
+      <div
         className={`fixed inset-y-0 left-0 right-[35%] z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-12 px-24">
@@ -198,11 +196,11 @@ export default function InvoiceSidebar({
           </div>
         </div>
       </div>
-      
+
       {/* Main Sidebar */}
-      <div 
+      <div
         className={`fixed inset-y-0 right-0 z-50 w-[35%] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+          isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Header */}
@@ -211,8 +209,8 @@ export default function InvoiceSidebar({
           <div className="flex items-center gap-2">
             {/* Bouton PDF - masqué pour les brouillons */}
             {invoice.status !== INVOICE_STATUS.DRAFT && (
-              <UniversalPDFGenerator 
-                data={invoice} 
+              <UniversalPDFGenerator
+                data={invoice}
                 type="invoice"
                 variant="default"
                 size="sm"
@@ -351,19 +349,22 @@ export default function InvoiceSidebar({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-normal">Avoirs</h3>
-              {(invoice.status === INVOICE_STATUS.PENDING || invoice.status === INVOICE_STATUS.COMPLETED || invoice.status === INVOICE_STATUS.CANCELED) && !creditNoteLimitReached && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCreateCreditNote}
-                  className="h-7 px-2 text-xs"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Créer un avoir
-                </Button>
-              )}
+              {(invoice.status === INVOICE_STATUS.PENDING ||
+                invoice.status === INVOICE_STATUS.COMPLETED ||
+                invoice.status === INVOICE_STATUS.CANCELED) &&
+                !creditNoteLimitReached && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateCreditNote}
+                    className="h-7 px-2 text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Créer un avoir
+                  </Button>
+                )}
             </div>
-            
+
             {loadingCreditNotes ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -380,16 +381,19 @@ export default function InvoiceSidebar({
                     className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-start justify-between">
-                      <div 
+                      <div
                         className="flex flex-col cursor-pointer flex-1 min-w-0"
                         onClick={() => handleViewCreditNote(creditNote)}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <Receipt className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm font-medium truncate">{creditNote.number}</span>
+                          <span className="text-sm font-medium truncate">
+                            {creditNote.number}
+                          </span>
                         </div>
                         <div className="text-xs text-muted-foreground ml-9">
-                          {formatDate(creditNote.issueDate)} • {formatCurrency(creditNote.finalTotalTTC || 0)}
+                          {formatDate(creditNote.issueDate)} •{" "}
+                          {formatCurrency(creditNote.finalTotalTTC || 0)}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
@@ -405,18 +409,24 @@ export default function InvoiceSidebar({
               </div>
             ) : (
               <div className="text-center py-4 text-sm text-muted-foreground">
-                {(invoice.status === INVOICE_STATUS.PENDING || invoice.status === INVOICE_STATUS.COMPLETED || invoice.status === INVOICE_STATUS.CANCELED) ? (
+                {invoice.status === INVOICE_STATUS.PENDING ||
+                invoice.status === INVOICE_STATUS.COMPLETED ||
+                invoice.status === INVOICE_STATUS.CANCELED ? (
                   <div>
                     <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     {creditNoteLimitReached ? (
                       <>
                         <p>Limite d'avoirs atteinte</p>
-                        <p className="text-xs mt-1">La somme des avoirs a atteint le montant de la facture</p>
+                        <p className="text-xs mt-1">
+                          La somme des avoirs a atteint le montant de la facture
+                        </p>
                       </>
                     ) : (
                       <>
                         <p>Aucun avoir créé</p>
-                        <p className="text-xs mt-1">Cliquez sur "Créer" pour ajouter un avoir</p>
+                        <p className="text-xs mt-1">
+                          Cliquez sur "Créer" pour ajouter un avoir
+                        </p>
                       </>
                     )}
                   </div>
@@ -424,7 +434,10 @@ export default function InvoiceSidebar({
                   <div>
                     <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>Aucun avoir</p>
-                    <p className="text-xs mt-1">Les avoirs ne peuvent être créés que pour les factures en attente, terminées ou annulées</p>
+                    <p className="text-xs mt-1">
+                      Les avoirs ne peuvent être créés que pour les factures en
+                      attente, terminées ou annulées
+                    </p>
                   </div>
                 )}
               </div>
@@ -523,11 +536,11 @@ export default function InvoiceSidebar({
       {isCreditNotePreviewOpen && (
         <div className="fixed inset-0 z-[100]">
           {/* Fixed Backdrop */}
-          <div 
+          <div
             className="fixed inset-0 bg-black/80"
             onClick={() => setIsCreditNotePreviewOpen(false)}
           />
-          
+
           {/* Fixed Close Button */}
           <button
             onClick={() => setIsCreditNotePreviewOpen(false)}
@@ -535,13 +548,16 @@ export default function InvoiceSidebar({
           >
             <X className="h-6 w-6" />
           </button>
-          
+
           {/* Scrollable Content Area */}
           <div className="fixed inset-0 overflow-y-auto">
             <div className="w-[210mm] mx-auto bg-white my-12">
               {/* Credit Note Content */}
               {selectedCreditNote && (
-                <UniversalPreviewPDF data={selectedCreditNote} type="creditNote" />
+                <UniversalPreviewPDF
+                  data={selectedCreditNote}
+                  type="creditNote"
+                />
               )}
             </div>
           </div>

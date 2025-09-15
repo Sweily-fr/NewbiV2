@@ -4,9 +4,16 @@ import { useEffect, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
-import { getActiveOrganization, updateOrganization } from "@/src/lib/organization-client";
+import {
+  getActiveOrganization,
+  updateOrganization,
+} from "@/src/lib/organization-client";
 import { useUser } from "@/src/lib/auth/hooks";
-import { useCreateQuote, useUpdateQuote, useQuote } from "@/src/graphql/quoteQueries";
+import {
+  useCreateQuote,
+  useUpdateQuote,
+  useQuote,
+} from "@/src/graphql/quoteQueries";
 import { useQuoteNumber } from "./use-quote-number";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
@@ -26,7 +33,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     nextQuoteNumber,
     validateQuoteNumber,
     isLoading: numberLoading,
-    hasExistingQuotes
+    hasExistingQuotes,
   } = useQuoteNumber();
 
   const { createQuote, loading: creating } = useCreateQuote();
@@ -38,36 +45,38 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     mode: "onChange",
     resolver: (values) => {
       const errors = {};
-      
+
       // Validation de la date d'émission
       if (values.issueDate) {
         const issueDate = new Date(values.issueDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0); // Réinitialiser l'heure à minuit pour la comparaison
-        
+
         if (issueDate < today) {
           errors.issueDate = {
-            type: 'validate',
-            message: 'La date d\'émission ne peut pas être antérieure à la date actuelle'
+            type: "validate",
+            message:
+              "La date d'émission ne peut pas être antérieure à la date actuelle",
           };
         }
-        
+
         // Validation de la date de validité
         if (values.validUntil) {
           const validUntilDate = new Date(values.validUntil);
-          
+
           if (validUntilDate < issueDate) {
             errors.validUntil = {
-              type: 'validate',
-              message: 'La date de validité ne peut pas être antérieure à la date d\'émission'
+              type: "validate",
+              message:
+                "La date de validité ne peut pas être antérieure à la date d'émission",
             };
           }
         }
       }
-      
+
       return {
         values,
-        errors: Object.keys(errors).length > 0 ? errors : {}
+        errors: Object.keys(errors).length > 0 ? errors : {},
       };
     },
   });
@@ -83,23 +92,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // Initialize form data when quote loads
   useEffect(() => {
     if (existingQuote && mode !== "create") {
-      console.log("🔍 Données brutes du devis:", {
-        id: existingQuote.id,
-        issueDate: existingQuote.issueDate,
-        validUntil: existingQuote.validUntil,
-        status: existingQuote.status,
-        appearance: existingQuote.appearance,
-        appearanceDetails: {
-          textColor: existingQuote.appearance?.textColor,
-          headerBgColor: existingQuote.appearance?.headerBgColor,
-          headerTextColor: existingQuote.appearance?.headerTextColor
-        },
-        rawValidUntil: existingQuote.validUntil,
-        rawIssueDate: existingQuote.issueDate
-      });
-      
       const quoteData = transformQuoteToFormData(existingQuote);
-      console.log("🎨 Données d'apparence transformées:", quoteData.appearance);
 
       reset(quoteData);
 
@@ -111,7 +104,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           validUntil: currentFormData.validUntil,
           status: currentFormData.status,
           appearance: currentFormData.appearance,
-          client: currentFormData.client ? 'Client présent' : 'Aucun client'
+          client: currentFormData.client ? "Client présent" : "Aucun client",
         });
       }, 100);
     } else {
@@ -127,7 +120,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     if (mode === "create") {
       // Set the next sequential number or 000001 for first quote
       const numberToUse = nextQuoteNumber || 1;
-      const formattedNumber = String(numberToUse).padStart(6, '0');
+      const formattedNumber = String(numberToUse).padStart(6, "0");
       setValue("number", formattedNumber);
     }
   }, [mode, nextQuoteNumber, setValue]);
@@ -138,8 +131,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       const loadOrganizationData = async () => {
         try {
           const organization = await getActiveOrganization();
-          console.log("🔍 Debug - Organisation récupérée:", organization);
-          
+
           if (organization) {
             // Mettre à jour les informations de l'entreprise
             setValue("companyInfo.name", organization.companyName || "");
@@ -148,7 +140,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             setValue("companyInfo.website", organization.website || "");
             setValue("companyInfo.siret", organization.siret || "");
             setValue("companyInfo.vatNumber", organization.vatNumber || "");
-            
+
             // Gérer l'adresse de l'entreprise
             if (organization.address) {
               if (typeof organization.address === "string") {
@@ -157,52 +149,65 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
                 const addressString = [
                   organization.address.street,
                   organization.address.additional,
-                  `${organization.address.postalCode || ''} ${organization.address.city || ''}`.trim(),
-                  organization.address.country
-                ].filter(Boolean).join('\n');
+                  `${organization.address.postalCode || ""} ${organization.address.city || ""}`.trim(),
+                  organization.address.country,
+                ]
+                  .filter(Boolean)
+                  .join("\n");
                 setValue("companyInfo.address", addressString);
               }
             }
-            
+
             // Mettre à jour les paramètres d'apparence
-            setValue("appearance.textColor", organization.documentTextColor || "#000000");
-            setValue("appearance.headerTextColor", organization.documentHeaderTextColor || "#ffffff");
-            setValue("appearance.headerBgColor", organization.documentHeaderBgColor || "#1d1d1b");
-            
+            setValue(
+              "appearance.textColor",
+              organization.documentTextColor || "#000000"
+            );
+            setValue(
+              "appearance.headerTextColor",
+              organization.documentHeaderTextColor || "#ffffff"
+            );
+            setValue(
+              "appearance.headerBgColor",
+              organization.documentHeaderBgColor || "#1d1d1b"
+            );
+
             // Mettre à jour les notes et conditions
-            setValue("headerNotes", organization.quoteHeaderNotes || organization.documentHeaderNotes || "");
-            setValue("footerNotes", organization.quoteFooterNotes || organization.documentFooterNotes || "");
-            setValue("termsAndConditions", organization.quoteTermsAndConditions || organization.documentTermsAndConditions || "");
-            
+            setValue(
+              "headerNotes",
+              organization.quoteHeaderNotes ||
+                organization.documentHeaderNotes ||
+                ""
+            );
+            setValue(
+              "footerNotes",
+              organization.quoteFooterNotes ||
+                organization.documentFooterNotes ||
+                ""
+            );
+            setValue(
+              "termsAndConditions",
+              organization.quoteTermsAndConditions ||
+                organization.documentTermsAndConditions ||
+                ""
+            );
+
             // Mettre à jour les coordonnées bancaires
             setValue("showBankDetails", organization.showBankDetails || false);
             setValue("companyInfo.bankDetails", {
               bankName: organization.bankName || "",
               iban: organization.bankIban || "",
-              bic: organization.bankBic || ""
-            });
-            
-            console.log("🔍 Debug - Données d'organisation appliquées:", {
-              companyInfo: {
-                name: organization.companyName,
-                email: organization.companyEmail,
-                phone: organization.companyPhone,
-                siret: organization.siret,
-                vatNumber: organization.vatNumber,
-                address: organization.address
-              },
-              bankDetails: {
-                bankName: organization.bankName,
-                iban: organization.bankIban,
-                bic: organization.bankBic
-              }
+              bic: organization.bankBic || "",
             });
           }
         } catch (error) {
-          console.error("❌ Erreur lors de la récupération de l'organisation:", error);
+          console.error(
+            "❌ Erreur lors de la récupération de l'organisation:",
+            error
+          );
         }
       };
-      
+
       loadOrganizationData();
     }
   }, [mode, setValue]);
@@ -239,24 +244,28 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       toast.error("La date d'émission est requise");
       return false;
     }
-    
+
     // Vérifier que la date d'émission n'est pas antérieure à la date actuelle
     const issueDate = new Date(data.issueDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Réinitialiser l'heure à minuit pour la comparaison
-    
+
     if (issueDate < today) {
-      toast.error("La date d'émission ne peut pas être antérieure à la date actuelle");
+      toast.error(
+        "La date d'émission ne peut pas être antérieure à la date actuelle"
+      );
       return false;
     }
-    
+
     // Vérifier la date de validité
     if (data.validUntil) {
       const validUntilDate = new Date(data.validUntil);
-      
+
       // Vérifier que la date de validité n'est pas antérieure à la date d'émission
       if (validUntilDate < issueDate) {
-        toast.error("La date de validité ne peut pas être antérieure à la date d'émission");
+        toast.error(
+          "La date de validité ne peut pas être antérieure à la date d'émission"
+        );
         return false;
       }
     }
@@ -289,7 +298,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       try {
         setSaving(true);
         const currentFormData = getValues();
-        
+
         // Vérifier la validité du formulaire
         if (!isAutoSave) {
           if (!validateStep1()) {
@@ -310,21 +319,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           existingQuote
         );
         input.status = "DRAFT";
-        
-        console.log("💾 Données à sauvegarder (appearance):", {
-          formDataAppearance: currentFormData.appearance,
-          formDataAppearanceDetails: {
-            textColor: currentFormData.appearance?.textColor,
-            headerBgColor: currentFormData.appearance?.headerBgColor,
-            headerTextColor: currentFormData.appearance?.headerTextColor
-          },
-          inputAppearance: input.appearance,
-          inputAppearanceDetails: {
-            textColor: input.appearance?.textColor,
-            headerBgColor: input.appearance?.headerBgColor,
-            headerTextColor: input.appearance?.headerTextColor
-          }
-        });
 
         let result;
         if (mode === "create" || !quoteId) {
@@ -332,7 +326,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
           if (result?.id) {
             const newQuoteId = result.id;
-            console.log("✅ Devis créé avec succès, ID:", newQuoteId);
 
             if (!isAutoSave) {
               toast.success("Brouillon sauvegardé");
@@ -360,7 +353,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       } finally {
         setSaving(false);
       }
-      
+
       return true;
     },
     [
@@ -372,7 +365,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       updateQuote,
       router,
       session,
-      validateStep1
+      validateStep1,
     ]
   );
 
@@ -454,11 +447,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     try {
       const currentFormData = getValues();
       const activeOrganization = await getActiveOrganization();
-      
+
       const organizationData = {
         documentTextColor: currentFormData.appearance?.textColor || "#000000",
-        documentHeaderTextColor: currentFormData.appearance?.headerTextColor || "#ffffff",
-        documentHeaderBgColor: currentFormData.appearance?.headerBgColor || "#1d1d1b",
+        documentHeaderTextColor:
+          currentFormData.appearance?.headerTextColor || "#ffffff",
+        documentHeaderBgColor:
+          currentFormData.appearance?.headerBgColor || "#1d1d1b",
         quoteHeaderNotes: currentFormData.headerNotes || "",
         quoteFooterNotes: currentFormData.footerNotes || "",
         quoteTermsAndConditions: currentFormData.termsAndConditions || "",
@@ -466,7 +461,10 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       };
 
       await updateOrganization(activeOrganization.id, organizationData);
-      console.log("✅ Paramètres sauvegardés dans l'organisation:", organizationData);
+      console.log(
+        "✅ Paramètres sauvegardés dans l'organisation:",
+        organizationData
+      );
     } catch (error) {
       console.error("❌ Erreur lors de la sauvegarde des paramètres:", error);
       throw error;
@@ -488,10 +486,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
     // Actions
     onSave: (formData) => {
-      console.log("🔄 onSave appelé depuis le formulaire avec:", {
-        formData,
-        status: formData?.status,
-      });
       // Mettre à jour les données du formulaire si nécessaire
       if (formData) {
         setFormData(formData);
@@ -509,7 +503,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     hasExistingQuotes,
     canEdit:
       !loadingQuote && (mode === "create" || existingQuote?.status === "DRAFT"),
-    
+
     // Organization settings
     saveSettingsToOrganization,
   };
@@ -518,10 +512,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 // Helper functions
 function getInitialFormData(mode, initialData, session) {
   const today = new Date().toISOString().split("T")[0];
-  
+
   // Utiliser la valeur validUntil existante si elle est disponible
   // sinon définir une date par défaut (aujourd'hui + 30 jours)
-  const validUntil = initialData?.validUntil || 
+  const validUntil =
+    initialData?.validUntil ||
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const baseData = {
@@ -583,10 +578,9 @@ function getInitialFormData(mode, initialData, session) {
     organizationSettings: null,
   };
 
-
   if (mode === "create" && session?.user?.company) {
     const userCompany = session.user.company;
-    
+
     baseData.companyInfo = {
       name: userCompany.name || "",
       email: userCompany.email || "",
@@ -639,31 +633,38 @@ function transformQuoteToFormData(quote) {
 
     try {
       let dateObj;
-      
+
       // Si c'est déjà une chaîne au format YYYY-MM-DD
-      if (typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+      if (
+        typeof dateValue === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(dateValue)
+      ) {
         return dateValue;
       }
-      
+
       // Si c'est un timestamp numérique ou une chaîne de chiffres
-      if ((typeof dateValue === 'number' && !isNaN(dateValue)) || 
-          (typeof dateValue === 'string' && /^\d+$/.test(dateValue))) {
-        const timestamp = typeof dateValue === 'string' ? parseInt(dateValue, 10) : dateValue;
-        
+      if (
+        (typeof dateValue === "number" && !isNaN(dateValue)) ||
+        (typeof dateValue === "string" && /^\d+$/.test(dateValue))
+      ) {
+        const timestamp =
+          typeof dateValue === "string" ? parseInt(dateValue, 10) : dateValue;
+
         // Vérifier si c'est un timestamp en secondes (10 chiffres) ou millisecondes (13 chiffres)
         if (timestamp > 0) {
-          const timestampMs = timestamp.toString().length === 10 ? timestamp * 1000 : timestamp;
+          const timestampMs =
+            timestamp.toString().length === 10 ? timestamp * 1000 : timestamp;
           dateObj = new Date(timestampMs);
-          
+
           if (isNaN(dateObj.getTime())) {
             return "";
           }
-          
+
           const year = dateObj.getFullYear();
-          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-          const day = String(dateObj.getDate()).padStart(2, '0');
+          const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+          const day = String(dateObj.getDate()).padStart(2, "0");
           const result = `${year}-${month}-${day}`;
-          
+
           return result;
         } else {
           return "";
@@ -672,25 +673,28 @@ function transformQuoteToFormData(quote) {
       // Si c'est une chaîne avec un timestamp ISO (2024-09-25T00:00:00.000Z)
       else if (typeof dateValue === "string" && dateValue.includes("T")) {
         // Extraire uniquement la partie date (YYYY-MM-DD)
-        const datePart = dateValue.split('T')[0];
+        const datePart = dateValue.split("T")[0];
         if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
           return datePart;
         }
         dateObj = new Date(dateValue);
-      } 
+      }
       // Si c'est déjà un objet Date
       else if (dateValue instanceof Date) {
         dateObj = dateValue;
       }
       // Si c'est un objet avec des propriétés de date (comme venant d'un sélecteur de date)
-      else if (dateValue && typeof dateValue === 'object') {
-        
+      else if (dateValue && typeof dateValue === "object") {
         // Format avec year, month, day
-        if ('year' in dateValue && 'month' in dateValue && 'day' in dateValue) {
-          dateObj = new Date(dateValue.year, dateValue.month - 1, dateValue.day);
+        if ("year" in dateValue && "month" in dateValue && "day" in dateValue) {
+          dateObj = new Date(
+            dateValue.year,
+            dateValue.month - 1,
+            dateValue.day
+          );
         }
         // Format avec getTime()
-        else if ('getTime' in dateValue) {
+        else if ("getTime" in dateValue) {
           dateObj = new Date(dateValue.getTime());
         }
         // Autre format d'objet non reconnu
@@ -710,29 +714,36 @@ function transformQuoteToFormData(quote) {
 
       // Formater en YYYY-MM-DD
       const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dateObj.getDate()).padStart(2, '0');
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getDate()).padStart(2, "0");
       const result = `${year}-${month}-${day}`;
-      
+
       return result;
     } catch (error) {
-      console.error(`❌ Erreur lors de la transformation de ${fieldName}:`, error);
+      console.error(
+        `❌ Erreur lors de la transformation de ${fieldName}:`,
+        error
+      );
       return "";
     }
   };
 
   const issueDate = transformDate(quote.issueDate, "issueDate");
-  
+
   // Pour la date de validité, on la récupère directement depuis la base de données
   // sans appliquer de logique conditionnelle qui pourrait la supprimer
   let validUntil = "";
-  
-  if (quote.validUntil !== undefined && quote.validUntil !== null && quote.validUntil !== '') {
+
+  if (
+    quote.validUntil !== undefined &&
+    quote.validUntil !== null &&
+    quote.validUntil !== ""
+  ) {
     validUntil = transformDate(quote.validUntil, "validUntil");
   } else {
     console.log("ℹ️ Aucune date de validité trouvée dans le devis");
   }
-  
+
   return {
     prefix: quote.prefix || "",
     number: quote.number || "",
@@ -773,27 +784,33 @@ function transformQuoteToFormData(quote) {
       // Formatage cohérent de l'adresse pour l'affichage dans le PDF
       address: (() => {
         if (!quote.companyInfo?.address) return "";
-        
+
         if (typeof quote.companyInfo.address === "string") {
           return quote.companyInfo.address;
         }
-        
+
         // Créer un tableau avec les parties de l'adresse et filtrer les vides
         const addressParts = [
           quote.companyInfo.address.street,
           quote.companyInfo.address.additional,
-          quote.companyInfo.address.postalCode ? quote.companyInfo.address.postalCode + ' ' + (quote.companyInfo.address.city || '') : quote.companyInfo.address.city,
-          quote.companyInfo.address.country
+          quote.companyInfo.address.postalCode
+            ? quote.companyInfo.address.postalCode +
+              " " +
+              (quote.companyInfo.address.city || "")
+            : quote.companyInfo.address.city,
+          quote.companyInfo.address.country,
         ].filter(Boolean); // Enlève les valeurs vides du tableau
-        
-        return addressParts.join('\n');
+
+        return addressParts.join("\n");
       })(),
       // Assurer que bankDetails a toujours la même structure
-      bankDetails: quote.companyInfo?.bankDetails ? {
-        bankName: quote.companyInfo.bankDetails.bankName || "",
-        iban: quote.companyInfo.bankDetails.iban || "",
-        bic: quote.companyInfo.bankDetails.bic || ""
-      } : null,
+      bankDetails: quote.companyInfo?.bankDetails
+        ? {
+            bankName: quote.companyInfo.bankDetails.bankName || "",
+            iban: quote.companyInfo.bankDetails.iban || "",
+            bic: quote.companyInfo.bankDetails.bic || "",
+          }
+        : null,
     },
 
     items:
@@ -853,15 +870,17 @@ function transformQuoteToFormData(quote) {
       : null,
 
     // Paramètres d'apparence depuis le devis existant
-    appearance: quote.appearance ? {
-      textColor: quote.appearance.textColor || "#000000",
-      headerTextColor: quote.appearance.headerTextColor || "#ffffff",
-      headerBgColor: quote.appearance.headerBgColor || "#1d1d1b",
-    } : {
-      textColor: "#000000",
-      headerTextColor: "#ffffff",
-      headerBgColor: "#1d1d1b",
-    },
+    appearance: quote.appearance
+      ? {
+          textColor: quote.appearance.textColor || "#000000",
+          headerTextColor: quote.appearance.headerTextColor || "#ffffff",
+          headerBgColor: quote.appearance.headerBgColor || "#1d1d1b",
+        }
+      : {
+          textColor: "#000000",
+          headerTextColor: "#ffffff",
+          headerBgColor: "#1d1d1b",
+        },
   };
 }
 
@@ -871,7 +890,6 @@ function transformFormDataToInput(
   session = null,
   existingQuote = null // Ajouter existingQuote comme paramètre
 ) {
-
   const cleanClient = formData.client
     ? {
         id: formData.client.id,
@@ -980,36 +998,43 @@ function transformFormDataToInput(
         issueDate = d.toISOString().split("T")[0];
       }
     } catch (e) {
-      console.error('Erreur lors de la validation de la date d\'émission:', e);
+      console.error("Erreur lors de la validation de la date d'émission:", e);
       issueDate = new Date().toISOString().split("T")[0];
     }
   }
 
-  const ensureValidDate = (dateValue, fieldName, fallbackDate = null, existingQuoteParam = null) => {
-    
+  const ensureValidDate = (
+    dateValue,
+    fieldName,
+    fallbackDate = null,
+    existingQuoteParam = null
+  ) => {
     // Fonction pour créer une date sans l'heure
     const createDateWithoutTime = (date) => {
       if (!date) return null;
       const d = new Date(date);
       return new Date(d.getFullYear(), d.getMonth(), d.getDate());
     };
-    
+
     // Si on a une date valide, on la retourne
     if (dateValue) {
       // Si c'est déjà une chaîne au format YYYY-MM-DD
-      if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-        const [year, month, day] = dateValue.split('-').map(Number);
+      if (
+        typeof dateValue === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(dateValue)
+      ) {
+        const [year, month, day] = dateValue.split("-").map(Number);
         const date = new Date(year, month - 1, day);
         return date;
       }
-      
+
       // Pour les autres formats de date
       const date = new Date(dateValue);
       if (!isNaN(date.getTime())) {
         return createDateWithoutTime(date);
       }
     }
-    
+
     // Si on est en mode édition et qu'il y a une date existante dans le devis, on la conserve
     if (existingQuoteParam && existingQuoteParam.validUntil) {
       const existingDate = createDateWithoutTime(existingQuoteParam.validUntil);
@@ -1017,7 +1042,7 @@ function transformFormDataToInput(
         return existingDate;
       }
     }
-    
+
     // Si on est en mode édition et qu'il y a une date existante dans le formulaire, on la conserve
     if (formData.id && formData.validUntil) {
       const existingDate = createDateWithoutTime(formData.validUntil);
@@ -1025,7 +1050,7 @@ function transformFormDataToInput(
         return existingDate;
       }
     }
-    
+
     // Sinon, on utilise la date de fallback fournie ou la date d'émission + 30 jours
     let fallback;
     if (fallbackDate) {
@@ -1037,14 +1062,14 @@ function transformFormDataToInput(
       // Ajouter 30 jours par défaut
       fallback.setDate(fallback.getDate() + 30);
     }
-    
+
     return fallback;
   };
 
   // Vérifier si on est en mode édition et si le devis existant a une date de validité
   const isEditMode = !!existingQuote;
   const existingValidUntil = existingQuote?.validUntil;
-    
+
   // Déterminer la date de validité
   let validUntilDate;
   try {
@@ -1052,35 +1077,50 @@ function transformFormDataToInput(
       validUntilDate = new Date(existingValidUntil);
       // Vérifier que la date est valide
       if (isNaN(validUntilDate.getTime())) {
-        validUntilDate = ensureValidDate(formData.validUntil, "validUntil", null, existingQuote);
+        validUntilDate = ensureValidDate(
+          formData.validUntil,
+          "validUntil",
+          null,
+          existingQuote
+        );
       }
     } else {
-      validUntilDate = ensureValidDate(formData.validUntil, "validUntil", null, existingQuote);
+      validUntilDate = ensureValidDate(
+        formData.validUntil,
+        "validUntil",
+        null,
+        existingQuote
+      );
     }
   } catch (e) {
-    console.error('Erreur lors de la récupération de la date de validité:', e);
+    console.error("Erreur lors de la récupération de la date de validité:", e);
     validUntilDate = new Date(issueDate);
     validUntilDate.setDate(validUntilDate.getDate() + 30); // 30 jours par défaut
   }
-  
+
   // Fonction pour créer une date sans l'heure pour la comparaison
   const createDateWithoutTime = (date) => {
     if (!date) return null;
     try {
       // Si c'est déjà une chaîne au format YYYY-MM-DD
-      if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        const [year, month, day] = date.split('-').map(Number);
+      if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const [year, month, day] = date.split("-").map(Number);
         return new Date(year, month - 1, day);
       }
-      
+
       const d = new Date(date);
       if (isNaN(d.getTime())) {
-        console.warn('Date invalide fournie à createDateWithoutTime:', date);
+        console.warn("Date invalide fournie à createDateWithoutTime:", date);
         return null;
       }
       return new Date(d.getFullYear(), d.getMonth(), d.getDate());
     } catch (e) {
-      console.error('Erreur lors de la création de la date:', e, 'Valeur:', date);
+      console.error(
+        "Erreur lors de la création de la date:",
+        e,
+        "Valeur:",
+        date
+      );
       return null;
     }
   };
@@ -1088,66 +1128,67 @@ function transformFormDataToInput(
   // S'assurer que la date de validité est postérieure ou égale à la date d'émission
   const issueDateForComparison = createDateWithoutTime(issueDate);
   const validUntilDateNoTime = createDateWithoutTime(validUntilDate);
-  
+
   // Vérifier que les dates sont valides avant de les utiliser
   if (!issueDateForComparison || !validUntilDateNoTime) {
-    const errorMessage = `❌ Erreur: Date invalide détectée - ` +
+    const errorMessage =
+      `❌ Erreur: Date invalide détectée - ` +
       `issueDate: ${issueDate} (${typeof issueDate}), ` +
       `validUntilDate: ${validUntilDate} (${typeof validUntilDate})`;
     console.error(errorMessage);
-    
+
     // Utiliser des valeurs par défaut sécurisées
     const today = new Date();
     const defaultValidUntil = new Date(today);
     defaultValidUntil.setDate(today.getDate() + 30);
-    
+
     return {
       ...formData,
-      issueDate: today.toISOString().split('T')[0],
-      validUntil: defaultValidUntil.toISOString().split('T')[0],
-      status: formData.status || "DRAFT"
+      issueDate: today.toISOString().split("T")[0],
+      validUntil: defaultValidUntil.toISOString().split("T")[0],
+      status: formData.status || "DRAFT",
     };
   }
-    
+
   // Si la date de validité est antérieure à la date d'émission, on l'ajuste
   if (validUntilDateNoTime < issueDateForComparison) {
     // Utiliser la date d'émission + 1 jour comme date de validité minimale
     validUntilDate = new Date(issueDateForComparison);
     validUntilDate.setDate(validUntilDate.getDate() + 1);
   }
-  
+
   // Formater les dates finales en tenant compte du fuseau horaire local
   const formatFinalDate = (date) => {
     try {
       if (!date) return null;
-      
+
       // Si c'est déjà au format YYYY-MM-DD, le retourner tel quel
-      if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return date;
       }
-      
+
       // Créer une date locale sans décalage de fuseau horaire
       const d = new Date(date);
       if (isNaN(d.getTime())) return null;
-      
+
       // Formater manuellement pour éviter les problèmes de fuseau horaire
       const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+
       return `${year}-${month}-${day}`;
     } catch (e) {
-      console.error('Erreur lors du formatage final de la date:', e);
+      console.error("Erreur lors du formatage final de la date:", e);
       return null;
     }
   };
-  
+
   // Formater les dates finales en ignorant l'heure et le fuseau horaire
   const today = new Date();
-  const defaultIssueDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  
+  const defaultIssueDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
   const finalIssueDate = formatFinalDate(issueDate) || defaultIssueDate;
-  
+
   // Pour la date de validité, on s'assure qu'elle est bien après la date d'émission
   let finalValidUntil = formatFinalDate(validUntilDate);
   if (!finalValidUntil) {
@@ -1155,17 +1196,17 @@ function transformFormDataToInput(
     d.setDate(d.getDate() + 30);
     finalValidUntil = formatFinalDate(d) || defaultIssueDate;
   }
-  
+
   // Vérifier que la date de validité n'est pas antérieure à la date d'émission
   const finalIssueDateObj = new Date(finalIssueDate);
   const validUntilObj = new Date(finalValidUntil);
-  
+
   if (validUntilObj < finalIssueDateObj) {
     const adjustedDate = new Date(finalIssueDateObj);
     adjustedDate.setDate(adjustedDate.getDate() + 1);
     finalValidUntil = formatFinalDate(adjustedDate) || defaultIssueDate;
   }
-  
+
   return {
     prefix: formData.prefix || "",
     number: formData.number || "",
@@ -1175,29 +1216,30 @@ function transformFormDataToInput(
     status: formData.status || "DRAFT",
     client: cleanClient,
     companyInfo: cleanCompanyInfo,
-    items: formData.items?.map((item) => {
-      // Convertir vatRate en nombre et s'assurer qu'il est défini
-      const itemVatRate = parseFloat(item.vatRate || item.taxRate || 0) || 0;
-      
-      // Créer l'objet de base de l'article
-      const itemData = {
-        description: item.description || "",
-        quantity: parseFloat(item.quantity) || 0,
-        unitPrice: parseFloat(item.unitPrice) || 0,
-        vatRate: itemVatRate,
-        unit: item.unit || "pièce",
-        discount: parseFloat(item.discount) || 0,
-        discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
-        details: item.details || "",
-      };
+    items:
+      formData.items?.map((item) => {
+        // Convertir vatRate en nombre et s'assurer qu'il est défini
+        const itemVatRate = parseFloat(item.vatRate || item.taxRate || 0) || 0;
 
-      // Ajouter vatExemptionText uniquement si vatRate est 0
-      if (itemVatRate === 0) {
-        itemData.vatExemptionText = item.vatExemptionText || '';
-      }
+        // Créer l'objet de base de l'article
+        const itemData = {
+          description: item.description || "",
+          quantity: parseFloat(item.quantity) || 0,
+          unitPrice: parseFloat(item.unitPrice) || 0,
+          vatRate: itemVatRate,
+          unit: item.unit || "pièce",
+          discount: parseFloat(item.discount) || 0,
+          discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
+          details: item.details || "",
+        };
 
-      return itemData;
-    }) || [],
+        // Ajouter vatExemptionText uniquement si vatRate est 0
+        if (itemVatRate === 0) {
+          itemData.vatExemptionText = item.vatExemptionText || "";
+        }
+
+        return itemData;
+      }) || [],
     discount: parseFloat(formData.discount) || 0,
     discountType: (formData.discountType || "PERCENTAGE").toUpperCase(),
     headerNotes: formData.headerNotes || "",
@@ -1211,23 +1253,27 @@ function transformFormDataToInput(
     // Inclure les paramètres d'apparence
     appearance: {
       textColor: formData.appearance?.textColor || "#000000",
-      headerTextColor: formData.appearance?.headerTextColor || "#ffffff", 
+      headerTextColor: formData.appearance?.headerTextColor || "#ffffff",
       headerBgColor: formData.appearance?.headerBgColor || "#1d1d1b",
     },
     // Inclure les paramètres des coordonnées bancaires
     showBankDetails: formData.showBankDetails || false,
-    shipping: formData.shipping ? {
-      billShipping: formData.shipping.billShipping || false,
-      shippingAddress: formData.shipping.shippingAddress ? {
-        fullName: formData.shipping.shippingAddress.fullName || "",
-        street: formData.shipping.shippingAddress.street || "",
-        city: formData.shipping.shippingAddress.city || "",
-        postalCode: formData.shipping.shippingAddress.postalCode || "",
-        country: formData.shipping.shippingAddress.country || "",
-      } : null,
-      shippingAmountHT: parseFloat(formData.shipping.shippingAmountHT) || 0,
-      shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
-    } : null,
+    shipping: formData.shipping
+      ? {
+          billShipping: formData.shipping.billShipping || false,
+          shippingAddress: formData.shipping.shippingAddress
+            ? {
+                fullName: formData.shipping.shippingAddress.fullName || "",
+                street: formData.shipping.shippingAddress.street || "",
+                city: formData.shipping.shippingAddress.city || "",
+                postalCode: formData.shipping.shippingAddress.postalCode || "",
+                country: formData.shipping.shippingAddress.country || "",
+              }
+            : null,
+          shippingAmountHT: parseFloat(formData.shipping.shippingAmountHT) || 0,
+          shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
+        }
+      : null,
   };
 }
 

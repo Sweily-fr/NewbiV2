@@ -7,15 +7,10 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
     return;
   }
 
-  console.log("Hook before signIn email déclenché");
-
   const email = ctx.body?.email;
   if (!email) {
-    console.log("Pas d'email trouvé dans la requête");
     return;
   }
-
-  console.log("Vérification du statut isActive pour:", email);
 
   // Vérifier si l'utilisateur existe et s'il est actif
   const { mongoDb } = await import("./mongodb");
@@ -24,10 +19,6 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
   const user = await usersCollection.findOne({ email: email });
 
   if (user && user.isActive === false) {
-    console.log(
-      "Utilisateur désactivé détecté, envoi de l'email de réactivation"
-    );
-
     // Envoyer l'email de réactivation
     await sendReactivationEmail(user);
 
@@ -47,8 +38,6 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
     return;
   }
 
-  console.log("Hook OAuth déclenché sur:", ctx.path);
-
   // Utiliser newSession comme nous l'avons vu dans les logs
   const newSession = ctx.context.newSession;
 
@@ -56,20 +45,12 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
     const user = newSession.user;
     const userId = newSession.session.userId;
 
-    console.log("Nouvelle session OAuth détectée pour userId:", userId);
-    console.log("Utilisateur:", user.email);
-
     // Créer une organisation automatiquement comme pour l'inscription normale
     try {
-      console.log("Création automatique d'organisation pour OAuth...");
-
       // Générer le nom et le slug comme dans useAutoOrganization
       const organizationName =
         user.name || `Workspace ${user.email.split("@")[0]}'s`;
       const organizationSlug = `org-${user.id.slice(-8)}`;
-
-      console.log("Nom de l'organisation:", organizationName);
-      console.log("Slug de l'organisation:", organizationSlug);
 
       // Utiliser l'API interne Better Auth pour créer l'organisation
       const organizationData = {
@@ -82,26 +63,15 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
         },
       };
 
-      const organization =
-        await ctx.context.internalAdapter.createOrganization({
+      const organization = await ctx.context.internalAdapter.createOrganization(
+        {
           ...organizationData,
           creatorId: userId,
-        });
-
-      console.log(
-        "Organisation créée automatiquement via OAuth:",
-        organization
+        }
       );
     } catch (error) {
-      console.error(
-        "Erreur lors de la création automatique d'organisation OAuth:",
-        error
-      );
-
       // Fallback: essayer avec l'adapter normal
       try {
-        console.log("Tentative avec l'adapter normal...");
-
         const organizationData = {
           name: user.name
             ? `Organisation de ${user.name}`
@@ -122,9 +92,6 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
             role: "owner",
           },
         });
-
-        console.log("Organisation créée avec fallback:", organization);
-        console.log("Membre créé:", member);
       } catch (fallbackError) {
         console.error("Erreur même avec le fallback:", fallbackError);
       }

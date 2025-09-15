@@ -104,11 +104,9 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
         return;
       }
 
-      console.log("📁 Fichier sélectionné:", file.name, file.type, file.size);
       setSelectedFile(file);
 
       // Upload immédiat vers Cloudflare
-      console.log("📤 Début upload vers Cloudflare...");
       await uploadDocument(file);
     },
     [uploadDocument]
@@ -141,9 +139,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
   // Traitement du reçu avec OCR
   const handleProcessReceipt = useCallback(async () => {
     if (uploadResult && selectedFile) {
-      console.log("🔍 Début traitement OCR du reçu:", selectedFile.name);
-      console.log("🔗 URL Cloudflare:", uploadResult.url);
-
       try {
         await processDocumentFromUrl(
           uploadResult.url,
@@ -156,8 +151,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
             includeImageBase64: false,
           }
         );
-
-        console.log("✅ OCR terminé avec succès");
       } catch (error) {
         console.error("❌ Erreur OCR:", error);
       }
@@ -171,8 +164,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
     async (financialAnalysis) => {
       if (ocrResult && selectedFile && uploadResult) {
         try {
-          console.log("🔄 Création de la dépense depuis OCR...");
-
           // Préparer les données pour la création de dépense
           const ocrData = {
             ...ocrResult,
@@ -191,8 +182,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
             ocrData,
             fileData
           );
-
-          console.log("✅ Dépense créée avec succès:", createdExpense);
 
           // Notifier le parent si nécessaire
           if (onUploadSuccess) {

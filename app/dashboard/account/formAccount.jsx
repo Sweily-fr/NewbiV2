@@ -69,7 +69,6 @@ export default function ProfileForm({ user }) {
     // Avec GraphQL, l'avatar est automatiquement mis à jour côté serveur
     // Pas besoin de l'inclure dans updateData car l'upload GraphQL
     // gère déjà la mise à jour de l'avatar utilisateur
-    console.log("Données à mettre à jour:", updateData);
 
     await updateUser(updateData, {
       onSuccess: () => {
@@ -93,7 +92,6 @@ export default function ProfileForm({ user }) {
     if (value === currentValue) return;
 
     const updateData = { [fieldName]: value };
-    console.log("Mise à jour du champ:", fieldName, "avec la valeur:", value);
 
     try {
       await updateUser(updateData, {
@@ -114,7 +112,6 @@ export default function ProfileForm({ user }) {
   };
 
   const handleImageChange = (imageUrl, uploadData) => {
-    console.log("Image uploadée via GraphQL:", { imageUrl, uploadData });
     setProfileImageUrl(imageUrl);
 
     // Optionnel: recharger la session immédiatement pour refléter le changement
@@ -122,7 +119,6 @@ export default function ProfileForm({ user }) {
   };
 
   const handleImageDelete = () => {
-    console.log("Image supprimée via GraphQL");
     setProfileImageUrl(null);
 
     // Optionnel: recharger la session immédiatement pour refléter le changement

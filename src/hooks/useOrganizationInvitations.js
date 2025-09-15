@@ -1,13 +1,13 @@
-import { useState, useCallback, useEffect } from 'react';
-import { organization, useSession, authClient } from '@/src/lib/auth-client';
-import { toast } from '@/src/components/ui/sonner';
+import { useState, useCallback, useEffect } from "react";
+import { organization, useSession, authClient } from "@/src/lib/auth-client";
+import { toast } from "@/src/components/ui/sonner";
 
 export const useOrganizationInvitations = () => {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [activeOrgSet, setActiveOrgSet] = useState(false);
-  
+
   // Utiliser les hooks Better Auth
   const { data: organizations } = authClient.useListOrganizations();
   const { data: activeOrganization } = authClient.useActiveOrganization();
@@ -15,23 +15,29 @@ export const useOrganizationInvitations = () => {
   // Définir l'organisation active si ce n'est pas déjà fait
   useEffect(() => {
     const setActiveOrg = async () => {
-      if (!activeOrgSet && organizations && organizations.length > 0 && !activeOrganization) {
-        console.log('Définition de l\'organisation active:', organizations[0]);
+      if (
+        !activeOrgSet &&
+        organizations &&
+        organizations.length > 0 &&
+        !activeOrganization
+      ) {
         try {
           await organization.setActive({
             organizationId: organizations[0].id,
           });
           setActiveOrgSet(true);
-          console.log('Organisation active définie avec succès');
         } catch (error) {
-          console.error('Erreur lors de la définition de l\'organisation active:', error);
+          console.error(
+            "Erreur lors de la définition de l'organisation active:",
+            error
+          );
         }
       }
     };
-    
+
     setActiveOrg();
   }, [organizations, activeOrganization, activeOrgSet]);
-  
+
   // Récupérer l'organisation de l'utilisateur
   const getUserOrganization = useCallback(() => {
     if (activeOrganization) {
@@ -44,124 +50,126 @@ export const useOrganizationInvitations = () => {
   }, [activeOrganization, organizations]);
 
   // Inviter un membre
-  const inviteMember = useCallback(async ({ email, role = 'member' }) => {
-    setInviting(true);
-    try {
-      console.log('Invitation d\'un membre:', { email, role });
-      
-      if (!session?.user) {
-        throw new Error('Utilisateur non connecté');
+  const inviteMember = useCallback(
+    async ({ email, role = "member" }) => {
+      setInviting(true);
+      try {
+        if (!session?.user) {
+          throw new Error("Utilisateur non connecté");
+        }
+
+        // Récupérer l'organisation de l'utilisateur
+        const userOrg = getUserOrganization();
+
+        if (!userOrg) {
+          throw new Error("Aucune organisation trouvée pour cet utilisateur");
+        }
+
+        const { data, error } = await organization.inviteMember({
+          email,
+          role,
+          organizationId: userOrg.id, // Spécifier explicitement l'ID de l'organisation
+        });
+
+        if (error) {
+          // Essayer d'extraire un message d'erreur plus détaillé
+          const errorMessage =
+            error.message ||
+            error.error ||
+            error.details ||
+            "Erreur lors de l'envoi de l'invitation";
+          toast.error(errorMessage);
+          return { success: false, error };
+        }
+
+        toast.success(`Invitation envoyée à ${email}`);
+        return { success: true, data };
+      } catch (error) {
+        toast.error(error.message || "Erreur lors de l'envoi de l'invitation");
+        return { success: false, error: error.message };
+      } finally {
+        setInviting(false);
       }
-
-      // Récupérer l'organisation de l'utilisateur
-      const userOrg = getUserOrganization();
-      
-      if (!userOrg) {
-        throw new Error('Aucune organisation trouvée pour cet utilisateur');
-      }
-      
-      console.log('Organisation trouvée:', userOrg);
-
-      const { data, error } = await organization.inviteMember({
-        email,
-        role,
-        organizationId: userOrg.id, // Spécifier explicitement l'ID de l'organisation
-      });
-
-      if (error) {
-        console.error('Erreur lors de l\'invitation:', error);
-        // Essayer d'extraire un message d'erreur plus détaillé
-        const errorMessage = error.message || error.error || error.details || 'Erreur lors de l\'envoi de l\'invitation';
-        toast.error(errorMessage);
-        return { success: false, error };
-      }
-
-      console.log('Invitation envoyée avec succès:', data);
-      toast.success(`Invitation envoyée à ${email}`);
-      return { success: true, data };
-      
-    } catch (error) {
-      console.error('Erreur lors de l\'invitation:', error);
-      toast.error(error.message || 'Erreur lors de l\'envoi de l\'invitation');
-      return { success: false, error: error.message };
-    } finally {
-      setInviting(false);
-    }
-  }, [session, getUserOrganization]);
+    },
+    [session, getUserOrganization]
+  );
 
   // Lister les membres de l'organisation
-  const listMembers = useCallback(async (organizationId = null) => {
-    setLoading(true);
-    try {
-      const userOrg = getUserOrganization();
-      const orgId = organizationId || userOrg?.id;
-      
-      if (!orgId) {
-        console.error('Aucune organisation trouvée');
-        return { success: false, error: 'Aucune organisation trouvée' };
-      }
-      
-      console.log('Récupération des membres pour l\'organisation:', orgId);
-      
-      // Utiliser getFullOrganization qui fonctionne mieux côté client
-      const { data: fullOrg, error } = await organization.getFullOrganization({
-        organizationId: orgId,
-        membersLimit: 100,
-      });
+  const listMembers = useCallback(
+    async (organizationId = null) => {
+      setLoading(true);
+      try {
+        const userOrg = getUserOrganization();
+        const orgId = organizationId || userOrg?.id;
 
-      if (error) {
-        console.error("Erreur lors de la récupération de l'organisation complète:", error);
-        return { success: false, error };
-      }
+        if (!orgId) {
+          return { success: false, error: "Aucune organisation trouvée" };
+        }
 
-      console.log('Organisation complète récupérée:', fullOrg);
-      
-      // Filtrer les membres pour exclure les owners
-      const filteredMembers = (fullOrg?.members || []).filter(member => member.role !== 'owner');
-      
-      console.log('Membres filtrés (sans owners):', filteredMembers);
-      return { success: true, data: filteredMembers };
-    } catch (error) {
-      console.error("Erreur lors de la récupération des membres:", error);
-      return { success: false, error: error.message };
-    } finally {
-      setLoading(false);
-    }
-  }, [getUserOrganization]);
+        // Utiliser getFullOrganization qui fonctionne mieux côté client
+        const { data: fullOrg, error } = await organization.getFullOrganization(
+          {
+            organizationId: orgId,
+            membersLimit: 100,
+          }
+        );
+
+        if (error) {
+          return { success: false, error };
+        }
+
+        // Filtrer les membres pour exclure les owners
+        const filteredMembers = (fullOrg?.members || []).filter(
+          (member) => member.role !== "owner"
+        );
+
+        return { success: true, data: filteredMembers };
+      } catch (error) {
+        return { success: false, error: error.message };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getUserOrganization]
+  );
 
   // Lister les invitations en attente
-  const listInvitations = useCallback(async (organizationId = null) => {
-    setLoading(true);
-    try {
-      const userOrg = getUserOrganization();
-      const orgId = organizationId || userOrg?.id;
-      
-      if (!orgId) {
-        console.error('Aucune organisation trouvée');
-        return { success: false, error: 'Aucune organisation trouvée' };
-      }
-      
-      console.log('Récupération des invitations pour l\'organisation:', orgId);
-      
-      // Utiliser getFullOrganization pour récupérer les invitations
-      const { data: fullOrg, error } = await organization.getFullOrganization({
-        organizationId: orgId,
-      });
+  const listInvitations = useCallback(
+    async (organizationId = null) => {
+      setLoading(true);
+      try {
+        const userOrg = getUserOrganization();
+        const orgId = organizationId || userOrg?.id;
 
-      if (error) {
-        console.error("Erreur lors de la récupération de l'organisation complète:", error);
-        return { success: false, error };
-      }
+        if (!orgId) {
+          return { success: false, error: "Aucune organisation trouvée" };
+        }
 
-      console.log('Invitations récupérées:', fullOrg?.invitations);
-      return { success: true, data: fullOrg?.invitations || [] };
-    } catch (error) {
-      console.error("Erreur lors de la récupération des invitations:", error);
-      return { success: false, error: error.message };
-    } finally {
-      setLoading(false);
-    }
-  }, [getUserOrganization]);
+        // Utiliser getFullOrganization pour récupérer les invitations
+        const { data: fullOrg, error } = await organization.getFullOrganization(
+          {
+            organizationId: orgId,
+          }
+        );
+
+        if (error) {
+          console.error(
+            "Erreur lors de la récupération de l'organisation complète:",
+            error
+          );
+          return { success: false, error };
+        }
+
+        return { success: true, data: fullOrg?.invitations || [] };
+      } catch (error) {
+        console.error("Erreur lors de la récupération des invitations:", error);
+        return { success: false, error: error.message };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getUserOrganization]
+  );
 
   // Supprimer un membre
   const removeMember = useCallback(
@@ -173,7 +181,6 @@ export const useOrganizationInvitations = () => {
         });
 
         if (error) {
-          console.error("Erreur lors de la suppression du membre:", error);
           toast.error("Erreur lors de la suppression du membre");
           return { success: false, error };
         }
@@ -181,7 +188,6 @@ export const useOrganizationInvitations = () => {
         toast.success("Membre supprimé avec succès");
         return { success: true, data };
       } catch (error) {
-        console.error("Erreur lors de la suppression du membre:", error);
         toast.error(error.message || "Erreur lors de la suppression du membre");
         return { success: false, error: error.message };
       }
@@ -197,7 +203,6 @@ export const useOrganizationInvitations = () => {
       });
 
       if (error) {
-        console.error("Erreur lors de l'annulation de l'invitation:", error);
         toast.error("Erreur lors de l'annulation de l'invitation");
         return { success: false, error };
       }
@@ -205,7 +210,6 @@ export const useOrganizationInvitations = () => {
       toast.success("Invitation annulée avec succès");
       return { success: true, data };
     } catch (error) {
-      console.error("Erreur lors de l'annulation de l'invitation:", error);
       toast.error(
         error.message || "Erreur lors de l'annulation de l'invitation"
       );
@@ -224,7 +228,6 @@ export const useOrganizationInvitations = () => {
         });
 
         if (error) {
-          console.error("Erreur lors de la mise à jour du rôle:", error);
           toast.error("Erreur lors de la mise à jour du rôle");
           return { success: false, error };
         }
@@ -232,7 +235,6 @@ export const useOrganizationInvitations = () => {
         toast.success("Rôle mis à jour avec succès");
         return { success: true, data };
       } catch (error) {
-        console.error("Erreur lors de la mise à jour du rôle:", error);
         toast.error(error.message || "Erreur lors de la mise à jour du rôle");
         return { success: false, error: error.message };
       }
@@ -241,49 +243,53 @@ export const useOrganizationInvitations = () => {
   );
 
   // Fonction pour récupérer tous les collaborateurs (membres + invitations)
-  const getAllCollaborators = useCallback(async (organizationId = null) => {
-    setLoading(true);
-    try {
-      const userOrg = getUserOrganization();
-      const orgId = organizationId || userOrg?.id;
-      
-      if (!orgId) {
-        console.error('Aucune organisation trouvée');
-        return { success: false, error: 'Aucune organisation trouvée' };
-      }
-      
-      console.log('Récupération de tous les collaborateurs pour l\'organisation:', orgId);
-      
-      // Utiliser getFullOrganization pour récupérer membres et invitations
-      const { data: fullOrg, error } = await organization.getFullOrganization({
-        organizationId: orgId,
-        membersLimit: 100,
-      });
+  const getAllCollaborators = useCallback(
+    async (organizationId = null) => {
+      setLoading(true);
+      try {
+        const userOrg = getUserOrganization();
+        const orgId = organizationId || userOrg?.id;
 
-      if (error) {
-        console.error("Erreur lors de la récupération de l'organisation complète:", error);
-        return { success: false, error };
-      }
+        if (!orgId) {
+          return { success: false, error: "Aucune organisation trouvée" };
+        }
 
-      // Filtrer les membres pour exclure les owners
-      const filteredMembers = (fullOrg?.members || []).filter(member => member.role !== 'owner');
-      const invitations = fullOrg?.invitations || [];
-      
-      // Combiner membres et invitations avec un type pour les différencier
-      const collaborators = [
-        ...filteredMembers.map(member => ({ ...member, type: 'member' })),
-        ...invitations.map(invitation => ({ ...invitation, type: 'invitation' }))
-      ];
-      
-      console.log('Tous les collaborateurs (membres + invitations):', collaborators);
-      return { success: true, data: collaborators };
-    } catch (error) {
-      console.error("Erreur lors de la récupération des collaborateurs:", error);
-      return { success: false, error: error.message };
-    } finally {
-      setLoading(false);
-    }
-  }, [getUserOrganization]);
+        // Utiliser getFullOrganization pour récupérer membres et invitations
+        const { data: fullOrg, error } = await organization.getFullOrganization(
+          {
+            organizationId: orgId,
+            membersLimit: 100,
+          }
+        );
+
+        if (error) {
+          return { success: false, error };
+        }
+
+        // Filtrer les membres pour exclure les owners
+        const filteredMembers = (fullOrg?.members || []).filter(
+          (member) => member.role !== "owner"
+        );
+        const invitations = fullOrg?.invitations || [];
+
+        // Combiner membres et invitations avec un type pour les différencier
+        const collaborators = [
+          ...filteredMembers.map((member) => ({ ...member, type: "member" })),
+          ...invitations.map((invitation) => ({
+            ...invitation,
+            type: "invitation",
+          })),
+        ];
+
+        return { success: true, data: collaborators };
+      } catch (error) {
+        return { success: false, error: error.message };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getUserOrganization]
+  );
 
   return {
     // Actions

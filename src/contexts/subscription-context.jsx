@@ -13,26 +13,20 @@ export function SubscriptionProvider({ children }) {
 
   const fetchSubscription = async () => {
     if (!session?.session?.activeOrganizationId) {
-      console.log("Pas d'organisation active, subscription = null");
       setSubscription(null);
       setLoading(false);
       return;
     }
 
     try {
-      console.log("=== SUBSCRIPTION STATUS ===");
-      console.log("Organisation ID:", session.session.activeOrganizationId);
-
       // Récupérer les abonnements pour cette organisation
-      const { data: subscriptions, error } = await authClient.subscription.list({
-        query: {
-          referenceId: session.session.activeOrganizationId,
-        },
-      });
-
-      console.log("Réponse API subscription.list:");
-      console.log("- data:", subscriptions);
-      console.log("- error:", error);
+      const { data: subscriptions, error } = await authClient.subscription.list(
+        {
+          query: {
+            referenceId: session.session.activeOrganizationId,
+          },
+        }
+      );
 
       if (error) {
         console.error("Erreur récupération abonnement:", error);
@@ -44,23 +38,18 @@ export function SubscriptionProvider({ children }) {
         (sub) => sub.status === "active" || sub.status === "trialing"
       );
 
-      console.log("Abonnement actif:", activeSubscription);
-
-      if (activeSubscription) {
-        console.log("STATUT:", activeSubscription.status);
-        console.log("PLAN:", activeSubscription.plan);
-        console.log("LIMITES:", activeSubscription.limits);
-      }
+      // if (activeSubscription) {
+      //   console.log("STATUT:", activeSubscription.status);
+      //   console.log("PLAN:", activeSubscription.plan);
+      //   console.log("LIMITES:", activeSubscription.limits);
+      // }
 
       setSubscription(activeSubscription || null);
-      console.log("Subscription définie dans le contexte:", activeSubscription || null);
     } catch (error) {
-      console.error("Exception récupération abonnement:", error);
       setSubscription(null);
     } finally {
       setLoading(false);
       setHasInitialized(true);
-      console.log("Loading terminé, hasInitialized = true");
     }
   };
 
@@ -73,7 +62,6 @@ export function SubscriptionProvider({ children }) {
     fetchSubscription();
   };
 
-
   const hasFeature = (feature) => {
     if (!subscription) return false;
     return subscription.limits?.[feature] > 0;
@@ -84,8 +72,8 @@ export function SubscriptionProvider({ children }) {
   };
 
   const isActive = () => {
-    const result = subscription?.status === "active" || subscription?.status === "trialing";
-    console.log("isActive() appelé:", { subscription, result });
+    const result =
+      subscription?.status === "active" || subscription?.status === "trialing";
     return result;
   };
 

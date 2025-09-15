@@ -84,12 +84,6 @@ const VerticalSignature = ({
   const photoWidthPx = Math.round((photoColumnWidth / 100) * maxTableWidth);
   const contentWidthPx = Math.round((contentColumnWidth / 100) * maxTableWidth);
 
-  // Debug pour vérifier la valeur du séparateur vertical
-  console.log(
-    "VerticalSignature - separators?.vertical?.width:",
-    signatureData.separators?.vertical?.width
-  );
-
   return (
     <table
       cellPadding="0"

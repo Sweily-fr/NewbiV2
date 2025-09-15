@@ -49,7 +49,6 @@ export default function InvoiceTestPage() {
 
   const handleSave = async (data) => {
     try {
-      console.log("Saving invoice:", data);
       setInvoiceData(data);
       toast.success("Facture sauvegardée avec succès");
       return { success: true, data };

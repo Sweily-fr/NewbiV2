@@ -8,7 +8,6 @@ export const useStripePayment = () => {
 
   const [createPaymentSession] = useMutation(CREATE_PAYMENT_SESSION_FOR_FILE_TRANSFER, {
     onCompleted: (data) => {
-      console.log('✅ Session de paiement créée:', data);
       if (data.createPaymentSessionForFileTransfer.success) {
         // Rediriger vers Stripe Checkout
         const sessionUrl = data.createPaymentSessionForFileTransfer.sessionUrl;
@@ -23,7 +22,6 @@ export const useStripePayment = () => {
       setIsProcessing(false);
     },
     onError: (error) => {
-      console.error('❌ Erreur lors de la création de la session de paiement:', error);
       toast.error('Erreur lors de la création de la session de paiement');
       setIsProcessing(false);
     }
@@ -38,7 +36,6 @@ export const useStripePayment = () => {
     setIsProcessing(true);
     
     try {
-      console.log('🔄 Création de la session de paiement pour le transfert:', transferId);
       
       await createPaymentSession({
         variables: {
@@ -46,7 +43,6 @@ export const useStripePayment = () => {
         }
       });
     } catch (error) {
-      console.error('❌ Erreur lors de l\'initiation du paiement:', error);
       toast.error('Erreur lors de l\'initiation du paiement');
       setIsProcessing(false);
     }

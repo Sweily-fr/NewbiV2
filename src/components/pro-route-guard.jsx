@@ -14,24 +14,23 @@ export function ProRouteGuard({ children, pageName }) {
     // Attendre que l'initialisation soit complète
     if (!loading && hasInitialized && !hasChecked) {
       setHasChecked(true);
-      
+
       // Vérifier si l'utilisateur a un abonnement actif
       const hasActiveSubscription = isActive();
-      
-      console.log("ProRouteGuard - Vérification finale:", {
-        loading,
-        hasInitialized,
-        hasActiveSubscription,
-        subscription,
-        pageName
-      });
-      
+
       if (!hasActiveSubscription) {
-        console.log("Redirection vers /dashboard/outils - pas d'abonnement actif");
         router.replace("/dashboard/outils");
       }
     }
-  }, [loading, hasInitialized, subscription, router, isActive, hasChecked, pageName]);
+  }, [
+    loading,
+    hasInitialized,
+    subscription,
+    router,
+    isActive,
+    hasChecked,
+    pageName,
+  ]);
 
   if (loading) {
     return (

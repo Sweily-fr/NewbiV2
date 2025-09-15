@@ -35,8 +35,6 @@ export function DeactivateAccountModal({ isOpen, onClose, userEmail }) {
     }
 
     try {
-      console.log("Désactivation du compte pour:", userEmail);
-
       // Appel à l'API de désactivation
       const response = await fetch("/api/account/deactivate", {
         method: "POST",

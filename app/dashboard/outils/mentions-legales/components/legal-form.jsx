@@ -102,7 +102,6 @@ export function LegalForm({ onFormChange }) {
   }, [form.formState.isDirty, form, onFormChange]);
 
   const onSubmit = (data) => {
-    console.log("Données du formulaire:", data);
     // Ici vous pouvez ajouter la logique pour générer le document
   };
 

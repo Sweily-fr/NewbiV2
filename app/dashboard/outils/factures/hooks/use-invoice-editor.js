@@ -11,17 +11,24 @@ import {
   useNextInvoiceNumber,
 } from "@/src/graphql/invoiceQueries";
 import { useUser } from "@/src/lib/auth/hooks";
-import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
+import {
+  updateOrganization,
+  getActiveOrganization,
+} from "@/src/lib/organization-client";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
-export function useInvoiceEditor({ mode, invoiceId, initialData, organization }) {
+export function useInvoiceEditor({
+  mode,
+  invoiceId,
+  initialData,
+  organization,
+}) {
   const router = useRouter();
   // const autosaveTimeoutRef = useRef(null); // DISABLED - Auto-save removed
 
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
-  
 
   // GraphQL hooks
   const { invoice: existingInvoice, loading: loadingInvoice } =
@@ -54,33 +61,14 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
 
   // Initialize form data when invoice loads
   useEffect(() => {
-    console.log("🔄 useEffect - Chargement des données de facture existante");
-    console.log("📋 existingInvoice:", existingInvoice);
-    console.log("🎯 mode:", mode);
-
     if (existingInvoice && mode !== "create") {
-      console.log(
-        "✅ Conditions remplies - Transformation et reset du formulaire"
-      );
       const invoiceData = transformInvoiceToFormData(existingInvoice);
-      console.log("📝 Données avant reset:", invoiceData);
-      console.log("🔍 CLIENT dans les données:", invoiceData.client);
-      console.log("🔍 ITEMS dans les données:", invoiceData.items);
-      console.log("🔍 Nombre d'articles:", invoiceData.items?.length || 0);
 
       reset(invoiceData);
-      console.log("🎉 Reset du formulaire effectué");
 
       // Vérifier les données après reset
       setTimeout(() => {
         const currentFormData = getValues();
-        console.log("🔍 Données après reset:", currentFormData);
-        console.log("🔍 CLIENT après reset:", currentFormData.client);
-        console.log("🔍 ITEMS après reset:", currentFormData.items);
-        console.log("🔍 DATES après reset:");
-        console.log("  - issueDate:", currentFormData.issueDate);
-        console.log("  - executionDate:", currentFormData.executionDate);
-        console.log("  - dueDate:", currentFormData.dueDate);
       }, 100);
     } else {
       console.log("❌ Conditions non remplies pour le chargement:", {
@@ -102,16 +90,6 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
   useEffect(() => {
     if (mode === "create" && organization) {
       // 🔍 Debug: Afficher la structure complète des données d'organisation
-      console.log("🔍 DEBUG - Organisation complète:", organization);
-      console.log("🔍 DEBUG - Organization ID:", organization?.id);
-      console.log("🔍 DEBUG - Organization Name:", organization?.name);
-      console.log("🔍 DEBUG - Company Name:", organization?.companyName);
-      console.log("🔍 DEBUG - Company Email:", organization?.companyEmail);
-      console.log("🔍 DEBUG - Address Street:", organization?.addressStreet);
-      console.log("🔍 DEBUG - Address City:", organization?.addressCity);
-      console.log("🔍 DEBUG - SIRET disponible:", organization?.siret);
-      console.log("🔍 DEBUG - VAT Number disponible:", organization?.vatNumber);
-      console.log("🔍 DEBUG - Bank IBAN:", organization?.bankIban);
 
       const autoFilledCompanyInfo = {
         name: organization?.companyName || "",
@@ -134,11 +112,6 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
       };
 
       setValue("companyInfo", autoFilledCompanyInfo);
-
-      console.log(
-        "✅ CompanyInfo auto-rempli avec les données d'organisation:",
-        autoFilledCompanyInfo
-      );
     }
   }, [mode, organization, setValue]);
 
@@ -146,28 +119,46 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
   useEffect(() => {
     if (mode === "create" && organization) {
       // Utiliser directement les couleurs de l'organisation pour l'apparence par défaut
-      setValue("appearance.textColor", organization.documentTextColor || "#000000");
-      setValue("appearance.headerTextColor", organization.documentHeaderTextColor || "#ffffff");
-      setValue("appearance.headerBgColor", organization.documentHeaderBgColor || "#1d1d1b");
-      
+      setValue(
+        "appearance.textColor",
+        organization.documentTextColor || "#000000"
+      );
+      setValue(
+        "appearance.headerTextColor",
+        organization.documentHeaderTextColor || "#ffffff"
+      );
+      setValue(
+        "appearance.headerBgColor",
+        organization.documentHeaderBgColor || "#1d1d1b"
+      );
+
       // Utiliser les notes et conditions spécifiques aux factures
-      setValue("headerNotes", organization.invoiceHeaderNotes || organization.documentHeaderNotes || "");
-      setValue("footerNotes", organization.invoiceFooterNotes || organization.documentFooterNotes || "");
-      setValue("termsAndConditions", organization.invoiceTermsAndConditions || organization.documentTermsAndConditions || "");
+      setValue(
+        "headerNotes",
+        organization.invoiceHeaderNotes ||
+          organization.documentHeaderNotes ||
+          ""
+      );
+      setValue(
+        "footerNotes",
+        organization.invoiceFooterNotes ||
+          organization.documentFooterNotes ||
+          ""
+      );
+      setValue(
+        "termsAndConditions",
+        organization.invoiceTermsAndConditions ||
+          organization.documentTermsAndConditions ||
+          ""
+      );
       setValue("showBankDetails", organization.showBankDetails || false);
-      
+
       // Ajouter les coordonnées bancaires dans companyInfo
       setValue("companyInfo.bankName", organization.bankName || "");
       setValue("companyInfo.bankIban", organization.bankIban || "");
       setValue("companyInfo.bankBic", organization.bankBic || "");
-      
-      console.log("🔍 Debug - Données d'organisation appliquées aux factures:", {
-        bankName: organization.bankName,
-        bankIban: organization.bankIban,
-        bankBic: organization.bankBic
-      });
     }
-    
+
     // Stocker les coordonnées bancaires de l'organisation (disponible en création et édition)
     if (organization?.bankIban) {
       const userBankDetails = {
@@ -176,10 +167,6 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
         bankName: organization.bankName || "",
       };
       setValue("userBankDetails", userBankDetails);
-      console.log(
-        "🏦 Coordonnées bancaires organisation disponibles:",
-        userBankDetails
-      );
     }
   }, [mode, organization, setValue]);
 
@@ -231,10 +218,6 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
   // Manual save handler
   const handleSave = useCallback(async () => {
     const currentFormData = getValues();
-    console.log(
-      "💾 DÉBUT handleSave - Données du formulaire:",
-      currentFormData
-    );
 
     const isValid = await trigger();
     if (!isValid) {
@@ -248,19 +231,13 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
 
     try {
       setSaving(true);
-      console.log(
-        "📝 Données avant transformation (handleSave):",
-        currentFormData
-      );
+
       // Pas de changement de statut dans handleSave, donc pas besoin du statut précédent
       const input = transformFormDataToInput(currentFormData);
-      console.log("🔄 Input transformé pour GraphQL (handleSave):", input);
 
       if (mode === "create") {
-        console.log("📤 Envoi de la mutation CREATE_INVOICE (handleSave)...");
         const result = await createInvoice(input);
 
-        console.log("✅ Facture créée avec succès (handleSave):", result);
         toast.success("Facture créée avec succès");
         router.push("/dashboard/outils/factures");
         return true;
@@ -300,10 +277,6 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
   // Submit handler (validate and send)
   const handleSubmit = useCallback(async () => {
     const currentFormData = getValues();
-    console.log(
-      "🚀 DÉBUT handleSubmit - Données du formulaire:",
-      currentFormData
-    );
 
     const isValid = await trigger();
     if (!isValid) {
@@ -320,18 +293,14 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
         isDeposit: currentFormData.isDepositInvoice || false, // Mapping correct vers le champ backend
       };
 
-      console.log("📝 Données avant transformation:", dataToTransform);
       // Passer le statut précédent pour gérer automatiquement la date d'émission
       const previousStatus =
         mode === "edit" ? existingInvoice?.status : "DRAFT";
       const input = transformFormDataToInput(dataToTransform, previousStatus);
-      console.log("🔄 Input transformé pour GraphQL:", input);
 
       if (mode === "create") {
-        console.log("📤 Envoi de la mutation CREATE_INVOICE...");
         const result = await createInvoice(input);
 
-        console.log("✅ Facture créée avec succès:", result);
         toast.success("Facture créée et validée");
         router.push("/dashboard/outils/factures");
         return true;
@@ -368,11 +337,13 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
     try {
       const currentFormData = getValues();
       const activeOrganization = await getActiveOrganization();
-      
+
       const organizationData = {
         documentTextColor: currentFormData.appearance?.textColor || "#000000",
-        documentHeaderTextColor: currentFormData.appearance?.headerTextColor || "#ffffff",
-        documentHeaderBgColor: currentFormData.appearance?.headerBgColor || "#1d1d1b",
+        documentHeaderTextColor:
+          currentFormData.appearance?.headerTextColor || "#ffffff",
+        documentHeaderBgColor:
+          currentFormData.appearance?.headerBgColor || "#1d1d1b",
         invoiceHeaderNotes: currentFormData.headerNotes || "",
         invoiceFooterNotes: currentFormData.footerNotes || "",
         invoiceTermsAndConditions: currentFormData.termsAndConditions || "",
@@ -380,7 +351,6 @@ export function useInvoiceEditor({ mode, invoiceId, initialData, organization })
       };
 
       await updateOrganization(activeOrganization.id, organizationData);
-      console.log("✅ Paramètres sauvegardés dans l'organisation:", organizationData);
     } catch (error) {
       console.error("❌ Erreur lors de la sauvegarde des paramètres:", error);
       throw error;
@@ -483,14 +453,18 @@ function getInitialFormData(mode, initialData, session, organization) {
   // Utiliser les paramètres par défaut de l'organisation si disponibles
   if (mode === "create" && organization) {
     // Paramètres d'apparence par défaut
-    if (organization.defaultTextColor || organization.defaultHeaderTextColor || organization.defaultHeaderBgColor) {
+    if (
+      organization.defaultTextColor ||
+      organization.defaultHeaderTextColor ||
+      organization.defaultHeaderBgColor
+    ) {
       defaultData.appearance = {
         textColor: organization.defaultTextColor || "#000000",
         headerTextColor: organization.defaultHeaderTextColor || "#ffffff",
         headerBgColor: organization.defaultHeaderBgColor || "#1d1d1b",
       };
     }
-    
+
     // Paramètres de contenu par défaut
     if (organization.defaultHeaderNotes) {
       defaultData.headerNotes = organization.defaultHeaderNotes;
@@ -511,32 +485,6 @@ function getInitialFormData(mode, initialData, session, organization) {
 }
 
 function transformInvoiceToFormData(invoice) {
-  console.log(
-    "🔍 DEBUG - Données de facture reçues pour transformation:",
-    invoice
-  );
-
-  // Debug spécifique pour les dates
-  console.log("📅 DATES DEBUG:");
-  console.log(
-    "  - issueDate brute:",
-    invoice.issueDate,
-    "type:",
-    typeof invoice.issueDate
-  );
-  console.log(
-    "  - executionDate brute:",
-    invoice.executionDate,
-    "type:",
-    typeof invoice.executionDate
-  );
-  console.log(
-    "  - dueDate brute:",
-    invoice.dueDate,
-    "type:",
-    typeof invoice.dueDate
-  );
-
   // Fonction helper pour transformer les dates
   const transformDate = (dateValue, fieldName) => {
     if (!dateValue) return null;
@@ -547,7 +495,6 @@ function transformInvoiceToFormData(invoice) {
         typeof dateValue === "string" &&
         /^\d{4}-\d{2}-\d{2}$/.test(dateValue)
       ) {
-        console.log(`  ✅ ${fieldName} déjà au bon format:`, dateValue);
         return dateValue;
       }
 
@@ -557,12 +504,7 @@ function transformInvoiceToFormData(invoice) {
         const date = new Date(timestamp);
         if (!isNaN(date.getTime())) {
           const formatted = date.toISOString().split("T")[0];
-          console.log(
-            `  🔄 ${fieldName} timestamp transformé:`,
-            dateValue,
-            "→",
-            formatted
-          );
+
           return formatted;
         }
       }
@@ -575,7 +517,6 @@ function transformInvoiceToFormData(invoice) {
       }
 
       const formatted = date.toISOString().split("T")[0];
-      console.log(`  🔄 ${fieldName} transformée:`, dateValue, "→", formatted);
       return formatted;
     } catch (error) {
       console.error(`  ❌ Erreur transformation ${fieldName}:`, error);
@@ -599,22 +540,22 @@ function transformInvoiceToFormData(invoice) {
           // Formatage cohérent de l'adresse avec les devis
           address: (() => {
             if (!invoice.companyInfo.address) return "";
-            
+
             if (typeof invoice.companyInfo.address === "string") {
               return invoice.companyInfo.address;
             }
-            
+
             // Créer un tableau avec les parties de l'adresse et filtrer les vides
             const addressParts = [
               invoice.companyInfo.address.street,
               invoice.companyInfo.address.additional,
-              invoice.companyInfo.address.postalCode ? 
-                `${invoice.companyInfo.address.postalCode} ${invoice.companyInfo.address.city || ''}`.trim() : 
-                invoice.companyInfo.address.city,
-              invoice.companyInfo.address.country
+              invoice.companyInfo.address.postalCode
+                ? `${invoice.companyInfo.address.postalCode} ${invoice.companyInfo.address.city || ""}`.trim()
+                : invoice.companyInfo.address.city,
+              invoice.companyInfo.address.country,
             ].filter(Boolean); // Enlève les valeurs vides du tableau
-            
-            return addressParts.join('\n');
+
+            return addressParts.join("\n");
           })(),
           email: invoice.companyInfo.email || "",
           phone: invoice.companyInfo.phone || "",
@@ -689,14 +630,6 @@ function transformInvoiceToFormData(invoice) {
     },
   };
 
-  console.log(
-    "🔍 DEBUG - Données transformées pour le formulaire:",
-    transformedData
-  );
-  console.log(
-    "🔍 DEBUG - executionDate dans transformedData:",
-    transformedData.executionDate
-  );
   return transformedData;
 }
 
@@ -786,10 +719,6 @@ function transformFormDataToInput(formData, previousStatus = null) {
   if (previousStatus === "DRAFT" && formData.status === "PENDING") {
     // Mettre à jour la date d'émission à la date actuelle
     issueDate = new Date().toISOString().split("T")[0];
-    console.log(
-      "📅 Date d'émission mise à jour automatiquement lors du passage DRAFT -> PENDING:",
-      issueDate
-    );
   }
 
   // Helper pour s'assurer qu'on n'envoie jamais null pour les dates obligatoires
@@ -797,10 +726,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
     if (!dateValue) {
       // Si pas de fallback, utiliser la date d'émission
       const fallback = fallbackDate || issueDate;
-      console.log(
-        `⚠️ ${fieldName} est null/undefined, utilisation de la date de fallback:`,
-        fallback
-      );
+
       return fallback;
     }
     return dateValue;
@@ -832,9 +758,6 @@ function transformFormDataToInput(formData, previousStatus = null) {
 
   // Si on passe de DRAFT à PENDING, ne pas envoyer le numéro pour permettre la génération automatique
   if (previousStatus === "DRAFT" && formData.status === "PENDING") {
-    console.log(
-      "🔄 Transition DRAFT->PENDING détectée - Le numéro sera généré automatiquement par le backend"
-    );
     numberToSend = undefined; // Ne pas envoyer le numéro
     prefixToSend = undefined; // Ne pas envoyer le préfixe
   }
@@ -879,18 +802,22 @@ function transformFormDataToInput(formData, previousStatus = null) {
       headerTextColor: formData.appearance?.headerTextColor || "#ffffff",
       headerBgColor: formData.appearance?.headerBgColor || "#1d1d1b",
     },
-    shipping: formData.shipping ? {
-      billShipping: formData.shipping.billShipping || false,
-      shippingAddress: formData.shipping.shippingAddress ? {
-        fullName: formData.shipping.shippingAddress.fullName || "",
-        street: formData.shipping.shippingAddress.street || "",
-        city: formData.shipping.shippingAddress.city || "",
-        postalCode: formData.shipping.shippingAddress.postalCode || "",
-        country: formData.shipping.shippingAddress.country || "",
-      } : null,
-      shippingAmountHT: parseFloat(formData.shipping.shippingAmountHT) || 0,
-      shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
-    } : null,
+    shipping: formData.shipping
+      ? {
+          billShipping: formData.shipping.billShipping || false,
+          shippingAddress: formData.shipping.shippingAddress
+            ? {
+                fullName: formData.shipping.shippingAddress.fullName || "",
+                street: formData.shipping.shippingAddress.street || "",
+                city: formData.shipping.shippingAddress.city || "",
+                postalCode: formData.shipping.shippingAddress.postalCode || "",
+                country: formData.shipping.shippingAddress.country || "",
+              }
+            : null,
+          shippingAmountHT: parseFloat(formData.shipping.shippingAmountHT) || 0,
+          shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
+        }
+      : null,
   };
 }
 

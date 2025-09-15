@@ -1,27 +1,53 @@
 "use client";
 
-import React, { useEffect, useCallback, useState, useMemo, useRef } from "react";
+import React, {
+  useEffect,
+  useCallback,
+  useState,
+  useMemo,
+  useRef,
+} from "react";
 import { useFormContext } from "react-hook-form";
 import { Calendar as CalendarIcon, Clock, Info } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar } from "@/src/components/ui/calendar";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/src/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { cn } from "@/src/lib/utils";
-import { 
-  generateQuotePrefix, 
-  parseQuotePrefix, 
-  formatQuotePrefix, 
+import {
+  generateQuotePrefix,
+  parseQuotePrefix,
+  formatQuotePrefix,
   getCurrentMonthYear,
   validateQuoteNumber,
   formatQuoteNumber,
-  getQuoteDisplayNumber
+  getQuoteDisplayNumber,
 } from "@/src/utils/quoteUtils";
 
 const VALIDITY_PERIOD_SUGGESTIONS = [
@@ -29,21 +55,26 @@ const VALIDITY_PERIOD_SUGGESTIONS = [
   { value: 30, label: "30 jours" },
   { value: 45, label: "45 jours" },
   { value: 60, label: "60 jours" },
-  { value: 90, label: "90 jours" }
+  { value: 90, label: "90 jours" },
 ];
 
-export default function QuoteInfoSection({ 
-  canEdit = true, 
+export default function QuoteInfoSection({
+  canEdit = true,
   nextQuoteNumber = null,
   validateQuoteNumber: validateQuoteNumberProp = null,
-  hasExistingQuotes = false 
+  hasExistingQuotes = false,
 }) {
-  const { setValue, register, formState: { errors }, getValues } = useFormContext();
-  
+  const {
+    setValue,
+    register,
+    formState: { errors },
+    getValues,
+  } = useFormContext();
+
   // Use getValues instead of watch to prevent re-renders
   const [, forceUpdate] = useState({});
   const data = getValues();
-  
+
   // Simple state for selected period without complex calculations
   const [selectedPeriod, setSelectedPeriod] = useState(null);
 
@@ -51,51 +82,63 @@ export default function QuoteInfoSection({
   const handlePrefixChange = (e) => {
     const { value } = e.target;
     const cursorPosition = e.target.selectionStart;
-    
+
     // Check if user is typing MM or AAAA
-    if (value.includes('MM')) {
+    if (value.includes("MM")) {
       const { month } = getCurrentMonthYear();
-      const newValue = value.replace('MM', month);
+      const newValue = value.replace("MM", month);
       setValue("prefix", newValue, { shouldValidate: true });
       // Move cursor after the inserted month
       setTimeout(() => {
-        e.target.setSelectionRange(cursorPosition + month.length - 2, cursorPosition + month.length - 2);
+        e.target.setSelectionRange(
+          cursorPosition + month.length - 2,
+          cursorPosition + month.length - 2
+        );
       }, 0);
       return;
     }
-    
-    if (value.includes('AAAA')) {
+
+    if (value.includes("AAAA")) {
       const { year } = getCurrentMonthYear();
-      const newValue = value.replace('AAAA', year);
+      const newValue = value.replace("AAAA", year);
       setValue("prefix", newValue, { shouldValidate: true });
       // Move cursor after the inserted year
       setTimeout(() => {
-        e.target.setSelectionRange(cursorPosition + year.length - 4, cursorPosition + year.length - 4);
+        e.target.setSelectionRange(
+          cursorPosition + year.length - 4,
+          cursorPosition + year.length - 4
+        );
       }, 0);
       return;
     }
-    
+
     // For normal typing, just update the value
     setValue("prefix", value, { shouldValidate: true });
   };
 
   // Initialize defaults only once on mount
   const [initialized, setInitialized] = useState(false);
-  
+
   useEffect(() => {
     if (initialized) return;
-    
+
     setInitialized(true);
-    
+
     // Initialize without causing re-renders
     const currentData = getValues();
     if (!currentData.prefix) {
-      setValue("prefix", generateQuotePrefix(), { shouldValidate: false, shouldDirty: false });
+      setValue("prefix", generateQuotePrefix(), {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
     }
-    
+
     if (!currentData.issueDate) {
       const today = new Date();
-      setValue('issueDate', today.toISOString().split('T')[0], { shouldValidate: false, shouldDirty: false });
+      setValue("issueDate", today.toISOString().split("T")[0], {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
     }
   }, []);
 
@@ -109,50 +152,28 @@ export default function QuoteInfoSection({
 
   const validateValidUntil = (value) => {
     if (!value) return "La date de validité est requise";
-    
+
     // Créer des dates sans l'heure pour la comparaison
     const validUntilDate = createDateWithoutTime(value);
     const issueDateValue = data.issueDate;
-    
+
     if (!validUntilDate || isNaN(validUntilDate.getTime())) {
       return "La date de validité n'est pas valide";
     }
-    
-    console.log('🔍 Données de validation - Entrée:', {
-      validUntilValue: value,
-      validUntilDate: validUntilDate.toISOString(),
-      validUntilDateLocale: validUntilDate.toLocaleString('fr-FR'),
-      validUntilTimestamp: validUntilDate.getTime(),
-      issueDateValue: issueDateValue
-    });
-    
+
     if (issueDateValue) {
       const issueDate = createDateWithoutTime(issueDateValue);
-      
+
       if (!issueDate || isNaN(issueDate.getTime())) {
         return "La date d'émission n'est pas valide";
       }
-      
-      console.log('🔍 Validation des dates - Comparaison:', {
-        validUntil: {
-          date: validUntilDate.toISOString().split('T')[0],
-          timestamp: validUntilDate.getTime(),
-          locale: validUntilDate.toLocaleString('fr-FR')
-        },
-        issueDate: {
-          date: issueDate.toISOString().split('T')[0],
-          timestamp: issueDate.getTime(),
-          locale: issueDate.toLocaleString('fr-FR')
-        },
-        comparison: validUntilDate < issueDate ? 'INVALIDE (validUntil < issueDate)' : 'VALIDE (validUntil >= issueDate)'
-      });
-      
+
       // Comparaison des timestamps des dates sans heure
       if (validUntilDate.getTime() < issueDate.getTime()) {
         return "La date de validité doit être postérieure ou égale à la date d'émission";
       }
     }
-    
+
     return true;
   };
 
@@ -184,12 +205,12 @@ export default function QuoteInfoSection({
                     required: "Le préfixe est requis",
                     maxLength: {
                       value: 20,
-                      message: "Le préfixe ne doit pas dépasser 20 caractères"
+                      message: "Le préfixe ne doit pas dépasser 20 caractères",
                     },
                     pattern: {
                       value: /^D-\d{6}$/,
-                      message: "Format attendu : D-MMAAAA (ex: D-022025)"
-                    }
+                      message: "Format attendu : D-MMAAAA (ex: D-022025)",
+                    },
                   })}
                   value={data.prefix || ""}
                   onChange={handlePrefixChange}
@@ -205,7 +226,11 @@ export default function QuoteInfoSection({
                     if (e.target.value) {
                       const parsed = parseQuotePrefix(e.target.value);
                       if (parsed) {
-                        setValue("prefix", formatQuotePrefix(parsed.month, parsed.year), { shouldValidate: true });
+                        setValue(
+                          "prefix",
+                          formatQuotePrefix(parsed.month, parsed.year),
+                          { shouldValidate: true }
+                        );
                       }
                     }
                   }}
@@ -214,9 +239,7 @@ export default function QuoteInfoSection({
                 />
               </div>
               {errors?.prefix && (
-                <p className="text-xs text-red-500">
-                  {errors.prefix.message}
-                </p>
+                <p className="text-xs text-red-500">{errors.prefix.message}</p>
               )}
             </div>
           </div>
@@ -237,47 +260,45 @@ export default function QuoteInfoSection({
                   validate: {
                     isValid: (value) => {
                       // Skip validation for DRAFT- prefixed numbers
-                      if (value && value.startsWith('DRAFT-')) {
+                      if (value && value.startsWith("DRAFT-")) {
                         return true;
                       }
-                      
+
                       // Use the new validation function if provided
                       if (validateQuoteNumberProp) {
                         const validation = validateQuoteNumberProp(value);
                         return validation.isValid || validation.message;
                       }
-                      
+
                       // Fallback to old validation
                       if (!validateQuoteNumber(value)) {
                         return "Le numéro doit contenir entre 1 et 6 chiffres uniquement";
                       }
                       return true;
-                    }
-                  }
+                    },
+                  },
                 })}
                 value={data.number || ""}
                 placeholder="000001"
                 disabled={!canEdit}
-                readOnly={data.number && data.number.startsWith('DRAFT-')}
+                readOnly={data.number && data.number.startsWith("DRAFT-")}
                 onBlur={(e) => {
                   // Don't format DRAFT- numbers
-                  if (e.target.value && e.target.value.startsWith('DRAFT-')) {
+                  if (e.target.value && e.target.value.startsWith("DRAFT-")) {
                     return;
                   }
-                  
+
                   // Format with leading zeros when leaving the field
                   if (e.target.value && validateQuoteNumber(e.target.value)) {
                     const formattedNum = formatQuoteNumber(e.target.value);
-                    setValue('number', formattedNum, { shouldValidate: true });
+                    setValue("number", formattedNum, { shouldValidate: true });
                   }
                 }}
               />
               {errors?.number && (
-                <p className="text-xs text-red-500">
-                  {errors.number.message}
-                </p>
+                <p className="text-xs text-red-500">{errors.number.message}</p>
               )}
-              {data.number && data.number.startsWith('DRAFT-') && (
+              {data.number && data.number.startsWith("DRAFT-") && (
                 <p className="text-xs text-blue-600">
                   Numéro de brouillon - sera remplacé lors de la validation
                 </p>
@@ -300,7 +321,11 @@ export default function QuoteInfoSection({
             <Input
               id="project-reference"
               value={data.projectReference || ""}
-              onChange={(e) => setValue("projectReference", e.target.value, { shouldDirty: true })}
+              onChange={(e) =>
+                setValue("projectReference", e.target.value, {
+                  shouldDirty: true,
+                })
+              }
               placeholder="PROJ-2025-001"
               disabled={!canEdit}
             />
@@ -311,9 +336,7 @@ export default function QuoteInfoSection({
         <div className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label className="text-sm font-normal">
-                Date d'émission *
-              </Label>
+              <Label className="text-sm font-normal">Date d'émission *</Label>
               <span title="Date à laquelle le devis est émis. Par défaut, c'est la date d'aujourd'hui.">
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </span>
@@ -321,7 +344,7 @@ export default function QuoteInfoSection({
             <input
               type="hidden"
               {...register("issueDate", {
-                required: "La date d'émission est requise"
+                required: "La date d'émission est requise",
               })}
             />
             <Popover>
@@ -336,16 +359,23 @@ export default function QuoteInfoSection({
                   type="button"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {data.issueDate ? (() => {
-                    try {
-                      const date = new Date(data.issueDate);
-                      if (isNaN(date.getTime())) return <span>Date invalide</span>;
-                      return format(date, "PPP", { locale: fr });
-                    } catch (error) {
-                      console.warn('Erreur de formatage de date issueDate:', data.issueDate, error);
-                      return <span>Date invalide</span>;
-                    }
-                  })() : (
+                  {data.issueDate ? (
+                    (() => {
+                      try {
+                        const date = new Date(data.issueDate);
+                        if (isNaN(date.getTime()))
+                          return <span>Date invalide</span>;
+                        return format(date, "PPP", { locale: fr });
+                      } catch (error) {
+                        console.warn(
+                          "Erreur de formatage de date issueDate:",
+                          data.issueDate,
+                          error
+                        );
+                        return <span>Date invalide</span>;
+                      }
+                    })()
+                  ) : (
                     <span>Choisir une date</span>
                   )}
                 </Button>
@@ -353,9 +383,14 @@ export default function QuoteInfoSection({
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={data.issueDate ? new Date(data.issueDate) : undefined}
+                  selected={
+                    data.issueDate ? new Date(data.issueDate) : undefined
+                  }
                   onSelect={(date) => {
-                    setValue("issueDate", format(date, 'yyyy-MM-dd'), { shouldDirty: true, shouldValidate: true });
+                    setValue("issueDate", format(date, "yyyy-MM-dd"), {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
                   }}
                   initialFocus
                   locale={fr}
@@ -363,17 +398,13 @@ export default function QuoteInfoSection({
               </PopoverContent>
             </Popover>
             {errors?.issueDate && (
-              <p className="text-xs text-red-500">
-                {errors.issueDate.message}
-              </p>
+              <p className="text-xs text-red-500">{errors.issueDate.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Label className="text-sm font-normal">
-                Valide jusqu'au *
-              </Label>
+              <Label className="text-sm font-normal">Valide jusqu'au *</Label>
               <span title="Date limite de validité du devis. Après cette date, le devis ne sera plus valable.">
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </span>
@@ -383,7 +414,7 @@ export default function QuoteInfoSection({
                 type="hidden"
                 {...register("validUntil", {
                   required: "La date de validité est requise",
-                  validate: validateValidUntil
+                  validate: validateValidUntil,
                 })}
               />
               <Popover>
@@ -404,29 +435,35 @@ export default function QuoteInfoSection({
                         if (!data.validUntil && data.validUntil !== 0) {
                           return <span>Choisir une date</span>;
                         }
-                        
+
                         let date;
                         const value = data.validUntil;
-                        
-                        console.log('📅 Affichage date validUntil:', { 
-                          value, 
-                          type: typeof value,
-                          isDate: value instanceof Date
-                        });
-                        
+
                         // 1. Vérifier si c'est une chaîne au format YYYY-MM-DD
-                        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                        if (
+                          typeof value === "string" &&
+                          /^\d{4}-\d{2}-\d{2}$/.test(value)
+                        ) {
                           date = new Date(value);
                         }
                         // 2. Vérifier si c'est un timestamp numérique (nombre ou chaîne de chiffres)
-                        else if ((typeof value === 'string' && /^\d+$/.test(value)) || 
-                                (typeof value === 'number' && !isNaN(value))) {
+                        else if (
+                          (typeof value === "string" && /^\d+$/.test(value)) ||
+                          (typeof value === "number" && !isNaN(value))
+                        ) {
                           const timestamp = parseInt(value, 10);
                           // Convertir en millisecondes si c'est en secondes (10 chiffres)
-                          date = new Date(timestamp.toString().length === 10 ? timestamp * 1000 : timestamp);
+                          date = new Date(
+                            timestamp.toString().length === 10
+                              ? timestamp * 1000
+                              : timestamp
+                          );
                         }
                         // 3. Vérifier si c'est une chaîne ISO (2024-09-25T00:00:00.000Z)
-                        else if (typeof value === 'string' && value.includes('T')) {
+                        else if (
+                          typeof value === "string" &&
+                          value.includes("T")
+                        ) {
                           date = new Date(value);
                         }
                         // 4. Vérifier si c'est un objet Date
@@ -437,33 +474,32 @@ export default function QuoteInfoSection({
                         else {
                           date = new Date(value);
                         }
-                        
+
                         // Vérifier que la date est valide
                         if (!date || isNaN(date.getTime())) {
-                          console.warn('⚠️ Date de validité invalide:', { 
-                            value, 
+                          console.warn("⚠️ Date de validité invalide:", {
+                            value,
                             type: typeof value,
-                            isDate: value instanceof Date
+                            isDate: value instanceof Date,
                           });
                           return <span>Date invalide</span>;
                         }
-                        
+
                         // Formater la date pour l'affichage
-                        const formattedDate = format(date, "PPP", { locale: fr });
-                        console.log('✅ Date formatée avec succès:', { 
-                          original: value, 
-                          formatted: formattedDate,
-                          timestamp: date.getTime()
+                        const formattedDate = format(date, "PPP", {
+                          locale: fr,
                         });
-                        
+
                         return formattedDate;
-                        
                       } catch (error) {
-                        console.error('❌ Erreur lors du formatage de la date:', {
-                          error,
-                          validUntil: data.validUntil,
-                          type: typeof data.validUntil
-                        });
+                        console.error(
+                          "❌ Erreur lors du formatage de la date:",
+                          {
+                            error,
+                            validUntil: data.validUntil,
+                            type: typeof data.validUntil,
+                          }
+                        );
                         return <span>Date invalide</span>;
                       }
                     })()}
@@ -474,40 +510,58 @@ export default function QuoteInfoSection({
                     mode="single"
                     selected={(() => {
                       if (!data.validUntil) return undefined;
-                      
+
                       try {
                         let date;
                         // Si c'est un timestamp (nombre ou chaîne de chiffres)
-                        if ((typeof data.validUntil === 'string' && /^\d+$/.test(data.validUntil)) || 
-                            typeof data.validUntil === 'number') {
+                        if (
+                          (typeof data.validUntil === "string" &&
+                            /^\d+$/.test(data.validUntil)) ||
+                          typeof data.validUntil === "number"
+                        ) {
                           const timestamp = parseInt(data.validUntil, 10);
                           // Vérifier si c'est un timestamp en secondes (10 chiffres) ou millisecondes (13 chiffres)
-                          date = new Date(timestamp.toString().length === 10 ? timestamp * 1000 : timestamp);
-                        } 
+                          date = new Date(
+                            timestamp.toString().length === 10
+                              ? timestamp * 1000
+                              : timestamp
+                          );
+                        }
                         // Si c'est une chaîne de date ISO (2024-09-25T00:00:00.000Z)
-                        else if (typeof data.validUntil === 'string' && data.validUntil.includes('T')) {
-                          date = new Date(data.validUntil.split('T')[0]);
+                        else if (
+                          typeof data.validUntil === "string" &&
+                          data.validUntil.includes("T")
+                        ) {
+                          date = new Date(data.validUntil.split("T")[0]);
                         }
                         // Si c'est déjà une chaîne de date au format YYYY-MM-DD
-                        else if (typeof data.validUntil === 'string') {
+                        else if (typeof data.validUntil === "string") {
                           date = new Date(data.validUntil);
                         }
                         // Si c'est déjà un objet Date
                         else if (data.validUntil instanceof Date) {
                           date = data.validUntil;
                         }
-                        
-                        return date && !isNaN(date.getTime()) ? date : undefined;
+
+                        return date && !isNaN(date.getTime())
+                          ? date
+                          : undefined;
                       } catch (error) {
-                        console.warn('Erreur de formatage de la date sélectionnée:', data.validUntil, error);
+                        console.warn(
+                          "Erreur de formatage de la date sélectionnée:",
+                          data.validUntil,
+                          error
+                        );
                         return undefined;
                       }
                     })()}
                     onSelect={(date) => {
                       if (!date) return;
-                      const dateStr = format(date, 'yyyy-MM-dd');
-                      console.log('📅 Date sélectionnée:', dateStr);
-                      setValue("validUntil", dateStr, { shouldDirty: true, shouldValidate: true });
+                      const dateStr = format(date, "yyyy-MM-dd");
+                      setValue("validUntil", dateStr, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
                     }}
                     initialFocus
                     locale={fr}
@@ -515,15 +569,19 @@ export default function QuoteInfoSection({
                 </PopoverContent>
               </Popover>
               <Select
-                value={selectedPeriod || ''}
+                value={selectedPeriod || ""}
                 onValueChange={(value) => {
-                  if (!value || value === 'custom') return;
+                  if (!value || value === "custom") return;
                   const days = parseInt(value);
                   const issueDate = new Date(data.issueDate || new Date());
                   const validUntil = new Date(issueDate);
                   validUntil.setDate(validUntil.getDate() + days);
-                  
-                  setValue("validUntil", validUntil.toISOString().split('T')[0], { shouldDirty: true, shouldValidate: false });
+
+                  setValue(
+                    "validUntil",
+                    validUntil.toISOString().split("T")[0],
+                    { shouldDirty: true, shouldValidate: false }
+                  );
                   setSelectedPeriod(value);
                 }}
                 disabled={!canEdit}
@@ -533,7 +591,10 @@ export default function QuoteInfoSection({
                 </SelectTrigger>
                 <SelectContent>
                   {VALIDITY_PERIOD_SUGGESTIONS.map((period) => (
-                    <SelectItem key={period.value} value={period.value.toString()}>
+                    <SelectItem
+                      key={period.value}
+                      value={period.value.toString()}
+                    >
                       {period.label}
                     </SelectItem>
                   ))}

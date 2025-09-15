@@ -89,9 +89,9 @@ export default function KanbanPage() {
   } = useKanbanBoards();
 
   return (
-    <div className="w-full max-w-[100vw] mx-auto p-6">
+    <div className="w-full max-w-[100vw] mx-auto p-4 sm:p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="flex flex-col gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-medium mb-2">Tableaux Kanban</h1>
           <p className="text-muted-foreground text-sm">
@@ -99,15 +99,15 @@ export default function KanbanPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {/* Search Bar */}
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Rechercher un tableau..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
+              className="pl-10 w-full sm:w-64"
             />
           </div>
 
@@ -116,7 +116,7 @@ export default function KanbanPage() {
             onOpenChange={setIsCreateDialogOpen}
           >
             <DialogTrigger asChild>
-              <Button variant="default" className="font-normal">
+              <Button variant="default" className="font-normal w-full sm:w-auto">
                 Nouveau tableau
               </Button>
             </DialogTrigger>
@@ -254,7 +254,7 @@ export default function KanbanPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {boards.map((board) => (
             <Link key={board.id} href={`/dashboard/outils/kanban/${board.id}`}>
               <Card className="min-h-42 hover:shadow-lg transition-all duration-200 cursor-pointer group relative">

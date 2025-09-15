@@ -66,11 +66,6 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
 
-  // Debug log to check what event is being passed
-  useEffect(() => {
-    console.log("EventDialog received event:", event);
-  }, [event]);
-
   useEffect(() => {
     if (event) {
       setTitle(event.title || "");
@@ -133,36 +128,38 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   const eventValidationPatterns = {
     title: {
       pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()!?]{1,200}$/,
-      message: "Le titre doit contenir entre 1 et 200 caractères (lettres, chiffres, espaces et ponctuation de base autorisés)"
+      message:
+        "Le titre doit contenir entre 1 et 200 caractères (lettres, chiffres, espaces et ponctuation de base autorisés)",
     },
     description: {
       pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()!?\n\r]{0,1000}$/,
-      message: "La description ne peut pas dépasser 1000 caractères"
+      message: "La description ne peut pas dépasser 1000 caractères",
     },
     location: {
       pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()]{0,200}$/,
-      message: "Le lieu ne peut pas dépasser 200 caractères (lettres, chiffres, espaces et ponctuation de base autorisés)"
-    }
+      message:
+        "Le lieu ne peut pas dépasser 200 caractères (lettres, chiffres, espaces et ponctuation de base autorisés)",
+    },
   };
 
   // Fonction de validation des champs
   const validateField = (fieldName, value) => {
-    if (!value && fieldName === 'title') {
+    if (!value && fieldName === "title") {
       return "Le titre est requis";
     }
-    
+
     if (!value) return null; // Champs optionnels
-    
+
     // Vérification des tentatives d'injection
     if (detectInjectionAttempt(value)) {
       return "Caractères non autorisés détectés";
     }
-    
+
     const pattern = eventValidationPatterns[fieldName];
     if (pattern && !pattern.pattern.test(value)) {
       return pattern.message;
     }
-    
+
     return null;
   };
 
@@ -206,28 +203,28 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     const titleValue = title.trim();
     const descriptionValue = description.trim();
     const locationValue = location.trim();
-    
+
     // Validation du titre
-    const titleError = validateField('title', titleValue);
+    const titleError = validateField("title", titleValue);
     if (titleError) errors.title = titleError;
-    
+
     // Validation de la description
-    const descriptionError = validateField('description', descriptionValue);
+    const descriptionError = validateField("description", descriptionValue);
     if (descriptionError) errors.description = descriptionError;
-    
+
     // Validation du lieu
-    const locationError = validateField('location', locationValue);
+    const locationError = validateField("location", locationValue);
     if (locationError) errors.location = locationError;
-    
+
     // Si des erreurs de validation existent, les afficher
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
-    
+
     // Réinitialiser les erreurs de champs
     setFieldErrors({});
-    
+
     // Use generic title if empty
     const eventTitle = titleValue || "(sans titre)";
 
@@ -318,7 +315,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                 setTitle(sanitized);
                 // Effacer l'erreur du champ quand l'utilisateur tape
                 if (fieldErrors.title) {
-                  setFieldErrors(prev => ({ ...prev, title: null }));
+                  setFieldErrors((prev) => ({ ...prev, title: null }));
                 }
               }}
               className={fieldErrors.title ? "border-red-500" : ""}
@@ -338,14 +335,16 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                 setDescription(sanitized);
                 // Effacer l'erreur du champ quand l'utilisateur tape
                 if (fieldErrors.description) {
-                  setFieldErrors(prev => ({ ...prev, description: null }));
+                  setFieldErrors((prev) => ({ ...prev, description: null }));
                 }
               }}
               rows={3}
               className={fieldErrors.description ? "border-red-500" : ""}
             />
             {fieldErrors.description && (
-              <p className="text-sm text-red-500 mt-1">{fieldErrors.description}</p>
+              <p className="text-sm text-red-500 mt-1">
+                {fieldErrors.description}
+              </p>
             )}
           </div>
 
@@ -503,13 +502,15 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                 setLocation(sanitized);
                 // Effacer l'erreur du champ quand l'utilisateur tape
                 if (fieldErrors.location) {
-                  setFieldErrors(prev => ({ ...prev, location: null }));
+                  setFieldErrors((prev) => ({ ...prev, location: null }));
                 }
               }}
               className={fieldErrors.location ? "border-red-500" : ""}
             />
             {fieldErrors.location && (
-              <p className="text-sm text-red-500 mt-1">{fieldErrors.location}</p>
+              <p className="text-sm text-red-500 mt-1">
+                {fieldErrors.location}
+              </p>
             )}
           </div>
           <fieldset className="space-y-4">

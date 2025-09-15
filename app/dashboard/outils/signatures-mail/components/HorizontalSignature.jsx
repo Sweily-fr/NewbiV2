@@ -80,10 +80,6 @@ const HorizontalSignature = ({
   logoSrc,
 }) => {
   // Debug pour vérifier la valeur du séparateur vertical
-  console.log(
-    "HorizontalSignature - separators?.vertical?.width:",
-    signatureData.separators?.vertical?.width
-  );
 
   return (
     <table

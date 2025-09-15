@@ -25,58 +25,56 @@ const RegisterForm = () => {
   const { createAutoOrganization } = useAutoOrganization();
 
   // Récupérer les paramètres d'invitation
-  const invitationId = searchParams.get('invitation');
-  const invitationEmail = searchParams.get('email');
+  const invitationId = searchParams.get("invitation");
+  const invitationEmail = searchParams.get("email");
 
   const onSubmit = async (formData) => {
-    console.log(formData, "formData");
     await signUp.email(formData, {
       onSuccess: async (context) => {
         toast.success("Vous avez reçu un email de verification");
 
-        console.log("Callback onSuccess - Context:", context);
-
         // Si c'est une inscription via invitation, accepter l'invitation automatiquement
         if (invitationId) {
-          console.log("Inscription via invitation, tentative d'acceptation automatique...");
-          
           setTimeout(async () => {
             try {
               const response = await fetch(`/api/invitations/${invitationId}`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                  'Content-Type': 'application/json',
+                  "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ action: 'accept' }),
+                body: JSON.stringify({ action: "accept" }),
               });
 
               if (response.ok) {
-                console.log("Invitation acceptée automatiquement après inscription");
-                toast.success("Invitation acceptée ! Redirection vers le dashboard...");
+                toast.success(
+                  "Invitation acceptée ! Redirection vers le dashboard..."
+                );
                 router.push("/dashboard");
                 return;
               } else {
-                console.error("Erreur lors de l'acceptation automatique de l'invitation");
+                console.error(
+                  "Erreur lors de l'acceptation automatique de l'invitation"
+                );
               }
             } catch (error) {
-              console.error("Erreur lors de l'acceptation de l'invitation:", error);
+              console.error(
+                "Erreur lors de l'acceptation de l'invitation:",
+                error
+              );
             }
-            
+
             // Fallback: redirection normale
             router.push("/auth/login");
           }, 2000);
         } else {
           // Créer automatiquement une organisation après l'inscription normale
-          console.log("Tentative de création automatique d'organisation...");
 
           setTimeout(async () => {
             // Passer l'utilisateur depuis le contexte si disponible
             const user = context?.user || context?.data?.user;
-            console.log("Utilisateur depuis le contexte:", user);
 
             const result = await createAutoOrganization(user);
             if (result.success) {
-              console.log("Organisation créée automatiquement après inscription");
               toast.success("Organisation créée automatiquement");
             } else {
               console.error(

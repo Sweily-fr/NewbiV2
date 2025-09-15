@@ -81,12 +81,12 @@ export default function SecuritySection({ session }) {
 
   const handlePhoneVerification = () => {
     // Ici vous implémenteriez la logique de vérification du téléphone
-    console.log("Vérification du téléphone:", phoneNumber, verificationCode);
+    // console.log("Vérification du téléphone:", phoneNumber, verificationCode);
   };
 
   const handleSendVerificationCode = () => {
     // Ici vous implémenteriez l'envoi du code de vérification
-    console.log("Envoi du code de vérification à:", phoneNumber);
+    // console.log("Envoi du code de vérification à:", phoneNumber);
   };
 
   // Gérer les erreurs Stripe

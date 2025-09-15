@@ -105,12 +105,6 @@ export default function ClientSelector({
 
   // Synchroniser selectedValue avec selectedClient prop
   useEffect(() => {
-    console.log("🔄 ClientSelector - Synchronisation selectedClient:", {
-      selectedClient,
-      selectedClientName: selectedClient?.name,
-      currentSelectedValue: selectedValue,
-    });
-
     if (selectedClient) {
       setSelectedValue(selectedClient.name);
     } else {
@@ -211,22 +205,8 @@ export default function ClientSelector({
   };
 
   const handleClientSelect = (client) => {
-    console.log("✅ ClientSelector - Client sélectionné (original):", {
-      client,
-      clientName: client.name,
-      clientEmail: client.email,
-      onSelectExists: !!onSelect,
-    });
-
     // Compléter les données manquantes
     const completedClient = completeClientData(client);
-
-    console.log("🔧 ClientSelector - Client complété:", {
-      completedClient,
-      address: completedClient.address,
-      firstName: completedClient.firstName,
-      lastName: completedClient.lastName,
-    });
 
     onSelect?.(completedClient);
     setSelectedValue(client.name);
@@ -325,8 +305,6 @@ export default function ClientSelector({
       return; // ARRÊT COMPLET - Double sécurité
     }
 
-    console.log("✅ Validation réussie - Procédure de soumission autorisée");
-
     try {
       // Préparation des données pour l'API - uniquement les champs acceptés par ClientInput
       const clientData = {
@@ -398,7 +376,6 @@ export default function ClientSelector({
   };
 
   const handleSwitchToNewClient = () => {
-    console.log("🔄 ClientSelector - Basculement vers nouveau client");
     setActiveTab("new");
     setOpen(false);
     setQuery("");
@@ -418,8 +395,6 @@ export default function ClientSelector({
 
   // Fonction pour sélectionner une entreprise de l'API Gouv
   const handleCompanySelect = (company) => {
-    console.log("🏢 Sélection entreprise API Gouv:", company);
-
     try {
       // Convertir l'entreprise en format client
       const clientData = convertCompanyToClient(company);
@@ -1158,7 +1133,6 @@ export default function ClientSelector({
                             newClientForm.hasDifferentShippingAddress || false
                           }
                           onCheckedChange={(checked) => {
-                            console.log("Checkbox changed:", checked);
                             setNewClientForm((prev) => ({
                               ...prev,
                               hasDifferentShippingAddress: Boolean(checked),
@@ -1172,12 +1146,6 @@ export default function ClientSelector({
                           Utiliser une adresse de livraison différente
                         </Label>
                       </div>
-
-                      {/* Debug: État de la checkbox */}
-                      {console.log(
-                        "hasDifferentShippingAddress:",
-                        newClientForm.hasDifferentShippingAddress
-                      )}
 
                       {newClientForm.hasDifferentShippingAddress && (
                         <div className="space-y-4 px-6 pt-2 border-l-2 border-gray-200">

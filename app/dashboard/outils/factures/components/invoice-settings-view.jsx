@@ -69,10 +69,6 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
         sourceData &&
         (sourceData.iban || sourceData.bic || sourceData.bankName)
       ) {
-        console.log(
-          "🏦 Import automatique des coordonnées bancaires lors du chargement:",
-          sourceData
-        );
         setValue("bankDetails.iban", sourceData.iban || "", {
           shouldDirty: true,
         });
@@ -111,13 +107,17 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
               </div> */}
 
               {/* Vérifier si des coordonnées bancaires sont disponibles */}
-              {data.userBankDetails?.iban || data.userBankDetails?.bic || data.userBankDetails?.bankName ? (
+              {data.userBankDetails?.iban ||
+              data.userBankDetails?.bic ||
+              data.userBankDetails?.bankName ? (
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     id="show-bank-details"
                     checked={data.showBankDetails || false}
                     onCheckedChange={(checked) => {
-                      setValue("showBankDetails", checked, { shouldDirty: true });
+                      setValue("showBankDetails", checked, {
+                        shouldDirty: true,
+                      });
                     }}
                     disabled={!canEdit}
                   />
@@ -129,16 +129,18 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
                       Afficher les coordonnées bancaires
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Cochez pour inclure vos coordonnées bancaires sur la facture
+                      Cochez pour inclure vos coordonnées bancaires sur la
+                      facture
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-md">
                   <p className="mb-2">
-                    Aucune coordonnée bancaire n'est configurée pour votre entreprise.
+                    Aucune coordonnée bancaire n'est configurée pour votre
+                    entreprise.
                   </p>
-                  <a 
+                  <a
                     href="/dashboard/settings"
                     className="text-primary hover:underline font-medium flex items-center gap-1"
                   >
@@ -149,57 +151,55 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
               )}
 
               {/* Afficher les détails bancaires si activé et disponibles */}
-              {data.showBankDetails && (data.userBankDetails?.iban || data.userBankDetails?.bic || data.userBankDetails?.bankName) && (
-                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                  {/* Nom de la banque */}
-                  <div>
-                    <Label className="font-light">
-                      Nom de la banque
-                    </Label>
-                    <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <p className="text-sm">
-                        {data.bankDetails?.bankName || "Non spécifié"}
-                      </p>
+              {data.showBankDetails &&
+                (data.userBankDetails?.iban ||
+                  data.userBankDetails?.bic ||
+                  data.userBankDetails?.bankName) && (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    {/* Nom de la banque */}
+                    <div>
+                      <Label className="font-light">Nom de la banque</Label>
+                      <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                        <p className="text-sm">
+                          {data.bankDetails?.bankName || "Non spécifié"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* IBAN */}
-                  <div>
-                    <Label className="font-light">
-                      IBAN
-                    </Label>
-                    <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <p className="text-sm font-mono">
-                        {data.bankDetails?.iban || "Non spécifié"}
-                      </p>
+                    {/* IBAN */}
+                    <div>
+                      <Label className="font-light">IBAN</Label>
+                      <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                        <p className="text-sm font-mono">
+                          {data.bankDetails?.iban || "Non spécifié"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* BIC/SWIFT */}
-                  <div>
-                    <Label className="font-light">
-                      BIC/SWIFT
-                    </Label>
-                    <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                      <p className="text-sm font-mono">
-                        {data.bankDetails?.bic || "Non spécifié"}
-                      </p>
+                    {/* BIC/SWIFT */}
+                    <div>
+                      <Label className="font-light">BIC/SWIFT</Label>
+                      <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                        <p className="text-sm font-mono">
+                          {data.bankDetails?.bic || "Non spécifié"}
+                        </p>
+                      </div>
                     </div>
+
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Les coordonnées bancaires sont gérées dans les paramètres
+                      de votre entreprise.
+                    </p>
+
+                    {/* Alerte informative */}
+                    <Alert>
+                      <AlertDescription>
+                        Ces coordonnées bancaires apparaîtront sur votre facture
+                        pour faciliter les paiements de vos clients.
+                      </AlertDescription>
+                    </Alert>
                   </div>
-
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Les coordonnées bancaires sont gérées dans les paramètres de votre entreprise.
-                  </p>
-
-                  {/* Alerte informative */}
-                  <Alert>
-                    <AlertDescription>
-                      Ces coordonnées bancaires apparaîtront sur votre facture
-                      pour faciliter les paiements de vos clients.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              )}
+                )}
             </CardContent>
           </Card>
           <Separator />

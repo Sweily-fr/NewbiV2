@@ -319,9 +319,6 @@ export function useQuoteTable({ data = [], onRefetch }) {
             dateValue === undefined ||
             dateValue === ""
           ) {
-            console.log(
-              `[QUOTE ${quoteNumber || quoteId}] Champ validUntil manquant ou vide`
-            );
             return (
               <div className="text-muted-foreground text-sm">Non définie</div>
             );
@@ -445,29 +442,10 @@ export function useQuoteTable({ data = [], onRefetch }) {
   // Log des données pour débogage
   useEffect(() => {
     if (data && data.length > 0) {
-      console.log("=== DÉBOGAGE DONNÉES DEVIS ===");
-      console.log("Nombre de devis:", data.length);
-
       // Afficher les 3 premiers devis pour inspection
       const sampleQuotes = data.slice(0, 3);
 
       sampleQuotes.forEach((quote, index) => {
-        console.log(`\n=== Devis #${index + 1} ===`);
-        console.log("ID:", quote.id);
-        console.log("Numéro:", quote.number);
-        console.log(
-          "Date émission:",
-          quote.issueDate,
-          "Type:",
-          typeof quote.issueDate
-        );
-        console.log(
-          "Valid until:",
-          quote.validUntil,
-          "Type:",
-          typeof quote.validUntil
-        );
-
         // Tester la conversion de la date
         if (quote.validUntil) {
           try {
@@ -501,15 +479,6 @@ export function useQuoteTable({ data = [], onRefetch }) {
           }
         }
       });
-
-      // Vérifier si validUntil existe dans les clés
-      const firstQuote = data[0];
-      if (firstQuote) {
-        console.log("\n=== STRUCTURE DU PREMIER DEVIS ===");
-        console.log("Clés disponibles:", Object.keys(firstQuote));
-        console.log("validUntil existe:", "validUntil" in firstQuote);
-        console.log("validUntil valeur:", firstQuote.validUntil);
-      }
     }
   }, [data]);
 

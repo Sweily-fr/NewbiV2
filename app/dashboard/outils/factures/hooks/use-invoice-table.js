@@ -33,22 +33,22 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
   const invoice = row.original;
   const clientName = invoice.client?.name || "";
   const invoiceNumber = invoice.number || "";
-  
+
   // Formater les dates dans différents formats pour la recherche
   const formatDate = (dateValue) => {
     if (!dateValue) return [];
-    
+
     try {
       // Gérer différents types de dates (string, nombre, Date)
       let date;
-      if (typeof dateValue === 'string') {
+      if (typeof dateValue === "string") {
         // Si c'est un timestamp en millisecondes (string de chiffres)
         if (/^\d+$/.test(dateValue)) {
           date = new Date(parseInt(dateValue, 10));
         } else {
           date = new Date(dateValue);
         }
-      } else if (typeof dateValue === 'number') {
+      } else if (typeof dateValue === "number") {
         date = new Date(dateValue);
       } else if (dateValue instanceof Date) {
         date = dateValue;
@@ -57,11 +57,11 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
       }
 
       if (isNaN(date.getTime())) return [];
-      
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
+
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
       const year = date.getFullYear();
-      
+
       // Formats de date pour la recherche
       return [
         // Format d'affichage dans le tableau (JJ/MM/AAAA)
@@ -81,15 +81,19 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
         // Format mois-année avec tirets (MM-AAAA)
         `${month}-${year}`,
         // Format texte en français
-        date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-        date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
-        date.toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' })
-      ].filter((value, index, self) => 
-        // Supprimer les doublons
-        value && self.indexOf(value) === index
+        date.toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }),
+        date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
+        date.toLocaleDateString("fr-FR", { month: "2-digit", year: "numeric" }),
+      ].filter(
+        (value, index, self) =>
+          // Supprimer les doublons
+          value && self.indexOf(value) === index
       );
     } catch (error) {
-      console.error('Erreur de formatage de date:', error);
       return [];
     }
   };
@@ -97,28 +101,28 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
   // Récupérer les dates formatées
   const issueDates = invoice.issueDate ? formatDate(invoice.issueDate) : [];
   const dueDates = invoice.dueDate ? formatDate(invoice.dueDate) : [];
-  
+
   // Récupérer les autres données
   const status = INVOICE_STATUS_LABELS[invoice.status] || "";
   const amount = invoice.finalTotalTTC ? invoice.finalTotalTTC.toString() : "";
-  
+
   // Préparer le contenu de recherche
   const searchableContent = [
     clientName,
-    invoiceNumber,                        // Numéro de facture exact
+    invoiceNumber, // Numéro de facture exact
     ...issueDates,
     ...dueDates,
     status,
-    amount.replace(/\./g, ','),          // Montant avec virgule
-    amount.replace(/\./g, '')            // Montant sans séparateur
+    amount.replace(/\./g, ","), // Montant avec virgule
+    amount.replace(/\./g, ""), // Montant sans séparateur
   ]
     .filter(Boolean)
-    .map(s => s.toString().toLowerCase().trim());
+    .map((s) => s.toString().toLowerCase().trim());
 
   const searchTerm = (filterValue ?? "").toLowerCase().trim();
-  
+
   // Vérifier si le terme de recherche correspond à l'un des éléments
-  return searchableContent.some(content => content.includes(searchTerm));
+  return searchableContent.some((content) => content.includes(searchTerm));
 };
 
 const memoizedStatusFilter = (row, columnId, filterValue) => {
@@ -239,17 +243,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
           const dateFromOriginal = row.original.issueDate;
           const date = dateFromGetter || dateFromOriginal;
 
-          // Debug logging
-          console.log("DEBUG issueDate:", {
-            dateFromGetter,
-            dateFromOriginal,
-            finalDate: date,
-            rowOriginal: row.original,
-            allKeys: Object.keys(row.original),
-          });
-
           if (!date) {
-            console.log("Aucune date d'émission trouvée pour:", row.original);
             return "-";
           }
 
@@ -272,25 +266,17 @@ export function useInvoiceTable({ data = [], onRefetch }) {
               // Si c'est déjà un objet Date
               parsedDate = date;
             } else {
-              console.log("Format de date non reconnu:", typeof date, date);
               return "-";
             }
 
             if (isNaN(parsedDate.getTime())) {
-              console.log("Date invalide après parsing:", date, parsedDate);
               return "-";
             }
 
             const formattedDate = parsedDate.toLocaleDateString("fr-FR");
-            console.log(
-              "Date formatée avec succès:",
-              date,
-              "->",
-              formattedDate
-            );
+
             return formattedDate;
           } catch (error) {
-            console.warn("Erreur parsing date d'émission:", date, error);
             return "-";
           }
         },
@@ -312,16 +298,9 @@ export function useInvoiceTable({ data = [], onRefetch }) {
           const dateFromOriginal = row.original.dueDate;
           const date = dateFromGetter || dateFromOriginal;
 
-          // Debug logging
-          console.log("DEBUG dueDate:", {
-            dateFromGetter,
-            dateFromOriginal,
-            finalDate: date,
-            rowOriginal: row.original,
-          });
+  
 
           if (!date) {
-            console.log("Aucune date d'échéance trouvée pour:", row.original);
             return "-";
           }
 
@@ -344,20 +323,12 @@ export function useInvoiceTable({ data = [], onRefetch }) {
               // Si c'est déjà un objet Date
               dueDate = date;
             } else {
-              console.log(
-                "Format de date d'échéance non reconnu:",
-                typeof date,
-                date
-              );
+           
               return "-";
             }
 
             if (isNaN(dueDate.getTime())) {
-              console.log(
-                "Date d'échéance invalide après parsing:",
-                date,
-                dueDate
-              );
+           
               return "-";
             }
 
@@ -366,12 +337,6 @@ export function useInvoiceTable({ data = [], onRefetch }) {
               dueDate < today && row.original.status === "PENDING";
 
             const formattedDate = dueDate.toLocaleDateString("fr-FR");
-            console.log(
-              "Date d'échéance formatée avec succès:",
-              date,
-              "->",
-              formattedDate
-            );
 
             return (
               <div className={cn(isOverdue && "text-destructive font-medium")}>
@@ -380,7 +345,6 @@ export function useInvoiceTable({ data = [], onRefetch }) {
               </div>
             );
           } catch (error) {
-            console.warn("Erreur parsing date d'échéance:", date, error);
             return "-";
           }
         },
@@ -515,7 +479,6 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       try {
         await Promise.all(batch.map((invoice) => deleteInvoice(invoice.id)));
       } catch (error) {
-        console.error("Error deleting batch:", error);
         toast.error(
           `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`
         );

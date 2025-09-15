@@ -125,7 +125,6 @@ export function EventCalendar({
   };
 
   const handleEventSelect = (event) => {
-    console.log("Event selected:", event); // Debug log
     setSelectedEvent(event);
     setIsEventDialogOpen(true);
   };

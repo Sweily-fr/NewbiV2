@@ -104,10 +104,6 @@ export default function Settings() {
   // Fonction pour mettre à jour les informations de l'organisation
   const onSubmit = async (formData) => {
     try {
-      console.log("🔍 Organisation actuelle:", organization);
-      console.log("🔍 Loading organisation:", orgLoading);
-      console.log("🔍 Erreur organisation:", orgError);
-
       if (!organization?.id) {
         toast.error("Aucune organisation active trouvée");
         return;
@@ -117,14 +113,10 @@ export default function Settings() {
       const validation = validateSettingsForm(formData);
 
       if (!validation.isValid) {
-        console.error("Erreurs de validation:", validation.errors);
-        console.error("Données du formulaire:", formData);
-        console.error("Données nettoyées:", validation.sanitizedData);
-
         // Afficher les erreurs spécifiques dans la console
-        Object.keys(validation.errors).forEach((field) => {
-          console.error(`Erreur ${field}:`, validation.errors[field]);
-        });
+        // Object.keys(validation.errors).forEach((field) => {
+        //   console.error(`Erreur ${field}:`, validation.errors[field]);
+        // });
 
         toast.error(
           `Erreurs de validation: ${Object.keys(validation.errors).join(", ")}`
@@ -207,11 +199,6 @@ export default function Settings() {
             : existingOrgData.bankBic || "",
       };
 
-      console.log("🔄 Données existantes organisation:", existingOrgData);
-      console.log("🔄 Données du formulaire:", formData);
-      console.log("🔄 Données nettoyées:", sanitizedFormData);
-      console.log("🔄 Données finales pour l'organisation:", transformedData);
-
       await updateOrganization(transformedData, {
         onSuccess: () => {
           toast.success(
@@ -222,11 +209,9 @@ export default function Settings() {
         },
         onError: (error) => {
           toast.error("Erreur lors de la mise à jour");
-          console.error("Erreur de mise à jour:", error);
         },
       });
     } catch (error) {
-      console.error("Erreur lors de la mise à jour:", error);
       toast.error("Une erreur s'est produite lors de la mise à jour");
     }
   };

@@ -183,7 +183,7 @@ export default function ModernInvoiceEditor({
         </div>
 
         {/* Right Panel - Preview */}
-        <div className="border-l flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+        <div className="border-l flex-col h-[calc(100vh-4rem)] overflow-hidden hidden lg:flex">
           {/* <div className="flex-shrink-0 p-4 border-b">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">Aperçu de la facture</h2>

@@ -62,8 +62,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("🚀 Formulaire soumis avec type:", formData.type);
-    console.log("🚀 FormData complet:", formData);
+
     onSubmit(formData);
   };
 

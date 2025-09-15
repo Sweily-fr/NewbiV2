@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useOcr } from "@/src/hooks/useOcr";
@@ -14,7 +19,7 @@ import {
   AlertCircle,
   CheckCircle,
   X,
-  TestTube
+  TestTube,
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
@@ -24,29 +29,33 @@ import { toast } from "@/src/components/ui/sonner";
 export default function OcrTestPage() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
-  
-  const { processDocument, ocrResult, isProcessing, error, resetOcr } = useOcr();
+
+  const { processDocument, ocrResult, isProcessing, error, resetOcr } =
+    useOcr();
 
   // Types de fichiers acceptés
   const acceptedTypes = [
-    'image/jpeg',
-    'image/jpg', 
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'application/pdf',
-    'image/tiff',
-    'image/bmp'
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+    "image/tiff",
+    "image/bmp",
   ];
 
   const handleFileSelect = (file) => {
     if (!acceptedTypes.includes(file.type)) {
-      toast.error('Type de fichier non supporté. Formats acceptés: JPG, PNG, GIF, WebP, PDF, TIFF, BMP');
+      toast.error(
+        "Type de fichier non supporté. Formats acceptés: JPG, PNG, GIF, WebP, PDF, TIFF, BMP"
+      );
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) { // 10MB
-      toast.error('Fichier trop volumineux (max 10MB)');
+    if (file.size > 10 * 1024 * 1024) {
+      // 10MB
+      toast.error("Fichier trop volumineux (max 10MB)");
       return;
     }
 
@@ -87,31 +96,30 @@ export default function OcrTestPage() {
 
   const handleProcessReceipt = async () => {
     if (!selectedFile) {
-      toast.error('Aucun fichier sélectionné');
+      toast.error("Aucun fichier sélectionné");
       return;
     }
 
     try {
-      toast.info('Début du traitement OCR...');
+      toast.info("Début du traitement OCR...");
       await processDocument(selectedFile, {
         model: "mistral-ocr-latest",
-        includeImageBase64: false
+        includeImageBase64: false,
       });
-      
+
       if (ocrResult?.success) {
-        toast.success('Traitement OCR terminé avec succès !');
+        toast.success("Traitement OCR terminé avec succès !");
       }
     } catch (err) {
-      console.error('Erreur traitement OCR:', err);
-      toast.error('Erreur lors du traitement OCR');
+      console.error("Erreur traitement OCR:", err);
+      toast.error("Erreur lors du traitement OCR");
     }
   };
 
   const handleValidate = () => {
     if (ocrResult) {
-      toast.success('Données OCR validées !');
-      console.log('Données validées:', ocrResult);
-      
+      toast.success("Données OCR validées !");
+
       // Reset pour un nouveau test
       setSelectedFile(null);
       resetOcr();
@@ -121,7 +129,7 @@ export default function OcrTestPage() {
   const removeFile = () => {
     setSelectedFile(null);
     resetOcr();
-    toast.info('Fichier supprimé');
+    toast.info("Fichier supprimé");
   };
 
   return (
@@ -138,33 +146,38 @@ export default function OcrTestPage() {
       </div>
 
       {/* Zone de drop */}
-      <Card 
+      <Card
         className={`border-2 border-dashed transition-colors cursor-pointer ${
-          dragActive ? "border-blue-500 bg-blue-50" : "border-muted-foreground/25"
+          dragActive
+            ? "border-blue-500 bg-blue-50"
+            : "border-muted-foreground/25"
         } ${selectedFile ? "border-green-500 bg-green-50" : ""}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        onClick={() => document.getElementById('file-input')?.click()}
+        onClick={() => document.getElementById("file-input")?.click()}
       >
         <CardContent className="p-8 text-center">
           <input
             id="file-input"
             type="file"
-            accept={acceptedTypes.join(',')}
+            accept={acceptedTypes.join(",")}
             onChange={handleFileInputChange}
             className="hidden"
           />
-          
+
           {selectedFile ? (
             <div className="space-y-3">
               <div className="flex items-center justify-center">
                 <FileText className="h-12 w-12 text-green-600" />
               </div>
               <div>
-                <p className="font-medium text-green-700">{selectedFile.name}</p>
+                <p className="font-medium text-green-700">
+                  {selectedFile.name}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  {Math.round(selectedFile.size / 1024)} KB • {selectedFile.type}
+                  {Math.round(selectedFile.size / 1024)} KB •{" "}
+                  {selectedFile.type}
                 </p>
               </div>
               <Button
@@ -192,10 +205,18 @@ export default function OcrTestPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-1 justify-center">
-                <Badge variant="outline" className="text-xs">JPG</Badge>
-                <Badge variant="outline" className="text-xs">PNG</Badge>
-                <Badge variant="outline" className="text-xs">PDF</Badge>
-                <Badge variant="outline" className="text-xs">WebP</Badge>
+                <Badge variant="outline" className="text-xs">
+                  JPG
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  PNG
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  PDF
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  WebP
+                </Badge>
               </div>
             </div>
           )}
@@ -228,7 +249,7 @@ export default function OcrTestPage() {
       )}
 
       {/* Bouton de traitement */}
-      <Button 
+      <Button
         onClick={handleProcessReceipt}
         disabled={!selectedFile || isProcessing}
         className="w-full"

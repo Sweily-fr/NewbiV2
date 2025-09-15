@@ -29,7 +29,6 @@ export default function NewKanbanPage() {
     onCompleted: async (data) => {
       try {
         // Créer les colonnes par défaut
-        console.log("Creating default columns for board:", data.createBoard.id);
         await createDefaultColumns(data.createBoard.id);
         toast.success("Tableau créé avec succès");
         router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);

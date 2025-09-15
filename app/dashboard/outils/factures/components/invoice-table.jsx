@@ -132,19 +132,19 @@ export default function InvoiceTable() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex flex-1 items-center space-x-2">
           <Input
             placeholder="Rechercher des factures..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
-            className="h-8 w-[150px] lg:w-[250px]"
+            className="h-8 w-full sm:w-[150px] lg:w-[250px]"
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="ml-auto border-dashed font-normal">
+              <Button variant="outline" size="sm" className="border-dashed font-normal">
                 <ListFilterIcon className="mr-2 h-4 w-4" />
-                Statut
+                <span className="hidden sm:inline">Statut</span>
                 {statusFilter && INVOICE_STATUS_LABELS[statusFilter] && (
                   <Badge variant="secondary" className="ml-2">
                     {INVOICE_STATUS_LABELS[statusFilter]}
@@ -184,7 +184,9 @@ export default function InvoiceTable() {
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm" className="ml-2">
                   <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer ({selectedRows.length})
+                  <span className="hidden sm:inline">Supprimer</span>
+                  <span className="sm:hidden">({selectedRows.length})</span>
+                  <span className="hidden sm:inline">({selectedRows.length})</span>
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -209,13 +211,11 @@ export default function InvoiceTable() {
             </AlertDialog>
           )}
         </div>
-        <div className="flex items-center space-x-2">
-        </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-x-auto">
+        <Table className="min-w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -268,13 +268,13 @@ export default function InvoiceTable() {
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <div className="flex-1 text-sm font-normal text-muted-foreground">
+        <div className="flex-1 text-sm font-normal text-muted-foreground hidden sm:block">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center gap-2">
-            <p className="whitespace-nowrap text-sm font-normal">
+            <p className="whitespace-nowrap text-sm font-normal hidden sm:block">
               Lignes par page
             </p>
             <Select

@@ -116,7 +116,6 @@ Date de dernière mise à jour : ${new Date().toLocaleDateString("fr-FR")}`;
     try {
       await navigator.clipboard.writeText(text);
       // Ici vous pouvez ajouter une notification de succès
-      console.log("Texte copié dans le presse-papiers");
     } catch (err) {
       console.error("Erreur lors de la copie:", err);
     }
