@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -13,7 +13,7 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
-export default function ReactivateAccountPage() {
+function ReactivateAccountContent() {
   const [status, setStatus] = useState("loading"); // loading, success, error
   const [message, setMessage] = useState("");
   const searchParams = useSearchParams();
@@ -145,5 +145,13 @@ export default function ReactivateAccountPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ReactivateAccountPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <ReactivateAccountContent />
+    </Suspense>
   );
 }

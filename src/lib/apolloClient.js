@@ -112,8 +112,6 @@ export const apolloClient = new ApolloClient({
         },
       },
     },
-    // Activer les notifications de changement de cache
-    addTypename: true,
   }),
   defaultOptions: {
     watchQuery: {
