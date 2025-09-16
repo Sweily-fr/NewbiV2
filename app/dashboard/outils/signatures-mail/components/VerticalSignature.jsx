@@ -77,6 +77,8 @@ const VerticalSignature = ({
   validateUrl,
   logoSrc,
 }) => {
+  // Utilisation directe des espacements de signatureData
+  const spacings = signatureData.spacings || {};
   // Calcul des largeurs de colonnes dynamiques pour la signature verticale
   const photoColumnWidth = signatureData.columnWidths?.photo || 25;
   const contentColumnWidth = signatureData.columnWidths?.content || 75;
@@ -123,7 +125,7 @@ const VerticalSignature = ({
                 <tr>
                   <td
                     style={{
-                      paddingBottom: `${signatureData.spacings?.photoBottom || 12}px`,
+                      paddingBottom: `${spacings.photoBottom || 16}px`,
                       textAlign: signatureData.nameAlignment || "left",
                     }}
                   >
@@ -187,7 +189,7 @@ const VerticalSignature = ({
                 <tr>
                   <td
                     style={{
-                      paddingBottom: `${signatureData.spacings?.nameBottom || 8}px`,
+                      paddingBottom: `${spacings.nameBottom || 8}px`,
                       textAlign: signatureData.nameAlignment || "left",
                     }}
                   >
@@ -255,7 +257,7 @@ const VerticalSignature = ({
                   <tr>
                     <td
                       style={{
-                        paddingBottom: `${signatureData.spacings?.positionBottom || 8}px`,
+                        paddingBottom: `${spacings.positionBottom || 8}px`,
                         textAlign: signatureData.nameAlignment || "left",
                       }}
                     >
@@ -318,7 +320,7 @@ const VerticalSignature = ({
                   <tr>
                     <td
                       style={{
-                        paddingBottom: `${signatureData.spacings?.companyBottom || 12}px`,
+                        paddingBottom: `${spacings.companyBottom || 12}px`,
                         textAlign: signatureData.nameAlignment || "left",
                       }}
                     >
@@ -410,8 +412,8 @@ const VerticalSignature = ({
                     <td
                       style={{
                         paddingBottom: signatureData.mobile
-                          ? `${signatureData.spacings?.phoneToMobile || 4}px`
-                          : `${signatureData.spacings?.contactBottom || 6}px`,
+                          ? `${spacings.phoneToMobile || 4}px`
+                          : `${spacings.contactBottom || 6}px`,
                       }}
                     >
                       <div
@@ -473,8 +475,8 @@ const VerticalSignature = ({
                     <td
                       style={{
                         paddingBottom: signatureData.email
-                          ? `${signatureData.spacings?.mobileToEmail || 4}px`
-                          : `${signatureData.spacings?.contactBottom || 6}px`,
+                          ? `${spacings.mobileToEmail || 4}px`
+                          : `${spacings.contactBottom || 6}px`,
                       }}
                     >
                       <div
@@ -536,8 +538,8 @@ const VerticalSignature = ({
                     <td
                       style={{
                         paddingBottom: signatureData.website
-                          ? `${signatureData.spacings?.emailToWebsite || 4}px`
-                          : `${signatureData.spacings?.contactBottom || 6}px`,
+                          ? `${spacings.emailToWebsite || 4}px`
+                          : `${spacings.contactBottom || 6}px`,
                       }}
                     >
                       <div
@@ -599,8 +601,8 @@ const VerticalSignature = ({
                     <td
                       style={{
                         paddingBottom: signatureData.address
-                          ? `${signatureData.spacings?.websiteToAddress || 4}px`
-                          : `${signatureData.spacings?.contactBottom || 6}px`,
+                          ? `${spacings.websiteToAddress || 4}px`
+                          : `${spacings.contactBottom || 6}px`,
                       }}
                     >
                       <div
@@ -659,7 +661,7 @@ const VerticalSignature = ({
                 {/* Adresse */}
                 {signatureData.address && (
                   <tr>
-                    <td style={{ paddingBottom: "12px" }}>
+                    <td style={{ paddingBottom: `${spacings.addressBottom || spacings.websiteToAddress || 12}px` }}>
                       <div
                         style={{
                           display: "flex",
@@ -718,8 +720,8 @@ const VerticalSignature = ({
                 <tr>
                   <td
                     style={{
-                      paddingTop: `${signatureData.spacings?.separatorTop || 12}px`,
-                      paddingBottom: `${signatureData.spacings?.separatorBottom || 12}px`,
+                      paddingTop: `${spacings.separatorTop || 12}px`,
+                      paddingBottom: `${spacings.separatorBottom || 12}px`,
                     }}
                   >
                     {signatureData.separators?.horizontal?.enabled && (
@@ -740,7 +742,8 @@ const VerticalSignature = ({
                 <tr>
                   <td
                     style={{
-                      paddingTop: `${signatureData.spacings?.logoBottom || 12}px`,
+                      paddingTop: `${spacings.logoTop || 15}px`,
+                      paddingBottom: `${spacings.logoBottom || 15}px`,
                       textAlign: "center",
                     }}
                   >
