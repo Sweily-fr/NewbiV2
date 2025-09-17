@@ -3,6 +3,7 @@ import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
 import { toast } from "@/src/components/ui/sonner";
+import { authClient } from "@/src/lib/auth-client";
 
 // Fonction pour vérifier si un token JWT est expiré
 const isTokenExpired = (token) => {
@@ -26,49 +27,39 @@ const uploadLink = createUploadLink({
 });
 
 const authLink = setContext(async (_, { headers }) => {
-  console.log('🔍 [Apollo Client] Configuration des headers d\'authentification');
-  
   try {
-    // Récupérer le JWT via getSession avec le header set-auth-jwt
-    const { getSession } = await import("@/src/lib/auth-client");
-    
+    // Récupérer le JWT via authClient.getSession avec le header set-auth-jwt
     let jwtToken = null;
     
-    await getSession({
+    await authClient.getSession({
       fetchOptions: {
         onSuccess: (ctx) => {
           const jwt = ctx.response.headers.get("set-auth-jwt");
-          if (jwt) {
+          if (jwt && !isTokenExpired(jwt)) {
             jwtToken = jwt;
-            console.log('✅ [Apollo Client] JWT récupéré depuis header set-auth-jwt');
           }
         }
       }
     });
     
     if (jwtToken) {
-      console.log('✅ [Apollo Client] Token JWT valide, ajout header Authorization');
-      const authHeaders = {
+      return {
         headers: {
           ...headers,
           authorization: `Bearer ${jwtToken}`,
         }
       };
-      console.log('🔍 [Apollo Client] Headers finaux:', authHeaders);
-      return authHeaders;
     }
   } catch (error) {
-    console.error('❌ [Apollo Client] Erreur récupération JWT:', error);
+    // Erreur silencieuse - ne pas exposer les détails d'authentification
+    console.error("Erreur récupération JWT");
   }
 
-  console.log('🔍 [Apollo Client] Pas de token JWT, headers sans authentification');
-  const noAuthHeaders = {
+  return {
     headers: {
       ...headers,
     }
   };
-  console.log('🔍 [Apollo Client] Headers sans auth:', noAuthHeaders);
-  return noAuthHeaders;
 });
 
 // Intercepteur d'erreurs pour gérer les erreurs d'authentification
@@ -93,9 +84,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
   }
 
   if (networkError) {
-    console.error("Network error:", networkError);
-
-    // Détection du type d'erreur réseau
+    // Détection du type d'erreur réseau sans exposer les détails
     if (networkError.message === "Failed to fetch") {
       toast.error(
         "Le serveur est actuellement indisponible. Veuillez réessayer ultérieurement.",
@@ -112,7 +101,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
       );
     } else {
       toast.warning(
-        `Problème de connexion au serveur: ${networkError.message}`,
+        "Problème de connexion au serveur.",
         {
           duration: 5000,
         }
