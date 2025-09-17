@@ -278,6 +278,11 @@ export const validateSettingsForm = (formData) => {
     else sanitizedData.description = validation.sanitizedValue;
   }
 
+  // Validation du logo - pas de validation de format, juste inclusion dans les données nettoyées
+  if (formData.logo !== undefined) {
+    sanitizedData.logo = formData.logo || "";
+  }
+
   // Validation adresse
   if (formData.address) {
     const addressErrors = {};

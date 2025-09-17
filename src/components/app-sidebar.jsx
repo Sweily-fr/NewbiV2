@@ -26,6 +26,8 @@ import {
   Command,
 } from "@tabler/icons-react";
 
+import { CircleGauge, Calendar, Users, FileMinus, Search, MessageCircleQuestionMark } from "lucide-react";
+
 import { NavDocuments } from "@/src/components/nav-documents";
 import { NavMain } from "@/src/components/nav-main";
 import { NavSecondary } from "@/src/components/nav-secondary";
@@ -68,7 +70,7 @@ const data = {
     {
       title: "Tableau de bord",
       url: "/dashboard",
-      icon: IconDashboard,
+      icon: CircleGauge,
     },
     // {
     //   title: "Intégrations",
@@ -88,7 +90,7 @@ const data = {
     {
       title: "Calendrier",
       url: "/dashboard/calendar",
-      icon: IconCalendar,
+      icon: Calendar,
     },
     // {
     //   title: "Favoris",
@@ -98,12 +100,12 @@ const data = {
     {
       title: "Clients",
       url: "/dashboard/clients",
-      icon: IconUsers,
+      icon: Users,
     },
     {
       title: "Catalogues",
       url: "/dashboard/catalogues",
-      icon: IconFileWord,
+      icon: FileMinus,
     },
   ],
   navClouds: [
@@ -158,17 +160,17 @@ const data = {
     {
       title: "Communauté",
       url: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
-      icon: IconUsers,
+      icon: Users,
     },
     {
       title: "Recherche",
       url: "#",
-      icon: IconSearch,
+      icon: Search,
     },
     {
       title: "Aide",
       url: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
-      icon: IconHelp,
+      icon: MessageCircleQuestionMark,
     },
   ],
   documents: [
@@ -182,7 +184,11 @@ const data = {
 
 export function AppSidebar({ ...props }) {
   const { session } = useUser();
-  const { loading: subscriptionLoading, isActive, subscription } = useSubscription();
+  const {
+    loading: subscriptionLoading,
+    isActive,
+    subscription,
+  } = useSubscription();
   const [theme, setTheme] = React.useState("light");
 
   // Effet pour détecter le thème depuis localStorage au chargement du composant
@@ -230,7 +236,9 @@ export function AppSidebar({ ...props }) {
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent className="mt-1">
-        {session?.user && !subscriptionLoading && !(isActive() && !subscription) ? (
+        {session?.user &&
+        !subscriptionLoading &&
+        !(isActive() && !subscription) ? (
           <>
             <NavMain items={data.navMain} />
             <NavDocuments items={data.documents} />
@@ -279,14 +287,18 @@ export function AppSidebar({ ...props }) {
         )}
       </SidebarContent>
       <SidebarFooter>
-        {session?.user && !subscriptionLoading && !(isActive() && !subscription) ? (
+        {session?.user &&
+        !subscriptionLoading &&
+        !(isActive() && !subscription) ? (
           <SidebarTrialCard />
         ) : (
           <div className="mb-2 px-2">
             <Skeleton className="h-16 w-full bg-[#EBEBEB] rounded-md" />
           </div>
         )}
-        {session?.user && !subscriptionLoading && !(isActive() && !subscription) ? (
+        {session?.user &&
+        !subscriptionLoading &&
+        !(isActive() && !subscription) ? (
           <NavUser user={session.user} />
         ) : (
           <div className="flex items-center gap-2 px-2 py-1.5">

@@ -1,7 +1,7 @@
 "use client";
 
 import { IconApps, IconCirclePlusFilled, IconMail } from "@tabler/icons-react";
-import { Crown } from "lucide-react";
+import { Crown, LayoutPanelLeft } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
 import {
@@ -19,7 +19,7 @@ import { usePathname } from "next/navigation";
 export function NavMain({ items }) {
   const pathname = usePathname();
   const { isActive } = useSubscription();
-  
+
   // Définir les onglets qui nécessitent un abonnement Pro
   const proTabs = ["Tableau de bord", "Clients"]; // "Catalogues" retiré
   return (
@@ -38,7 +38,7 @@ export function NavMain({ items }) {
                 )}
                 //className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
               >
-                <IconApps />
+                <LayoutPanelLeft />
                 <span className="font-polysans font-light">Outils</span>
               </SidebarMenuButton>
             </Link>
@@ -48,7 +48,7 @@ export function NavMain({ items }) {
           {items.map((item) => {
             const isProTab = proTabs.includes(item.title);
             const hasAccess = !isProTab || isActive();
-            
+
             return (
               <SidebarMenuItem key={item.title}>
                 <Link href={hasAccess ? item.url : "#"} className="w-full">
@@ -61,11 +61,17 @@ export function NavMain({ items }) {
                           pathname?.startsWith(item.url + "/"))) &&
                         "bg-[#F0F0F0] hover:bg-[#F0F0F0]/90 active:bg-[#F0F0F0] text-black min-w-8 duration-200 ease-linear"
                     )}
-                    tooltip={isProTab && !isActive() ? `${item.title} - Fonctionnalité Pro` : item.title}
+                    tooltip={
+                      isProTab && !isActive()
+                        ? `${item.title} - Fonctionnalité Pro`
+                        : item.title
+                    }
                     disabled={!hasAccess}
                   >
                     {item.icon && <item.icon />}
-                    <span className="font-polysans font-light">{item.title}</span>
+                    <span className="font-polysans font-light">
+                      {item.title}
+                    </span>
                     {isProTab && !isActive() && (
                       <Crown className="w-3 h-3 ml-auto text-[#5b4fff]" />
                     )}

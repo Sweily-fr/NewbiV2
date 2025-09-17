@@ -319,4 +319,4 @@ const Footer7 = ({
   );
 };
 
-export { Footer7 };
+export default Footer7;

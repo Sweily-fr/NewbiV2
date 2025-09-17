@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { jwt } from "better-auth/plugins";
 import { mongoDb } from "./mongodb";
 import {
   adminPlugin,
@@ -19,6 +20,7 @@ export const auth = betterAuth({
   database: mongodbAdapter(mongoDb),
   appName: "Newbi",
   plugins: [
+    jwt(),
     adminPlugin,
     phoneNumberPlugin,
     twoFactorPlugin,

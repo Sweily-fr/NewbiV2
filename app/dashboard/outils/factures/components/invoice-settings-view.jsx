@@ -168,7 +168,7 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
 
                     {/* IBAN */}
                     <div>
-                      <Label className="font-light">IBAN</Label>
+                      <Label className="font-normal">IBAN</Label>
                       <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                         <p className="text-sm font-mono">
                           {data.bankDetails?.iban || "Non spécifié"}
@@ -178,7 +178,7 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
 
                     {/* BIC/SWIFT */}
                     <div>
-                      <Label className="font-light">BIC/SWIFT</Label>
+                      <Label className="font-normal">BIC/SWIFT</Label>
                       <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                         <p className="text-sm font-mono">
                           {data.bankDetails?.bic || "Non spécifié"}

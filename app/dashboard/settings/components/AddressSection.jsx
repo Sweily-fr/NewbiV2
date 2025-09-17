@@ -35,15 +35,15 @@ export default function AddressSection({ register, errors, watch, setValue }) {
 
   return (
     <div className="space-y-6">
-      <Card className="border-0 shadow-none backdrop-blur-sm">
-        <CardHeader className="pb-4">
+      <Card className="border-0 shadow-none backdrop-blur-sm pt-2">
+        {/* <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-3 text-lg font-medium">
             <div className="p-2 bg-blue-50 rounded-lg">
               <MapPin className="h-5 w-5 text-blue-600" />
             </div>
             Adresse de l'entreprise
           </CardTitle>
-        </CardHeader>
+        </CardHeader> */}
         <CardContent className="space-y-6">
           {/* Adresse complète */}
           <div className="space-y-2">
