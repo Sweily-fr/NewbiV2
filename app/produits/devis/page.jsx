@@ -1,6 +1,6 @@
 import React from "react";
 import HeroHeader from "@/src/components/blocks/hero-header";
-import { Footer7 } from "@/src/components/footer7";
+import Footer7 from "@/src/components/footer7";
 import { HeroSection } from "./section/hero-section";
 import SectionAvantages from "./section/section-avantages";
 import { Poppins } from "next/font/google";
