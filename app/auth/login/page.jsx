@@ -107,7 +107,7 @@ export default function LoginPage() {
             <div className="mt-8 flex flex-row items-center flex-wrap gap-4 max-sm:flex-col">
               <Button
                 variant="outline"
-                className="flex-1 items-center justify-center"
+                className="flex-1 items-center justify-center cursor-pointer"
                 onClick={() => signInWithProvider("github")}
               >
                 <GitHubIcon className="size-5" aria-hidden={true} />
@@ -185,16 +185,22 @@ export default function LoginPage() {
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden min-h-screen bg-background flex items-start justify-center pt-16 pb-8">
-        <div className="w-full max-w-sm px-6">
-          <h3 className="text-2xl font-semibold text-foreground mb-2">
+      <div className="md:hidden min-h-screen bg-background flex items-center justify-center pb-8">
+        <div className="w-full max-w-sm px-1">
+          <img
+            src="/ni2.svg"
+            alt="Newbi Logo"
+            className="absolute top-1 left-0"
+            width={80}
+          />
+          <h3 className="text-3xl font-medium text-foreground mb-2">
             Connectez-vous
           </h3>
           <p className="text-sm text-muted-foreground mb-6">
             Vous n'avez pas de compte ?{" "}
             <Link
               href="/auth/signup"
-              className="font-medium text-primary hover:text-primary/90"
+              className="font-medium text-primary hover:text-primary/90 underline"
             >
               Inscription
             </Link>

@@ -5,8 +5,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@tabler/icons-react";
 import { useSubscription } from "@/src/contexts/subscription-context";
-import { Crown } from "lucide-react";
+import { Crown, Settings2, Trash, Settings } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { SettingsModal } from "@/src/components/settings-modal";
 
 import {
   SidebarGroup,
@@ -38,6 +39,7 @@ import {
 function SettingsDropdownMenu() {
   const { isActive } = useSubscription();
   const [open, setOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   return (
     <SidebarMenuItem key={"settings"}>
@@ -45,7 +47,7 @@ function SettingsDropdownMenu() {
         className="mb-1 cursor-pointer"
         onClick={() => setOpen(true)}
       >
-        <IconSettings />
+        <Settings />
         <span className="font-polysans font-light">Paramètres</span>
       </SidebarMenuButton>
 
@@ -65,13 +67,14 @@ function SettingsDropdownMenu() {
           side="bottom"
           align="start"
         >
-          <DropdownMenuItem className="cursor-pointer" asChild>
-            <Link href={"/dashboard/settings"}>
-              <IconFolder />
-              <span className="font-polysans font-light">
-                Paramètres entreprise
-              </span>
-            </Link>
+          <DropdownMenuItem 
+            className="cursor-pointer"
+            onClick={() => setSettingsModalOpen(true)}
+          >
+            <Settings2 />
+            <span className="font-polysans font-light">
+              Paramètres entreprise
+            </span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -114,7 +117,7 @@ function SettingsDropdownMenu() {
             asChild
           >
             <Link href={"/dashboard/account"}>
-              <IconTrash />
+              <Trash />
               <span className="font-polysans font-light">
                 Désactiver le compte
               </span>
@@ -122,11 +125,16 @@ function SettingsDropdownMenu() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <SettingsModal open={settingsModalOpen} onOpenChange={setSettingsModalOpen} />
     </SidebarMenuItem>
   );
 }
 
 export function NavSecondary({ items, ...props }) {
+  const [open, setOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const { isActive } = useSubscription();
+
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>

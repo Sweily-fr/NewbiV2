@@ -256,7 +256,7 @@ const LoginForm = () => {
           id="email"
           name="email"
           autoComplete="email"
-          placeholder="ephraim@blocks.so"
+          placeholder="Email"
           className="mt-2"
           {...register("email", {
             required: "Email est requis",
@@ -293,7 +293,7 @@ const LoginForm = () => {
       </div>
       <SubmitButton
         type="submit"
-        className="mt-4 w-full py-2 font-medium"
+        className="mt-4 w-full py-2 font-normal cursor-pointer"
         isLoading={isSubmitting}
       >
         Se connecter

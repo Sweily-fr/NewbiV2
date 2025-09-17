@@ -25,28 +25,51 @@ const uploadLink = createUploadLink({
   },
 });
 
-const authLink = setContext((_, { headers }) => {
-  // Récupérer le token depuis le localStorage
-  const token = localStorage.getItem("token");
-
-  // Vérifier si le token est expiré
-  if (token && isTokenExpired(token)) {
-    // Si le token est expiré, le supprimer
-    localStorage.removeItem("token");
-    // La déconnexion complète sera gérée par le contexte d'authentification
-    return { headers };
+const authLink = setContext(async (_, { headers }) => {
+  console.log('🔍 [Apollo Client] Configuration des headers d\'authentification');
+  
+  try {
+    // Récupérer le JWT via getSession avec le header set-auth-jwt
+    const { getSession } = await import("@/src/lib/auth-client");
+    
+    let jwtToken = null;
+    
+    await getSession({
+      fetchOptions: {
+        onSuccess: (ctx) => {
+          const jwt = ctx.response.headers.get("set-auth-jwt");
+          if (jwt) {
+            jwtToken = jwt;
+            console.log('✅ [Apollo Client] JWT récupéré depuis header set-auth-jwt');
+          }
+        }
+      }
+    });
+    
+    if (jwtToken) {
+      console.log('✅ [Apollo Client] Token JWT valide, ajout header Authorization');
+      const authHeaders = {
+        headers: {
+          ...headers,
+          authorization: `Bearer ${jwtToken}`,
+        }
+      };
+      console.log('🔍 [Apollo Client] Headers finaux:', authHeaders);
+      return authHeaders;
+    }
+  } catch (error) {
+    console.error('❌ [Apollo Client] Erreur récupération JWT:', error);
   }
 
-  // Retourner les headers avec le token d'authentification
-  return {
+  console.log('🔍 [Apollo Client] Pas de token JWT, headers sans authentification');
+  const noAuthHeaders = {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : "",
-    },
+    }
   };
+  console.log('🔍 [Apollo Client] Headers sans auth:', noAuthHeaders);
+  return noAuthHeaders;
 });
-
-// console.log("token", authLink);
 
 // Intercepteur d'erreurs pour gérer les erreurs d'authentification
 const errorLink = onError(({ graphQLErrors, networkError }) => {
