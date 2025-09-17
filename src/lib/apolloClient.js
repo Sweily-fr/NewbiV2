@@ -19,7 +19,7 @@ const isTokenExpired = (token) => {
 
 // Configuration Upload Link avec support des uploads de fichiers
 const uploadLink = createUploadLink({
-  uri: process.env.API_URL || "http://localhost:4000/graphql",
+  uri: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql",
   credentials: "include", // Important pour better-auth (cookies)
   headers: {
     "Apollo-Require-Preflight": "true",
