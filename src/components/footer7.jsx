@@ -105,7 +105,7 @@ const Footer7 = ({
               <div className="col-span-1 sm:col-span-2 md:col-span-2 flex justify-center md:justify-start mb-6 sm:mb-4 md:mb-0">
                 <div className="lg:pb-6 group/item relative">
                   <img
-                    src="/newbiLogo.svg"
+                    src={getAssetUrl("newbiLogo.svg")}
                     alt="logo"
                     width="80"
                     height="80"
