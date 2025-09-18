@@ -3,6 +3,7 @@ import React from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { Button } from "@/src/components/ui/button";
+import { getAssetUrl } from "@/src/lib/image-utils";
 
 const defaultSections = [
   {
@@ -50,7 +51,7 @@ const defaultLegalLinks = [
 const Footer7 = ({
   logo = {
     url: "https://www.shadcnblocks.com",
-    src: "http://localhost:3000/newbiLogo.png",
+    src: getAssetUrl("newbiLogo.png"),
     alt: "logo",
     title: "",
   },

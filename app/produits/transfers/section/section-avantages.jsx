@@ -1,6 +1,7 @@
 import React from "react";
 import { AnimatedList } from "@/src/components/magicui/animated-list";
 import { cn } from "@/src/lib/utils";
+import { getIconUrl } from "@/src/lib/image-utils";
 
 let notifications = [
   {
@@ -234,7 +235,7 @@ export default function SectionAvantages() {
                   </div>
                   <img
                     alt=""
-                    src="http://localhost:3000/linkedin.svg"
+                    src={getIconUrl("linkedin.svg")}
                     style={{
                       left: "360px",
                       top: "144px",
@@ -245,7 +246,7 @@ export default function SectionAvantages() {
                   />
                   <img
                     alt=""
-                    src="http://localhost:3000/dribbble.svg"
+                    src={getIconUrl("dribbble.svg")}
                     style={{
                       left: "285px",
                       top: "20px",
@@ -256,7 +257,7 @@ export default function SectionAvantages() {
                   />
                   <img
                     alt=""
-                    src="http://localhost:3000/upwork.svg"
+                    src={getIconUrl("upwork.svg")}
                     style={{
                       left: "255px",
                       top: "210px",
@@ -267,7 +268,7 @@ export default function SectionAvantages() {
                   />
                   <img
                     alt=""
-                    src="http://localhost:3000/linkedin.svg"
+                    src={getIconUrl("linkedin.svg")}
                     style={{
                       left: "144px",
                       top: "40px",
@@ -278,7 +279,7 @@ export default function SectionAvantages() {
                   />
                   <img
                     alt=""
-                    src="http://localhost:3000/upwork.svg"
+                    src={getIconUrl("upwork.svg")}
                     style={{
                       left: "36px",
                       top: "56px",
@@ -289,7 +290,7 @@ export default function SectionAvantages() {
                   />
                   <img
                     alt=""
-                    src="http://localhost:3000/we-work-remotely.svg"
+                    src={getIconUrl("we-work-remotely.svg")}
                     style={{
                       left: "96px",
                       top: "176px",
