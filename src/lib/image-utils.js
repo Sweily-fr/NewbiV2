@@ -12,7 +12,7 @@ export function getImageUrl(imagePath) {
   const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
   
   // En production, utiliser l'URL de l'app, sinon localhost:3000
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000";
   
   return `${baseUrl}${cleanPath}`;
 }
