@@ -136,7 +136,7 @@ const columns = [
     accessorKey: "name",
     cell: ({ row }) => {
       const product = row.original;
-      return <div className="font-medium">{product.name}</div>;
+      return <div className="font-normal">{product.name}</div>;
     },
     size: 200,
     filterFn: multiColumnFilterFn,
@@ -161,7 +161,7 @@ const columns = [
     cell: ({ row }) => {
       const price = row.getValue("unitPrice");
       return price ? (
-        <span className="font-medium">{price.toFixed(2)} €</span>
+        <span className="font-normal">{price.toFixed(2)} €</span>
       ) : (
         "-"
       );
