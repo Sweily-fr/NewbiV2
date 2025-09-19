@@ -8,7 +8,8 @@ import ForgetPasswordForm from "./forget-passwordForm";
 export default function ForgetPassWordPage() {
   return (
     <main>
-      <div className="flex h-screen">
+      {/* Desktop Layout */}
+      <div className="hidden md:flex h-screen">
         <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
           <div
             className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
@@ -19,9 +20,9 @@ export default function ForgetPassWordPage() {
                 <div className="flex-1">
                   <Typewriter
                     text={[
-                      "Créez votre compte en quelques secondes.",
-                      "Rejoignez notre communauté.",
-                      "Commencez votre aventure dès maintenant.",
+                      "Récupérez votre mot de passe facilement.",
+                      "Sécurité et simplicité.",
+                      "Retrouvez l'accès à votre compte.",
                     ]}
                     speed={30}
                     deleteSpeed={30}
@@ -52,6 +53,27 @@ export default function ForgetPassWordPage() {
             </p>
             <ForgetPasswordForm />
           </div>
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden min-h-screen bg-background flex items-center justify-center pb-8">
+        <div className="w-full max-w-sm px-6">
+          <img
+            src="/ni2.png"
+            alt="Newbi Logo"
+            className="absolute top-28 left-8"
+            width={30}
+          />
+          <h3 className="text-xl font-medium text-foreground mb-2">
+            Mot de passe oublié
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Entrer votre email pour recevoir un lien de réinitialisation de mot
+            de passe
+          </p>
+
+          <ForgetPasswordForm />
         </div>
       </div>
     </main>

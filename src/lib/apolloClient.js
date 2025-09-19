@@ -3,6 +3,7 @@ import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
 import { toast } from "@/src/components/ui/sonner";
+import { authClient } from "@/src/lib/auth-client";
 
 // Fonction pour vérifier si un token JWT est expiré
 const isTokenExpired = (token) => {
@@ -18,35 +19,50 @@ const isTokenExpired = (token) => {
 
 // Configuration Upload Link avec support des uploads de fichiers
 const uploadLink = createUploadLink({
-  uri: "http://localhost:4000/graphql",
+  uri:
+    process.env.NEXT_PUBLIC_API_URL + "graphql" ||
+    "http://localhost:4000/graphql",
   credentials: "include", // Important pour better-auth (cookies)
   headers: {
     "Apollo-Require-Preflight": "true",
   },
 });
 
-const authLink = setContext((_, { headers }) => {
-  // Récupérer le token depuis le localStorage
-  const token = localStorage.getItem("token");
+const authLink = setContext(async (_, { headers }) => {
+  try {
+    // Récupérer le JWT via authClient.getSession avec le header set-auth-jwt
+    let jwtToken = null;
 
-  // Vérifier si le token est expiré
-  if (token && isTokenExpired(token)) {
-    // Si le token est expiré, le supprimer
-    localStorage.removeItem("token");
-    // La déconnexion complète sera gérée par le contexte d'authentification
-    return { headers };
+    await authClient.getSession({
+      fetchOptions: {
+        onSuccess: (ctx) => {
+          const jwt = ctx.response.headers.get("set-auth-jwt");
+          if (jwt && !isTokenExpired(jwt)) {
+            jwtToken = jwt;
+          }
+        },
+      },
+    });
+
+    if (jwtToken) {
+      return {
+        headers: {
+          ...headers,
+          authorization: `Bearer ${jwtToken}`,
+        },
+      };
+    }
+  } catch (error) {
+    // Erreur silencieuse - ne pas exposer les détails d'authentification
+    console.error("Erreur récupération JWT");
   }
 
-  // Retourner les headers avec le token d'authentification
   return {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : "",
     },
   };
 });
-
-// console.log("token", authLink);
 
 // Intercepteur d'erreurs pour gérer les erreurs d'authentification
 const errorLink = onError(({ graphQLErrors, networkError }) => {
@@ -70,9 +86,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
   }
 
   if (networkError) {
-    console.error("Network error:", networkError);
-
-    // Détection du type d'erreur réseau
+    // Détection du type d'erreur réseau sans exposer les détails
     if (networkError.message === "Failed to fetch") {
       toast.error(
         "Le serveur est actuellement indisponible. Veuillez réessayer ultérieurement.",
@@ -88,12 +102,9 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
         }
       );
     } else {
-      toast.warning(
-        `Problème de connexion au serveur: ${networkError.message}`,
-        {
-          duration: 5000,
-        }
-      );
+      toast.warning("Problème de connexion au serveur.", {
+        duration: 5000,
+      });
     }
   }
 });

@@ -11,10 +11,8 @@ import { validateSettingsForm, sanitizeInput } from "@/src/lib/validation";
 
 // Import des composants de section
 import CompanySection from "./components/CompanySection";
-import AddressSection from "./components/AddressSection";
 import BankSection from "./components/BankSection";
 import LegalSection from "./components/LegalSection";
-import BillingSection from "./components/BillingSection";
 import SecuritySection from "./components/SecuritySection";
 
 // Configuration des onglets
@@ -23,10 +21,6 @@ const TABS_CONFIG = {
     title: "Informations de l'entreprise",
     description: "Gérez les informations générales de votre entreprise",
   },
-  address: {
-    title: "Adresse",
-    description: "Configurez l'adresse de votre entreprise",
-  },
   bank: {
     title: "Coordonnées bancaires",
     description: "Gérez vos informations bancaires",
@@ -34,10 +28,6 @@ const TABS_CONFIG = {
   legal: {
     title: "Informations légales",
     description: "Configurez les informations légales de votre entreprise",
-  },
-  billing: {
-    title: "Facturation et abonnement",
-    description: "Gérez votre abonnement et vos informations de facturation",
   },
   security: {
     title: "Sécurité",
@@ -140,7 +130,10 @@ export default function Settings() {
         companyPhone:
           sanitizedFormData.phone || existingOrgData.companyPhone || "",
         website: sanitizedFormData.website || existingOrgData.website || "",
-        logo: sanitizedFormData.logo || existingOrgData.logo || "",
+        logo:
+          sanitizedFormData.logo !== undefined
+            ? sanitizedFormData.logo
+            : existingOrgData.logo || "",
 
         // Informations légales
         siret: sanitizedFormData.legal?.siret || existingOrgData.siret || "",
@@ -201,9 +194,7 @@ export default function Settings() {
 
       await updateOrganization(transformedData, {
         onSuccess: () => {
-          toast.success(
-            "Informations de l'entreprise mises à jour avec succès"
-          );
+          toast.success("Informations mises à jour avec succès");
           // Ne pas refetch immédiatement pour éviter de remettre les anciennes valeurs
           // Le useEffect se chargera de la synchronisation quand les nouvelles données arriveront
         },
@@ -267,14 +258,10 @@ export default function Settings() {
     switch (activeTab) {
       case "entreprise":
         return <CompanySection {...commonProps} />;
-      case "address":
-        return <AddressSection {...commonProps} />;
       case "bank":
         return <BankSection {...commonProps} />;
       case "legal":
         return <LegalSection {...commonProps} />;
-      case "billing":
-        return <BillingSection session={session} />;
       case "security":
         return <SecuritySection session={session} />;
       default:
@@ -301,7 +288,7 @@ export default function Settings() {
                 {currentTab.description}
               </p>
             </div>
-            {activeTab !== "security" && activeTab !== "billing" && (
+            {activeTab !== "security" && (
               <Button
                 type="submit"
                 disabled={isSubmitting}

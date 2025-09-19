@@ -33,7 +33,7 @@ export default function Outils() {
   if (loading || !session?.user) {
     return (
       <div className="flex flex-col p-4 md:p-6 md:py-6">
-        <Skeleton className="h-6 md:h-8 w-24 md:w-32 mb-2 bg-[#EBEBEB] rounded-sm" />
+        <Skeleton className="h-6 md:h-8 w-24 md:w-32 mb-2 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
         <div className="flex flex-col gap-6 pt-8 w-full">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 w-full">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -42,19 +42,19 @@ export default function Outils() {
                   <div className="flex flex-col p-2 flex-1 justify-between">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <Skeleton className="h-7 w-7 bg-[#EBEBEB] rounded-md" />
+                        <Skeleton className="h-7 w-7 bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
                       </div>
                       <div className="space-y-3">
-                        <Skeleton className="h-5 w-24 bg-[#EBEBEB] rounded-sm" />
-                        <Skeleton className="h-4 w-32 bg-[#EBEBEB] rounded-sm" />
+                        <Skeleton className="h-5 w-24 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+                        <Skeleton className="h-4 w-32 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
                       </div>
                     </div>
                     <div className="pt-6">
-                      <Skeleton className="h-4 w-16 bg-[#EBEBEB] rounded-sm" />
+                      <Skeleton className="h-4 w-16 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
                     </div>
                   </div>
                   <div className="w-1/2 rounded-xl m-1 p-2">
-                    <Skeleton className="h-full w-full bg-[#EBEBEB] rounded-xl" />
+                    <Skeleton className="h-full w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-xl" />
                   </div>
                 </div>
               </div>
@@ -81,23 +81,41 @@ export default function Outils() {
             className="flex-1 flex-col justify-start gap-4 md:gap-6"
           >
             <TabsList className="grid w-full grid-cols-4 h-auto">
-              <TabsTrigger value="outline" className="font-normal text-xs md:text-sm px-2 md:px-3 py-2">
+              <TabsTrigger
+                value="outline"
+                className="font-normal text-xs md:text-sm px-2 md:px-3 py-2"
+              >
                 Tout
               </TabsTrigger>
-              <TabsTrigger value="past-performance" className="font-normal text-xs md:text-sm px-1 md:px-3 py-2">
+              <TabsTrigger
+                value="past-performance"
+                className="font-normal text-xs md:text-sm px-1 md:px-3 py-2"
+              >
                 <span className="hidden md:inline">Financier</span>
                 <span className="md:hidden">Fin.</span>
-                <Badge variant="secondary" className="ml-1 text-xs">3</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  3
+                </Badge>
               </TabsTrigger>
-              <TabsTrigger value="key-personnel" className="font-normal text-xs md:text-sm px-1 md:px-3 py-2">
+              <TabsTrigger
+                value="key-personnel"
+                className="font-normal text-xs md:text-sm px-1 md:px-3 py-2"
+              >
                 <span className="hidden md:inline">Marketing</span>
                 <span className="md:hidden">Mark.</span>
-                <Badge variant="secondary" className="ml-1 text-xs">2</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  2
+                </Badge>
               </TabsTrigger>
-              <TabsTrigger value="focus-documents" className="font-normal text-xs md:text-sm px-1 md:px-3 py-2">
+              <TabsTrigger
+                value="focus-documents"
+                className="font-normal text-xs md:text-sm px-1 md:px-3 py-2"
+              >
                 <span className="hidden md:inline">Automatisation</span>
                 <span className="md:hidden">Auto.</span>
-                <Badge variant="secondary" className="ml-1 text-xs">1</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  1
+                </Badge>
               </TabsTrigger>
             </TabsList>
           </Tabs>

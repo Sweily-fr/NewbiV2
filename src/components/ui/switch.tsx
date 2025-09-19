@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Switch as SwitchPrimitive } from "radix-ui"
+import * as React from "react";
+import { Switch as SwitchPrimitive } from "radix-ui";
 
-import { cn } from "@/src/lib/utils"
+import { cn } from "@/src/lib/utils";
 
 function Switch({
   className,
@@ -21,11 +21,11 @@ function Switch({
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         className={cn(
-          "bg-background pointer-events-none block size-5 rounded-full shadow-xs ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0 data-[state=checked]:rtl:-translate-x-4"
+          "bg-background pointer-events-none dark:bg-white block size-5 rounded-full shadow-xs ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0 data-[state=checked]:rtl:-translate-x-4"
         )}
       />
     </SwitchPrimitive.Root>
-  )
+  );
 }
 
-export { Switch }
+export { Switch };

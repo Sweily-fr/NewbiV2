@@ -128,19 +128,19 @@ export default function LegalSection({ register, errors, watch, setValue }) {
 
   return (
     <div className="space-y-6">
-      <Card className="border-0 shadow-none backdrop-blur-sm">
-        <CardHeader className="pb-4">
+      <Card className="border-0 shadow-none backdrop-blur-sm pt-2">
+        {/* <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-3 text-lg font-medium">
             <div className="p-2 bg-blue-50 rounded-lg">
               <FileText className="h-5 w-5 text-blue-600" />
             </div>
             Informations légales
           </CardTitle>
-        </CardHeader>
+        </CardHeader> */}
         <CardContent className="space-y-6">
           {/* Cases à cocher pour conditions spéciales */}
           {visibleFields.commercialActivityCheckbox && (
-            <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
+            <div className="space-y-4 p-4 bg-[#5B4FFF]/50 rounded-lg">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="hasCommercialActivity"
@@ -157,12 +157,13 @@ export default function LegalSection({ register, errors, watch, setValue }) {
             </div>
           )}
 
-          <div className="space-y-4 p-4 bg-green-50 rounded-lg">
+          <div className="space-y-4 p-4 bg-[#5B4FFF]/10 rounded-lg">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="isVatSubject"
                 checked={isVatSubject}
                 onCheckedChange={setIsVatSubject}
+                className="bg-white border-gray-300 data-[state=checked]:bg-white data-[state=checked]:text-[#5B4FFF] data-[state=checked]:border-[#5B4FFF]"
               />
               <Label htmlFor="isVatSubject" className="text-sm font-normal">
                 Êtes-vous assujetti à la TVA ?
@@ -400,16 +401,16 @@ export default function LegalSection({ register, errors, watch, setValue }) {
           </div>
 
           {/* Information légale */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 p-4 rounded-xl shadow-sm">
+          <div className="bg-gradient-to-r from-[#5B4FFF]/10 to-[#5B4FFF]/20 dark:from-[#5B4FFF]/20 dark:to-[#5B4FFF]/30 p-4 rounded-xl shadow-sm">
             <div className="flex items-start gap-3">
               <div className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-sm">
-                <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <FileText className="h-5 w-5 text-[#5B4FFF] dark:text-[#5B4FFF]" />
               </div>
               <div>
-                <h4 className="font-medium text-amber-900 dark:text-amber-100">
+                <h4 className="font-medium text-[#5B4FFF] dark:text-[#5B4FFF]">
                   Informations légales
                 </h4>
-                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                <p className="text-sm text-[#5B4FFF]/80 dark:text-[#5B4FFF]/70 mt-1">
                   Ces informations sont utilisées pour la génération automatique
                   de vos mentions légales et documents officiels. Assurez-vous
                   qu'elles sont exactes et à jour.

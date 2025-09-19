@@ -3,6 +3,7 @@ import {
   organization,
   phoneNumber,
   twoFactor,
+  multiSession,
 } from "better-auth/plugins";
 import { stripe } from "@better-auth/stripe";
 import Stripe from "stripe";
@@ -33,7 +34,6 @@ export const phoneNumberPlugin = phoneNumber({
 export const twoFactorPlugin = twoFactor({
   otpOptions: {
     async sendOTP({ user, otp, type }, request) {
-
       // Better Auth ne passe pas automatiquement type="sms"
       // Il faut détecter manuellement si l'utilisateur a un phoneNumber
       const shouldUseSMS = user.phoneNumber && user.phoneNumber.trim() !== "";
@@ -65,7 +65,6 @@ export const stripePlugin = stripe({
       { user, session, referenceId, action },
       request
     ) => {
-
       // Vérifier si l'utilisateur a les permissions pour gérer les abonnements
       if (
         action === "upgrade-subscription" ||
@@ -123,7 +122,6 @@ export const stripePlugin = stripe({
   },
   // Webhooks Stripe pour mettre à jour automatiquement le statut
   onEvent: async (event, adapter) => {
-
     switch (event.type) {
       case "checkout.session.completed":
         const session = event.data.object;
@@ -156,7 +154,6 @@ export const stripePlugin = stripe({
                 updatedAt: new Date(),
               },
             });
-
           } catch (error) {
             console.error(
               `[STRIPE WEBHOOK] Erreur création abonnement:`,
@@ -409,4 +406,9 @@ export const organizationPlugin = organization({
   async sendInvitationEmail(data) {
     await sendOrganizationInvitationEmail(data);
   },
+});
+
+// Configuration du plugin Multi Session
+export const multiSessionPlugin = multiSession({
+  maximumSessions: 10, // Limite configurable depuis l'UI
 });

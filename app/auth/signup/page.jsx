@@ -102,10 +102,18 @@ export default function SignUpPage() {
         </div>
         <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
           <div
-            className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
-            style={{ backgroundImage: "url('/BackgroundAuth.svg')" }}
+            className="flex p-6 items-center justify-center w-full h-full rounded-lg relative"
+            style={{
+              backgroundImage: "url('/BackgroundAuth.svg')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              transform: "rotate(180deg)",
+            }}
           >
-            <div className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto">
+            <div
+              className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto"
+              style={{ transform: "rotate(180deg)" }}
+            >
               <div className="text-lg min-h-[27px] flex items-center justify-between">
                 <div className="flex-1">
                   <Typewriter
@@ -127,7 +135,7 @@ export default function SignUpPage() {
             <img
               src="/ni.svg"
               alt="Newbi Logo"
-              className="absolute bottom-2 right-3 w-5 h-auto filter brightness-0 invert"
+              className="absolute top-2 left-3 w-5 h-auto filter brightness-0 invert"
               style={{ opacity: 0.9 }}
             />
           </div>
@@ -135,16 +143,22 @@ export default function SignUpPage() {
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden min-h-screen bg-background flex items-start justify-center pt-16 pb-8">
+      <div className="md:hidden min-h-screen bg-background flex items-center justify-center pb-8">
         <div className="w-full max-w-sm px-6">
-          <h3 className="text-2xl font-semibold text-foreground mb-2">
+          <img
+            src="/ni2.png"
+            alt="Newbi Logo"
+            className="absolute top-16 left-8"
+            width={30}
+          />
+          <h3 className="text-xl font-medium text-foreground mb-2">
             Inscrivez-vous
           </h3>
           <p className="text-sm text-muted-foreground mb-6">
             Vous avez déjà un compte ?{" "}
             <Link
               href="/auth/login"
-              className="font-medium text-primary hover:text-primary/90"
+              className="font-medium text-primary hover:text-primary/90 underline"
             >
               Se connecter
             </Link>
@@ -179,6 +193,9 @@ export default function SignUpPage() {
           </div>
 
           <RegisterForm />
+          <p className="mt-4 text-sm py-2 text-muted-foreground text-center">
+            {""}
+          </p>
         </div>
       </div>
     </main>

@@ -1,0 +1,26 @@
+<svg width="192" height="128" viewBox="0 0 192 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="r">
+      <rect x="6" y="6" width="180" height="116" rx="14"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#r)">
+    <!-- fond clair -->
+    <rect x="6" y="6" width="180" height="116" fill="#F3F4F6" stroke="#E5E7EB"/>
+    <rect x="24" y="26" width="144" height="76" rx="6" fill="#E5E7EB"/>
+    <rect x="24" y="26" width="144" height="16" rx="4" fill="#FFFFFF"/>
+    <circle cx="34" cy="34" r="3" fill="#D1D5DB"/>
+    <circle cx="46" cy="34" r="3" fill="#D1D5DB"/>
+    <circle cx="58" cy="34" r="3" fill="#D1D5DB"/>
+    <rect x="44" y="56" width="56" height="8" rx="4" fill="#FFFFFF"/>
+    <rect x="44" y="70" width="88" height="8" rx="4" fill="#FFFFFF"/>
+    <rect x="44" y="84" width="40" height="8" rx="4" fill="#FFFFFF"/>
+    <!-- bande sombre à droite -->
+    <rect x="96" y="6" width="90" height="116" fill="#111827"/>
+    <rect x="24" y="26" width="144" height="16" rx="4" fill="#374151" opacity="0.7"/>
+    <rect x="96" y="26" width="72" height="76" fill="#111827"/>
+    <rect x="120" y="56" width="56" height="8" rx="4" fill="#374151"/>
+    <rect x="120" y="70" width="56" height="8" rx="4" fill="#374151"/>
+  </g>
+  <rect x="6" y="6" width="180" height="116" rx="14" fill="none" stroke="#E5E7EB"/>
+</svg>

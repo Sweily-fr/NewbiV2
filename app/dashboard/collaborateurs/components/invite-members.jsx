@@ -13,6 +13,7 @@ import {
 } from "@/src/components/ui/dialog";
 import { Label } from "@/src/components/ui/label";
 import { InputEmail } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -68,26 +69,29 @@ export default function InviteMembers({
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col items-center justify-center gap-2">
           <div
             className="flex size-11 shrink-0 items-center justify-center rounded-full border"
             aria-hidden="true"
           >
-            <UserRoundPlusIcon className="opacity-80" size={16} />
+            <UserRoundPlusIcon className="opacity-80" size={20} />
           </div>
           <DialogHeader>
-            <DialogTitle className="text-left">Inviter des membres</DialogTitle>
-            <DialogDescription className="text-left">
-              Inviter des membres pour qu'ils puissent utiliser les composants
-              gratuitement.
+            <DialogTitle className="text-center font-medium">
+              Inviter des membres
+            </DialogTitle>
+            <DialogDescription className="text-center w-sm">
+              Inviter des membres pour qu'ils puissent utiliser vos outils.
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 pt-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email du collaborateur</Label>
+              <Label htmlFor="email" className="font-normal">
+                Email du collaborateur
+              </Label>
               <InputEmail
                 id="email"
                 placeholder="collaborateur@exemple.com"
@@ -105,7 +109,9 @@ export default function InviteMembers({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Rôle</Label>
+              <Label htmlFor="role" className="font-normal">
+                Rôle
+              </Label>
               <Controller
                 name="role"
                 control={control}
@@ -130,11 +136,38 @@ export default function InviteMembers({
                 <p className="text-sm text-red-500">{errors.role.message}</p>
               )}
             </div>
-          </div>
 
-          <Button type="submit" className="w-full" disabled={inviting}>
-            {inviting ? "Envoi en cours..." : "Envoyer l'invitation"}
-          </Button>
+            <div className="space-y-2">
+              <Label htmlFor="message" className="font-normal">
+                Message (optionnel)
+              </Label>
+              <Textarea
+                id="message"
+                placeholder="Ajoutez un message personnalisé à votre invitation..."
+                rows={3}
+                {...register("message")}
+              />
+              <p className="text-xs text-muted-foreground">
+                Ce message sera inclus dans l'email d'invitation
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 pt-2">
+            <Button
+              type="submit"
+              className="w-full cursor-pointer"
+              disabled={inviting}
+            >
+              {inviting ? "Envoi en cours..." : "Envoyer l'invitation"}
+            </Button>
+            <Button
+              type="button"
+              className="w-full cursor-pointer"
+              variant="outline"
+            >
+              Annuler
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

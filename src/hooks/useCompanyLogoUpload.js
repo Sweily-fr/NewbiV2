@@ -106,18 +106,8 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
         setCurrentImageUrl(uploadData.url);
         setCurrentFileKey(uploadData.key);
 
-        // Sauvegarder automatiquement en BDD
-        try {
-          await updateCompanyLogo({
-            variables: {
-              logoUrl: uploadData.url,
-              workspaceId: workspaceId,
-            },
-          });
-        } catch (dbError) {
-          console.warn("Erreur sauvegarde BDD:", dbError);
-          // Ne pas faire échouer l'upload si la BDD échoue
-        }
+        // Ne pas sauvegarder automatiquement en BDD - laisser le formulaire principal gérer cela
+        // pour éviter les conflits entre les deux systèmes de sauvegarde
 
         toast.success("Logo uploadé avec succès !");
         onUploadSuccess?.(uploadData.url);
@@ -164,17 +154,7 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
       toast.error("Erreur lors de la suppression");
     }
 
-    // Sauvegarder automatiquement en BDD (suppression)
-    try {
-      await updateCompanyLogo({
-        variables: {
-          logoUrl: null,
-          workspaceId: workspaceId,
-        },
-      });
-    } catch (dbError) {
-      console.warn("Erreur suppression BDD:", dbError);
-    }
+    // Ne pas sauvegarder automatiquement en BDD - laisser le formulaire principal gérer cela
 
     // Nettoyer l'état local
     if (previewUrl) {

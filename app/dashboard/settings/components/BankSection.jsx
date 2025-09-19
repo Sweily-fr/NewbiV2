@@ -21,7 +21,7 @@ export default function BankSection({ register, errors, watch }) {
   const ibanValue = watch("bankDetails.iban") || "";
   const bicValue = watch("bankDetails.bic") || "";
   const bankNameValue = watch("bankDetails.bankName") || "";
-  
+
   const hasIban = ibanValue.trim() !== "";
   const hasBic = bicValue.trim() !== "";
   const hasBankName = bankNameValue.trim() !== "";
@@ -29,16 +29,19 @@ export default function BankSection({ register, errors, watch }) {
 
   return (
     <div className="space-y-4">
-      <Card className="border-0 shadow-none backdrop-blur-sm">
+      <Card className="border-0 shadow-none backdrop-blur-sm pt-2">
         <CardContent className="space-y-4">
           {/* Information sur la validation conditionnelle */}
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              <strong>Coordonnées bancaires optionnelles</strong>
+              <strong>
+                Coordonnées bancaires optionnelles
+              </strong>
               <br />
-              Vous pouvez laisser tous les champs vides. Si vous renseignez une information bancaire, 
-              les trois champs (IBAN, BIC et nom de banque) deviennent obligatoires.
+              Vous pouvez laisser tous les champs vides. Si vous renseignez une
+              information bancaire, les trois champs (IBAN, BIC et nom de
+              banque) deviennent obligatoires.
             </AlertDescription>
           </Alert>
 
@@ -46,7 +49,7 @@ export default function BankSection({ register, errors, watch }) {
           <div className="space-y-2">
             <Label
               htmlFor="bankDetails.iban"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 font-normal"
             >
               <Hash className="h-4 w-4" />
               IBAN {hasAnyBankField && "*"}
@@ -55,7 +58,9 @@ export default function BankSection({ register, errors, watch }) {
               id="bankDetails.iban"
               placeholder="FR76 1234 5678 9012 3456 7890 123"
               {...register("bankDetails.iban", {
-                required: hasAnyBankField ? "L'IBAN est requis si vous renseignez des coordonnées bancaires" : false,
+                required: hasAnyBankField
+                  ? "L'IBAN est requis si vous renseignez des coordonnées bancaires"
+                  : false,
                 pattern: {
                   value: VALIDATION_PATTERNS.iban.pattern,
                   message: VALIDATION_PATTERNS.iban.message,
@@ -86,7 +91,7 @@ export default function BankSection({ register, errors, watch }) {
           <div className="space-y-2">
             <Label
               htmlFor="bankDetails.bic"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 font-normal"
             >
               <Building2 className="h-4 w-4" />
               BIC/SWIFT {hasAnyBankField && "*"}
@@ -95,7 +100,9 @@ export default function BankSection({ register, errors, watch }) {
               id="bankDetails.bic"
               placeholder="BNPAFRPP"
               {...register("bankDetails.bic", {
-                required: hasAnyBankField ? "Le BIC est requis si vous renseignez des coordonnées bancaires" : false,
+                required: hasAnyBankField
+                  ? "Le BIC est requis si vous renseignez des coordonnées bancaires"
+                  : false,
                 pattern: {
                   value: VALIDATION_PATTERNS.bic.pattern,
                   message: VALIDATION_PATTERNS.bic.message,
@@ -124,14 +131,16 @@ export default function BankSection({ register, errors, watch }) {
 
           {/* Nom de la banque */}
           <div className="space-y-2">
-            <Label htmlFor="bankDetails.bankName">
+            <Label htmlFor="bankDetails.bankName" className="font-normal">
               Nom de la banque {hasAnyBankField && "*"}
             </Label>
             <Input
               id="bankDetails.bankName"
               placeholder="BNP Paribas"
               {...register("bankDetails.bankName", {
-                required: hasAnyBankField ? "Le nom de la banque est requis si vous renseignez des coordonnées bancaires" : false,
+                required: hasAnyBankField
+                  ? "Le nom de la banque est requis si vous renseignez des coordonnées bancaires"
+                  : false,
                 pattern: {
                   value: VALIDATION_PATTERNS.bankName.pattern,
                   message: VALIDATION_PATTERNS.bankName.message,
@@ -159,9 +168,9 @@ export default function BankSection({ register, errors, watch }) {
             <AlertDescription>
               <strong>Sécurité des données bancaires</strong>
               <br />
-              Vos informations bancaires sont chiffrées et stockées de
-              manière sécurisée. Elles ne seront utilisées que pour les
-              virements et facturations.
+              Vos informations bancaires sont chiffrées et stockées de manière
+              sécurisée. Elles ne seront utilisées que pour les virements et
+              facturations.
             </AlertDescription>
           </Alert>
         </CardContent>

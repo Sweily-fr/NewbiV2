@@ -1,6 +1,7 @@
 import React from "react";
 import { AnimatedList } from "@/src/components/magicui/animated-list";
 import { cn } from "@/src/lib/utils";
+import { getIconUrl } from "@/src/lib/image-utils";
 
 let notifications = [
   {
@@ -213,7 +214,7 @@ export default function FeatureGrid({ className }) {
                   >
                     <img
                       alt=""
-                      src="http://localhost:3000/outlook-svgrepo-com.svg"
+                      src={getIconUrl("outlook-svgrepo-com.svg")}
                       className="size-8"
                     />
                   </div>
@@ -228,7 +229,7 @@ export default function FeatureGrid({ className }) {
                   >
                     <img
                       alt=""
-                      src="http://localhost:3000/linkedin-icon.svg"
+                      src={getIconUrl("linkedin-icon.svg")}
                       className="size-8"
                     />
                   </div>
@@ -243,7 +244,7 @@ export default function FeatureGrid({ className }) {
                   >
                     <img
                       alt=""
-                      src="http://localhost:3000/google-gmail.svg"
+                      src={getIconUrl("google-gmail.svg")}
                       className="size-8"
                     />
                   </div>
@@ -258,7 +259,7 @@ export default function FeatureGrid({ className }) {
                   >
                     <img
                       alt=""
-                      src="http://localhost:3000/yahoo.svg"
+                      src={getIconUrl("yahoo.svg")}
                       className="size-8"
                     />
                   </div>
@@ -273,7 +274,7 @@ export default function FeatureGrid({ className }) {
                   >
                     <img
                       alt=""
-                      src="http://localhost:3000/apple.svg"
+                      src={getIconUrl("apple.svg")}
                       className="size-8"
                     />
                   </div>
@@ -288,7 +289,7 @@ export default function FeatureGrid({ className }) {
                   >
                     <img
                       alt=""
-                      src="http://localhost:3000/yahoo.svg"
+                      src={getIconUrl("yahoo.svg")}
                       className="size-8"
                     />
                   </div>

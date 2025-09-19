@@ -38,14 +38,9 @@ export function SubscriptionProvider({ children }) {
         (sub) => sub.status === "active" || sub.status === "trialing"
       );
 
-      // if (activeSubscription) {
-      //   console.log("STATUT:", activeSubscription.status);
-      //   console.log("PLAN:", activeSubscription.plan);
-      //   console.log("LIMITES:", activeSubscription.limits);
-      // }
-
       setSubscription(activeSubscription || null);
     } catch (error) {
+      console.error("Erreur lors de la récupération de l'abonnement:", error);
       setSubscription(null);
     } finally {
       setLoading(false);
@@ -72,9 +67,7 @@ export function SubscriptionProvider({ children }) {
   };
 
   const isActive = () => {
-    const result =
-      subscription?.status === "active" || subscription?.status === "trialing";
-    return result;
+    return subscription?.status === "active" || subscription?.status === "trialing";
   };
 
   const value = {

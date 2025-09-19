@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { jwt, bearer } from "better-auth/plugins";
 import { mongoDb } from "./mongodb";
 import {
   adminPlugin,
@@ -7,6 +8,7 @@ import {
   twoFactorPlugin,
   stripePlugin,
   organizationPlugin,
+  multiSessionPlugin,
 } from "./auth-plugins";
 import { beforeSignInHook, afterOAuthHook } from "./auth-hooks";
 import {
@@ -19,12 +21,25 @@ export const auth = betterAuth({
   database: mongodbAdapter(mongoDb),
   appName: "Newbi",
   plugins: [
+    jwt(),
+    bearer(),
     adminPlugin,
     phoneNumberPlugin,
     twoFactorPlugin,
     stripePlugin,
     organizationPlugin,
+    multiSessionPlugin,
   ],
+
+  session: {
+    expiresIn: 604800, // 7 jours par défaut (en secondes)
+    updateAge: 86400, // Rafraîchir toutes les 24h (en secondes)
+    storeSessionInDatabase: true, // Stocker les sessions en base
+    cookieCache: {
+      enabled: true,
+      maxAge: 300, // Cache cookie 5 minutes
+    },
+  },
 
   emailAndPassword: {
     enabled: true,
