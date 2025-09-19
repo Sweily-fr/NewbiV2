@@ -5,15 +5,28 @@ import {
   inferOrgAdditionalFields,
   phoneNumberClient,
   twoFactorClient,
+  multiSessionClient,
 } from "better-auth/client/plugins";
 import { stripeClient } from "@better-auth/stripe/client";
 
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
+  fetchOptions: {
+    onSuccess: (ctx) => {
+      const authToken = ctx.response.headers.get("set-auth-token");
+      if (authToken) {
+        console.log(
+          "✅ [Auth Client] Bearer token récupéré depuis set-auth-token"
+        );
+        localStorage.setItem("bearer_token", authToken);
+      }
+    },
+  },
   plugins: [
     adminClient(),
     phoneNumberClient(),
     twoFactorClient(),
+    multiSessionClient(),
     organizationClient({
       schema: inferOrgAdditionalFields({
         organization: {
@@ -53,8 +66,8 @@ export const authClient = createAuthClient({
 });
 
 export const {
-  signIn,
   signUp,
+  signIn,
   signOut,
   updateUser,
   forgetPassword,
@@ -62,4 +75,6 @@ export const {
   useSession,
   admin,
   organization,
+  twoFactor,
+  multiSession,
 } = authClient;

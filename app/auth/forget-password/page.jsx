@@ -58,20 +58,21 @@ export default function ForgetPassWordPage() {
 
       {/* Mobile Layout */}
       <div className="md:hidden min-h-screen bg-background flex items-center justify-center pb-8">
-        <div className="w-full max-w-sm px-1">
+        <div className="w-full max-w-sm px-6">
           <img
-            src="/ni2.svg"
+            src="/ni2.png"
             alt="Newbi Logo"
-            className="absolute top-1 left-0"
-            width={100}
+            className="absolute top-28 left-8"
+            width={30}
           />
-          <h3 className="text-3xl font-medium text-foreground mb-2">
+          <h3 className="text-xl font-medium text-foreground mb-2">
             Mot de passe oublié
           </h3>
           <p className="text-sm text-muted-foreground mb-6">
-            Entrer votre email pour recevoir un lien de réinitialisation de mot de passe
+            Entrer votre email pour recevoir un lien de réinitialisation de mot
+            de passe
           </p>
-          
+
           <ForgetPasswordForm />
         </div>
       </div>

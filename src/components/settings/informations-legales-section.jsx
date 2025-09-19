@@ -49,10 +49,18 @@ const ACTIVITY_CATEGORIES = [
   { value: "industrielle", label: "Activité industrielle" },
 ];
 
-export function InformationsLegalesSection({ register, errors, watch, setValue, session, organization }) {
+export function InformationsLegalesSection({
+  register,
+  errors,
+  watch,
+  setValue,
+  session,
+  organization,
+}) {
   const watchedValues = watch();
   const isVatSubject = watchedValues.legal?.isVatSubject || false;
-  const hasCommercialActivity = watchedValues.legal?.hasCommercialActivity || false;
+  const hasCommercialActivity =
+    watchedValues.legal?.hasCommercialActivity || false;
   const selectedLegalForm = watchedValues.legal?.legalForm || "";
   const selectedRegime = watchedValues.legal?.regime || "";
   const selectedCategory = watchedValues.legal?.category || "";
@@ -91,7 +99,7 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
 
   // Composant pour afficher les labels avec astérisque rouge si requis
   const RequiredLabel = ({ htmlFor, children, isRequired }) => (
-    <Label htmlFor={htmlFor} className="text-sm font-medium">
+    <Label htmlFor={htmlFor} className="text-sm font-normal pb-2">
       {children}
       {isRequired && <span className="text-red-500 ml-1">*</span>}
     </Label>
@@ -101,9 +109,7 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
     <div className="space-y-8">
       {/* Titre */}
       <div>
-        <h2 className="text-lg font-medium text-gray-900 mb-1">
-          Informations légales
-        </h2>
+        <h2 className="text-lg font-medium mb-1">Informations légales</h2>
         <Separator />
 
         {/* Switches pour conditions spéciales */}
@@ -112,10 +118,10 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
           {visibleFields.commercialActivityCheckbox && (
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-gray-900 mb-1">
+                <h3 className="text-sm font-medium text-gray-600 mb-1">
                   Exercez-vous une activité commerciale ?
                 </h3>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-400">
                   Cette information détermine si le numéro RCS est requis pour
                   votre forme juridique.
                 </p>
@@ -131,10 +137,10 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
           {/* Switch TVA - toujours visible */}
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-sm font-medium text-gray-900 mb-1">
+              <h3 className="text-sm font-medium text-gray-600 mb-1">
                 Êtes-vous assujetti à la TVA ?
               </h3>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-400">
                 Si oui, le numéro de TVA intracommunautaire sera requis.
               </p>
             </div>
@@ -149,7 +155,7 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
         {/* Formulaire des informations légales */}
         <div className="space-y-6 mt-8">
           {/* Forme juridique */}
-          <div className="space-y-2">
+          <div className="flex flex-col gap-1">
             <RequiredLabel htmlFor="legalForm" isRequired={true}>
               <Building className="h-4 w-4 inline mr-2 text-gray-500" />
               Forme juridique
@@ -173,7 +179,7 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
 
           {/* SIRET et RCS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
+            <div className="flex flex-col gap-1">
               <RequiredLabel htmlFor="siret" isRequired={requiredFields.siret}>
                 Numéro SIRET
               </RequiredLabel>
@@ -184,13 +190,15 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
                 {...register("legal.siret")}
               />
               {errors.legal?.siret && (
-                <p className="text-sm text-red-500">{errors.legal.siret.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.legal.siret.message}
+                </p>
               )}
               <p className="text-xs text-gray-600">14 chiffres sans espaces</p>
             </div>
 
             {visibleFields.rcs && (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-1">
                 <RequiredLabel htmlFor="rcs" isRequired={requiredFields.rcs}>
                   Numéro RCS
                   {!requiredFields.rcs &&
@@ -207,7 +215,9 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
                   {...register("legal.rcs")}
                 />
                 {errors.legal?.rcs && (
-                  <p className="text-sm text-red-500">{errors.legal.rcs.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.legal.rcs.message}
+                  </p>
                 )}
                 <p className="text-xs text-gray-600">
                   Format: RCS Ville 123 456 789
@@ -219,7 +229,7 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
           {/* Numéro de TVA et Capital social */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {visibleFields.vatNumber && (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-1">
                 <RequiredLabel
                   htmlFor="vatNumber"
                   isRequired={requiredFields.vatNumber}
@@ -233,7 +243,9 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
                   {...register("legal.vatNumber")}
                 />
                 {errors.legal?.vatNumber && (
-                  <p className="text-sm text-red-500">{errors.legal.vatNumber.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.legal.vatNumber.message}
+                  </p>
                 )}
                 <p className="text-xs text-gray-600">
                   Format: FR + 11 chiffres
@@ -242,7 +254,7 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
             )}
 
             {visibleFields.capital && (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-1">
                 <RequiredLabel
                   htmlFor="capital"
                   isRequired={requiredFields.capital}
@@ -258,7 +270,9 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
                   {...register("legal.capital")}
                 />
                 {errors.legal?.capital && (
-                  <p className="text-sm text-red-500">{errors.legal.capital.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.legal.capital.message}
+                  </p>
                 )}
                 <p className="text-xs text-gray-600">Montant en euros</p>
               </div>
@@ -266,7 +280,7 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
           </div>
 
           {/* Régime fiscal */}
-          <div className="space-y-2">
+          <div className="flex flex-col gap-1">
             <RequiredLabel
               htmlFor="regime"
               isRequired={requiredFields.fiscalRegime}
@@ -288,7 +302,7 @@ export function InformationsLegalesSection({ register, errors, watch, setValue, 
           </div>
 
           {/* Catégorie d'activité */}
-          <div className="space-y-2">
+          <div className="flex flex-col gap-1">
             <RequiredLabel
               htmlFor="category"
               isRequired={requiredFields.activityCategory}

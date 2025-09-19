@@ -22,10 +22,18 @@ const COUNTRIES = [
   { value: "Luxembourg", label: "Luxembourg" },
 ];
 
-export function GeneraleSection({ register, errors, watch, setValue, session, organization }) {
+export function GeneraleSection({
+  register,
+  errors,
+  watch,
+  setValue,
+  session,
+  organization,
+}) {
   const watchedValues = watch();
   const logoUrl = watchedValues.logo || organization?.logo || null;
-  const selectedCountry = watchedValues.address?.country || organization?.addressCountry || "France";
+  const selectedCountry =
+    watchedValues.address?.country || organization?.addressCountry || "France";
 
   const handleLogoChange = (imageUrl) => {
     setValue("logo", imageUrl, { shouldDirty: false });
@@ -39,22 +47,22 @@ export function GeneraleSection({ register, errors, watch, setValue, session, or
     <div className="space-y-8">
       {/* Titre */}
       <div>
-        <h2 className="text-lg font-medium text-gray-900 mb-1">Générale</h2>
+        <h2 className="text-lg font-medium mb-1">Générale</h2>
         <Separator />
 
         {/* Logo de l'entreprise */}
         <div className="mb-8 mt-12">
-          <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+          <div className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-[#2c2c2c] rounded-xl">
             <CompanyLogoUpload
               currentImageUrl={logoUrl}
               onImageChange={handleLogoChange}
               showDescription={false}
             />
             <div className="flex-1">
-              <Label className="text-sm font-medium text-gray-900">
+              <Label className="text-sm font-normal text-gray-900 dark:text-gray-100">
                 Logo de l'entreprise
               </Label>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs w-[80%] text-gray-600 dark:text-gray-400 mt-1">
                 Glissez une image ou cliquez pour uploader le logo de votre
                 entreprise. Formats acceptés : JPG, PNG, GIF (max 5MB)
               </p>
@@ -71,7 +79,7 @@ export function GeneraleSection({ register, errors, watch, setValue, session, or
             <div className="space-y-2">
               <Label
                 htmlFor="name"
-                className="flex items-center gap-2 text-sm font-medium"
+                className="flex items-center gap-2 text-sm font-normal"
               >
                 <Building className="h-4 w-4 text-gray-500" />
                 Nom de l'entreprise *
@@ -92,7 +100,7 @@ export function GeneraleSection({ register, errors, watch, setValue, session, or
             <div className="space-y-2">
               <Label
                 htmlFor="email"
-                className="flex items-center gap-2 text-sm font-medium"
+                className="flex items-center gap-2 text-sm font-normal"
               >
                 <Mail className="h-4 w-4 text-gray-500" />
                 Email professionnel *
@@ -117,7 +125,7 @@ export function GeneraleSection({ register, errors, watch, setValue, session, or
             <div className="space-y-2">
               <Label
                 htmlFor="phone"
-                className="flex items-center gap-2 text-sm font-medium"
+                className="flex items-center gap-2 text-sm font-normal"
               >
                 <Phone className="h-4 w-4 text-gray-500" />
                 Téléphone
@@ -136,7 +144,7 @@ export function GeneraleSection({ register, errors, watch, setValue, session, or
             <div className="space-y-2">
               <Label
                 htmlFor="website"
-                className="flex items-center gap-2 text-sm font-medium"
+                className="flex items-center gap-2 text-sm font-normal"
               >
                 <Globe className="h-4 w-4 text-gray-500" />
                 Site web
@@ -157,14 +165,16 @@ export function GeneraleSection({ register, errors, watch, setValue, session, or
 
           {/* Section Adresse */}
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-500" />
-              <h3 className="text-sm font-medium text-gray-900">Adresse</h3>
-            </div>
+            {/* <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-gray-500 dark;text-gray-200" />
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                Adresse
+              </h3>
+            </div> */}
 
             {/* Adresse complète */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium" htmlFor="address">
+              <Label className="text-sm font-normal" htmlFor="address">
                 Adresse *
               </Label>
               <Input
@@ -176,50 +186,56 @@ export function GeneraleSection({ register, errors, watch, setValue, session, or
                 })}
               />
               {errors.address?.street && (
-                <p className="text-sm text-red-500">{errors.address.street.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.address.street.message}
+                </p>
               )}
             </div>
 
             {/* Ville et Code postal */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-sm font-medium" htmlFor="city">
+                <Label className="text-sm font-normal" htmlFor="city">
                   Ville *
                 </Label>
-                <Input 
-                  id="city" 
-                  placeholder="Paris" 
+                <Input
+                  id="city"
+                  placeholder="Paris"
                   className="w-full"
                   {...register("address.city", {
                     required: "La ville est requise",
                   })}
                 />
                 {errors.address?.city && (
-                  <p className="text-sm text-red-500">{errors.address.city.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.address.city.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium" htmlFor="postalCode">
+                <Label className="text-sm font-normal" htmlFor="postalCode">
                   Code postal *
                 </Label>
-                <Input 
-                  id="postalCode" 
-                  placeholder="75001" 
+                <Input
+                  id="postalCode"
+                  placeholder="75001"
                   className="w-full"
                   {...register("address.postalCode", {
                     required: "Le code postal est requis",
                   })}
                 />
                 {errors.address?.postalCode && (
-                  <p className="text-sm text-red-500">{errors.address.postalCode.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.address.postalCode.message}
+                  </p>
                 )}
               </div>
             </div>
 
             {/* Pays */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium" htmlFor="country">
+              <Label className="text-sm font-normal" htmlFor="country">
                 Pays *
               </Label>
               <Select

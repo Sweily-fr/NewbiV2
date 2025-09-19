@@ -37,10 +37,14 @@ import { ModeToggle } from "@/src/components/ui/mode-toggle";
 import { signOut } from "../lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { SettingsModal } from "./settings-modal";
 
 export function NavUser({ user }) {
   const { isMobile } = useSidebar();
   const { isActive } = useSubscription();
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState("user-info");
 
   const profileImage = user.avatar || "https://github.com/shadcn.png";
 
@@ -125,18 +129,26 @@ export function NavUser({ user }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <Link href="/dashboard/account">
-                <DropdownMenuItem className="cursor-pointer">
-                  <IconUserCircle />
-                  Compte
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/dashboard/subscribe">
-                <DropdownMenuItem className="cursor-pointer">
-                  <CreditCard />
-                  Gérer l’abonnement
-                </DropdownMenuItem>
-              </Link>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => {
+                  setSettingsInitialTab("user-info");
+                  setSettingsModalOpen(true);
+                }}
+              >
+                <IconUserCircle />
+                Compte
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => {
+                  setSettingsInitialTab("subscription");
+                  setSettingsModalOpen(true);
+                }}
+              >
+                <CreditCard />
+                Gérer l'abonnement
+              </DropdownMenuItem>
               {/* <DropdownMenuItem className="cursor-pointer">
                 <IconCreditCard />
                 Facture
@@ -160,6 +172,11 @@ export function NavUser({ user }) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <SettingsModal
+          open={settingsModalOpen}
+          onOpenChange={setSettingsModalOpen}
+          initialTab={settingsInitialTab}
+        />
       </SidebarMenuItem>
     </SidebarMenu>
   );

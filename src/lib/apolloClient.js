@@ -25,43 +25,26 @@ const uploadLink = createUploadLink({
   },
 });
 
-const authLink = setContext(async (_, { headers }) => {
+const authLink = setContext((_, { headers }) => {
   console.log('🔍 [Apollo Client] Configuration des headers d\'authentification');
   
-  try {
-    // Récupérer le JWT via getSession avec le header set-auth-jwt
-    const { getSession } = await import("@/src/lib/auth-client");
-    
-    let jwtToken = null;
-    
-    await getSession({
-      fetchOptions: {
-        onSuccess: (ctx) => {
-          const jwt = ctx.response.headers.get("set-auth-jwt");
-          if (jwt) {
-            jwtToken = jwt;
-            console.log('✅ [Apollo Client] JWT récupéré depuis header set-auth-jwt');
-          }
-        }
+  // Récupérer le Bearer token depuis localStorage
+  const bearerToken = localStorage.getItem('bearer_token');
+  console.log('🔍 [Apollo Client] Bearer token récupéré:', bearerToken ? 'présent' : 'absent');
+  
+  if (bearerToken) {
+    console.log('✅ [Apollo Client] Bearer token valide, ajout header Authorization');
+    const authHeaders = {
+      headers: {
+        ...headers,
+        authorization: `Bearer ${bearerToken}`,
       }
-    });
-    
-    if (jwtToken) {
-      console.log('✅ [Apollo Client] Token JWT valide, ajout header Authorization');
-      const authHeaders = {
-        headers: {
-          ...headers,
-          authorization: `Bearer ${jwtToken}`,
-        }
-      };
-      console.log('🔍 [Apollo Client] Headers finaux:', authHeaders);
-      return authHeaders;
-    }
-  } catch (error) {
-    console.error('❌ [Apollo Client] Erreur récupération JWT:', error);
+    };
+    console.log('🔍 [Apollo Client] Headers finaux:', authHeaders);
+    return authHeaders;
   }
 
-  console.log('🔍 [Apollo Client] Pas de token JWT, headers sans authentification');
+  console.log('🔍 [Apollo Client] Pas de Bearer token, headers sans authentification');
   const noAuthHeaders = {
     headers: {
       ...headers,

@@ -23,9 +23,11 @@ export async function sendReactivationEmail(user) {
 // Fonction pour envoyer un SMS (développement)
 export function sendSMSInDevelopment(phoneNumber, code, context = "SMS") {
   if (process.env.NODE_ENV === "development") {
-    console.log(`[${context} DEV] Code de vérification pour ${phoneNumber}: ${code}`);
+    console.log(
+      `[${context} DEV] Code de vérification pour ${phoneNumber}: ${code}`
+    );
   }
-  
+
   // TODO: Intégrer un vrai service SMS en production
   // Exemple avec Twilio:
   // const twilio = require('twilio');

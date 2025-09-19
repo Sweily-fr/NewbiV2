@@ -186,14 +186,14 @@ export default function LoginPage() {
 
       {/* Mobile Layout */}
       <div className="md:hidden min-h-screen bg-background flex items-center justify-center pb-8">
-        <div className="w-full max-w-sm px-1">
+        <div className="w-full max-w-sm px-6">
           <img
-            src="/ni2.svg"
+            src="/ni2.png"
             alt="Newbi Logo"
-            className="absolute top-1 left-0"
-            width={80}
+            className="absolute top-16 left-8"
+            width={30}
           />
-          <h3 className="text-3xl font-medium text-foreground mb-2">
+          <h3 className="text-xl font-medium text-foreground mb-2">
             Connectez-vous
           </h3>
           <p className="text-sm text-muted-foreground mb-6">

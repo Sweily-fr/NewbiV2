@@ -11,6 +11,8 @@ import {
   Settings2,
   Bell,
   Users,
+  Crown,
+  User,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/src/components/ui/dialog";
 import {
@@ -34,9 +36,13 @@ import CoordonneesBancairesSection from "./settings/coordonnees-bancaires-sectio
 import InformationsLegalesSection from "./settings/informations-legales-section";
 import EspacesSection from "./settings/espaces-section";
 import FacturationSection from "./settings/facturation-section";
+import { SubscriptionSection } from "./settings/subscription-section";
+import { SecuritySection } from "./settings/security-section";
+import PersonnesSection from "./settings/personnes-section";
+import UserInfoSection from "./settings/user-info-section";
 
-export function SettingsModal({ open, onOpenChange }) {
-  const [activeTab, setActiveTab] = useState("preferences");
+export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }) {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [showNoChangesWarning, setShowNoChangesWarning] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -228,6 +234,13 @@ export function SettingsModal({ open, onOpenChange }) {
     }
   };
 
+  // Mettre à jour l'onglet actif quand initialTab change
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
   // Charger les données de l'organisation et du user dans le formulaire
   useEffect(() => {
     if (organization && session?.user) {
@@ -283,8 +296,12 @@ export function SettingsModal({ open, onOpenChange }) {
   // Fonction pour gérer le changement d'onglet
   const handleTabChange = (newTab) => {
     // Vérifier si on est sur un onglet avec formulaire et s'il y a des modifications
-    const isFormTab = ["generale", "coordonnees-bancaires", "informations-legales"].includes(activeTab);
-    
+    const isFormTab = [
+      "generale",
+      "coordonnees-bancaires",
+      "informations-legales",
+    ].includes(activeTab);
+
     if (isFormTab && hasUnsavedChanges) {
       // Afficher le modal de confirmation s'il y a des modifications non sauvegardées
       setPendingTab(newTab);
@@ -362,6 +379,14 @@ export function SettingsModal({ open, onOpenChange }) {
         return <InformationsLegalesSection {...commonProps} />;
       case "facturation":
         return <FacturationSection />;
+      case "subscription":
+        return <SubscriptionSection />;
+      case "securite":
+        return <SecuritySection />;
+      case "personnes":
+        return <PersonnesSection />;
+      case "user-info":
+        return <UserInfoSection onTabChange={handleTabChange} />;
       default:
         return (
           <div className="text-center py-12">
@@ -419,8 +444,9 @@ export function SettingsModal({ open, onOpenChange }) {
       items: [
         {
           id: "personnes",
-          label: "Personnes",
+          label: "Rôles utilisateurs",
           icon: Users,
+          disabled: true,
         },
         {
           id: "espaces",
@@ -436,6 +462,11 @@ export function SettingsModal({ open, onOpenChange }) {
           label: "Facturation",
           icon: CreditCard,
         },
+        {
+          id: "subscription",
+          label: "Abonnement",
+          icon: Crown,
+        },
       ],
     },
   ];
@@ -449,15 +480,23 @@ export function SettingsModal({ open, onOpenChange }) {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="flex h-full">
             {/* Sidebar */}
-            <div className="w-60 bg-gray-50 dark:bg-[#171717] border-r overflow-y-auto">
+            <div className="w-60 bg-gray-50 dark:bg-[#171717] overflow-y-auto">
               {/* Header */}
               <div className="p-4">
                 <h2 className="text-sm font-medium text-gray-500 mb-4">
                   Paramètres
                 </h2>
 
-                {/* User Info */}
-                <div className="flex items-center gap-2 mb-4 px-2">
+                {/* User Info - Now clickable */}
+                <button
+                  type="button"
+                  onClick={() => handleTabChange("user-info")}
+                  className={`w-full flex items-center gap-2 mb-4 px-2 py-2 rounded-md transition-colors ${
+                    activeTab === "user-info"
+                      ? "bg-[#EDECEB] dark:bg-[#2c2c2c]"
+                      : "hover:bg-gray-100 dark:hover:bg-[#2c2c2c]"
+                  }`}
+                >
                   <div className="w-6 h-6 bg-[#5B4FFF]/300 rounded-full flex items-center justify-center text-white text-xs font-medium">
                     {session?.user?.name?.charAt(0) || "S"}
                   </div>
@@ -466,7 +505,7 @@ export function SettingsModal({ open, onOpenChange }) {
                       {session?.user?.name || "Sofiane Mtimet"}
                     </p>
                   </div>
-                </div>
+                </button>
 
                 {/* Sections */}
                 <div className="space-y-1">
@@ -495,14 +534,21 @@ export function SettingsModal({ open, onOpenChange }) {
                                   : "cursor-pointer"
                               } ${
                                 activeTab === item.id && !item.disabled
-                                  ? "bg-[#EDECEB] font-medium"
+                                  ? "bg-[#EDECEB] dark:bg-[#2c2c2c] font-medium"
                                   : !item.disabled
-                                    ? "hover:bg-gray-100"
+                                    ? "hover:bg-gray-100 dark:hover:bg-[#2c2c2c]"
                                     : ""
                               }`}
                             >
                               <Icon className="h-4 w-4" />
-                              {item.label}
+                              <span className="flex items-center gap-2">
+                                {item.label}
+                                {item.disabled && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-medium bg-[#5b4eff] text-white rounded-full">
+                                    à venir
+                                  </span>
+                                )}
+                              </span>
                             </button>
                           );
                         })}
@@ -510,7 +556,7 @@ export function SettingsModal({ open, onOpenChange }) {
                       {/* Séparateur entre sections (sauf pour la dernière et la première) */}
                       {sectionIndex < sections.length - 1 &&
                         sectionIndex > 0 && (
-                          <div className="border-t border-gray-200 mt-3 pt-1"></div>
+                          <div className="border-t border-gray-200 dark:border-[#2c2c2c] mt-3 pt-1"></div>
                         )}
                     </div>
                   ))}
@@ -534,7 +580,11 @@ export function SettingsModal({ open, onOpenChange }) {
 
               {/* Fixed Footer with Buttons */}
               <div className="border-t bg-white dark:bg-[#0A0A0A] p-4 flex justify-end gap-3">
-                <Button variant="outline" onClick={handleCloseModal}>
+                <Button
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={handleCloseModal}
+                >
                   Annuler
                 </Button>
                 {activeTab !== "espaces" &&
@@ -543,7 +593,7 @@ export function SettingsModal({ open, onOpenChange }) {
                     <Button
                       type="submit"
                       disabled={isSubmitting || !hasUnsavedChanges}
-                      className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff]"
+                      className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white"
                       onClick={(e) => {
                         console.log(
                           "🔘 Bouton cliqué, type:",
@@ -581,7 +631,7 @@ export function SettingsModal({ open, onOpenChange }) {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleForceClose}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 dark:text-white"
             >
               {pendingTab
                 ? "Changer d'onglet sans sauvegarder"
@@ -600,16 +650,20 @@ export function SettingsModal({ open, onOpenChange }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Modifications non sauvegardées</AlertDialogTitle>
             <AlertDialogDescription>
-              Vous avez des modifications non sauvegardées. Souhaitez-vous continuer à modifier ou changer d'onglet sans sauvegarder ?
+              Vous avez des modifications non sauvegardées. Souhaitez-vous
+              continuer à modifier ou changer d'onglet sans sauvegarder ?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleContinueEditing}>
+            <AlertDialogCancel
+              onClick={handleContinueEditing}
+              className="cursor-pointer"
+            >
               Continuer la modification
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelEditing}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 dark:text-white cursor-pointer"
             >
               Changer d'onglet sans sauvegarder
             </AlertDialogAction>

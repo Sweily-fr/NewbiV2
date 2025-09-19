@@ -85,34 +85,34 @@ export default function FacturationSection() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-medium text-gray-900 mb-1">Facturation</h2>
+        <h2 className="text-lg font-medium mb-1">Facturation</h2>
         <Separator />
       </div>
 
       {/* Factures Section */}
       <div className="space-y-6">
         <div>
-          <h3 className="text-base font-medium text-gray-900 mb-4">Factures</h3>
+          <h3 className="text-base font-medium mb-4">Factures</h3>
 
           <div className="space-y-3">
             {factures.map((facture) => (
               <div
                 key={facture.id}
-                className="flex items-center justify-between p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-[#2c2c2c]"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                  {/* <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
                     <FileText className="h-3 w-3 text-gray-600" />
-                  </div>
+                  </div> */}
 
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
-                      <span className="font-medium text-sm text-gray-900">
+                      <span className="font-medium text-sm text-gray-200">
                         {facture.date}
                       </span>
-                      {getStatusBadge(facture.status)}
+                      {/* {getStatusBadge(facture.status)} */}
                     </div>
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-gray-400">
                       {facture.type} • {facture.amount}
                     </div>
                   </div>
@@ -123,9 +123,8 @@ export default function FacturationSection() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleViewInvoice(facture.id)}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 cursor-pointer"
                   >
-                    <Eye className="h-4 w-4" />
                     Afficher la facture
                   </Button>
                 </div>
