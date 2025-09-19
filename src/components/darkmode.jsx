@@ -6,9 +6,9 @@ import { CheckIcon, MinusIcon } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group";
 
 const items = [
-  { value: "light", label: "Claire", image: "/ui-light.png" },
-  { value: "dark", label: "Sombre", image: "/ui-dark.png" },
-  { value: "system", label: "Système", image: "/ui-system.png" },
+  { value: "light", label: "Claire", image: "/theme-light.svg" },
+  { value: "dark", label: "Sombre", image: "/theme-dark.svg" },
+  { value: "system", label: "Système", image: "/theme-system.svg" },
 ];
 
 export default function DarkModeComponent() {

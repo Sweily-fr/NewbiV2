@@ -19,7 +19,9 @@ const isTokenExpired = (token) => {
 
 // Configuration Upload Link avec support des uploads de fichiers
 const uploadLink = createUploadLink({
-  uri: process.env.NEXT_PUBLIC_API_URL + "graphql" || "http://localhost:4000/graphql",
+  uri:
+    process.env.NEXT_PUBLIC_API_URL + "graphql" ||
+    "http://localhost:4000/graphql",
   credentials: "include", // Important pour better-auth (cookies)
   headers: {
     "Apollo-Require-Preflight": "true",
@@ -30,7 +32,7 @@ const authLink = setContext(async (_, { headers }) => {
   try {
     // Récupérer le JWT via authClient.getSession avec le header set-auth-jwt
     let jwtToken = null;
-    
+
     await authClient.getSession({
       fetchOptions: {
         onSuccess: (ctx) => {
@@ -38,16 +40,16 @@ const authLink = setContext(async (_, { headers }) => {
           if (jwt && !isTokenExpired(jwt)) {
             jwtToken = jwt;
           }
-        }
-      }
+        },
+      },
     });
-    
+
     if (jwtToken) {
       return {
         headers: {
           ...headers,
           authorization: `Bearer ${jwtToken}`,
-        }
+        },
       };
     }
   } catch (error) {
@@ -58,7 +60,7 @@ const authLink = setContext(async (_, { headers }) => {
   return {
     headers: {
       ...headers,
-    }
+    },
   };
 });
 
@@ -100,12 +102,9 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
         }
       );
     } else {
-      toast.warning(
-        "Problème de connexion au serveur.",
-        {
-          duration: 5000,
-        }
-      );
+      toast.warning("Problème de connexion au serveur.", {
+        duration: 5000,
+      });
     }
   }
 });

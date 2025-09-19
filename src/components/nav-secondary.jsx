@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@tabler/icons-react";
 import { useSubscription } from "@/src/contexts/subscription-context";
-import { Crown, Settings2, Trash, Settings } from "lucide-react";
+import { Crown, Settings2, Trash, Settings, Users} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { SettingsModal } from "@/src/components/settings-modal";
 
@@ -40,6 +40,7 @@ function SettingsDropdownMenu() {
   const { isActive } = useSubscription();
   const [open, setOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState("preferences");
 
   return (
     <SidebarMenuItem key={"settings"}>
@@ -67,9 +68,12 @@ function SettingsDropdownMenu() {
           side="bottom"
           align="start"
         >
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="cursor-pointer"
-            onClick={() => setSettingsModalOpen(true)}
+            onClick={() => {
+              setSettingsInitialTab("preferences");
+              setSettingsModalOpen(true);
+            }}
           >
             <Settings2 />
             <span className="font-polysans font-light">
@@ -82,13 +86,17 @@ function SettingsDropdownMenu() {
               "cursor-pointer",
               !isActive() && "opacity-60 cursor-not-allowed"
             )}
-            asChild={isActive()}
+            onClick={() => {
+              // Toujours ouvrir le modal sur l'onglet espaces
+              setSettingsInitialTab("espaces");
+              setSettingsModalOpen(true);
+            }}
           >
             {isActive() ? (
-              <Link href={"/dashboard/collaborateurs"}>
+              <>
                 <IconUsers />
                 <span className="font-polysans font-light">Collaborateurs</span>
-              </Link>
+              </>
             ) : (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
@@ -125,7 +133,11 @@ function SettingsDropdownMenu() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <SettingsModal open={settingsModalOpen} onOpenChange={setSettingsModalOpen} />
+      <SettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        initialTab={settingsInitialTab}
+      />
     </SidebarMenuItem>
   );
 }

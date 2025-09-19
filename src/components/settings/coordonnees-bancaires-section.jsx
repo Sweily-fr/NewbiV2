@@ -7,12 +7,19 @@ import { Separator } from "@/src/components/ui/separator";
 import { CreditCard, Building2, Hash, Info, Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 
-export function CoordonneesBancairesSection({ register, errors, watch, setValue, session, organization }) {
+export function CoordonneesBancairesSection({
+  register,
+  errors,
+  watch,
+  setValue,
+  session,
+  organization,
+}) {
   return (
     <div className="space-y-8">
       {/* Titre */}
       <div>
-        <h2 className="text-lg font-medium text-gray-900 mb-1">Coordonnées bancaires</h2>
+        <h2 className="text-lg font-medium mb-1">Coordonnées bancaires</h2>
         <Separator />
 
         {/* Information sur la validation conditionnelle */}
@@ -37,7 +44,7 @@ export function CoordonneesBancairesSection({ register, errors, watch, setValue,
           <div className="space-y-2">
             <Label
               htmlFor="iban"
-              className="flex items-center gap-2 text-sm font-medium"
+              className="flex items-center gap-2 text-sm font-normal"
             >
               <Hash className="h-4 w-4 text-gray-500" />
               IBAN *
@@ -49,7 +56,9 @@ export function CoordonneesBancairesSection({ register, errors, watch, setValue,
               {...register("bankDetails.iban")}
             />
             {errors.bankDetails?.iban && (
-              <p className="text-sm text-red-500">{errors.bankDetails.iban.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.bankDetails.iban.message}
+              </p>
             )}
             <p className="text-xs text-gray-600">
               Format international (ex: FR76 1234 5678 9012 3456 7890 123)
@@ -60,7 +69,7 @@ export function CoordonneesBancairesSection({ register, errors, watch, setValue,
           <div className="space-y-2">
             <Label
               htmlFor="bic"
-              className="flex items-center gap-2 text-sm font-medium"
+              className="flex items-center gap-2 text-sm font-normal"
             >
               <Building2 className="h-4 w-4 text-gray-500" />
               BIC/SWIFT *
@@ -72,7 +81,9 @@ export function CoordonneesBancairesSection({ register, errors, watch, setValue,
               {...register("bankDetails.bic")}
             />
             {errors.bankDetails?.bic && (
-              <p className="text-sm text-red-500">{errors.bankDetails.bic.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.bankDetails.bic.message}
+              </p>
             )}
             <p className="text-xs text-gray-600">
               Code d'identification de votre banque (8 ou 11 caractères)
@@ -83,7 +94,7 @@ export function CoordonneesBancairesSection({ register, errors, watch, setValue,
           <div className="space-y-2">
             <Label
               htmlFor="bankName"
-              className="flex items-center gap-2 text-sm font-medium"
+              className="flex items-center gap-2 text-sm font-normal"
             >
               <CreditCard className="h-4 w-4 text-gray-500" />
               Nom de la banque *
@@ -95,7 +106,9 @@ export function CoordonneesBancairesSection({ register, errors, watch, setValue,
               {...register("bankDetails.bankName")}
             />
             {errors.bankDetails?.bankName && (
-              <p className="text-sm text-red-500">{errors.bankDetails.bankName.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.bankDetails.bankName.message}
+              </p>
             )}
             <p className="text-xs text-gray-600">
               Nom de votre établissement bancaire

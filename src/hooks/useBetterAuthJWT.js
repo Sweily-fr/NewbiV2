@@ -1,118 +1,123 @@
-import { useSession } from "@/src/lib/auth-client";
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
+import { useSession } from '@/src/lib/auth-client';
 
 /**
- * Hook d'authentification utilisant les JWT natifs de Better Auth
+ * Hook d'authentification utilisant les Bearer tokens de Better Auth
  * Résout le problème des domaines croisés en production
  */
 export const useBetterAuthJWT = () => {
   const { data: session, isPending } = useSession();
-  const [jwtToken, setJwtToken] = useState(null);
-  const [isLoadingJWT, setIsLoadingJWT] = useState(false);
+  const [bearerToken, setBearerToken] = useState(null);
+  const [isLoadingToken, setIsLoadingToken] = useState(false);
 
-  // Récupérer le JWT quand la session Better Auth est disponible
+  console.log('🔍 [useBetterAuthJWT] Hook appelé, session:', session?.user?.email || 'non connecté');
+
   useEffect(() => {
-    const fetchJWT = async () => {
-      if (!session?.user || jwtToken || isLoadingJWT) return;
-
-      setIsLoadingJWT(true);
-      try {
-        // Méthode 1: Via l'endpoint /api/auth/token
-        const response = await fetch('/api/auth/token', {
-          method: 'GET',
-          credentials: 'include', // Inclure les cookies de session
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setJwtToken(data.token);
-          
-          // Stocker le JWT dans localStorage pour persistance
-          localStorage.setItem('better_auth_jwt', data.token);
-        }
-      } catch (error) {
-        console.error('Erreur récupération JWT:', error);
-      } finally {
-        setIsLoadingJWT(false);
+    const initializeToken = () => {
+      // Récupérer le Bearer token depuis localStorage
+      const storedToken = localStorage.getItem('bearer_token');
+      console.log('🔍 [useBetterAuthJWT] Bearer token localStorage:', storedToken ? 'présent' : 'absent');
+      
+      if (storedToken) {
+        setBearerToken(storedToken);
+        console.log('✅ [useBetterAuthJWT] Bearer token récupéré depuis localStorage');
+        return;
       }
     };
 
-    // Récupérer le JWT depuis localStorage au démarrage
-    console.log('🔍 [useBetterAuthJWT] Vérification token localStorage');
-    const storedToken = localStorage.getItem('better_auth_jwt');
-    console.log('🔍 [useBetterAuthJWT] Token stocké:', storedToken ? 'présent' : 'absent');
-    
-    if (storedToken) {
-      try {
-        const decoded = jwt.decode(storedToken);
-        console.log(' [useBetterAuthJWT] Token décodé:', decoded);
-        
-        if (decoded && decoded.exp * 1000 > Date.now()) {
-          console.log(' [useBetterAuthJWT] Token valide, utilisation');
-          setJwtToken(storedToken);
-        } else {
-          console.log(' [useBetterAuthJWT] Token expiré, suppression');
-          localStorage.removeItem('better_auth_jwt');
-        }
-      } catch (error) {
-        console.error(' [useBetterAuthJWT] Token JWT invalide dans localStorage:', error);
-        localStorage.removeItem('better_auth_jwt');
-      }
-    } else if (session?.user && !storedToken) {
-      fetchJWT();
+    if (!isPending && session?.user) {
+      initializeToken();
     }
-  }, [session, jwtToken, isLoadingJWT]);
+  }, [session, isPending]);
 
-  // Alternative: Récupérer JWT via header set-auth-jwt lors de getSession
   useEffect(() => {
-    const getJWTFromHeader = async () => {
-      if (!session?.user || jwtToken) return;
+    // Nettoyer le token si l'utilisateur n'est plus connecté
+    if (!session?.user && bearerToken) {
+      setBearerToken(null);
+      localStorage.removeItem('bearer_token');
+    }
+  }, [session, bearerToken]);
 
+  useEffect(() => {
+    const getTokenFromHeader = async () => {
+      if (!session?.user || bearerToken) return;
+      
+      console.log('🔍 [useBetterAuthJWT] Tentative récupération Bearer token via header');
+      setIsLoadingToken(true);
+      
       try {
-        // Utiliser getSession avec fetchOptions pour récupérer le header
         const { getSession } = await import("@/src/lib/auth-client");
         
         await getSession({
           fetchOptions: {
             onSuccess: (ctx) => {
-              const jwt = ctx.response.headers.get("set-auth-jwt");
-              if (jwt) {
-                setJwtToken(jwt);
-                localStorage.setItem('better_auth_jwt', jwt);
+              const token = ctx.response.headers.get("set-auth-token");
+              console.log('🔍 [useBetterAuthJWT] Header set-auth-token:', token ? 'présent' : 'absent');
+              
+              if (token) {
+                console.log('✅ [useBetterAuthJWT] Bearer token récupéré depuis header set-auth-token');
+                setBearerToken(token);
+                localStorage.setItem('bearer_token', token);
+              }
+            },
+            onError: (ctx) => {
+              console.error('❌ [useBetterAuthJWT] Erreur getSession:', ctx.error);
+            }
+          }
+        });
+      } catch (error) {
+        console.error('❌ [useBetterAuthJWT] Erreur récupération Bearer token:', error);
+      } finally {
+        setIsLoadingToken(false);
+      }
+    };
+
+    if (session?.user && !bearerToken && !isLoadingToken) {
+      getTokenFromHeader();
+    }
+  }, [session, bearerToken, isLoadingToken]);
+
+  const refreshToken = async () => {
+    console.log('🔄 [useBetterAuthJWT] Rafraîchissement Bearer token demandé');
+    setBearerToken(null);
+    localStorage.removeItem('bearer_token');
+    
+    if (session?.user) {
+      setIsLoadingToken(true);
+      try {
+        const { getSession } = await import("@/src/lib/auth-client");
+        
+        await getSession({
+          fetchOptions: {
+            onSuccess: (ctx) => {
+              const token = ctx.response.headers.get("set-auth-token");
+              if (token) {
+                console.log('✅ [useBetterAuthJWT] Bearer token rafraîchi avec succès');
+                setBearerToken(token);
+                localStorage.setItem('bearer_token', token);
               }
             }
           }
         });
       } catch (error) {
-        console.error('Erreur récupération JWT via header:', error);
+        console.error('❌ [useBetterAuthJWT] Erreur rafraîchissement Bearer token:', error);
+      } finally {
+        setIsLoadingToken(false);
       }
-    };
-
-    // Utiliser cette méthode si la première échoue
-    if (session?.user && !jwtToken && !isLoadingJWT) {
-      getJWTFromHeader();
     }
-  }, [session, jwtToken, isLoadingJWT]);
-
-  // Nettoyer le JWT quand la session se termine
-  useEffect(() => {
-    if (!session?.user && jwtToken) {
-      setJwtToken(null);
-      localStorage.removeItem('better_auth_jwt');
-    }
-  }, [session, jwtToken]);
+  };
 
   /**
-   * Effectue une requête authentifiée vers l'API avec JWT
+   * Effectue une requête authentifiée vers l'API avec Bearer token
    */
   const apiRequest = async (url, options = {}) => {
-    if (!jwtToken) {
-      throw new Error('JWT non disponible');
+    if (!bearerToken) {
+      throw new Error('Bearer token non disponible');
     }
 
     const headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${jwtToken}`,
+      'Authorization': `Bearer ${bearerToken}`,
       ...options.headers,
     };
 
@@ -121,11 +126,11 @@ export const useBetterAuthJWT = () => {
       headers,
     });
 
-    // Si le JWT est expiré, nettoyer et essayer de récupérer un nouveau
+    // Si le token est expiré, nettoyer et essayer de récupérer un nouveau
     if (response.status === 401) {
-      setJwtToken(null);
-      localStorage.removeItem('better_auth_jwt');
-      // Le useEffect se chargera de récupérer un nouveau JWT
+      setBearerToken(null);
+      localStorage.removeItem('bearer_token');
+      // Le useEffect se chargera de récupérer un nouveau token
     }
 
     return response;
@@ -164,8 +169,8 @@ export const useBetterAuthJWT = () => {
       });
 
       // Nettoyer l'état local
-      setJwtToken(null);
-      localStorage.removeItem('better_auth_jwt');
+      setBearerToken(null);
+      localStorage.removeItem('bearer_token');
       
       // Rediriger vers la page de connexion
       window.location.href = '/auth/signin';
@@ -178,19 +183,22 @@ export const useBetterAuthJWT = () => {
     // Session Better Auth
     session,
     user: session?.user,
-    isLoading: isPending || isLoadingJWT,
+    isLoading: isPending || isLoadingToken,
     
-    // JWT
-    jwtToken,
-    hasJWT: !!jwtToken,
+    // Bearer token (avec alias JWT pour compatibilité)
+    bearerToken,
+    jwtToken: bearerToken,
+    hasJWT: !!bearerToken,
     
     // Méthodes
+    refreshToken,
+    refreshJWT: refreshToken,
     apiRequest,
     graphqlRequest,
     logout,
     
     // État
     isAuthenticated: !!session?.user,
-    isReady: !!session?.user && !!jwtToken,
+    isReady: !!session?.user && !!bearerToken,
   };
 };

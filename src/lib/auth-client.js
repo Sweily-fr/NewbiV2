@@ -5,6 +5,7 @@ import {
   inferOrgAdditionalFields,
   phoneNumberClient,
   twoFactorClient,
+  multiSessionClient,
 } from "better-auth/client/plugins";
 import { stripeClient } from "@better-auth/stripe/client";
 
@@ -14,6 +15,7 @@ export const authClient = createAuthClient({
     adminClient(),
     phoneNumberClient(),
     twoFactorClient(),
+    multiSessionClient(),
     organizationClient({
       schema: inferOrgAdditionalFields({
         organization: {
@@ -53,8 +55,8 @@ export const authClient = createAuthClient({
 });
 
 export const {
-  signIn,
   signUp,
+  signIn,
   signOut,
   updateUser,
   forgetPassword,
@@ -62,4 +64,6 @@ export const {
   useSession,
   admin,
   organization,
+  twoFactor,
+  multiSession,
 } = authClient;

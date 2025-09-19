@@ -1,13 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { ChevronsUpDown, Plus, Crown } from "lucide-react";
+import { ChevronsUpDown, Plus, Crown, Settings, Users } from "lucide-react";
 import { IconBuilding } from "@tabler/icons-react";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscription } from "@/src/contexts/subscription-context";
 import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import InviteMembers from "../../app/dashboard/collaborateurs/components/invite-members";
+import { SettingsModal } from "./settings-modal";
 // app/dashboard/collaborateurs/components/invite-members
 import {
   DropdownMenu,
@@ -29,6 +31,9 @@ export function TeamSwitcher() {
   const { isMobile } = useSidebar();
   const { isActive } = useSubscription();
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] =
+    React.useState("preferences");
 
   // Utiliser les hooks Better Auth pour récupérer les organisations
   const { data: organizations, isPending: organizationsLoading } =
@@ -96,17 +101,17 @@ export function TeamSwitcher() {
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-              <img src="/newbi.svg" alt="NewBi Logo" className="size-8" />
+                <img src="/newbi.svg" alt="NewBi Logo" className="size-7" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">
-                  {currentOrganization.name}
+                  <span className="truncate font-medium">
+                    {currentOrganization.name}
                   </span>
                   <span className="truncate text-xs">
-                  {organizations.length} organisation
-                  {organizations.length > 1 ? "s" : ""}
+                    {organizations.length} organisation
+                    {organizations.length > 1 ? "s" : ""}
                   </span>
                 </div>
-              <ChevronsUpDown className="ml-auto" />
+                <ChevronsUpDown className="ml-auto" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -115,31 +120,31 @@ export function TeamSwitcher() {
               side={isMobile ? "bottom" : "right"}
               sideOffset={4}
             >
-            <DropdownMenuLabel className="text-muted-foreground text-xs flex items-center justify-between">
-              <span>Organisations</span>
-              <Badge
-                variant="outline"
-                className={`text-xs px-2 py-0.5 ${
-                  isActive()
-                    ? "bg-[#5b4fff]/10 text-[#5b4fff] border-[#5b4fff]/20"
-                    : "bg-gray-50 text-gray-600 border-gray-200"
-                }`}
-              >
-                <Crown className="w-3 h-3 mr-1" />
-                {isActive() ? "Pro" : "Free"}
-              </Badge>
+              <DropdownMenuLabel className="text-muted-foreground text-xs flex items-center justify-between">
+                <span>Organisations</span>
+                <Badge
+                  variant="outline"
+                  className={`text-xs px-2 py-0.5 ${
+                    isActive()
+                      ? "bg-[#5b4fff]/10 text-[#5b4fff] border-[#5b4fff]/20"
+                      : "bg-gray-50 text-gray-600 border-gray-200"
+                  }`}
+                >
+                  <Crown className="w-3 h-3 mr-1" />
+                  {isActive() ? "Pro" : "Free"}
+                </Badge>
               </DropdownMenuLabel>
-            {organizations.map((org, index) => (
+              {organizations.map((org, index) => (
                 <DropdownMenuItem
                   key={org.id}
                   onClick={() => handleSetActiveOrganization(org.id)}
                   className="gap-2 p-2 cursor-pointer"
                 >
                   <div className="flex size-6 items-center justify-center rounded-sm border">
-                  <IconBuilding className="size-3.5 shrink-0" />
+                    <IconBuilding className="size-3.5 shrink-0" />
                   </div>
                   <div className="flex flex-col">
-                  <span className="font-medium">{org.name}</span>
+                    <span className="font-medium">{org.name}</span>
                     {org.slug && (
                       <span className="text-xs text-muted-foreground">
                         @{org.slug}
@@ -153,22 +158,43 @@ export function TeamSwitcher() {
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="gap-2 p-2 cursor-pointer"
-                onClick={() => setInviteDialogOpen(true)}
-              >
-                <div className="flex size-5 items-center justify-center rounded-sm border bg-transparent">
-                  <Plus className="size-3" />
-                </div>
-                <div className="text-xs font-normal">
-                  Inviter un collaborateur
-                </div>
-              </DropdownMenuItem>
+              <div className="flex gap-2 p-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSettingsInitialTab("preferences");
+                    setSettingsModalOpen(true);
+                  }}
+                  className="flex-1 h-8 text-xs font-normal cursor-pointer"
+                >
+                  <Settings className="size-3 mr-1" />
+                  Paramètres
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setInviteDialogOpen(true)}
+                  className="flex-1 h-8 text-xs font-normal cursor-pointer"
+                >
+                  <Users className="size-3 mr-1" />
+                  Inviter des membres
+                </Button>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarMenuItem>
       </SidebarMenu>
-      <InviteMembers open={inviteDialogOpen} onOpenChange={setInviteDialogOpen} />
+      <InviteMembers
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+      />
+      <SettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        initialTab={settingsInitialTab}
+      />
     </>
   );
 }

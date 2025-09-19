@@ -26,7 +26,14 @@ import {
   Command,
 } from "@tabler/icons-react";
 
-import { CircleGauge, Calendar, Users, FileMinus, Search, MessageCircleQuestionMark } from "lucide-react";
+import {
+  CircleGauge,
+  Calendar,
+  Users,
+  FileMinus,
+  Search,
+  MessageCircleQuestionMark,
+} from "lucide-react";
 
 import { NavDocuments } from "@/src/components/nav-documents";
 import { NavMain } from "@/src/components/nav-main";
@@ -254,7 +261,7 @@ export function AppSidebar({ ...props }) {
                     key={i}
                     className="flex w-full items-center gap-2 px-2 py-1.5"
                   >
-                    <Skeleton className="h-8 w-full bg-[#EBEBEB] rounded-sm" />
+                    <Skeleton className="h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
                   </div>
                 ))}
               </div>
@@ -262,13 +269,13 @@ export function AppSidebar({ ...props }) {
 
             {/* NavDocuments Skeleton */}
             <div className="px-4 py-6">
-              <Skeleton className="h-5 w-16 mb-2 bg-[#EBEBEB] rounded-sm" />
+              <Skeleton className="h-5 w-16 mb-2 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
               <div className="space-y-2">
                 <div className="flex items-center gap-2 py-1.5">
-                  <Skeleton className="h-8 w-full bg-[#EBEBEB] rounded-sm" />
+                  <Skeleton className="h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
                 </div>
                 <div className="flex items-center gap-2 py-1.5">
-                  <Skeleton className="h-8 w-full bg-[#EBEBEB] rounded-sm" />
+                  <Skeleton className="h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
                 </div>
               </div>
             </div>
@@ -278,7 +285,7 @@ export function AppSidebar({ ...props }) {
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-2 px-2 py-1.5">
-                    <Skeleton className="h-8 w-full bg-[#EBEBEB] rounded-sm" />
+                    <Skeleton className="h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
                   </div>
                 ))}
               </div>
@@ -293,7 +300,7 @@ export function AppSidebar({ ...props }) {
           <SidebarTrialCard />
         ) : (
           <div className="mb-2 px-2">
-            <Skeleton className="h-16 w-full bg-[#EBEBEB] rounded-md" />
+            <Skeleton className="h-16 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
           </div>
         )}
         {session?.user &&
@@ -302,10 +309,10 @@ export function AppSidebar({ ...props }) {
           <NavUser user={session.user} />
         ) : (
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <Skeleton className="h-8 w-8 rounded-full bg-[#EBEBEB]" />
+            <Skeleton className="h-8 w-8 rounded-full bg-[#EBEBEB] dark:bg-[#292929]" />
             <div className="flex-1">
-              <Skeleton className="h-4 w-24 mb-1 bg-[#EBEBEB] rounded-sm" />
-              <Skeleton className="h-3 w-32 bg-[#EBEBEB] rounded-sm" />
+              <Skeleton className="h-4 w-24 mb-1 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+              <Skeleton className="h-3 w-32 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
             </div>
           </div>
         )}
