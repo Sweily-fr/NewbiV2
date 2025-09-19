@@ -138,7 +138,7 @@ const columns = [
         client.type === "INDIVIDUAL" && (client.firstName || client.lastName)
           ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
           : client.name;
-      return <div className="font-medium">{displayName}</div>;
+      return <div className="font-normal">{displayName}</div>;
     },
     size: 200,
     filterFn: multiColumnFilterFn,
@@ -155,7 +155,7 @@ const columns = [
     cell: ({ row }) => (
       <Badge
         className={cn(
-          "bg-blue-100 border-blue-300 text-blue-800",
+          "font-normal bg-blue-100 border-blue-300 text-blue-800",
           row.getValue("type") === "COMPANY" &&
             "bg-purple-100 border-purple-300 text-purple-800"
         )}

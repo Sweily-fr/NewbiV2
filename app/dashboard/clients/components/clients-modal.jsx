@@ -333,12 +333,9 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
               {/* Adresse de facturation */}
               <div className="space-y-3 py-2">
-                <Label className="text-base font-medium">
-                  Adresse de facturation
-                </Label>
 
                 <div className="space-y-2">
-                  <Label>Adresse</Label>
+                  <Label> Adresse de facturation</Label>
                   <Textarea
                     placeholder="123 Rue de la Paix"
                     {...register("address.street")}
@@ -420,9 +417,6 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               {/* Adresse de livraison */}
               {hasDifferentShipping && (
                 <div className="space-y-3 border-l-2 border-gray-200 pl-4">
-                  <Label className="text-base font-medium">
-                    Adresse de livraison
-                  </Label>
 
                   <div className="space-y-2">
                     <Label>Adresse</Label>
