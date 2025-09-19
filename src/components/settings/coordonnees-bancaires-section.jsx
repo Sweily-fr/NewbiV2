@@ -27,7 +27,9 @@ export function CoordonneesBancairesSection({
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              <strong>Coordonnées bancaires optionnelles</strong>
+              <span className="font-medium">
+                Coordonnées bancaires optionnelles
+              </span>
               <br />
               Vous pouvez laisser tous les champs vides. Si vous renseignez une
               information bancaire, les trois champs (IBAN, BIC et nom de
@@ -121,7 +123,9 @@ export function CoordonneesBancairesSection({
           <Alert>
             <Shield className="h-4 w-4 text-green-600" />
             <AlertDescription>
-              <strong>Sécurité des données bancaires</strong>
+              <span className="font-medium">
+                Sécurité des données bancaires
+              </span>
               <br />
               Vos informations bancaires sont chiffrées et stockées de manière
               sécurisée. Elles ne seront utilisées que pour les virements et

@@ -37,8 +37,8 @@ export const auth = betterAuth({
     storeSessionInDatabase: true, // Stocker les sessions en base
     cookieCache: {
       enabled: true,
-      maxAge: 300 // Cache cookie 5 minutes
-    }
+      maxAge: 300, // Cache cookie 5 minutes
+    },
   },
 
   emailAndPassword: {

@@ -42,10 +42,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
-import { Eye, EyeOff, LogOut, Smartphone, CreditCard, CheckCircle, ExternalLink } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  LogOut,
+  Smartphone,
+  CreditCard,
+  CheckCircle,
+  ExternalLink,
+} from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { useActiveOrganization } from "@/src/lib/organization-client";
-import { useSession, twoFactor, signOut, multiSession } from "@/src/lib/auth-client";
+import {
+  useSession,
+  twoFactor,
+  signOut,
+  multiSession,
+} from "@/src/lib/auth-client";
 import { useEffect } from "react";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
@@ -53,10 +66,14 @@ import { useUser } from "@/src/lib/auth/hooks";
 
 export function SecuritySection() {
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
-  const { organization, loading: orgLoading, updateOrganization } = useActiveOrganization();
+  const {
+    organization,
+    loading: orgLoading,
+    updateOrganization,
+  } = useActiveOrganization();
   const { data: session, refetch: refetchSession } = useSession();
   const { session: user } = useUser();
-  
+
   // États pour Stripe Connect
   const [showStripeOnboarding, setShowStripeOnboarding] = useState(false);
   const {
@@ -94,7 +111,7 @@ export function SecuritySection() {
     try {
       setDevicesLoading(true);
       const { data, error } = await multiSession.listDeviceSessions();
-      
+
       if (error) {
         console.error("Erreur lors de la récupération des sessions:", error);
         toast.error("Erreur lors du chargement des sessions");
@@ -105,15 +122,17 @@ export function SecuritySection() {
         // Transformer les données Better Auth pour l'affichage
         const transformedDevices = data.map((sessionData, index) => ({
           id: sessionData.id || sessionData.token,
-          device: getUserAgent(sessionData.userAgent) || `Appareil ${index + 1}`,
+          device:
+            getUserAgent(sessionData.userAgent) || `Appareil ${index + 1}`,
           lastActivity: formatLastActivity(sessionData.updatedAt),
           ip: sessionData.ipAddress || "IP inconnue",
-          location: getLocationFromIP(sessionData.ipAddress) || "Localisation inconnue",
+          location:
+            getLocationFromIP(sessionData.ipAddress) || "Localisation inconnue",
           createdAt: sessionData.createdAt,
           current: sessionData.id === session?.session?.id,
           sessionToken: sessionData.token,
         }));
-        
+
         setDevices(transformedDevices);
       }
     } catch (error) {
@@ -127,30 +146,33 @@ export function SecuritySection() {
   // Fonctions utilitaires pour transformer les données
   const getUserAgent = (userAgent) => {
     if (!userAgent) return "Navigateur inconnu";
-    
+
     if (userAgent.includes("Chrome")) return "Chrome";
-    if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) return "Safari";
+    if (userAgent.includes("Safari") && !userAgent.includes("Chrome"))
+      return "Safari";
     if (userAgent.includes("Firefox")) return "Firefox";
     if (userAgent.includes("Edge")) return "Edge";
-    
+
     return "Navigateur inconnu";
   };
 
   const formatLastActivity = (updatedAt) => {
     if (!updatedAt) return "Activité inconnue";
-    
+
     const now = new Date();
     const updated = new Date(updatedAt);
     const diffInMinutes = Math.floor((now - updated) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return "À l'instant";
-    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''}`;
-    
+    if (diffInMinutes < 60)
+      return `Il y a ${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""}`;
+
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `Il y a ${diffInHours} heure${diffInHours > 1 ? 's' : ''}`;
-    
+    if (diffInHours < 24)
+      return `Il y a ${diffInHours} heure${diffInHours > 1 ? "s" : ""}`;
+
     const diffInDays = Math.floor(diffInHours / 24);
-    return `Il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
+    return `Il y a ${diffInDays} jour${diffInDays > 1 ? "s" : ""}`;
   };
 
   const getLocationFromIP = (ip) => {
@@ -173,25 +195,29 @@ export function SecuritySection() {
     }
 
     try {
-      await updateOrganization({
-        name: organizationForm.organizationName.trim(),
-      }, {
-        onSuccess: () => {
-          toast.success("Nom de l'organisation modifié avec succès");
-          setShowOrganizationModal(false);
-          setOrganizationForm({ organizationName: "" });
+      await updateOrganization(
+        {
+          name: organizationForm.organizationName.trim(),
         },
-        onError: (error) => {
-          console.error("Erreur lors de la mise à jour:", error);
-          toast.error("Erreur lors de la modification du nom de l'organisation");
+        {
+          onSuccess: () => {
+            toast.success("Nom de l'organisation modifié avec succès");
+            setShowOrganizationModal(false);
+            setOrganizationForm({ organizationName: "" });
+          },
+          onError: (error) => {
+            console.error("Erreur lors de la mise à jour:", error);
+            toast.error(
+              "Erreur lors de la modification du nom de l'organisation"
+            );
+          },
         }
-      });
+      );
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
       toast.error("Erreur lors de la modification du nom de l'organisation");
     }
   };
-
 
   const revokeSession = (deviceId) => {
     toast.success("Session révoquée avec succès");
@@ -209,7 +235,9 @@ export function SecuritySection() {
     } else {
       // Désactiver le 2FA - demander le mot de passe
       if (!passwordFor2FA) {
-        toast.error("Veuillez saisir votre mot de passe pour désactiver le 2FA");
+        toast.error(
+          "Veuillez saisir votre mot de passe pour désactiver le 2FA"
+        );
         return;
       }
 
@@ -220,7 +248,9 @@ export function SecuritySection() {
         });
 
         if (error) {
-          toast.error("Erreur lors de la désactivation du 2FA: " + error.message);
+          toast.error(
+            "Erreur lors de la désactivation du 2FA: " + error.message
+          );
           return;
         }
 
@@ -258,9 +288,11 @@ export function SecuritySection() {
 
       // Recharger la session pour obtenir l'état 2FA mis à jour
       await refetchSession();
-      
+
       // Note: twoFactorEnabled ne sera true qu'après vérification du code TOTP
-      toast.success("2FA activé - Configurez votre application d'authentification");
+      toast.success(
+        "2FA activé - Configurez votre application d'authentification"
+      );
       setShow2FAModal(false);
       setPasswordFor2FA("");
 
@@ -284,35 +316,37 @@ export function SecuritySection() {
   // Fonction pour sauvegarder les paramètres de session
   const handleSessionSettingsChange = async (setting, value) => {
     setIsSessionLoading(true);
-    
+
     try {
       // Convertir les valeurs UI en secondes pour Better Auth
       let sessionConfig = {};
-      
-      if (setting === 'sessionDuration') {
+
+      if (setting === "sessionDuration") {
         // Convertir jours en secondes
         sessionConfig.expiresIn = parseInt(value) * 24 * 60 * 60;
       }
-      
-      if (setting === 'inactivityTimeout') {
+
+      if (setting === "inactivityTimeout") {
         // Convertir heures en secondes pour updateAge
         sessionConfig.updateAge = parseInt(value) * 60 * 60;
       }
 
       // Mettre à jour l'état local
-      setSecuritySettings(prev => ({
+      setSecuritySettings((prev) => ({
         ...prev,
-        [setting]: parseInt(value)
+        [setting]: parseInt(value),
       }));
 
       // TODO: Implémenter l'API pour mettre à jour la configuration de session
       // Cette fonctionnalité nécessiterait une API personnalisée car Better Auth
       // ne permet pas de modifier la configuration de session à chaud
-      
+
       toast.success("Paramètres de session mis à jour");
-      
     } catch (error) {
-      console.error("Erreur lors de la mise à jour des paramètres de session:", error);
+      console.error(
+        "Erreur lors de la mise à jour des paramètres de session:",
+        error
+      );
       toast.error("Erreur lors de la mise à jour des paramètres");
     } finally {
       setIsSessionLoading(false);
@@ -322,8 +356,8 @@ export function SecuritySection() {
   // Fonction pour déconnecter un appareil spécifique
   const handleLogoutDevice = async (deviceId) => {
     try {
-      const device = devices.find(d => d.id === deviceId);
-      
+      const device = devices.find((d) => d.id === deviceId);
+
       if (device?.current) {
         // Session actuelle - déconnexion complète
         await signOut();
@@ -331,15 +365,15 @@ export function SecuritySection() {
       } else if (device?.sessionToken) {
         // Déconnecter une session spécifique avec Better Auth
         const { error } = await multiSession.revoke({
-          sessionToken: device.sessionToken
+          sessionToken: device.sessionToken,
         });
-        
+
         if (error) {
           console.error("Erreur lors de la révocation de session:", error);
           toast.error("Erreur lors de la déconnexion de l'appareil");
           return;
         }
-        
+
         // Recharger la liste des appareils
         await fetchDeviceSessions();
         toast.success("Appareil déconnecté avec succès");
@@ -354,41 +388,51 @@ export function SecuritySection() {
   const handleLogoutAllOtherDevices = async () => {
     try {
       // Déconnecter toutes les sessions sauf la session actuelle
-      const otherDevices = devices.filter(device => !device.current && device.sessionToken);
-      
+      const otherDevices = devices.filter(
+        (device) => !device.current && device.sessionToken
+      );
+
       if (otherDevices.length === 0) {
         toast.info("Aucun autre appareil connecté");
         return;
       }
 
       // Révoquer toutes les autres sessions
-      const revokePromises = otherDevices.map(device => 
+      const revokePromises = otherDevices.map((device) =>
         multiSession.revoke({ sessionToken: device.sessionToken })
       );
-      
+
       const results = await Promise.allSettled(revokePromises);
-      
+
       // Vérifier les résultats
-      const failedRevocations = results.filter(result => result.status === 'rejected');
-      
+      const failedRevocations = results.filter(
+        (result) => result.status === "rejected"
+      );
+
       if (failedRevocations.length > 0) {
         console.error("Certaines révocations ont échoué:", failedRevocations);
-        toast.error(`Erreur lors de la déconnexion de ${failedRevocations.length} appareil(s)`);
+        toast.error(
+          `Erreur lors de la déconnexion de ${failedRevocations.length} appareil(s)`
+        );
       } else {
-        toast.success(`${otherDevices.length} appareil(s) déconnecté(s) avec succès`);
+        toast.success(
+          `${otherDevices.length} appareil(s) déconnecté(s) avec succès`
+        );
       }
-      
+
       // Recharger la liste des appareils
       await fetchDeviceSessions();
-      
     } catch (error) {
-      console.error("Erreur lors de la déconnexion des autres appareils:", error);
+      console.error(
+        "Erreur lors de la déconnexion des autres appareils:",
+        error
+      );
       toast.error("Erreur lors de la déconnexion globale");
     }
   };
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-20">
       <div>
         <h2 className="text-lg font-medium mb-1">Sécurité</h2>
         <Separator />
@@ -396,19 +440,27 @@ export function SecuritySection() {
         <div className="space-y-6 mt-8">
           {/* Titre section Identité */}
           <div>
-            <h3 className="text-base font-medium mb-2">Identité</h3>
+            <h3 className="text-sm font-medium mb-2">Identité</h3>
             <Separator />
           </div>
 
           {/* Modification nom de l'organisation */}
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h4 className="text-sm font-normal mb-1">Nom de l'organisation</h4>
+              <h4 className="text-sm font-normal mb-1">
+                Nom de l'organisation
+              </h4>
               <p className="text-xs text-gray-400">
-                {orgLoading ? "Chargement..." : (organization?.name || "Aucune organisation")} •{" "}
-                <Dialog open={showOrganizationModal} onOpenChange={setShowOrganizationModal}>
+                {orgLoading
+                  ? "Chargement..."
+                  : organization?.name || "Aucune organisation"}{" "}
+                •{" "}
+                <Dialog
+                  open={showOrganizationModal}
+                  onOpenChange={setShowOrganizationModal}
+                >
                   <DialogTrigger asChild>
-                    <button 
+                    <button
                       className="text-gray-400 underline hover:text-gray-600 cursor-pointer"
                       disabled={orgLoading}
                     >
@@ -417,14 +469,18 @@ export function SecuritySection() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Modifier le nom de l'organisation</DialogTitle>
+                      <DialogTitle>
+                        Modifier le nom de l'organisation
+                      </DialogTitle>
                       <DialogDescription>
                         Changez le nom qui apparaît dans votre espace de travail
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="organizationName">Nom de l'organisation</Label>
+                        <Label htmlFor="organizationName">
+                          Nom de l'organisation
+                        </Label>
                         <Input
                           id="organizationName"
                           type="text"
@@ -463,7 +519,7 @@ export function SecuritySection() {
         <div className="space-y-6 mt-8">
           {/* Titre section Stripe Connect */}
           <div>
-            <h3 className="text-base font-medium mb-2">
+            <h3 className="text-sm font-medium mb-2">
               Paiements Stripe Connect
             </h3>
             <Separator />
@@ -471,9 +527,7 @@ export function SecuritySection() {
 
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h4 className="text-sm font-normal mb-1">
-                Connexion Stripe
-              </h4>
+              <h4 className="text-sm font-normal mb-1">Connexion Stripe</h4>
               <p className="text-xs text-gray-400">
                 {stripeConnected
                   ? canReceivePayments
@@ -519,7 +573,7 @@ export function SecuritySection() {
         <div className="space-y-6 mt-8">
           {/* Titre section 2FA */}
           <div>
-            <h3 className="text-base font-medium mb-2">
+            <h3 className="text-sm font-medium mb-2">
               Authentification à deux facteurs (2FA)
             </h3>
             <Separator />
@@ -531,7 +585,8 @@ export function SecuritySection() {
                 Activer l'authentification à deux facteurs
               </h4>
               <p className="text-xs text-gray-400">
-                Sécurisez votre compte avec une couche de protection supplémentaire
+                Sécurisez votre compte avec une couche de protection
+                supplémentaire
               </p>
             </div>
             <Switch
@@ -549,9 +604,7 @@ export function SecuritySection() {
         <div className="space-y-6 mt-8">
           {/* Titre section Ouverture au démarrage */}
           <div>
-            <h3 className="text-base font-medium mb-2">
-              Ouverture au démarrage
-            </h3>
+            <h3 className="text-sm font-medium mb-2">Ouverture au démarrage</h3>
             <Separator />
           </div>
 
@@ -592,9 +645,7 @@ export function SecuritySection() {
         <div className="space-y-6 mt-8">
           {/* Titre section Sessions */}
           <div>
-            <h3 className="text-base font-medium mb-2">
-              Paramètres de session
-            </h3>
+            <h3 className="text-sm font-medium mb-2">Paramètres de session</h3>
             <Separator />
           </div>
 
@@ -607,7 +658,9 @@ export function SecuritySection() {
             </div>
             <Select
               value={securitySettings.sessionDuration.toString()}
-              onValueChange={(value) => handleSessionSettingsChange('sessionDuration', value)}
+              onValueChange={(value) =>
+                handleSessionSettingsChange("sessionDuration", value)
+              }
               disabled={isSessionLoading}
             >
               <SelectTrigger className="w-32">
@@ -630,7 +683,9 @@ export function SecuritySection() {
             </div>
             <Select
               value={securitySettings.inactivityTimeout.toString()}
-              onValueChange={(value) => handleSessionSettingsChange('inactivityTimeout', value)}
+              onValueChange={(value) =>
+                handleSessionSettingsChange("inactivityTimeout", value)
+              }
               disabled={isSessionLoading}
             >
               <SelectTrigger className="w-32">
@@ -653,7 +708,9 @@ export function SecuritySection() {
             </div>
             <Select
               value={securitySettings.maxSessions.toString()}
-              onValueChange={(value) => handleSessionSettingsChange('maxSessions', value)}
+              onValueChange={(value) =>
+                handleSessionSettingsChange("maxSessions", value)
+              }
               disabled={isSessionLoading}
             >
               <SelectTrigger className="w-32">
@@ -674,9 +731,7 @@ export function SecuritySection() {
         <div className="space-y-6 mt-8">
           {/* Titre section Appareils */}
           <div>
-            <h3 className="text-base font-medium mb-2">
-              Appareils et sessions
-            </h3>
+            <h3 className="text-sm font-medium mb-2">Appareils et sessions</h3>
             <Separator />
           </div>
 
@@ -684,7 +739,10 @@ export function SecuritySection() {
             <div className="flex-1">
               <h4 className="text-sm font-normal mb-1">Appareils connectés</h4>
               <p className="text-xs text-gray-400">
-                {devicesLoading ? "Chargement..." : `${devices.length} appareil(s) connecté(s)`} • Gérez vos sessions actives
+                {devicesLoading
+                  ? "Chargement..."
+                  : `${devices.length} appareil(s) connecté(s)`}{" "}
+                • Gérez vos sessions actives
               </p>
             </div>
             <AlertDialog>
@@ -720,11 +778,15 @@ export function SecuritySection() {
           <div>
             {devicesLoading ? (
               <div className="flex justify-center py-8">
-                <div className="text-sm text-gray-400">Chargement des sessions...</div>
+                <div className="text-sm text-gray-400">
+                  Chargement des sessions...
+                </div>
               </div>
             ) : devices.length === 0 ? (
               <div className="flex justify-center py-8">
-                <div className="text-sm text-gray-400">Aucune session active trouvée</div>
+                <div className="text-sm text-gray-400">
+                  Aucune session active trouvée
+                </div>
               </div>
             ) : (
               <Table>
@@ -739,75 +801,81 @@ export function SecuritySection() {
                     <TableHead className="font-normal text-xs">
                       Localisation
                     </TableHead>
-                    <TableHead className="font-normal text-xs">Actions</TableHead>
+                    <TableHead className="font-normal text-xs">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {devices.map((device) => (
-                  <TableRow key={device.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Smartphone className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-normal text-xs">
-                              {device.device}
-                            </span>
-                            {device.current && (
-                              <Badge variant="secondary" className="text-[8px]">
-                                Actuel
-                              </Badge>
-                            )}
+                    <TableRow key={device.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-normal text-xs">
+                                {device.device}
+                              </span>
+                              {device.current && (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[8px]"
+                                >
+                                  Actuel
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-gray-400">
+                              IP: {device.ip}
+                            </p>
                           </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="text-xs">{device.lastActivity}</p>
                           <p className="text-[10px] text-gray-400">
-                            IP: {device.ip}
+                            Créé le{" "}
+                            {new Date(device.createdAt).toLocaleDateString()}
                           </p>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="text-xs">{device.lastActivity}</p>
-                        <p className="text-[10px] text-gray-400">
-                          Créé le{" "}
-                          {new Date(device.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs">{device.location}</span>
-                    </TableCell>
-                    <TableCell>
-                      {!device.current && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              Révoquer
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Révoquer la session
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Êtes-vous sûr de vouloir révoquer cette session
-                                ? L'appareil sera déconnecté immédiatement.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleLogoutDevice(device.id)}
-                              >
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs">{device.location}</span>
+                      </TableCell>
+                      <TableCell>
+                        {!device.current && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm">
                                 Révoquer
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Révoquer la session
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Êtes-vous sûr de vouloir révoquer cette
+                                  session ? L'appareil sera déconnecté
+                                  immédiatement.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleLogoutDevice(device.id)}
+                                >
+                                  Révoquer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>
@@ -820,9 +888,12 @@ export function SecuritySection() {
       <Dialog open={show2FAModal} onOpenChange={setShow2FAModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Activer l'authentification à deux facteurs</DialogTitle>
+            <DialogTitle>
+              Activer l'authentification à deux facteurs
+            </DialogTitle>
             <DialogDescription>
-              Saisissez votre mot de passe pour activer l'authentification à deux facteurs
+              Saisissez votre mot de passe pour activer l'authentification à
+              deux facteurs
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -849,7 +920,7 @@ export function SecuritySection() {
             >
               Annuler
             </Button>
-            <Button 
+            <Button
               onClick={enable2FA}
               disabled={is2FALoading || !passwordFor2FA}
             >
