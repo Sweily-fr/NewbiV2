@@ -350,7 +350,7 @@ export function InformationsLegalesSection({
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                <strong>Informations légales</strong>
+                <span className="font-medium">Informations légales</span>
                 <br />
                 Ces informations sont utilisées pour la génération automatique
                 de vos mentions légales et documents officiels. Assurez-vous
