@@ -46,15 +46,47 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
   // Pré-remplir le formulaire si une transaction est fournie (mode édition)
   useEffect(() => {
     if (transaction && open) {
-      setFormData({
+      console.log("🔄 AddTransactionDrawer - Transaction reçue:", transaction);
+      
+      // Formater la date pour l'input date (format YYYY-MM-DD)
+      let formattedDate = new Date().toISOString().split("T")[0]; // Défaut
+      if (transaction.date) {
+        console.log("📅 Date originale:", transaction.date, "Type:", typeof transaction.date);
+        
+        if (typeof transaction.date === "string") {
+          // Si c'est déjà une string, vérifier le format
+          if (transaction.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            formattedDate = transaction.date;
+          } else {
+            // Essayer de parser la date
+            const parsedDate = new Date(transaction.date);
+            if (!isNaN(parsedDate.getTime())) {
+              formattedDate = parsedDate.toISOString().split("T")[0];
+            }
+          }
+        } else {
+          // Si c'est un objet Date
+          const dateObj = new Date(transaction.date);
+          if (!isNaN(dateObj.getTime())) {
+            formattedDate = dateObj.toISOString().split("T")[0];
+          }
+        }
+      }
+      
+      console.log("📅 Date formatée pour l'input:", formattedDate);
+      
+      const newFormData = {
         type: transaction.type || "EXPENSE",
         amount: transaction.amount?.toString() || "",
         category: transaction.category || "",
-        date: transaction.date || new Date().toISOString().split("T")[0],
+        date: formattedDate,
         description: transaction.description || "",
         paymentMethod: transaction.paymentMethod || "CARD",
         vendor: transaction.vendor || "",
-      });
+      };
+      
+      console.log("📝 FormData final:", newFormData);
+      setFormData(newFormData);
     }
   }, [transaction, open]);
 
@@ -192,7 +224,10 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                   <Input
                     type="date"
                     value={formData.date}
-                    onChange={(e) => handleChange("date")(e.target.value)}
+                    onChange={(e) => {
+                      console.log("📅 Changement de date:", e.target.value);
+                      handleChange("date")(e.target.value);
+                    }}
                     className="w-40"
                   />
                 </div>

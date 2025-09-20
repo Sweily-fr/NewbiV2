@@ -233,18 +233,25 @@ export const useUpdateExpense = () => {
 
   const updateExpense = async (id, input) => {
     try {
+      console.log("🔄 Tentative de modification dépense:", { id, input });
+      
       const result = await updateExpenseMutation({
         variables: { id, input },
       });
+
+      console.log("📊 Résultat mutation updateExpense:", result);
 
       if (result.data?.updateExpense) {
         toast.success("Dépense modifiée avec succès");
         return { success: true, expense: result.data.updateExpense };
       } else {
+        console.error("❌ Pas de données dans result.data.updateExpense:", result.data);
         throw new Error("Erreur lors de la modification");
       }
     } catch (error) {
       console.error("Erreur modification dépense:", error);
+      console.error("Détails de l'erreur:", error.graphQLErrors);
+      console.error("Erreur réseau:", error.networkError);
       toast.error(
         error.message || "Erreur lors de la modification de la dépense"
       );
