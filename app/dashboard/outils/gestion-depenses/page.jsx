@@ -47,13 +47,16 @@ function GestionDepensesContent() {
     }).format(amount || 0);
   };
 
+  // Filtrer les dépenses payées (exclure les DRAFT)
+  const paidExpenses = expenses.filter(expense => expense.status === 'PAID');
+  
   // Calcul des statistiques réelles avec les utilitaires
   const totalIncome = paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
-  const totalExpenses = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+  const totalExpenses = paidExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
 
   // Utiliser les fonctions utilitaires pour les données de graphique
   const incomeChartData = useMemo(() => processInvoicesForCharts(paidInvoices), [paidInvoices]);
-  const expenseChartData = useMemo(() => processExpensesForCharts(expenses), [expenses]);
+  const expenseChartData = useMemo(() => processExpensesForCharts(paidExpenses), [paidExpenses]);
 
   // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
   const handleOpenInviteDialog = () => {
