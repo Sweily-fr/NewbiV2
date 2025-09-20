@@ -12,9 +12,9 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   ExternalLink,
-  DollarSign,
+  Euro,
   CreditCard,
-  FileText,
+  FileMinus2,
 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useExpenses } from "@/src/hooks/useExpenses";
@@ -151,11 +151,11 @@ export default function UnifiedTransactions({ limit = 5, className }) {
         <ArrowUpRight className="h-4 w-4 text-red-500" />
       );
     } else if (transaction.type === "expense") {
-      return <DollarSign className="h-3 w-3" />;
+      return <Euro className="h-3.5 w-3.5" />;
     } else if (transaction.type === "income") {
       return <ArrowDownLeft className="h-4 w-4" />;
     } else if (transaction.type === "invoice") {
-      return <FileText className="h-4 w-4" />;
+      return <FileMinus2 className="h-3.5 w-3.5" />;
     }
     return <CreditCard className="h-4 w-4 text-gray-500" />;
   };
@@ -253,11 +253,11 @@ export default function UnifiedTransactions({ limit = 5, className }) {
               className="flex items-center justify-between"
             >
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-[#5b4fff]/15 dark:bg-[#5b4fff]/25 rounded-full flex items-center justify-center">
                   {getTransactionIcon(transaction)}
                 </div>
                 <div>
-                  <p className="text-xs font-normal truncate max-w-[150px]">
+                  <p className="text-sm font-normal truncate max-w-[170px]">
                     {transaction.description || "Transaction"}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
@@ -267,7 +267,7 @@ export default function UnifiedTransactions({ limit = 5, className }) {
               </div>
               <div className="flex items-center space-x-2">
                 <span
-                  className={`text-xs font-normal ${getTransactionColor(transaction)}`}
+                  className={`text-sm font-normal ${getTransactionColor(transaction)}`}
                 >
                   {transaction.type === "income" ||
                   transaction.type === "invoice" ||

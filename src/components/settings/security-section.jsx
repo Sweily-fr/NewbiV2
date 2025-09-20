@@ -178,10 +178,11 @@ export function SecuritySection() {
           const displayIp = ipAddress === "" ? "Localhost" : ipAddress;
 
           // Générer un ID unique en combinant plusieurs sources et l'index
-          const uniqueId = sessionData.id || 
-                          sessionData.sessionId || 
-                          sessionData.token || 
-                          `device-${index}-${Date.now()}`;
+          const uniqueId =
+            sessionData.id ||
+            sessionData.sessionId ||
+            sessionData.token ||
+            `device-${index}-${Date.now()}`;
 
           return {
             id: uniqueId,
@@ -654,7 +655,7 @@ export function SecuritySection() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowStripeOnboarding(true)}
-                    className="text-xs h-7 border-[#5b4fff]/20 text-[#5b4fff] hover:bg-[#5b4fff]/5"
+                    className="text-xs h-7 border-[#5b4fff]/20 text-[#5b4fff] hover:bg-[#5b4fff]/5 cursor-pointer"
                   >
                     <ExternalLink className="h-3 w-3 mr-1" />
                     {canReceivePayments ? "Tableau de bord" : "Finaliser"}
