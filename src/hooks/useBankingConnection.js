@@ -13,10 +13,23 @@ export function useBankingConnection(workspaceId) {
   const checkConnectionStatus = async () => {
     if (!workspaceId) return;
 
+    // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Vérification du statut bancaire
     try {
       setIsLoading(true);
       setError(null);
 
+      // Simulation d'un délai pour l'UX
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Pas de connexion bancaire pour l'instant
+      setIsConnected(false);
+      setAccountsCount(0);
+      setBridgeUserExists(false);
+      setHasAccounts(false);
+
+      console.log("🏦 Vérification du statut bancaire désactivée temporairement");
+
+      /* CODE ORIGINAL COMMENTÉ :
       const response = await fetch("/api/banking-connect/status", {
         headers: {
           "x-workspace-id": workspaceId,
@@ -27,15 +40,20 @@ export function useBankingConnection(workspaceId) {
         const data = await response.json();
         setIsConnected(data.isConnected);
         setAccountsCount(data.accountsCount || 0);
-        // Stocker les nouvelles propriétés
         setBridgeUserExists(data.bridgeUserExists || false);
         setHasAccounts(data.hasAccounts || false);
       } else {
         throw new Error("Erreur lors de la vérification du statut");
       }
+      */
     } catch (err) {
-      setError(err.message);
-      console.error("Erreur vérification statut bancaire:", err);
+      // En cas d'erreur, on ignore et on met des valeurs par défaut
+      console.warn("⚠️ Erreur vérification statut bancaire (ignorée):", err.message);
+      setIsConnected(false);
+      setAccountsCount(0);
+      setBridgeUserExists(false);
+      setHasAccounts(false);
+      setError(null); // On n'affiche plus l'erreur
     } finally {
       setIsLoading(false);
     }
@@ -44,6 +62,12 @@ export function useBankingConnection(workspaceId) {
   const connectBank = async () => {
     if (!workspaceId) return;
 
+    // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Connexion bancaire
+    console.log("🏦 Connexion bancaire désactivée temporairement");
+    setError("Intégration bancaire temporairement désactivée");
+    return;
+
+    /* CODE ORIGINAL COMMENTÉ :
     try {
       setIsLoading(true);
       setError(null);
@@ -56,7 +80,6 @@ export function useBankingConnection(workspaceId) {
 
       if (response.ok) {
         const data = await response.json();
-        // Rediriger vers l'URL de connexion Bridge
         window.location.href = data.connectUrl;
       } else {
         const errorData = await response.json();
@@ -68,11 +91,17 @@ export function useBankingConnection(workspaceId) {
     } finally {
       setIsLoading(false);
     }
+    */
   };
 
   const disconnectBank = async () => {
     if (!workspaceId) return;
 
+    // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Déconnexion bancaire
+    console.log("🏦 Déconnexion bancaire désactivée temporairement");
+    return false;
+
+    /* CODE ORIGINAL COMMENTÉ :
     try {
       setIsLoading(true);
       setError(null);
@@ -100,6 +129,7 @@ export function useBankingConnection(workspaceId) {
     } finally {
       setIsLoading(false);
     }
+    */
   };
 
   // Vérifier le statut au chargement

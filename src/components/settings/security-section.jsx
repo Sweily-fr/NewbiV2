@@ -57,7 +57,7 @@ import {
   useSession,
   twoFactor,
   signOut,
-  multiSession,
+  authClient,
 } from "@/src/lib/auth-client";
 import { useEffect } from "react";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
@@ -110,7 +110,35 @@ export function SecuritySection() {
   const fetchDeviceSessions = async () => {
     try {
       setDevicesLoading(true);
-      const { data, error } = await multiSession.listDeviceSessions();
+
+      // Essayer d'abord avec l'API client
+      let { data, error } = await authClient.multiSession.listDeviceSessions();
+
+      // Si ça ne fonctionne pas, essayer avec l'API REST directement
+      if (error || !data || (Array.isArray(data) && data.length === 0)) {
+        console.log("🔍 Tentative avec l'API REST directe...");
+
+        try {
+          const response = await fetch("/api/auth/list-device-sessions", {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (response.ok) {
+            const restData = await response.json();
+            console.log("🔍 Données de l'API REST:", restData);
+            data = restData;
+            error = null;
+          }
+        } catch (restError) {
+          console.log(
+            "🔍 API REST non disponible, utilisation des données client"
+          );
+        }
+      }
 
       if (error) {
         console.error("Erreur lors de la récupération des sessions:", error);
@@ -119,20 +147,57 @@ export function SecuritySection() {
       }
 
       if (data) {
-        // Transformer les données Better Auth pour l'affichage
-        const transformedDevices = data.map((sessionData, index) => ({
-          id: sessionData.id || sessionData.token,
-          device:
-            getUserAgent(sessionData.userAgent) || `Appareil ${index + 1}`,
-          lastActivity: formatLastActivity(sessionData.updatedAt),
-          ip: sessionData.ipAddress || "IP inconnue",
-          location:
-            getLocationFromIP(sessionData.ipAddress) || "Localisation inconnue",
-          createdAt: sessionData.createdAt,
-          current: sessionData.id === session?.session?.id,
-          sessionToken: sessionData.token,
-        }));
+        console.log("🔍 Structure des données de session:", data);
 
+        // Vérifier si data est un tableau ou un objet avec session
+        let sessionsArray = [];
+
+        if (Array.isArray(data)) {
+          // Si c'est un tableau de sessions
+          sessionsArray = data;
+        } else if (data.session) {
+          // Si c'est un objet avec une session unique
+          sessionsArray = [data.session];
+        } else if (data.sessions) {
+          // Si c'est un objet avec un tableau de sessions
+          sessionsArray = data.sessions;
+        } else {
+          // Si c'est directement une session
+          sessionsArray = [data];
+        }
+
+        console.log("🔍 Sessions à traiter:", sessionsArray);
+
+        // Transformer les données Better Auth pour l'affichage
+        const transformedDevices = sessionsArray.map((sessionData, index) => {
+          console.log(`🔍 Session ${index}:`, sessionData);
+
+          // Traiter l'IP vide
+          const ipAddress =
+            sessionData.ipAddress || sessionData.ip || "127.0.0.1";
+          const displayIp = ipAddress === "" ? "Localhost" : ipAddress;
+
+          return {
+            id: sessionData.id || sessionData.sessionId || sessionData.token,
+            device:
+              getUserAgent(sessionData.userAgent) || `Appareil ${index + 1}`,
+            lastActivity: formatLastActivity(
+              sessionData.updatedAt || sessionData.lastAccessed
+            ),
+            ip: displayIp,
+            location:
+              getLocationFromIP(ipAddress) ||
+              (ipAddress === "" || ipAddress === "127.0.0.1"
+                ? "Local"
+                : "Localisation inconnue"),
+            createdAt: sessionData.createdAt || sessionData.created,
+            current: true, // Pour l'instant, on considère que c'est la session actuelle
+            sessionToken:
+              sessionData.token || sessionData.sessionToken || sessionData.id,
+          };
+        });
+
+        console.log("🔍 Devices transformés:", transformedDevices);
         setDevices(transformedDevices);
       }
     } catch (error) {
@@ -147,20 +212,56 @@ export function SecuritySection() {
   const getUserAgent = (userAgent) => {
     if (!userAgent) return "Navigateur inconnu";
 
-    if (userAgent.includes("Chrome")) return "Chrome";
-    if (userAgent.includes("Safari") && !userAgent.includes("Chrome"))
-      return "Safari";
-    if (userAgent.includes("Firefox")) return "Firefox";
-    if (userAgent.includes("Edge")) return "Edge";
+    console.log("🔍 UserAgent reçu:", userAgent);
 
-    return "Navigateur inconnu";
+    // Détection plus précise des navigateurs et OS
+    let browser = "Navigateur inconnu";
+    let os = "";
+
+    // Détection de l'OS
+    if (userAgent.includes("Macintosh") || userAgent.includes("Mac OS X")) {
+      os = "macOS";
+    } else if (userAgent.includes("Windows")) {
+      os = "Windows";
+    } else if (userAgent.includes("Linux")) {
+      os = "Linux";
+    } else if (userAgent.includes("iPhone") || userAgent.includes("iPad")) {
+      os = "iOS";
+    } else if (userAgent.includes("Android")) {
+      os = "Android";
+    }
+
+    // Détection du navigateur (ordre important)
+    if (userAgent.includes("Edg/")) {
+      browser = "Edge";
+    } else if (userAgent.includes("Chrome/") && !userAgent.includes("Edg/")) {
+      browser = "Chrome";
+    } else if (
+      userAgent.includes("Safari/") &&
+      !userAgent.includes("Chrome/")
+    ) {
+      browser = "Safari";
+    } else if (userAgent.includes("Firefox/")) {
+      browser = "Firefox";
+    }
+
+    return os ? `${browser} sur ${os}` : browser;
   };
 
   const formatLastActivity = (updatedAt) => {
     if (!updatedAt) return "Activité inconnue";
 
+    console.log("🔍 Date reçue:", updatedAt, "Type:", typeof updatedAt);
+
     const now = new Date();
     const updated = new Date(updatedAt);
+
+    // Vérifier si la date est valide
+    if (isNaN(updated.getTime())) {
+      console.log("🔍 Date invalide:", updatedAt);
+      return "Activité inconnue";
+    }
+
     const diffInMinutes = Math.floor((now - updated) / (1000 * 60));
 
     if (diffInMinutes < 1) return "À l'instant";
@@ -364,7 +465,7 @@ export function SecuritySection() {
         toast.success("Déconnexion réussie");
       } else if (device?.sessionToken) {
         // Déconnecter une session spécifique avec Better Auth
-        const { error } = await multiSession.revoke({
+        const { error } = await authClient.multiSession.revoke({
           sessionToken: device.sessionToken,
         });
 
@@ -399,7 +500,7 @@ export function SecuritySection() {
 
       // Révoquer toutes les autres sessions
       const revokePromises = otherDevices.map((device) =>
-        multiSession.revoke({ sessionToken: device.sessionToken })
+        authClient.multiSession.revoke({ sessionToken: device.sessionToken })
       );
 
       const results = await Promise.allSettled(revokePromises);
@@ -539,10 +640,10 @@ export function SecuritySection() {
             <div className="flex items-center gap-2 ml-4">
               {stripeConnected ? (
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
+                  {/* <div className="flex items-center gap-1">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <span className="text-xs text-green-600">Connecté</span>
-                  </div>
+                  </div> */}
                   <Button
                     variant="outline"
                     size="sm"
