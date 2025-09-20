@@ -11,6 +11,7 @@ import { resetPassword } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import Link from "next/link";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -48,41 +49,136 @@ export default function ResetPasswordPage() {
   };
   return (
     <main>
-      <div className="flex h-screen">
-        <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
-          <div
-            className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center"
-            style={{ backgroundImage: "url('/backgroundLogin.png')" }}
-          ></div>
-        </div>
-        <div className="w-1/2 flex items-center justify-center p-32">
-          <div className="sm:mx-auto sm:max-w-3xl w-full px-4">
-            <Card>
-              <CardHeader className="">
-                <CardTitle>Reinitialisation du mot de passe</CardTitle>
-                <CardDescription>
-                  Veuillez entrer votre nouveau mot de passe
-                </CardDescription>
-                <Input
-                  type="password"
-                  id="password"
-                  autoComplete="password"
-                  placeholder="Mot de passe"
-                  className="mt-2"
-                  {...register("password", {
-                    required: "Mot de passe est requis",
-                  })}
-                />
+      {/* Desktop Layout */}
+      <div className="hidden md:flex h-screen">
+        <div className="w-1/2 flex items-center justify-center p-8">
+          <div className="mx-auto sm:max-w-md w-full">
+            <h3 className="text-3xl font-semibold text-foreground dark:text-foreground">
+              Réinitialisation du mot de passe
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
+              Entrez votre nouveau mot de passe pour sécuriser votre compte.
+            </p>
+            
+            <div className="mt-8">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <Input
+                    type="password"
+                    id="password"
+                    autoComplete="new-password"
+                    placeholder="Nouveau mot de passe"
+                    {...register("password", {
+                      required: "Mot de passe est requis",
+                      minLength: {
+                        value: 8,
+                        message: "Le mot de passe doit contenir au moins 8 caractères"
+                      }
+                    })}
+                  />
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                  )}
+                </div>
+                
                 <SubmitButton
                   type="submit"
-                  className="mt-4 w-full py-2 font-medium cursor-pointer"
-                  onClick={handleSubmit(onSubmit)}
+                  className="w-full py-2 font-medium"
+                  disabled={isSubmitting}
                 >
-                  Reinitialiser le mot de passe
+                  {isSubmitting ? "Réinitialisation..." : "Réinitialiser le mot de passe"}
                 </SubmitButton>
-              </CardHeader>
-            </Card>
+              </form>
+            </div>
+            
+            <p className="mt-6 text-sm text-muted-foreground dark:text-muted-foreground text-center">
+              Vous vous souvenez de votre mot de passe ?{" "}
+              <Link
+                href="/auth/login"
+                className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
+              >
+                Se connecter
+              </Link>
+            </p>
           </div>
+        </div>
+        <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
+          <div
+            className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
+            style={{ backgroundImage: "url('/BackgroundAuth.svg')" }}
+          >
+            <div className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto">
+              <div className="text-lg min-h-[27px] flex items-center justify-center">
+                <div className="text-center">
+                  <p className="font-medium text-[#1C1C1C] text-[15px]">
+                    Sécurisez votre compte avec un nouveau mot de passe.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <img
+              src="/ni.svg"
+              alt="Newbi Logo"
+              className="absolute bottom-2 right-3 w-5 h-auto filter brightness-0 invert"
+              style={{ opacity: 0.9 }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden min-h-screen bg-background flex items-center justify-center pb-8">
+        <div className="w-full max-w-sm px-6">
+          <img
+            src="/ni2.png"
+            alt="Newbi Logo"
+            className="absolute top-16 left-8"
+            width={30}
+          />
+          <h3 className="text-xl font-medium text-foreground mb-2">
+            Réinitialisation du mot de passe
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Entrez votre nouveau mot de passe pour sécuriser votre compte.
+          </p>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <Input
+                type="password"
+                id="password"
+                autoComplete="new-password"
+                placeholder="Nouveau mot de passe"
+                {...register("password", {
+                  required: "Mot de passe est requis",
+                  minLength: {
+                    value: 8,
+                    message: "Le mot de passe doit contenir au moins 8 caractères"
+                  }
+                })}
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              )}
+            </div>
+            
+            <SubmitButton
+              type="submit"
+              className="w-full py-2 font-medium"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Réinitialisation..." : "Réinitialiser le mot de passe"}
+            </SubmitButton>
+          </form>
+
+          <p className="mt-4 text-sm text-muted-foreground text-center">
+            <Link
+              href="/auth/login"
+              className="font-medium text-primary hover:text-primary/90"
+            >
+              Retour à la connexion
+            </Link>
+          </p>
         </div>
       </div>
     </main>
