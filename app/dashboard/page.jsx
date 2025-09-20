@@ -27,6 +27,7 @@ import {
   FileCheck2,
   Download,
   FileClock,
+  Send,
   Landmark,
   Zap,
   Monitor,
@@ -231,12 +232,12 @@ function DashboardContent() {
             asChild
           >
             <a
-              href="/dashboard/outils/factures/new"
+              href="/dashboard/outils/transferts-fichiers/new"
               className="flex items-center gap-1 md:gap-2 justify-center"
             >
-              <Download className="w-4 h-4" />
+              <Send className="w-4 h-4" />
               <span className="text-xs md:text-xs truncate">
-                Importer des factures
+                Transférer un fichier
               </span>
             </a>
           </Button>
