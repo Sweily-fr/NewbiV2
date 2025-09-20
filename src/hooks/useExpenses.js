@@ -2,6 +2,7 @@ import { useQuery, useMutation } from "@apollo/client";
 import { GET_EXPENSES, GET_EXPENSE_STATS } from "../graphql/queries/expense";
 import {
   CREATE_EXPENSE,
+  UPDATE_EXPENSE,
   DELETE_EXPENSE,
   DELETE_MULTIPLE_EXPENSES,
 } from "../graphql/mutations/expense";
@@ -57,7 +58,7 @@ export const useDeleteExpense = () => {
         variables: {
           status: "PAID",
           page: 1,
-          limit: 20,
+          limit: 100, // Correspondre à la limite utilisée dans le tableau
         },
       },
     ],
@@ -208,6 +209,51 @@ export const useDeleteMultipleExpenses = () => {
 
   return {
     deleteMultipleExpenses,
+    loading,
+  };
+};
+
+/**
+ * Hook pour mettre à jour une dépense
+ */
+export const useUpdateExpense = () => {
+  const [updateExpenseMutation, { loading }] = useMutation(UPDATE_EXPENSE, {
+    refetchQueries: [
+      {
+        query: GET_EXPENSES,
+        variables: {
+          status: "PAID",
+          page: 1,
+          limit: 100,
+        },
+      },
+    ],
+    awaitRefetchQueries: true,
+  });
+
+  const updateExpense = async (id, input) => {
+    try {
+      const result = await updateExpenseMutation({
+        variables: { id, input },
+      });
+
+      if (result.data?.updateExpense) {
+        toast.success("Dépense modifiée avec succès");
+        return { success: true, expense: result.data.updateExpense };
+      } else {
+        throw new Error("Erreur lors de la modification");
+      }
+    } catch (error) {
+      console.error("Erreur modification dépense:", error);
+      toast.error(
+        error.message || "Erreur lors de la modification de la dépense"
+      );
+      return { success: false, error };
+    }
+  };
+
+  return {
+    updateExpense,
     loading,
   };
 };

@@ -104,6 +104,7 @@ import { ReceiptUploadDrawer } from "./receipt-upload-drawer";
 import {
   useExpenses,
   useCreateExpense,
+  useUpdateExpense,
   useDeleteExpense,
   useDeleteMultipleExpenses,
 } from "@/src/hooks/useExpenses";
@@ -387,7 +388,11 @@ const columns = [
     cell: ({ row, table }) => {
       return (
         <div onClick={(e) => e.stopPropagation()}>
-          <RowActions row={row} onEdit={table.options.meta?.onEdit} />
+          <RowActions 
+            row={row} 
+            onEdit={table.options.meta?.onEdit}
+            onRefresh={table.options.meta?.onRefresh}
+          />
         </div>
       );
     },
@@ -481,8 +486,9 @@ export default function TransactionTable() {
     limit: 100, // Récupérer plus de données pour la pagination côté client
   });
 
-  // Hooks pour la création et suppression
+  // Hooks pour la création, modification et suppression
   const { createExpense, loading: createLoading } = useCreateExpense();
+  const { updateExpense, loading: updateLoading } = useUpdateExpense();
   const { createInvoice, loading: createInvoiceLoading } = useCreateInvoice();
   const { deleteExpense, loading: deleteLoading } = useDeleteExpense();
   const { deleteMultipleExpenses, loading: deleteMultipleLoading } =
@@ -826,9 +832,32 @@ export default function TransactionTable() {
   };
 
   const handleSaveTransaction = async (updatedTransaction) => {
-    // Simulation de sauvegarde (à remplacer par une mutation GraphQL)
-    handleCloseEditModal();
-    toast.success("Transaction mise à jour");
+    if (!editingTransaction) return;
+
+    try {
+      // Mapper les données du formulaire vers le format de l'API
+      const updateInput = {
+        title: updatedTransaction.description || "Transaction modifiée",
+        description: updatedTransaction.description,
+        amount: parseFloat(updatedTransaction.amount),
+        currency: "EUR",
+        category: mapCategoryToEnum(updatedTransaction.category),
+        date: updatedTransaction.date,
+        paymentMethod: mapPaymentMethodToEnum(updatedTransaction.paymentMethod),
+        vendor: updatedTransaction.vendor,
+        notes: updatedTransaction.description,
+      };
+
+      const result = await updateExpense(editingTransaction.id, updateInput);
+
+      if (result.success) {
+        handleCloseEditModal();
+        // Forcer le refetch des données pour mettre à jour le tableau
+        refetchExpenses();
+      }
+    } catch (error) {
+      console.error("Erreur lors de la modification de la transaction:", error);
+    }
   };
 
   // Fonction pour télécharger le justificatif via l'URL Cloudflare
@@ -883,6 +912,7 @@ export default function TransactionTable() {
     globalFilterFn: multiColumnFilterFn,
     meta: {
       onEdit: handleEditTransaction,
+      onRefresh: refetch,
     },
   });
 
@@ -1374,6 +1404,14 @@ export default function TransactionTable() {
         onSubmit={handleAddTransaction}
       />
 
+      {/* Edit Transaction Drawer */}
+      <AddTransactionDrawer
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onSubmit={handleSaveTransaction}
+        transaction={editingTransaction}
+      />
+
       {/* Receipt Upload Drawer */}
       <ReceiptUploadDrawer
         open={isReceiptUploadDrawerOpen}
@@ -1384,7 +1422,7 @@ export default function TransactionTable() {
   );
 }
 
-function RowActions({ row, onEdit }) {
+function RowActions({ row, onEdit, onRefresh }) {
   const transaction = row.original;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { deleteExpense, loading: deleteLoading } = useDeleteExpense();
@@ -1408,6 +1446,11 @@ function RowActions({ row, onEdit }) {
     try {
       const result = await deleteExpense(transaction.id);
       setShowDeleteDialog(false);
+      
+      // Si la suppression a réussi, forcer le rafraîchissement
+      if (result.success && onRefresh) {
+        onRefresh();
+      }
       // Le toast de succès/erreur est géré dans le hook
     } catch (error) {
       console.error("Error deleting expense:", error);
@@ -1422,52 +1465,81 @@ function RowActions({ row, onEdit }) {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <div className="flex justify-end">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="shadow-none"
-            aria-label="Actions de la transaction"
-          >
-            <EllipsisIcon size={16} aria-hidden="true" />
-          </Button>
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            onClick={handleEdit}
-            disabled={transaction.source === "invoice"}
-          >
-            <span>Modifier</span>
-            <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleCopyDescription}>
-            <span>Copier description</span>
-            <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          {transaction.attachment && (
-            <DropdownMenuItem
-              onClick={() => handleDownloadAttachment(transaction)}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div className="flex justify-end">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="shadow-none"
+              aria-label="Actions de la transaction"
             >
-              <span>Télécharger justificatif</span>
-              <DropdownMenuShortcut>⌘V</DropdownMenuShortcut>
+              <EllipsisIcon size={16} aria-hidden="true" />
+            </Button>
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              onClick={handleEdit}
+              disabled={transaction.source === "invoice"}
+            >
+              <span>Modifier</span>
+              <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
             </DropdownMenuItem>
-          )}
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
-          onClick={() => setShowDeleteDialog(true)}
-          variant="destructive"
-          disabled={deleteLoading || transaction.source === "invoice"}
-        >
-          <span>{deleteLoading ? "Suppression..." : "Supprimer"}</span>
-          <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <DropdownMenuItem onClick={handleCopyDescription}>
+              <span>Copier description</span>
+              <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            {transaction.attachment && (
+              <DropdownMenuItem
+                onClick={() => handleDownloadAttachment(transaction)}
+              >
+                <span>Télécharger justificatif</span>
+                <DropdownMenuShortcut>⌘V</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={() => setShowDeleteDialog(true)}
+            variant="destructive"
+            disabled={deleteLoading || transaction.source === "invoice"}
+          >
+            <span>{deleteLoading ? "Suppression..." : "Supprimer"}</span>
+            <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette transaction ? Cette action est irréversible.
+              <br />
+              <strong>Description :</strong> {transaction.description}
+              <br />
+              <strong>Montant :</strong> {transaction.amount.toFixed(2)} €
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteLoading}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {deleteLoading ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -102,6 +102,44 @@ export const APPLY_OCR_DATA_TO_EXPENSE = gql`
 `;
 
 /**
+ * Mutation pour mettre à jour une dépense
+ */
+export const UPDATE_EXPENSE = gql`
+  mutation UpdateExpense($id: ID!, $input: UpdateExpenseInput!) {
+    updateExpense(id: $id, input: $input) {
+      id
+      title
+      description
+      amount
+      currency
+      category
+      date
+      vendor
+      vendorVatNumber
+      invoiceNumber
+      documentNumber
+      vatAmount
+      vatRate
+      status
+      paymentMethod
+      paymentDate
+      notes
+      tags
+      isVatDeductible
+      files {
+        id
+        filename
+        originalFilename
+        url
+        ocrProcessed
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+/**
  * Mutation pour supprimer une dépense
  */
 export const DELETE_EXPENSE = gql`
