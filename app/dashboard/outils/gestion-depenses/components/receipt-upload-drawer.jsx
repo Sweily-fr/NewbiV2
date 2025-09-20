@@ -239,28 +239,28 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
         style={{ width: "620px", maxWidth: "620px", minWidth: "620px" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div>
-            <h2 className="text-lg font-medium flex items-center gap-2">
+        <DrawerHeader className="flex flex-col p-6 border-b space-y-0">
+          <div className="flex items-center justify-between mb-2">
+            <DrawerTitle className="text-lg font-medium flex items-center gap-2 m-0 p-0">
               <UploadIcon className="h-5 w-5" />
               Ajouter un reçu
-            </h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              Uploadez une photo ou un PDF de votre reçu pour créer
-              automatiquement une dépense
-            </p>
+            </DrawerTitle>
+            <DrawerClose asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={handleClose}
+              >
+                <XIcon className="h-4 w-4" />
+              </Button>
+            </DrawerClose>
           </div>
-          <DrawerClose asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={handleClose}
-            >
-              <XIcon className="h-4 w-4" />
-            </Button>
-          </DrawerClose>
-        </div>
+          <DrawerDescription className="text-xs text-muted-foreground m-0 p-0">
+            Uploadez une photo ou un PDF de votre reçu pour créer
+            automatiquement une dépense
+          </DrawerDescription>
+        </DrawerHeader>
 
         {/* Content */}
         <div className="p-6 space-y-6 flex-1 overflow-y-auto">

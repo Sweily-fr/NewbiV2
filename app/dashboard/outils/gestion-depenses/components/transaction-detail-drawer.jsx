@@ -53,12 +53,74 @@ export function TransactionDetailDrawer({
   const PaymentIcon =
     paymentMethodIcons[transaction.paymentMethod] || FileTextIcon;
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+  const formatDate = (dateInput, includeTime = false) => {
+    console.log("formatDate input:", dateInput, typeof dateInput);
+    
+    if (!dateInput) return "Date non disponible";
+    
+    let date;
+    
+    // Gérer différents types d'entrée
+    if (typeof dateInput === 'string') {
+      // Cas spécial pour les chaînes vides ou "Invalid Date"
+      if (dateInput === '' || dateInput === 'Invalid Date') {
+        return "Date non disponible";
+      }
+      
+      // Si c'est une date au format YYYY-MM-DD, ajouter une heure pour éviter les problèmes de timezone
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+        date = new Date(dateInput + 'T12:00:00.000Z');
+      } 
+      // Si c'est un timestamp en string
+      else if (/^\d{10,13}$/.test(dateInput)) {
+        date = new Date(parseInt(dateInput));
+      }
+      // Autres formats de string
+      else {
+        date = new Date(dateInput);
+      }
+    } 
+    // Si c'est un nombre (timestamp)
+    else if (typeof dateInput === 'number') {
+      date = new Date(dateInput);
+    }
+    // Si c'est déjà un objet Date
+    else if (dateInput instanceof Date) {
+      date = dateInput;
+    }
+    // Autres cas
+    else {
+      console.log("Type de date non supporté:", typeof dateInput, dateInput);
+      return "Format de date non supporté";
+    }
+    
+    // Vérifier si la date est valide
+    if (isNaN(date.getTime())) {
+      console.log("Date invalide après parsing:", dateInput, "->", date);
+      return "Date invalide";
+    }
+    
+    // Formater selon les besoins
+    if (includeTime) {
+      const dateStr = date.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      
+      const timeStr = date.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      
+      return `${dateStr} ${timeStr}`;
+    } else {
+      return date.toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    }
   };
 
   const formatAmount = (amount) => {
@@ -73,14 +135,18 @@ export function TransactionDetailDrawer({
         style={{ width: "620px", maxWidth: "620px", minWidth: "620px" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-medium">Détails de la transaction</h2>
-          <DrawerClose asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <XIcon className="h-4 w-4" />
-            </Button>
-          </DrawerClose>
-        </div>
+        <DrawerHeader className="flex flex-row items-center justify-between p-6 border-b space-y-0">
+          <DrawerTitle className="text-lg font-medium m-0 p-0 flex-shrink-0">
+            Détails de la transaction
+          </DrawerTitle>
+          <div className="flex-shrink-0">
+            <DrawerClose asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <XIcon className="h-4 w-4" />
+              </Button>
+            </DrawerClose>
+          </div>
+        </DrawerHeader>
 
         {/* Content */}
         <div className="flex-1 p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-120px)]">
@@ -138,17 +204,7 @@ export function TransactionDetailDrawer({
             <div className="flex items-center justify-between">
               <span className="text-sm">Date</span>
               <span className="text-sm font-medium">
-                {new Date(transaction.date).toLocaleDateString("en-US", {
-                  month: "2-digit",
-                  day: "2-digit",
-                  year: "numeric",
-                })}{" "}
-                {new Date(transaction.date).toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                })}{" "}
-                PDT
+                {formatDate(transaction.date, true)}
               </span>
             </div>
 
@@ -291,7 +347,7 @@ export function TransactionDetailDrawer({
                   <div className="flex justify-between">
                     <span className="text-sm">Date de facture</span>
                     <span className="text-sm">
-                      {new Date(transaction.ocrMetadata.invoiceDate).toLocaleDateString('fr-FR')}
+                      {formatDate(transaction.ocrMetadata.invoiceDate, false)}
                     </span>
                   </div>
                 )}
