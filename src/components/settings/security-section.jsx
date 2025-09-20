@@ -177,8 +177,14 @@ export function SecuritySection() {
             sessionData.ipAddress || sessionData.ip || "127.0.0.1";
           const displayIp = ipAddress === "" ? "Localhost" : ipAddress;
 
+          // Générer un ID unique en combinant plusieurs sources et l'index
+          const uniqueId = sessionData.id || 
+                          sessionData.sessionId || 
+                          sessionData.token || 
+                          `device-${index}-${Date.now()}`;
+
           return {
-            id: sessionData.id || sessionData.sessionId || sessionData.token,
+            id: uniqueId,
             device:
               getUserAgent(sessionData.userAgent) || `Appareil ${index + 1}`,
             lastActivity: formatLastActivity(

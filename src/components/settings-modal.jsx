@@ -14,7 +14,7 @@ import {
   Crown,
   User,
 } from "lucide-react";
-import { Dialog, DialogContent } from "@/src/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -477,6 +477,8 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
         className="max-h-[90vh] p-0 gap-0 overflow-hidden"
         style={{ maxWidth: "72rem", width: "82vw", height: "88vh" }}
       >
+        {/* DialogTitle caché pour l'accessibilité */}
+        <DialogTitle className="sr-only">Paramètres de l'application</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="flex h-full">
             {/* Sidebar */}

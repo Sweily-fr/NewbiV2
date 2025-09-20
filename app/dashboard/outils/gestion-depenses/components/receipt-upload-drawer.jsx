@@ -106,8 +106,8 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
 
       setSelectedFile(file);
 
-      // Upload immédiat vers Cloudflare
-      await uploadDocument(file);
+      // Upload immédiat vers Cloudflare dans le compartiment "ocr"
+      await uploadDocument(file, "ocr");
     },
     [uploadDocument]
   );
