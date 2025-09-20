@@ -2,6 +2,7 @@ import { useQuery, useMutation } from "@apollo/client";
 import { GET_EXPENSES, GET_EXPENSE_STATS } from "../graphql/queries/expense";
 import {
   CREATE_EXPENSE,
+  UPDATE_EXPENSE,
   DELETE_EXPENSE,
   DELETE_MULTIPLE_EXPENSES,
 } from "../graphql/mutations/expense";
@@ -57,7 +58,7 @@ export const useDeleteExpense = () => {
         variables: {
           status: "PAID",
           page: 1,
-          limit: 20,
+          limit: 100, // Correspondre à la limite utilisée dans le tableau
         },
       },
     ],
@@ -156,16 +157,8 @@ export const useDeleteMultipleExpenses = () => {
   const [deleteMultipleExpensesMutation, { loading }] = useMutation(
     DELETE_MULTIPLE_EXPENSES,
     {
-      refetchQueries: [
-        {
-          query: GET_EXPENSES,
-          variables: {
-            status: "PAID",
-            page: 1,
-            limit: 20,
-          },
-        },
-      ],
+      // Utiliser refetchQueries sans variables spécifiques pour rafraîchir toutes les requêtes GET_EXPENSES
+      refetchQueries: [GET_EXPENSES],
       awaitRefetchQueries: true,
     }
   );
@@ -216,6 +209,58 @@ export const useDeleteMultipleExpenses = () => {
 
   return {
     deleteMultipleExpenses,
+    loading,
+  };
+};
+
+/**
+ * Hook pour mettre à jour une dépense
+ */
+export const useUpdateExpense = () => {
+  const [updateExpenseMutation, { loading }] = useMutation(UPDATE_EXPENSE, {
+    refetchQueries: [
+      {
+        query: GET_EXPENSES,
+        variables: {
+          status: "PAID",
+          page: 1,
+          limit: 100,
+        },
+      },
+    ],
+    awaitRefetchQueries: true,
+  });
+
+  const updateExpense = async (id, input) => {
+    try {
+      console.log("🔄 Tentative de modification dépense:", { id, input });
+      
+      const result = await updateExpenseMutation({
+        variables: { id, input },
+      });
+
+      console.log("📊 Résultat mutation updateExpense:", result);
+
+      if (result.data?.updateExpense) {
+        toast.success("Dépense modifiée avec succès");
+        return { success: true, expense: result.data.updateExpense };
+      } else {
+        console.error("❌ Pas de données dans result.data.updateExpense:", result.data);
+        throw new Error("Erreur lors de la modification");
+      }
+    } catch (error) {
+      console.error("Erreur modification dépense:", error);
+      console.error("Détails de l'erreur:", error.graphQLErrors);
+      console.error("Erreur réseau:", error.networkError);
+      toast.error(
+        error.message || "Erreur lors de la modification de la dépense"
+      );
+      return { success: false, error };
+    }
+  };
+
+  return {
+    updateExpense,
     loading,
   };
 };

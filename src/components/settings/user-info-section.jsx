@@ -234,7 +234,7 @@ export default function UserInfoSection({ onTabChange }) {
                     variant="outline"
                     size="sm"
                     onClick={() => onTabChange && onTabChange("subscription")}
-                    className="text-red-700 bg-transparent border-red-300 hover:text-red-700 hover:border-red-300 cursor-pointer"
+                    className="text-red-700 bg-transparent border-red-300 hover:text-red-700 hover:border-red-300 hover:bg-red-100 cursor-pointer"
                   >
                     Gérer mon abonnement
                   </Button>

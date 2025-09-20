@@ -18,16 +18,34 @@ export default function BankBalanceCard({ className }) {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Récupérer les dépenses et factures pour calculer le solde total
-  const { expenses, loading: expensesLoading } = useExpenses({ status: 'PAID', limit: 1000 });
+  const { expenses, loading: expensesLoading } = useExpenses({
+    status: "PAID",
+    limit: 1000,
+  });
   const { invoices, loading: invoicesLoading } = useInvoices();
 
   const fetchAccounts = async () => {
     if (!workspaceId) return;
 
+    // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Récupération des comptes bancaires
+    // Pour éviter les erreurs sur le dashboard
     try {
       setLoading(true);
+
+      // Simulation d'un délai pour l'UX
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Pas de comptes bancaires pour l'instant
+      setAccounts([]);
+      setError(null);
+
+      console.log(
+        "📊 Récupération des comptes bancaires désactivée temporairement"
+      );
+
+      /* CODE ORIGINAL COMMENTÉ :
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/banking/accounts`,
         {
@@ -46,8 +64,12 @@ export default function BankBalanceCard({ className }) {
       } else {
         throw new Error("Erreur lors de la récupération des comptes");
       }
+      */
     } catch (err) {
-      setError(err.message);
+      // En cas d'erreur, on affiche quand même le dashboard sans comptes
+      console.warn("⚠️ Erreur récupération comptes (ignorée):", err.message);
+      setAccounts([]);
+      setError(null); // On n'affiche plus l'erreur
     } finally {
       setLoading(false);
     }
@@ -69,26 +91,41 @@ export default function BankBalanceCard({ className }) {
     (sum, account) => sum + (account.balance || 0),
     0
   );
-  
+
   // Calculer le solde total incluant toutes les transactions
   const totalBalance = useMemo(() => {
     // Revenus des factures payées
-    const paidInvoices = invoices.filter(invoice => invoice.status === 'COMPLETED');
-    const invoiceIncome = paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || invoice.totalTTC || 0), 0);
-    
+    const paidInvoices = invoices.filter(
+      (invoice) => invoice.status === "COMPLETED"
+    );
+    const invoiceIncome = paidInvoices.reduce(
+      (sum, invoice) => sum + (invoice.finalTotalTTC || invoice.totalTTC || 0),
+      0
+    );
+
     // Revenus et dépenses des expenses
-    const incomeExpenses = expenses.filter(e => e.notes && e.notes.includes('[INCOME]'));
-    const regularExpenses = expenses.filter(e => !e.notes || !e.notes.includes('[INCOME]'));
-    
-    const manualIncome = incomeExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-    const totalExpenses = regularExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-    
+    const incomeExpenses = expenses.filter(
+      (e) => e.notes && e.notes.includes("[INCOME]")
+    );
+    const regularExpenses = expenses.filter(
+      (e) => !e.notes || !e.notes.includes("[INCOME]")
+    );
+
+    const manualIncome = incomeExpenses.reduce(
+      (sum, expense) => sum + (expense.amount || 0),
+      0
+    );
+    const totalExpenses = regularExpenses.reduce(
+      (sum, expense) => sum + (expense.amount || 0),
+      0
+    );
+
     // Solde total = Solde bancaire + Revenus - Dépenses
     return bankBalance + invoiceIncome + manualIncome - totalExpenses;
   }, [accounts, expenses, invoices, bankBalance]);
 
   const isLoading = loading || expensesLoading || invoicesLoading;
-  
+
   if (isLoading) {
     return (
       <Card className={className}>
@@ -135,12 +172,15 @@ export default function BankBalanceCard({ className }) {
               Solde global (revenus - dépenses)
             </p>
           </div>
-          
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 text-center">
-              Aucun compte bancaire connecté
+
+          {/* <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-700 text-center">
+              💳 Intégration bancaire temporairement désactivée
             </p>
-          </div>
+            <p className="text-xs text-blue-600 text-center mt-1">
+              Le solde est calculé sur vos factures et dépenses
+            </p>
+          </div> */}
 
           {/* Bouton de gestion - Désactivé temporairement */}
           <Button
@@ -173,13 +213,15 @@ export default function BankBalanceCard({ className }) {
             Solde global (comptes + revenus - dépenses)
           </p>
         </div>
-        
+
         {/* Solde bancaire si différent */}
         {bankBalance !== totalBalance && (
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Solde bancaire</span>
-              <span className="text-sm font-medium">{formatCurrency(bankBalance)}</span>
+              <span className="text-sm font-medium">
+                {formatCurrency(bankBalance)}
+              </span>
             </div>
           </div>
         )}

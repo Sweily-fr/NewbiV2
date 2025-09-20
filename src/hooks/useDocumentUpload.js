@@ -36,8 +36,9 @@ export const useDocumentUpload = () => {
     },
   });
 
-  const uploadDocument = async (file) => {
+  const uploadDocument = async (file, folderType = null) => {
     try {
+      console.log('🚀 Frontend - Upload avec folderType:', folderType);
       setIsUploading(true);
       setUploadProgress(0);
       setUploadError(null);
@@ -55,7 +56,10 @@ export const useDocumentUpload = () => {
       }, 200);
 
       await uploadDocumentMutation({
-        variables: { file },
+        variables: { 
+          file,
+          folderType 
+        },
       });
 
       clearInterval(progressInterval);

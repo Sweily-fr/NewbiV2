@@ -27,6 +27,7 @@ import {
   FileCheck2,
   Download,
   FileClock,
+  Send,
   Landmark,
   Zap,
   Monitor,
@@ -98,12 +99,15 @@ function DashboardContent() {
 
   // Utiliser les fonctions utilitaires importées
 
-  // Calculate totals from real data - uniquement factures payées et toutes les dépenses
+  // Filtrer les dépenses payées (exclure les DRAFT)
+  const paidExpenses = expenses.filter(expense => expense.status === 'PAID');
+  
+  // Calculate totals from real data - uniquement factures payées et dépenses payées
   const totalIncome = paidInvoices.reduce(
     (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
     0
   );
-  const totalExpenses = expenses.reduce(
+  const totalExpenses = paidExpenses.reduce(
     (sum, expense) => sum + (expense.amount || 0),
     0
   );
@@ -114,8 +118,8 @@ function DashboardContent() {
     [expenses, paidInvoices]
   );
   const expenseChartData = useMemo(
-    () => processExpensesForCharts(expenses),
-    [expenses]
+    () => processExpensesForCharts(paidExpenses),
+    [paidExpenses]
   );
 
   // Si les données sont en cours de chargement, afficher le skeleton
@@ -231,12 +235,12 @@ function DashboardContent() {
             asChild
           >
             <a
-              href="/dashboard/outils/factures/new"
+              href="/dashboard/outils/transferts-fichiers/new"
               className="flex items-center gap-1 md:gap-2 justify-center"
             >
-              <Download className="w-4 h-4" />
+              <Send className="w-4 h-4" />
               <span className="text-xs md:text-xs truncate">
-                Importer des factures
+                Transférer un fichier
               </span>
             </a>
           </Button>

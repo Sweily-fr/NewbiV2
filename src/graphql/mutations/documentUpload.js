@@ -5,8 +5,8 @@
 import { gql } from '@apollo/client';
 
 export const UPLOAD_DOCUMENT = gql`
-  mutation UploadDocument($file: Upload!) {
-    uploadDocument(file: $file) {
+  mutation UploadDocument($file: Upload!, $folderType: String) {
+    uploadDocument(file: $file, folderType: $folderType) {
       success
       key
       url

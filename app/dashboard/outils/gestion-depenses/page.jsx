@@ -8,15 +8,20 @@ import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useExpenses } from "@/src/hooks/useExpenses";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { processInvoicesForCharts, processExpensesForCharts, getIncomeChartConfig, getExpenseChartConfig } from "@/src/utils/chartDataProcessors";
+import { useApolloClient } from "@apollo/client";
+import { Button } from "@/src/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 function GestionDepensesContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const client = useApolloClient();
 
   // Récupération des dépenses depuis l'API - sans paramètres pour éviter les problèmes
   const {
     expenses,
     loading: expensesLoading,
     error: expensesError,
+    refetch: refetchExpenses,
   } = useExpenses();
 
   // Récupération des factures payées depuis l'API
@@ -42,17 +47,32 @@ function GestionDepensesContent() {
     }).format(amount || 0);
   };
 
+  // Filtrer les dépenses payées (exclure les DRAFT)
+  const paidExpenses = expenses.filter(expense => expense.status === 'PAID');
+  
   // Calcul des statistiques réelles avec les utilitaires
   const totalIncome = paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
-  const totalExpenses = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+  const totalExpenses = paidExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
 
   // Utiliser les fonctions utilitaires pour les données de graphique
   const incomeChartData = useMemo(() => processInvoicesForCharts(paidInvoices), [paidInvoices]);
-  const expenseChartData = useMemo(() => processExpensesForCharts(expenses), [expenses]);
+  const expenseChartData = useMemo(() => processExpensesForCharts(paidExpenses), [paidExpenses]);
 
   // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
   const handleOpenInviteDialog = () => {
     setDialogOpen(true);
+  };
+
+  // Fonction pour rafraîchir les données et vider le cache
+  const handleRefreshData = async () => {
+    try {
+      // Vider le cache Apollo Client
+      await client.clearStore();
+      // Refetch les données
+      await refetchExpenses();
+    } catch (error) {
+      console.error('Erreur lors du rafraîchissement:', error);
+    }
   };
 
   // Utiliser les configurations importées
@@ -61,12 +81,23 @@ function GestionDepensesContent() {
 
   return (
     <div className="flex flex-col gap-2 py-4 md:gap-6 md:py-6 p-6">
-      <div className="w-full">
-        <h1 className="text-2xl font-medium mb-2">Gestion des dépenses</h1>
-        <p className="text-muted-foreground text-sm">
-          Gérer vos dépenses en toute simplicité avec la lecture OCR de vos
-          reçus
-        </p>
+      <div className="w-full flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-medium mb-2">Gestion des dépenses</h1>
+          <p className="text-muted-foreground text-sm">
+            Gérer vos dépenses en toute simplicité avec la lecture OCR de vos
+            reçus
+          </p>
+        </div>
+        <Button 
+          onClick={handleRefreshData}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2 font-normal"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Actualiser les données
+        </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Graphique des entrées avec vraies données */}

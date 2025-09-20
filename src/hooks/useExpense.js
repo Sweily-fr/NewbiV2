@@ -75,9 +75,17 @@ export const useExpense = () => {
         amount: parseFloat(transactionData.amount) || 0,
         currency: transactionData.currency || "EUR",
         category: categoryMapping[transactionData.category] || "OTHER",
-        date:
-          transactionData.transaction_date ||
-          new Date().toISOString().split("T")[0],
+        date: (() => {
+          // Vérifier si transaction_date est valide
+          if (transactionData.transaction_date) {
+            const date = new Date(transactionData.transaction_date);
+            if (!isNaN(date.getTime())) {
+              return transactionData.transaction_date;
+            }
+          }
+          // Fallback vers la date actuelle si invalide ou manquante
+          return new Date().toISOString().split("T")[0];
+        })(),
         vendor: transactionData.vendor_name || "",
         vendorVatNumber:
           financialAnalysis?.extracted_fields?.vendor_siret || "",
@@ -166,7 +174,15 @@ export const useExpense = () => {
             vendorVatNumber:
               financialAnalysis?.extracted_fields?.vendor_siret || "",
             invoiceNumber: transactionData.document_number || "",
-            invoiceDate: transactionData.transaction_date || "",
+            invoiceDate: (() => {
+              if (transactionData.transaction_date) {
+                const date = new Date(transactionData.transaction_date);
+                if (!isNaN(date.getTime())) {
+                  return transactionData.transaction_date;
+                }
+              }
+              return "";
+            })(),
             totalAmount: parseFloat(transactionData.amount) || 0,
             vatAmount: parseFloat(transactionData.tax_amount) || 0,
             currency: transactionData.currency || "EUR",

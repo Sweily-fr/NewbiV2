@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   XIcon,
   Euro,
@@ -32,7 +32,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
 
-export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
+export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction = null }) {
   const [formData, setFormData] = useState({
     type: "EXPENSE", // Défaut à EXPENSE pour les dépenses
     amount: "",
@@ -42,6 +42,53 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
     paymentMethod: "CARD",
     vendor: "",
   });
+
+  // Pré-remplir le formulaire si une transaction est fournie (mode édition)
+  useEffect(() => {
+    if (transaction && open) {
+      console.log("🔄 AddTransactionDrawer - Transaction reçue:", transaction);
+      
+      // Formater la date pour l'input date (format YYYY-MM-DD)
+      let formattedDate = new Date().toISOString().split("T")[0]; // Défaut
+      if (transaction.date) {
+        console.log("📅 Date originale:", transaction.date, "Type:", typeof transaction.date);
+        
+        if (typeof transaction.date === "string") {
+          // Si c'est déjà une string, vérifier le format
+          if (transaction.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            formattedDate = transaction.date;
+          } else {
+            // Essayer de parser la date
+            const parsedDate = new Date(transaction.date);
+            if (!isNaN(parsedDate.getTime())) {
+              formattedDate = parsedDate.toISOString().split("T")[0];
+            }
+          }
+        } else {
+          // Si c'est un objet Date
+          const dateObj = new Date(transaction.date);
+          if (!isNaN(dateObj.getTime())) {
+            formattedDate = dateObj.toISOString().split("T")[0];
+          }
+        }
+      }
+      
+      console.log("📅 Date formatée pour l'input:", formattedDate);
+      
+      const newFormData = {
+        type: transaction.type || "EXPENSE",
+        amount: transaction.amount?.toString() || "",
+        category: transaction.category || "",
+        date: formattedDate,
+        description: transaction.description || "",
+        paymentMethod: transaction.paymentMethod || "CARD",
+        vendor: transaction.vendor || "",
+      };
+      
+      console.log("📝 FormData final:", newFormData);
+      setFormData(newFormData);
+    }
+  }, [transaction, open]);
 
   // Réinitialiser le formulaire quand le drawer se ferme
   const handleOpenChange = (isOpen) => {
@@ -80,7 +127,9 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
       >
         <DrawerHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
-            <DrawerTitle>Ajouter une transaction</DrawerTitle>
+            <DrawerTitle>
+              {transaction ? "Modifier la transaction" : "Ajouter une transaction"}
+            </DrawerTitle>
             <DrawerClose asChild>
               <Button variant="ghost" size="icon">
                 <XIcon className="h-4 w-4" />
@@ -175,7 +224,10 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
                   <Input
                     type="date"
                     value={formData.date}
-                    onChange={(e) => handleChange("date")(e.target.value)}
+                    onChange={(e) => {
+                      console.log("📅 Changement de date:", e.target.value);
+                      handleChange("date")(e.target.value);
+                    }}
                     className="w-40"
                   />
                 </div>
@@ -300,7 +352,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit }) {
                 type="submit"
                 className="bg-primary hover:bg-primary/90 cursor-pointer font-normal"
               >
-                Ajouter la transaction
+                {transaction ? "Modifier la transaction" : "Ajouter la transaction"}
               </Button>
             </div>
           </form>

@@ -14,7 +14,7 @@ import {
   Crown,
   User,
 } from "lucide-react";
-import { Dialog, DialogContent } from "@/src/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -471,15 +471,66 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
     },
   ];
 
+  // Onglets principaux pour mobile (regroupés logiquement)
+  const mobileMainTabs = [
+    {
+      id: "user-info",
+      label: "Mon compte",
+      icon: User,
+    },
+    {
+      id: "generale",
+      label: "Général",
+      icon: Settings,
+      hasSubsections: true,
+      subsections: ["generale", "coordonnees-bancaires", "informations-legales"]
+    },
+    {
+      id: "securite",
+      label: "Sécurité",
+      icon: Shield,
+    },
+    {
+      id: "subscription",
+      label: "Abonnement",
+      icon: Crown,
+    },
+  ];
+
+  // Fonction pour déterminer l'onglet actif sur mobile
+  const getActiveMobileTab = () => {
+    const generalTabs = ["generale", "coordonnees-bancaires", "informations-legales"];
+    if (generalTabs.includes(activeTab)) {
+      return "generale";
+    }
+    return activeTab;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[90vh] p-0 gap-0 overflow-hidden"
-        style={{ maxWidth: "72rem", width: "82vw", height: "88vh" }}
+        className="max-h-[90vh] md:max-h-[90vh] p-0 gap-0 overflow-hidden"
+        style={{ 
+          maxWidth: "72rem", 
+          width: "95vw", 
+          height: "92vh",
+          // Mobile specific styles
+          ...(typeof window !== 'undefined' && window.innerWidth < 768 && {
+            width: "100vw",
+            height: "100vh",
+            maxWidth: "100vw",
+            maxHeight: "100vh",
+            borderRadius: "0px",
+            margin: "0",
+          })
+        }}
       >
+        {/* DialogTitle caché pour l'accessibilité */}
+        <DialogTitle className="sr-only">Paramètres de l'application</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex h-full">
-            {/* Sidebar */}
+          {/* Desktop Layout */}
+          <div className="hidden md:flex h-full">
+            {/* Sidebar Desktop */}
             <div className="w-60 bg-gray-50 dark:bg-[#171717] overflow-y-auto">
               {/* Header */}
               <div className="p-4">
@@ -564,7 +615,7 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
               </div>
             </div>
 
-            {/* Content Area */}
+            {/* Content Area Desktop */}
             <div className="flex-1 bg-white dark:bg-[#0A0A0A] flex flex-col">
               {/* Scrollable Content */}
               <div
@@ -605,6 +656,115 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
                       {isSubmitting ? "Mise à jour..." : "Sauvegarder"}
                     </Button>
                   )}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Layout */}
+          <div className="md:hidden flex flex-col h-full">
+            {/* Header Mobile */}
+            <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-[#0A0A0A]">
+              <h2 className="text-lg font-semibold">Paramètres</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCloseModal}
+                className="h-8 w-8 p-0"
+              >
+                ✕
+              </Button>
+            </div>
+
+            {/* Sub-navigation for General section on mobile */}
+            {getActiveMobileTab() === "generale" && (
+              <div className="bg-gray-50 dark:bg-[#171717] border-b border-gray-200 dark:border-gray-800">
+                <div className="flex overflow-x-auto">
+                  {[
+                    { id: "generale", label: "Informations" },
+                    { id: "coordonnees-bancaires", label: "Bancaire" },
+                    { id: "informations-legales", label: "Légal" }
+                  ].map((subTab) => (
+                    <button
+                      key={subTab.id}
+                      type="button"
+                      onClick={() => handleTabChange(subTab.id)}
+                      className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                        activeTab === subTab.id
+                          ? "border-[#5b4eff] text-[#5b4eff] bg-white dark:bg-[#0A0A0A]"
+                          : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                      }`}
+                    >
+                      {subTab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Content Area Mobile */}
+            <div className="flex-1 bg-white dark:bg-[#0A0A0A] overflow-y-auto">
+              <div className={`p-6 ${
+                (activeTab === "generale" || activeTab === "coordonnees-bancaires" || activeTab === "informations-legales")
+                  ? "pb-40" // Plus d'espace pour les boutons d'action
+                  : "pb-24" // Espace normal pour les autres sections
+              }`}>
+                {renderContent()}
+              </div>
+            </div>
+
+            {/* Bottom Navigation Mobile */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0A0A0A] border-t border-gray-200 dark:border-gray-800 shadow-lg">
+              {/* Safe area padding for iOS devices */}
+              <div className="pb-safe">
+                <div className="flex items-center justify-around px-2 py-3">
+                  {mobileMainTabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = getActiveMobileTab() === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => handleTabChange(tab.id)}
+                        className={`flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1 relative ${
+                          isActive
+                            ? "bg-[#5b4eff]/10 text-[#5b4eff] scale-105"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        }`}
+                      >
+                        <Icon className={`h-5 w-5 mb-1 transition-colors ${isActive ? "text-[#5b4eff]" : ""}`} />
+                        <span className={`text-xs font-medium truncate transition-colors ${isActive ? "text-[#5b4eff]" : ""}`}>
+                          {tab.label}
+                        </span>
+                        {/* Indicateur pour les onglets avec sous-sections */}
+                        {tab.hasSubsections && isActive && (
+                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-[#5b4eff] rounded-full animate-pulse"></div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                {/* Action Buttons Mobile */}
+                {(activeTab === "generale" || activeTab === "coordonnees-bancaires" || activeTab === "informations-legales") && (
+                  <div className="px-4 pb-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="flex-1 cursor-pointer h-11"
+                        onClick={handleCloseModal}
+                      >
+                        Annuler
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting || !hasUnsavedChanges}
+                        className="flex-1 bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white h-11"
+                      >
+                        {isSubmitting ? "Mise à jour..." : "Sauvegarder"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

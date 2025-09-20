@@ -110,24 +110,16 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <div className="flex flex-col gap-2">
-          {/* <div
-            className="flex size-11 shrink-0 items-center justify-center rounded-full border"
-            aria-hidden="true"
-          >
-            <UserRoundPlusIcon className="opacity-80" size={16} />
-          </div> */}
-          <DialogHeader>
-            <DialogTitle className="text-left">
-              {client ? "Modifier le client" : "Ajouter un client"}
-            </DialogTitle>
-            <DialogDescription className="text-left">
-              {client
-                ? "Modifiez les informations du client"
-                : "Créez un nouveau client pour votre entreprise"}
-            </DialogDescription>
-          </DialogHeader>
-        </div>
+        <DialogHeader>
+          <DialogTitle className="text-left">
+            {client ? "Modifier le client" : "Ajouter un client"}
+          </DialogTitle>
+          <DialogDescription className="text-left">
+            {client
+              ? "Modifiez les informations du client"
+              : "Créez un nouveau client pour votre entreprise"}
+          </DialogDescription>
+        </DialogHeader>
 
         <form
           onSubmit={handleSubmit(onSubmit)}
