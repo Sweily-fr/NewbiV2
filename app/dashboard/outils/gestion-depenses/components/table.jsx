@@ -392,6 +392,7 @@ const columns = [
             row={row} 
             onEdit={table.options.meta?.onEdit}
             onRefresh={table.options.meta?.onRefresh}
+            onDownloadAttachment={table.options.meta?.onDownloadAttachment}
           />
         </div>
       );
@@ -882,10 +883,10 @@ export default function TransactionTable() {
       link.click();
       document.body.removeChild(link);
 
-      toast.success("Téléchargement du justificatif lancé");
+      toast.success("Justificatif ouvert dans un nouvel onglet");
     } catch (error) {
       console.error("❌ Erreur lors du téléchargement:", error);
-      toast.error("Erreur lors du téléchargement du justificatif");
+      toast.error("Erreur lors de l'affichage du justificatif");
     }
   };
 
@@ -913,6 +914,7 @@ export default function TransactionTable() {
     meta: {
       onEdit: handleEditTransaction,
       onRefresh: refetch,
+      onDownloadAttachment: handleDownloadAttachment,
     },
   });
 
@@ -1422,7 +1424,7 @@ export default function TransactionTable() {
   );
 }
 
-function RowActions({ row, onEdit, onRefresh }) {
+function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
   const transaction = row.original;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { deleteExpense, loading: deleteLoading } = useDeleteExpense();
@@ -1494,12 +1496,12 @@ function RowActions({ row, onEdit, onRefresh }) {
             </DropdownMenuItem>
             {transaction.attachment && (
               <DropdownMenuItem
-                onClick={() => handleDownloadAttachment(transaction)}
+                onClick={() => onDownloadAttachment && onDownloadAttachment(transaction)}
               >
-                <span>Télécharger justificatif</span>
+                <span>Afficher le justificatif</span>
                 <DropdownMenuShortcut>⌘V</DropdownMenuShortcut>
               </DropdownMenuItem>
-            )}
+            )}  
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
