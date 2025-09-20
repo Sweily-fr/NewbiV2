@@ -156,16 +156,8 @@ export const useDeleteMultipleExpenses = () => {
   const [deleteMultipleExpensesMutation, { loading }] = useMutation(
     DELETE_MULTIPLE_EXPENSES,
     {
-      refetchQueries: [
-        {
-          query: GET_EXPENSES,
-          variables: {
-            status: "PAID",
-            page: 1,
-            limit: 20,
-          },
-        },
-      ],
+      // Utiliser refetchQueries sans variables spécifiques pour rafraîchir toutes les requêtes GET_EXPENSES
+      refetchQueries: [GET_EXPENSES],
       awaitRefetchQueries: true,
     }
   );

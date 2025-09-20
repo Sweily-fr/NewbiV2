@@ -637,15 +637,14 @@ export default function TransactionTable() {
       return;
     }
 
-    // Séparer les dépenses des autres types (seules les dépenses peuvent être supprimées)
     const expenseRows = selectedRows.filter(
       (row) => row.original.source === "expense"
     );
     const invoiceRows = selectedRows.filter(
       (row) => row.original.source === "invoice"
     );
-    const nonDeletableCount = invoiceRows.length;
-    if (nonDeletableCount > 0) {
+
+    if (invoiceRows.length > 0) {
       toast.warning(
         `${invoiceRows.length} facture(s) ignorée(s) (non supprimables)`
       );
@@ -662,6 +661,8 @@ export default function TransactionTable() {
 
       if (result.success) {
         table.resetRowSelection();
+        // Rafraîchir manuellement les données pour mise à jour en temps réel
+        await refetchExpenses();
         // Le toast de succès est géré dans le hook
       }
     } catch (error) {
