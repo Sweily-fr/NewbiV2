@@ -29,6 +29,8 @@ export function GeneraleSection({
   setValue,
   session,
   organization,
+  updateOrganization,
+  refetchOrganization,
 }) {
   const watchedValues = watch();
   const logoUrl = watchedValues.logo || organization?.logo || null;
@@ -36,11 +38,40 @@ export function GeneraleSection({
     watchedValues.address?.country || organization?.addressCountry || "France";
 
   const handleLogoChange = (imageUrl) => {
-    setValue("logo", imageUrl, { shouldDirty: false });
+    console.log("🖼️ handleLogoChange appelé avec:", imageUrl);
+    setValue("logo", imageUrl, { shouldDirty: true });
+    console.log("✅ setValue logo appelé avec shouldDirty: true");
+  };
+
+  const handleOrganizationUpdate = async (logoUrl) => {
+    console.log("🏢 handleOrganizationUpdate appelé avec:", logoUrl);
+    if (updateOrganization && organization?.id) {
+      try {
+        await updateOrganization(
+          { logo: logoUrl },
+          {
+            onSuccess: async () => {
+              console.log("✅ Logo sauvegardé automatiquement dans l'organisation");
+              // Forcer un refetch de l'organisation pour mettre à jour la session
+              if (refetchOrganization) {
+                console.log("🔄 Refetch de l'organisation pour mise à jour session...");
+                await refetchOrganization();
+                console.log("✅ Session mise à jour avec le nouveau logo");
+              }
+            },
+            onError: (error) => {
+              console.error("❌ Erreur sauvegarde automatique logo:", error);
+            },
+          }
+        );
+      } catch (error) {
+        console.error("❌ Erreur lors de la sauvegarde automatique:", error);
+      }
+    }
   };
 
   const handleCountryChange = (value) => {
-    setValue("address.country", value, { shouldDirty: false });
+    setValue("address.country", value, { shouldDirty: true });
   };
 
   return (
@@ -56,6 +87,7 @@ export function GeneraleSection({
             <CompanyLogoUpload
               currentImageUrl={logoUrl}
               onImageChange={handleLogoChange}
+              onOrganizationUpdate={handleOrganizationUpdate}
               showDescription={false}
             />
             <div className="flex-1">
@@ -91,6 +123,9 @@ export function GeneraleSection({
                 {...register("name", {
                   required: "Le nom est requis",
                 })}
+                onChange={(e) => {
+                  setValue("name", e.target.value, { shouldDirty: true });
+                }}
               />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -113,6 +148,9 @@ export function GeneraleSection({
                 {...register("email", {
                   required: "L'email est requis",
                 })}
+                onChange={(e) => {
+                  setValue("email", e.target.value, { shouldDirty: true });
+                }}
               />
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -135,6 +173,9 @@ export function GeneraleSection({
                 placeholder="+33 1 23 45 67 89"
                 className="w-full"
                 {...register("phone")}
+                onChange={(e) => {
+                  setValue("phone", e.target.value, { shouldDirty: true });
+                }}
               />
               {errors.phone && (
                 <p className="text-sm text-red-500">{errors.phone.message}</p>
@@ -154,6 +195,9 @@ export function GeneraleSection({
                 placeholder="https://www.entreprise.com"
                 className="w-full"
                 {...register("website")}
+                onChange={(e) => {
+                  setValue("website", e.target.value, { shouldDirty: true });
+                }}
               />
               {errors.website && (
                 <p className="text-sm text-red-500">{errors.website.message}</p>
@@ -184,6 +228,9 @@ export function GeneraleSection({
                 {...register("address.street", {
                   required: "L'adresse est requise",
                 })}
+                onChange={(e) => {
+                  setValue("address.street", e.target.value, { shouldDirty: true });
+                }}
               />
               {errors.address?.street && (
                 <p className="text-sm text-red-500">
@@ -205,6 +252,9 @@ export function GeneraleSection({
                   {...register("address.city", {
                     required: "La ville est requise",
                   })}
+                  onChange={(e) => {
+                    setValue("address.city", e.target.value, { shouldDirty: true });
+                  }}
                 />
                 {errors.address?.city && (
                   <p className="text-sm text-red-500">
@@ -224,6 +274,9 @@ export function GeneraleSection({
                   {...register("address.postalCode", {
                     required: "Le code postal est requis",
                   })}
+                  onChange={(e) => {
+                    setValue("address.postalCode", e.target.value, { shouldDirty: true });
+                  }}
                 />
                 {errors.address?.postalCode && (
                   <p className="text-sm text-red-500">

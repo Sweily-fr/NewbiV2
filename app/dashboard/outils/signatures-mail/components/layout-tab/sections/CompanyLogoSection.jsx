@@ -1,16 +1,37 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Building } from "lucide-react";
+import { useActiveOrganization } from "@/src/lib/organization-client";
 
 export default function CompanyLogoSection({
   signatureData,
   updateSignatureData,
 }) {
+  console.log("🚀 CompanyLogoSection - Composant chargé");
+  const { organization } = useActiveOrganization();
+  console.log("🚀 CompanyLogoSection - Hook useActiveOrganization appelé");
+  
+  // Récupérer automatiquement le logo de l'entreprise au chargement
+  useEffect(() => {
+    console.log("🔍 CompanyLogoSection - Organization:", organization);
+    console.log("🔍 CompanyLogoSection - Logo dans organization:", organization?.logo);
+    console.log("🔍 CompanyLogoSection - Logo actuel signature:", signatureData.logo);
+    
+    if (organization?.logo && !signatureData.logo) {
+      console.log("✅ CompanyLogoSection - Application du logo automatique:", organization.logo);
+      updateSignatureData("logo", organization.logo);
+    } else if (!organization?.logo) {
+      console.log("❌ CompanyLogoSection - Aucun logo trouvé dans l'organisation");
+    } else if (signatureData.logo) {
+      console.log("ℹ️ CompanyLogoSection - Logo déjà présent dans la signature");
+    }
+  }, [organization?.logo, signatureData.logo, updateSignatureData]);
+
   // Gestion de la taille du logo
   const handleLogoSizeChange = (value) => {
     const numValue = parseInt(value) || 60;
@@ -21,9 +42,9 @@ export default function CompanyLogoSection({
     <div className="flex flex-col gap-3">
       <h2 className="text-sm font-medium">Logo entreprise</h2>
       <div className="flex flex-col gap-3 ml-4">
-        {/* Upload du logo entreprise */}
+        {/* Logo entreprise automatique */}
         <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">Image</Label>
+          <Label className="text-xs text-muted-foreground">Logo entreprise</Label>
           <div className="flex items-center gap-2 w-30">
             {signatureData.logo ? (
               <>
@@ -32,43 +53,31 @@ export default function CompanyLogoSection({
                   alt="Logo entreprise"
                   className="w-8 h-8 object-contain rounded border bg-white"
                 />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => updateSignatureData("logo", null)}
-                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                  title="Supprimer le logo"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
+                <div className="flex items-center gap-1 text-xs text-green-600">
+                  <Building className="w-3 h-3" />
+                  <span>Auto</span>
+                </div>
               </>
             ) : (
-              <div
-                onClick={() => {
-                  const input = document.createElement("input");
-                  input.type = "file";
-                  input.accept = "image/*";
-                  input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (e) =>
-                        updateSignatureData("logo", e.target.result);
-                      reader.readAsDataURL(file);
-                    }
-                  };
-                  input.click();
-                }}
-                className="flex items-center w-full gap-2 bg-[#efefef] dark:bg-[#1F1F1F] dark:border-[#2F2F2F] dark:border rounded-md px-2 py-1 cursor-pointer hover:bg-[#efefef]/80 transition-colors"
-              >
-                <div className="w-6 h-6 pr-2 border-r flex items-center justify-center">
-                  <Upload className="w-3 h-3" />
-                </div>
-                <span className="text-xs text-gray-600 dark:text-white">
-                  Ajouter...
-                </span>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Building className="w-3 h-3" />
+                <span>Aucun logo d'entreprise</span>
               </div>
             )}
+          </div>
+        </div>
+        
+        {/* Message informatif */}
+        <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-2 rounded-md">
+          <div className="flex items-start gap-2">
+            <Building className="w-3 h-3 mt-0.5 text-blue-600" />
+            <div>
+              <p className="font-medium text-blue-700 dark:text-blue-400">Logo automatique</p>
+              <p className="text-blue-600 dark:text-blue-300">
+                Le logo de votre entreprise est récupéré automatiquement depuis votre profil. 
+                Pour le modifier, rendez-vous dans Paramètres → Informations entreprise.
+              </p>
+            </div>
           </div>
         </div>
 

@@ -365,6 +365,8 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
       setValue,
       session,
       organization,
+      updateOrganization,
+      refetchOrganization: refetchOrg,
     };
     switch (activeTab) {
       case "espaces":
