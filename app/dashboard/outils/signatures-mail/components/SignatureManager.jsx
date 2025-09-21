@@ -445,7 +445,7 @@ const SignatureManager = () => {
               signature.phone
                 ? `
             <tr>
-              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.phoneToMobile || 4}px;">
+              <td style="padding: 0; margin: 0; padding-bottom: ${spacings.phoneBottom}px;">
                 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
                   <tbody>
                     <tr>
@@ -469,7 +469,7 @@ const SignatureManager = () => {
               signature.mobile
                 ? `
             <tr>
-              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.mobileToEmail || 4}px;">
+              <td style="padding: 0; margin: 0; padding-bottom: ${spacings.mobileBottom}px;">
                 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
                   <tbody>
                     <tr>
@@ -493,7 +493,7 @@ const SignatureManager = () => {
               signature.email
                 ? `
             <tr>
-              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.emailToWebsite || 4}px;">
+              <td style="padding: 0; margin: 0; padding-bottom: ${spacings.emailBottom}px;">
                 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
                   <tbody>
                     <tr>
@@ -517,7 +517,7 @@ const SignatureManager = () => {
               signature.website
                 ? `
             <tr>
-              <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.websiteToAddress || 4}px;">
+              <td style="padding: 0; margin: 0; padding-bottom: ${spacings.websiteBottom}px;">
                 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
                   <tbody>
                     <tr>
@@ -610,6 +610,39 @@ const SignatureManager = () => {
     photoSrc,
     logoSrc
   ) => {
+    // Normaliser les noms des espacements pour la version verticale
+    const spacings = {
+      // Espacements communs
+      nameBottom: signature.spacings?.nameBottom || 8,
+      positionBottom: signature.spacings?.positionBottom || 8,
+      companyBottom: signature.spacings?.companyBottom || 12,
+      phoneBottom: signature.spacings?.phoneBottom || signature.spacings?.phoneToMobile || 4,
+      mobileBottom: signature.spacings?.mobileBottom || signature.spacings?.mobileToEmail || 4,
+      emailBottom: signature.spacings?.emailBottom || 4,
+      websiteBottom: signature.spacings?.websiteBottom || signature.spacings?.emailToWebsite || 4,
+      addressBottom: signature.spacings?.addressBottom || signature.spacings?.websiteToAddress || 12,
+      
+      // Espacements verticaux
+      photoBottom: signature.spacings?.photoBottom || 16,  // Espace sous la photo en vertical
+      
+      // Espacements généraux
+      logoTop: signature.spacings?.logoTop || 15,
+      logoBottom: signature.spacings?.logoBottom || 15,
+      socialTop: signature.spacings?.socialTop || 10,
+      socialBottom: signature.spacings?.socialBottom || 10,
+      separatorTop: signature.spacings?.separatorTop || 8,
+      separatorBottom: signature.spacings?.separatorBottom || 8,
+      
+      // Espacements entre les éléments de contact
+      phoneToMobile: signature.spacings?.phoneToMobile || 4,
+      mobileToEmail: signature.spacings?.mobileToEmail || 4,
+      emailToWebsite: signature.spacings?.emailToWebsite || 4,
+      websiteToAddress: signature.spacings?.websiteToAddress || 4,
+    };
+
+    // Debug: Afficher les espacements normalisés
+    console.log('Espacements normalisés pour la version verticale:', spacings);
+    
     // HTML optimisé pour Gmail - format vertical
     return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: ${signature.fontFamily || "Arial, sans-serif"}; font-size: 14px; line-height: 1.4; margin: 0; padding: 0;">
 <tbody>
@@ -617,7 +650,7 @@ const SignatureManager = () => {
     photoSrc
       ? `
   <tr>
-    <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.photoBottom || 16}px; text-align: ${signature.nameAlignment || "left"};">
+    <td style="padding: 0; margin: 0; padding-bottom: ${spacings.photoBottom}px; text-align: ${signature.nameAlignment || "left"};">
       <img src="${photoSrc}" alt="Photo de profil" style="width: ${signature.imageSize || 80}px; height: ${signature.imageSize || 80}px; border-radius: ${signature.imageShape === "square" ? "8px" : "50%"}; display: block; margin: 0; padding: 0; border: none;" />
     </td>
   </tr>
@@ -626,7 +659,7 @@ const SignatureManager = () => {
   }
   
   <tr>
-    <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.nameBottom || 8}px; text-align: ${signature.nameAlignment || "left"};">
+    <td style="padding: 0; margin: 0; padding-bottom: ${spacings.nameBottom}px; text-align: ${signature.nameAlignment || "left"};">
       <span style="font-size: ${signature.typography?.fullName?.fontSize || signature.fontSize?.name || 16}px; font-weight: ${signature.typography?.fullName?.fontWeight || "normal"}; color: ${signature.typography?.fullName?.color || primaryColor}; line-height: 1.2; margin: 0; padding: 0; font-family: ${signature.typography?.fullName?.fontFamily || signature.fontFamily || "Arial, sans-serif"};">
         ${signature.fullName || ""}
       </span>
@@ -637,7 +670,7 @@ const SignatureManager = () => {
     signature.position
       ? `
   <tr>
-    <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.positionBottom || 8}px;">
+    <td style="padding: 0; margin: 0; padding-bottom: ${spacings.positionBottom}px;">
       <span style="font-size: ${signature.typography?.position?.fontSize || signature.fontSize?.position || 14}px; color: ${signature.typography?.position?.color || "#666666"}; font-weight: ${signature.typography?.position?.fontWeight || "normal"}; font-style: ${signature.typography?.position?.fontStyle || "normal"}; text-decoration: ${signature.typography?.position?.textDecoration || "none"}; margin: 0; padding: 0; font-family: ${signature.typography?.position?.fontFamily || signature.fontFamily || "Arial, sans-serif"};">
         ${signature.position}
       </span>
@@ -651,8 +684,8 @@ const SignatureManager = () => {
     signature.company
       ? `
   <tr>
-    <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.companyBottom || 12}px;">
-      <span style="font-size: ${signature.typography?.company?.fontSize || 14}px; font-weight: ${signature.typography?.company?.fontWeight || "normal"}; color: ${signature.typography?.company?.color || primaryColor}; margin: 0; padding: 0; font-family: ${signature.typography?.company?.fontFamily || signature.fontFamily || "Arial, sans-serif"};">
+    <td style="padding: 0; margin: 0; padding-bottom: ${spacings.companyBottom}px;">
+      <span style="font-size: ${signature.typography?.company?.fontSize || signature.fontSize?.company || 14}px; font-weight: ${signature.typography?.company?.fontWeight || "bold"}; color: ${signature.typography?.company?.color || primaryColor}; margin: 0; padding: 0; font-family: ${signature.typography?.company?.fontFamily || signature.fontFamily || "Arial, sans-serif"};">
         ${signature.company}
       </span>
     </td>
@@ -665,7 +698,7 @@ const SignatureManager = () => {
     signature.phone
       ? `
   <tr>
-    <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.phoneToMobile || 4}px;">
+    <td style="padding: 0; margin: 0; padding-bottom: ${spacings.phoneBottom}px;">
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
         <tbody>
           <tr>
@@ -690,7 +723,7 @@ const SignatureManager = () => {
     signature.mobile
       ? `
   <tr>
-    <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.mobileToEmail || 4}px;">
+    <td style="padding: 0; margin: 0; padding-bottom: ${spacings.mobileBottom}px;">
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
         <tbody>
           <tr>
@@ -715,7 +748,7 @@ const SignatureManager = () => {
     signature.email
       ? `
   <tr>
-    <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.emailToWebsite || 4}px;">
+    <td style="padding: 0; margin: 0; padding-bottom: ${spacings.emailBottom}px;">
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
         <tbody>
           <tr>
@@ -740,7 +773,7 @@ const SignatureManager = () => {
     signature.website
       ? `
   <tr>
-    <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.websiteToAddress || 4}px;">
+    <td style="padding: 0; margin: 0; padding-bottom: ${spacings.websiteBottom}px;">
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
         <tbody>
           <tr>
@@ -765,7 +798,7 @@ const SignatureManager = () => {
     signature.address
       ? `
   <tr>
-    <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.addressBottom || 8}px;">
+    <td style="padding: 0; margin: 0; padding-bottom: ${spacings.addressBottom}px;">
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
         <tbody>
           <tr>
@@ -790,7 +823,7 @@ const SignatureManager = () => {
     signature.separator?.enabled
       ? `
   <tr>
-    <td style="padding: 0; margin: 0; padding-top: ${signature.spacings?.separatorTop || 8}px; padding-bottom: ${signature.spacings?.separatorBottom || 8}px;">
+    <td style="padding: 0; margin: 0; padding-top: ${spacings.separatorTop}px; padding-bottom: ${spacings.separatorBottom}px;">
       <div style="width: 100%; height: 1px; background-color: ${signature.separator?.color || "#e5e7eb"}; margin: 0; padding: 0;"></div>
     </td>
   </tr>
@@ -802,7 +835,7 @@ const SignatureManager = () => {
     logoSrc
       ? `
   <tr>
-    <td style="padding: 0; margin: 0; padding-top: ${signature.spacings?.logoToSocial || 15}px; text-align: ${signature.logoAlignment || "left"};">
+    <td style="padding: 0; margin: 0; padding-top: ${spacings.logoTop}px; text-align: ${signature.logoAlignment || "left"};">
       ${
         signature.logoBackground?.enabled
           ? `
@@ -828,8 +861,99 @@ const SignatureManager = () => {
     setCopyingId(signature.id);
 
     try {
+<<<<<<< HEAD
       // Utiliser la signature passée en paramètre (celle qu'on veut copier)
       const htmlSignature = generateSignatureHTML(signature);
+=======
+      // Créer une copie profonde des données actuelles de l'éditeur
+      const currentSignatureData = JSON.parse(JSON.stringify(signatureData));
+      
+      // Créer la signature à copier en fusionnant les données
+      const signatureToCopy = {
+        ...signature,                // Données de base de la signature sauvegardée
+        ...currentSignatureData,     // Données actuelles de l'éditeur
+        id: signature.id,           // Conserver l'ID original
+        signatureName: signature.signatureName // Conserver le nom original
+      };
+      
+      // Forcer l'orientation actuelle
+      const currentTemplate = currentSignatureData.template || "horizontal";
+      signatureToCopy.template = currentTemplate;
+      signatureToCopy.layout = currentTemplate;
+      
+      // S'assurer que les espacements sont correctement définis
+      if (!signatureToCopy.spacings) {
+        signatureToCopy.spacings = {};
+      }
+
+      // Définir les valeurs par défaut pour tous les espacements
+      // Ces valeurs doivent correspondre à celles utilisées dans les templates
+      const defaultSpacings = {
+        // Espacements communs
+        nameBottom: 8,
+        positionBottom: 8,
+        companyBottom: 12,
+        phoneBottom: 4,
+        mobileBottom: 4,
+        emailBottom: 4,
+        websiteBottom: 4,
+        addressBottom: 12,
+        
+        // Espacements horizontaux
+        nameSpacing: 12,  // Espacement entre la photo et le nom en horizontal
+        
+        // Espacements verticaux
+        photoBottom: 16,  // Espace sous la photo en vertical
+        
+        // Espacements généraux
+        logoTop: 15,
+        logoBottom: 15,
+        socialTop: 10,
+        socialBottom: 10,
+        separatorTop: 8,
+        separatorBottom: 8,
+        
+        // Espacements entre les éléments de contact
+        phoneToMobile: 4,
+        mobileToEmail: 4,
+        emailToWebsite: 4,
+        websiteToAddress: 4,
+        
+        // Valeurs spécifiques aux templates
+        ...(currentTemplate === 'horizontal' ? {
+          // Valeurs spécifiques au mode horizontal
+          nameSpacing: 12,  // Espacement entre photo et contenu
+        } : {
+          // Valeurs spécifiques au mode vertical
+          photoBottom: 16,  // Espace sous la photo
+        })
+      };
+
+      // Fusionner les espacements en respectant la priorité :
+      // 1. Valeurs actuelles de l'éditeur (signatureData.spacings)
+      // 2. Valeurs de la signature sauvegardée (signature.spacings)
+      // 3. Valeurs par défaut
+      signatureToCopy.spacings = {
+        ...defaultSpacings,
+        ...(signature.spacings || {}),
+        ...(currentSignatureData.spacings || {})
+      };
+      
+      // S'assurer que les valeurs numériques sont bien des nombres
+      Object.keys(signatureToCopy.spacings).forEach(key => {
+        if (typeof signatureToCopy.spacings[key] === 'string') {
+          signatureToCopy.spacings[key] = parseInt(signatureToCopy.spacings[key], 10) || defaultSpacings[key] || 0;
+        }
+      });
+
+      // Debug: Afficher les détails de la signature à copier
+      console.log("🔍 Signature à copier:", signatureToCopy);
+      console.log("📏 Espacements utilisés:", signatureToCopy.spacings);
+      console.log("📋 Template utilisé:", currentTemplate);
+
+      // Générer le HTML avec la signature mise à jour
+      const htmlSignature = generateSignatureHTML(signatureToCopy);
+>>>>>>> 112b6ad (kanban signature mail)
 
       // Copier en tant que texte riche (HTML)
       if (navigator.clipboard && window.ClipboardItem) {
@@ -1114,7 +1238,7 @@ export const generateGmailSignatureHTML = (signature) => {
             signature.phone
               ? `
           <tr>
-            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.phoneToMobile || 4}px;">
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.phoneBottom || 4}px;">
               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
                 <tbody>
                   <tr>
@@ -1138,7 +1262,7 @@ export const generateGmailSignatureHTML = (signature) => {
             signature.mobile
               ? `
           <tr>
-            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.mobileToEmail || 4}px;">
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.mobileBottom || 4}px;">
               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
                 <tbody>
                   <tr>
@@ -1162,7 +1286,7 @@ export const generateGmailSignatureHTML = (signature) => {
             signature.email
               ? `
           <tr>
-            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.emailToWebsite || 4}px;">
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.emailBottom || 4}px;">
               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
                 <tbody>
                   <tr>
@@ -1186,7 +1310,7 @@ export const generateGmailSignatureHTML = (signature) => {
             signature.website
               ? `
           <tr>
-            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.websiteToAddress || 4}px;">
+            <td style="padding: 0; margin: 0; padding-bottom: ${signature.spacings?.websiteBottom || 4}px;">
               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0; padding: 0;">
                 <tbody>
                   <tr>
