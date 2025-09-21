@@ -28,6 +28,8 @@ import { useActiveOrganization } from "@/src/lib/organization-client";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
 import { useSettingsModal } from "@/src/hooks/useSettingsModal";
 import { SettingsModal } from "@/src/components/settings-modal";
+import { PricingModal } from "./pricing-modal";
+import { useState } from "react";
 
 // Fonction pour déterminer la couleur de l'icône en fonction du type d'outil
 function getIconColor(title) {
@@ -151,6 +153,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
   const { data: session } = useSession();
   const { organization } = useActiveOrganization();
   const { isOpen, initialTab, openSettings, closeSettings } = useSettingsModal();
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   
   // Fonction pour vérifier si les informations d'entreprise sont complètes
   const checkCompanyInfo = () => {
@@ -233,8 +236,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
   // Fonction pour gérer le clic sur un outil premium
   const handlePremiumToolClick = (e) => {
     e.preventDefault();
-    // Rediriger vers la page outils avec le paramètre pricing=true
-    router.push('/dashboard/outils?pricing=true');
+    setIsPricingModalOpen(true);
   };
   
   // Fonction pour gérer le clic sur un outil nécessitant les informations d'entreprise
@@ -373,6 +375,11 @@ export function SectionCards({ className, activeFilter = "outline" }) {
         open={isOpen}
         onOpenChange={closeSettings}
         initialTab={initialTab}
+      />
+      
+      <PricingModal 
+        isOpen={isPricingModalOpen} 
+        onClose={() => setIsPricingModalOpen(false)} 
       />
     </div>
   );
