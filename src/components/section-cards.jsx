@@ -21,8 +21,13 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { useSubscription } from "@/src/contexts/subscription-context";
-import { Crown } from "lucide-react";
+import { Crown, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/src/lib/auth-client";
+import { useActiveOrganization } from "@/src/lib/organization-client";
+import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
+import { useSettingsModal } from "@/src/hooks/useSettingsModal";
+import { SettingsModal } from "@/src/components/settings-modal";
 
 // Fonction pour déterminer la couleur de l'icône en fonction du type d'outil
 function getIconColor(title) {
@@ -143,12 +148,106 @@ const cards = [
 export function SectionCards({ className, activeFilter = "outline" }) {
   const { isActive } = useSubscription();
   const router = useRouter();
+  const { data: session } = useSession();
+  const { organization } = useActiveOrganization();
+  const { isOpen, initialTab, openSettings, closeSettings } = useSettingsModal();
+  
+  // Fonction pour vérifier si les informations d'entreprise sont complètes
+  const checkCompanyInfo = () => {
+    // Vérifier d'abord les données de session
+    if (session?.user?.organization) {
+      return isCompanyInfoComplete(session.user.organization);
+    }
+    
+    // Fallback sur les données d'organisation
+    if (organization) {
+      const companyData = {
+        companyName: organization.companyName,
+        companyEmail: organization.companyEmail,
+        addressStreet: organization.addressStreet,
+        addressCity: organization.addressCity,
+        addressZipCode: organization.addressZipCode,
+        addressCountry: organization.addressCountry,
+      };
+      
+      return !!(
+        companyData.companyName &&
+        companyData.companyEmail &&
+        companyData.addressStreet &&
+        companyData.addressCity &&
+        companyData.addressZipCode &&
+        companyData.addressCountry
+      );
+    }
+    
+    return false;
+  };
+
+  // Fonction pour déterminer quel onglet ouvrir selon les informations manquantes
+  const getRequiredSettingsTab = () => {
+    let orgData = null;
+    
+    // Récupérer les données d'organisation
+    if (session?.user?.organization) {
+      orgData = session.user.organization;
+    } else if (organization) {
+      orgData = {
+        companyName: organization.companyName,
+        companyEmail: organization.companyEmail,
+        addressStreet: organization.addressStreet,
+        addressCity: organization.addressCity,
+        addressZipCode: organization.addressZipCode,
+        addressCountry: organization.addressCountry,
+        siret: organization.siret,
+        legalForm: organization.legalForm,
+      };
+    }
+
+    if (!orgData) return "generale";
+
+    // Vérifier les informations générales d'abord
+    const hasGeneralInfo = !!(
+      orgData.companyName &&
+      orgData.companyEmail &&
+      orgData.addressStreet &&
+      orgData.addressCity &&
+      orgData.addressZipCode &&
+      orgData.addressCountry
+    );
+
+    if (!hasGeneralInfo) {
+      return "generale";
+    }
+
+    // Si les informations générales sont OK, vérifier les informations légales
+    const hasLegalInfo = !!(orgData.siret && orgData.legalForm);
+    
+    if (!hasLegalInfo) {
+      return "informations-legales";
+    }
+
+    // Par défaut, ouvrir l'onglet général
+    return "generale";
+  };
   
   // Fonction pour gérer le clic sur un outil premium
   const handlePremiumToolClick = (e) => {
     e.preventDefault();
     // Rediriger vers la page outils avec le paramètre pricing=true
     router.push('/dashboard/outils?pricing=true');
+  };
+  
+  // Fonction pour gérer le clic sur un outil nécessitant les informations d'entreprise
+  const handleCompanyInfoRequiredClick = (e, toolTitle) => {
+    e.preventDefault();
+    console.log(`Clic sur ${toolTitle} - Informations d'entreprise requises`);
+    
+    // Déterminer quel onglet ouvrir selon les informations manquantes
+    const requiredTab = getRequiredSettingsTab();
+    console.log(`Ouverture du modal sur l'onglet: ${requiredTab}`);
+    
+    // Ouvrir le modal de paramètres sur l'onglet approprié
+    openSettings(requiredTab);
   };
   
   // Filtrer les cartes selon l'onglet actif
@@ -169,18 +268,32 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     >
       {filteredCards.map((card, index) => {
         const isAvailable = card.status === "available" || !card.status;
-        const hasAccess = !card.isPro || isActive(); // Vérification de l'abonnement activée
-
-        // La fonction getIconColor est maintenant définie en dehors du composant
+        const hasSubscriptionAccess = !card.isPro || isActive();
+        
+        // Vérifier si l'outil nécessite les informations d'entreprise
+        const requiresCompanyInfo = card.title === "Factures" || card.title === "Devis";
+        const hasCompanyInfoAccess = !requiresCompanyInfo || checkCompanyInfo();
+        
+        // L'accès final nécessite à la fois l'abonnement ET les informations d'entreprise
+        const hasFullAccess = hasSubscriptionAccess && hasCompanyInfoAccess;
+        
+        // Déterminer le type de restriction
+        const restrictionType = !hasSubscriptionAccess ? "subscription" : 
+                               !hasCompanyInfoAccess ? "companyInfo" : null;
 
         return (
           <Card 
             key={index} 
             className={cn(
               "border-0 shadow-sm p-2 relative transition-all duration-200 group",
-              !hasAccess && "cursor-pointer hover:shadow-md hover:border-gray-200/50"
+              !hasFullAccess && "cursor-pointer hover:shadow-md hover:border-gray-200/50",
+              !hasCompanyInfoAccess && requiresCompanyInfo && "opacity-75 grayscale-[0.3]"
             )}
-            onClick={!hasAccess ? handlePremiumToolClick : undefined}
+            onClick={
+              !hasSubscriptionAccess ? handlePremiumToolClick :
+              !hasCompanyInfoAccess && requiresCompanyInfo ? (e) => handleCompanyInfoRequiredClick(e, card.title) :
+              undefined
+            }
           >
             
             <div className="flex flex-row h-full">
@@ -197,7 +310,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                     >
                       <p className="text-white">{card.icon}</p>
                     </div>
-                    {!hasAccess && (
+                    {!hasFullAccess && restrictionType === "subscription" && (
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <Crown className="w-4 h-4 text-gray-400" />
                       </div>
@@ -213,7 +326,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                 </div>
 
                 <div className="pt-6">
-                  {isAvailable && hasAccess && (
+                  {isAvailable && hasFullAccess && (
                     <Link
                       href={card.href || "#"}
                       className="text-sm font-medium text-[#5B4FFF] hover:text-[#5B4FFF] flex items-center gap-2 no-underline"
@@ -221,11 +334,18 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                       Accéder <span className="text-sm">→</span>
                     </Link>
                   )}
-                  {!hasAccess && (
-                    <div className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-gray-500">
-                        Nécessite un abonnement
-                      </span>
+                  {!hasFullAccess && (
+                    <div className="text-sm font-medium flex items-center gap-2">
+                      {restrictionType === "subscription" && (
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-gray-500">
+                          Nécessite un abonnement
+                        </span>
+                      )}
+                      {restrictionType === "companyInfo" && (
+                        <span className="text-xs text-red-500 font-medium">
+                          Informations entreprise manquantes - <span className="underline cursor-pointer">Configurer</span>
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -246,8 +366,8 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                   objectFit: "cover",
                 }}
               >
-                {/* Overlay discret pour les outils premium */}
-                {!hasAccess && (
+                {/* Overlay discret pour les outils premium uniquement */}
+                {!hasFullAccess && restrictionType === "subscription" && (
                   <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                     <div className="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-sm">
                       <div className="flex items-center gap-1.5 text-gray-600">
@@ -262,6 +382,13 @@ export function SectionCards({ className, activeFilter = "outline" }) {
           </Card>
         );
       })}
+      
+      {/* Modal de paramètres */}
+      <SettingsModal
+        open={isOpen}
+        onOpenChange={closeSettings}
+        initialTab={initialTab}
+      />
     </div>
   );
 }
