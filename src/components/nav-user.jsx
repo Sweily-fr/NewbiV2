@@ -46,7 +46,24 @@ export function NavUser({ user }) {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("user-info");
 
-  const profileImage = user.avatar || "https://github.com/shadcn.png";
+  const profileImage = user.avatar;
+  
+  // Fonction pour générer les initiales du nom
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    
+    const names = name.split(' ');
+    let initials = names[0].charAt(0).toUpperCase();
+    
+    // Ajouter la première lettre du prénom et du nom si disponible
+    if (names.length > 1) {
+      initials += names[names.length - 1].charAt(0).toUpperCase();
+    }
+    
+    return initials;
+  };
+  
+  const userInitials = getInitials(user?.name);
 
   const router = useRouter();
 
@@ -74,12 +91,17 @@ export function NavUser({ user }) {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage
-                  className="object-cover"
-                  src={profileImage}
-                  alt={user.name}
-                />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                {profileImage ? (
+                  <AvatarImage
+                    className="object-cover"
+                    src={profileImage}
+                    alt={user.name}
+                  />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium">
+                    {userInitials}
+                  </div>
+                )}
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -100,12 +122,17 @@ export function NavUser({ user }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage
-                      className="object-cover"
-                      src={profileImage}
-                      alt={user.name}
-                    />
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                    {profileImage ? (
+                      <AvatarImage
+                        className="object-cover"
+                        src={profileImage}
+                        alt={user.name}
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium">
+                        {userInitials}
+                      </div>
+                    )}
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{user.name}</span>
