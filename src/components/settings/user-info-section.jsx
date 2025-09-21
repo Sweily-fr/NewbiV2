@@ -105,7 +105,7 @@ export default function UserInfoSection({ onTabChange }) {
     <div className="space-y-16">
       <div>
         <h2 className="text-lg font-medium mb-1">Mon compte</h2>
-        <Separator />
+        <Separator className="hidden md:block" />
 
         <div className="space-y-6 mt-8">
           {/* Section Informations personnelles */}

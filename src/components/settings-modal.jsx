@@ -41,12 +41,17 @@ import { SecuritySection } from "./settings/security-section";
 import PersonnesSection from "./settings/personnes-section";
 import UserInfoSection from "./settings/user-info-section";
 
-export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }) {
+export function SettingsModal({
+  open,
+  onOpenChange,
+  initialTab = "preferences",
+}) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [showNoChangesWarning, setShowNoChangesWarning] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingTab, setPendingTab] = useState(null);
+  const [viewportHeight, setViewportHeight] = useState(0);
   const initialValuesRef = useRef(null);
   const { data: session } = useSession();
   const {
@@ -240,6 +245,48 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
       setActiveTab(initialTab);
     }
   }, [initialTab]);
+
+  // Gérer la hauteur de la viewport pour mobile (barre d'adresse du navigateur)
+  useEffect(() => {
+    const updateViewportHeight = () => {
+      // Utiliser la hauteur visuelle de la viewport (exclut les barres du navigateur)
+      const vh = window.visualViewport
+        ? window.visualViewport.height
+        : window.innerHeight;
+      setViewportHeight(vh);
+
+      // Mettre à jour la variable CSS pour la hauteur de la viewport
+      document.documentElement.style.setProperty("--vh", `${vh * 0.01}px`);
+    };
+
+    if (typeof window !== "undefined") {
+      updateViewportHeight();
+
+      // Écouter les changements de taille de la viewport
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", updateViewportHeight);
+      } else {
+        window.addEventListener("resize", updateViewportHeight);
+      }
+
+      // Écouter les changements d'orientation
+      window.addEventListener("orientationchange", () => {
+        setTimeout(updateViewportHeight, 100);
+      });
+
+      return () => {
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener(
+            "resize",
+            updateViewportHeight
+          );
+        } else {
+          window.removeEventListener("resize", updateViewportHeight);
+        }
+        window.removeEventListener("orientationchange", updateViewportHeight);
+      };
+    }
+  }, [open]);
 
   // Charger les données de l'organisation et du user dans le formulaire
   useEffect(() => {
@@ -483,7 +530,11 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
       label: "Général",
       icon: Settings,
       hasSubsections: true,
-      subsections: ["generale", "coordonnees-bancaires", "informations-legales"]
+      subsections: [
+        "generale",
+        "coordonnees-bancaires",
+        "informations-legales",
+      ],
     },
     {
       id: "securite",
@@ -499,34 +550,49 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
 
   // Fonction pour déterminer l'onglet actif sur mobile
   const getActiveMobileTab = () => {
-    const generalTabs = ["generale", "coordonnees-bancaires", "informations-legales"];
+    const generalTabs = [
+      "generale",
+      "coordonnees-bancaires",
+      "informations-legales",
+    ];
     if (generalTabs.includes(activeTab)) {
       return "generale";
     }
-    return activeTab;
+
+    // Mapper les onglets desktop vers mobile
+    const tabMapping = {
+      preferences: "user-info",
+      espaces: "user-info",
+      facturation: "subscription",
+    };
+
+    return tabMapping[activeTab] || activeTab;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-h-[90vh] md:max-h-[90vh] p-0 gap-0 overflow-hidden"
-        style={{ 
-          maxWidth: "72rem", 
-          width: "95vw", 
+        style={{
+          maxWidth: "72rem",
+          width: "95vw",
           height: "92vh",
           // Mobile specific styles
-          ...(typeof window !== 'undefined' && window.innerWidth < 768 && {
-            width: "100vw",
-            height: "100vh",
-            maxWidth: "100vw",
-            maxHeight: "100vh",
-            borderRadius: "0px",
-            margin: "0",
-          })
+          ...(typeof window !== "undefined" &&
+            window.innerWidth < 768 && {
+              width: "100vw",
+              height: viewportHeight ? `${viewportHeight}px` : "100vh",
+              maxWidth: "100vw",
+              maxHeight: viewportHeight ? `${viewportHeight}px` : "100vh",
+              borderRadius: "0px",
+              margin: "0",
+            }),
         }}
       >
         {/* DialogTitle caché pour l'accessibilité */}
-        <DialogTitle className="sr-only">Paramètres de l'application</DialogTitle>
+        <DialogTitle className="sr-only">
+          Paramètres de l'application
+        </DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
           {/* Desktop Layout */}
           <div className="hidden md:flex h-full">
@@ -661,20 +727,7 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
           </div>
 
           {/* Mobile Layout */}
-          <div className="md:hidden flex flex-col h-full">
-            {/* Header Mobile */}
-            <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-[#0A0A0A]">
-              <h2 className="text-lg font-semibold">Paramètres</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCloseModal}
-                className="h-8 w-8 p-0"
-              >
-                ✕
-              </Button>
-            </div>
-
+          <div className="md:hidden flex flex-col h-full overflow-hidden">
             {/* Sub-navigation for General section on mobile */}
             {getActiveMobileTab() === "generale" && (
               <div className="bg-gray-50 dark:bg-[#171717] border-b border-gray-200 dark:border-gray-800">
@@ -682,16 +735,16 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
                   {[
                     { id: "generale", label: "Informations" },
                     { id: "coordonnees-bancaires", label: "Bancaire" },
-                    { id: "informations-legales", label: "Légal" }
+                    { id: "informations-legales", label: "Légal" },
                   ].map((subTab) => (
                     <button
                       key={subTab.id}
                       type="button"
                       onClick={() => handleTabChange(subTab.id)}
-                      className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                      className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                         activeTab === subTab.id
                           ? "border-[#5b4eff] text-[#5b4eff] bg-white dark:bg-[#0A0A0A]"
-                          : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                          : "border-transparent font-normal text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                       }`}
                     >
                       {subTab.label}
@@ -702,22 +755,40 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
             )}
 
             {/* Content Area Mobile */}
-            <div className="flex-1 bg-white dark:bg-[#0A0A0A] overflow-y-auto">
-              <div className={`p-6 ${
-                (activeTab === "generale" || activeTab === "coordonnees-bancaires" || activeTab === "informations-legales")
-                  ? "pb-40" // Plus d'espace pour les boutons d'action
-                  : "pb-24" // Espace normal pour les autres sections
-              }`}>
+            <div
+              className="flex-1 bg-white dark:bg-[#0A0A0A] overflow-y-auto"
+              style={{
+                height: "calc(100vh - 160px)",
+                maxHeight: "calc(100vh - 160px)",
+                overflowY: "scroll",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              <div
+                className={`p-6 ${
+                  activeTab === "generale" ||
+                  activeTab === "coordonnees-bancaires" ||
+                  activeTab === "informations-legales"
+                    ? "pb-60" // Plus d'espace pour les boutons d'action (encore plus augmenté)
+                    : "pb-44" // Espace normal pour les autres sections (encore plus augmenté)
+                }`}
+              >
                 {renderContent()}
               </div>
             </div>
 
             {/* Bottom Navigation Mobile */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0A0A0A] border-t border-gray-200 dark:border-gray-800 shadow-lg">
-              {/* Safe area padding for iOS devices */}
-              <div className="pb-safe">
-                <div className="flex items-center justify-around px-2 py-3">
-                  {mobileMainTabs.map((tab) => {
+            <div
+              className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0A0A0A] border-t border-gray-200 dark:border-gray-800 shadow-lg"
+              style={{
+                paddingBottom: "max(env(safe-area-inset-bottom), 20px)",
+                marginBottom: "0px",
+              }}
+            >
+              {/* Safe area padding for iOS devices and browser bars */}
+              <div className="pt-2">
+                <div className="flex items-center justify-around px-2 pt-3">
+                  {mobileMainTabs.map((tab, index) => {
                     const Icon = tab.icon;
                     const isActive = getActiveMobileTab() === tab.id;
                     return (
@@ -725,14 +796,22 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
                         key={tab.id}
                         type="button"
                         onClick={() => handleTabChange(tab.id)}
-                        className={`flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1 relative ${
+                        className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 min-w-0 flex-1 mx-1 relative ${
                           isActive
-                            ? "bg-[#5b4eff]/10 text-[#5b4eff] scale-105"
-                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                            ? "bg-[rgba(91,78,255,0.2)] text-[#5b4eff]"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                         }`}
                       >
-                        <Icon className={`h-5 w-5 mb-1 transition-colors ${isActive ? "text-[#5b4eff]" : ""}`} />
-                        <span className={`text-xs font-medium truncate transition-colors ${isActive ? "text-[#5b4eff]" : ""}`}>
+                        <Icon
+                          className={`h-5 w-5 mb-1 transition-colors duration-300 ${
+                            isActive ? "text-[#5b4eff]" : ""
+                          }`}
+                        />
+                        <span
+                          className={`text-[11px] font-medium truncate transition-colors duration-300 ${
+                            isActive ? "text-[#5b4eff]" : ""
+                          }`}
+                        >
                           {tab.label}
                         </span>
                         {/* Indicateur pour les onglets avec sous-sections */}
@@ -743,9 +822,11 @@ export function SettingsModal({ open, onOpenChange, initialTab = "preferences" }
                     );
                   })}
                 </div>
-                
+
                 {/* Action Buttons Mobile */}
-                {(activeTab === "generale" || activeTab === "coordonnees-bancaires" || activeTab === "informations-legales") && (
+                {(activeTab === "generale" ||
+                  activeTab === "coordonnees-bancaires" ||
+                  activeTab === "informations-legales") && (
                   <div className="px-4 pb-4 pt-2 border-t border-gray-100 dark:border-gray-800">
                     <div className="flex gap-3">
                       <Button

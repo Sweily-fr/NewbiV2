@@ -47,7 +47,7 @@ export default function Component({
       >
         <span className="flex grow items-center">
           <SearchIcon
-            className="text-muted-foreground/80 -ms-1 me-3"
+            className="text-muted-foreground/80 -ms-1 me-3 text-[#5b4eff]"
             size={16}
             aria-hidden="true"
           />

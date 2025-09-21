@@ -100,8 +100,8 @@ function DashboardContent() {
   // Utiliser les fonctions utilitaires importées
 
   // Filtrer les dépenses payées (exclure les DRAFT)
-  const paidExpenses = expenses.filter(expense => expense.status === 'PAID');
-  
+  const paidExpenses = expenses.filter((expense) => expense.status === "PAID");
+
   // Calculate totals from real data - uniquement factures payées et dépenses payées
   const totalIncome = paidInvoices.reduce(
     (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
@@ -159,7 +159,7 @@ function DashboardContent() {
       </div>
       <div className="flex flex-col gap-3 w-full">
         <Comp333
-          className="w-full h-11 flex items-center text-xs md:text-xs placeholder:text-xs md:placeholder:text-xs"
+          className="w-full h-11 flex items-center text-sm md:text-sm placeholder:text-sm md:placeholder:text-sm"
           placeholder="Rechercher des transactions ou lancer une action"
           commandPlaceholder="Rechercher des transactions ou lancer une action"
         />
