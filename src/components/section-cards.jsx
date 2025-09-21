@@ -287,7 +287,8 @@ export function SectionCards({ className, activeFilter = "outline" }) {
             className={cn(
               "border-0 shadow-sm p-2 relative transition-all duration-200 group",
               !hasFullAccess && "cursor-pointer hover:shadow-md hover:border-gray-200/50",
-              !hasCompanyInfoAccess && requiresCompanyInfo && "opacity-75 grayscale-[0.3]"
+              !hasCompanyInfoAccess && requiresCompanyInfo && "opacity-75 grayscale-[0.3]",
+              !hasSubscriptionAccess && "opacity-75 grayscale-[0.3]"
             )}
             onClick={
               !hasSubscriptionAccess ? handlePremiumToolClick :
@@ -310,11 +311,6 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                     >
                       <p className="text-white">{card.icon}</p>
                     </div>
-                    {!hasFullAccess && restrictionType === "subscription" && (
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <Crown className="w-4 h-4 text-gray-400" />
-                      </div>
-                    )}
                   </div>
 
                   <div className="space-y-3">
@@ -337,8 +333,9 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                   {!hasFullAccess && (
                     <div className="text-sm font-medium flex items-center gap-2">
                       {restrictionType === "subscription" && (
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-gray-500">
-                          Nécessite un abonnement
+                        <span className="text-sm text-gray-500 flex items-center gap-1 font-light">
+                          <Crown className="w-4 h-4" />
+                          Pro
                         </span>
                       )}
                       {restrictionType === "companyInfo" && (
@@ -365,19 +362,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                   opacity: 0.7,
                   objectFit: "cover",
                 }}
-              >
-                {/* Overlay discret pour les outils premium uniquement */}
-                {!hasFullAccess && restrictionType === "subscription" && (
-                  <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                    <div className="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-sm">
-                      <div className="flex items-center gap-1.5 text-gray-600">
-                        <Crown className="w-3.5 h-3.5" />
-                        <span className="text-xs font-medium">Pro</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              ></div>
             </div>
           </Card>
         );
