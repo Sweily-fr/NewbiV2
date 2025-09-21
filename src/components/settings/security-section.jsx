@@ -543,7 +543,7 @@ export function SecuritySection() {
     <div className="space-y-20">
       <div>
         <h2 className="text-lg font-medium mb-1">Sécurité</h2>
-        <Separator />
+        <Separator className="hidden md:block" />
 
         <div className="space-y-6 mt-8">
           {/* Titre section Identité */}

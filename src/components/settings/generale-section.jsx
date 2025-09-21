@@ -48,7 +48,7 @@ export function GeneraleSection({
       {/* Titre */}
       <div>
         <h2 className="text-lg font-medium mb-1">Générale</h2>
-        <Separator />
+        <Separator className="hidden md:block" />
 
         {/* Logo de l'entreprise */}
         <div className="mb-8 mt-12">

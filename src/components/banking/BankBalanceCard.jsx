@@ -158,11 +158,11 @@ export default function BankBalanceCard({ className }) {
   // Afficher le solde total même sans comptes bancaires
   if (accounts.length === 0) {
     return (
-      <Card className={className}>
+      <Card className={`${className} flex flex-col`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-normal">Soldes</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col flex-1">
           {/* Solde total sans comptes bancaires */}
           <div className="mb-6">
             <div className="text-3xl font-medium mb-2">
@@ -182,10 +182,13 @@ export default function BankBalanceCard({ className }) {
             </p>
           </div> */}
 
+          {/* Spacer pour pousser le bouton vers le bas */}
+          <div className="flex-1"></div>
+
           {/* Bouton de gestion - Désactivé temporairement */}
           <Button
             variant="outline"
-            className="w-full font-normal"
+            className="w-full font-normal mt-auto"
             disabled
             onClick={() => {
               console.log("Intégration bancaire en cours de développement");
@@ -199,11 +202,11 @@ export default function BankBalanceCard({ className }) {
   }
 
   return (
-    <Card className={className}>
+    <Card className={`${className} flex flex-col`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-normal">Soldes</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col flex-1">
         {/* Solde total */}
         <div className="mb-6">
           <div className="text-3xl font-medium mb-2">
@@ -227,7 +230,7 @@ export default function BankBalanceCard({ className }) {
         )}
 
         {/* Liste des comptes */}
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4 mb-6 flex-1">
           {accounts.slice(0, 4).map((account) => (
             <div
               key={account._id}
@@ -249,7 +252,7 @@ export default function BankBalanceCard({ className }) {
         {/* Bouton de gestion - Désactivé temporairement */}
         <Button
           variant="outline"
-          className="w-full font-normal"
+          className="w-full font-normal mt-auto"
           disabled
           onClick={() => {
             console.log("Intégration bancaire en cours de développement");

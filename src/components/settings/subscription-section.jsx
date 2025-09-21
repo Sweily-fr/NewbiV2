@@ -191,7 +191,7 @@ export function SubscriptionSection() {
             ? "Gestion de l'abonnement"
             : "Passer à un forfait supérieur"}
         </h2>
-        <Separator />
+        <Separator className="hidden md:block" />
       </div>
 
       <div className="space-y-6">
