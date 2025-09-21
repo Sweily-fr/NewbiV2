@@ -19,9 +19,9 @@ const isTokenExpired = (token) => {
 
 // Configuration Upload Link avec support des uploads de fichiers
 const uploadLink = createUploadLink({
-  uri:
-    process.env.NEXT_PUBLIC_API_URL + "graphql" ||
-    "http://localhost:4000/graphql",
+  uri: process.env.NEXT_PUBLIC_API_URL 
+    ? process.env.NEXT_PUBLIC_API_URL + "graphql" 
+    : "http://localhost:4000/graphql",
   credentials: "include", // Important pour better-auth (cookies)
   headers: {
     "Apollo-Require-Preflight": "true",
@@ -32,29 +32,37 @@ const authLink = setContext(async (_, { headers }) => {
   try {
     // Récupérer le JWT via authClient.getSession avec le header set-auth-jwt
     let jwtToken = null;
+    console.log("🔍 [Apollo] Récupération du token JWT...");
 
     await authClient.getSession({
       fetchOptions: {
         onSuccess: (ctx) => {
           const jwt = ctx.response.headers.get("set-auth-jwt");
+          console.log("🔍 [Apollo] Token JWT reçu:", jwt ? "✅ OUI" : "❌ NON");
           if (jwt && !isTokenExpired(jwt)) {
             jwtToken = jwt;
+            console.log("✅ [Apollo] Token JWT valide et non expiré");
+          } else if (jwt) {
+            console.log("⚠️ [Apollo] Token JWT expiré");
           }
         },
       },
     });
 
     if (jwtToken) {
+      console.log("✅ [Apollo] Envoi du token JWT dans les headers");
       return {
         headers: {
           ...headers,
           authorization: `Bearer ${jwtToken}`,
         },
       };
+    } else {
+      console.log("❌ [Apollo] Aucun token JWT à envoyer");
     }
   } catch (error) {
     // Erreur silencieuse - ne pas exposer les détails d'authentification
-    console.error("Erreur récupération JWT");
+    console.error("❌ [Apollo] Erreur récupération JWT:", error.message);
   }
 
   return {

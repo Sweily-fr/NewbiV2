@@ -67,18 +67,21 @@ const HeroAnimation = () => {
     <>
       {/* Version Mobile */}
       <div className="block md:hidden relative w-full">
-        <div className="flex flex-col items-center justify-center text-center px-6 py-8">
-          <h1 className="max-w-sm text-center mx-auto text-balance font-medium text-2xl sm:text-3xl font-['Poppins'] leading-tight">
-            <span className="text-[#2E2E2E] block mb-2">
+        <div className="flex flex-col items-center justify-center text-center px-3 py-8">
+          <h1
+            className="max-w-sm text-center mx-auto font-medium font-['Poppins'] leading-tight"
+            style={{ fontSize: "27px" }}
+          >
+            <span className="text-[#2E2E2E] block mb-1">
               Les meilleurs outils
             </span>
             <span className="bg-gradient-to-r from-[#171717] to-[#171717]/90 px-4 py-2 text-white rounded-lg inline-block my-3">
               pour être indépendant,
             </span>
-            <span className="text-[#2E2E2E] mt-2 block">sans le prix fort</span>
+            <span className="text-[#2E2E2E] mt-1 block">sans le prix fort</span>
           </h1>
 
-          <p className="text-[#2E2E2E] text-base sm:text-lg mt-6 max-w-sm mx-auto leading-relaxed">
+          <p className="text-[#2E2E2E] text-base sm:text-lg pt-8 max-w-sm mx-auto leading-relaxed">
             Créez votre business parfait en quelques clics.
           </p>
         </div>

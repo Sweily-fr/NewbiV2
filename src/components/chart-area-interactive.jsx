@@ -158,7 +158,7 @@ export function ChartAreaInteractive({
 }) {
   const chartId = React.useId();
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = React.useState("90d");
+  const [timeRange, setTimeRange] = React.useState("7d");
 
   React.useEffect(() => {
     if (isMobile) {
@@ -313,7 +313,7 @@ export function ChartAreaInteractive({
             {singleCurve ? (
               <Area
                 dataKey="desktop"
-                type="natural"
+                type="monotone"
                 fill={
                   showGradient
                     ? `url(#fillDesktop-${chartId})`
@@ -327,7 +327,7 @@ export function ChartAreaInteractive({
                 {showMobile && (
                   <Area
                     dataKey="mobile"
-                    type="natural"
+                    type="monotone"
                     fill={
                       hideMobileCurve
                         ? "transparent"
@@ -347,7 +347,7 @@ export function ChartAreaInteractive({
                 {showDesktop && (
                   <Area
                     dataKey="desktop"
-                    type="natural"
+                    type="monotone"
                     fill={
                       showGradient
                         ? `url(#fillDesktop-${chartId})`
