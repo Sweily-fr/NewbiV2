@@ -313,6 +313,7 @@ const SignatureManager = () => {
           };
 
           updateSignatureData(mappedData);
+          console.log("✅ Signature chargée:", signature.signatureName);
         }
       },
       onError: (error) => {
@@ -365,8 +366,14 @@ const SignatureManager = () => {
     const logoSrc = signature.logo || "";
     const template = signature.template || signature.layout || "horizontal";
 
+    // Debug pour voir quelle orientation est détectée
+    console.log("🎯 Template détecté dans generateSignatureHTML:", template);
+    console.log("🎯 signature.template:", signature.template);
+    console.log("🎯 signature.layout:", signature.layout);
+
     // Générer selon l'orientation
     if (template === "vertical") {
+      console.log("📋 Génération HTML VERTICAL");
       return generateVerticalSignatureHTML(
         signature,
         primaryColor,
@@ -374,6 +381,7 @@ const SignatureManager = () => {
         logoSrc
       );
     } else {
+      console.log("📋 Génération HTML HORIZONTAL");
       return generateHorizontalSignatureHTML(
         signature,
         primaryColor,
@@ -861,10 +869,6 @@ const SignatureManager = () => {
     setCopyingId(signature.id);
 
     try {
-<<<<<<< HEAD
-      // Utiliser la signature passée en paramètre (celle qu'on veut copier)
-      const htmlSignature = generateSignatureHTML(signature);
-=======
       // Créer une copie profonde des données actuelles de l'éditeur
       const currentSignatureData = JSON.parse(JSON.stringify(signatureData));
       
@@ -953,7 +957,6 @@ const SignatureManager = () => {
 
       // Générer le HTML avec la signature mise à jour
       const htmlSignature = generateSignatureHTML(signatureToCopy);
->>>>>>> 112b6ad (kanban signature mail)
 
       // Copier en tant que texte riche (HTML)
       if (navigator.clipboard && window.ClipboardItem) {
@@ -1013,6 +1016,14 @@ const SignatureManager = () => {
 
   const signatures = data?.getMyEmailSignatures || [];
 
+  // Debug logs
+  console.log("🔍 [FRONTEND] État du composant SignatureManager:");
+  console.log("  - isMounted:", isMounted);
+  console.log("  - loading:", loading);
+  console.log("  - error:", error);
+  console.log("  - data:", data);
+  console.log("  - signatures:", signatures);
+  console.log("  - signatures.length:", signatures.length);
 
   // Fonction pour changer de template
   const handleTemplateChange = (templateId) => {

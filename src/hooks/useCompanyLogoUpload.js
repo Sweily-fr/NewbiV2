@@ -104,9 +104,9 @@ export const useCompanyLogoUpload = ({ onUploadSuccess, onOrganizationUpdate }) 
         setCurrentImageUrl(uploadData.url);
         setCurrentFileKey(uploadData.key);
 
-<<<<<<< HEAD
         // Ne pas sauvegarder automatiquement en BDD - laisser le formulaire principal gérer cela
         // pour éviter les conflits entre les deux systèmes de sauvegarde
+<<<<<<< HEAD
 =======
         // Sauvegarder automatiquement en BDD via better-auth
         try {
@@ -131,6 +131,8 @@ export const useCompanyLogoUpload = ({ onUploadSuccess, onOrganizationUpdate }) 
           toast.error("Logo uploadé mais erreur de sauvegarde en base de données");
         }
 >>>>>>> fe2d248 (save)
+=======
+>>>>>>> 7f3a92a (save)
 
         toast.success("Logo uploadé avec succès !");
         onUploadSuccess?.(uploadData.url);
@@ -217,33 +219,7 @@ export const useCompanyLogoUpload = ({ onUploadSuccess, onOrganizationUpdate }) 
       suppressionCloudflareReussie = false;
     }
 
-    // 2. Supprimer de la BDD OBLIGATOIREMENT (même si Cloudflare échoue)
-    try {
-      console.log("🗑️ Suppression du logo en BDD via better-auth");
-      console.log("🔍 WorkspaceId utilisé:", workspaceId);
-      
-      const result = await authClient.organization.update({
-        organizationId: workspaceId,
-        data: {
-          logo: null
-        }
-      });
-      
-      console.log("✅ Logo supprimé de la BDD avec succès:", result);
-      console.log("✅ Données retournées par better-auth:", JSON.stringify(result, null, 2));
-      
-      if (suppressionCloudflareReussie) {
-        toast.success("Logo supprimé avec succès");
-      } else {
-        toast.success("Logo supprimé de la base de données");
-      }
-    } catch (dbError) {
-      console.error("❌ Erreur suppression BDD:", dbError);
-      console.error("❌ Détails erreur BDD:", dbError.message);
-      console.error("❌ Stack trace:", dbError.stack);
-      console.error("❌ WorkspaceId problématique:", workspaceId);
-      toast.error("Erreur lors de la suppression en base de données");
-    }
+    // Ne pas sauvegarder automatiquement en BDD - laisser le formulaire principal gérer cela
 
     // 3. Nettoyer l'état local IMMÉDIATEMENT et AGRESSIVEMENT
     if (previewUrl) {

@@ -63,23 +63,11 @@ export default function CompanySection({
     }
   };
 
-  const handleOrganizationUpdate = React.useCallback(() => {
-    // Refetch l'organisation après mise à jour du logo
-    console.log("🔄 handleOrganizationUpdate appelé - refetch organisation");
-    refetchOrganization().then((result) => {
-      console.log("✅ Refetch organisation terminé:", result);
-    }).catch((error) => {
-      console.error("❌ Erreur refetch organisation:", error);
-    });
-  }, [refetchOrganization]);
-
-  // Initialiser avec la valeur existante ET forcer la mise à jour quand l'organisation change
+  // Synchroniser avec la valeur du formulaire
   useEffect(() => {
     const currentLogo = watch("logo");
-    console.log("🔄 useEffect CompanySection - currentLogo:", currentLogo, "logoUrl:", logoUrl);
     if (currentLogo !== logoUrl) {
-      console.log("🔄 Mise à jour logoUrl:", currentLogo || null);
-      setLogoUrl(currentLogo || null);
+      setLogoUrl(currentLogo);
     }
   }, [watch("logo")]);
 
