@@ -116,10 +116,6 @@ export default function CompanySection({
                     return true;
                   },
                 })}
-                onChange={(e) => {
-                  const sanitized = sanitizeInput(e.target.value);
-                  e.target.value = sanitized;
-                }}
               />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -151,10 +147,6 @@ export default function CompanySection({
                     return true;
                   },
                 })}
-                onChange={(e) => {
-                  const sanitized = sanitizeInput(e.target.value, "email");
-                  e.target.value = sanitized;
-                }}
               />
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -187,10 +179,6 @@ export default function CompanySection({
                     return true;
                   },
                 })}
-                onChange={(e) => {
-                  const sanitized = sanitizeInput(e.target.value, "phone");
-                  e.target.value = sanitized;
-                }}
               />
             </div>
 
@@ -217,10 +205,6 @@ export default function CompanySection({
                     return true;
                   },
                 })}
-                onChange={(e) => {
-                  const sanitized = sanitizeInput(e.target.value);
-                  e.target.value = sanitized;
-                }}
               />
             </div>
           </div>
@@ -255,10 +239,10 @@ export default function CompanySection({
                 e.target.value = sanitized;
               }}
             />
-          </div> */}
+          </div>
 
           {/* Séparateur */}
-          {/* <Separator className="my-6" /> */}
+          <Separator className="my-6" />
 
           {/* Section Adresse */}
           <div className="space-y-4">
@@ -283,10 +267,6 @@ export default function CompanySection({
                     return true;
                   },
                 })}
-                onChange={(e) => {
-                  const sanitized = sanitizeInput(e.target.value);
-                  e.target.value = sanitized;
-                }}
               />
               {errors.address?.street && (
                 <p className="text-sm text-red-500">
@@ -317,10 +297,6 @@ export default function CompanySection({
                       return true;
                     },
                   })}
-                  onChange={(e) => {
-                    const sanitized = sanitizeInput(e.target.value);
-                    e.target.value = sanitized;
-                  }}
                 />
                 {errors.address?.city && (
                   <p className="text-sm text-red-500">
@@ -349,10 +325,6 @@ export default function CompanySection({
                       return true;
                     },
                   })}
-                  onChange={(e) => {
-                    const sanitized = sanitizeInput(e.target.value, "numeric");
-                    e.target.value = sanitized;
-                  }}
                 />
                 {errors.address?.postalCode && (
                   <p className="text-sm text-red-500">

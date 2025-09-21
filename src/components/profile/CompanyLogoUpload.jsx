@@ -34,9 +34,15 @@ export function CompanyLogoUpload({
     isAuthenticated
   } = useCompanyLogoUpload({
     onUploadSuccess: (imageUrl) => {
+      console.log("📤 CompanyLogoUpload onUploadSuccess appelé avec:", imageUrl);
       onImageChange(imageUrl);
     },
-    onOrganizationUpdate: onOrganizationUpdate
+    onOrganizationUpdate: (imageUrl) => {
+      console.log("🏢 CompanyLogoUpload onOrganizationUpdate appelé avec:", imageUrl);
+      if (onOrganizationUpdate) {
+        onOrganizationUpdate(imageUrl);
+      }
+    }
   });
 
   // Initialiser avec l'image existante

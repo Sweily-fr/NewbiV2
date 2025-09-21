@@ -33,6 +33,7 @@ import LayoutTab from "./layout-tab/layout-tab";
 import LayoutTabTypography from "./tab-typography/layout-tab";
 import LayoutTabImg from "./layout-img/layout-tab";
 import SignatureManager from "./SignatureManager";
+import CancelConfirmationModal from "./CancelConfirmationModal";
 // Mutation GraphQL pour créer une signature
 const CREATE_EMAIL_SIGNATURE = gql`
   mutation CreateEmailSignature($input: EmailSignatureInput!) {
@@ -91,6 +92,7 @@ export function TabSignature({ existingSignatureId = null }) {
   );
   const [isDefault, setIsDefault] = useState(signatureData.isDefault || false);
   const [saveStatus, setSaveStatus] = useState(null); // null, 'success', 'error'
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
   const [createSignature, { loading: creating }] = useMutation(
     CREATE_EMAIL_SIGNATURE,
@@ -304,6 +306,19 @@ export function TabSignature({ existingSignatureId = null }) {
     setIsDefault(signatureData.isDefault || false);
     setIsModalOpen(true);
   };
+
+  const handleCancelClick = () => {
+    setShowCancelConfirmation(true);
+  };
+
+  const handleConfirmCancel = () => {
+    setShowCancelConfirmation(false);
+    router.push("/dashboard/outils/signatures-mail");
+  };
+
+  const handleCloseCancelModal = () => {
+    setShowCancelConfirmation(false);
+  };
   return (
     <div className="flex flex-col h-full">
       <Tabs defaultValue="tab-1" className="flex flex-col h-full">
@@ -348,7 +363,11 @@ export function TabSignature({ existingSignatureId = null }) {
       {/* Footer fixe avec les boutons */}
       <div className="flex-shrink-0 py-4 mx-4 border-t">
         <div className="flex justify-between">
-          <Button variant="outline" className="cursor-pointer">
+          <Button 
+            variant="outline" 
+            className="cursor-pointer"
+            onClick={handleCancelClick}
+          >
             Annuler
           </Button>
           <Button
@@ -429,6 +448,15 @@ export function TabSignature({ existingSignatureId = null }) {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation d'annulation */}
+      <CancelConfirmationModal
+        isOpen={showCancelConfirmation}
+        onClose={handleCloseCancelModal}
+        onConfirm={handleConfirmCancel}
+        title="Annuler la création de signature ?"
+        message="Êtes-vous sûr de vouloir annuler ? Toutes les modifications non sauvegardées seront perdues et vous serez redirigé vers la liste des signatures."
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import React, {
   Suspense,
 } from "react";
 import { useSearchParams } from "next/navigation";
+import { useActiveOrganization } from "@/src/lib/organization-client";
 
 // Context pour les données de signature
 const SignatureContext = createContext();
@@ -26,6 +27,7 @@ export const useSignatureData = () => {
 function SignatureProviderContent({ children }) {
   const searchParams = useSearchParams();
   const isEditMode = searchParams?.get("edit") === "true";
+  const { organization } = useActiveOrganization();
 
   // Données par défaut (mémorisées pour éviter les re-renders)
   const defaultSignatureData = useMemo(
@@ -241,6 +243,21 @@ function SignatureProviderContent({ children }) {
       );
     }
   }, [isEditMode, defaultSignatureData]);
+
+  // Effet pour appliquer automatiquement le logo de l'organisation
+  useEffect(() => {
+    console.log("🔍 SignatureProvider - Organization:", organization);
+    console.log("🔍 SignatureProvider - Logo dans organization:", organization?.logo);
+    console.log("🔍 SignatureProvider - Logo actuel signature:", signatureData.logo);
+    
+    if (organization?.logo && !signatureData.logo) {
+      console.log("✅ SignatureProvider - Application automatique du logo:", organization.logo);
+      setSignatureData(prev => ({
+        ...prev,
+        logo: organization.logo
+      }));
+    }
+  }, [organization?.logo, signatureData.logo, organization]);
 
   const updateSignatureData = (key, value) => {
     setSignatureData((prev) => {
