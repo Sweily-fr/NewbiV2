@@ -208,14 +208,6 @@ export function TransactionDetailDrawer({
               </span>
             </div>
 
-            <div className="pt-2">
-              <Button
-                variant="link"
-                className="h-auto p-0 text-blue-600 hover:text-blue-700"
-              >
-                Plus de détails
-              </Button>
-            </div>
           </div>
 
           {/* Fichiers épinglés */}
