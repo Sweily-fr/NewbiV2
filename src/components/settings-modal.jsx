@@ -758,8 +758,8 @@ export function SettingsModal({
             <div
               className="flex-1 bg-white dark:bg-[#0A0A0A] overflow-y-auto"
               style={{
-                height: "calc(100vh - 160px)",
-                maxHeight: "calc(100vh - 160px)",
+                height: "calc(100vh - 20px)",
+                maxHeight: "calc(100vh - 20px)",
                 overflowY: "scroll",
                 WebkitOverflowScrolling: "touch",
               }}
@@ -786,8 +786,8 @@ export function SettingsModal({
               }}
             >
               {/* Safe area padding for iOS devices and browser bars */}
-              <div className="pt-2">
-                <div className="flex items-center justify-around px-2 pt-3">
+              <div className="pt-1">
+                <div className="flex items-center justify-around px-2 pt-2">
                   {mobileMainTabs.map((tab, index) => {
                     const Icon = tab.icon;
                     const isActive = getActiveMobileTab() === tab.id;
@@ -796,10 +796,10 @@ export function SettingsModal({
                         key={tab.id}
                         type="button"
                         onClick={() => handleTabChange(tab.id)}
-                        className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 min-w-0 flex-1 mx-1 relative ${
+                        className={`flex flex-col items-center justify-center transition-all duration-300 min-w-0 flex-1 relative ${
                           isActive
-                            ? "bg-[rgba(91,78,255,0.2)] text-[#5b4eff]"
-                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                            ? "text-[#5b4eff] px-4 py-2 rounded-lg"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 px-3 py-2 mx-1"
                         }`}
                       >
                         <Icon
