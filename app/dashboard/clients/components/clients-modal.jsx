@@ -420,6 +420,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               {/* Adresse de livraison */}
               {hasDifferentShipping && (
                 <div className="space-y-3 border-l-2 border-gray-200 pl-4">
+<<<<<<< HEAD
 
                   <div className="space-y-2">
                     <Label>Nom complet</Label>
@@ -439,6 +440,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                       </p>
                     )}
                   </div>
+=======
+>>>>>>> Dylan/Ticketv5
 
                   <div className="space-y-2">
                     <Label>Adresse</Label>

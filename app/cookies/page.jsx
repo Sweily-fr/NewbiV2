@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useCookieConsent } from "@/src/hooks/useCookieConsent";
 import { Button } from "@/src/components/ui/button";
-import { Footer7 } from "@/src/components/footer7";
+import Footer7 from "@/src/components/footer7";
 import CookiePreferencesModal from "@/src/components/cookies/CookiePreferencesModal";
 
 export default function CookiesPage() {
