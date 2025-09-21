@@ -13,6 +13,7 @@ import { cn } from '@/src/lib/utils';
 export function CompanyLogoUpload({ 
   currentImageUrl = null,
   onImageChange = () => {},
+  onOrganizationUpdate = () => {},
   className = '',
   showDescription = true
 }) {
@@ -34,7 +35,8 @@ export function CompanyLogoUpload({
   } = useCompanyLogoUpload({
     onUploadSuccess: (imageUrl) => {
       onImageChange(imageUrl);
-    }
+    },
+    onOrganizationUpdate: onOrganizationUpdate
   });
 
   // Initialiser avec l'image existante
@@ -81,8 +83,31 @@ export function CompanyLogoUpload({
   }, [handleFileSelect]);
 
   const handleRemove = () => {
-    removeImage();
+    console.log("🗑️ handleRemove appelé - suppression immédiate UI");
+    // Nettoyer l'UI IMMÉDIATEMENT avant même la suppression Cloudflare
     onImageChange(null);
+    
+    // Forcer le nettoyage de l'état local immédiatement
+    if (typeof window !== 'undefined') {
+      // Nettoyer tous les caches possibles
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('logo') || key.includes('organization') || key.includes('company')) {
+            localStorage.removeItem(key);
+          }
+        });
+        Object.keys(sessionStorage).forEach(key => {
+          if (key.includes('logo') || key.includes('organization') || key.includes('company')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch (e) {
+        console.warn("Erreur nettoyage storage UI:", e);
+      }
+    }
+    
+    // Puis supprimer de Cloudflare/BDD
+    removeImage();
   };
 
   // Afficher un message si l'utilisateur n'est pas connecté
@@ -127,7 +152,7 @@ export function CompanyLogoUpload({
             <img
               className="size-full object-contain"
               src={displayImageUrl}
-              alt="Logo de l'entreprise"
+              alt=""
               width={96}
               height={96}
               style={{ objectFit: "contain" }}
@@ -187,11 +212,6 @@ export function CompanyLogoUpload({
               : "Glissez un logo ou cliquez pour uploader"
             }
           </p>
-          {userId && (
-            <p className="text-muted-foreground text-xs text-center opacity-75">
-              Stockage : user/{userId}/imgCompany
-            </p>
-          )}
         </div>
       )}
     </div>

@@ -1,11 +1,10 @@
 import { useState, useCallback, useRef } from "react";
-import { useSession } from "@/src/lib/auth-client";
+import { useSession, authClient } from "@/src/lib/auth-client";
 import { useMutation } from "@apollo/client";
 import {
   UPLOAD_DOCUMENT,
   DELETE_DOCUMENT,
 } from "../graphql/mutations/documentUpload";
-import { UPDATE_COMPANY_LOGO } from "../graphql/mutations/user";
 import { toast } from "@/src/components/ui/sonner";
 import { useWorkspace } from "./useWorkspace";
 
@@ -15,7 +14,7 @@ import { useWorkspace } from "./useWorkspace";
  * - Suppression automatique de l'ancienne image
  * - Gestion des erreurs simplifiée
  */
-export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
+export const useCompanyLogoUpload = ({ onUploadSuccess, onOrganizationUpdate }) => {
   const { data: session } = useSession();
   const { workspaceId } = useWorkspace();
   const fileInputRef = useRef(null);
@@ -30,7 +29,6 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
   // Mutations GraphQL
   const [uploadDocument] = useMutation(UPLOAD_DOCUMENT);
   const [deleteDocument] = useMutation(DELETE_DOCUMENT);
-  const [updateCompanyLogo] = useMutation(UPDATE_COMPANY_LOGO);
 
   /**
    * Ouvre le sélecteur de fichier
@@ -106,11 +104,44 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
         setCurrentImageUrl(uploadData.url);
         setCurrentFileKey(uploadData.key);
 
+<<<<<<< HEAD
         // Ne pas sauvegarder automatiquement en BDD - laisser le formulaire principal gérer cela
         // pour éviter les conflits entre les deux systèmes de sauvegarde
+=======
+        // Sauvegarder automatiquement en BDD via better-auth
+        try {
+          console.log("🔄 Tentative de sauvegarde logo:", {
+            organizationId: workspaceId,
+            logoUrl: uploadData.url
+          });
+          
+          const logoResult = await authClient.organization.update({
+            organizationId: workspaceId,
+            data: {
+              logo: uploadData.url
+            }
+          });
+          
+          console.log("✅ Logo sauvegardé en BDD via better-auth:", logoResult);
+          console.log("✅ Données retournées:", JSON.stringify(logoResult, null, 2));
+        } catch (dbError) {
+          console.error("❌ Erreur sauvegarde BDD:", dbError);
+          console.error("❌ Détails erreur:", dbError.message, dbError.stack);
+          // Ne pas faire échouer l'upload si la BDD échoue
+          toast.error("Logo uploadé mais erreur de sauvegarde en base de données");
+        }
+>>>>>>> fe2d248 (save)
 
         toast.success("Logo uploadé avec succès !");
         onUploadSuccess?.(uploadData.url);
+        
+        // Notifier que l'organisation doit être mise à jour
+        onOrganizationUpdate?.();
+        
+        // Forcer le refetch immédiat pour s'assurer que l'UI se met à jour
+        setTimeout(() => {
+          onOrganizationUpdate?.();
+        }, 100);
       } catch (error) {
         console.error("Erreur upload:", error);
         toast.error("Erreur lors de l'upload");
@@ -132,9 +163,10 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
       currentFileKey,
       uploadDocument,
       deleteDocument,
-      updateCompanyLogo,
       onUploadSuccess,
+      onOrganizationUpdate,
       previewUrl,
+      workspaceId,
     ]
   );
 
@@ -142,21 +174,78 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
    * Supprime l'image actuelle
    */
   const removeImage = useCallback(async () => {
+    let suppressionCloudflareReussie = false;
+    
+    console.log("🔍 État avant suppression:", {
+      currentFileKey,
+      currentImageUrl,
+      hasImage: !!(previewUrl || currentImageUrl)
+    });
+    
+    // 1. Supprimer de Cloudflare d'abord
     try {
-      if (currentFileKey) {
+      // Si on n'a pas de currentFileKey mais qu'on a une URL, essayer d'extraire la clé
+      let fileKeyToDelete = currentFileKey;
+      
+      if (!fileKeyToDelete && currentImageUrl) {
+        // Extraire la clé depuis l'URL Cloudflare
+        // Format: https://pub-xxx.r2.dev/signatures/userId/imgCompany/filename.ext
+        const urlParts = currentImageUrl.split('/');
+        if (urlParts.length >= 3) {
+          const filename = urlParts[urlParts.length - 1]; // filename.ext
+          const folder = urlParts[urlParts.length - 2]; // imgCompany
+          const userId = urlParts[urlParts.length - 3]; // userId
+          fileKeyToDelete = `signatures/${userId}/${folder}/${filename}`;
+          console.log("🔑 Clé extraite de l'URL:", fileKeyToDelete);
+        }
+      }
+      
+      if (fileKeyToDelete) {
+        console.log("🗑️ Suppression du logo sur Cloudflare:", fileKeyToDelete);
         await deleteDocument({
-          variables: { key: currentFileKey },
+          variables: { key: fileKeyToDelete },
         });
-        toast.success("Logo supprimé avec succès");
+        console.log("✅ Logo supprimé de Cloudflare avec succès");
+        suppressionCloudflareReussie = true;
+      } else {
+        console.warn("⚠️ Aucune clé de fichier trouvée pour la suppression");
+        suppressionCloudflareReussie = true; // Continuer quand même pour nettoyer la BDD
       }
     } catch (error) {
-      console.error("Erreur suppression:", error);
-      toast.error("Erreur lors de la suppression");
+      console.error("❌ Erreur suppression Cloudflare:", error);
+      // Ne pas arrêter - continuer pour nettoyer la BDD quand même
+      suppressionCloudflareReussie = false;
     }
 
-    // Ne pas sauvegarder automatiquement en BDD - laisser le formulaire principal gérer cela
+    // 2. Supprimer de la BDD OBLIGATOIREMENT (même si Cloudflare échoue)
+    try {
+      console.log("🗑️ Suppression du logo en BDD via better-auth");
+      console.log("🔍 WorkspaceId utilisé:", workspaceId);
+      
+      const result = await authClient.organization.update({
+        organizationId: workspaceId,
+        data: {
+          logo: null
+        }
+      });
+      
+      console.log("✅ Logo supprimé de la BDD avec succès:", result);
+      console.log("✅ Données retournées par better-auth:", JSON.stringify(result, null, 2));
+      
+      if (suppressionCloudflareReussie) {
+        toast.success("Logo supprimé avec succès");
+      } else {
+        toast.success("Logo supprimé de la base de données");
+      }
+    } catch (dbError) {
+      console.error("❌ Erreur suppression BDD:", dbError);
+      console.error("❌ Détails erreur BDD:", dbError.message);
+      console.error("❌ Stack trace:", dbError.stack);
+      console.error("❌ WorkspaceId problématique:", workspaceId);
+      toast.error("Erreur lors de la suppression en base de données");
+    }
 
-    // Nettoyer l'état local
+    // 3. Nettoyer l'état local IMMÉDIATEMENT et AGRESSIVEMENT
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -168,13 +257,60 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
       fileInputRef.current.value = "";
     }
 
+    // Notifier immédiatement la suppression avec null explicite
     onUploadSuccess?.(null);
+    
+    // Forcer le nettoyage de tous les caches possibles
+    if (typeof window !== 'undefined') {
+      // Nettoyer localStorage et sessionStorage
+      try {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.includes('logo') || key.includes('organization') || key.includes('company')) {
+            localStorage.removeItem(key);
+            console.log("🧹 Nettoyage localStorage:", key);
+          }
+        });
+        
+        const sessionKeys = Object.keys(sessionStorage);
+        sessionKeys.forEach(key => {
+          if (key.includes('logo') || key.includes('organization') || key.includes('company')) {
+            sessionStorage.removeItem(key);
+            console.log("🧹 Nettoyage sessionStorage:", key);
+          }
+        });
+      } catch (e) {
+        console.warn("Erreur nettoyage storage:", e);
+      }
+    }
+    
+    // Forcer PLUSIEURS refetch pour s'assurer de la synchronisation
+    console.log("🔄 Déclenchement des refetch multiples...");
+    onOrganizationUpdate?.();
+    setTimeout(() => {
+      console.log("🔄 Refetch +100ms");
+      onOrganizationUpdate?.();
+    }, 100);
+    setTimeout(() => {
+      console.log("🔄 Refetch +500ms");
+      onOrganizationUpdate?.();
+    }, 500);
+    setTimeout(() => {
+      console.log("🔄 Refetch +1000ms");
+      onOrganizationUpdate?.();
+    }, 1000);
+    setTimeout(() => {
+      console.log("🔄 Refetch final +2000ms");
+      onOrganizationUpdate?.();
+    }, 2000);
   }, [
     currentFileKey,
+    currentImageUrl,
     deleteDocument,
     previewUrl,
     onUploadSuccess,
-    updateCompanyLogo,
+    onOrganizationUpdate,
+    workspaceId,
   ]);
 
   /**

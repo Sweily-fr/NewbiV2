@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useActiveOrganization } from "@/src/lib/organization-client";
 import { Label } from "@/src/components/ui/label";
 import {
   Input,
@@ -43,22 +44,66 @@ export default function CompanySection({
   watch,
   setValue,
   session,
+  organization,
 }) {
+  const { refetch: refetchOrganization } = useActiveOrganization();
   const [logoUrl, setLogoUrl] = React.useState(watch("logo") || null);
   const selectedCountry = watch("address.country");
 
   const handleLogoChange = (imageUrl) => {
+    console.log("🔄 handleLogoChange appelé avec:", imageUrl);
     setLogoUrl(imageUrl);
     setValue("logo", imageUrl);
+    
+    // Forcer une mise à jour immédiate de l'affichage
+    if (imageUrl) {
+      console.log("✅ Logo mis à jour:", imageUrl);
+    } else {
+      console.log("🗑️ Logo supprimé - nettoyage UI");
+    }
   };
 
-  // Synchroniser avec la valeur du formulaire
+  const handleOrganizationUpdate = React.useCallback(() => {
+    // Refetch l'organisation après mise à jour du logo
+    console.log("🔄 handleOrganizationUpdate appelé - refetch organisation");
+    refetchOrganization().then((result) => {
+      console.log("✅ Refetch organisation terminé:", result);
+    }).catch((error) => {
+      console.error("❌ Erreur refetch organisation:", error);
+    });
+  }, [refetchOrganization]);
+
+  // Initialiser avec la valeur existante ET forcer la mise à jour quand l'organisation change
   useEffect(() => {
     const currentLogo = watch("logo");
+    console.log("🔄 useEffect CompanySection - currentLogo:", currentLogo, "logoUrl:", logoUrl);
     if (currentLogo !== logoUrl) {
-      setLogoUrl(currentLogo);
+      console.log("🔄 Mise à jour logoUrl:", currentLogo || null);
+      setLogoUrl(currentLogo || null);
     }
   }, [watch("logo")]);
+
+  // Forcer la mise à jour quand l'organisation change
+  useEffect(() => {
+    if (organization?.logo !== logoUrl) {
+      console.log("🔄 Organisation changée - nouveau logo:", organization?.logo);
+      setLogoUrl(organization?.logo || null);
+      setValue("logo", organization?.logo || null);
+      
+      // Si le logo est null, forcer le nettoyage complet
+      if (organization?.logo === null || organization?.logo === undefined) {
+        console.log("🧹 Logo null détecté - nettoyage forcé");
+        setLogoUrl(null);
+        setValue("logo", null);
+        
+        // Forcer la re-render du composant
+        setTimeout(() => {
+          setLogoUrl(null);
+          setValue("logo", null);
+        }, 50);
+      }
+    }
+  }, [organization?.logo, logoUrl, setValue]);
 
   return (
     <div className="space-y-6">
@@ -77,6 +122,7 @@ export default function CompanySection({
             <CompanyLogoUpload
               currentImageUrl={logoUrl}
               onImageChange={handleLogoChange}
+              onOrganizationUpdate={handleOrganizationUpdate}
               showDescription={false}
             />
             <div className="flex-1">
