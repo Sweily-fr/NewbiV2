@@ -117,7 +117,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
         const value = `${formattedHour}:${formattedMinute}`;
         // Use a fixed date to avoid unnecessary date object creations
         const date = new Date(2000, 0, 1, hour, minute);
-        const label = format(date, "h:mm a");
+        const label = format(date, "H:mm", { locale: fr });
         options.push({ value, label });
       }
     }
@@ -368,7 +368,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                       )}
                     >
                       {startDate
-                        ? format(startDate, "PPP")
+                        ? format(startDate, "PPP", { locale: fr })
                         : "Choisir une date"}
                     </span>
                     <RiCalendarLine
@@ -383,6 +383,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                     mode="single"
                     selected={startDate}
                     defaultMonth={startDate}
+                    locale={fr}
                     onSelect={(date) => {
                       if (date) {
                         setStartDate(date);
@@ -437,7 +438,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                         !endDate && "text-muted-foreground"
                       )}
                     >
-                      {endDate ? format(endDate, "PPP") : "Choisir une date"}
+                      {endDate ? format(endDate, "PPP", { locale: fr }) : "Choisir une date"}
                     </span>
                     <RiCalendarLine
                       size={16}
@@ -451,6 +452,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                     mode="single"
                     selected={endDate}
                     defaultMonth={endDate}
+                    locale={fr}
                     disabled={{ before: startDate }}
                     onSelect={(date) => {
                       if (date) {
