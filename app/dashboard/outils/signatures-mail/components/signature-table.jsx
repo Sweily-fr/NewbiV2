@@ -152,19 +152,19 @@ export default function SignatureTable() {
           />
         </div>
         <div className="flex items-center space-x-2">
-          {selectedRows.length > 0 && (
+          {table.getSelectedRowModel().rows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">
                   <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer ({selectedRows.length})
+                  Supprimer ({table.getSelectedRowModel().rows.length})
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                    Êtes-vous sûr de vouloir supprimer {table.getSelectedRowModel().rows.length}{" "}
                     signature(s) ? Cette action est irréversible.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -467,11 +467,13 @@ function useSignatureTable({ data, onRefetch, actions }) {
   });
 
   const handleDeleteSelected = async () => {
+    if (!table.getSelectedRowModel().rows.length) return;
+    
     setIsDeleting(true);
     try {
-      // Logique de suppression multiple à implémenter
-      // await deleteMultipleSignatures(selectedRows);
-      setSelectedRows([]);
+      const selectedIds = table.getSelectedRowModel().rows.map(row => row.original.id);
+      await actions.handleDeleteMultiple(selectedIds);
+      table.resetRowSelection();
       onRefetch?.();
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);

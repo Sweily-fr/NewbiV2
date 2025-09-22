@@ -9,7 +9,7 @@ import { Switch } from "@/src/components/ui/switch";
 export default function SpacingSection({ signatureData, updateSignatureData }) {
   // Gestion des espacements
   const handleSpacingChange = (spacingKey, value) => {
-    const numValue = parseInt(value) || 0;
+    const numValue = value === "" ? 0 : parseInt(value) || 0;
     const clampedValue = Math.max(0, Math.min(30, numValue)); // Entre 0 et 30px
     updateSignatureData("spacings", {
       ...signatureData.spacings,
@@ -130,7 +130,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.nameSpacing || 12]}
+                  value={[signatureData.spacings?.nameSpacing ?? 12]}
                   onValueChange={(value) =>
                     handleSpacingChange("nameSpacing", value[0])
                   }
@@ -172,7 +172,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   />
                   <Slider
                     className="grow h-4"
-                    value={[signatureData.spacings?.logoBottom || 12]}
+                    value={[signatureData.spacings?.logoBottom ?? 12]}
                     onValueChange={(value) =>
                       handleSpacingChange("logoBottom", value[0])
                     }
@@ -216,7 +216,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.nameBottom || 8]}
+                  value={[signatureData.spacings?.nameBottom ?? 8]}
                   onValueChange={(value) =>
                     handleSpacingChange("nameBottom", value[0])
                   }
@@ -259,7 +259,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.positionBottom || 8]}
+                  value={[signatureData.spacings?.positionBottom ?? 8]}
                   onValueChange={(value) =>
                     handleSpacingChange("positionBottom", value[0])
                   }
@@ -300,7 +300,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.phoneToMobile || 4]}
+                  value={[signatureData.spacings?.phoneToMobile ?? 4]}
                   onValueChange={(value) =>
                     handleSpacingChange("phoneToMobile", value[0])
                   }
@@ -341,7 +341,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.mobileToEmail || 4]}
+                  value={[signatureData.spacings?.mobileToEmail ?? 4]}
                   onValueChange={(value) =>
                     handleSpacingChange("mobileToEmail", value[0])
                   }
@@ -382,7 +382,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.emailToWebsite || 4]}
+                  value={[signatureData.spacings?.emailToWebsite ?? 4]}
                   onValueChange={(value) =>
                     handleSpacingChange("emailToWebsite", value[0])
                   }
@@ -423,7 +423,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.websiteToAddress || 4]}
+                  value={[signatureData.spacings?.websiteToAddress ?? 4]}
                   onValueChange={(value) =>
                     handleSpacingChange("websiteToAddress", value[0])
                   }
@@ -456,7 +456,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.separatorTop || 12]}
+                  value={[signatureData.spacings?.separatorTop ?? 12]}
                   onValueChange={(value) =>
                     handleSpacingChange("separatorTop", value[0])
                   }
@@ -497,7 +497,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.separatorBottom || 12]}
+                  value={[signatureData.spacings?.separatorBottom ?? 12]}
                   onValueChange={(value) =>
                     handleSpacingChange("separatorBottom", value[0])
                   }
@@ -538,7 +538,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.logoToSocial || 12]}
+                  value={[signatureData.spacings?.logoToSocial ?? 12]}
                   onValueChange={(value) =>
                     handleSpacingChange("logoToSocial", value[0])
                   }
@@ -595,7 +595,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                       <Slider
                         className="grow h-4"
                         value={[
-                          signatureData.spacings?.verticalSeparatorLeft || 22,
+                          signatureData.spacings?.verticalSeparatorLeft ?? 22,
                         ]}
                         onValueChange={(value) =>
                           handleSpacingChange("verticalSeparatorLeft", value[0])
@@ -649,7 +649,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                       <Slider
                         className="grow h-4"
                         value={[
-                          signatureData.spacings?.verticalSeparatorRight || 22,
+                          signatureData.spacings?.verticalSeparatorRight ?? 22,
                         ]}
                         onValueChange={(value) =>
                           handleSpacingChange(

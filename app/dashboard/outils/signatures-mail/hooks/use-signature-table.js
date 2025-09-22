@@ -41,18 +41,156 @@ const GET_EMAIL_SIGNATURE = gql`
     getEmailSignature(id: $id) {
       id
       signatureName
+      isDefault
+
+      # Informations personnelles
       firstName
       lastName
-      email
       position
-      companyName
+
+      # Informations de contact
+      email
       phone
+      mobile
       website
       address
-      photo
-      logo
+      companyName
+
+      # Options d'affichage des icônes
+      showPhoneIcon
+      showMobileIcon
+      showEmailIcon
+      showAddressIcon
+      showWebsiteIcon
+
+      # Couleurs
       primaryColor
-      isDefault
+      colors {
+        name
+        position
+        company
+        contact
+        separatorVertical
+        separatorHorizontal
+      }
+
+      # Configuration layout
+      nameSpacing
+      nameAlignment
+      layout
+      columnWidths {
+        photo
+        content
+      }
+
+      # Images
+      photo
+      photoKey
+      logo
+      logoKey
+      imageSize
+      imageShape
+      logoSize
+
+      # Séparateurs
+      separatorVerticalWidth
+      separatorHorizontalWidth
+
+      # Espacements
+      spacings {
+        global
+        photoBottom
+        logoBottom
+        nameBottom
+        positionBottom
+        companyBottom
+        contactBottom
+        phoneToMobile
+        mobileToEmail
+        emailToWebsite
+        websiteToAddress
+        separatorTop
+        separatorBottom
+        logoToSocial
+        verticalSeparatorLeft
+        verticalSeparatorRight
+      }
+      detailedSpacing
+
+      # Typographie
+      fontFamily
+      fontSize {
+        name
+        position
+        contact
+      }
+      typography {
+        fullName {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        position {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        company {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        email {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        phone {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        mobile {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        website {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        address {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+      }
+
       createdAt
       updatedAt
     }
@@ -63,6 +201,13 @@ const GET_EMAIL_SIGNATURE = gql`
 const DELETE_EMAIL_SIGNATURE = gql`
   mutation DeleteEmailSignature($id: ID!) {
     deleteEmailSignature(id: $id)
+  }
+`;
+
+// Mutation pour supprimer plusieurs signatures
+const DELETE_MULTIPLE_EMAIL_SIGNATURES = gql`
+  mutation DeleteMultipleEmailSignatures($ids: [ID!]!) {
+    deleteMultipleEmailSignatures(ids: $ids)
   }
 `;
 
@@ -160,6 +305,21 @@ export const useSignatureActions = () => {
       onError: (error) => {
         console.error("Erreur lors de la suppression:", error);
         toast.error("Erreur lors de la suppression de la signature");
+      },
+    }
+  );
+
+  const [deleteMultipleSignatures, { loading: deletingMultiple }] = useMutation(
+    DELETE_MULTIPLE_EMAIL_SIGNATURES,
+    {
+      refetchQueries: ["GetMyEmailSignatures"],
+      onCompleted: (data) => {
+        const count = data?.deleteMultipleEmailSignatures || 0;
+        toast.success(`${count} signature${count > 1 ? 's' : ''} supprimée${count > 1 ? 's' : ''} avec succès`);
+      },
+      onError: (error) => {
+        console.error("Erreur lors de la suppression multiple:", error);
+        toast.error("Erreur lors de la suppression des signatures");
       },
     }
   );
@@ -331,11 +491,20 @@ export const useSignatureActions = () => {
     }
   };
 
+  const handleDeleteMultiple = async (signatureIds) => {
+    try {
+      await deleteMultipleSignatures({ variables: { ids: signatureIds } });
+    } catch (error) {
+      console.error("Erreur lors de la suppression multiple:", error);
+    }
+  };
+
   return {
     handleEdit,
     handleDelete,
+    handleDeleteMultiple,
     handleDuplicate,
     handleToggleFavorite,
-    loading: deleting || settingDefault || loadingSignature || duplicating,
+    loading: deleting || settingDefault || loadingSignature || duplicating || deletingMultiple,
   };
 };

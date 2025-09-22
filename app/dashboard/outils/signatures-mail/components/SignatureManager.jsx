@@ -141,7 +141,11 @@ const GET_EMAIL_SIGNATURE = gql`
         websiteToAddress
         separatorTop
         separatorBottom
+        logoToSocial
+        verticalSeparatorLeft
+        verticalSeparatorRight
       }
+      detailedSpacing
 
       # Typographie
       fontFamily
@@ -149,6 +153,72 @@ const GET_EMAIL_SIGNATURE = gql`
         name
         position
         contact
+      }
+      typography {
+        fullName {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        position {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        company {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        email {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        phone {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        mobile {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        website {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        address {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
       }
 
       createdAt
@@ -301,7 +371,13 @@ const SignatureManager = () => {
               websiteToAddress: 4,
               separatorTop: 16,
               separatorBottom: 16,
+              logoToSocial: 12,
+              verticalSeparatorLeft: 22,
+              verticalSeparatorRight: 22,
             },
+            
+            // Mode espacement détaillé
+            detailedSpacing: signature.detailedSpacing || false,
 
             // Typographie
             fontFamily: signature.fontFamily || "Arial, sans-serif",
@@ -309,6 +385,138 @@ const SignatureManager = () => {
               name: 16,
               position: 14,
               contact: 13,
+            },
+            // Typographie détaillée
+            typography: signature.typography ? {
+              fullName: {
+                fontFamily: signature.typography.fullName?.fontFamily || "Arial, sans-serif",
+                fontSize: signature.typography.fullName?.fontSize || 16,
+                color: signature.typography.fullName?.color || "#171717",
+                fontWeight: signature.typography.fullName?.fontWeight || "normal",
+                fontStyle: signature.typography.fullName?.fontStyle || "normal",
+                textDecoration: signature.typography.fullName?.textDecoration || "none",
+              },
+              position: {
+                fontFamily: signature.typography.position?.fontFamily || "Arial, sans-serif",
+                fontSize: signature.typography.position?.fontSize || 14,
+                color: signature.typography.position?.color || "#666666",
+                fontWeight: signature.typography.position?.fontWeight || "normal",
+                fontStyle: signature.typography.position?.fontStyle || "normal",
+                textDecoration: signature.typography.position?.textDecoration || "none",
+              },
+              company: {
+                fontFamily: signature.typography.company?.fontFamily || "Arial, sans-serif",
+                fontSize: signature.typography.company?.fontSize || 14,
+                color: signature.typography.company?.color || "#171717",
+                fontWeight: signature.typography.company?.fontWeight || "normal",
+                fontStyle: signature.typography.company?.fontStyle || "normal",
+                textDecoration: signature.typography.company?.textDecoration || "none",
+              },
+              email: {
+                fontFamily: signature.typography.email?.fontFamily || "Arial, sans-serif",
+                fontSize: signature.typography.email?.fontSize || 12,
+                color: signature.typography.email?.color || "#666666",
+                fontWeight: signature.typography.email?.fontWeight || "normal",
+                fontStyle: signature.typography.email?.fontStyle || "normal",
+                textDecoration: signature.typography.email?.textDecoration || "none",
+              },
+              phone: {
+                fontFamily: signature.typography.phone?.fontFamily || "Arial, sans-serif",
+                fontSize: signature.typography.phone?.fontSize || 12,
+                color: signature.typography.phone?.color || "#666666",
+                fontWeight: signature.typography.phone?.fontWeight || "normal",
+                fontStyle: signature.typography.phone?.fontStyle || "normal",
+                textDecoration: signature.typography.phone?.textDecoration || "none",
+              },
+              mobile: {
+                fontFamily: signature.typography.mobile?.fontFamily || "Arial, sans-serif",
+                fontSize: signature.typography.mobile?.fontSize || 12,
+                color: signature.typography.mobile?.color || "#666666",
+                fontWeight: signature.typography.mobile?.fontWeight || "normal",
+                fontStyle: signature.typography.mobile?.fontStyle || "normal",
+                textDecoration: signature.typography.mobile?.textDecoration || "none",
+              },
+              website: {
+                fontFamily: signature.typography.website?.fontFamily || "Arial, sans-serif",
+                fontSize: signature.typography.website?.fontSize || 12,
+                color: signature.typography.website?.color || "#666666",
+                fontWeight: signature.typography.website?.fontWeight || "normal",
+                fontStyle: signature.typography.website?.fontStyle || "normal",
+                textDecoration: signature.typography.website?.textDecoration || "none",
+              },
+              address: {
+                fontFamily: signature.typography.address?.fontFamily || "Arial, sans-serif",
+                fontSize: signature.typography.address?.fontSize || 12,
+                color: signature.typography.address?.color || "#666666",
+                fontWeight: signature.typography.address?.fontWeight || "normal",
+                fontStyle: signature.typography.address?.fontStyle || "normal",
+                textDecoration: signature.typography.address?.textDecoration || "none",
+              },
+            } : {
+              fullName: {
+                fontFamily: "Arial, sans-serif",
+                fontSize: 16,
+                color: "#171717",
+                fontWeight: "normal",
+                fontStyle: "normal",
+                textDecoration: "none",
+              },
+              position: {
+                fontFamily: "Arial, sans-serif",
+                fontSize: 14,
+                color: "#666666",
+                fontWeight: "normal",
+                fontStyle: "normal",
+                textDecoration: "none",
+              },
+              company: {
+                fontFamily: "Arial, sans-serif",
+                fontSize: 14,
+                color: "#171717",
+                fontWeight: "normal",
+                fontStyle: "normal",
+                textDecoration: "none",
+              },
+              email: {
+                fontFamily: "Arial, sans-serif",
+                fontSize: 12,
+                color: "#666666",
+                fontWeight: "normal",
+                fontStyle: "normal",
+                textDecoration: "none",
+              },
+              phone: {
+                fontFamily: "Arial, sans-serif",
+                fontSize: 12,
+                color: "#666666",
+                fontWeight: "normal",
+                fontStyle: "normal",
+                textDecoration: "none",
+              },
+              mobile: {
+                fontFamily: "Arial, sans-serif",
+                fontSize: 12,
+                color: "#666666",
+                fontWeight: "normal",
+                fontStyle: "normal",
+                textDecoration: "none",
+              },
+              website: {
+                fontFamily: "Arial, sans-serif",
+                fontSize: 12,
+                color: "#666666",
+                fontWeight: "normal",
+                fontStyle: "normal",
+                textDecoration: "none",
+              },
+              address: {
+                fontFamily: "Arial, sans-serif",
+                fontSize: 12,
+                color: "#666666",
+                fontWeight: "normal",
+                fontStyle: "normal",
+                textDecoration: "none",
+              },
             },
           };
 
