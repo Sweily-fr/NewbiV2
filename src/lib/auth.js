@@ -30,14 +30,14 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
-    async signInRateLimit(request) {
+    requireEmailVerification: true,
+    async signInRateLimit() {
       return {
         window: 60,
         max: 5,
       };
     },
-    async beforeSignIn({ user }, request) {
+    async beforeSignIn({ user }) {
       // Vérifier si le compte est actif
       if (user.isActive === false) {
         console.log(
@@ -52,15 +52,26 @@ export const auth = betterAuth({
         );
       }
 
+      // Vérifier si l'email est vérifié (Better Auth gère cela automatiquement avec requireEmailVerification: true)
+      if (!user.emailVerified) {
+        console.log(
+          `Tentative de connexion avec email non vérifié: ${user.email}`
+        );
+
+        throw new Error(
+          "Veuillez vérifier votre adresse email avant de vous connecter."
+        );
+      }
+
       return user;
     },
-    sendResetPassword: async ({ user, url, token }, request) => {
+    sendResetPassword: async ({ user, url }) => {
       await sendResetPasswordEmail(user, url);
     },
   },
 
   emailVerification: {
-    sendVerificationEmail: async ({ user, url, token }) => {
+    sendVerificationEmail: async ({ user, url }) => {
       await sendVerificationEmail(user, url);
     },
     sendOnSignUp: true,
