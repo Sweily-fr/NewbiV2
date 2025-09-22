@@ -73,9 +73,6 @@ export default function MobileSettingsNavigation({
       <div className="mt-6 space-y-6">
         {/* Espace de travail */}
         <div>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 px-4">
-            Espace de travail
-          </p>
           <div className="bg-white dark:bg-[#171717] mx-4 rounded-xl shadow-sm overflow-hidden">
             {tabs.slice(1, 4).map((tab, index) => {
               const IconComponent = iconMap[tab.icon];
@@ -108,9 +105,6 @@ export default function MobileSettingsNavigation({
 
         {/* Gestion */}
         <div>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 px-4">
-            Gestion
-          </p>
           <div className="bg-white dark:bg-[#171717] mx-4 rounded-xl shadow-sm overflow-hidden">
             {tabs.slice(4, 8).map((tab, index) => {
               const IconComponent = iconMap[tab.icon];
@@ -148,9 +142,6 @@ export default function MobileSettingsNavigation({
 
         {/* Préférences */}
         <div>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 px-4">
-            Préférences
-          </p>
           <div className="bg-white dark:bg-[#171717] mx-4 rounded-xl shadow-sm overflow-hidden">
             {tabs.slice(8).map((tab, index) => {
               const IconComponent = iconMap[tab.icon];
