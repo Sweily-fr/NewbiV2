@@ -10,7 +10,7 @@ export default function NewTransfertsFichiers() {
           Nouveau transfert de fichiers
         </h1>
         <p className="text-muted-foreground text-sm">
-          Partagez des fichiers volumineux jusqu'à 10GB avec vos clients ou
+          Partagez des fichiers volumineux jusqu'à 5GB avec vos clients ou
           collaborateurs
         </p>
       </div>
