@@ -7,8 +7,6 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { Card, CardContent } from "@/src/components/ui/card";
 import SignatureTable from "./components/signature-table";
 import { useRouter } from "next/navigation";
-import { CompanyInfoGuard } from "@/src/components/guards/CompanyInfoGuard";
-import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { gql } from "@apollo/client";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
@@ -140,7 +138,7 @@ function SignaturesContent() {
   };
 
   return (
-    <CompanyInfoGuard>
+    <>
       {/* Mobile Desktop-Only Notice */}
       <div className="block lg:hidden">
         <div className="min-h-screen flex items-center justify-center p-6">
@@ -199,16 +197,12 @@ function SignaturesContent() {
           <SignatureTable />
         </Suspense>
       </div>
-    </CompanyInfoGuard>
+    </>
   );
 }
 
 export default function SignaturesPage() {
-  return (
-    <ProRouteGuard pageName="Signatures Mail">
-      <SignaturesContent />
-    </ProRouteGuard>
-  );
+  return <SignaturesContent />;
 }
 
 function SignatureTableSkeleton() {
