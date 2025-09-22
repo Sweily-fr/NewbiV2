@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
@@ -14,7 +14,14 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { FileText, Building, Euro, Shield, Info } from "lucide-react";
-import { getRequiredFields, getVisibleFields } from "@/src/lib/validation";
+import {
+  getRequiredFields,
+  getVisibleFields,
+  VALIDATION_PATTERNS,
+  sanitizeInput,
+  detectInjectionAttempt,
+} from "@/src/lib/validation";
+import { useFormContext } from "react-hook-form";
 
 const LEGAL_FORMS = [
   { value: "SARL", label: "SARL - Société à Responsabilité Limitée" },
@@ -50,14 +57,27 @@ const ACTIVITY_CATEGORIES = [
 ];
 
 export function InformationsLegalesSection({
-  register,
-  errors,
-  watch,
-  setValue,
   session,
   organization,
+  updateOrganization,
+  refetchOrganization,
 }) {
+  // Utiliser le contexte du formulaire global
+  const {
+    register,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext();
+
+  // Surveiller les valeurs du formulaire
   const watchedValues = watch();
+
+  // Debug : surveiller les changements
+  useEffect(() => {
+    console.log("🔍 [LEGALES] watchedValues changé:", watchedValues);
+  }, [watchedValues]);
+
   const isVatSubject = watchedValues.legal?.isVatSubject || false;
   const hasCommercialActivity =
     watchedValues.legal?.hasCommercialActivity || false;
@@ -187,7 +207,21 @@ export function InformationsLegalesSection({
                 id="siret"
                 placeholder="12345678901234"
                 className="w-full"
-                {...register("legal.siret")}
+                {...register("legal.siret", {
+                  required: requiredFields.siret
+                    ? "Le numéro SIRET est requis"
+                    : false,
+                  pattern: {
+                    value: VALIDATION_PATTERNS.siret.pattern,
+                    message: VALIDATION_PATTERNS.siret.message,
+                  },
+                  validate: (value) => {
+                    if (value && detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
+                })}
               />
               {errors.legal?.siret && (
                 <p className="text-sm text-red-500">
@@ -212,7 +246,21 @@ export function InformationsLegalesSection({
                   id="rcs"
                   placeholder="RCS Paris 123 456 789"
                   className="w-full"
-                  {...register("legal.rcs")}
+                  {...register("legal.rcs", {
+                    required: requiredFields.rcs
+                      ? "Le numéro RCS est requis"
+                      : false,
+                    pattern: {
+                      value: VALIDATION_PATTERNS.rcs.pattern,
+                      message: VALIDATION_PATTERNS.rcs.message,
+                    },
+                    validate: (value) => {
+                      if (value && detectInjectionAttempt(value)) {
+                        return "Caractères non autorisés détectés";
+                      }
+                      return true;
+                    },
+                  })}
                 />
                 {errors.legal?.rcs && (
                   <p className="text-sm text-red-500">
@@ -240,7 +288,21 @@ export function InformationsLegalesSection({
                   id="vatNumber"
                   placeholder="FR12345678901"
                   className="w-full"
-                  {...register("legal.vatNumber")}
+                  {...register("legal.vatNumber", {
+                    required: requiredFields.vatNumber
+                      ? "Le numéro de TVA est requis"
+                      : false,
+                    pattern: {
+                      value: VALIDATION_PATTERNS.vatNumber.pattern,
+                      message: VALIDATION_PATTERNS.vatNumber.message,
+                    },
+                    validate: (value) => {
+                      if (value && detectInjectionAttempt(value)) {
+                        return "Caractères non autorisés détectés";
+                      }
+                      return true;
+                    },
+                  })}
                 />
                 {errors.legal?.vatNumber && (
                   <p className="text-sm text-red-500">
@@ -267,7 +329,21 @@ export function InformationsLegalesSection({
                   placeholder="10000"
                   type="number"
                   className="w-full"
-                  {...register("legal.capital")}
+                  {...register("legal.capital", {
+                    required: requiredFields.capital
+                      ? "Le capital social est requis"
+                      : false,
+                    pattern: {
+                      value: VALIDATION_PATTERNS.capital.pattern,
+                      message: VALIDATION_PATTERNS.capital.message,
+                    },
+                    validate: (value) => {
+                      if (value && detectInjectionAttempt(value)) {
+                        return "Caractères non autorisés détectés";
+                      }
+                      return true;
+                    },
+                  })}
                 />
                 {errors.legal?.capital && (
                   <p className="text-sm text-red-500">
