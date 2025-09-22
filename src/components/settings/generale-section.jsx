@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
+import { Building, Mail, Phone, Globe, MapPin } from "lucide-react";
 import { CompanyLogoUpload } from "@/src/components/profile/CompanyLogoUpload";
 import {
   Select,
@@ -12,7 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Building, Mail, Phone, Globe, MapPin } from "lucide-react";
+import { useFormContext } from "react-hook-form";
+import {
+  sanitizeInput,
+  VALIDATION_PATTERNS,
+  detectInjectionAttempt,
+} from "@/src/lib/validation";
 
 const COUNTRIES = [
   { value: "France", label: "France" },
@@ -23,24 +29,42 @@ const COUNTRIES = [
 ];
 
 export function GeneraleSection({
-  register,
-  errors,
-  watch,
-  setValue,
   session,
   organization,
   updateOrganization,
   refetchOrganization,
 }) {
+  // Utiliser le contexte du formulaire global
+  console.log("🔍 [GENERALE] Tentative d'accès au FormContext...");
+  
+  let formContext;
+  try {
+    formContext = useFormContext();
+    console.log("✅ [GENERALE] FormContext reçu avec succès:", formContext);
+  } catch (error) {
+    console.error("❌ [GENERALE] Erreur FormContext:", error);
+    return <div>Erreur: FormContext non disponible</div>;
+  }
+
+  const {
+    register,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext();
+
+  // Surveiller les valeurs du formulaire pour détecter les changements
   const watchedValues = watch();
+
+
   const logoUrl = watchedValues.logo || organization?.logo || null;
   const selectedCountry =
     watchedValues.address?.country || organization?.addressCountry || "France";
 
   const handleLogoChange = (imageUrl) => {
     console.log("🖼️ handleLogoChange appelé avec:", imageUrl);
-    setValue("logo", imageUrl, { shouldDirty: true });
-    console.log("✅ setValue logo appelé avec shouldDirty: true");
+    setValue("logo", imageUrl);
+    console.log("✅ setValue logo appelé");
   };
 
   const handleOrganizationUpdate = async (logoUrl) => {
@@ -51,10 +75,14 @@ export function GeneraleSection({
           { logo: logoUrl },
           {
             onSuccess: async () => {
-              console.log("✅ Logo sauvegardé automatiquement dans l'organisation");
+              console.log(
+                "✅ Logo sauvegardé automatiquement dans l'organisation"
+              );
               // Forcer un refetch de l'organisation pour mettre à jour la session
               if (refetchOrganization) {
-                console.log("🔄 Refetch de l'organisation pour mise à jour session...");
+                console.log(
+                  "🔄 Refetch de l'organisation pour mise à jour session..."
+                );
                 await refetchOrganization();
                 console.log("✅ Session mise à jour avec le nouveau logo");
               }
@@ -71,11 +99,12 @@ export function GeneraleSection({
   };
 
   const handleCountryChange = (value) => {
-    setValue("address.country", value, { shouldDirty: true });
+    setValue("address.country", value, { shouldValidate: true });
   };
 
   return (
     <div className="space-y-8">
+
       {/* Titre */}
       <div>
         <h2 className="text-lg font-medium mb-1">Générale</h2>
@@ -122,10 +151,17 @@ export function GeneraleSection({
                 className="w-full"
                 {...register("name", {
                   required: "Le nom est requis",
+                  pattern: {
+                    value: VALIDATION_PATTERNS.companyName.pattern,
+                    message: VALIDATION_PATTERNS.companyName.message,
+                  },
+                  validate: (value) => {
+                    if (detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
                 })}
-                onChange={(e) => {
-                  setValue("name", e.target.value, { shouldDirty: true });
-                }}
               />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -147,10 +183,17 @@ export function GeneraleSection({
                 className="w-full"
                 {...register("email", {
                   required: "L'email est requis",
+                  pattern: {
+                    value: VALIDATION_PATTERNS.email.pattern,
+                    message: VALIDATION_PATTERNS.email.message,
+                  },
+                  validate: (value) => {
+                    if (detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
                 })}
-                onChange={(e) => {
-                  setValue("email", e.target.value, { shouldDirty: true });
-                }}
               />
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -172,10 +215,18 @@ export function GeneraleSection({
                 id="phone"
                 placeholder="+33 1 23 45 67 89"
                 className="w-full"
-                {...register("phone")}
-                onChange={(e) => {
-                  setValue("phone", e.target.value, { shouldDirty: true });
-                }}
+                {...register("phone", {
+                  pattern: {
+                    value: VALIDATION_PATTERNS.phone.pattern,
+                    message: VALIDATION_PATTERNS.phone.message,
+                  },
+                  validate: (value) => {
+                    if (value && detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
+                })}
               />
               {errors.phone && (
                 <p className="text-sm text-red-500">{errors.phone.message}</p>
@@ -194,10 +245,18 @@ export function GeneraleSection({
                 id="website"
                 placeholder="https://www.entreprise.com"
                 className="w-full"
-                {...register("website")}
-                onChange={(e) => {
-                  setValue("website", e.target.value, { shouldDirty: true });
-                }}
+                {...register("website", {
+                  pattern: {
+                    value: VALIDATION_PATTERNS.website.pattern,
+                    message: VALIDATION_PATTERNS.website.message,
+                  },
+                  validate: (value) => {
+                    if (value && detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
+                })}
               />
               {errors.website && (
                 <p className="text-sm text-red-500">{errors.website.message}</p>
@@ -227,10 +286,17 @@ export function GeneraleSection({
                 className="w-full"
                 {...register("address.street", {
                   required: "L'adresse est requise",
+                  pattern: {
+                    value: VALIDATION_PATTERNS.street.pattern,
+                    message: VALIDATION_PATTERNS.street.message,
+                  },
+                  validate: (value) => {
+                    if (detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
                 })}
-                onChange={(e) => {
-                  setValue("address.street", e.target.value, { shouldDirty: true });
-                }}
               />
               {errors.address?.street && (
                 <p className="text-sm text-red-500">
@@ -251,10 +317,17 @@ export function GeneraleSection({
                   className="w-full"
                   {...register("address.city", {
                     required: "La ville est requise",
+                    pattern: {
+                      value: VALIDATION_PATTERNS.city.pattern,
+                      message: VALIDATION_PATTERNS.city.message,
+                    },
+                    validate: (value) => {
+                      if (detectInjectionAttempt(value)) {
+                        return "Caractères non autorisés détectés";
+                      }
+                      return true;
+                    },
                   })}
-                  onChange={(e) => {
-                    setValue("address.city", e.target.value, { shouldDirty: true });
-                  }}
                 />
                 {errors.address?.city && (
                   <p className="text-sm text-red-500">
@@ -273,10 +346,17 @@ export function GeneraleSection({
                   className="w-full"
                   {...register("address.postalCode", {
                     required: "Le code postal est requis",
+                    pattern: {
+                      value: VALIDATION_PATTERNS.postalCode.pattern,
+                      message: VALIDATION_PATTERNS.postalCode.message,
+                    },
+                    validate: (value) => {
+                      if (detectInjectionAttempt(value)) {
+                        return "Caractères non autorisés détectés";
+                      }
+                      return true;
+                    },
                   })}
-                  onChange={(e) => {
-                    setValue("address.postalCode", e.target.value, { shouldDirty: true });
-                  }}
                 />
                 {errors.address?.postalCode && (
                   <p className="text-sm text-red-500">
@@ -306,6 +386,11 @@ export function GeneraleSection({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.address?.country && (
+                <p className="text-sm text-red-500">
+                  {errors.address.country.message}
+                </p>
+              )}
             </div>
           </div>
         </div>

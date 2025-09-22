@@ -130,7 +130,10 @@ export default function Settings() {
         companyPhone:
           sanitizedFormData.phone || existingOrgData.companyPhone || "",
         website: sanitizedFormData.website || existingOrgData.website || "",
-        logo: sanitizedFormData.logo !== undefined ? sanitizedFormData.logo : (existingOrgData.logo || ""),
+        logo:
+          sanitizedFormData.logo !== undefined
+            ? sanitizedFormData.logo
+            : existingOrgData.logo || "",
 
         // Informations légales
         siret: sanitizedFormData.legal?.siret || existingOrgData.siret || "",
@@ -191,9 +194,7 @@ export default function Settings() {
 
       await updateOrganization(transformedData, {
         onSuccess: () => {
-          toast.success(
-            "Informations mises à jour avec succès"
-          );
+          toast.success("Informations mises à jour avec succès");
           // Ne pas refetch immédiatement pour éviter de remettre les anciennes valeurs
           // Le useEffect se chargera de la synchronisation quand les nouvelles données arriveront
         },

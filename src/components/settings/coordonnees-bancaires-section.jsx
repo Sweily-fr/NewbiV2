@@ -1,20 +1,39 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
 import { CreditCard, Building2, Hash, Info, Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
+import { useFormContext } from "react-hook-form";
+import {
+  VALIDATION_PATTERNS,
+  sanitizeInput,
+  detectInjectionAttempt,
+} from "@/src/lib/validation";
 
 export function CoordonneesBancairesSection({
-  register,
-  errors,
-  watch,
-  setValue,
   session,
   organization,
+  updateOrganization,
+  refetchOrganization,
 }) {
+  // Utiliser le contexte du formulaire global
+  const {
+    register,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext();
+
+  // Surveiller les valeurs du formulaire
+  const watchedValues = watch();
+
+  // Debug : surveiller les changements
+  useEffect(() => {
+    console.log("🔍 [BANCAIRES] watchedValues changé:", watchedValues);
+  }, [watchedValues]);
   return (
     <div className="space-y-8">
       {/* Titre */}
@@ -55,7 +74,18 @@ export function CoordonneesBancairesSection({
               id="iban"
               placeholder="FR76 1234 5678 9012 3456 7890 123"
               className="w-full"
-              {...register("bankDetails.iban")}
+              {...register("bankDetails.iban", {
+                pattern: {
+                  value: VALIDATION_PATTERNS.iban.pattern,
+                  message: VALIDATION_PATTERNS.iban.message,
+                },
+                validate: (value) => {
+                  if (value && detectInjectionAttempt(value)) {
+                    return "Caractères non autorisés détectés";
+                  }
+                  return true;
+                },
+              })}
             />
             {errors.bankDetails?.iban && (
               <p className="text-sm text-red-500">
@@ -80,7 +110,18 @@ export function CoordonneesBancairesSection({
               id="bic"
               placeholder="BNPAFRPP"
               className="w-full"
-              {...register("bankDetails.bic")}
+              {...register("bankDetails.bic", {
+                pattern: {
+                  value: VALIDATION_PATTERNS.bic.pattern,
+                  message: VALIDATION_PATTERNS.bic.message,
+                },
+                validate: (value) => {
+                  if (value && detectInjectionAttempt(value)) {
+                    return "Caractères non autorisés détectés";
+                  }
+                  return true;
+                },
+              })}
             />
             {errors.bankDetails?.bic && (
               <p className="text-sm text-red-500">
@@ -105,7 +146,18 @@ export function CoordonneesBancairesSection({
               id="bankName"
               placeholder="BNP Paribas"
               className="w-full"
-              {...register("bankDetails.bankName")}
+              {...register("bankDetails.bankName", {
+                pattern: {
+                  value: VALIDATION_PATTERNS.bankName.pattern,
+                  message: VALIDATION_PATTERNS.bankName.message,
+                },
+                validate: (value) => {
+                  if (value && detectInjectionAttempt(value)) {
+                    return "Caractères non autorisés détectés";
+                  }
+                  return true;
+                },
+              })}
             />
             {errors.bankDetails?.bankName && (
               <p className="text-sm text-red-500">

@@ -112,7 +112,12 @@ export function SecuritySection() {
       setDevicesLoading(true);
 
       // Essayer d'abord avec l'API client
-      let { data, error } = await authClient.multiSession.listDeviceSessions();
+      let { data, error } = await authClient.multiSession
+        .listDeviceSessions()
+        .catch((err) => {
+          console.log("🔍 API multiSession non disponible:", err);
+          return { data: null, error: { message: "API non disponible" } };
+        });
 
       // Si ça ne fonctionne pas, essayer avec l'API REST directement
       if (error || !data || (Array.isArray(data) && data.length === 0)) {
@@ -142,7 +147,15 @@ export function SecuritySection() {
 
       if (error) {
         console.error("Erreur lors de la récupération des sessions:", error);
-        toast.error("Erreur lors du chargement des sessions");
+        // Ne pas afficher d'erreur si c'est juste un objet vide (pas vraiment une erreur)
+        if (error && Object.keys(error).length > 0 && error.message) {
+          toast.error("Erreur lors du chargement des sessions");
+        } else {
+          console.log("🔍 Aucune session trouvée ou API non disponible");
+        }
+        // Continuer avec un tableau vide au lieu de return
+        setDevices([]);
+        setDevicesLoading(false);
         return;
       }
 
