@@ -88,13 +88,15 @@ function TransfertsContent() {
             <AlertDialogTitle className="text-black">
               Transfert créé avec succès !
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4">
-              <div>Votre transfert de fichiers a été créé. Vous pouvez maintenant partager le lien avec vos destinataires.</div>
-              
-              <div className="bg-gray-50 p-3 rounded-lg border">
-                <div className="text-xs text-gray-600 mb-2">Lien de partage :</div>
-                <div className="text-sm font-mono break-all bg-white p-2 rounded border">
-                  {transferLink}
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <div>Votre transfert de fichiers a été créé. Vous pouvez maintenant partager le lien avec vos destinataires.</div>
+                
+                <div className="bg-gray-50 p-3 rounded-lg border">
+                  <div className="text-xs text-gray-600 mb-2">Lien de partage :</div>
+                  <div className="text-sm font-mono break-all bg-white p-2 rounded border">
+                    {transferLink}
+                  </div>
                 </div>
               </div>
             </AlertDialogDescription>

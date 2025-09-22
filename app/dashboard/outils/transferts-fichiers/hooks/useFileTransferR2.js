@@ -184,7 +184,7 @@ export const useFileTransferR2 = (refetchTransfers) => {
           };
 
           setTransferResult(result);
-          toast.success("Transfert R2 créé avec succès !");
+          toast.success("Transfert créé avec succès !");
 
           // Rafraîchir la liste des transferts
           if (refetchTransfers) {

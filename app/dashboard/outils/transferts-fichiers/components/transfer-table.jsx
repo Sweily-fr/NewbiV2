@@ -309,24 +309,29 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
     .getFilteredSelectedRowModel()
     .rows.map((row) => row.original);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [transferToDelete, setTransferToDelete] = useState(null);
 
   const viewTransfer = (shareLink) => {
     window.open(`/dashboard/outils/transferts-fichiers/${shareLink}`, "_blank");
   };
 
   const handleDeleteTransfer = async (transferId) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce transfert ?")) {
-      setIsDeleting(true);
-      try {
-        await deleteTransfer(transferId);
-        toast.success("Transfert supprimé avec succès");
-        onRefresh?.();
-      } catch (error) {
-        console.error("Erreur lors de la suppression:", error);
-        toast.error("Erreur lors de la suppression du transfert");
-      } finally {
-        setIsDeleting(false);
-      }
+    setTransferToDelete(transferId);
+  };
+
+  const confirmDeleteTransfer = async () => {
+    if (!transferToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteTransfer(transferToDelete);
+      onRefresh?.();
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      toast.error("Erreur lors de la suppression du transfert");
+    } finally {
+      setIsDeleting(false);
+      setTransferToDelete(null);
     }
   };
 
@@ -382,7 +387,7 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteSelected}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="bg-destructive text-white hover:bg-destructive/90"
                   >
                     Supprimer
                   </AlertDialogAction>
@@ -392,6 +397,28 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
           )}
         </div>
       </div>
+
+      {/* AlertDialog pour suppression individuelle */}
+      <AlertDialog open={!!transferToDelete} onOpenChange={() => setTransferToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce transfert ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteTransfer}
+              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Table */}
       <div className="rounded-md border">
