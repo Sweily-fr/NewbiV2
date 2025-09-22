@@ -175,7 +175,7 @@ const columns = [
     cell: ({ row }) => {
       const vatRate = row.getValue("vatRate");
       return vatRate ? (
-        <Badge className="bg-green-100 border-green-300 text-green-800">
+        <Badge className="bg-green-100 border-green-300 text-green-800 font-normal">
           {vatRate}%
         </Badge>
       ) : (
@@ -199,7 +199,7 @@ const columns = [
     cell: ({ row }) => {
       const category = row.getValue("category");
       return category ? (
-        <Badge className="bg-blue-100 border-blue-300 text-blue-800">
+        <Badge className="bg-blue-100 border-blue-300 text-blue-800 font-normal">
           {category}
         </Badge>
       ) : (
