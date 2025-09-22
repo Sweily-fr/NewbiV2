@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import {
   Building2,
   CreditCard,
@@ -29,7 +29,12 @@ import { Button } from "@/src/components/ui/button";
 import { useSession } from "@/src/lib/auth-client";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { toast } from "@/src/components/ui/sonner";
-import { validateSettingsForm } from "@/src/lib/validation";
+import {
+  validateSettingsForm,
+  VALIDATION_PATTERNS,
+  sanitizeInput,
+  detectInjectionAttempt,
+} from "@/src/lib/validation";
 import PreferencesSection from "./settings/preferences-section";
 import GeneraleSection from "./settings/generale-section";
 import CoordonneesBancairesSection from "./settings/coordonnees-bancaires-section";
@@ -40,6 +45,7 @@ import { SubscriptionSection } from "./settings/subscription-section";
 import { SecuritySection } from "./settings/security-section";
 import PersonnesSection from "./settings/personnes-section";
 import UserInfoSection from "./settings/user-info-section";
+import { MobileSettingsModal } from "./settings/mobile/mobile-settings-modal";
 
 export function SettingsModal({
   open,
@@ -49,10 +55,7 @@ export function SettingsModal({
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [showNoChangesWarning, setShowNoChangesWarning] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingTab, setPendingTab] = useState(null);
-  const [viewportHeight, setViewportHeight] = useState(0);
-  const initialValuesRef = useRef(null);
   const { data: session } = useSession();
   const {
     organization,
@@ -62,38 +65,28 @@ export function SettingsModal({
     updateOrganization,
   } = useActiveOrganization();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-    watch,
-    setValue,
-  } = useForm({
+  const formMethods = useForm({
+    mode: "onChange", // Validation en temps réel
     defaultValues: {
-      // Informations entreprise
+      // Informations générales
       name: "",
       email: "",
       phone: "",
       website: "",
       description: "",
       logo: "",
-
-      // Adresse
       address: {
         street: "",
         city: "",
         postalCode: "",
         country: "France",
       },
-
-      // Informations bancaires
+      // Coordonnées bancaires
       bankDetails: {
         iban: "",
         bic: "",
         bankName: "",
       },
-
       // Informations légales
       legal: {
         siret: "",
@@ -109,189 +102,18 @@ export function SettingsModal({
     },
   });
 
-  // Fonction pour mettre à jour les informations de l'organisation
-  const onSubmit = async (formData) => {
-    try {
-      console.log("🚀 onSubmit déclenché avec:", formData);
+  const {
+    handleSubmit,
+    formState: { errors, isSubmitting: formIsSubmitting, isDirty },
+    reset,
+    watch,
+  } = formMethods;
 
-      if (!organization?.id) {
-        console.error("❌ Aucune organisation active trouvée");
-        toast.error("Aucune organisation active trouvée");
-        return;
-      }
-
-      console.log("✅ Organisation trouvée:", organization.id);
-
-      // Validation et nettoyage des données côté frontend
-      console.log("🔍 Validation des données...");
-      const validation = validateSettingsForm(formData);
-      console.log("📋 Résultat de validation:", validation);
-
-      if (!validation.isValid) {
-        console.error("❌ Validation échouée:", validation.errors);
-        toast.error(
-          `Erreurs de validation: ${Object.keys(validation.errors).join(", ")}`
-        );
-        return;
-      }
-
-      console.log("✅ Validation réussie");
-
-      // Utiliser les données nettoyées
-      const sanitizedFormData = validation.sanitizedData;
-
-      // Récupérer les données existantes de l'organisation
-      const existingOrgData = organization || {};
-
-      // Transformer les données pour correspondre au schéma organization
-      const transformedData = {
-        // Informations de base de l'entreprise
-        companyName:
-          sanitizedFormData.name || existingOrgData.companyName || "",
-        companyEmail:
-          sanitizedFormData.email || existingOrgData.companyEmail || "",
-        companyPhone:
-          sanitizedFormData.phone || existingOrgData.companyPhone || "",
-        website: sanitizedFormData.website || existingOrgData.website || "",
-        logo:
-          sanitizedFormData.logo !== undefined
-            ? sanitizedFormData.logo
-            : existingOrgData.logo || "",
-
-        // Informations légales
-        siret: sanitizedFormData.legal?.siret || existingOrgData.siret || "",
-        vatNumber:
-          sanitizedFormData.legal?.vatNumber || existingOrgData.vatNumber || "",
-        rcs: sanitizedFormData.legal?.rcs || existingOrgData.rcs || "",
-        legalForm:
-          sanitizedFormData.legal?.legalForm || existingOrgData.legalForm || "",
-        capitalSocial:
-          sanitizedFormData.legal?.capital ||
-          existingOrgData.capitalSocial ||
-          "",
-        fiscalRegime:
-          sanitizedFormData.legal?.regime || existingOrgData.fiscalRegime || "",
-        activityCategory:
-          sanitizedFormData.legal?.category ||
-          existingOrgData.activityCategory ||
-          "",
-        isVatSubject:
-          sanitizedFormData.legal?.isVatSubject ||
-          existingOrgData.isVatSubject ||
-          false,
-        hasCommercialActivity:
-          sanitizedFormData.legal?.hasCommercialActivity ||
-          existingOrgData.hasCommercialActivity ||
-          false,
-
-        // Adresse (champs aplatis)
-        addressStreet:
-          sanitizedFormData.address?.street ||
-          existingOrgData.addressStreet ||
-          "",
-        addressCity:
-          sanitizedFormData.address?.city || existingOrgData.addressCity || "",
-        addressZipCode:
-          sanitizedFormData.address?.postalCode ||
-          existingOrgData.addressZipCode ||
-          "",
-        addressCountry:
-          sanitizedFormData.address?.country ||
-          existingOrgData.addressCountry ||
-          "France",
-
-        // Coordonnées bancaires (champs aplatis)
-        bankName:
-          sanitizedFormData.bankDetails?.bankName !== undefined
-            ? sanitizedFormData.bankDetails.bankName
-            : existingOrgData.bankName || "",
-        bankIban:
-          sanitizedFormData.bankDetails?.iban !== undefined
-            ? sanitizedFormData.bankDetails.iban
-            : existingOrgData.bankIban || "",
-        bankBic:
-          sanitizedFormData.bankDetails?.bic !== undefined
-            ? sanitizedFormData.bankDetails.bic
-            : existingOrgData.bankBic || "",
-      };
-
-      console.log("🔄 Données du formulaire:", formData);
-      console.log("🔄 Données transformées à envoyer:", transformedData);
-      console.log("🔄 Organisation actuelle:", organization);
-
-      await updateOrganization(transformedData, {
-        onSuccess: (result) => {
-          console.log("✅ Mise à jour réussie:", result);
-          toast.success("Informations mises à jour avec succès");
-          // Réinitialiser les valeurs de référence après sauvegarde réussie
-          initialValuesRef.current = formData;
-          setHasUnsavedChanges(false);
-        },
-        onError: (error) => {
-          console.error("❌ Erreur lors de la mise à jour:", error);
-          toast.error(
-            `Erreur lors de la mise à jour: ${error.message || "Erreur inconnue"}`
-          );
-        },
-      });
-    } catch (error) {
-      toast.error("Une erreur s'est produite lors de la mise à jour");
-    }
-  };
-
-  // Mettre à jour l'onglet actif quand initialTab change
+  // Initialiser le formulaire avec les données de l'organisation
   useEffect(() => {
-    if (initialTab) {
-      setActiveTab(initialTab);
-    }
-  }, [initialTab]);
-
-  // Gérer la hauteur de la viewport pour mobile (barre d'adresse du navigateur)
-  useEffect(() => {
-    const updateViewportHeight = () => {
-      // Utiliser la hauteur visuelle de la viewport (exclut les barres du navigateur)
-      const vh = window.visualViewport
-        ? window.visualViewport.height
-        : window.innerHeight;
-      setViewportHeight(vh);
-
-      // Mettre à jour la variable CSS pour la hauteur de la viewport
-      document.documentElement.style.setProperty("--vh", `${vh * 0.01}px`);
-    };
-
-    if (typeof window !== "undefined") {
-      updateViewportHeight();
-
-      // Écouter les changements de taille de la viewport
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", updateViewportHeight);
-      } else {
-        window.addEventListener("resize", updateViewportHeight);
-      }
-
-      // Écouter les changements d'orientation
-      window.addEventListener("orientationchange", () => {
-        setTimeout(updateViewportHeight, 100);
-      });
-
-      return () => {
-        if (window.visualViewport) {
-          window.visualViewport.removeEventListener(
-            "resize",
-            updateViewportHeight
-          );
-        } else {
-          window.removeEventListener("resize", updateViewportHeight);
-        }
-        window.removeEventListener("orientationchange", updateViewportHeight);
-      };
-    }
-  }, [open]);
-
-  // Charger les données de l'organisation et du user dans le formulaire
-  useEffect(() => {
-    if (organization && session?.user) {
+    if (organization) {
       const initialData = {
+        // Informations générales
         name: organization.companyName || "",
         email: organization.companyEmail || "",
         phone: organization.companyPhone || "",
@@ -304,12 +126,13 @@ export function SettingsModal({
           postalCode: organization.addressZipCode || "",
           country: organization.addressCountry || "France",
         },
+        // Coordonnées bancaires
         bankDetails: {
           iban: organization.bankIban || "",
           bic: organization.bankBic || "",
           bankName: organization.bankName || "",
         },
-        // Informations légales - mapper vers la structure legal.* pour cohérence avec LegalSection
+        // Informations légales
         legal: {
           siret: organization.siret || "",
           vatNumber: organization.vatNumber || "",
@@ -323,38 +146,81 @@ export function SettingsModal({
         },
       };
 
+      console.log("🔄 Initialisation du formulaire avec:", initialData);
       reset(initialData);
-      initialValuesRef.current = initialData;
-      setHasUnsavedChanges(false);
     }
-  }, [organization, session, reset]);
+  }, [organization, reset]);
 
-  // Surveiller les changements dans le formulaire
-  const watchedValues = watch();
-  useEffect(() => {
-    if (initialValuesRef.current && watchedValues) {
-      const hasChanges =
-        JSON.stringify(watchedValues) !==
-        JSON.stringify(initialValuesRef.current);
-      setHasUnsavedChanges(hasChanges);
+  // Fonction de sauvegarde
+  const handleSaveAll = async (formData) => {
+    try {
+      console.log("🚀 [MODAL] Début de la sauvegarde avec:", formData);
+
+      if (!organization?.id) {
+        toast.error("Aucune organisation active trouvée");
+        return;
+      }
+
+      // Transformer les données pour Better Auth
+      const transformedData = {
+        // Informations générales
+        companyName: sanitizeInput(formData.name || ""),
+        companyEmail: sanitizeInput(formData.email || ""),
+        companyPhone: sanitizeInput(formData.phone || ""),
+        website: sanitizeInput(formData.website || ""),
+        logo: formData.logo || "",
+        addressStreet: sanitizeInput(formData.address?.street || ""),
+        addressCity: sanitizeInput(formData.address?.city || ""),
+        addressZipCode: sanitizeInput(formData.address?.postalCode || ""),
+        addressCountry: formData.address?.country || "France",
+
+        // Coordonnées bancaires
+        bankName: sanitizeInput(formData.bankDetails?.bankName || ""),
+        bankIban: sanitizeInput(formData.bankDetails?.iban || ""),
+        bankBic: sanitizeInput(formData.bankDetails?.bic || ""),
+
+        // Informations légales
+        siret: sanitizeInput(formData.legal?.siret || ""),
+        vatNumber: sanitizeInput(formData.legal?.vatNumber || ""),
+        rcs: sanitizeInput(formData.legal?.rcs || ""),
+        legalForm: formData.legal?.legalForm || "",
+        capitalSocial: sanitizeInput(formData.legal?.capital || ""),
+        fiscalRegime: formData.legal?.regime || "",
+        activityCategory: formData.legal?.category || "",
+        isVatSubject: formData.legal?.isVatSubject || false,
+        hasCommercialActivity: formData.legal?.hasCommercialActivity || false,
+      };
+
+      console.log("🔍 [MODAL] Données transformées:", transformedData);
+
+      // Sauvegarder via Better Auth
+      await updateOrganization(transformedData, {
+        onSuccess: () => {
+          toast.success("Modifications sauvegardées avec succès");
+        },
+        onError: (error) => {
+          toast.error("Erreur lors de la sauvegarde");
+          console.error("❌ [MODAL] Erreur sauvegarde:", error);
+        },
+      });
+    } catch (error) {
+      toast.error("Erreur lors de la sauvegarde");
+      console.error("❌ [MODAL] Erreur sauvegarde:", error);
     }
-  }, [watchedValues]);
+  };
 
   // Fonction pour gérer le changement d'onglet
   const handleTabChange = (newTab) => {
-    // Vérifier si on est sur un onglet avec formulaire et s'il y a des modifications
     const isFormTab = [
       "generale",
       "coordonnees-bancaires",
       "informations-legales",
     ].includes(activeTab);
 
-    if (isFormTab && hasUnsavedChanges) {
-      // Afficher le modal de confirmation s'il y a des modifications non sauvegardées
+    if (isFormTab && isDirty) {
       setPendingTab(newTab);
       setShowNoChangesWarning(true);
     } else {
-      // Changer d'onglet directement
       setActiveTab(newTab);
     }
   };
@@ -362,7 +228,7 @@ export function SettingsModal({
   // Fonction pour gérer la fermeture du modal
   const handleCloseModal = () => {
     if (
-      hasUnsavedChanges &&
+      isDirty &&
       (activeTab === "generale" ||
         activeTab === "coordonnees-bancaires" ||
         activeTab === "informations-legales")
@@ -374,7 +240,7 @@ export function SettingsModal({
     }
   };
 
-  // Fonction pour forcer la fermeture sans sauvegarder
+  // Fonctions pour les modals de confirmation
   const handleForceClose = () => {
     if (pendingTab) {
       setActiveTab(pendingTab);
@@ -383,49 +249,49 @@ export function SettingsModal({
       onOpenChange(false);
     }
     setShowUnsavedWarning(false);
+    setShowNoChangesWarning(false);
   };
 
   const handleCancelClose = () => {
     setPendingTab(null);
     setShowUnsavedWarning(false);
-  };
-
-  // Fonctions pour gérer le modal "aucune modification"
-  const handleContinueEditing = () => {
-    setPendingTab(null);
-    setShowNoChangesWarning(false);
-  };
-
-  const handleCancelEditing = () => {
-    if (pendingTab) {
-      setActiveTab(pendingTab);
-      setPendingTab(null);
-    }
     setShowNoChangesWarning(false);
   };
 
   const renderContent = () => {
-    const commonProps = {
-      register,
-      errors,
-      watch,
-      setValue,
-      session,
-      organization,
-      updateOrganization,
-      refetchOrganization: refetchOrg,
-    };
+    // Les composants vont maintenant utiliser useFormContext()
     switch (activeTab) {
       case "espaces":
         return <EspacesSection />;
       case "preferences":
         return <PreferencesSection />;
       case "generale":
-        return <GeneraleSection {...commonProps} />;
+        return (
+          <GeneraleSection
+            session={session}
+            organization={organization}
+            updateOrganization={updateOrganization}
+            refetchOrganization={refetchOrg}
+          />
+        );
       case "coordonnees-bancaires":
-        return <CoordonneesBancairesSection {...commonProps} />;
+        return (
+          <CoordonneesBancairesSection
+            session={session}
+            organization={organization}
+            updateOrganization={updateOrganization}
+            refetchOrganization={refetchOrg}
+          />
+        );
       case "informations-legales":
-        return <InformationsLegalesSection {...commonProps} />;
+        return (
+          <InformationsLegalesSection
+            session={session}
+            organization={organization}
+            updateOrganization={updateOrganization}
+            refetchOrganization={refetchOrg}
+          />
+        );
       case "facturation":
         return <FacturationSection />;
       case "subscription":
@@ -451,11 +317,7 @@ export function SettingsModal({
   const sections = [
     {
       items: [
-        {
-          id: "preferences",
-          label: "Préférences",
-          icon: Settings2,
-        },
+        { id: "preferences", label: "Préférences", icon: Settings2 },
         {
           id: "notifications",
           label: "Notifications",
@@ -467,11 +329,7 @@ export function SettingsModal({
     {
       title: "Espace de travail",
       items: [
-        {
-          id: "generale",
-          label: "Générale",
-          icon: Settings,
-        },
+        { id: "generale", label: "Générale", icon: Settings },
         {
           id: "coordonnees-bancaires",
           label: "Coordonnées bancaires",
@@ -482,11 +340,7 @@ export function SettingsModal({
           label: "Informations légales",
           icon: FileText,
         },
-        {
-          id: "securite",
-          label: "Sécurité",
-          icon: Shield,
-        },
+        { id: "securite", label: "Sécurité", icon: Shield },
       ],
     },
     {
@@ -497,422 +351,251 @@ export function SettingsModal({
           icon: Users,
           disabled: true,
         },
-        {
-          id: "espaces",
-          label: "Espaces",
-          icon: Building2,
-        },
+        { id: "espaces", label: "Espaces", icon: Building2 },
       ],
     },
     {
       items: [
-        {
-          id: "facturation",
-          label: "Facturation",
-          icon: CreditCard,
-        },
-        {
-          id: "subscription",
-          label: "Abonnement",
-          icon: Crown,
-        },
+        { id: "facturation", label: "Facturation", icon: CreditCard },
+        { id: "subscription", label: "Abonnement", icon: Crown },
       ],
     },
   ];
 
-  // Onglets principaux pour mobile (regroupés logiquement)
-  const mobileMainTabs = [
-    {
-      id: "user-info",
-      label: "Mon compte",
-      icon: User,
-    },
-    {
-      id: "generale",
-      label: "Général",
-      icon: Settings,
-      hasSubsections: true,
-      subsections: [
-        "generale",
-        "coordonnees-bancaires",
-        "informations-legales",
-      ],
-    },
-    {
-      id: "securite",
-      label: "Sécurité",
-      icon: Shield,
-    },
-    {
-      id: "subscription",
-      label: "Abonnement",
-      icon: Crown,
-    },
-  ];
+  // Déterminer si on est sur mobile
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Fonction pour déterminer l'onglet actif sur mobile
-  const getActiveMobileTab = () => {
-    const generalTabs = [
-      "generale",
-      "coordonnees-bancaires",
-      "informations-legales",
-    ];
-    if (generalTabs.includes(activeTab)) {
-      return "generale";
-    }
-
-    // Mapper les onglets desktop vers mobile
-    const tabMapping = {
-      preferences: "user-info",
-      espaces: "user-info",
-      facturation: "subscription",
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
     };
 
-    return tabMapping[activeTab] || activeTab;
-  };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Rendu conditionnel selon la taille d'écran
+  if (isMobile) {
+    return (
+      <FormProvider {...formMethods}>
+        <MobileSettingsModal
+          open={open}
+          onClose={() => onOpenChange(false)}
+          session={session}
+          organization={organization}
+          updateOrganization={updateOrganization}
+          refetchOrganization={refetchOrg}
+          formIsSubmitting={formIsSubmitting}
+          isDirty={isDirty}
+          onSubmit={handleSubmit(handleSaveAll)}
+        />
+      </FormProvider>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-h-[90vh] md:max-h-[90vh] p-0 gap-0 overflow-hidden"
-        style={{
-          maxWidth: "72rem",
-          width: "95vw",
-          height: "92vh",
-          // Mobile specific styles
-          ...(typeof window !== "undefined" &&
-            window.innerWidth < 768 && {
-              width: "100vw",
-              height: viewportHeight ? `${viewportHeight}px` : "100vh",
-              maxWidth: "100vw",
-              maxHeight: viewportHeight ? `${viewportHeight}px` : "100vh",
-              borderRadius: "0px",
-              margin: "0",
-            }),
-        }}
-      >
-        {/* DialogTitle caché pour l'accessibilité */}
-        <DialogTitle className="sr-only">
-          Paramètres de l'application
-        </DialogTitle>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          {/* Desktop Layout */}
-          <div className="hidden md:flex h-full">
-            {/* Sidebar Desktop */}
-            <div className="w-60 bg-gray-50 dark:bg-[#171717] overflow-y-auto">
-              {/* Header */}
-              <div className="p-4">
-                <h2 className="text-sm font-medium text-gray-500 mb-4">
-                  Paramètres
-                </h2>
+      <FormProvider {...formMethods}>
+        <DialogContent
+          className="max-h-[90vh] md:max-h-[90vh] p-0 gap-0 overflow-hidden"
+          style={{
+            maxWidth: "72rem",
+            width: "95vw",
+            height: "92vh",
+          }}
+        >
+          <DialogTitle className="sr-only">
+            Paramètres de l'application
+          </DialogTitle>
 
-                {/* User Info - Now clickable */}
-                <button
-                  type="button"
-                  onClick={() => handleTabChange("user-info")}
-                  className={`w-full flex items-center gap-2 mb-4 px-2 py-2 rounded-md transition-colors ${
-                    activeTab === "user-info"
-                      ? "bg-[#EDECEB] dark:bg-[#2c2c2c]"
-                      : "hover:bg-gray-100 dark:hover:bg-[#2c2c2c]"
-                  }`}
-                >
-                  <div className="w-6 h-6 bg-[#5B4FFF]/300 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                    {session?.user?.name?.charAt(0) || "S"}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {session?.user?.name || "Sofiane Mtimet"}
-                    </p>
-                  </div>
-                </button>
+          <form onSubmit={handleSubmit(handleSaveAll)}>
+            {/* Desktop Layout */}
+            <div className="flex h-full">
+              {/* Sidebar Desktop */}
+              <div className="w-60 bg-gray-50 dark:bg-[#171717] overflow-y-auto">
+                <div className="p-4">
+                  <h2 className="text-sm font-medium text-gray-500 mb-4">
+                    Paramètres
+                  </h2>
 
-                {/* Sections */}
-                <div className="space-y-1">
-                  {sections.map((section, sectionIndex) => (
-                    <div key={sectionIndex}>
-                      {/* Titre de section si présent */}
-                      {section.title && (
-                        <h3 className="text-xs font-medium text-gray-500 mb-2 mt-4">
-                          {section.title}
-                        </h3>
-                      )}
-                      <div className="space-y-1">
-                        {section.items.map((item) => {
-                          const Icon = item.icon;
-                          return (
-                            <button
-                              key={item.id}
-                              type="button"
-                              onClick={() =>
-                                !item.disabled && handleTabChange(item.id)
-                              }
-                              disabled={item.disabled}
-                              className={`w-full text-left px-2 py-1.5 text-[13.5px] rounded-md transition-colors flex items-center gap-3 ${
-                                item.disabled
-                                  ? "cursor-not-allowed opacity-50"
-                                  : "cursor-pointer"
-                              } ${
-                                activeTab === item.id && !item.disabled
-                                  ? "bg-[#EDECEB] dark:bg-[#2c2c2c] font-medium"
-                                  : !item.disabled
-                                    ? "hover:bg-gray-100 dark:hover:bg-[#2c2c2c]"
-                                    : ""
-                              }`}
-                            >
-                              <Icon className="h-4 w-4" />
-                              <span className="flex items-center gap-2">
-                                {item.label}
-                                {item.disabled && (
-                                  <span className="px-1.5 py-0.5 text-[9px] font-medium bg-[#5b4eff] text-white rounded-full">
-                                    à venir
-                                  </span>
-                                )}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {/* Séparateur entre sections (sauf pour la dernière et la première) */}
-                      {sectionIndex < sections.length - 1 &&
-                        sectionIndex > 0 && (
-                          <div className="border-t border-gray-200 dark:border-[#2c2c2c] mt-3 pt-1"></div>
-                        )}
+                  {/* User Info */}
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange("user-info")}
+                    className={`w-full flex items-center gap-2 mb-4 px-2 py-2 rounded-md transition-colors ${
+                      activeTab === "user-info"
+                        ? "bg-[#EDECEB] dark:bg-[#2c2c2c]"
+                        : "hover:bg-gray-100 dark:hover:bg-[#2c2c2c]"
+                    }`}
+                  >
+                    <div className="w-6 h-6 bg-[#5B4FFF]/300 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                      {session?.user?.name?.charAt(0) || "S"}
                     </div>
-                  ))}
+                    <div>
+                      <p className="text-sm font-medium">
+                        {session?.user?.name || "Utilisateur"}
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Sections */}
+                  <div className="space-y-1">
+                    {sections.map((section, sectionIndex) => (
+                      <div key={sectionIndex}>
+                        {section.title && (
+                          <h3 className="text-xs font-medium text-gray-500 mb-2 mt-4">
+                            {section.title}
+                          </h3>
+                        )}
+                        <div className="space-y-1">
+                          {section.items.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <button
+                                key={item.id}
+                                type="button"
+                                onClick={() =>
+                                  !item.disabled && handleTabChange(item.id)
+                                }
+                                disabled={item.disabled}
+                                className={`w-full text-left px-2 py-1.5 text-[13.5px] rounded-md transition-colors flex items-center gap-3 ${
+                                  item.disabled
+                                    ? "cursor-not-allowed opacity-50"
+                                    : "cursor-pointer"
+                                } ${
+                                  activeTab === item.id && !item.disabled
+                                    ? "bg-[#EDECEB] dark:bg-[#2c2c2c] font-medium"
+                                    : !item.disabled
+                                      ? "hover:bg-gray-100 dark:hover:bg-[#2c2c2c]"
+                                      : ""
+                                }`}
+                              >
+                                <Icon className="h-4 w-4" />
+                                <span className="flex items-center gap-2">
+                                  {item.label}
+                                  {item.disabled && (
+                                    <span className="px-1.5 py-0.5 text-[9px] font-medium bg-[#5b4eff] text-white rounded-full">
+                                      à venir
+                                    </span>
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Content Area Desktop */}
-            <div className="flex-1 bg-white dark:bg-[#0A0A0A] flex flex-col">
-              {/* Scrollable Content */}
-              <div
-                className="flex-1 overflow-y-auto"
-                style={{
-                  height: "calc(88vh - 80px)",
-                  maxHeight: "calc(88vh - 80px)",
-                  overflowY: "scroll",
-                }}
-              >
-                <div className="p-12 pb-6">{renderContent()}</div>
-              </div>
-
-              {/* Fixed Footer with Buttons */}
-              <div className="border-t bg-white dark:bg-[#0A0A0A] p-4 flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  className="cursor-pointer"
-                  onClick={handleCloseModal}
+              {/* Content Area Desktop */}
+              <div className="flex-1 bg-white dark:bg-[#0A0A0A] flex flex-col">
+                <div
+                  className="flex-1 overflow-y-auto"
+                  style={{
+                    height: "calc(88vh - 80px)",
+                    maxHeight: "calc(88vh - 80px)",
+                    overflowY: "scroll",
+                  }}
                 >
-                  Annuler
-                </Button>
-                {activeTab !== "espaces" &&
-                  activeTab !== "facturation" &&
-                  activeTab !== "preferences" && (
+                  <div className="p-12 pb-6">{renderContent()}</div>
+                </div>
+
+                {/* Fixed Footer with Buttons */}
+                <div className="border-t bg-white dark:bg-[#0A0A0A] p-4 flex justify-end gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="cursor-pointer"
+                    onClick={handleCloseModal}
+                  >
+                    Annuler
+                  </Button>
+                  {[
+                    "generale",
+                    "coordonnees-bancaires",
+                    "informations-legales",
+                  ].includes(activeTab) && (
                     <Button
                       type="submit"
-                      disabled={isSubmitting || !hasUnsavedChanges}
+                      disabled={formIsSubmitting || !isDirty}
                       className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white"
-                      onClick={(e) => {
-                        console.log(
-                          "🔘 Bouton cliqué, type:",
-                          e.currentTarget.type
-                        );
-                        console.log("🔘 Form element:", e.currentTarget.form);
-                      }}
                     >
-                      {isSubmitting ? "Mise à jour..." : "Sauvegarder"}
+                      {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}
                     </Button>
                   )}
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Layout */}
-          <div className="md:hidden flex flex-col h-full overflow-hidden">
-            {/* Sub-navigation for General section on mobile */}
-            {getActiveMobileTab() === "generale" && (
-              <div className="bg-gray-50 dark:bg-[#171717] border-b border-gray-200 dark:border-gray-800">
-                <div className="flex overflow-x-auto">
-                  {[
-                    { id: "generale", label: "Informations" },
-                    { id: "coordonnees-bancaires", label: "Bancaire" },
-                    { id: "informations-legales", label: "Légal" },
-                  ].map((subTab) => (
-                    <button
-                      key={subTab.id}
-                      type="button"
-                      onClick={() => handleTabChange(subTab.id)}
-                      className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                        activeTab === subTab.id
-                          ? "border-[#5b4eff] text-[#5b4eff] bg-white dark:bg-[#0A0A0A]"
-                          : "border-transparent font-normal text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                      }`}
-                    >
-                      {subTab.label}
-                    </button>
-                  ))}
                 </div>
               </div>
-            )}
+            </div>
+          </form>
+        </DialogContent>
 
-            {/* Content Area Mobile */}
-            <div
-              className="flex-1 bg-white dark:bg-[#0A0A0A] overflow-y-auto"
-              style={{
-                height: "calc(100vh - 160px)",
-                maxHeight: "calc(100vh - 160px)",
-                overflowY: "scroll",
-                WebkitOverflowScrolling: "touch",
-              }}
-            >
-              <div
-                className={`p-6 ${
-                  activeTab === "generale" ||
-                  activeTab === "coordonnees-bancaires" ||
-                  activeTab === "informations-legales"
-                    ? "pb-60" // Plus d'espace pour les boutons d'action (encore plus augmenté)
-                    : "pb-44" // Espace normal pour les autres sections (encore plus augmenté)
-                }`}
+        {/* Alert Dialogs */}
+        <AlertDialog
+          open={showUnsavedWarning}
+          onOpenChange={setShowUnsavedWarning}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Modifications non sauvegardées
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {pendingTab
+                  ? "Vous avez des modifications non sauvegardées. Êtes-vous sûr de vouloir changer d'onglet sans sauvegarder ?"
+                  : "Vous avez des modifications non sauvegardées. Êtes-vous sûr de vouloir fermer sans sauvegarder ?"}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleCancelClose}>
+                Continuer l'édition
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleForceClose}
+                className="bg-red-600 hover:bg-red-700 dark:text-white"
               >
-                {renderContent()}
-              </div>
-            </div>
+                {pendingTab
+                  ? "Changer d'onglet sans sauvegarder"
+                  : "Fermer sans sauvegarder"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-            {/* Bottom Navigation Mobile */}
-            <div
-              className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0A0A0A] border-t border-gray-200 dark:border-gray-800 shadow-lg"
-              style={{
-                paddingBottom: "max(env(safe-area-inset-bottom), 20px)",
-                marginBottom: "0px",
-              }}
-            >
-              {/* Safe area padding for iOS devices and browser bars */}
-              <div className="pt-2">
-                <div className="flex items-center justify-around px-2 pt-3">
-                  {mobileMainTabs.map((tab, index) => {
-                    const Icon = tab.icon;
-                    const isActive = getActiveMobileTab() === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => handleTabChange(tab.id)}
-                        className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 min-w-0 flex-1 mx-1 relative ${
-                          isActive
-                            ? "bg-[rgba(91,78,255,0.2)] text-[#5b4eff]"
-                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                        }`}
-                      >
-                        <Icon
-                          className={`h-5 w-5 mb-1 transition-colors duration-300 ${
-                            isActive ? "text-[#5b4eff]" : ""
-                          }`}
-                        />
-                        <span
-                          className={`text-[11px] font-medium truncate transition-colors duration-300 ${
-                            isActive ? "text-[#5b4eff]" : ""
-                          }`}
-                        >
-                          {tab.label}
-                        </span>
-                        {/* Indicateur pour les onglets avec sous-sections */}
-                        {tab.hasSubsections && isActive && (
-                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-[#5b4eff] rounded-full animate-pulse"></div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Action Buttons Mobile */}
-                {(activeTab === "generale" ||
-                  activeTab === "coordonnees-bancaires" ||
-                  activeTab === "informations-legales") && (
-                  <div className="px-4 pb-4 pt-2 border-t border-gray-100 dark:border-gray-800">
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        className="flex-1 cursor-pointer h-11"
-                        onClick={handleCloseModal}
-                      >
-                        Annuler
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting || !hasUnsavedChanges}
-                        className="flex-1 bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white h-11"
-                      >
-                        {isSubmitting ? "Mise à jour..." : "Sauvegarder"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </form>
-      </DialogContent>
-
-      {/* Alert Dialog pour les modifications non sauvegardées */}
-      <AlertDialog
-        open={showUnsavedWarning}
-        onOpenChange={setShowUnsavedWarning}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Modifications non sauvegardées</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingTab
-                ? "Vous avez des modifications non sauvegardées. Êtes-vous sûr de vouloir changer d'onglet sans sauvegarder ?"
-                : "Vous avez des modifications non sauvegardées. Êtes-vous sûr de vouloir fermer sans sauvegarder ?"}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelClose}>
-              Continuer l'édition
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleForceClose}
-              className="bg-red-600 hover:bg-red-700 dark:text-white"
-            >
-              {pendingTab
-                ? "Changer d'onglet sans sauvegarder"
-                : "Fermer sans sauvegarder"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Alert Dialog pour aucune modification effectuée */}
-      <AlertDialog
-        open={showNoChangesWarning}
-        onOpenChange={setShowNoChangesWarning}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Modifications non sauvegardées</AlertDialogTitle>
-            <AlertDialogDescription>
-              Vous avez des modifications non sauvegardées. Souhaitez-vous
-              continuer à modifier ou changer d'onglet sans sauvegarder ?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={handleContinueEditing}
-              className="cursor-pointer"
-            >
-              Continuer la modification
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleCancelEditing}
-              className="bg-red-600 hover:bg-red-700 dark:text-white cursor-pointer"
-            >
-              Changer d'onglet sans sauvegarder
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <AlertDialog
+          open={showNoChangesWarning}
+          onOpenChange={setShowNoChangesWarning}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Modifications non sauvegardées
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Vous avez des modifications non sauvegardées. Souhaitez-vous
+                continuer à modifier ou changer d'onglet sans sauvegarder ?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={handleCancelClose}
+                className="cursor-pointer"
+              >
+                Continuer la modification
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleForceClose}
+                className="bg-red-600 hover:bg-red-700 dark:text-white cursor-pointer"
+              >
+                Changer d'onglet sans sauvegarder
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </FormProvider>
     </Dialog>
   );
 }

@@ -27,8 +27,20 @@ export async function getActiveOrganization() {
  */
 export async function updateOrganization(organizationId, data, options = {}) {
   try {
+    // Vérifier la session utilisateur
+    const { data: session } = await authClient.getSession();
+    console.log(
+      "👤 Utilisateur actuel:",
+      session?.user?.id,
+      session?.user?.email
+    );
+
     console.log("🔄 Mise à jour de l'organisation:", organizationId);
     console.log("🔄 Données à envoyer:", data);
+    console.log(
+      "🔄 Structure exacte de l'appel:",
+      JSON.stringify({ organizationId, data }, null, 2)
+    );
 
     const result = await authClient.organization.update({
       organizationId,
@@ -36,6 +48,10 @@ export async function updateOrganization(organizationId, data, options = {}) {
     });
 
     console.log("✅ Résultat de la mise à jour:", result);
+    console.log(
+      "✅ Données dans result.data:",
+      JSON.stringify(result.data, null, 2)
+    );
 
     if (options.onSuccess) {
       options.onSuccess(result);
@@ -124,25 +140,26 @@ export function useActiveOrganization() {
 
     try {
       const result = await updateOrganization(organization.id, data, options);
-      
+
       // Si on supprime le logo (data.logo === null), forcer le nettoyage complet
       if (data.logo === null || data.logo === undefined) {
         console.log("🧹 Suppression logo détectée - nettoyage forcé de l'état");
         const cleanedOrg = { ...organization, ...data, logo: null };
         setOrganization(cleanedOrg);
-        
+
         // Forcer un refetch après un délai pour s'assurer de la synchronisation
         setTimeout(() => {
           console.log("🔄 Refetch forcé après suppression logo");
           fetchOrganization();
         }, 100);
       } else {
-        // Mettre à jour l'état local avec les données envoyées pour éviter le refetch
-        // qui pourrait remettre d'anciennes valeurs
+        // Mettre à jour l'état local avec les données envoyées (pas result.data qui contient les anciennes valeurs)
+        console.log("🔄 Mise à jour de l'état local avec les données envoyées:", data);
         const updatedOrg = { ...organization, ...data };
         setOrganization(updatedOrg);
+        console.log("✅ État organization mis à jour:", updatedOrg);
       }
-      
+
       return result;
     } catch (error) {
       throw error;
