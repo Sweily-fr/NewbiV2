@@ -156,7 +156,12 @@ const columns = [
     cell: ({ row }) => {
       const reference = row.getValue("reference");
       return reference ? (
-        <span className="font-mono text-sm">{reference}</span>
+        <span 
+          className="font-mono text-sm max-w-[100px] truncate block" 
+          title={reference}
+        >
+          {reference}
+        </span>
       ) : (
         "-"
       );
