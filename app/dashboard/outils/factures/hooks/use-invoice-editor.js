@@ -238,7 +238,6 @@ export function useInvoiceEditor({
       if (mode === "create") {
         const result = await createInvoice(input);
 
-        toast.success("Facture créée avec succès");
         router.push("/dashboard/outils/factures");
         return true;
       } else {
@@ -301,7 +300,6 @@ export function useInvoiceEditor({
       if (mode === "create") {
         const result = await createInvoice(input);
 
-        toast.success("Facture créée et validée");
         router.push("/dashboard/outils/factures");
         return true;
       } else {

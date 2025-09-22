@@ -74,7 +74,6 @@ export default function CreateLinkedInvoicePopover({
       });
 
       setIsOpen(false);
-      toast.success("Facture créée avec succès");
     } catch (error) {
       toast.error("Erreur lors de la création de la facture");
     }

@@ -29,7 +29,45 @@ import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
 import { useSettingsModal } from "@/src/hooks/useSettingsModal";
 import { SettingsModal } from "@/src/components/settings-modal";
 import { PricingModal } from "./pricing-modal";
+import { GridBackground } from "@/src/components/ui/grid-background";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { useState } from "react";
+
+// Textes explicatifs pour chaque outil
+const toolDescriptions = {
+  "Créer une Facture": {
+    title: "Outil de Facturation",
+    description: "Créez des factures professionnelles en quelques clics. Gérez vos clients, ajoutez vos produits/services, calculez automatiquement les taxes et suivez les paiements. Exportez vos factures en PDF et envoyez-les directement par email à vos clients."
+  },
+  "Créer un Devis": {
+    title: "Générateur de Devis",
+    description: "Élaborez des devis détaillés et attractifs pour vos prospects. Personnalisez vos offres, ajustez les prix, incluez des conditions spéciales et convertissez facilement vos devis acceptés en factures."
+  },
+  "Créer une Dépense": {
+    title: "Gestion des Dépenses",
+    description: "Enregistrez et catégorisez toutes vos dépenses professionnelles. Uploadez vos reçus, suivez vos frais déductibles et générez des rapports pour votre comptabilité et déclarations fiscales."
+  },
+  "Gérer les Signatures de Mail": {
+    title: "Signatures Email Professionnelles",
+    description: "Créez des signatures email élégantes et cohérentes pour votre entreprise. Ajoutez votre logo, vos coordonnées, liens vers vos réseaux sociaux et respectez votre charte graphique."
+  },
+  "Transferer des fichiers": {
+    title: "Partage de Fichiers Sécurisé",
+    description: "Partagez vos fichiers volumineux en toute sécurité avec vos clients et partenaires. Générez des liens de téléchargement temporaires, protégez vos documents par mot de passe et suivez les téléchargements."
+  },
+  "Gestion De Projet KANBAN": {
+    title: "Tableau Kanban",
+    description: "Organisez vos projets et tâches avec des tableaux Kanban intuitifs. Créez des colonnes personnalisées, déplacez vos tâches, assignez des responsables et suivez l'avancement de vos projets en temps réel."
+  }
+};
 
 // Fonction pour déterminer la couleur de l'icône en fonction du type d'outil
 function getIconColor(title) {
@@ -59,8 +97,8 @@ function getIconColor(title) {
 
 const cards = [
   {
-    title: "Factures",
-    subtitle: "Créez et gérez vos factures.",
+    title: "Créer une Facture",
+    subtitle: "Créez et gérez facilement toutes vos factures professionnelles.",
     icon: <IconFileInvoice size={15} />,
     href: "/dashboard/outils/factures",
     status: "available",
@@ -70,8 +108,8 @@ const cards = [
     category: "financier",
   },
   {
-    title: "Devis",
-    subtitle: "Créez et suivez vos devis.",
+    title: "Créer un Devis",
+    subtitle: "Créez et suivez efficacement tous vos devis clients.",
     icon: <IconFileDescription size={15} />,
     href: "/dashboard/outils/devis",
     status: "available",
@@ -81,8 +119,8 @@ const cards = [
     category: "financier",
   },
   {
-    title: "Dépenses",
-    subtitle: "Créez et gérez vos dépenses.",
+    title: "Créer une Dépense",
+    subtitle: "Créez et gérez simplement toutes vos dépenses d'entreprise.",
     icon: <IconReceipt size={15} />,
     href: "/dashboard/outils/gestion-depenses",
     status: "available",
@@ -92,8 +130,8 @@ const cards = [
     category: "financier",
   },
   {
-    title: "Signatures de mail",
-    subtitle: "Créez et gérez vos signatures de mail.",
+    title: "Gérer les Signatures de Mail",
+    subtitle: "Créez et gérez professionnellement vos signatures d'email.",
     icon: <IconMailForward size={15} />,
     href: "/dashboard/outils/signatures-mail",
     status: "available",
@@ -103,8 +141,8 @@ const cards = [
     category: "marketing",
   },
   {
-    title: "Transfert de fichiers",
-    subtitle: "Transférez vos fichiers.",
+    title: "Transferer des fichiers",
+    subtitle: "Transférez et partagez rapidement tous vos fichiers importants.",
     icon: <IconTransfer size={15} />,
     href: "/dashboard/outils/transferts-fichiers",
     status: "available",
@@ -114,8 +152,8 @@ const cards = [
     category: "marketing",
   },
   {
-    title: "KANBAN",
-    subtitle: "Créez et gérez vos tâches.",
+    title: "Gestion De Projet KANBAN",
+    subtitle: "Créez et gérez efficacement toutes vos tâches quotidiennes.",
     icon: <IconLayoutKanban size={15} />,
     href: "/dashboard/outils/kanban",
     status: "available",
@@ -154,6 +192,8 @@ export function SectionCards({ className, activeFilter = "outline" }) {
   const { organization } = useActiveOrganization();
   const { isOpen, initialTab, openSettings, closeSettings } = useSettingsModal();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [selectedTool, setSelectedTool] = useState(null);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   
   // Fonction pour vérifier si les informations d'entreprise sont complètes
   const checkCompanyInfo = () => {
@@ -251,6 +291,13 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     // Ouvrir le modal de paramètres sur l'onglet approprié
     openSettings(requiredTab);
   };
+
+  // Fonction pour ouvrir la modal d'information d'un outil
+  const handleToolInfoClick = (e, toolTitle) => {
+    e.preventDefault();
+    setSelectedTool(toolTitle);
+    setIsInfoDialogOpen(true);
+  };
   
   // Filtrer les cartes selon l'onglet actif
   const filteredCards = cards.filter(card => {
@@ -287,8 +334,8 @@ export function SectionCards({ className, activeFilter = "outline" }) {
           <Card 
             key={index} 
             className={cn(
-              "border-0 shadow-sm p-2 relative transition-all duration-200 group",
-              !hasFullAccess && "cursor-pointer hover:shadow-md hover:border-gray-200/50",
+              "border border-gray-200 hover:border-gray-300 transition-all duration-200 group bg-gray-50 shadow-none relative overflow-hidden",
+              !hasFullAccess && "cursor-pointer",
               !hasCompanyInfoAccess && requiresCompanyInfo && "opacity-75 grayscale-[0.3]",
               !hasSubscriptionAccess && "opacity-75 grayscale-[0.3]"
             )}
@@ -298,74 +345,93 @@ export function SectionCards({ className, activeFilter = "outline" }) {
               undefined
             }
           >
-            
-            <div className="flex flex-row h-full">
-              {/* Partie gauche avec icône, titre, description et lien */}
-              <div className="flex flex-col p-2 flex-1 justify-between">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div
-                      className={cn(
-                        "p-2 rounded-md w-7 h-7 flex items-center justify-center",
-                        `bg-[${card.bgIconColor}]`
-                      )}
-                      // style={{ backgroundColor: getIconColor(card.title) }}
-                    >
-                      <p className="text-white">{card.icon}</p>
+            <GridBackground />
+            <CardContent className="p-6 relative z-10">
+              <div className="flex items-start justify-between h-full min-h-[200px]">
+                {/* Partie gauche avec contenu */}
+                <div className="flex flex-col justify-end h-full pr-4">
+                  {/* Header avec titre et description */}
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-xl text-gray-900">{card.title}</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        {card.subtitle}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <CardTitle className="font-normal">{card.title}</CardTitle>
-                    <CardDescription className="text-xs">
-                      {card.subtitle}
-                    </CardDescription>
+                  {/* Actions en bas */}
+                  <div className="flex items-center gap-3 pt-6">
+                    {isAvailable && hasFullAccess && (
+                      <>
+                        <Link href={card.href || "#"}>
+                          <Button 
+                            size="sm" 
+                            className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 text-sm font-medium cursor-pointer"
+                          >
+                            Accéder
+                          </Button>
+                        </Link>
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          className="border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium cursor-pointer"
+                          onClick={(e) => handleToolInfoClick(e, card.title)}
+                        >
+                          En savoir plus
+                        </Button>
+                      </>
+                    )}
+                    {!hasFullAccess && (
+                      <div className="flex items-center gap-3">
+                        {restrictionType === "subscription" && (
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                            className="border-orange-200 text-orange-700 hover:bg-orange-50 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                          >
+                            <Crown className="w-4 h-4" />
+                            Passer Pro
+                          </Button>
+                        )}
+                        {restrictionType === "companyInfo" && (
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                            className="border-red-200 text-red-700 hover:bg-red-50 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                          >
+                            <Lock className="w-4 h-4" />
+                            Configuration requise
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="pt-6">
-                  {isAvailable && hasFullAccess && (
-                    <Link
-                      href={card.href || "#"}
-                      className="text-sm font-medium text-[#5B4FFF] hover:text-[#5B4FFF] flex items-center gap-2 no-underline"
-                    >
-                      Accéder <span className="text-sm">→</span>
-                    </Link>
-                  )}
-                  {!hasFullAccess && (
-                    <div className="text-sm font-medium flex items-center gap-2">
-                      {restrictionType === "subscription" && (
-                        <span className="text-sm text-gray-500 flex items-center gap-1 font-light">
-                          <Crown className="w-4 h-4" />
-                          Pro
-                        </span>
-                      )}
-                      {restrictionType === "companyInfo" && (
-                        <span className="text-xs text-red-500 font-medium">
-                          Informations entreprise manquantes - <span className="underline cursor-pointer">Configurer</span>
-                        </span>
-                      )}
-                    </div>
-                  )}
+                {/* Partie droite avec illustration */}
+                <div className="flex-shrink-0 w-52 h-52 flex items-center justify-center relative overflow-visible">
+                  <div
+                    className="w-full h-full flex items-center justify-center bg-center bg-no-repeat relative z-10 transition-transform duration-300 group-hover:scale-110 overflow-visible"
+                    style={{
+                      backgroundImage: card.Image ? `url(${card.Image})` : "none",
+                      backgroundSize: "80%",
+                      backgroundPosition: "top center",
+                      backgroundRepeat: "no-repeat",
+                    }}
+                  >
+                    {!card.Image && (
+                      <div 
+                        className="w-12 h-12 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: card.bgIconColor }}
+                      >
+                        <div className="text-white text-lg">{card.icon}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* Partie droite avec la visualisation - coins arrondis */}
-              <div
-                className={cn(
-                  "w-1/2 rounded-xl m-1 p-2 flex flex-col justify-center space-y-4 bg-[#5B4FFF]/4 bg-center bg-no-repeat bg-50% bg-blend-soft-light relative",
-                  card.Image ? "" : "bg-none"
-                )}
-                style={{
-                  backgroundImage: card.Image ? `url(${card.Image})` : "none",
-                  backgroundSize: "80%",
-                  backgroundPosition: "center center",
-                  backgroundRepeat: "no-repeat",
-                  opacity: 0.7,
-                  objectFit: "cover",
-                }}
-              ></div>
-            </div>
+            </CardContent>
           </Card>
         );
       })}
@@ -381,6 +447,25 @@ export function SectionCards({ className, activeFilter = "outline" }) {
         isOpen={isPricingModalOpen} 
         onClose={() => setIsPricingModalOpen(false)} 
       />
+      
+      {/* Modal d'information sur l'outil */}
+      <AlertDialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {selectedTool && toolDescriptions[selectedTool]?.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm leading-relaxed">
+              {selectedTool && toolDescriptions[selectedTool]?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setIsInfoDialogOpen(false)}>
+              Compris
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
