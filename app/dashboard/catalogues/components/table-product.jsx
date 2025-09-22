@@ -90,6 +90,7 @@ import {
   TableRow,
 } from "@/src/components/ui/table";
 import { toast } from "@/src/components/ui/sonner";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { useProducts, useDeleteProduct } from "@/src/hooks/useProducts";
 import ProductModal from "./product-modal";
 
@@ -382,14 +383,9 @@ export default function TableProduct({ handleAddProduct }) {
     return filterValue ?? [];
   }, [table.getColumn("category")?.getFilterValue()]);
 
-  // Affichage du loader pendant le chargement
+  // Affichage du skeleton pendant le chargement
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        <span>Chargement des produits...</span>
-      </div>
-    );
+    return <CatalogSkeleton />;
   }
 
   // Affichage d'erreur
@@ -465,7 +461,7 @@ export default function TableProduct({ handleAddProduct }) {
           {/* Filter by category */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="font-normal">
                 <FilterIcon
                   className="-ms-1 opacity-60"
                   size={16}
@@ -512,13 +508,13 @@ export default function TableProduct({ handleAddProduct }) {
           {/* Toggle columns visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="font-normal">
                 <Columns3Icon
                   className="-ms-1 opacity-60"
                   size={16}
                   aria-hidden="true"
                 />
-                Vue
+                <span className="hidden sm:inline">Colonne</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -527,6 +523,17 @@ export default function TableProduct({ handleAddProduct }) {
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
                 .map((column) => {
+                  // Traduction des noms de colonnes
+                  const columnTranslations = {
+                    name: "Nom du produit",
+                    reference: "Référence",
+                    unitPrice: "Prix unitaire (HT)",
+                    vatRate: "Taux TVA",
+                    unit: "Unité",
+                    category: "Catégorie",
+                    description: "Description"
+                  };
+                  
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
@@ -537,7 +544,7 @@ export default function TableProduct({ handleAddProduct }) {
                       }
                       onSelect={(event) => event.preventDefault()}
                     >
-                      {column.id}
+                      {columnTranslations[column.id] || column.id}
                     </DropdownMenuCheckboxItem>
                   );
                 })}
@@ -549,7 +556,7 @@ export default function TableProduct({ handleAddProduct }) {
           {table.getSelectedRowModel().rows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="ml-auto" variant="outline">
+                <Button className="ml-auto font-normal" variant="destructive">
                   <TrashIcon
                     className="-ms-1 opacity-60"
                     size={16}
@@ -591,8 +598,7 @@ export default function TableProduct({ handleAddProduct }) {
           )}
           {/* Add product button */}
           <Button
-            className="ml-auto cursor-pointer"
-            variant="outline"
+            className="ml-auto cursor-pointer font-normal bg-black text-white hover:bg-gray-800"
             onClick={handleAddProduct}
           >
             <PlusIcon
@@ -616,7 +622,7 @@ export default function TableProduct({ handleAddProduct }) {
                     <TableHead
                       key={header.id}
                       style={{ width: `${header.getSize()}px` }}
-                      className="h-11"
+                      className="h-11 font-normal"
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
@@ -670,11 +676,47 @@ export default function TableProduct({ handleAddProduct }) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {loading ? (
+              // Skeleton loading state
+              Array.from({ length: pagination.pageSize }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`} className="h-14">
+                  <TableCell>
+                    <Skeleton className="h-4 w-4 rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-40" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <Skeleton className="h-8 w-8 rounded" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="h-14"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="last:py-0">
@@ -721,7 +763,7 @@ export default function TableProduct({ handleAddProduct }) {
       <div className="flex items-center justify-between gap-8">
         {/* Results per page */}
         <div className="flex items-center gap-3">
-          <Label htmlFor={id} className="max-sm:sr-only">
+          <Label htmlFor={id} className="max-sm:sr-only font-normal">
             Lignes par page
           </Label>
           <Select
@@ -745,7 +787,7 @@ export default function TableProduct({ handleAddProduct }) {
         {/* Page number information */}
         <div className="text-muted-foreground flex grow justify-end text-sm whitespace-nowrap">
           <p
-            className="text-muted-foreground text-sm whitespace-nowrap"
+            className="text-muted-foreground text-sm whitespace-nowrap font-normal"
             aria-live="polite"
           >
             <span className="text-foreground">
@@ -915,5 +957,111 @@ function RowActions({ row, onEdit, onDelete }) {
         </AlertDialogContent>
       </AlertDialog>
     </DropdownMenu>
+  );
+}
+
+// Composant skeleton adaptatif pour le catalogue
+function CatalogSkeleton() {
+  return (
+    <div className="space-y-4">
+      {/* Filters skeleton */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          {/* Search input skeleton */}
+          <Skeleton className="h-10 w-60" />
+          {/* Category filter skeleton */}
+          <Skeleton className="h-10 w-24" />
+          {/* Column filter skeleton */}
+          <Skeleton className="h-10 w-20 sm:w-24" />
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Add product button skeleton */}
+          <Skeleton className="h-10 w-32 sm:w-40" />
+        </div>
+      </div>
+
+      {/* Table skeleton */}
+      <div className="bg-background overflow-hidden rounded-md border">
+        <div className="table-fixed w-full">
+          {/* Header skeleton */}
+          <div className="border-b">
+            <div className="flex items-center h-11 px-4">
+              <Skeleton className="h-4 w-4 mr-4" />
+              <div className="flex-1 flex gap-4">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-20" />
+                <div className="hidden sm:block">
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                <div className="hidden md:block">
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="hidden lg:block">
+                  <Skeleton className="h-4 w-40" />
+                </div>
+                <Skeleton className="h-4 w-8 ml-auto" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Rows skeleton - Responsive */}
+          <div className="divide-y">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <div key={index} className="flex items-center h-14 px-4">
+                <Skeleton className="h-4 w-4 mr-4" />
+                <div className="flex-1 flex gap-4 items-center">
+                  {/* Nom du produit */}
+                  <Skeleton className="h-4 w-32" />
+                  {/* Référence */}
+                  <Skeleton className="h-4 w-24" />
+                  {/* Prix */}
+                  <Skeleton className="h-4 w-20" />
+                  {/* TVA */}
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                  {/* Unité - Hidden on mobile */}
+                  <div className="hidden sm:block">
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                  {/* Catégorie - Hidden on mobile */}
+                  <div className="hidden md:block">
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </div>
+                  {/* Description - Hidden on mobile and tablet */}
+                  <div className="hidden lg:block">
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                  {/* Actions */}
+                  <div className="ml-auto">
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Pagination skeleton */}
+      <div className="flex items-center justify-between gap-8">
+        {/* Results per page */}
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-4 w-24 hidden sm:block" />
+          <Skeleton className="h-10 w-16" />
+        </div>
+        {/* Page info */}
+        <div className="flex-1 flex justify-end">
+          <Skeleton className="h-4 w-20" />
+        </div>
+        {/* Pagination buttons */}
+        <div className="flex items-center gap-1">
+          <Skeleton className="h-10 w-10" />
+          <Skeleton className="h-10 w-10" />
+          <Skeleton className="h-10 w-10" />
+          <Skeleton className="h-10 w-10" />
+        </div>
+      </div>
+    </div>
   );
 }

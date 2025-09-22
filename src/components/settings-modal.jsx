@@ -412,6 +412,8 @@ export function SettingsModal({
       setValue,
       session,
       organization,
+      updateOrganization,
+      refetchOrganization: refetchOrg,
     };
     switch (activeTab) {
       case "espaces":

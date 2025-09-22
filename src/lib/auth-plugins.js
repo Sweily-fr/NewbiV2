@@ -247,6 +247,11 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        logo: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Legal information
         siret: {
           type: "string",

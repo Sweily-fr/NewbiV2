@@ -33,6 +33,7 @@ import LayoutTab from "./layout-tab/layout-tab";
 import LayoutTabTypography from "./tab-typography/layout-tab";
 import LayoutTabImg from "./layout-img/layout-tab";
 import SignatureManager from "./SignatureManager";
+import CancelConfirmationModal from "./CancelConfirmationModal";
 // Mutation GraphQL pour créer une signature
 const CREATE_EMAIL_SIGNATURE = gql`
   mutation CreateEmailSignature($input: EmailSignatureInput!) {
@@ -91,42 +92,21 @@ export function TabSignature({ existingSignatureId = null }) {
   );
   const [isDefault, setIsDefault] = useState(signatureData.isDefault || false);
   const [saveStatus, setSaveStatus] = useState(null); // null, 'success', 'error'
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
   const [createSignature, { loading: creating }] = useMutation(
     CREATE_EMAIL_SIGNATURE,
     {
-      update: (cache, { data }) => {
-        if (data?.createEmailSignature) {
-          // Lire les données existantes du cache
-          const existingData = cache.readQuery({
-            query: GET_MY_EMAIL_SIGNATURES,
-          });
-
-          if (existingData?.getMyEmailSignatures) {
-            // Ajouter la nouvelle signature à la liste
-            cache.writeQuery({
-              query: GET_MY_EMAIL_SIGNATURES,
-              data: {
-                getMyEmailSignatures: [
-                  ...existingData.getMyEmailSignatures,
-                  data.createEmailSignature,
-                ],
-              },
-            });
-          }
-        }
-      },
+      refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES }],
       onCompleted: (data) => {
-        toast.success("Signature créée avec succès !");
-
-        // Redirection après un court délai pour laisser voir la notification
-        setTimeout(() => {
-          router.push("/dashboard/outils/signatures-mail");
-        }, 1500);
+        console.log("✅ Signature créée:", data.createEmailSignature);
+        setSaveStatus("success");
+        setTimeout(() => setSaveStatus(null), 3000);
       },
       onError: (error) => {
         console.error("❌ Erreur création:", error);
-        toast.error("Erreur lors de la création de la signature");
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus(null), 3000);
       },
     }
   );
@@ -134,31 +114,7 @@ export function TabSignature({ existingSignatureId = null }) {
   const [updateSignature, { loading: updating }] = useMutation(
     UPDATE_EMAIL_SIGNATURE,
     {
-      update: (cache, { data }) => {
-        if (data?.updateEmailSignature) {
-          // Lire les données existantes du cache
-          const existingData = cache.readQuery({
-            query: GET_MY_EMAIL_SIGNATURES,
-          });
-
-          if (existingData?.getMyEmailSignatures) {
-            // Mettre à jour la signature dans la liste
-            const updatedSignatures = existingData.getMyEmailSignatures.map(
-              (sig) =>
-                sig.id === data.updateEmailSignature.id
-                  ? data.updateEmailSignature
-                  : sig
-            );
-
-            cache.writeQuery({
-              query: GET_MY_EMAIL_SIGNATURES,
-              data: {
-                getMyEmailSignatures: updatedSignatures,
-              },
-            });
-          }
-        }
-      },
+      refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES }],
       onCompleted: (data) => {
         toast.success("Signature mise à jour avec succès !");
 
@@ -304,6 +260,19 @@ export function TabSignature({ existingSignatureId = null }) {
     setIsDefault(signatureData.isDefault || false);
     setIsModalOpen(true);
   };
+
+  const handleCancelClick = () => {
+    setShowCancelConfirmation(true);
+  };
+
+  const handleConfirmCancel = () => {
+    setShowCancelConfirmation(false);
+    router.push("/dashboard/outils/signatures-mail");
+  };
+
+  const handleCloseCancelModal = () => {
+    setShowCancelConfirmation(false);
+  };
   return (
     <div className="flex flex-col h-full">
       <Tabs defaultValue="tab-1" className="flex flex-col h-full">
@@ -348,7 +317,11 @@ export function TabSignature({ existingSignatureId = null }) {
       {/* Footer fixe avec les boutons */}
       <div className="flex-shrink-0 py-4 mx-4 border-t">
         <div className="flex justify-between">
-          <Button variant="outline" className="cursor-pointer">
+          <Button 
+            variant="outline" 
+            className="cursor-pointer"
+            onClick={handleCancelClick}
+          >
             Annuler
           </Button>
           <Button
@@ -429,6 +402,15 @@ export function TabSignature({ existingSignatureId = null }) {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation d'annulation */}
+      <CancelConfirmationModal
+        isOpen={showCancelConfirmation}
+        onClose={handleCloseCancelModal}
+        onConfirm={handleConfirmCancel}
+        title="Annuler la création de signature ?"
+        message="Êtes-vous sûr de vouloir annuler ? Toutes les modifications non sauvegardées seront perdues et vous serez redirigé vers la liste des signatures."
+      />
     </div>
   );
 }

@@ -15,7 +15,7 @@ import { useWorkspace } from "./useWorkspace";
  * - Suppression automatique de l'ancienne image
  * - Gestion des erreurs simplifiée
  */
-export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
+export const useCompanyLogoUpload = ({ onUploadSuccess, onOrganizationUpdate }) => {
   const { data: session } = useSession();
   const { workspaceId } = useWorkspace();
   const fileInputRef = useRef(null);
@@ -111,6 +111,12 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
 
         toast.success("Logo uploadé avec succès !");
         onUploadSuccess?.(uploadData.url);
+        
+        // Sauvegarder automatiquement dans l'organisation si la fonction est fournie
+        if (onOrganizationUpdate) {
+          console.log("🏢 Appel de onOrganizationUpdate avec:", uploadData.url);
+          onOrganizationUpdate(uploadData.url);
+        }
       } catch (error) {
         console.error("Erreur upload:", error);
         toast.error("Erreur lors de l'upload");
@@ -134,6 +140,7 @@ export const useCompanyLogoUpload = ({ onUploadSuccess }) => {
       deleteDocument,
       updateCompanyLogo,
       onUploadSuccess,
+      onOrganizationUpdate,
       previewUrl,
     ]
   );
