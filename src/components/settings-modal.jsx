@@ -62,6 +62,45 @@ export function SettingsModal({
     updateOrganization,
   } = useActiveOrganization();
 
+  // Fonction pour créer les valeurs par défaut
+  const createDefaultValues = (org = null, user = null) => ({
+    // Informations entreprise
+    name: org?.companyName || "",
+    email: org?.companyEmail || "",
+    phone: org?.companyPhone || "",
+    website: org?.website || "",
+    description: org?.description || "",
+    logo: org?.logo || "",
+
+    // Adresse
+    address: {
+      street: org?.addressStreet || "",
+      city: org?.addressCity || "",
+      postalCode: org?.addressZipCode || "",
+      country: org?.addressCountry || "France",
+    },
+
+    // Informations bancaires
+    bankDetails: {
+      iban: org?.bankIban || "",
+      bic: org?.bankBic || "",
+      bankName: org?.bankName || "",
+    },
+
+    // Informations légales
+    legal: {
+      siret: org?.siret || "",
+      vatNumber: org?.vatNumber || "",
+      rcs: org?.rcs || "",
+      legalForm: org?.legalForm || "",
+      capital: org?.capitalSocial || "",
+      regime: org?.fiscalRegime || "",
+      category: org?.activityCategory || "",
+      isVatSubject: org?.isVatSubject || false,
+      hasCommercialActivity: org?.hasCommercialActivity || false,
+    },
+  });
+
   const {
     register,
     handleSubmit,
@@ -69,44 +108,9 @@ export function SettingsModal({
     reset,
     watch,
     setValue,
+    control,
   } = useForm({
-    defaultValues: {
-      // Informations entreprise
-      name: "",
-      email: "",
-      phone: "",
-      website: "",
-      description: "",
-      logo: "",
-
-      // Adresse
-      address: {
-        street: "",
-        city: "",
-        postalCode: "",
-        country: "France",
-      },
-
-      // Informations bancaires
-      bankDetails: {
-        iban: "",
-        bic: "",
-        bankName: "",
-      },
-
-      // Informations légales
-      legal: {
-        siret: "",
-        vatNumber: "",
-        rcs: "",
-        legalForm: "",
-        capital: "",
-        regime: "",
-        category: "",
-        isVatSubject: false,
-        hasCommercialActivity: false,
-      },
-    },
+    defaultValues: createDefaultValues(),
   });
 
   // Fonction pour mettre à jour les informations de l'organisation
@@ -291,43 +295,15 @@ export function SettingsModal({
   // Charger les données de l'organisation et du user dans le formulaire
   useEffect(() => {
     if (organization && session?.user) {
-      const initialData = {
-        name: organization.companyName || "",
-        email: organization.companyEmail || "",
-        phone: organization.companyPhone || "",
-        website: organization.website || "",
-        description: organization.description || "",
-        logo: organization.logo || "",
-        address: {
-          street: organization.addressStreet || "",
-          city: organization.addressCity || "",
-          postalCode: organization.addressZipCode || "",
-          country: organization.addressCountry || "France",
-        },
-        bankDetails: {
-          iban: organization.bankIban || "",
-          bic: organization.bankBic || "",
-          bankName: organization.bankName || "",
-        },
-        // Informations légales - mapper vers la structure legal.* pour cohérence avec LegalSection
-        legal: {
-          siret: organization.siret || "",
-          vatNumber: organization.vatNumber || "",
-          rcs: organization.rcs || "",
-          legalForm: organization.legalForm || "",
-          capital: organization.capitalSocial || "",
-          regime: organization.fiscalRegime || "",
-          category: organization.activityCategory || "",
-          isVatSubject: organization.isVatSubject || false,
-          hasCommercialActivity: organization.hasCommercialActivity || false,
-        },
-      };
-
+      const initialData = createDefaultValues(organization, session.user);
+      console.log("🔄 Initialisation du formulaire avec les données:", initialData);
+      console.log("🔄 Avant reset - valeurs actuelles:", watch());
       reset(initialData);
+      console.log("🔄 Après reset - nouvelles valeurs:", watch());
       initialValuesRef.current = initialData;
       setHasUnsavedChanges(false);
     }
-  }, [organization, session, reset]);
+  }, [organization, session, reset]); // Utiliser les mêmes dépendances que la page qui fonctionne
 
   // Surveiller les changements dans le formulaire
   const watchedValues = watch();
@@ -337,6 +313,13 @@ export function SettingsModal({
         JSON.stringify(watchedValues) !==
         JSON.stringify(initialValuesRef.current);
       setHasUnsavedChanges(hasChanges);
+      
+      // Debug : afficher les changements détectés
+      if (process.env.NODE_ENV === 'development' && hasChanges) {
+        console.log("🔍 Changements détectés dans le formulaire:");
+        console.log("Valeurs actuelles:", watchedValues);
+        console.log("Valeurs initiales:", initialValuesRef.current);
+      }
     }
   }, [watchedValues]);
 
@@ -405,11 +388,20 @@ export function SettingsModal({
   };
 
   const renderContent = () => {
+    // Debug : vérifier l'état du formulaire
+    if (process.env.NODE_ENV === 'development') {
+      const currentValues = watch();
+      console.log("🔍 État actuel du formulaire:", currentValues);
+      console.log("🔍 Organisation disponible:", !!organization);
+      console.log("🔍 Loading:", orgLoading);
+    }
+
     const commonProps = {
       register,
       errors,
       watch,
       setValue,
+      control,
       session,
       organization,
     };
