@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { Suspense } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import { SidebarTrigger } from "@/src/components/ui/sidebar";
@@ -44,7 +44,7 @@ const SignatureSaveButton = () => {
   );
 };
 
-export function SiteHeader() {
+function SiteHeaderContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { workspaceId } = useWorkspace();
@@ -140,5 +140,41 @@ export function SiteHeader() {
         </div>
       </div>
     </header>
+  );
+}
+
+// Composant de fallback pour le loading
+function SiteHeaderFallback() {
+  return (
+    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+        <SidebarTrigger className="-ml-1" />
+        <Separator
+          orientation="vertical"
+          className="mx-2 data-[orientation=vertical]:h-4"
+        />
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbPage className="text-xs">
+                Chargement...
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <div className="ml-auto flex items-center gap-2">
+          <ModeToggle />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// Composant principal avec Suspense
+export function SiteHeader() {
+  return (
+    <Suspense fallback={<SiteHeaderFallback />}>
+      <SiteHeaderContent />
+    </Suspense>
   );
 }
