@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import {
   GET_BOARDS,
@@ -17,9 +17,10 @@ export const useKanbanBoards = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ title: "", description: "" });
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // GraphQL queries and mutations
-  const { data, refetch } = useQuery(GET_BOARDS, {
+  const { data, loading: queryLoading, refetch } = useQuery(GET_BOARDS, {
     variables: { workspaceId },
     skip: !workspaceId,
     errorPolicy: "all",
@@ -90,6 +91,20 @@ export const useKanbanBoards = () => {
   });
 
   const boards = data?.boards || [];
+
+  // Gérer l'état de chargement initial
+  useEffect(() => {
+    // Si on a un workspaceId et que la requête n'est plus en loading, on peut arrêter le loading initial
+    if (workspaceId && !queryLoading && data !== undefined) {
+      // Petit délai pour éviter les flashs trop rapides
+      const timer = setTimeout(() => {
+        setIsInitialLoading(false);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+    // Si on n'a pas de workspaceId, on continue d'afficher le skeleton jusqu'à ce qu'il soit disponible
+  }, [workspaceId, queryLoading, data]);
 
   // Filter boards based on search term
   const filteredBoards = boards.filter(
@@ -191,6 +206,8 @@ export const useKanbanBoards = () => {
     // Data & Loading States
     boards: filteredBoards,
     loading: creating || updating || deleting,
+    queryLoading,
+    isInitialLoading,
     creating,
     updating,
     deleting,
