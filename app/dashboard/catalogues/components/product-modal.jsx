@@ -176,27 +176,24 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" className="hidden">
-          Ajouter un produit
+          Ajouter un produit / service
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <div className="flex flex-col gap-2">
           <DialogHeader>
             <DialogTitle className="text-left">
-              {product ? "Modifier le produit" : "Ajouter un produit"}
+              {product ? "Modifier le produit et/ou service" : "Ajouter un produit et/ou service"}
             </DialogTitle>
             <DialogDescription className="text-left">
               {product
-                ? "Modifiez les informations du produit"
-                : "Créez un nouveau produit pour votre catalogue"}
+                ? "Modifiez les informations du produit et/ou service"
+                : "Créez un nouveau produit et/ou service pour votre catalogue"}
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-5 max-h-[70vh] p-1 overflow-y-auto"
-        >
+        <div className="space-y-5 max-h-[70vh] p-1 overflow-y-auto">
           <div className="space-y-4">
             {/* Nom du produit */}
             <div className="space-y-2">
@@ -366,21 +363,23 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-            >
-              Annuler
-            </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? "Enregistrement..." : isEditing ? "Modifier" : "Créer"}
-            </Button>
-          </div>
-        </form>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Annuler
+          </Button>
+          <Button 
+            onClick={handleSubmit(onSubmit)} 
+            disabled={loading}
+          >
+            {loading ? "Enregistrement..." : isEditing ? "Modifier le produit et/ou service" : "Créer le produit et/ou service"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
