@@ -137,7 +137,14 @@ const columns = [
     accessorKey: "name",
     cell: ({ row }) => {
       const product = row.original;
-      return <div className="font-normal">{product.name}</div>;
+      return (
+        <div 
+          className="font-normal max-w-[180px] truncate" 
+          title={product.name}
+        >
+          {product.name}
+        </div>
+      );
     },
     size: 200,
     filterFn: multiColumnFilterFn,
@@ -199,8 +206,13 @@ const columns = [
     cell: ({ row }) => {
       const category = row.getValue("category");
       return category ? (
-        <Badge className="bg-blue-100 border-blue-300 text-blue-800 font-normal">
-          {category}
+        <Badge 
+          className="bg-blue-100 border-blue-300 text-blue-800 font-normal max-w-[100px] inline-block" 
+          title={category}
+        >
+          <span className="block truncate">
+            {category}
+          </span>
         </Badge>
       ) : (
         "-"
