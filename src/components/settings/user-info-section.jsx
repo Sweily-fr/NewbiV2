@@ -9,11 +9,9 @@ import { useForm } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { updateUser, useSession } from "@/src/lib/auth-client";
 import { GraphQLProfileImageUpload } from "@/src/components/profile/GraphQLProfileImageUpload";
-import {
-  ChangeEmailModal,
-  ChangePasswordModal,
-  ChangePhoneModal,
-} from "../../../app/dashboard/account/components";
+import { ChangeEmailModal } from "../../../app/dashboard/account/components/ChangeEmailModal";
+import { ChangePasswordModal } from "../../../app/dashboard/account/components/ChangePasswordModal";
+import { ChangePhoneModal } from "../../../app/dashboard/account/components/ChangePhoneModal";
 import { DeactivateAccountModal } from "../../../app/dashboard/account/components/DeactivateAccountModal";
 import { useSubscription } from "@/src/contexts/subscription-context";
 import Link from "next/link";

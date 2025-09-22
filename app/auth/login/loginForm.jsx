@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "../../../src/lib/auth-client";
 import { TwoFactorModal } from "./components/TwoFactorModal";
+import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
 
 // Fonction pour s'assurer qu'une organisation active est définie
 const ensureActiveOrganization = async () => {
@@ -71,6 +72,14 @@ const LoginForm = () => {
   const router = useRouter();
   const [show2FA, setShow2FA] = React.useState(false);
   const [twoFactorData, setTwoFactorData] = React.useState(null);
+  const [showEmailVerification, setShowEmailVerification] = React.useState(false);
+  const [userEmailForVerification, setUserEmailForVerification] = React.useState("");
+
+  // Debug: Log des changements d'état du modal
+  React.useEffect(() => {
+    console.log("🔄 État du modal de vérification d'email:", showEmailVerification);
+    console.log("📧 Email pour vérification:", userEmailForVerification);
+  }, [showEmailVerification, userEmailForVerification]);
 
   const onSubmit = async (formData) => {
     await authClient.signIn.email(formData, {
@@ -136,7 +145,9 @@ const LoginForm = () => {
           router.push("/dashboard");
         }
       },
-      onError: (error) => {
+      onError: async (error) => {
+        console.log("🔍 Erreur de connexion détectée:", error);
+        
         // Essayer différents formats d'erreur
         let errorMessage = null;
 
@@ -148,17 +159,65 @@ const LoginForm = () => {
           errorMessage = error;
         }
 
+        console.log("📝 Message d'erreur extrait:", errorMessage);
+
         // Vérifier si c'est une erreur de compte désactivé
         if (
           errorMessage &&
           (errorMessage.includes("désactivé") ||
             errorMessage.includes("réactivation"))
         ) {
+          console.log("🚫 Compte désactivé détecté");
           toast.error(errorMessage);
-        } else {
-          // Erreur générique pour les autres cas
-          toast.error("Erreur lors de la connexion");
+          return;
         }
+
+        // Vérifier si c'est une erreur de vérification d'email
+        if (
+          errorMessage &&
+          (errorMessage.includes("vérifier votre adresse email") ||
+            errorMessage.includes("email avant de vous connecter") ||
+            errorMessage.includes("Veuillez vérifier"))
+        ) {
+          console.log("📧 Erreur de vérification d'email détectée, ouverture du modal");
+          // L'utilisateur existe mais n'a pas vérifié son email
+          setUserEmailForVerification(formData.email);
+          setShowEmailVerification(true);
+          return;
+        }
+
+        // Vérifier si l'utilisateur existe mais n'a pas vérifié son email (fallback)
+        console.log("🔍 Vérification fallback pour:", formData.email);
+        if (formData.email) {
+          try {
+            const response = await fetch('/api/auth/check-user', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ email: formData.email }),
+            });
+
+            if (response.ok) {
+              const userData = await response.json();
+              console.log("👤 Données utilisateur:", userData);
+              
+              if (userData.exists && !userData.emailVerified) {
+                console.log("📧 Email non vérifié détecté via API, ouverture du modal");
+                // L'utilisateur existe mais n'a pas vérifié son email
+                setUserEmailForVerification(formData.email);
+                setShowEmailVerification(true);
+                return;
+              }
+            }
+          } catch (checkError) {
+            console.log("❌ Erreur lors de la vérification de l'utilisateur:", checkError);
+          }
+        }
+
+        // Erreur générique pour les autres cas
+        console.log("⚠️ Affichage erreur générique");
+        toast.error("Email ou mot de passe incorrect");
       },
     });
   };
@@ -304,6 +363,13 @@ const LoginForm = () => {
         isOpen={show2FA}
         onClose={() => setShow2FA(false)}
         onVerify={handleVerify2FA}
+      />
+
+      {/* Modal de vérification d'email */}
+      <EmailVerificationDialog
+        isOpen={showEmailVerification}
+        onClose={() => setShowEmailVerification(false)}
+        userEmail={userEmailForVerification}
       />
     </form>
   );
