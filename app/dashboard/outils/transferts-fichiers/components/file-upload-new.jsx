@@ -33,7 +33,6 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { Separator } from "@/src/components/ui/separator";
 import {
   IconClock,
-  IconMail,
   IconShield,
   IconSend,
   IconCreditCard,
@@ -85,7 +84,7 @@ const getFileIcon = (file) => {
 };
 
 export default function FileUploadNew() {
-  const maxSize = 10 * 1024 * 1024 * 1024; // 10GB
+  const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
   const maxFiles = 10;
 
   // Hooks
@@ -272,11 +271,28 @@ export default function FileUploadNew() {
 
   const handleCreateTransfer = async () => {
     try {
-      const result = await createTransfer(transferOptions);
+      // Convertir la durée d'expiration en jours
+      const expiryDays = (() => {
+        switch (transferOptions.expiration) {
+          case "24h": return 1;
+          case "48h": return 2;
+          case "7d": return 7;
+          case "30d": return 30;
+          default: return 7; // Par défaut 7 jours
+        }
+      })();
 
-      // Rediriger vers la page des transferts après création réussie
+      const transferOptionsWithDays = {
+        ...transferOptions,
+        expiryDays
+      };
+
+      const result = await createTransfer(transferOptionsWithDays);
+
+      // Rediriger vers la page des transferts avec les paramètres du lien après création réussie
       if (result && result.success) {
-        window.location.href = "/dashboard/outils/transferts-fichiers";
+        const { shareLink, accessKey } = result;
+        window.location.href = `/dashboard/outils/transferts-fichiers?shareLink=${shareLink}&accessKey=${accessKey}`;
       }
     } catch (error) {
       console.error("Error creating transfer:", error);
@@ -355,7 +371,7 @@ export default function FileUploadNew() {
               Glissez-déposez vos fichiers ou cliquez pour sélectionner
             </p>
             <p className="text-muted-foreground mb-2 text-xs">
-              Taille maximale : 10GB par fichier • Tous formats acceptés
+              Taille maximale : 5GB par fichier • Tous formats acceptés
             </p>
             <div className="text-muted-foreground/70 flex flex-wrap justify-center gap-1 text-xs">
               <span>Tous les fichiers</span>
@@ -455,29 +471,6 @@ export default function FileUploadNew() {
                 <SelectItem value="30d">30 jours</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-
-          <Separator />
-
-          {/* Email */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <IconMail className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-normal">
-                Email du destinataire
-              </Label>
-            </div>
-            <Input
-              type="email"
-              placeholder="destinataire@exemple.com"
-              value={transferOptions.recipientEmail}
-              onChange={(e) =>
-                handleOptionChange("recipientEmail", e.target.value)
-              }
-            />
-            <p className="text-xs text-muted-foreground">
-              Optionnel - Le destinataire recevra le lien par email
-            </p>
           </div>
 
           <Separator />

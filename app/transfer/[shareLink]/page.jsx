@@ -37,7 +37,28 @@ export default function TransferPage() {
   const paymentStatus = searchParams.get("payment_status");
 
   const [isDownloading, setIsDownloading] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState("");
   const confettiRef = useRef(null);
+
+  // Liste des images disponibles dans le dossier linkTransfert
+  const availableImages = [
+    "daniela-kokina-hOhlYhAiizc.png",
+    "lukasz-szmigiel-jFCViYFYcus.png",
+    "mark-basarab-1OtUkD_8svc.png",
+    "mourad-saadi-GyDktTa0Nmw.png"
+  ];
+
+  // Fonction pour sélectionner une image aléatoire
+  const getRandomBackgroundImage = () => {
+    const randomIndex = Math.floor(Math.random() * availableImages.length);
+    const selectedImage = availableImages[randomIndex];
+    return `/images/linkTransfert/${selectedImage}`;
+  };
+
+  // Sélectionner une image aléatoire au chargement
+  useEffect(() => {
+    setBackgroundImage(getRandomBackgroundImage());
+  }, []);
 
   // Hook pour gérer les paiements Stripe
   const { initiatePayment, isProcessing } = useStripePayment();
@@ -83,7 +104,7 @@ export default function TransferPage() {
 
       // Demander l'autorisation de téléchargement au serveur
       const authResponse = await fetch(
-        `${apiUrl}/api/transfers/${transfer?.fileTransfer?.id}/authorize`,
+        `${apiUrl}api/transfers/${transfer?.fileTransfer?.id}/authorize`,
         {
           method: "POST",
           headers: {
@@ -118,7 +139,7 @@ export default function TransferPage() {
       }
 
       // Utiliser la route proxy du serveur pour un vrai téléchargement
-      const proxyUrl = `${apiUrl}/api/files/download/${transfer?.fileTransfer?.id}/${fileId}`;
+      const proxyUrl = `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`;
 
       const a = document.createElement("a");
       a.href = proxyUrl;
@@ -131,7 +152,7 @@ export default function TransferPage() {
       // Marquer le téléchargement comme terminé
       if (downloadInfo.downloadEventId) {
         await fetch(
-          `${apiUrl}/api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
+          `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
           {
             method: "POST",
             headers: {
@@ -161,7 +182,7 @@ export default function TransferPage() {
 
       // Demander l'autorisation de téléchargement pour tous les fichiers
       const authResponse = await fetch(
-        `${apiUrl}/api/transfers/${transfer?.fileTransfer?.id}/authorize`,
+        `${apiUrl}api/transfers/${transfer?.fileTransfer?.id}/authorize`,
         {
           method: "POST",
           headers: {
@@ -407,36 +428,40 @@ export default function TransferPage() {
               </div>
             </CardContent>
           </Card>
-          <Separator />
-          {(transfer?.fileTransfer?.isPaymentRequired === true ||
-            (transfer?.fileTransfer?.paymentAmount &&
-              transfer?.fileTransfer?.paymentAmount > 0)) &&
-            !transfer?.fileTransfer?.isPaid && (
-              <Card className="mb-6 border-none shadow-none">
-                <CardContent className="p-0">
-                  <div className="flex item-center justify-between">
-                    <div className="flex flex-col">
-                      <h3 className="text-lg font-normal">Paiement requis</h3>
-                      <p className="mb-4 text-sm">
-                        Ce transfert nécessite un paiement de{" "}
-                        {transfer?.fileTransfer?.paymentAmount}{" "}
-                        {transfer?.fileTransfer?.paymentCurrency}
-                      </p>
+          {Boolean(
+            (transfer?.fileTransfer?.isPaymentRequired === true ||
+              (transfer?.fileTransfer?.paymentAmount &&
+                transfer?.fileTransfer?.paymentAmount > 0)) &&
+            !transfer?.fileTransfer?.isPaid
+          ) && (
+              <>
+                <Separator />
+                <Card className="mb-6 border-none shadow-none">
+                  <CardContent className="p-0">
+                    <div className="flex item-center justify-between">
+                      <div className="flex flex-col">
+                        <h3 className="text-lg font-normal">Paiement requis</h3>
+                        <p className="mb-4 text-sm">
+                          Ce transfert nécessite un paiement de{" "}
+                          {transfer?.fileTransfer?.paymentAmount}{" "}
+                          {transfer?.fileTransfer?.paymentCurrency}
+                        </p>
+                      </div>
+                      <Button
+                        className="cursor-pointer bg-[#5b4fff]/80 hover:bg-[#5b4fff]/90"
+                        onClick={() =>
+                          initiatePayment(transfer?.fileTransfer?.id)
+                        }
+                        disabled={isProcessing}
+                      >
+                        {isProcessing ? "Redirection..." : "Procéder au paiement"}
+                      </Button>
                     </div>
-                    <Button
-                      className="cursor-pointer bg-[#5b4fff]/80 hover:bg-[#5b4fff]/90"
-                      onClick={() =>
-                        initiatePayment(transfer?.fileTransfer?.id)
-                      }
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? "Redirection..." : "Procéder au paiement"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+                <Separator />
+              </>
             )}
-          <Separator />
           {/* ici tu fais les mdifs */}
           <Card className="shadow-none border-none">
             <CardHeader className="p-0">
@@ -581,7 +606,7 @@ export default function TransferPage() {
       <div className="hidden lg:flex w-1/2 p-3 items-center min-h-screen justify-center">
         <div
           className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
-          style={{ backgroundImage: "url('/BackgroundAuth.svg')" }}
+          style={{ backgroundImage: `url('${backgroundImage}')` }}
         >
           <div className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto">
             <div className="text-lg min-h-[27px] flex items-center justify-between">

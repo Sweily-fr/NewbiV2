@@ -141,32 +141,6 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
         size: 200,
       },
       {
-        accessorKey: "recipientEmail",
-        header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Destinataire
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </div>
-        ),
-        cell: ({ row }) => {
-          const transfer = row.original;
-          return transfer.recipientEmail ? (
-            <div className="flex items-center gap-1">
-              <IconUser size={14} className="text-muted-foreground" />
-              <span className="text-sm font-normal">
-                {transfer.recipientEmail}
-              </span>
-            </div>
-          ) : (
-            <span className="text-sm text-muted-foreground font-normal">-</span>
-          );
-        },
-        size: 200,
-      },
-      {
         accessorKey: "status",
         header: ({ column }) => (
           <div
@@ -201,7 +175,7 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
         size: 100,
       },
       {
-        accessorKey: "expiresAt",
+        accessorKey: "expiryDate",
         header: ({ column }) => (
           <div
             className="flex items-center cursor-pointer font-normal"
@@ -213,35 +187,19 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
         ),
         cell: ({ row }) => {
           const transfer = row.original;
-          if (!transfer.expiresAt) return "-";
-          const expirationDate = new Date(transfer.expiresAt);
+          if (!transfer.expiryDate) return "-";
+          const expirationDate = new Date(transfer.expiryDate);
           const isExpired = expirationDate < new Date();
           return (
             <div className={cn(isExpired && "text-destructive font-normal")}>
               <div className="font-normal">
                 {format(expirationDate, "dd/MM/yyyy", { locale: fr })}
               </div>
-              {isExpired && <div className="text-xs">Expiré</div>}
+              <div className="text-xs text-muted-foreground">
+                {format(expirationDate, "HH:mm", { locale: fr })}
+              </div>
+              {isExpired && <div className="text-xs text-red-600">Expiré</div>}
             </div>
-          );
-        },
-        size: 120,
-      },
-      {
-        accessorKey: "downloadCount",
-        header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Téléchargements
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </div>
-        ),
-        cell: ({ row }) => {
-          const transfer = row.original;
-          return (
-            <span className="font-normal">{transfer.downloadCount || 0}</span>
           );
         },
         size: 120,
@@ -351,24 +309,29 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
     .getFilteredSelectedRowModel()
     .rows.map((row) => row.original);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [transferToDelete, setTransferToDelete] = useState(null);
 
   const viewTransfer = (shareLink) => {
     window.open(`/dashboard/outils/transferts-fichiers/${shareLink}`, "_blank");
   };
 
   const handleDeleteTransfer = async (transferId) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce transfert ?")) {
-      setIsDeleting(true);
-      try {
-        await deleteTransfer(transferId);
-        toast.success("Transfert supprimé avec succès");
-        onRefresh?.();
-      } catch (error) {
-        console.error("Erreur lors de la suppression:", error);
-        toast.error("Erreur lors de la suppression du transfert");
-      } finally {
-        setIsDeleting(false);
-      }
+    setTransferToDelete(transferId);
+  };
+
+  const confirmDeleteTransfer = async () => {
+    if (!transferToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteTransfer(transferToDelete);
+      onRefresh?.();
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      toast.error("Erreur lors de la suppression du transfert");
+    } finally {
+      setIsDeleting(false);
+      setTransferToDelete(null);
     }
   };
 
@@ -424,7 +387,7 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteSelected}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="bg-destructive text-white hover:bg-destructive/90"
                   >
                     Supprimer
                   </AlertDialogAction>
@@ -434,6 +397,28 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
           )}
         </div>
       </div>
+
+      {/* AlertDialog pour suppression individuelle */}
+      <AlertDialog open={!!transferToDelete} onOpenChange={() => setTransferToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce transfert ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteTransfer}
+              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Table */}
       <div className="rounded-md border">

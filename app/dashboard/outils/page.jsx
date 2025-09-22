@@ -74,13 +74,13 @@ export default function Outils() {
         activité
       </p>
       <div className="flex flex-col gap-4 md:gap-6 pt-6 md:pt-8 w-full">
-        <div className="flex items-center justify-between gap-2 md:gap-4 w-full">
+        <div className="flex items-center justify-start gap-2 md:gap-4 w-full">
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="flex-1 flex-col justify-start gap-4 md:gap-6"
+            className="w-auto flex-col justify-start gap-4 md:gap-6"
           >
-            <TabsList className="grid w-full grid-cols-4 h-auto">
+            <TabsList className="grid w-auto grid-cols-4 h-auto">
               <TabsTrigger
                 value="outline"
                 className="font-normal text-xs md:text-sm px-2 md:px-3 py-2"

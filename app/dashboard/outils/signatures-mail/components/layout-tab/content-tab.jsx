@@ -40,7 +40,7 @@ export default function ContentTab() {
       />
       {/* <Separator /> */}
 
-      {/* <SaveSection /> */}
+      <SaveSection />
     </div>
   );
 }

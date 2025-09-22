@@ -60,7 +60,6 @@ export default function InvoiceRowActions({ row, onRefetch }) {
   const handleDelete = async () => {
     try {
       await deleteInvoice(invoice.id);
-      toast.success("Facture supprimée avec succès");
       if (onRefetch) onRefetch();
     } catch (error) {
       toast.error("Erreur lors de la suppression de la facture");
@@ -70,7 +69,6 @@ export default function InvoiceRowActions({ row, onRefetch }) {
   const handleCreateInvoice = async () => {
     try {
       await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
-      toast.success("Facture créée avec succès");
       if (onRefetch) onRefetch();
     } catch (error) {
       toast.error("Erreur lors de la création de la facture");
