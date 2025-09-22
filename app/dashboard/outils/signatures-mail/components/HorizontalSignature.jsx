@@ -156,7 +156,7 @@ const HorizontalSignature = ({
           {signatureData.separators?.vertical?.enabled && (
             <td
               style={{
-                width: `${signatureData.spacings?.verticalSeparatorLeft || 8}px`,
+                width: `${signatureData.spacings?.verticalSeparatorLeft ?? 8}px`,
               }}
             >
               &nbsp;
@@ -187,7 +187,7 @@ const HorizontalSignature = ({
           {signatureData.separators?.vertical?.enabled && (
             <td
               style={{
-                width: `${signatureData.spacings?.verticalSeparatorRight || 8}px`,
+                width: `${signatureData.spacings?.verticalSeparatorRight ?? 8}px`,
               }}
             >
               &nbsp;
@@ -198,7 +198,7 @@ const HorizontalSignature = ({
           <td
             style={{
               verticalAlign: "top",
-              paddingLeft: `${signatureData.spacings?.nameSpacing || 12}px`,
+              paddingLeft: `${signatureData.spacings?.nameSpacing ?? 12}px`,
             }}
           >
             <table
@@ -218,7 +218,7 @@ const HorizontalSignature = ({
                     colSpan="2"
                     style={{
                       textAlign: signatureData.nameAlignment || "left",
-                      paddingBottom: `${signatureData.spacings?.nameBottom || 2}px`,
+                      paddingBottom: `${signatureData.spacings?.nameBottom ?? 2}px`,
                     }}
                   >
                     <div
@@ -300,7 +300,7 @@ const HorizontalSignature = ({
                           signatureData.typography?.position?.textDecoration ||
                           "none",
                         paddingTop: "2px",
-                        paddingBottom: `${signatureData.spacings?.positionBottom || 4}px`,
+                        paddingBottom: `${signatureData.spacings?.positionBottom ?? 4}px`,
                       }}
                     >
                       <InlineEdit
@@ -361,7 +361,7 @@ const HorizontalSignature = ({
                           signatureData.typography?.company?.textDecoration ||
                           "none",
                         paddingTop: "2px",
-                        paddingBottom: `${signatureData.spacings?.companyBottom || 8}px`,
+                        paddingBottom: `${signatureData.spacings?.companyBottom ?? 8}px`,
                       }}
                     >
                       <InlineEdit
@@ -404,7 +404,7 @@ const HorizontalSignature = ({
                       colSpan="2"
                       style={{
                         paddingTop: "4px",
-                        paddingBottom: `${signatureData.spacings?.phoneToMobile || 4}px`,
+                        paddingBottom: `${signatureData.spacings?.phoneToMobile ?? 4}px`,
                       }}
                     >
                       <table
@@ -503,7 +503,7 @@ const HorizontalSignature = ({
                       colSpan="2"
                       style={{
                         paddingTop: "4px",
-                        paddingBottom: `${signatureData.spacings?.mobileToEmail || 4}px`,
+                        paddingBottom: `${signatureData.spacings?.mobileToEmail ?? 4}px`,
                       }}
                     >
                       <table
@@ -603,7 +603,7 @@ const HorizontalSignature = ({
                       colSpan="2"
                       style={{
                         paddingTop: "4px",
-                        paddingBottom: `${signatureData.spacings?.emailToWebsite || 4}px`,
+                        paddingBottom: `${signatureData.spacings?.emailToWebsite ?? 4}px`,
                       }}
                     >
                       <table
@@ -702,7 +702,7 @@ const HorizontalSignature = ({
                       colSpan="2"
                       style={{
                         paddingTop: "4px",
-                        paddingBottom: `${signatureData.spacings?.websiteToAddress || 4}px`,
+                        paddingBottom: `${signatureData.spacings?.websiteToAddress ?? 4}px`,
                       }}
                     >
                       <table
@@ -802,7 +802,7 @@ const HorizontalSignature = ({
                       colSpan="2"
                       style={{
                         paddingTop: "4px",
-                        paddingBottom: `${signatureData.spacings?.contactBottom || 8}px`,
+                        paddingBottom: `${signatureData.spacings?.contactBottom ?? 8}px`,
                       }}
                     >
                       <table
@@ -886,8 +886,8 @@ const HorizontalSignature = ({
             <td
               colSpan={signatureData.separators?.vertical?.enabled ? "5" : "2"}
               style={{
-                paddingTop: `${signatureData.spacings?.separatorTop || 12}px`,
-                paddingBottom: `${signatureData.spacings?.separatorBottom || 12}px`,
+                paddingTop: `${signatureData.spacings?.separatorTop ?? 12}px`,
+                paddingBottom: `${signatureData.spacings?.separatorBottom ?? 12}px`,
               }}
             >
               <hr
@@ -969,7 +969,7 @@ const HorizontalSignature = ({
             <td
               colSpan={signatureData.separators?.vertical?.enabled ? "5" : "2"}
               style={{
-                paddingTop: `${signatureData.spacings?.logoToSocial || 15}px`,
+                paddingTop: `${signatureData.spacings?.logoToSocial ?? 15}px`,
                 textAlign: "left",
               }}
             >

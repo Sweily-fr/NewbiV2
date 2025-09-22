@@ -97,38 +97,16 @@ export function TabSignature({ existingSignatureId = null }) {
   const [createSignature, { loading: creating }] = useMutation(
     CREATE_EMAIL_SIGNATURE,
     {
-      update: (cache, { data }) => {
-        if (data?.createEmailSignature) {
-          // Lire les données existantes du cache
-          const existingData = cache.readQuery({
-            query: GET_MY_EMAIL_SIGNATURES,
-          });
-
-          if (existingData?.getMyEmailSignatures) {
-            // Ajouter la nouvelle signature à la liste
-            cache.writeQuery({
-              query: GET_MY_EMAIL_SIGNATURES,
-              data: {
-                getMyEmailSignatures: [
-                  ...existingData.getMyEmailSignatures,
-                  data.createEmailSignature,
-                ],
-              },
-            });
-          }
-        }
-      },
+      refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES }],
       onCompleted: (data) => {
-        toast.success("Signature créée avec succès !");
-
-        // Redirection après un court délai pour laisser voir la notification
-        setTimeout(() => {
-          router.push("/dashboard/outils/signatures-mail");
-        }, 1500);
+        console.log("✅ Signature créée:", data.createEmailSignature);
+        setSaveStatus("success");
+        setTimeout(() => setSaveStatus(null), 3000);
       },
       onError: (error) => {
         console.error("❌ Erreur création:", error);
-        toast.error("Erreur lors de la création de la signature");
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus(null), 3000);
       },
     }
   );
@@ -136,31 +114,7 @@ export function TabSignature({ existingSignatureId = null }) {
   const [updateSignature, { loading: updating }] = useMutation(
     UPDATE_EMAIL_SIGNATURE,
     {
-      update: (cache, { data }) => {
-        if (data?.updateEmailSignature) {
-          // Lire les données existantes du cache
-          const existingData = cache.readQuery({
-            query: GET_MY_EMAIL_SIGNATURES,
-          });
-
-          if (existingData?.getMyEmailSignatures) {
-            // Mettre à jour la signature dans la liste
-            const updatedSignatures = existingData.getMyEmailSignatures.map(
-              (sig) =>
-                sig.id === data.updateEmailSignature.id
-                  ? data.updateEmailSignature
-                  : sig
-            );
-
-            cache.writeQuery({
-              query: GET_MY_EMAIL_SIGNATURES,
-              data: {
-                getMyEmailSignatures: updatedSignatures,
-              },
-            });
-          }
-        }
-      },
+      refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES }],
       onCompleted: (data) => {
         toast.success("Signature mise à jour avec succès !");
 
