@@ -17,6 +17,7 @@ import { Save } from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_BOARD } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useSearchParams } from "next/navigation";
 
 // Composant bouton de sauvegarde pour les signatures
 const SignatureSaveButton = () => {
@@ -45,6 +46,7 @@ const SignatureSaveButton = () => {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { workspaceId } = useWorkspace();
 
   // Détecter si on est sur une page Kanban avec ID
@@ -76,6 +78,16 @@ export function SiteHeader() {
       if (isLastSegment && isKanbanPage && kanbanData?.board?.title) {
         formattedSegment = kanbanData.board.title;
       }
+      
+      // Si c'est le dernier segment "new" sur la page signatures-mail et qu'on a le paramètre edit=true
+      const isSignatureEditMode = isLastSegment && 
+                                  segment === "new" && 
+                                  pathname?.includes("/signatures-mail/") && 
+                                  searchParams?.get("edit") === "true";
+      
+      if (isSignatureEditMode) {
+        formattedSegment = "Éditer";
+      }
 
       // Pour le dernier segment, on retourne juste un BreadcrumbItem avec BreadcrumbPage
       if (isLastSegment) {
@@ -101,7 +113,7 @@ export function SiteHeader() {
         </React.Fragment>
       );
     });
-  }, [pathname, kanbanData]); // Dépendance sur pathname et kanbanData
+  }, [pathname, kanbanData, searchParams]); // Dépendance sur pathname, kanbanData et searchParams
 
   return (
     <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">

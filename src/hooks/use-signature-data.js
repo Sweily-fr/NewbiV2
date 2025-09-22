@@ -222,6 +222,7 @@ function SignatureProviderContent({ children }) {
           setSignatureData(mergedData);
 
           // Stocker l'ID de la signature en cours d'édition
+          console.log("🔍 useSignatureData - ID de signature en édition:", parsedData.id);
           setEditingSignatureId(parsedData.id);
 
           // Nettoyer localStorage après chargement
