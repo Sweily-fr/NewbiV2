@@ -1,6 +1,6 @@
 "use client";
 
-import { UserRoundPlusIcon } from "lucide-react";
+import { UserRoundPlusIcon, Search, Building, Loader2, ExternalLink } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
 import {
@@ -22,10 +22,14 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Checkbox } from "@/src/components/ui/checkbox";
+import { Badge } from "@/src/components/ui/badge";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { useCreateClient, useUpdateClient } from "@/src/hooks/useClients";
 import { useState, useEffect } from "react";
+
+// Import API Gouv utilities
+import { searchCompanies, convertCompanyToClient } from "@/src/utils/api-gouv";
 
 export default function ClientsModal({ client, onSave, open, onOpenChange }) {
   const { createClient, loading: createLoading } = useCreateClient();
@@ -67,6 +71,13 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
   const [hasDifferentShipping, setHasDifferentShipping] = useState(false);
   const clientType = watch("type");
+
+  // États pour la recherche d'entreprises via API Gouv
+  const [companyQuery, setCompanyQuery] = useState("");
+  const [debouncedCompanyQuery, setDebouncedCompanyQuery] = useState("");
+  const [companies, setCompanies] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [showCompanySearch, setShowCompanySearch] = useState(false);
 
   // Mettre à jour le formulaire quand le client change
   useEffect(() => {
@@ -121,6 +132,93 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
       setHasDifferentShipping(false);
     }
   }, [client, reset]);
+
+  // Debounce company search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCompanyQuery(companyQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [companyQuery]);
+
+  // Recherche d'entreprises via API Gouv Data
+  useEffect(() => {
+    if (!debouncedCompanyQuery || debouncedCompanyQuery.length < 2) {
+      setCompanies([]);
+      return;
+    }
+
+    const searchApiGouv = async () => {
+      setLoadingCompanies(true);
+      try {
+        const results = await searchCompanies(debouncedCompanyQuery, 8);
+        setCompanies(results);
+      } catch (error) {
+        console.error("Erreur recherche API Gouv:", error);
+        toast.error("Erreur lors de la recherche d'entreprises");
+        setCompanies([]);
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+
+    searchApiGouv();
+  }, [debouncedCompanyQuery]);
+
+  // Réinitialiser la recherche quand on change de type
+  useEffect(() => {
+    if (clientType !== "COMPANY") {
+      setShowCompanySearch(false);
+      setCompanyQuery("");
+      setCompanies([]);
+    }
+  }, [clientType]);
+
+  // Fonction pour calculer le numéro de TVA français à partir du SIREN
+  const calculateFrenchVAT = (siren) => {
+    if (!siren || siren.length !== 9) return '';
+    const key = (12 + 3 * (parseInt(siren) % 97)) % 97;
+    return `FR${key.toString().padStart(2, '0')}${siren}`;
+  };
+
+  // Fonction pour sélectionner une entreprise de l'API Gouv
+  const handleCompanySelect = (company) => {
+    try {
+      // Convertir l'entreprise en format client
+      const clientData = convertCompanyToClient(company);
+      
+      // Calculer le numéro de TVA automatiquement
+      if (company.id) {
+        clientData.vatNumber = calculateFrenchVAT(company.id);
+      }
+
+      // Remplir le formulaire avec les données de l'entreprise
+      reset({
+        type: "COMPANY",
+        name: clientData.name,
+        firstName: "",
+        lastName: "",
+        email: "", // À compléter manuellement
+        address: clientData.address,
+        shippingAddress: clientData.shippingAddress,
+        siret: clientData.siret,
+        vatNumber: clientData.vatNumber,
+      });
+
+      // Masquer la recherche et afficher le formulaire pré-rempli
+      setShowCompanySearch(false);
+      setCompanyQuery("");
+      setCompanies([]);
+
+      // Notification de succès
+      toast.success(`Entreprise "${company.name}" importée avec succès`);
+
+    } catch (error) {
+      console.error("Erreur lors de l'import de l'entreprise:", error);
+      toast.error("Erreur lors de l'import de l'entreprise");
+    }
+  };
 
   const onSubmit = async (formData) => {
     try {
@@ -199,9 +297,148 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                 />
               </div>
 
+              {/* Recherche d'entreprises via API Gouv Data */}
+              {clientType === "COMPANY" && !showCompanySearch && (
+                <div className="space-y-3 p-4 border rounded-lg bg-blue-50 border-blue-200">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <Building className="h-4 w-4" />
+                    <span className="font-medium text-sm">Rechercher une entreprise française</span>
+                  </div>
+                  <p className="text-xs text-blue-600">
+                    Importez automatiquement les informations d'une entreprise depuis la base officielle
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCompanySearch(true)}
+                    className="w-full h-9 text-sm border-blue-300 hover:bg-blue-100"
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Rechercher via API Data.gouv
+                  </Button>
+                </div>
+              )}
+
+              {/* Interface de recherche d'entreprises */}
+              {clientType === "COMPANY" && showCompanySearch && (
+                <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Building className="h-4 w-4 text-primary" />
+                      <Label className="font-medium">Rechercher une entreprise</Label>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowCompanySearch(false);
+                        setCompanyQuery("");
+                        setCompanies([]);
+                      }}
+                      className="h-8 w-8 p-0"
+                    >
+                      ×
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Input
+                        value={companyQuery}
+                        onChange={(e) => setCompanyQuery(e.target.value)}
+                        placeholder="Nom d'entreprise, SIRET, SIREN..."
+                        className="h-9 text-sm pl-10"
+                      />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Recherchez une entreprise française via la base de données officielle
+                    </p>
+                  </div>
+
+                  {/* Résultats de recherche */}
+                  {loadingCompanies && (
+                    <div className="flex items-center justify-center p-6">
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      <span className="text-sm">Recherche en cours...</span>
+                    </div>
+                  )}
+
+                  {companies.length > 0 && (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {companies.map((company) => (
+                        <div
+                          key={company.id}
+                          className="p-3 border rounded-lg hover:bg-white cursor-pointer transition-colors"
+                          onClick={() => handleCompanySelect(company)}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Building className="h-4 w-4 text-primary flex-shrink-0" />
+                                <h4 className="font-medium text-sm truncate">
+                                  {company.name}
+                                </h4>
+                                {company.status === "A" && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs bg-green-50 text-green-700 border-green-200"
+                                  >
+                                    Active
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground">
+                                  <strong>SIRET:</strong> {company.siret}
+                                </p>
+                                {company.address && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    <strong>Adresse:</strong> {company.address}, {company.postalCode} {company.city}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {companyQuery && !loadingCompanies && companies.length === 0 && (
+                    <div className="text-center p-6 text-muted-foreground">
+                      <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">
+                        Aucune entreprise trouvée pour "{companyQuery}"
+                      </p>
+                      <p className="text-xs mt-1">
+                        Essayez avec un nom d'entreprise ou un SIRET
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowCompanySearch(false);
+                        setCompanyQuery("");
+                        setCompanies([]);
+                      }}
+                      className="w-full h-9 text-sm"
+                    >
+                      Saisir manuellement
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Nom/Raison sociale */}
               {/* Raison sociale uniquement pour les entreprises */}
-              {clientType === "COMPANY" && (
+              {clientType === "COMPANY" && !showCompanySearch && (
                 <div className="space-y-2">
                   <Label>Raison sociale *</Label>
                   <Input
@@ -336,12 +573,9 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
               {/* Adresse de facturation */}
               <div className="space-y-3 py-2">
-                <Label className="text-base font-medium">
-                  Adresse de facturation
-                </Label>
 
                 <div className="space-y-2">
-                  <Label>Adresse</Label>
+                  <Label> Adresse de facturation</Label>
                   <Textarea
                     placeholder="123 Rue de la Paix"
                     {...register("address.street")}
@@ -423,28 +657,6 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               {/* Adresse de livraison */}
               {hasDifferentShipping && (
                 <div className="space-y-3 border-l-2 border-gray-200 pl-4">
-                  <Label className="text-base font-medium">
-                    Adresse de livraison
-                  </Label>
-
-                  <div className="space-y-2">
-                    <Label>Nom complet</Label>
-                    <Input
-                      placeholder="Nom complet du destinataire"
-                      {...register("shippingAddress.fullName", {
-                        pattern: {
-                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,100}$/,
-                          message:
-                            "Le nom complet doit contenir entre 2 et 100 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                        },
-                      })}
-                    />
-                    {errors.shippingAddress?.fullName && (
-                      <p className="text-sm text-red-500">
-                        {errors.shippingAddress.fullName.message}
-                      </p>
-                    )}
-                  </div>
 
                   <div className="space-y-2">
                     <Label>Adresse</Label>

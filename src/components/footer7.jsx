@@ -233,7 +233,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="mentions-legales"
+                      href="/mentions-legales"
                     >
                       Mentions légales
                     </a>
@@ -241,7 +241,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="politique-de-confidentialite"
+                      href="/politique-de-confidentialite"
                     >
                       Politique de confidentialité
                     </a>
@@ -249,7 +249,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="cgv"
+                      href="/cgv"
                     >
                       CGV
                     </a>
@@ -257,7 +257,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="cookies"
+                      href="/cookies"
                     >
                       Cookies
                     </a>

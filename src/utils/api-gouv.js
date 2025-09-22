@@ -19,32 +19,29 @@ export async function searchCompanies(query, limit = 10) {
     const url = new URL(API_GOUV_BASE_URL);
     url.searchParams.append('q', query.trim());
     url.searchParams.append('limite', limit.toString());
-    url.searchParams.append('activite_principale', 'true');
-    url.searchParams.append('adresse', 'true');
-    url.searchParams.append('dirigeants', 'true');
 
     const response = await fetch(url.toString());
     
     if (!response.ok) {
-      throw new Error(`Erreur API: ${response.status}`);
+      throw new Error(`Erreur API: ${response.status} - ${response.statusText}`);
     }
 
     const data = await response.json();
     
     return data.results?.map(company => ({
       id: company.siren,
-      siret: company.siret,
+      siret: company.siege?.siret || '',
       name: company.nom_complet || company.nom_raison_sociale,
       legalName: company.nom_raison_sociale,
       address: company.siege?.adresse || '',
       postalCode: company.siege?.code_postal || '',
       city: company.siege?.libelle_commune || '',
       activityCode: company.activite_principale,
-      activityLabel: company.libelle_activite_principale,
+      activityLabel: '', // Non disponible dans cette API
       status: company.etat_administratif,
       creationDate: company.date_creation,
-      employees: company.tranche_effectif_salarie?.intitule,
-      vatNumber: company.numero_tva_intra,
+      employees: company.tranche_effectif_salarie || '',
+      vatNumber: '', // Non disponible dans cette API
       // Données brutes pour debug
       raw: company
     })) || [];

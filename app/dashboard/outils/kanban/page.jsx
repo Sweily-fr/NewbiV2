@@ -53,6 +53,7 @@ import { useKanbanBoards } from "./hooks/useKanbanBoards";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client";
 import { KanbanBoardIllustration } from "@/src/components/kanban-board-illustration";
+import { KanbanSkeletonAdaptive } from "@/src/components/kanban-skeleton";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -75,6 +76,8 @@ export default function KanbanPage() {
     // Data & Loading States
     boards,
     loading,
+    queryLoading,
+    isInitialLoading,
     creating,
     updating,
     deleting,
@@ -190,7 +193,10 @@ export default function KanbanPage() {
       </div>
 
       {/* Boards Grid */}
-      {boards?.length === 0 ? (
+      {isInitialLoading ? (
+        // Afficher le skeleton pendant le chargement initial de la page
+        <KanbanSkeletonAdaptive />
+      ) : boards?.length === 0 ? (
         <div className="text-center py-12">
           {!searchTerm ? (
             <>
