@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useMutation } from "@apollo/client";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   GET_BOARD,
   CREATE_COLUMN,
@@ -9,6 +10,7 @@ import {
 } from "@/src/graphql/kanbanQueries";
 
 export const useKanbanColumns = (boardId, refetchBoard) => {
+  const { workspaceId } = useWorkspace();
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
   const [isEditColumnOpen, setIsEditColumnOpen] = useState(false);
   const [isDeleteColumnDialogOpen, setIsDeleteColumnDialogOpen] =
@@ -21,13 +23,14 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
   const [createColumn, { loading: createLoading }] = useMutation(
     CREATE_COLUMN,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
+      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
         toast.success("Colonne créée avec succès");
         setIsAddColumnOpen(false);
         setColumnForm({ title: "", color: "#3b82f6" });
       },
       onError: (error) => {
+        console.error("Erreur lors de la création de la colonne:", error);
         toast.error("Erreur lors de la création de la colonne");
       },
     }
@@ -36,7 +39,7 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
   const [updateColumn, { loading: updateLoading }] = useMutation(
     UPDATE_COLUMN,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
+      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
         toast.success("Colonne modifiée avec succès");
         setIsEditColumnOpen(false);
@@ -44,6 +47,7 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
         setColumnForm({ title: "", color: "#3b82f6" });
       },
       onError: (error) => {
+        console.error("Erreur lors de la modification de la colonne:", error);
         toast.error("Erreur lors de la modification de la colonne");
       },
     }
@@ -52,11 +56,12 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
   const [deleteColumn, { loading: deleteLoading }] = useMutation(
     DELETE_COLUMN,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
+      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
         toast.success("Colonne supprimée avec succès");
       },
       onError: (error) => {
+        console.error("Erreur lors de la suppression de la colonne:", error);
         toast.error("Erreur lors de la suppression de la colonne");
       },
     }
@@ -97,6 +102,7 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
             boardId: boardId,
             order: newOrder,
           },
+          workspaceId,
         },
       });
     } catch (error) {
@@ -119,6 +125,7 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
             title: columnForm.title,
             color: columnForm.color,
           },
+          workspaceId,
         },
       });
     } catch (error) {
@@ -140,6 +147,7 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
       await deleteColumn({
         variables: {
           id: columnId,
+          workspaceId,
         },
       });
       setIsDeleteColumnDialogOpen(false);

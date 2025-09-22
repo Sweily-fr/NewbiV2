@@ -336,12 +336,9 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
               {/* Adresse de facturation */}
               <div className="space-y-3 py-2">
-                <Label className="text-base font-medium">
-                  Adresse de facturation
-                </Label>
 
                 <div className="space-y-2">
-                  <Label>Adresse</Label>
+                  <Label> Adresse de facturation</Label>
                   <Textarea
                     placeholder="123 Rue de la Paix"
                     {...register("address.street")}
@@ -423,28 +420,6 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               {/* Adresse de livraison */}
               {hasDifferentShipping && (
                 <div className="space-y-3 border-l-2 border-gray-200 pl-4">
-                  <Label className="text-base font-medium">
-                    Adresse de livraison
-                  </Label>
-
-                  <div className="space-y-2">
-                    <Label>Nom complet</Label>
-                    <Input
-                      placeholder="Nom complet du destinataire"
-                      {...register("shippingAddress.fullName", {
-                        pattern: {
-                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,100}$/,
-                          message:
-                            "Le nom complet doit contenir entre 2 et 100 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                        },
-                      })}
-                    />
-                    {errors.shippingAddress?.fullName && (
-                      <p className="text-sm text-red-500">
-                        {errors.shippingAddress.fullName.message}
-                      </p>
-                    )}
-                  </div>
 
                   <div className="space-y-2">
                     <Label>Adresse</Label>
