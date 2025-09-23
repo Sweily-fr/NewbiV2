@@ -33,33 +33,62 @@ export default function Outils() {
   if (loading || !session?.user) {
     return (
       <div className="flex flex-col p-4 md:p-6 md:py-6">
+        {/* Skeleton du titre */}
         <Skeleton className="h-6 md:h-8 w-24 md:w-32 mb-2 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
-        <div className="flex flex-col gap-6 pt-8 w-full">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 w-full">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="border-0 shadow-sm p-2 rounded-lg">
-                <div className="flex flex-row h-full">
-                  <div className="flex flex-col p-2 flex-1 justify-between">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Skeleton className="h-7 w-7 bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
-                      </div>
-                      <div className="space-y-3">
-                        <Skeleton className="h-5 w-24 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
-                        <Skeleton className="h-4 w-32 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+        <Skeleton className="h-3 md:h-4 w-48 md:w-64 mb-6 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+        
+        {/* Skeleton des tabs */}
+        <div className="flex items-center gap-2 mb-6">
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-8 w-16 md:w-20 bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
+            ))}
+          </div>
+        </div>
+
+        {/* Skeleton des cards */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 w-full">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="border border-gray-200 bg-gray-50 shadow-none relative overflow-hidden rounded-xl">
+              {/* GridBackground skeleton */}
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `
+                    linear-gradient(to right, rgba(0,0,0,0.02) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0,0,0,0.02) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "20px 20px",
+                }} />
+              </div>
+              
+              <div className="p-4 relative z-10">
+                <div className="flex items-start justify-between h-full min-h-[140px]">
+                  {/* Partie gauche avec contenu */}
+                  <div className="flex flex-col justify-end h-full pr-4 flex-1">
+                    {/* Header avec titre et description */}
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Skeleton className="h-6 w-32 md:w-40 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+                        <Skeleton className="h-4 w-48 md:w-56 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+                        <Skeleton className="h-4 w-40 md:w-48 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
                       </div>
                     </div>
-                    <div className="pt-6">
-                      <Skeleton className="h-4 w-16 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+
+                    {/* Actions en bas */}
+                    <div className="flex items-center gap-3 pt-4">
+                      <Skeleton className="h-8 w-16 bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
+                      <Skeleton className="h-8 w-20 bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
                     </div>
                   </div>
-                  <div className="w-1/2 rounded-xl m-1 p-2">
-                    <Skeleton className="h-full w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-xl" />
+
+                  {/* Partie droite avec illustration */}
+                  <div className="flex-shrink-0 w-36 h-36 flex items-center justify-center relative">
+                    <Skeleton className="w-full h-full bg-[#EBEBEB] dark:bg-[#292929] rounded-xl" />
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     );
