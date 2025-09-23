@@ -150,11 +150,9 @@ function DashboardContent() {
   // Utiliser les vraies données financières
 
   return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-4 md:p-6">
+    <div className="flex flex-col gap-4 py-4 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
       <div className="flex items-center justify-between w-full mb-4 md:mb-6">
-        <p className="text-xl md:text-2xl font-medium">
-          Bonjour {session?.user?.name},
-        </p>
+        <h1 className="text-2xl font-medium">Bonjour {session?.user?.name},</h1>
         {/* <BankingConnectButton /> */}
       </div>
       <div className="flex flex-col gap-3 w-full">
@@ -163,87 +161,84 @@ function DashboardContent() {
           placeholder="Rechercher des transactions ou lancer une action"
           commandPlaceholder="Rechercher des transactions ou lancer une action"
         />
-        <div className="flex flex-wrap gap-2 md:gap-3 w-full">
-          <Button
-            className="cursor-pointer font-polysans font-normal flex-1 min-w-0 md:flex-none"
-            variant="outline"
-            size="sm"
-            asChild
-          >
-            <a
-              href="/dashboard/outils/gestion-depenses"
-              className="flex items-center gap-1 md:gap-2 justify-center"
+        {/* Conteneur avec scroll horizontal sur mobile, flex-wrap sur desktop */}
+        <div className="overflow-x-auto md:overflow-x-visible w-full scrollbar-hide">
+          <div className="flex gap-2 md:gap-3 md:flex-wrap w-max md:w-full">
+            <Button
+              className="cursor-pointer font-polysans font-normal whitespace-nowrap md:flex-1 md:min-w-0"
+              variant="outline"
+              size="sm"
+              asChild
             >
-              <CloudUpload className="w-4 h-4" />
-              <span className="text-xs md:text-xs truncate">
-                Créer une transaction
-              </span>
-            </a>
-          </Button>
-          <Button
-            className="cursor-pointer font-polysans font-normal flex-1 min-w-0 md:flex-none"
-            variant="outline"
-            size="sm"
-            asChild
-          >
-            <a
-              href="/dashboard/outils/factures/new"
-              className="flex items-center gap-1 md:gap-2 justify-center"
+              <a
+                href="/dashboard/outils/gestion-depenses"
+                className="flex items-center gap-1 md:gap-2 justify-center"
+              >
+                <CloudUpload className="w-4 h-4" />
+                <span className="text-xs md:text-xs">
+                  Créer une transaction
+                </span>
+              </a>
+            </Button>
+            <Button
+              className="cursor-pointer font-polysans font-normal whitespace-nowrap md:flex-1 md:min-w-0"
+              variant="outline"
+              size="sm"
+              asChild
             >
-              <FileCheck2 className="w-4 h-4" />
-              <span className="text-xs md:text-xs truncate">
-                Créer une facture
-              </span>
-            </a>
-          </Button>
-          <Button
-            className="cursor-pointer font-polysans font-normal flex-1 min-w-0 md:flex-none"
-            variant="outline"
-            size="sm"
-            asChild
-          >
-            <a
-              href="/dashboard/outils/gestion-depenses"
-              className="flex items-center gap-1 md:gap-2 justify-center"
+              <a
+                href="/dashboard/outils/factures/new"
+                className="flex items-center gap-1 md:gap-2 justify-center"
+              >
+                <FileCheck2 className="w-4 h-4" />
+                <span className="text-xs md:text-xs">Créer une facture</span>
+              </a>
+            </Button>
+            <Button
+              className="cursor-pointer font-polysans font-normal whitespace-nowrap md:flex-1 md:min-w-0"
+              variant="outline"
+              size="sm"
+              asChild
             >
-              <Download className="w-4 h-4" />
-              <span className="text-xs md:text-xs truncate">
-                Importer des reçus
-              </span>
-            </a>
-          </Button>
-          <Button
-            className="cursor-pointer font-polysans font-normal flex-1 min-w-0 md:flex-none"
-            variant="outline"
-            size="sm"
-            asChild
-          >
-            <a
-              href="/dashboard/outils/devis/new"
-              className="flex items-center gap-1 md:gap-2 justify-center"
+              <a
+                href="/dashboard/outils/gestion-depenses"
+                className="flex items-center gap-1 md:gap-2 justify-center"
+              >
+                <Download className="w-4 h-4" />
+                <span className="text-xs md:text-xs">Importer des reçus</span>
+              </a>
+            </Button>
+            <Button
+              className="cursor-pointer font-polysans font-normal whitespace-nowrap md:flex-1 md:min-w-0"
+              variant="outline"
+              size="sm"
+              asChild
             >
-              <FileClock className="w-4 h-4" />
-              <span className="text-xs md:text-xs truncate">
-                Créer un devis
-              </span>
-            </a>
-          </Button>
-          <Button
-            className="cursor-pointer font-polysans font-normal flex-1 min-w-0 md:flex-none"
-            variant="outline"
-            size="sm"
-            asChild
-          >
-            <a
-              href="/dashboard/outils/transferts-fichiers/new"
-              className="flex items-center gap-1 md:gap-2 justify-center"
+              <a
+                href="/dashboard/outils/devis/new"
+                className="flex items-center gap-1 md:gap-2 justify-center"
+              >
+                <FileClock className="w-4 h-4" />
+                <span className="text-xs md:text-xs">Créer un devis</span>
+              </a>
+            </Button>
+            <Button
+              className="cursor-pointer font-polysans font-normal whitespace-nowrap md:flex-1 md:min-w-0"
+              variant="outline"
+              size="sm"
+              asChild
             >
-              <Send className="w-4 h-4" />
-              <span className="text-xs md:text-xs truncate">
-                Transférer un fichier
-              </span>
-            </a>
-          </Button>
+              <a
+                href="/dashboard/outils/transferts-fichiers/new"
+                className="flex items-center gap-1 md:gap-2 justify-center"
+              >
+                <Send className="w-4 h-4" />
+                <span className="text-xs md:text-xs">
+                  Transférer un fichier
+                </span>
+              </a>
+            </Button>
+          </div>
         </div>
       </div>
       <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full mt-4">

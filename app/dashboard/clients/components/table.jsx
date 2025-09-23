@@ -360,9 +360,11 @@ export default function TableClients({ handleAddUser }) {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <>
+      {/* Desktop Layout */}
+      <div className="hidden md:block space-y-4">
+        {/* Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           {/* Filter by name or email */}
           <div className="relative">
@@ -802,14 +804,244 @@ export default function TableClients({ handleAddUser }) {
         </div>
       </div>
 
-      {/* Modal d'édition */}
-      <ClientsModal
-        client={editingClient}
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        onSave={handleSaveClient}
-      />
-    </div>
+        {/* Modal d'édition */}
+        <ClientsModal
+          client={editingClient}
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSave={handleSaveClient}
+        />
+      </div>
+
+      {/* Mobile Layout - Style Notion */}
+      <div className="md:hidden">
+        {/* Mobile Toolbar - Style Notion */}
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-3">
+            {/* Search Input */}
+            <div className="flex-1 relative">
+              <Input
+                placeholder="Rechercher des clients..."
+                value={globalFilter}
+                onChange={(e) => {
+                  setGlobalFilter(e.target.value);
+                  table.getColumn("name")?.setFilterValue(e.target.value);
+                }}
+                className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
+              />
+            </div>
+            
+            {/* Filter Button - Icon only */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto min-w-36 p-3" align="end">
+                <div className="space-y-3">
+                  <div className="text-muted-foreground text-xs font-normal">
+                    Filtrer par type
+                  </div>
+                  <div className="space-y-3">
+                    {uniqueTypeValues.map((value, i) => (
+                      <div key={value} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`mobile-${id}-${i}`}
+                          checked={selectedTypes.includes(value)}
+                          onCheckedChange={(checked) =>
+                            handleTypeChange(checked, value)
+                          }
+                        />
+                        <Label
+                          htmlFor={`mobile-${id}-${i}`}
+                          className="flex grow justify-between gap-2 font-normal"
+                        >
+                          {value === "INDIVIDUAL" ? "Particulier" : "Entreprise"}{" "}
+                          <span className="text-muted-foreground ms-2 text-xs">
+                            {typeCounts.get(value)}
+                          </span>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Sort Button - Icon only */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <Columns3Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            </Button>
+
+            {/* Add Client Button - Icon only */}
+            <Button
+              variant="default"
+              size="sm"
+              className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
+              onClick={handleAddUser}
+            >
+              <PlusIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Table - Mobile style (Notion-like) */}
+        <div className="overflow-x-auto">
+          <Table className="w-max">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow
+                  key={headerGroup.id}
+                  className="border-b border-gray-100 dark:border-gray-400"
+                >
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }}
+                      className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                    >
+                      {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                        <div
+                          className={cn(
+                            header.column.getCanSort() &&
+                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
+                          )}
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {{
+                            asc: (
+                              <ChevronUpIcon
+                                className="shrink-0 opacity-60"
+                                size={16}
+                                aria-hidden="true"
+                              />
+                            ),
+                            desc: (
+                              <ChevronDownIcon
+                                className="shrink-0 opacity-60"
+                                size={16}
+                                aria-hidden="true"
+                              />
+                            ),
+                          }[header.column.getIsSorted()] ?? null}
+                        </div>
+                      ) : (
+                        flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )
+                      )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                // Skeleton loading state
+                Array.from({ length: pagination.pageSize }).map((_, index) => (
+                  <TableRow key={`skeleton-${index}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-4 rounded" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-40" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end">
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell 
+                        key={cell.id} 
+                        className="py-3 px-4 whitespace-nowrap"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : error ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center text-red-500"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <span>Erreur lors du chargement des clients</span>
+                      <button
+                        onClick={handleRefresh}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Réessayer
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Aucun client trouvé.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Modal d'édition mobile */}
+        <ClientsModal
+          client={editingClient}
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSave={handleSaveClient}
+        />
+      </div>
+    </>
   );
 }
 
