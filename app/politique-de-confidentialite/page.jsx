@@ -1,10 +1,18 @@
 "use client";
 import React from "react";
 import Footer7 from "@/src/components/footer7";
+import SEOHead from "@/src/components/seo/seo-head";
+import { JsonLd } from "@/src/components/seo/seo-metadata";
+import { useLegalSEO } from "@/src/hooks/use-seo";
 
 export default function PolitiqueDeConfidentialite() {
+  const seoData = useLegalSEO("politique-de-confidentialite");
+
   return (
-    <div className="font-poppins">
+    <>
+      <SEOHead {...seoData} />
+      <JsonLd jsonLd={seoData.jsonLd} />
+      <div className="font-poppins">
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-lg shadow-sm p-8">
@@ -152,6 +160,7 @@ export default function PolitiqueDeConfidentialite() {
         </div>
       </div>
       <Footer7 />
-    </div>
+      </div>
+    </>
   );
 }

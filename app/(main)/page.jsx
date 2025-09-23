@@ -6,17 +6,26 @@ import TestimonialsSection from "./section/testimonial";
 import Freelance from "./section/freelance";
 import PricingSection from "./section/pricing-section";
 import FAQ from "./section/faq";
+import SEOHead from "@/src/components/seo/seo-head";
+import { JsonLd } from "@/src/components/seo/seo-metadata";
+import { useSEO } from "@/src/hooks/use-seo";
 
 export default function Home() {
+  const seoData = useSEO("home");
+
   return (
-    <div className="bg-[#FDFDFD] overflow-x-hidden">
-      <HeroSection />
-      <FeatureGrid />
-      <BusinessAgility />
-      <Freelance />
-      <TestimonialsSection />
-      <PricingSection />
-      <FAQ />
-    </div>
+    <>
+      <SEOHead {...seoData} />
+      <JsonLd jsonLd={seoData.jsonLd} />
+      <div className="bg-[#FDFDFD] overflow-x-hidden">
+        <HeroSection />
+        <FeatureGrid />
+        <BusinessAgility />
+        <Freelance />
+        <TestimonialsSection />
+        <PricingSection />
+        <FAQ />
+      </div>
+    </>
   );
 }

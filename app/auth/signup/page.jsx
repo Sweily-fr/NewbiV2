@@ -10,6 +10,9 @@ import Link from "next/link";
 import { toast } from "@/src/components/ui/sonner";
 import { Typewriter } from "@/src/components/ui/typewriter-text";
 import { CircleArrowUp } from "lucide-react";
+import SEOHead from "@/src/components/seo/seo-head";
+import { JsonLd } from "@/src/components/seo/seo-metadata";
+import { useAuthSEO } from "@/src/hooks/use-seo";
 
 const GitHubIcon = (props) => (
   <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
@@ -24,6 +27,8 @@ const GoogleIcon = (props) => (
 );
 
 export default function SignUpPage() {
+  const seoData = useAuthSEO("signup");
+
   const signInWithProvider = async (provider) => {
     await signIn.social(
       { provider, callbackURL: "/dashboard" },
@@ -40,7 +45,10 @@ export default function SignUpPage() {
   };
 
   return (
-    <main>
+    <>
+      <SEOHead {...seoData} />
+      <JsonLd jsonLd={seoData.jsonLd} />
+      <main>
       {/* Desktop Layout */}
       <div className="hidden md:flex h-screen">
         <div className="w-1/2 flex items-center justify-center p-8">
@@ -198,6 +206,7 @@ export default function SignUpPage() {
           </p>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

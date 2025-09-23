@@ -13,6 +13,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Typewriter } from "@/src/components/ui/typewriter-text";
 import { CircleArrowUp } from "lucide-react";
+import SEOHead from "@/src/components/seo/seo-head";
+import { JsonLd } from "@/src/components/seo/seo-metadata";
+import { useAuthSEO } from "@/src/hooks/use-seo";
 
 // import { GitHubIcon, GoogleIcon } from "@/src/components/ui/Icons";
 
@@ -86,8 +89,13 @@ const signInWithProvider = async (provider) => {
 };
 
 export default function LoginPage() {
+  const seoData = useAuthSEO("login");
+
   return (
-    <main>
+    <>
+      <SEOHead {...seoData} />
+      <JsonLd jsonLd={seoData.jsonLd} />
+      <main>
       {/* Desktop Layout */}
       <div className="hidden md:flex h-screen">
         <div className="w-1/2 flex items-center justify-center p-8">
@@ -245,6 +253,7 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

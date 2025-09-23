@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import HeroHeader from "@/src/components/blocks/hero-header";
 import Footer7 from "@/src/components/footer7";
@@ -7,6 +8,9 @@ import { Poppins } from "next/font/google";
 import WorkflowIntegration from "./section/workflow-integration";
 import FAQ from "./section/faq";
 import TestimonialsSection from "./section/testimonial";
+import SEOHead from "@/src/components/seo/seo-head";
+import { JsonLd } from "@/src/components/seo/seo-metadata";
+import { useProductSEO } from "@/src/hooks/use-seo";
 // Configuration de Poppins uniquement pour les landing pages
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
@@ -15,11 +19,16 @@ const poppins = Poppins({
   display: "swap",
 });
 
-export default function FacturesPage() {
+export default function TransfersPage() {
+  const seoData = useProductSEO("Transfers");
+
   return (
-    <div className={`${poppins.variable} font-poppins`}>
-      <HeroHeader />
-      <main>
+    <>
+      <SEOHead {...seoData} />
+      <JsonLd jsonLd={seoData.jsonLd} />
+      <div className={`${poppins.variable} font-poppins`}>
+        <HeroHeader />
+        <main>
         {/* Hero Section */}
         <HeroSection />
         <SectionAvantages />
@@ -311,8 +320,9 @@ export default function FacturesPage() {
             </div>
           </div>
         </section> */}
-      </main>
-      <Footer7 />
-    </div>
+        </main>
+        <Footer7 />
+      </div>
+    </>
   );
 }
