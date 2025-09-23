@@ -473,7 +473,7 @@ export function SettingsModal({
                                 }`}
                               >
                                 <Icon className="h-4 w-4" />
-                                <span className="flex items-center gap-2">
+                                <span className="flex font-normal items-center gap-2">
                                   {item.label}
                                   {item.disabled && (
                                     <span className="px-1.5 py-0.5 text-[9px] font-medium bg-[#5b4eff] text-white rounded-full">

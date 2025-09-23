@@ -93,9 +93,9 @@ export default function MobileSettingsNavigation({
                 >
                   <div className="flex items-center gap-3">
                     {IconComponent && (
-                      <IconComponent className="h-5 w-5 text-[#5b4eff] dark:text-white" />
+                      <IconComponent className="h-4 w-4 dark:text-white" />
                     )}
-                    <span className="text-gray-900 dark:text-white font-medium">
+                    <span className="text-gray-900 dark:text-white font-normal text-sm">
                       {tab.label}
                     </span>
                   </div>
@@ -128,13 +128,13 @@ export default function MobileSettingsNavigation({
                 >
                   <div className="flex items-center gap-3">
                     {IconComponent && (
-                      <IconComponent className="h-5 w-5 text-[#5b4eff] dark:text-white" />
+                      <IconComponent className="h-4 w-4 dark:text-white" />
                     )}
-                    <span className="text-gray-900 dark:text-white font-medium">
+                    <span className="text-gray-900 dark:text-white font-normal text-sm">
                       {tab.label}
                     </span>
                     {tab.id === "personnes" && (
-                      <span className="px-2 py-0.5 text-xs font-medium bg-[#5b4eff]/60 text-white rounded-full">
+                      <span className="px-2 py-0.5 text-xs font-normal bg-[#5b4eff]/60 text-white rounded-full">
                         À venir
                       </span>
                     )}
@@ -168,9 +168,9 @@ export default function MobileSettingsNavigation({
                 >
                   <div className="flex items-center gap-3">
                     {IconComponent && (
-                      <IconComponent className="h-5 w-5 text-[#5b4eff] dark:text-white" />
+                      <IconComponent className="h-4 w-4 dark:text-white" />
                     )}
-                    <span className="text-gray-900 dark:text-white font-medium">
+                    <span className="text-gray-900 dark:text-white font-normal text-sm">
                       {tab.label}
                     </span>
                   </div>
