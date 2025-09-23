@@ -183,7 +183,7 @@ export function MobileSettingsModal({
                 className="p-2 hover:bg-gray-200 dark:hover:bg-[#171717]"
               >
                 <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-              </Button>
+                </Button>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {currentTab?.label}
               </h1>

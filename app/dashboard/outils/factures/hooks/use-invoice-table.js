@@ -228,6 +228,29 @@ export function useInvoiceTable({ data = [], onRefetch }) {
         size: 200,
       },
       {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Statut
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        ),
+        cell: ({ row }) => {
+          const status = row.getValue("status");
+          const label = INVOICE_STATUS_LABELS[status] || status;
+          const colorClass = INVOICE_STATUS_COLORS[status] || "";
+
+          return (
+            <Badge className={cn("font-normal", colorClass)}>{label}</Badge>
+          );
+        },
+        size: 100,
+        filterFn: statusFilterFn,
+      },
+      {
         accessorKey: "issueDate",
         header: ({ column }) => (
           <div
@@ -349,29 +372,6 @@ export function useInvoiceTable({ data = [], onRefetch }) {
           }
         },
         size: 120,
-      },
-      {
-        accessorKey: "status",
-        header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Statut
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </div>
-        ),
-        cell: ({ row }) => {
-          const status = row.getValue("status");
-          const label = INVOICE_STATUS_LABELS[status] || status;
-          const colorClass = INVOICE_STATUS_COLORS[status] || "";
-
-          return (
-            <Badge className={cn("font-normal", colorClass)}>{label}</Badge>
-          );
-        },
-        size: 100,
-        filterFn: statusFilterFn,
       },
       {
         accessorKey: "finalTotalTTC",
