@@ -50,17 +50,18 @@ function SiteHeaderContent() {
   const { workspaceId } = useWorkspace();
 
   // Détecter si on est sur une page Kanban avec ID
-  const isKanbanPage = pathname?.includes('/kanban/') && pathname?.split('/').length >= 4;
-  const kanbanId = isKanbanPage ? pathname.split('/').pop() : null;
+  const isKanbanPage =
+    pathname?.includes("/kanban/") && pathname?.split("/").length >= 4;
+  const kanbanId = isKanbanPage ? pathname.split("/").pop() : null;
 
   // Récupérer les données du tableau Kanban si nécessaire
   const { data: kanbanData } = useQuery(GET_BOARD, {
-    variables: { 
+    variables: {
       id: kanbanId,
-      workspaceId 
+      workspaceId,
     },
-    skip: !kanbanId || kanbanId === 'new' || !workspaceId,
-    errorPolicy: 'ignore'
+    skip: !kanbanId || kanbanId === "new" || !workspaceId,
+    errorPolicy: "ignore",
   });
 
   // Utilisation de useMemo pour éviter les recalculs inutiles et les boucles infinies
@@ -71,20 +72,22 @@ function SiteHeaderContent() {
 
     return segments.map((segment, index) => {
       const href = "/" + segments.slice(0, index + 1).join("/");
-      let formattedSegment = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
-      
+      let formattedSegment =
+        segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
+
       // Si c'est le dernier segment et qu'on est sur une page Kanban, utiliser le nom du tableau
       const isLastSegment = index === segments.length - 1;
       if (isLastSegment && isKanbanPage && kanbanData?.board?.title) {
         formattedSegment = kanbanData.board.title;
       }
-      
+
       // Si c'est le dernier segment "new" sur la page signatures-mail et qu'on a le paramètre edit=true
-      const isSignatureEditMode = isLastSegment && 
-                                  segment === "new" && 
-                                  pathname?.includes("/signatures-mail/") && 
-                                  searchParams?.get("edit") === "true";
-      
+      const isSignatureEditMode =
+        isLastSegment &&
+        segment === "new" &&
+        pathname?.includes("/signatures-mail/") &&
+        searchParams?.get("edit") === "true";
+
       if (isSignatureEditMode) {
         formattedSegment = "Éditer";
       }
@@ -116,7 +119,7 @@ function SiteHeaderContent() {
   }, [pathname, kanbanData, searchParams]); // Dépendance sur pathname, kanbanData et searchParams
 
   return (
-    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:relative md:top-auto md:z-auto fixed top-0 z-50 bg-white md:bg-transparent dark:bg-background w-full">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator
@@ -146,7 +149,7 @@ function SiteHeaderContent() {
 // Composant de fallback pour le loading
 function SiteHeaderFallback() {
   return (
-    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:relative md:top-auto md:z-auto fixed top-0 z-50 bg-white md:bg-transparent dark:bg-background w-full">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator
@@ -156,9 +159,7 @@ function SiteHeaderFallback() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbPage className="text-xs">
-                Chargement...
-              </BreadcrumbPage>
+              <BreadcrumbPage className="text-xs">Chargement...</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>

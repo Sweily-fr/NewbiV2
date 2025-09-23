@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   flexRender,
   getCoreRowModel,
@@ -94,6 +95,7 @@ import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 export default function InvoiceTable() {
+  const router = useRouter();
   const { invoices, loading, error, refetch } = useInvoices();
 
   const {
@@ -132,7 +134,7 @@ export default function InvoiceTable() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hidden md:flex">
         <div className="flex flex-1 items-center space-x-2">
           <Input
             placeholder="Rechercher des factures..."
@@ -142,7 +144,11 @@ export default function InvoiceTable() {
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="border-dashed font-normal">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-dashed font-normal"
+              >
                 <ListFilterIcon className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Statut</span>
                 {statusFilter && INVOICE_STATUS_LABELS[statusFilter] && (
@@ -177,7 +183,7 @@ export default function InvoiceTable() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          
+
           {/* Bouton de suppression à côté du filtre de statut */}
           {selectedRows.length > 0 && (
             <AlertDialog>
@@ -186,7 +192,9 @@ export default function InvoiceTable() {
                   <TrashIcon className="mr-2 h-4 w-4" />
                   <span className="hidden sm:inline">Supprimer</span>
                   <span className="sm:hidden">({selectedRows.length})</span>
-                  <span className="hidden sm:inline">({selectedRows.length})</span>
+                  <span className="hidden sm:inline">
+                    ({selectedRows.length})
+                  </span>
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -213,8 +221,8 @@ export default function InvoiceTable() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-md border overflow-x-auto">
+      {/* Table - Desktop style (original) */}
+      <div className="hidden md:block rounded-md border overflow-x-auto">
         <Table className="min-w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -266,8 +274,140 @@ export default function InvoiceTable() {
         </Table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
+      {/* Mobile Toolbar - Style Notion */}
+      <div className="md:hidden px-4 py-3">
+        <div className="flex items-center gap-3">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <Input
+              placeholder="Rechercher des factures..."
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
+            />
+          </div>
+
+          {/* Filter Button - Icon only */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Filtrer par statut</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setStatusFilter("")}>
+                Tous les statuts
+              </DropdownMenuItem>
+              {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
+                <DropdownMenuItem
+                  key={value}
+                  onClick={() => setStatusFilter(value)}
+                >
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "mr-2",
+                      INVOICE_STATUS_COLORS[value] || "bg-gray-100"
+                    )}
+                  >
+                    {label}
+                  </Badge>
+                  {label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Sort Button - Icon only */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <Columns3Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+          </Button>
+
+          {/* Add Invoice Button - Icon only */}
+          <Button
+            variant="default"
+            size="sm"
+            className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
+            onClick={() => router.push("/dashboard/outils/factures/new")}
+          >
+            <PlusIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Table - Mobile style (Notion-like) */}
+      <div className="md:hidden overflow-x-auto">
+        <Table className="w-max">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow
+                key={headerGroup.id}
+                className="border-b border-gray-100 dark:border-gray-400"
+              >
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    style={{ width: header.getSize() }}
+                    className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className="py-3 px-4 whitespace-nowrap"
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={table.getAllColumns().length}
+                  className="h-24 text-center"
+                >
+                  Aucune facture trouvée.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination - Visible sur desktop seulement */}
+      <div className="hidden md:flex items-center justify-between">
         <div className="flex-1 text-sm font-normal text-muted-foreground hidden sm:block">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
