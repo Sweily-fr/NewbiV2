@@ -7,20 +7,36 @@ export const useAutoOrganization = () => {
   const createAutoOrganization = useCallback(
     async (userFromSignup = null) => {
       try {
-        // Utiliser l'utilisateur passé en paramètre ou celui de la session
-        const user = userFromSignup || session?.user;
+        let user = userFromSignup || session?.user;
+
+        // Si pas d'utilisateur disponible, essayer de récupérer la session actuelle
+        if (!user || !user.id) {
+          console.log("🔄 Tentative de récupération de la session actuelle...");
+
+          try {
+            const { data: currentSession } = await organization.getSession();
+            user = currentSession?.user;
+            console.log("👤 Utilisateur récupéré depuis la session:", user);
+          } catch (sessionError) {
+            console.error(
+              "❌ Erreur lors de la récupération de la session:",
+              sessionError
+            );
+          }
+        }
 
         if (!user || !user.id) {
           console.error("Utilisateur non disponible:", {
             session,
             userFromSignup,
+            retrievedUser: user,
           });
           return { success: false, error: "Utilisateur non disponible" };
         }
 
         // Générer le nom et le slug de l'organisation
         const organizationName =
-          user.name || `Workspace ${user.email.split("@")[0]}'s`;
+          user.name || `Espace ${user.email.split("@")[0]}'s`;
         const organizationSlug = `org-${user.id.slice(-8)}`;
 
         // Créer l'organisation via le client Better Auth

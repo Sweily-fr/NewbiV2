@@ -51,7 +51,62 @@ const ensureActiveOrganization = async () => {
         console.log("✅ Organisation active définie avec succès");
       }
     } else {
-      console.log("⚠️ Aucune organisation disponible");
+      // Aucune organisation disponible - créer une organisation automatiquement
+      console.log(
+        "⚠️ Aucune organisation disponible - création automatique..."
+      );
+
+      try {
+        // Récupérer l'utilisateur actuel depuis la session
+        const { data: session } = await authClient.getSession();
+        const user = session?.user;
+
+        if (!user || !user.id) {
+          console.error(
+            "❌ Utilisateur non disponible dans la session:",
+            session
+          );
+          return;
+        }
+
+        console.log(
+          "👤 Utilisateur trouvé pour création d'organisation:",
+          user
+        );
+
+        // Générer le nom et le slug de l'organisation
+        const organizationName =
+          user.name || `Espace ${user.email.split("@")[0]}'s`;
+        const organizationSlug = `org-${user.id.slice(-8)}`;
+
+        console.log("🏢 Création de l'organisation:", {
+          organizationName,
+          organizationSlug,
+        });
+
+        // Créer l'organisation directement avec authClient
+        const result = await authClient.organization.create({
+          name: organizationName,
+          slug: organizationSlug,
+          metadata: {
+            autoCreated: true,
+            createdAt: new Date().toISOString(),
+          },
+          keepCurrentActiveOrganization: false,
+        });
+
+        if (result.error) {
+          console.error(
+            "❌ Erreur lors de la création de l'organisation:",
+            result.error
+          );
+        } else {
+          console.log("✅ Organisation créée avec succès:", result.data);
+          toast.success("Bienvenue ! Votre espace de travail a été créé.");
+        }
+      } catch (error) {
+        console.error("❌ Erreur lors de la création automatique:", error);
+      }
     }
   } catch (error) {
     console.error(
@@ -72,12 +127,17 @@ const LoginForm = () => {
   const router = useRouter();
   const [show2FA, setShow2FA] = React.useState(false);
   const [twoFactorData, setTwoFactorData] = React.useState(null);
-  const [showEmailVerification, setShowEmailVerification] = React.useState(false);
-  const [userEmailForVerification, setUserEmailForVerification] = React.useState("");
+  const [showEmailVerification, setShowEmailVerification] =
+    React.useState(false);
+  const [userEmailForVerification, setUserEmailForVerification] =
+    React.useState("");
 
   // Debug: Log des changements d'état du modal
   React.useEffect(() => {
-    console.log("🔄 État du modal de vérification d'email:", showEmailVerification);
+    console.log(
+      "🔄 État du modal de vérification d'email:",
+      showEmailVerification
+    );
     console.log("📧 Email pour vérification:", userEmailForVerification);
   }, [showEmailVerification, userEmailForVerification]);
 
@@ -147,7 +207,7 @@ const LoginForm = () => {
       },
       onError: async (error) => {
         console.log("🔍 Erreur de connexion détectée:", error);
-        
+
         // Essayer différents formats d'erreur
         let errorMessage = null;
 
@@ -179,7 +239,9 @@ const LoginForm = () => {
             errorMessage.includes("email avant de vous connecter") ||
             errorMessage.includes("Veuillez vérifier"))
         ) {
-          console.log("📧 Erreur de vérification d'email détectée, ouverture du modal");
+          console.log(
+            "📧 Erreur de vérification d'email détectée, ouverture du modal"
+          );
           // L'utilisateur existe mais n'a pas vérifié son email
           setUserEmailForVerification(formData.email);
           setShowEmailVerification(true);
@@ -190,10 +252,10 @@ const LoginForm = () => {
         console.log("🔍 Vérification fallback pour:", formData.email);
         if (formData.email) {
           try {
-            const response = await fetch('/api/auth/check-user', {
-              method: 'POST',
+            const response = await fetch("/api/auth/check-user", {
+              method: "POST",
               headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
               },
               body: JSON.stringify({ email: formData.email }),
             });
@@ -201,9 +263,11 @@ const LoginForm = () => {
             if (response.ok) {
               const userData = await response.json();
               console.log("👤 Données utilisateur:", userData);
-              
+
               if (userData.exists && !userData.emailVerified) {
-                console.log("📧 Email non vérifié détecté via API, ouverture du modal");
+                console.log(
+                  "📧 Email non vérifié détecté via API, ouverture du modal"
+                );
                 // L'utilisateur existe mais n'a pas vérifié son email
                 setUserEmailForVerification(formData.email);
                 setShowEmailVerification(true);
@@ -211,7 +275,10 @@ const LoginForm = () => {
               }
             }
           } catch (checkError) {
-            console.log("❌ Erreur lors de la vérification de l'utilisateur:", checkError);
+            console.log(
+              "❌ Erreur lors de la vérification de l'utilisateur:",
+              checkError
+            );
           }
         }
 
