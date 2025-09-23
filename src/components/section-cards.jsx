@@ -55,7 +55,7 @@ const toolDescriptions = {
     title: "Gestion des Dépenses",
     description: "Enregistrez et catégorisez toutes vos dépenses professionnelles. Uploadez vos reçus, suivez vos frais déductibles et générez des rapports pour votre comptabilité et déclarations fiscales."
   },
-  "Gérer les Signatures de Mail": {
+  "Mes Signatures de Mail": {
     title: "Signatures Email Professionnelles",
     description: "Créez des signatures email élégantes et cohérentes pour votre entreprise. Ajoutez votre logo, vos coordonnées, liens vers vos réseaux sociaux et respectez votre charte graphique."
   },
@@ -63,7 +63,7 @@ const toolDescriptions = {
     title: "Partage de Fichiers Sécurisé",
     description: "Partagez vos fichiers volumineux en toute sécurité avec vos clients et partenaires. Générez des liens de téléchargement temporaires, protégez vos documents par mot de passe et suivez les téléchargements."
   },
-  "Gestion De Projet KANBAN": {
+  "Gestion De Projet": {
     title: "Tableau Kanban",
     description: "Organisez vos projets et tâches avec des tableaux Kanban intuitifs. Créez des colonnes personnalisées, déplacez vos tâches, assignez des responsables et suivez l'avancement de vos projets en temps réel."
   }
@@ -130,7 +130,7 @@ const cards = [
     category: "financier",
   },
   {
-    title: "Gérer les Signatures de Mail",
+    title: "Mes Signatures de Mail",
     subtitle: "Créez et gérez professionnellement vos signatures d'email.",
     icon: <IconMailForward size={15} />,
     href: "/dashboard/outils/signatures-mail",
@@ -152,7 +152,7 @@ const cards = [
     category: "marketing",
   },
   {
-    title: "Gestion De Projet KANBAN",
+    title: "Gestion De Projet",
     subtitle: "Créez et gérez efficacement toutes vos tâches quotidiennes.",
     icon: <IconLayoutKanban size={15} />,
     href: "/dashboard/outils/kanban",
@@ -346,8 +346,8 @@ export function SectionCards({ className, activeFilter = "outline" }) {
             }
           >
             <GridBackground />
-            <CardContent className="p-6 relative z-10">
-              <div className="flex items-start justify-between h-full min-h-[200px]">
+            <CardContent className="p-4 relative z-10">
+              <div className="flex items-start justify-between h-full min-h-[140px]">
                 {/* Partie gauche avec contenu */}
                 <div className="flex flex-col justify-end h-full pr-4">
                   {/* Header avec titre et description */}
@@ -361,7 +361,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                   </div>
 
                   {/* Actions en bas */}
-                  <div className="flex items-center gap-3 pt-6">
+                  <div className="flex items-center gap-3 pt-4">
                     {isAvailable && hasFullAccess && (
                       <>
                         <Link href={card.href || "#"}>
@@ -385,24 +385,44 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                     {!hasFullAccess && (
                       <div className="flex items-center gap-3">
                         {restrictionType === "subscription" && (
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            className="border-orange-200 text-orange-700 hover:bg-orange-50 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
-                          >
-                            <Crown className="w-4 h-4" />
-                            Passer Pro
-                          </Button>
+                          <>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              className="border-orange-200 text-orange-700 hover:bg-orange-50 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                            >
+                              <Crown className="w-4 h-4" />
+                              Passer Pro
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              className="border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium cursor-pointer"
+                              onClick={(e) => handleToolInfoClick(e, card.title)}
+                            >
+                              En savoir plus
+                            </Button>
+                          </>
                         )}
                         {restrictionType === "companyInfo" && (
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            className="border-red-200 text-red-700 hover:bg-red-50 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
-                          >
-                            <Lock className="w-4 h-4" />
-                            Configuration requise
-                          </Button>
+                          <>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              className="border-red-200 text-red-700 hover:bg-red-50 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                            >
+                              <Lock className="w-4 h-4" />
+                              Configuration requise
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              className="border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium cursor-pointer"
+                              onClick={(e) => handleToolInfoClick(e, card.title)}
+                            >
+                              En savoir plus
+                            </Button>
+                          </>
                         )}
                       </div>
                     )}
@@ -410,7 +430,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                 </div>
 
                 {/* Partie droite avec illustration */}
-                <div className="flex-shrink-0 w-52 h-52 flex items-center justify-center relative overflow-visible">
+                <div className="flex-shrink-0 w-36 h-36 flex items-center justify-center relative overflow-visible">
                   <div
                     className="w-full h-full flex items-center justify-center bg-center bg-no-repeat relative z-10 transition-transform duration-300 group-hover:scale-110 overflow-visible"
                     style={{
