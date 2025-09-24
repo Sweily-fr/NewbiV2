@@ -158,7 +158,12 @@ export function TrialStatusWidget({ className }) {
   const { trial, loading } = useSubscription();
 
   // Ne pas afficher pendant le chargement ou si trial n'est pas défini
-  if (loading || !trial || !trial.isTrialActive) {
+  if (loading || !trial) {
+    return null;
+  }
+
+  // Ne pas afficher si le trial n'est pas actif ou si il est expiré (0 jours restants)
+  if (!trial.isTrialActive || trial.daysRemaining <= 0) {
     return null;
   }
 
