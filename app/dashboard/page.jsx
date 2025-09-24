@@ -150,7 +150,7 @@ function DashboardContent() {
   // Utiliser les vraies données financières
 
   return (
-    <div className="flex flex-col gap-4 py-4 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
+    <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
       <div className="flex items-center justify-between w-full mb-4 md:mb-6">
         <h1 className="text-2xl font-medium">Bonjour {session?.user?.name},</h1>
         {/* <BankingConnectButton /> */}
