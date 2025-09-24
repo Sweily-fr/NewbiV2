@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/src/components/app-sidebar";
 import { SignatureSidebar } from "@/src/components/signature-sidebar";
@@ -10,20 +10,25 @@ import { SearchCommand } from "@/src/components/search-command";
 import { SignatureProvider, useSignatureData } from "@/src/hooks/use-signature-data";
 import { TrialBanner } from "@/src/components/trial-banner";
 import { PricingModal } from "@/src/components/pricing-modal";
-import { useState } from "react";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
   const pathname = usePathname();
   const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Protection contre l'erreur d'hydratation
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
   
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
   const isToolPage = pathname.includes("/dashboard/outils/") && 
     (pathname.includes("/new") || pathname.includes("/edit") || pathname.includes("/view"));
   
-  // Ne pas afficher le banner sur les pages d'outils pour éviter l'encombrement
-  const showTrialBanner = !isToolPage && pathname === "/dashboard";
+  // Désactiver complètement le banner - remplacé par le compteur dans le header
+  const showTrialBanner = false;
   
   // Utiliser les données de signature si on est sur la page de signature
   let signatureContextData = null;
@@ -31,6 +36,15 @@ function DashboardContent({ children }) {
     signatureContextData = useSignatureData();
   } catch {
     // Pas de contexte disponible, c'est normal si on n'est pas sur la page de signature
+  }
+
+  // Afficher un loader pendant l'hydratation
+  if (!isHydrated) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
   }
 
   return (

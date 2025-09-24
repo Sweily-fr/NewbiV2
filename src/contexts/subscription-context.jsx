@@ -10,15 +10,26 @@ export function SubscriptionProvider({ children }) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const { data: session } = useSession();
-  const trial = useTrial();
+
+  // Protection contre l'erreur d'hydratation
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+  const trial = useTrial(); // Réactivé avec démarrage automatique
+  
+  // Protection contre les boucles de rendu
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const fetchSubscription = async () => {
-    if (!session?.session?.activeOrganizationId) {
+    if (!session?.session?.activeOrganizationId || isProcessing || !isHydrated) {
       setSubscription(null);
       setLoading(false);
       return;
     }
+    
+    setIsProcessing(true);
 
     try {
       // Récupérer les abonnements pour cette organisation
@@ -47,12 +58,15 @@ export function SubscriptionProvider({ children }) {
     } finally {
       setLoading(false);
       setHasInitialized(true);
+      setIsProcessing(false);
     }
   };
 
   useEffect(() => {
-    fetchSubscription();
-  }, [session?.session?.activeOrganizationId]);
+    if (isHydrated) {
+      fetchSubscription();
+    }
+  }, [session?.session?.activeOrganizationId, isHydrated]);
 
   const refreshSubscription = () => {
     setLoading(true);

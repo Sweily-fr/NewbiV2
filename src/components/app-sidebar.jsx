@@ -243,9 +243,7 @@ export function AppSidebar({ ...props }) {
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent className="mt-1">
-        {session?.user &&
-        !subscriptionLoading &&
-        !(isActive() && !subscription) ? (
+        {session?.user && !subscriptionLoading ? (
           <>
             <NavMain items={data.navMain} />
             <NavDocuments items={data.documents} />
@@ -294,18 +292,14 @@ export function AppSidebar({ ...props }) {
         )}
       </SidebarContent>
       <SidebarFooter>
-        {session?.user &&
-        !subscriptionLoading &&
-        !(isActive() && !subscription) ? (
+        {session?.user && !subscriptionLoading ? (
           <SidebarTrialCard />
         ) : (
           <div className="mb-2 px-2">
             <Skeleton className="h-16 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
           </div>
         )}
-        {session?.user &&
-        !subscriptionLoading &&
-        !(isActive() && !subscription) ? (
+        {session?.user && !subscriptionLoading ? (
           <NavUser user={session.user} />
         ) : (
           <div className="flex items-center gap-2 px-2 py-1.5">

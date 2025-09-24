@@ -45,13 +45,22 @@ export function useTrial() {
   const { data: session } = useSession();
   const [trialStatus, setTrialStatus] = useState(null);
 
-  // Requête pour obtenir le statut de la période d'essai
+  // Requête pour obtenir le statut de la période d'essai avec protections
   const { loading, error, refetch } = useQuery(GET_TRIAL_STATUS, {
     skip: !session?.user,
+    fetchPolicy: 'cache-first', // Utiliser le cache en priorité pour éviter les requêtes excessives
+    errorPolicy: 'all',
+    notifyOnNetworkStatusChange: false, // Éviter les re-renders inutiles
+    pollInterval: 0, // Pas de polling automatique
     onCompleted: (data) => {
       if (data?.getTrialStatus?.success) {
         setTrialStatus(data.getTrialStatus.data);
       }
+    },
+    onError: (error) => {
+      console.error('Erreur GraphQL trial:', error);
+      // En cas d'erreur, utiliser les données de session comme fallback
+      setTrialStatus(null);
     },
   });
 
@@ -70,6 +79,15 @@ export function useTrial() {
 
     const user = session.user;
     const now = new Date();
+    
+    // Debug désactivé pour éviter le spam de logs
+    // console.log("useTrial - Session user data:", {
+    //   email: user.email,
+    //   isTrialActive: user.isTrialActive,
+    //   trialEndDate: user.trialEndDate,
+    //   hasUsedTrial: user.hasUsedTrial,
+    //   trialStartDate: user.trialStartDate
+    // });
     
     // Vérifier si l'utilisateur a une période d'essai active
     if (user.isTrialActive && user.trialEndDate) {
@@ -109,6 +127,32 @@ export function useTrial() {
 
   // Utiliser les données GraphQL si disponibles, sinon les données de session
   const currentTrialStatus = trialStatus || getTrialStatusFromSession();
+
+  // DÉSACTIVÉ TEMPORAIREMENT - Démarrer automatiquement la période d'essai à la première connexion
+  // Cause une boucle infinie avec rate limiting
+  /*
+  useEffect(() => {
+    const autoStartTrial = async () => {
+      if (!session?.user || loading || startingTrial) return;
+      
+      const sessionTrialStatus = getTrialStatusFromSession();
+      
+      // Si l'utilisateur n'a jamais utilisé de trial et n'en a pas d'actif, démarrer automatiquement
+      if (sessionTrialStatus && 
+          !sessionTrialStatus.hasUsedTrial && 
+          !sessionTrialStatus.isTrialActive) {
+        try {
+          console.log("Démarrage automatique de la période d'essai pour l'utilisateur:", session.user.email);
+          await startTrialMutation();
+        } catch (error) {
+          console.error("Erreur lors du démarrage automatique de la période d'essai:", error);
+        }
+      }
+    };
+
+    autoStartTrial();
+  }, [session?.user, loading, startingTrial, getTrialStatusFromSession, startTrialMutation]);
+  */
 
   // Démarrer une période d'essai
   const startTrial = useCallback(async () => {

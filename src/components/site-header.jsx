@@ -13,6 +13,7 @@ import {
 } from "@/src/components/ui/breadcrumb";
 import { usePathname } from "next/navigation";
 import { ModeToggle } from "@/src/components/ui/mode-toggle";
+import { TrialCounter } from "@/src/components/trial-counter";
 import { Save } from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_BOARD } from "@/src/graphql/kanbanQueries";
@@ -131,6 +132,7 @@ function SiteHeaderContent() {
         </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
           {/* <SignatureSaveButton /> */}
+          <TrialCounter />
           <ModeToggle />
           {/* <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a
@@ -164,6 +166,7 @@ function SiteHeaderFallback() {
           </BreadcrumbList>
         </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
+          <TrialCounter />
           <ModeToggle />
         </div>
       </div>
