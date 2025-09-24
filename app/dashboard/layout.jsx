@@ -8,15 +8,22 @@ import { SiteHeader } from "@/src/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/src/components/ui/sidebar";
 import { SearchCommand } from "@/src/components/search-command";
 import { SignatureProvider, useSignatureData } from "@/src/hooks/use-signature-data";
+import { TrialBanner } from "@/src/components/trial-banner";
+import { PricingModal } from "@/src/components/pricing-modal";
+import { useState } from "react";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
   const pathname = usePathname();
   const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
   const isToolPage = pathname.includes("/dashboard/outils/") && 
     (pathname.includes("/new") || pathname.includes("/edit") || pathname.includes("/view"));
+  
+  // Ne pas afficher le banner sur les pages d'outils pour éviter l'encombrement
+  const showTrialBanner = !isToolPage && pathname === "/dashboard";
   
   // Utiliser les données de signature si on est sur la page de signature
   let signatureContextData = null;
@@ -32,6 +39,17 @@ function DashboardContent({ children }) {
       <SidebarInset className="font-polysans font-light">
         <SiteHeader />
         <div className="flex flex-1 flex-col">
+          {showTrialBanner && (
+            <div className="p-4 pb-0">
+              <TrialBanner 
+                onUpgrade={() => setIsPricingModalOpen(true)}
+                onStartTrial={() => {
+                  // Le hook useTrial gère automatiquement le démarrage
+                  console.log("Période d'essai démarrée");
+                }}
+              />
+            </div>
+          )}
           <div className="@container/main flex flex-1 flex-col gap-2">
             {children}
           </div>
@@ -44,6 +62,12 @@ function DashboardContent({ children }) {
         />
       )}
       <SearchCommand />
+      
+      {/* Modal de pricing pour upgrade */}
+      <PricingModal 
+        isOpen={isPricingModalOpen} 
+        onClose={() => setIsPricingModalOpen(false)} 
+      />
     </SidebarProvider>
   );
 }

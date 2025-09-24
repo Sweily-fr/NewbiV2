@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authClient, useSession } from "@/src/lib/auth-client";
+import { useTrial } from "@/src/hooks/useTrial";
 
 const SubscriptionContext = createContext();
 
@@ -10,6 +11,7 @@ export function SubscriptionProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
   const { data: session } = useSession();
+  const trial = useTrial();
 
   const fetchSubscription = async () => {
     if (!session?.session?.activeOrganizationId) {
@@ -67,12 +69,20 @@ export function SubscriptionProvider({ children }) {
   };
 
   const isActive = () => {
-    return subscription?.status === "active" || subscription?.status === "trialing";
+    // Vérifier d'abord si l'utilisateur a un abonnement payant actif
+    const hasActiveSubscription = subscription?.status === "active" || subscription?.status === "trialing";
+    
+    // Si pas d'abonnement payant, vérifier la période d'essai
+    if (!hasActiveSubscription) {
+      return trial.hasPremiumAccess;
+    }
+    
+    return hasActiveSubscription;
   };
 
   const value = {
     subscription,
-    loading,
+    loading: loading || trial.loading,
     hasInitialized,
     refreshSubscription,
     hasFeature,
@@ -85,6 +95,15 @@ export function SubscriptionProvider({ children }) {
     projectLimit: () => getLimit("projects"),
     storageLimit: () => getLimit("storage"),
     invoiceLimit: () => getLimit("invoices"),
+    // Données de période d'essai
+    trial: {
+      isTrialActive: trial.isTrialActive,
+      daysRemaining: trial.daysRemaining,
+      hasUsedTrial: trial.hasUsedTrial,
+      trialMessage: trial.trialMessage,
+      canStartTrial: trial.canStartTrial,
+      startTrial: trial.startTrial,
+    },
   };
 
   return (

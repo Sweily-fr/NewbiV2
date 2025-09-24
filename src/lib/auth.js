@@ -111,6 +111,27 @@ export const auth = betterAuth({
         required: false,
         defaultValue: true,
       },
+      // Champs pour la période d'essai
+      trialStartDate: {
+        type: "date",
+        required: false,
+        defaultValue: null,
+      },
+      trialEndDate: {
+        type: "date",
+        required: false,
+        defaultValue: null,
+      },
+      isTrialActive: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
+      hasUsedTrial: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
     },
   },
 
