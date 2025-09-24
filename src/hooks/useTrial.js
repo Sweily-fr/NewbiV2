@@ -73,34 +73,34 @@ export function useTrial() {
     },
   });
 
-  // Calculer le statut de la période d'essai à partir des données de session
+  // Calculer le statut de la période d'essai à partir des données d'organisation de session
   const getTrialStatusFromSession = useCallback(() => {
-    if (!session?.user) return null;
+    if (!session?.user?.organization) return null;
 
-    const user = session.user;
+    const organization = session.user.organization;
     const now = new Date();
     
     // Debug désactivé pour éviter le spam de logs
-    // console.log("useTrial - Session user data:", {
-    //   email: user.email,
-    //   isTrialActive: user.isTrialActive,
-    //   trialEndDate: user.trialEndDate,
-    //   hasUsedTrial: user.hasUsedTrial,
-    //   trialStartDate: user.trialStartDate
+    // console.log("useTrial - Session organization data:", {
+    //   organizationId: organization.id,
+    //   isTrialActive: organization.isTrialActive,
+    //   trialEndDate: organization.trialEndDate,
+    //   hasUsedTrial: organization.hasUsedTrial,
+    //   trialStartDate: organization.trialStartDate
     // });
     
-    // Vérifier si l'utilisateur a une période d'essai active
-    if (user.isTrialActive && user.trialEndDate) {
-      const trialEndDate = new Date(user.trialEndDate);
+    // Vérifier si l'organisation a une période d'essai active
+    if (organization.isTrialActive && organization.trialEndDate) {
+      const trialEndDate = new Date(organization.trialEndDate);
       const isExpired = now > trialEndDate;
       
       if (isExpired) {
         return {
           isTrialActive: false,
-          trialEndDate: user.trialEndDate,
+          trialEndDate: organization.trialEndDate,
           daysRemaining: 0,
           hasPremiumAccess: false,
-          hasUsedTrial: user.hasUsedTrial || false,
+          hasUsedTrial: organization.hasUsedTrial || false,
         };
       }
 
@@ -109,10 +109,10 @@ export function useTrial() {
 
       return {
         isTrialActive: true,
-        trialEndDate: user.trialEndDate,
+        trialEndDate: organization.trialEndDate,
         daysRemaining: Math.max(0, daysRemaining),
         hasPremiumAccess: true,
-        hasUsedTrial: user.hasUsedTrial || false,
+        hasUsedTrial: organization.hasUsedTrial || false,
       };
     }
 
@@ -121,7 +121,7 @@ export function useTrial() {
       trialEndDate: null,
       daysRemaining: 0,
       hasPremiumAccess: false,
-      hasUsedTrial: user.hasUsedTrial || false,
+      hasUsedTrial: organization.hasUsedTrial || false,
     };
   }, [session]);
 

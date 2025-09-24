@@ -405,6 +405,27 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Trial system fields
+        trialStartDate: {
+          type: "date",
+          input: true,
+          required: false,
+        },
+        trialEndDate: {
+          type: "date",
+          input: true,
+          required: false,
+        },
+        isTrialActive: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        hasUsedTrial: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
       },
     },
   },
