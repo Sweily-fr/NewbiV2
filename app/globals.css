@@ -78,6 +78,16 @@
   background-color: rgb(107 114 128);
 }
 
+/* Hide scrollbar completely */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
 @layer base {
   html {
     font-family: "Poppins", system-ui, sans-serif;

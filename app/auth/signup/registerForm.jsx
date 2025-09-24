@@ -68,25 +68,8 @@ const RegisterFormContent = () => {
             router.push("/auth/login");
           }, 2000);
         } else {
-          // Créer automatiquement une organisation après l'inscription normale
-
-          setTimeout(async () => {
-            // Passer l'utilisateur depuis le contexte si disponible
-            const user = context?.user || context?.data?.user;
-
-            const result = await createAutoOrganization(user);
-            if (result.success) {
-              toast.success("Organisation créée automatiquement");
-            } else {
-              console.error(
-                "Échec de la création automatique d'organisation:",
-                result.error
-              );
-              // Ne pas afficher d'erreur à l'utilisateur car l'inscription a réussi
-            }
-          }, 3000);
-
           // Redirection vers la page de connexion après inscription
+          // L'organisation sera créée automatiquement lors de la première connexion
           router.push("/auth/login");
         }
       },

@@ -36,7 +36,7 @@ function DashboardContent({ children }) {
   return (
     <SidebarProvider defaultOpen={!isToolPage}>
       <AppSidebar variant="inset" />
-      <SidebarInset className="font-polysans font-light">
+      <SidebarInset className="font-polysans font-light md:pt-0 pt-10">
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           {showTrialBanner && (

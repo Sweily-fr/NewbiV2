@@ -51,11 +51,11 @@ export default function Component({
             size={16}
             aria-hidden="true"
           />
-          <span className="text-muted-foreground/70 font-normal">
+          <span className="text-muted-foreground/70 font-normal text-xs md:text-sm">
             {placeholder}
           </span>
         </span>
-        <div className="flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-1">
           <kbd className="bg-background flex justify-center items-center text-muted-foreground/70 inline-flex h-6 w-6 max-h-full items-center rounded border px-1 font-[inherit] text-[0.825rem] font-medium">
             ⌘
           </kbd>
