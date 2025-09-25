@@ -19,6 +19,7 @@ export function GraphQLProfileImageUpload({
   size = "default", // 'sm', 'default', 'lg'
 }) {
   const [isDragging, setIsDragging] = useState(false);
+  const [hasBeenDeleted, setHasBeenDeleted] = useState(false);
 
   const {
     isUploading,
@@ -29,12 +30,15 @@ export function GraphQLProfileImageUpload({
     handleFileSelect,
     deleteImage,
     setExistingImage,
+    forceDeleteImage,
     getDisplayImageUrl,
     hasImage,
     isNewImage,
     cleanup,
   } = useGraphQLImageUpload({
     onUploadSuccess: (imageUrl, uploadData) => {
+      // Réinitialiser le flag de suppression quand une nouvelle image est uploadée
+      setHasBeenDeleted(false);
       onImageChange(imageUrl, uploadData);
     },
     onUploadError: (error) => {
@@ -48,12 +52,12 @@ export function GraphQLProfileImageUpload({
     },
   });
 
-  // Initialiser avec l'image existante
+  // Initialiser avec l'image existante (seulement si pas supprimée)
   useEffect(() => {
-    if (currentImageUrl && !hasImage) {
+    if (currentImageUrl && !hasImage && !hasBeenDeleted) {
       setExistingImage(currentImageUrl);
     }
-  }, [currentImageUrl, hasImage, setExistingImage]);
+  }, [currentImageUrl, hasImage, setExistingImage, hasBeenDeleted]);
 
   // Nettoyage lors du démontage
   useEffect(() => {
@@ -93,7 +97,17 @@ export function GraphQLProfileImageUpload({
 
   // Gestion de la suppression avec le nouveau design
   const handleRemove = useCallback(async () => {
-    await deleteImage();
+    try {
+      // Marquer comme supprimé pour éviter la réinitialisation
+      setHasBeenDeleted(true);
+      
+      // Utiliser directement deleteImage qui gère déjà la suppression instantanée
+      await deleteImage();
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      // En cas d'erreur, permettre la réinitialisation
+      setHasBeenDeleted(false);
+    }
   }, [deleteImage]);
 
   const handleDragEnter = useCallback((e) => {
@@ -153,6 +167,13 @@ export function GraphQLProfileImageUpload({
               <X className="size-3.5" />
             )}
           </Button>
+        )}
+        
+        {/* Overlay de suppression pour feedback visuel */}
+        {isDeleting && displayImageUrl && (
+          <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+            <Loader2 className="size-4 animate-spin text-white" />
+          </div>
         )}
         <input
           ref={fileInputRef}

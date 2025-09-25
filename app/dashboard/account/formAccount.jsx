@@ -118,11 +118,16 @@ export default function ProfileForm({ user }) {
     refetch();
   };
 
-  const handleImageDelete = () => {
+  const handleImageDelete = async () => {
+    // Supprimer immédiatement l'image de l'état local (temps réel)
     setProfileImageUrl(null);
 
-    // Optionnel: recharger la session immédiatement pour refléter le changement
-    refetch();
+    // Recharger la session en arrière-plan
+    try {
+      await refetch();
+    } catch (error) {
+      console.error("Erreur lors du rechargement de session:", error);
+    }
   };
 
   return (

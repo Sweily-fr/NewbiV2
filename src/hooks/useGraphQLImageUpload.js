@@ -72,9 +72,8 @@ export function useGraphQLImageUpload({
   const [deleteImageMutation] = useMutation(DELETE_USER_PROFILE_IMAGE, {
     onCompleted: async (data) => {
       if (data.deleteUserProfileImage.success) {
-        setCurrentImageUrl(null);
-        setPreviewUrl(null);
-
+        // Ne pas modifier l'état local ici car c'est déjà fait dans deleteImage()
+        
         // Synchroniser avec Better Auth
         try {
           await syncUserAvatarDeletion();
@@ -100,6 +99,9 @@ export function useGraphQLImageUpload({
       onDeleteError(error);
       setIsDeleting(false);
     },
+    // Forcer le refetch du cache Apollo après suppression
+    refetchQueries: ['GetCurrentUser'],
+    awaitRefetchQueries: true,
   });
 
   /**
@@ -183,20 +185,42 @@ export function useGraphQLImageUpload({
   const deleteImage = useCallback(async () => {
     try {
       setIsDeleting(true);
-      await deleteImageMutation();
+      
+      // Supprimer immédiatement de l'interface pour un feedback instantané
+      const previousImageUrl = currentImageUrl;
+      const previousPreviewUrl = previewUrl;
+      setCurrentImageUrl(null);
+      setPreviewUrl(null);
+      
+      try {
+        await deleteImageMutation();
+      } catch (mutationError) {
+        // En cas d'erreur, restaurer l'image
+        setCurrentImageUrl(previousImageUrl);
+        setPreviewUrl(previousPreviewUrl);
+        throw mutationError;
+      }
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
       toast.error("Erreur lors de la suppression de l'image");
       onDeleteError(error);
       setIsDeleting(false);
     }
-  }, [deleteImageMutation, onDeleteError]);
+  }, [deleteImageMutation, onDeleteError, currentImageUrl, previewUrl]);
 
   /**
    * Définit une image existante (pour l'initialisation)
    */
   const setExistingImage = useCallback((imageUrl) => {
     setCurrentImageUrl(imageUrl);
+    setPreviewUrl(null);
+  }, []);
+
+  /**
+   * Force la suppression de l'image côté frontend (pour les cas où la sync échoue)
+   */
+  const forceDeleteImage = useCallback(() => {
+    setCurrentImageUrl(null);
     setPreviewUrl(null);
   }, []);
 
@@ -245,6 +269,7 @@ export function useGraphQLImageUpload({
     handleFileSelect,
     deleteImage,
     setExistingImage,
+    forceDeleteImage,
     cleanup,
     getDisplayImageUrl,
   };

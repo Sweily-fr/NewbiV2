@@ -38,7 +38,7 @@ export async function syncUserAvatar(avatarUrl) {
 export async function syncUserAvatarDeletion() {
   try {
     await updateUser(
-      { avatar: null },
+      { avatar: "" }, // Utiliser une chaîne vide au lieu de null
       {
         onSuccess: () => {
           console.log('Avatar supprimé de Better Auth');
