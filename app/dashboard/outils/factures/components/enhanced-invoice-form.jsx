@@ -435,7 +435,7 @@ export default function EnhancedInvoiceForm({
   return (
     <div className="flex flex-col h-full w-full">
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto pr-2 scrollbar-auto-hide min-h-0 pb-20 lg:pb-0">
+      <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0 pb-20 lg:pb-0">
         <div className="space-y-6">
           {/* Étape 1: Détails de la facture */}
           {currentStep === 1 && (
@@ -483,14 +483,14 @@ export default function EnhancedInvoiceForm({
 
       {/* Footer avec boutons d'action - Positionné en dehors du flux normal */}
       <div className="pt-4 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent p-4 lg:p-0">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto px-4 md:px-6 lg:px-0">
           <div className="flex justify-between items-center">
             <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => window.history.back()}
                 disabled={loading || saving}
-                className="text-sm font-normal"
+                className="text-sm font-normal hidden md:flex"
               >
                 Annuler
               </Button>

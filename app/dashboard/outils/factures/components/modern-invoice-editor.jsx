@@ -18,7 +18,10 @@ import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
 import InvoiceSettingsView from "./invoice-settings-view";
 import { toast } from "@/src/components/ui/sonner";
-import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
+import {
+  updateOrganization,
+  getActiveOrganization,
+} from "@/src/lib/organization-client";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -36,7 +39,10 @@ export default function ModernInvoiceEditor({
         const org = await getActiveOrganization();
         setOrganization(org);
       } catch (error) {
-        console.error("Erreur lors de la récupération de l'organisation:", error);
+        console.error(
+          "Erreur lors de la récupération de l'organisation:",
+          error
+        );
       }
     };
     fetchOrganization();
@@ -78,13 +84,13 @@ export default function ModernInvoiceEditor({
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full">
         {/* Left Panel - Enhanced Form */}
-        <div className="pl-6 pt-6 pr-6 pb-4 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
-          <div className="max-w-2xl mx-auto flex flex-col w-full h-full overflow-hidden">
+        <div className="pl-4 pt-18 pr-2 pb-4 md:pl-6 md:pt-6 md:pr-6 flex flex-col h-full overflow-hidden">
+          <div className="max-w-2xl mx-auto flex flex-col w-full h-full">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6 pb-6 border-b">
+            <div className="flex items-center justify-between mb-4 pb-4 md:mb-6 md:pb-6 border-b">
               <div className="flex items-center gap-2">
                 {/* <Button
                   variant="ghost"
@@ -95,7 +101,7 @@ export default function ModernInvoiceEditor({
                   <ArrowLeft className="h-4 w-4" />
                 </Button> */}
                 <div>
-                  <h1 className="text-2xl font-medium mb-1">
+                  <h1 className="text-xl md:text-2xl font-medium mb-1">
                     {showSettings ? (
                       "Paramètres de la facture"
                     ) : (
@@ -116,10 +122,10 @@ export default function ModernInvoiceEditor({
                 </div>
               </div>
 
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 md:gap-6">
                 {!showSettings && (
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={handleSettingsClick}
                     className="h-8 w-8 p-0"
@@ -127,6 +133,16 @@ export default function ModernInvoiceEditor({
                     <Settings className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 )}
+                {/* Croix pour fermer sur mobile */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.history.back()}
+                  className="h-8 w-8 p-0 md:hidden"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </Button>
+
                 {showSettings && (
                   <Button
                     variant="ghost"
@@ -161,10 +177,14 @@ export default function ModernInvoiceEditor({
                         // Sauvegarder les paramètres dans l'organisation
                         await saveSettingsToOrganization();
                         handleCloseSettings();
-                        toast.success("Paramètres sauvegardés dans l'organisation");
+                        toast.success(
+                          "Paramètres sauvegardés dans l'organisation"
+                        );
                       } catch (error) {
                         console.error("Erreur lors de la sauvegarde:", error);
-                        toast.error("Erreur lors de la sauvegarde des paramètres");
+                        toast.error(
+                          "Erreur lors de la sauvegarde des paramètres"
+                        );
                       }
                     }}
                   />
@@ -183,14 +203,14 @@ export default function ModernInvoiceEditor({
         </div>
 
         {/* Right Panel - Preview */}
-        <div className="border-l flex-col h-[calc(100vh-4rem)] overflow-hidden hidden lg:flex">
+        <div className="border-l flex-col h-full overflow-hidden hidden lg:flex">
           {/* <div className="flex-shrink-0 p-4 border-b">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">Aperçu de la facture</h2>
             </div>
           </div> */}
 
-          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-[calc(100vh-64px)]">
+          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full">
             <UniversalPreviewPDF data={formData} type="invoice" />
           </div>
         </div>
