@@ -124,24 +124,27 @@ export default function ModernInvoiceEditor({
 
               <div className="flex items-center gap-2 md:gap-6">
                 {!showSettings && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSettingsClick}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Settings className="h-4 w-4 text-muted-foreground" />
-                  </Button>
+                  <>
+                    {/* Croix pour fermer sur mobile */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.history.back()}
+                      className="h-8 w-8 p-0 md:hidden"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSettingsClick}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Settings className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </>
                 )}
-                {/* Croix pour fermer sur mobile */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => window.history.back()}
-                  className="h-8 w-8 p-0 md:hidden"
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </Button>
 
                 {showSettings && (
                   <Button
