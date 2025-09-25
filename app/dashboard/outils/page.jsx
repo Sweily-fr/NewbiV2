@@ -39,9 +39,9 @@ export default function Outils() {
         
         {/* Skeleton des tabs */}
         <div className="flex items-center gap-2 mb-6">
-          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+          <div className="flex gap-4 border-b pb-2">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-8 w-16 md:w-20 bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
+              <Skeleton key={i} className="h-6 w-16 md:w-20 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
             ))}
           </div>
         </div>
@@ -107,18 +107,18 @@ export default function Outils() {
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="w-auto flex-col justify-start gap-4 md:gap-6"
+            className="w-auto items-center"
           >
-            <TabsList className="grid w-auto grid-cols-4 h-auto">
+            <TabsList className="h-auto rounded-none border-b bg-transparent p-0">
               <TabsTrigger
                 value="outline"
-                className="font-normal text-xs md:text-sm px-2 md:px-3 py-2"
+                className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm"
               >
                 Tout
               </TabsTrigger>
               <TabsTrigger
                 value="past-performance"
-                className="font-normal text-xs md:text-sm px-1 md:px-3 py-2"
+                className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm"
               >
                 <span className="hidden md:inline">Financier</span>
                 <span className="md:hidden">Fin.</span>
@@ -128,7 +128,7 @@ export default function Outils() {
               </TabsTrigger>
               <TabsTrigger
                 value="key-personnel"
-                className="font-normal text-xs md:text-sm px-1 md:px-3 py-2"
+                className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm"
               >
                 <span className="hidden md:inline">Marketing</span>
                 <span className="md:hidden">Mark.</span>
@@ -138,7 +138,7 @@ export default function Outils() {
               </TabsTrigger>
               <TabsTrigger
                 value="focus-documents"
-                className="font-normal text-xs md:text-sm px-1 md:px-3 py-2"
+                className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm"
               >
                 <span className="hidden md:inline">Automatisation</span>
                 <span className="md:hidden">Auto.</span>
