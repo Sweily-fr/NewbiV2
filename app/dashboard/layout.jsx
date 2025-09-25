@@ -10,6 +10,8 @@ import { SearchCommand } from "@/src/components/search-command";
 import { SignatureProvider, useSignatureData } from "@/src/hooks/use-signature-data";
 import { TrialBanner } from "@/src/components/trial-banner";
 import { PricingModal } from "@/src/components/pricing-modal";
+import OnboardingModal from "@/src/components/onboarding-modal";
+import { useOnboarding } from "@/src/hooks/useOnboarding";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -17,6 +19,14 @@ function DashboardContent({ children }) {
   const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  
+  // Hook pour gérer l'onboarding
+  const { 
+    isOnboardingOpen, 
+    setIsOnboardingOpen, 
+    completeOnboarding, 
+    isLoading 
+  } = useOnboarding();
 
   // Protection contre l'erreur d'hydratation
   useEffect(() => {
@@ -81,6 +91,13 @@ function DashboardContent({ children }) {
       <PricingModal 
         isOpen={isPricingModalOpen} 
         onClose={() => setIsPricingModalOpen(false)} 
+      />
+      
+      {/* Modal d'onboarding pour les nouveaux utilisateurs */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onComplete={completeOnboarding}
       />
     </SidebarProvider>
   );
