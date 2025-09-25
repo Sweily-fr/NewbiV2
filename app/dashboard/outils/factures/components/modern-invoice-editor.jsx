@@ -134,7 +134,7 @@ export default function ModernInvoiceEditor({
                     >
                       <X className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                    
+
                     <Button
                       variant="ghost"
                       size="sm"

@@ -45,7 +45,7 @@ export default function ShippingSection({ canEdit }) {
     register,
     formState: { errors },
   } = useFormContext();
-  
+
   const data = watch();
   const shipping = data.shipping || {};
   const billShipping = shipping.billShipping || false;
@@ -54,25 +54,33 @@ export default function ShippingSection({ canEdit }) {
   // Fonction pour remplir automatiquement les informations de livraison du client
   const fillFromClientShipping = () => {
     if (client?.shippingAddress) {
-      setValue("shipping.shippingAddress", {
-        fullName: client.shippingAddress.fullName || "",
-        street: client.shippingAddress.street || "",
-        city: client.shippingAddress.city || "",
-        postalCode: client.shippingAddress.postalCode || "",
-        country: client.shippingAddress.country || "",
-      }, { shouldDirty: true });
+      setValue(
+        "shipping.shippingAddress",
+        {
+          fullName: client.shippingAddress.fullName || "",
+          street: client.shippingAddress.street || "",
+          city: client.shippingAddress.city || "",
+          postalCode: client.shippingAddress.postalCode || "",
+          country: client.shippingAddress.country || "",
+        },
+        { shouldDirty: true }
+      );
     }
   };
 
   // Fonction pour vider les champs de livraison
   const clearShippingFields = () => {
-    setValue("shipping.shippingAddress", {
-      fullName: "",
-      street: "",
-      city: "",
-      postalCode: "",
-      country: "",
-    }, { shouldDirty: true });
+    setValue(
+      "shipping.shippingAddress",
+      {
+        fullName: "",
+        street: "",
+        city: "",
+        postalCode: "",
+        country: "",
+      },
+      { shouldDirty: true }
+    );
     setValue("shipping.shippingAmountHT", 0, { shouldDirty: true });
     setValue("shipping.shippingVatRate", 20, { shouldDirty: true });
   };
@@ -80,7 +88,7 @@ export default function ShippingSection({ canEdit }) {
   // Gérer le changement de la case à cocher
   const handleBillShippingChange = (checked) => {
     setValue("shipping.billShipping", checked, { shouldDirty: true });
-    
+
     if (!checked) {
       clearShippingFields();
     } else if (client?.shippingAddress) {
@@ -111,7 +119,7 @@ export default function ShippingSection({ canEdit }) {
           />
           <Label
             htmlFor="billShipping"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             Facturer la livraison
           </Label>
@@ -162,7 +170,10 @@ export default function ShippingSection({ canEdit }) {
                 disabled={!canEdit}
                 rows={2}
                 {...register("shipping.shippingAddress.street", {
-                  validate: createValidationFunction("street", "L'adresse de livraison est requise")
+                  validate: createValidationFunction(
+                    "street",
+                    "L'adresse de livraison est requise"
+                  ),
                 })}
               />
               {errors?.shipping?.shippingAddress?.street && (
@@ -181,7 +192,10 @@ export default function ShippingSection({ canEdit }) {
                   placeholder="Ville"
                   disabled={!canEdit}
                   {...register("shipping.shippingAddress.city", {
-                    validate: createValidationFunction("city", "La ville est requise")
+                    validate: createValidationFunction(
+                      "city",
+                      "La ville est requise"
+                    ),
                   })}
                 />
                 {errors?.shipping?.shippingAddress?.city && (
@@ -198,7 +212,10 @@ export default function ShippingSection({ canEdit }) {
                   placeholder="Code postal"
                   disabled={!canEdit}
                   {...register("shipping.shippingAddress.postalCode", {
-                    validate: createValidationFunction("postalCode", "Le code postal est requis")
+                    validate: createValidationFunction(
+                      "postalCode",
+                      "Le code postal est requis"
+                    ),
                   })}
                 />
                 {errors?.shipping?.shippingAddress?.postalCode && (
@@ -217,7 +234,10 @@ export default function ShippingSection({ canEdit }) {
                 placeholder="Pays"
                 disabled={!canEdit}
                 {...register("shipping.shippingAddress.country", {
-                  validate: createValidationFunction("country", "Le pays est requis")
+                  validate: createValidationFunction(
+                    "country",
+                    "Le pays est requis"
+                  ),
                 })}
               />
               {errors?.shipping?.shippingAddress?.country && (
@@ -240,7 +260,7 @@ export default function ShippingSection({ canEdit }) {
                   disabled={!canEdit}
                   {...register("shipping.shippingAmountHT", {
                     valueAsNumber: true,
-                    validate: createAmountValidation()
+                    validate: createAmountValidation(),
                   })}
                 />
                 {errors?.shipping?.shippingAmountHT && (
@@ -254,8 +274,10 @@ export default function ShippingSection({ canEdit }) {
                 <Label htmlFor="shippingVatRate">TVA (%)</Label>
                 <Select
                   value={shipping.shippingVatRate?.toString() || "20"}
-                  onValueChange={(value) => 
-                    setValue("shipping.shippingVatRate", parseFloat(value), { shouldDirty: true })
+                  onValueChange={(value) =>
+                    setValue("shipping.shippingVatRate", parseFloat(value), {
+                      shouldDirty: true,
+                    })
                   }
                   disabled={!canEdit}
                 >

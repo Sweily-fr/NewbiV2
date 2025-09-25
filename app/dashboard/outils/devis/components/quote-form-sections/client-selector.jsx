@@ -618,7 +618,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="company-search"
-                        className="text-sm font-medium flex items-center gap-2"
+                        className="text-sm font-normal flex items-center gap-2"
                       >
                         <Building className="h-4 w-4" />
                         Rechercher une entreprise
@@ -724,7 +724,7 @@ export default function ClientSelector({
                       type="button"
                       variant="outline"
                       onClick={handleShowManualForm}
-                      className="w-full h-10 text-sm"
+                      className="w-full h-10 text-sm font-normal"
                       disabled={disabled}
                     >
                       <Plus className="h-4 w-4 mr-2" />

@@ -761,7 +761,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="company-search"
-                        className="text-sm font-medium flex items-center gap-2"
+                        className="text-sm font-normal flex items-center gap-2"
                       >
                         <Building className="h-4 w-4" />
                         Rechercher une entreprise
@@ -867,7 +867,7 @@ export default function ClientSelector({
                       type="button"
                       variant="outline"
                       onClick={handleShowManualForm}
-                      className="w-full h-10 text-sm"
+                      className="w-full h-10 text-sm font-normal"
                       disabled={disabled}
                     >
                       <Plus className="h-4 w-4 mr-2" />
@@ -882,7 +882,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="client-type"
-                        className="text-sm font-medium"
+                        className="text-sm font-normal"
                       >
                         Type de client
                       </Label>
@@ -952,7 +952,7 @@ export default function ClientSelector({
                         <div className="space-y-2">
                           <Label
                             htmlFor="client-name"
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Nom de l'entreprise{" "}
                             <span className="text-red-500">*</span>
@@ -990,7 +990,7 @@ export default function ClientSelector({
                         <div className="space-y-2">
                           <Label
                             htmlFor="client-firstname"
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Prénom
                           </Label>
@@ -1018,7 +1018,7 @@ export default function ClientSelector({
                         <div className="space-y-2">
                           <Label
                             htmlFor="client-lastname"
-                            className="text-sm font-medium"
+                            className="text-sm font-normal"
                           >
                             Nom
                           </Label>
@@ -1051,7 +1051,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="client-email"
-                        className="text-sm font-medium"
+                        className="text-sm font-normal"
                       >
                         Email <span className="text-red-500">*</span>
                       </Label>
@@ -1087,7 +1087,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="client-phone"
-                        className="text-sm font-medium"
+                        className="text-sm font-normal"
                       >
                         Téléphone
                       </Label>
@@ -1127,7 +1127,7 @@ export default function ClientSelector({
                       <div className="space-y-2">
                         <Label
                           htmlFor="client-siret"
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           SIRET
                         </Label>
@@ -1152,7 +1152,7 @@ export default function ClientSelector({
                       <div className="space-y-2">
                         <Label
                           htmlFor="client-vat"
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           N° TVA
                         </Label>
@@ -1187,7 +1187,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="client-street"
-                        className="text-sm font-medium"
+                        className="text-sm font-normal"
                       >
                         Adresse <span className="text-red-500">*</span>
                       </Label>
@@ -1227,7 +1227,7 @@ export default function ClientSelector({
                       <div className="space-y-2">
                         <Label
                           htmlFor="client-postal-code"
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           Code postal <span className="text-red-500">*</span>
                         </Label>
@@ -1266,7 +1266,7 @@ export default function ClientSelector({
                       <div className="space-y-2 md:col-span-2">
                         <Label
                           htmlFor="client-city"
-                          className="text-sm font-medium"
+                          className="text-sm font-normal"
                         >
                           Ville <span className="text-red-500">*</span>
                         </Label>
@@ -1306,7 +1306,7 @@ export default function ClientSelector({
                     <div className="space-y-2">
                       <Label
                         htmlFor="client-country"
-                        className="text-sm font-medium"
+                        className="text-sm font-normal"
                       >
                         Pays
                       </Label>
@@ -1381,7 +1381,7 @@ export default function ClientSelector({
                         />
                         <Label
                           htmlFor="different-shipping-address"
-                          className="text-sm font-medium cursor-pointer"
+                          className="text-sm font-normal cursor-pointer"
                         >
                           Utiliser une adresse de livraison différente
                         </Label>
@@ -1389,7 +1389,7 @@ export default function ClientSelector({
 
                       {newClientForm.hasDifferentShippingAddress && (
                         <div className="space-y-4 px-6 pt-2 border-l-2 border-gray-200">
-                          <Label className="text-sm font-medium text-gray-700">
+                          <Label className="text-sm font-normal text-gray-700">
                             Adresse de livraison
                           </Label>
 
@@ -1397,7 +1397,7 @@ export default function ClientSelector({
                           <div className="space-y-2">
                             <Label
                               htmlFor="shipping-fullname"
-                              className="text-sm font-medium"
+                              className="text-sm font-normal"
                             >
                               Nom complet
                             </Label>
@@ -1424,7 +1424,7 @@ export default function ClientSelector({
                           <div className="space-y-2">
                             <Label
                               htmlFor="shipping-street"
-                              className="text-sm font-medium"
+                              className="text-sm font-normal"
                             >
                               Rue <span className="text-red-500">*</span>
                             </Label>
@@ -1469,7 +1469,7 @@ export default function ClientSelector({
                             <div className="space-y-2">
                               <Label
                                 htmlFor="shipping-postal-code"
-                                className="text-sm font-medium"
+                                className="text-sm font-normal"
                               >
                                 Code postal
                               </Label>
@@ -1514,7 +1514,7 @@ export default function ClientSelector({
                             <div className="space-y-2">
                               <Label
                                 htmlFor="shipping-city"
-                                className="text-sm font-medium"
+                                className="text-sm font-normal"
                               >
                                 Ville <span className="text-red-500">*</span>
                               </Label>
@@ -1559,7 +1559,7 @@ export default function ClientSelector({
                           <div className="space-y-2">
                             <Label
                               htmlFor="shipping-country"
-                              className="text-sm font-medium"
+                              className="text-sm font-normal"
                             >
                               Pays
                             </Label>
@@ -1590,7 +1590,7 @@ export default function ClientSelector({
                   <div className="space-y-2">
                     <Label
                       htmlFor="client-notes"
-                      className="text-sm font-medium"
+                      className="text-sm font-normal"
                     >
                       Notes (optionnel)
                     </Label>
@@ -1622,7 +1622,7 @@ export default function ClientSelector({
                         setActiveTab("existing");
                       }}
                       disabled={disabled}
-                      className="h-10 px-4 text-sm"
+                      className="h-10 px-4 text-sm font-normal"
                     >
                       Annuler
                     </Button>
@@ -1634,7 +1634,7 @@ export default function ClientSelector({
                         !newClientForm.email ||
                         disabled
                       }
-                      className="h-10 px-4 text-sm"
+                      className="h-10 px-4 text-sm font-normal"
                     >
                       {createLoading ? (
                         <>
