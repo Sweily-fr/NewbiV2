@@ -94,6 +94,8 @@ function SignatureProviderContent({ children }) {
       logoSize: 60, // Taille par défaut du logo
       // Taille des logos sociaux (en pixels)
       socialSize: 24, // Taille par défaut des logos sociaux
+      // Mode espacement détaillé
+      detailedSpacing: false, // Par défaut, utiliser l'espacement global
       // Espacements entre les éléments (en pixels)
       spacings: {
         global: 8, // Espacement global par défaut

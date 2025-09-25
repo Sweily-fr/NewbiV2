@@ -10,6 +10,7 @@ import { Copy, Monitor, Smartphone, Check } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
+import { useSignatureGenerator } from "../hooks/useSignatureGenerator";
 import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
 import { useImageUpload } from "../hooks/useImageUpload";
@@ -31,8 +32,9 @@ import {
 } from "@/src/components/ui/tabs";
 
 // Aperçu de l'email avec édition inline
-const EmailPreview = ({ signatureData }) => {
+const EmailPreview = ({ signatureData, editingSignatureId }) => {
   const { updateSignatureData } = useSignatureData();
+  const { copyToClipboard } = useSignatureGenerator();
   const { uploadImageFile, getImageUrl, isUploading, error } = useImageUpload();
   const [isCopying, setIsCopying] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -1228,55 +1230,18 @@ const EmailPreview = ({ signatureData }) => {
     setIsCopying(true);
 
     try {
-      // Générer une PNG colorée pour Facebook si nécessaire
-      let facebookImageUrl = null;
-      if (signatureData.socialLinks?.facebook && signatureData.colors?.social) {
-        try {
-          const { generateColoredSocialLogo } = await import(
-            "../utils/svgToPng"
-          );
-          facebookImageUrl = await generateColoredSocialLogo(
-            "facebook",
-            signatureData.colors.social,
-            signatureData.socialSize || 24
-          );
-        } catch (error) {
-          console.error("❌ Erreur génération PNG:", error);
-        }
-      }
-
-      // Générer le HTML selon l'orientation actuelle
-      const htmlSignature = await generateSignatureHTML(facebookImageUrl);
-
-      // Utiliser l'API moderne du clipboard pour copier du HTML
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            "text/html": new Blob([htmlSignature], { type: "text/html" }),
-            "text/plain": new Blob([htmlSignature.replace(/<[^>]*>/g, "")], {
-              type: "text/plain",
-            }),
-          }),
-        ]);
-
-        toast.success("Signature copiée avec logo PNG pour Gmail !");
+      // Utiliser notre hook optimisé pour les clients mail
+      const result = await copyToClipboard();
+      
+      if (result.success) {
+        toast.success("Signature copiée avec espacements optimisés !");
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
-      } catch (error) {
-        console.error("Erreur lors de la copie:", error);
-        // Fallback pour les navigateurs plus anciens
-        try {
-          await navigator.clipboard.writeText(htmlSignature);
-          toast.success("Signature copiée (texte brut) !");
-          setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2000);
-        } catch (fallbackError) {
-          console.error("Erreur fallback:", fallbackError);
-          toast.error("Erreur lors de la copie de la signature");
-        }
+      } else {
+        toast.error(result.message);
       }
     } catch (error) {
-      console.error("❌ Erreur lors de la copie:", error);
+      console.error("❌ Erreur copie signature:", error);
       toast.error("Erreur lors de la copie de la signature");
     } finally {
       setIsCopying(false);
@@ -1322,11 +1287,16 @@ const EmailPreview = ({ signatureData }) => {
     }
 
     try {
-      // Déterminer le type d'image pour Cloudflare
-      const imageType = field === "photo" ? "profile" : "company";
+      // Déterminer le type d'image pour la nouvelle structure
+      const imageType = field === "photo" ? "imgProfil" : "logoReseau";
+      
+      // Récupérer ou générer un signatureId
+      const signatureId = editingSignatureId || `temp-${Date.now()}`;
+      
+      console.log(`🔄 Upload ${imageType} pour signature ${signatureId}`);
 
-      // Upload vers Cloudflare
-      const result = await uploadImageFile(file, imageType);
+      // Upload vers Cloudflare avec la nouvelle structure
+      const result = await uploadImageFile(file, imageType, signatureId);
 
       // Stocker l'URL publique et la clé Cloudflare
       updateSignatureData(field, result.url);
@@ -1715,7 +1685,7 @@ export default function NewSignaturePage() {
         <div className="grow min-w-0 h-[600px]">
           <TabsContent value="desktop" className="mt-0 w-full h-full">
             <div className="flex justify-center items-start h-full">
-              <EmailPreview signatureData={signatureData} />
+              <EmailPreview signatureData={signatureData} editingSignatureId={editingSignatureId} />
             </div>
           </TabsContent>
 

@@ -11,15 +11,21 @@ export function useImageUpload() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);
 
-  const uploadImageFile = useCallback(async (file, imageType = 'profile', onSuccess) => {
+  const uploadImageFile = useCallback(async (file, imageType = 'imgProfil', signatureId, onSuccess) => {
     if (!file) return;
+
+    if (!signatureId) {
+      const errorMsg = 'signatureId est requis pour l\'upload d\'images de signature';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    }
 
     setIsUploading(true);
     setError(null);
     setUploadProgress(0);
 
     try {
-      const result = await CloudflareImageService.uploadImage(file, imageType, (progress) => {
+      const result = await CloudflareImageService.uploadImage(file, imageType, signatureId, (progress) => {
         setUploadProgress(progress);
       });
 
