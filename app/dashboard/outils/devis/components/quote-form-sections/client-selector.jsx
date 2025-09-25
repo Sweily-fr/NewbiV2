@@ -444,11 +444,11 @@ export default function ClientSelector({
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="existing" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <span>Client existant</span>
+                <span className="font-normal">Client existant</span>
               </TabsTrigger>
               <TabsTrigger value="new" className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                <span>Nouveau client</span>
+                <span className="font-normal">Nouveau client</span>
               </TabsTrigger>
             </TabsList>
           </CardHeader>
@@ -650,7 +650,7 @@ export default function ClientSelector({
 
                     {companies.length > 0 && (
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">
+                        <Label className="text-sm font-normal">
                           Entreprises trouvées
                         </Label>
                         <div className="space-y-2 max-h-80 overflow-y-auto">
@@ -664,7 +664,7 @@ export default function ClientSelector({
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1">
                                     <Building className="h-4 w-4 text-primary flex-shrink-0" />
-                                    <h4 className="font-medium text-sm truncate">
+                                    <h4 className="font-normal text-sm truncate">
                                       {company.name}
                                     </h4>
                                     {company.status === "A" && (
@@ -1297,7 +1297,7 @@ export default function ClientSelector({
                   <div className="space-y-2">
                     <Label
                       htmlFor="client-notes"
-                      className="text-sm font-medium"
+                      className="text-sm font-normal"
                     >
                       Notes (optionnel)
                     </Label>
@@ -1329,7 +1329,7 @@ export default function ClientSelector({
                         setActiveTab("existing");
                       }}
                       disabled={disabled}
-                      className="h-10 px-4 text-sm"
+                      className="h-10 px-4 text-sm font-normal"
                     >
                       Annuler
                     </Button>
@@ -1341,7 +1341,7 @@ export default function ClientSelector({
                         !newClientForm.email ||
                         disabled
                       }
-                      className="h-10 px-4 text-sm"
+                      className="h-10 px-4 text-sm font-normal"
                     >
                       {createLoading ? (
                         <>

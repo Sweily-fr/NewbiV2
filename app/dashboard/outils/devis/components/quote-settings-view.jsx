@@ -40,7 +40,7 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave }) {
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               {/* Couleurs côte à côte */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Couleur du texte */}
                 <div className="space-y-2">
                   <Label htmlFor="text-color" className="font-light">

@@ -18,7 +18,10 @@ import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedQuoteForm from "./enhanced-quote-form";
 import QuoteSettingsView from "./quote-settings-view";
 import { toast } from "@/src/components/ui/sonner";
-import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
+import {
+  updateOrganization,
+  getActiveOrganization,
+} from "@/src/lib/organization-client";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -65,13 +68,13 @@ export default function ModernQuoteEditor({
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full">
         {/* Left Panel - Enhanced Form */}
-        <div className="pl-6 pt-6 pr-6 pb-4 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
-          <div className="max-w-2xl mx-auto flex flex-col w-full h-full overflow-hidden">
+        <div className="pl-4 pt-18 pr-2 pb-4 md:pl-6 md:pt-6 md:pr-6 flex flex-col h-full overflow-hidden">
+          <div className="max-w-2xl mx-auto flex flex-col w-full h-full">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6 pb-6 border-b">
+            <div className="flex items-center justify-between mb-4 pb-4 md:mb-6 md:pb-6 border-b">
               <div className="flex items-center gap-2">
                 {/* <Button
                   variant="ghost"
@@ -82,7 +85,7 @@ export default function ModernQuoteEditor({
                   <ArrowLeft className="h-4 w-4" />
                 </Button> */}
                 <div>
-                  <h1 className="text-2xl font-medium mb-1">
+                  <h1 className="text-xl md:text-2xl font-medium mb-1">
                     {showSettings ? (
                       "Paramètres du devis"
                     ) : (
@@ -103,29 +106,41 @@ export default function ModernQuoteEditor({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {!isReadOnly && (
+              <div className="flex items-center gap-2 md:gap-6">
+                {!showSettings && (
                   <>
-                    {!showSettings ? (
+                    {/* Croix pour fermer sur mobile */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.history.back()}
+                      className="h-8 w-8 p-0 md:hidden"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    
+                    {!isReadOnly && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleSettingsClick}
-                        className="gap-2"
+                        className="h-8 w-8 p-0"
                       >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleCloseSettings}
-                        className="gap-2"
-                      >
-                        <X className="h-4 w-4" />
+                        <Settings className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     )}
                   </>
+                )}
+
+                {showSettings && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCloseSettings}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </Button>
                 )}
                 {/* {formData.status && (
                   <Badge
@@ -152,10 +167,14 @@ export default function ModernQuoteEditor({
                         // Sauvegarder les paramètres dans l'organisation
                         await saveSettingsToOrganization();
                         handleCloseSettings();
-                        toast.success("Paramètres sauvegardés dans l'organisation");
+                        toast.success(
+                          "Paramètres sauvegardés dans l'organisation"
+                        );
                       } catch (error) {
                         console.error("Erreur lors de la sauvegarde:", error);
-                        toast.error("Erreur lors de la sauvegarde des paramètres");
+                        toast.error(
+                          "Erreur lors de la sauvegarde des paramètres"
+                        );
                       }
                     }}
                     canEdit={!isReadOnly}
@@ -182,8 +201,8 @@ export default function ModernQuoteEditor({
         </div>
 
         {/* Right Panel - Preview */}
-        <div className="border-l flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-[#F9F9F9] dark:bg-[#1a1a1a]">
-          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-[calc(100vh-64px)]">
+        <div className="border-l flex-col h-full overflow-hidden hidden lg:flex">
+          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full">
             <UniversalPreviewPDF data={formData} type="quote" />
           </div>
         </div>

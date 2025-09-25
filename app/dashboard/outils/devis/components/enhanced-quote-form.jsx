@@ -16,6 +16,8 @@ import {
   CheckIcon,
   ChevronDownIcon,
   Download,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_PRODUCTS } from "@/src/graphql/productQueries";
@@ -317,7 +319,7 @@ export default function EnhancedQuoteForm({
   return (
     <div className="flex flex-col h-full w-full">
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto pr-2 scrollbar-auto-hide min-h-0">
+      <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0">
         <div className="space-y-6 pb-20">
           {/* Étape 1: Détails du devis */}
           {currentStep === 1 && (
@@ -370,14 +372,15 @@ export default function EnhancedQuoteForm({
       </div>
 
       {/* Footer avec boutons d'action - Positionné en dehors du flux normal */}
-      <div className="pt-4 z-50 border-t">
-        <div className="max-w-2xl mx-auto">
+      <div className="pt-4 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent p-4 lg:p-0">
+        <div className="max-w-2xl mx-auto px-2 md:px-6 lg:px-0">
           <div className="flex justify-between items-center">
             <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => window.history.back()}
                 disabled={loading || saving}
+                className="text-sm font-normal hidden md:flex"
               >
                 Annuler
               </Button>
@@ -386,6 +389,7 @@ export default function EnhancedQuoteForm({
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={!canEdit || saving}
+                className="text-sm font-normal"
               >
                 {saving ? "Sauvegarde..." : "Brouillon"}
               </Button>
@@ -396,25 +400,28 @@ export default function EnhancedQuoteForm({
                 <Button
                   onClick={handleNextStep}
                   disabled={!isStep1Valid() || !canEdit}
-                  className="px-6 text-sm font-light"
+                  className="px-6 text-sm font-normal"
                 >
-                  Suivant
+                  <span className="hidden sm:inline">Suivant</span>
+                  <ChevronRight className="h-4 w-4 sm:ml-2" />
                 </Button>
               )}
 
               {currentStep === 2 && (
                 <>
                   <Button
+                    className="text-sm font-normal"
                     variant="outline"
                     onClick={handlePreviousStep}
                     disabled={!canEdit}
                   >
-                    Précédent
+                    <ChevronLeft className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Précédent</span>
                   </Button>
                   <Button
                     onClick={handleCreateQuote}
                     disabled={!isStep2Valid() || !canEdit || saving}
-                    className="px-6 text-sm font-light"
+                    className="px-6 text-sm font-normal"
                   >
                     {saving ? "Création..." : "Créer le devis"}
                   </Button>

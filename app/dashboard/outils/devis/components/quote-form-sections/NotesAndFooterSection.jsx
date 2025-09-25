@@ -69,7 +69,7 @@ export default function NotesAndFooterSection({ canEdit }) {
   return (
     <Card className="shadow-none border-none p-2 bg-transparent">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+        <CardTitle className="flex items-center gap-2 font-normal text-lg">
           {/* <Tag className="h-5 w-5" /> */}
           Notes et conditions
         </CardTitle>

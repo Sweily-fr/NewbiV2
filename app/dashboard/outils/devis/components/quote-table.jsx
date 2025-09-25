@@ -127,21 +127,25 @@ export default function QuoteTable() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hidden md:flex">
+        <div className="flex flex-1 items-center space-x-2">
           <Input
             placeholder="Rechercher des devis..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-80"
+            className="h-8 w-full sm:w-[150px] lg:w-[250px]"
           />
 
           {/* Status Filter */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="border-dashed font-normal">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-dashed font-normal"
+              >
                 <ListFilterIcon className="mr-2 h-4 w-4" />
-                Statut
+                <span className="hidden sm:inline">Statut</span>
                 {statusFilter?.length > 0 && (
                   <Badge variant="secondary" className="ml-2">
                     {statusFilter.length}
@@ -276,8 +280,72 @@ export default function QuoteTable() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-md border">
+      {/* Mobile Toolbar - Style Notion */}
+      <div className="md:hidden px-4 py-3">
+        <div className="flex items-center gap-3">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <Input
+              placeholder="Rechercher des devis..."
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
+            />
+          </div>
+
+          {/* Filter Button - Icon only */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end">
+              <div className="p-4">
+                <h4 className="font-medium leading-none mb-3">Filtrer par statut</h4>
+                <div className="space-y-2">
+                  {Object.entries(QUOTE_STATUS_LABELS).map(([status, label]) => (
+                    <div key={status} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`mobile-${status}`}
+                        checked={statusFilter.includes(status)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setStatusFilter([...statusFilter, status]);
+                          } else {
+                            setStatusFilter(
+                              statusFilter.filter((s) => s !== status)
+                            );
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`mobile-${status}`} className="text-sm font-normal">
+                        {label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {statusFilter.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setStatusFilter([])}
+                    className="w-full mt-3 h-8 px-2 lg:px-3"
+                  >
+                    Effacer les filtres
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      {/* Table - Desktop style (original) */}
+      <div className="hidden md:block rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -330,8 +398,69 @@ export default function QuoteTable() {
         </Table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
+      {/* Table - Mobile style (Notion-like) */}
+      <div className="md:hidden overflow-x-auto">
+        <Table className="w-max">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow
+                key={headerGroup.id}
+                className="border-b border-gray-100 dark:border-gray-400"
+              >
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    style={{ width: header.getSize() }}
+                    className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className="py-3 px-4 text-sm"
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={table.getAllColumns().length}
+                  className="h-24 text-center text-gray-500 dark:text-gray-400"
+                >
+                  {loading ? "Chargement..." : "Aucun devis trouvé."}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination - Visible sur desktop seulement */}
+      <div className="hidden md:flex items-center justify-between">
         <div className="flex-1 text-sm font-normal text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).

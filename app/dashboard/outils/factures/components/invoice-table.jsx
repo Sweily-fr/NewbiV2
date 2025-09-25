@@ -325,23 +325,23 @@ export default function InvoiceTable() {
           </DropdownMenu>
 
           {/* Sort Button - Icon only */}
-          <Button
+          {/* <Button
             variant="ghost"
             size="sm"
             className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <Columns3Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-          </Button>
+          </Button> */}
 
           {/* Add Invoice Button - Icon only */}
-          <Button
+          {/* <Button
             variant="default"
             size="sm"
             className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
             onClick={() => router.push("/dashboard/outils/factures/new")}
           >
             <PlusIcon className="h-4 w-4" />
-          </Button>
+          </Button> */}
         </div>
       </div>
 

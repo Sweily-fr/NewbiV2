@@ -92,37 +92,52 @@ export default function ItemsSection({
   };
 
   return (
-    <Card className="border-0 shadow-none bg-transparent mb-0">
+    <Card className="shadow-none p-2 border-none bg-transparent mb-0">
       <CardHeader className="p-0">
         <CardTitle className="flex items-center gap-2 font-normal text-lg">
-          {/* <Package className="h-5 w-5" /> */}
           Articles et produits
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-0">
         {/* Bouton ajouter article */}
-        <div className="flex gap-3 items-stretch">
-          <div className="flex-1 min-w-0" style={{ flexBasis: "75%" }}>
-            <div className="h-full">
-              <ProductSearchCombobox
-                onSelect={addItem}
-                placeholder="Rechercher un produit ou service..."
+        <div className="flex flex-col md:flex-row gap-3 items-stretch">
+          {ProductSearchCombobox ? (
+            <>
+              <div className="flex-1 min-w-0 order-1 md:order-1">
+                <div className="h-full">
+                  <ProductSearchCombobox
+                    onSelect={addItem}
+                    placeholder="Rechercher un produit..."
+                    disabled={!canEdit}
+                    className="h-full"
+                  />
+                </div>
+              </div>
+              <div className="flex-shrink-0 order-2 md:order-2 md:w-auto">
+                <Button
+                  onClick={() => addItem()}
+                  disabled={!canEdit}
+                  className="gap-2 w-full h-full min-h-10 font-normal"
+                  size="lg"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="md:inline">Ajouter un article</span>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="w-full">
+              <Button
+                onClick={() => addItem()}
                 disabled={!canEdit}
-                className="h-full"
-              />
+                className="gap-2 w-full h-full min-h-10 font-normal"
+                size="lg"
+              >
+                <Plus className="h-4 w-4" />
+                Ajouter un article
+              </Button>
             </div>
-          </div>
-          <div className="flex-shrink-0" style={{ flexBasis: "25%" }}>
-            <Button
-              onClick={() => addItem()}
-              disabled={!canEdit}
-              className="gap-2 w-full h-full min-h-10 font-normal"
-              size="lg"
-            >
-              <Plus />
-              Ajouter un article
-            </Button>
-          </div>
+          )}
         </div>
 
         {/* Liste des articles avec Accordion */}

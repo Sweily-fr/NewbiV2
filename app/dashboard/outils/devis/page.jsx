@@ -16,26 +16,56 @@ function QuotesContent() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-medium mb-2">Devis</h1>
-          <p className="text-muted-foreground">
-            Créez et gérez vos devis clients
-          </p>
+    <>
+      {/* Desktop Layout */}
+      <div className="hidden md:block space-y-6 p-4 sm:p-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-medium mb-2">Devis</h1>
+            <p className="text-muted-foreground text-sm">
+              Créez et gérez vos devis clients
+            </p>
+          </div>
+          <Button onClick={handleNewQuote} className="w-full sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            Nouveau devis
+          </Button>
         </div>
-        <Button onClick={handleNewQuote}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouveau devis
-        </Button>
+
+        {/* Table */}
+        <Suspense fallback={<QuoteTableSkeleton />}>
+          <QuoteTable />
+        </Suspense>
       </div>
 
-      {/* Table */}
-      <Suspense fallback={<QuoteTableSkeleton />}>
-        <QuoteTable />
-      </Suspense>
-    </div>
+      {/* Mobile Layout - Style Notion */}
+      <div className="md:hidden">
+        {/* Header - Style Notion sur mobile */}
+        <div className="px-4 py-6">
+          <div>
+            <h1 className="text-2xl font-medium mb-2">Devis</h1>
+            <p className="text-muted-foreground text-sm">
+              Créez et gérez vos devis clients
+            </p>
+          </div>
+        </div>
+
+        {/* Table */}
+        <Suspense fallback={<QuoteTableSkeleton />}>
+          <QuoteTable />
+        </Suspense>
+
+        {/* Bouton flottant mobile */}
+        <Button
+          onClick={handleNewQuote}
+          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
+          size="icon"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </div>
+    </>
   );
 }
 
