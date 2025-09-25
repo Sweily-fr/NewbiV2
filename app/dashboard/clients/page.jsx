@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/src/components/ui/button";
+import { Plus } from "lucide-react";
 import TableUser from "./components/table";
 import ClientsModal from "./components/clients-modal";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
@@ -44,6 +46,15 @@ function ClientsContent() {
         {/* Table */}
         <TableUser handleAddUser={handleOpenInviteDialog} />
         <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
+
+        {/* Bouton flottant mobile */}
+        <Button
+          onClick={handleOpenInviteDialog}
+          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
+          size="icon"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
       </div>
     </>
   );

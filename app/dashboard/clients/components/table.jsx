@@ -883,14 +883,14 @@ export default function TableClients({ handleAddUser }) {
             </Button>
 
             {/* Add Client Button - Icon only */}
-            <Button
+            {/* <Button
               variant="default"
               size="sm"
               className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
               onClick={handleAddUser}
             >
               <PlusIcon className="h-4 w-4" />
-            </Button>
+            </Button> */}
           </div>
         </div>
 

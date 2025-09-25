@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/src/components/ui/button";
+import { Plus } from "lucide-react";
 import TableProduct from "./components/table-product";
 import ProductModal from "./components/product-modal";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
@@ -44,6 +46,15 @@ function CataloguesContent() {
         {/* Table */}
         <TableProduct handleAddProduct={handleOpenProductDialog} />
         <ProductModal open={dialogOpen} onOpenChange={setDialogOpen} />
+
+        {/* Bouton flottant mobile */}
+        <Button
+          onClick={handleOpenProductDialog}
+          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
+          size="icon"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
       </div>
     </>
   );

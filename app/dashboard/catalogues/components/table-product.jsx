@@ -951,14 +951,14 @@ export default function TableProduct({ handleAddProduct }) {
             </Popover>
 
             {/* Add Product Button */}
-            <Button
+            {/* <Button
               variant="default"
               size="sm"
               className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
               onClick={handleAddProduct}
             >
               <PlusIcon className="h-4 w-4" />
-            </Button>
+            </Button> */}
           </div>
         </div>
 
