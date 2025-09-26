@@ -336,6 +336,7 @@ import { useQuery, useMutation, useApolloClient } from "@apollo/client";
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 
 // Hook optimisé pour récupérer la liste des factures
 export const useInvoices = () => {
@@ -581,6 +582,7 @@ export const useNextInvoiceNumber = (prefix, options = {}) => {
 export const useCreateInvoice = () => {
   const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
+  const { handleMutationError } = useErrorHandler();
 
   const [createInvoiceMutation, { loading }] = useMutation(CREATE_INVOICE, {
     onCompleted: () => {
@@ -591,8 +593,7 @@ export const useCreateInvoice = () => {
       });
     },
     onError: (error) => {
-      console.error("Erreur lors de la création de la facture:", error);
-      toast.error(error.message || "Erreur lors de la création de la facture");
+      handleMutationError(error, 'create', 'invoice');
     },
   });
 
@@ -618,6 +619,7 @@ export const useCreateInvoice = () => {
 export const useUpdateInvoice = () => {
   const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
+  const { handleMutationError } = useErrorHandler();
 
   const [updateInvoiceMutation, { loading }] = useMutation(UPDATE_INVOICE, {
     onCompleted: (data) => {
@@ -630,10 +632,7 @@ export const useUpdateInvoice = () => {
       });
     },
     onError: (error) => {
-      console.error("Erreur lors de la mise à jour de la facture:", error);
-      toast.error(
-        error.message || "Erreur lors de la mise à jour de la facture"
-      );
+      handleMutationError(error, 'update', 'invoice');
     },
   });
 
@@ -659,6 +658,7 @@ export const useUpdateInvoice = () => {
 export const useDeleteInvoice = () => {
   const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
+  const { handleMutationError } = useErrorHandler();
 
   const [deleteInvoiceMutation, { loading }] = useMutation(DELETE_INVOICE, {
     onCompleted: () => {
@@ -669,10 +669,7 @@ export const useDeleteInvoice = () => {
       });
     },
     onError: (error) => {
-      console.error("Erreur lors de la suppression de la facture:", error);
-      toast.error(
-        error.message || "Erreur lors de la suppression de la facture"
-      );
+      handleMutationError(error, 'delete', 'invoice');
     },
   });
 
@@ -696,13 +693,14 @@ export const useDeleteInvoice = () => {
 
 // Hook pour envoyer une facture par email
 export const useSendInvoice = () => {
+  const { handleMutationError } = useErrorHandler();
+  
   const [sendInvoiceMutation, { loading }] = useMutation(SEND_INVOICE, {
     onCompleted: () => {
       toast.success("Facture envoyée avec succès");
     },
     onError: (error) => {
-      console.error("Erreur lors de l'envoi de la facture:", error);
-      toast.error(error.message || "Erreur lors de l'envoi de la facture");
+      handleMutationError(error, 'send', 'invoice');
     },
   });
 

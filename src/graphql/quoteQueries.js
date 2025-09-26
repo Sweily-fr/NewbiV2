@@ -300,6 +300,7 @@ import { useQuery, useMutation, useApolloClient } from "@apollo/client";
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 
 // Hook optimisé pour récupérer la liste des devis
 export const useQuotes = (filters = {}) => {
@@ -432,6 +433,7 @@ export function useNextQuoteNumber(prefix, options = {}) {
 export const useCreateQuote = () => {
   const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
+  const { handleMutationError } = useErrorHandler();
 
   const [createQuoteMutation, { loading }] = useMutation(CREATE_QUOTE, {
     onCompleted: () => {
@@ -442,8 +444,7 @@ export const useCreateQuote = () => {
       });
     },
     onError: (error) => {
-      console.error("Erreur lors de la création du devis:", error);
-      toast.error(error.message || "Erreur lors de la création du devis");
+      handleMutationError(error, 'create', 'quote');
     },
   });
 

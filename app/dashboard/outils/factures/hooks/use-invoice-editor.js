@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
+import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 import {
   useCreateInvoice,
   useUpdateInvoice,
@@ -29,6 +30,9 @@ export function useInvoiceEditor({
 
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
+  
+  // Error handler
+  const { handleError } = useErrorHandler();
 
   // GraphQL hooks
   const { invoice: existingInvoice, loading: loadingInvoice } =
@@ -253,9 +257,7 @@ export function useInvoiceEditor({
       }
     } catch (error) {
       console.error("Save failed:", error);
-      toast.error(
-        `Erreur lors de la sauvegarde: ${error.message || "Erreur inconnue"}`
-      );
+      handleError(error, 'invoice');
       return false;
     } finally {
       setSaving(false);
@@ -271,6 +273,7 @@ export function useInvoiceEditor({
     setSaving,
     formState.errors,
     reset,
+    handleError,
   ]);
 
   // Submit handler (validate and send)
@@ -311,9 +314,7 @@ export function useInvoiceEditor({
       }
     } catch (error) {
       console.error("Submit failed:", error);
-      toast.error(
-        `Erreur lors de la validation: ${error.message || "Erreur inconnue"}`
-      );
+      handleError(error, 'invoice');
       return false;
     } finally {
       setSaving(false);
@@ -328,6 +329,7 @@ export function useInvoiceEditor({
     router,
     existingInvoice?.status,
     formState.errors,
+    handleError,
   ]);
 
   // Fonction pour sauvegarder les paramètres dans l'organisation

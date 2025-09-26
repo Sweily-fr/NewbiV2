@@ -4,6 +4,7 @@ import { setContext } from "@apollo/client/link/context";
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
 import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "@/src/lib/auth-client";
+import { getErrorMessage, isCriticalError } from "@/src/utils/errorMessages";
 
 // Fonction pour vérifier si un token JWT est expiré
 const isTokenExpired = (token) => {
@@ -11,7 +12,7 @@ const isTokenExpired = (token) => {
     const payload = JSON.parse(atob(token.split(".")[1]));
     const currentTime = Date.now() / 1000;
     return payload.exp < currentTime;
-  } catch (error) {
+  } catch {
     // Si on ne peut pas décoder le token, on considère qu'il est expiré
     return true;
   }
@@ -75,43 +76,49 @@ const authLink = setContext(async (_, { headers }) => {
 // Intercepteur d'erreurs pour gérer les erreurs d'authentification
 const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {
-    graphQLErrors.forEach(({ message, extensions }) => {
-      // Si l'erreur est liée à l'authentification
-      if (extensions?.code === "UNAUTHENTICATED") {
-        toast.error("Session expirée. Veuillez vous reconnecter.", {
+    graphQLErrors.forEach((error) => {
+      const { message, extensions } = error;
+      const errorWithCode = { message, code: extensions?.code };
+      
+      // Utiliser notre système centralisé pour obtenir le message utilisateur
+      const userMessage = getErrorMessage(errorWithCode, 'generic');
+      
+      // Si l'erreur est critique (authentification), gérer la redirection
+      if (isCriticalError(errorWithCode)) {
+        toast.error(userMessage, {
           duration: 5000,
+          description: "Vous allez être redirigé vers la page de connexion"
         });
 
         // Rediriger vers la page de connexion après un délai
         setTimeout(() => {
-          window.location.href = "/auth";
+          window.location.href = "/auth/login";
         }, 2000);
       } else {
-        // Afficher les autres erreurs GraphQL
-        toast.error(message);
+        // Afficher les autres erreurs GraphQL avec message utilisateur
+        toast.error(userMessage, {
+          duration: 4000
+        });
       }
     });
   }
 
   if (networkError) {
-    // Détection du type d'erreur réseau sans exposer les détails
+    // Utiliser notre système centralisé pour les erreurs réseau
+    const userMessage = getErrorMessage(networkError, 'network');
+    
     if (networkError.message === "Failed to fetch") {
-      toast.error(
-        "Le serveur est actuellement indisponible. Veuillez réessayer ultérieurement.",
-        {
-          duration: 5000,
-        }
-      );
-    } else if (networkError.message.includes("NetworkError")) {
-      toast.warning(
-        "Problème de connexion réseau. Veuillez vérifier votre connexion internet.",
-        {
-          duration: 5000,
-        }
-      );
-    } else {
-      toast.warning("Problème de connexion au serveur.", {
+      toast.error(userMessage, {
         duration: 5000,
+        description: "Vérifiez votre connexion internet et réessayez"
+      });
+    } else if (networkError.message.includes("NetworkError")) {
+      toast.warning(userMessage, {
+        duration: 5000,
+      });
+    } else {
+      toast.warning(userMessage, {
+        duration: 4000,
       });
     }
   }
