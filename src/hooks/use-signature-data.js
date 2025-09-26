@@ -34,6 +34,7 @@ function SignatureProviderContent({ children }) {
     () => ({
       signatureName: "Ma signature professionnelle",
       isDefault: true,
+      signatureId: null, // ID de la signature (généré lors de la sauvegarde)
       fullName: "Jean Dupont",
       position: "Fondateur & CEO",
       email: "newbi@contact.fr",
@@ -47,15 +48,20 @@ function SignatureProviderContent({ children }) {
       companyName: "",
       website: "https://www.newbi.fr",
       address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
+      // Réseaux sociaux
+      socialNetworks: {
+        facebook: "",
+        instagram: "",
+        linkedin: "",
+        x: "",
+      },
       primaryColor: "#171717",
       // Espacement entre prénom et nom (en pixels)
       nameSpacing: 4,
       // Alignement du nom et prénom (left, center, right)
       nameAlignment: "left",
-      // Layout de la signature (vertical ou horizontal)
-      layout: "horizontal",
-      // Template de signature (vertical, horizontal, obama, rangan, shah, custom)
-      template: "horizontal",
+      // Orientation de la signature (vertical ou horizontal)
+      orientation: "vertical",
       // Layout personnalisé pour le template custom
       customLayout: null,
       // Largeurs des colonnes (en pourcentage)
@@ -94,6 +100,8 @@ function SignatureProviderContent({ children }) {
       logoSize: 60, // Taille par défaut du logo
       // Taille des logos sociaux (en pixels)
       socialSize: 24, // Taille par défaut des logos sociaux
+      // Mode espacement détaillé
+      detailedSpacing: false, // Par défaut, utiliser l'espacement global
       // Espacements entre les éléments (en pixels)
       spacings: {
         global: 8, // Espacement global par défaut
@@ -121,48 +129,64 @@ function SignatureProviderContent({ children }) {
           fontSize: 16,
           color: "#171717",
           fontWeight: "normal",
+          fontStyle: "normal",
+          textDecoration: "none",
         },
         position: {
           fontFamily: "Arial, sans-serif",
           fontSize: 14,
           color: "#666666",
           fontWeight: "normal",
+          fontStyle: "normal",
+          textDecoration: "none",
         },
         company: {
           fontFamily: "Arial, sans-serif",
           fontSize: 14,
           color: "#171717",
           fontWeight: "normal",
+          fontStyle: "normal",
+          textDecoration: "none",
         },
         email: {
           fontFamily: "Arial, sans-serif",
           fontSize: 12,
           color: "#666666",
           fontWeight: "normal",
+          fontStyle: "normal",
+          textDecoration: "none",
         },
         phone: {
           fontFamily: "Arial, sans-serif",
           fontSize: 12,
           color: "#666666",
           fontWeight: "normal",
+          fontStyle: "normal",
+          textDecoration: "none",
         },
         mobile: {
           fontFamily: "Arial, sans-serif",
           fontSize: 12,
           color: "#666666",
           fontWeight: "normal",
+          fontStyle: "normal",
+          textDecoration: "none",
         },
         website: {
           fontFamily: "Arial, sans-serif",
           fontSize: 12,
           color: "#666666",
           fontWeight: "normal",
+          fontStyle: "normal",
+          textDecoration: "none",
         },
         address: {
           fontFamily: "Arial, sans-serif",
           fontSize: 12,
           color: "#666666",
           fontWeight: "normal",
+          fontStyle: "normal",
+          textDecoration: "none",
         },
       },
       // Typographie générale (conservée pour compatibilité)
@@ -187,6 +211,18 @@ function SignatureProviderContent({ children }) {
 
         if (editingSignature) {
           const parsedData = JSON.parse(editingSignature);
+          
+          console.log("🔍 [SIGNATURE_DATA] Données récupérées de localStorage:", parsedData);
+          console.log("🎨 [SIGNATURE_DATA] Typographie dans localStorage:", parsedData.typography);
+          console.log("📷 [SIGNATURE_DATA] Images dans localStorage:", {
+            photo: parsedData.photo,
+            photoKey: parsedData.photoKey,
+            logo: parsedData.logo,
+            logoKey: parsedData.logoKey,
+            imageSize: parsedData.imageSize,
+            imageShape: parsedData.imageShape,
+            logoSize: parsedData.logoSize
+          });
 
           // Merger les données existantes avec les données par défaut pour éviter les champs manquants
           const mergedData = {
@@ -214,10 +250,52 @@ function SignatureProviderContent({ children }) {
               ...(parsedData.fontSize || {}),
             },
             typography: {
-              ...defaultSignatureData.typography,
-              ...(parsedData.typography || {}),
+              fullName: {
+                ...defaultSignatureData.typography.fullName,
+                ...(parsedData.typography?.fullName || {}),
+              },
+              position: {
+                ...defaultSignatureData.typography.position,
+                ...(parsedData.typography?.position || {}),
+              },
+              company: {
+                ...defaultSignatureData.typography.company,
+                ...(parsedData.typography?.company || {}),
+              },
+              email: {
+                ...defaultSignatureData.typography.email,
+                ...(parsedData.typography?.email || {}),
+              },
+              phone: {
+                ...defaultSignatureData.typography.phone,
+                ...(parsedData.typography?.phone || {}),
+              },
+              mobile: {
+                ...defaultSignatureData.typography.mobile,
+                ...(parsedData.typography?.mobile || {}),
+              },
+              website: {
+                ...defaultSignatureData.typography.website,
+                ...(parsedData.typography?.website || {}),
+              },
+              address: {
+                ...defaultSignatureData.typography.address,
+                ...(parsedData.typography?.address || {}),
+              },
             },
           };
+          
+          console.log("🔄 [SIGNATURE_DATA] Données après merge:", mergedData);
+          console.log("🎨 [SIGNATURE_DATA] Typographie après merge:", mergedData.typography);
+          console.log("📷 [SIGNATURE_DATA] Images après merge:", {
+            photo: mergedData.photo,
+            photoKey: mergedData.photoKey,
+            logo: mergedData.logo,
+            logoKey: mergedData.logoKey,
+            imageSize: mergedData.imageSize,
+            imageShape: mergedData.imageShape,
+            logoSize: mergedData.logoSize
+          });
 
           setSignatureData(mergedData);
 
@@ -259,6 +337,96 @@ function SignatureProviderContent({ children }) {
       }));
     }
   }, [organization?.logo, signatureData.logo, organization]);
+
+  // Effet pour sauvegarder automatiquement dans localStorage (sauf en mode édition)
+  useEffect(() => {
+    if (!isEditMode && signatureData && Object.keys(signatureData).length > 0) {
+      // Éviter de sauvegarder les données par défaut vides
+      if (signatureData.fullName || signatureData.email || signatureData.position || signatureData.photo) {
+        console.log("💾 [AUTO_SAVE] Sauvegarde automatique dans localStorage");
+        localStorage.setItem("draftSignature", JSON.stringify(signatureData));
+      }
+    }
+  }, [signatureData, isEditMode]);
+
+  // Effet pour charger les données de brouillon au démarrage (seulement en mode création)
+  useEffect(() => {
+    if (!isEditMode) {
+      const draftData = localStorage.getItem("draftSignature");
+      if (draftData) {
+        try {
+          const parsedDraft = JSON.parse(draftData);
+          console.log("📋 [DRAFT] Chargement du brouillon depuis localStorage:", parsedDraft);
+          
+          // Merger avec les données par défaut pour éviter les champs manquants
+          const mergedData = {
+            ...defaultSignatureData,
+            ...parsedDraft,
+            colors: {
+              ...defaultSignatureData.colors,
+              ...(parsedDraft.colors || {}),
+            },
+            spacings: {
+              ...defaultSignatureData.spacings,
+              ...(parsedDraft.spacings || {}),
+            },
+            columnWidths: {
+              ...defaultSignatureData.columnWidths,
+              ...(parsedDraft.columnWidths || {}),
+            },
+            fontSize: {
+              ...defaultSignatureData.fontSize,
+              ...(parsedDraft.fontSize || {}),
+            },
+            socialNetworks: {
+              ...defaultSignatureData.socialNetworks,
+              ...(parsedDraft.socialNetworks || {}),
+            },
+            typography: {
+              fullName: {
+                ...defaultSignatureData.typography.fullName,
+                ...(parsedDraft.typography?.fullName || {}),
+              },
+              position: {
+                ...defaultSignatureData.typography.position,
+                ...(parsedDraft.typography?.position || {}),
+              },
+              company: {
+                ...defaultSignatureData.typography.company,
+                ...(parsedDraft.typography?.company || {}),
+              },
+              email: {
+                ...defaultSignatureData.typography.email,
+                ...(parsedDraft.typography?.email || {}),
+              },
+              phone: {
+                ...defaultSignatureData.typography.phone,
+                ...(parsedDraft.typography?.phone || {}),
+              },
+              mobile: {
+                ...defaultSignatureData.typography.mobile,
+                ...(parsedDraft.typography?.mobile || {}),
+              },
+              website: {
+                ...defaultSignatureData.typography.website,
+                ...(parsedDraft.typography?.website || {}),
+              },
+              address: {
+                ...defaultSignatureData.typography.address,
+                ...(parsedDraft.typography?.address || {}),
+              },
+            },
+          };
+          
+          setSignatureData(mergedData);
+          console.log("✅ [DRAFT] Brouillon chargé et mergé avec succès");
+        } catch (error) {
+          console.error("❌ [DRAFT] Erreur lors du chargement du brouillon:", error);
+          localStorage.removeItem("draftSignature");
+        }
+      }
+    }
+  }, [isEditMode, defaultSignatureData]);
 
   const updateSignatureData = (key, value) => {
     setSignatureData((prev) => {
@@ -319,8 +487,38 @@ function SignatureProviderContent({ children }) {
         ...(editData.fontSize || {}),
       },
       typography: {
-        ...defaultSignatureData.typography,
-        ...(editData.typography || {}),
+        fullName: {
+          ...defaultSignatureData.typography.fullName,
+          ...(editData.typography?.fullName || {}),
+        },
+        position: {
+          ...defaultSignatureData.typography.position,
+          ...(editData.typography?.position || {}),
+        },
+        company: {
+          ...defaultSignatureData.typography.company,
+          ...(editData.typography?.company || {}),
+        },
+        email: {
+          ...defaultSignatureData.typography.email,
+          ...(editData.typography?.email || {}),
+        },
+        phone: {
+          ...defaultSignatureData.typography.phone,
+          ...(editData.typography?.phone || {}),
+        },
+        mobile: {
+          ...defaultSignatureData.typography.mobile,
+          ...(editData.typography?.mobile || {}),
+        },
+        website: {
+          ...defaultSignatureData.typography.website,
+          ...(editData.typography?.website || {}),
+        },
+        address: {
+          ...defaultSignatureData.typography.address,
+          ...(editData.typography?.address || {}),
+        },
       },
     };
     setSignatureData(mergedData);

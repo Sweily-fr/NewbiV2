@@ -10,6 +10,8 @@ import { Switch } from "@/src/components/ui/switch";
 import { Save, Loader2, Check, AlertCircle } from "lucide-react";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { useActiveOrganization } from "@/src/lib/organization-client";
+import { useRouter } from "next/navigation";
+import { toast } from "@/src/components/ui/sonner";
 
 // Mutation GraphQL pour créer une signature
 const CREATE_EMAIL_SIGNATURE = gql`
@@ -38,6 +40,7 @@ const UPDATE_EMAIL_SIGNATURE = gql`
 const SignatureSave = ({ existingSignatureId = null }) => {
   const { signatureData, editingSignatureId } = useSignatureData();
   const { organization } = useActiveOrganization();
+  const router = useRouter();
   
   // Utiliser editingSignatureId du hook si existingSignatureId n'est pas fourni
   const signatureId = existingSignatureId || editingSignatureId;
@@ -75,9 +78,12 @@ const SignatureSave = ({ existingSignatureId = null }) => {
       refetchQueries: ["GetMyEmailSignatures"],
       onCompleted: (data) => {
         setSaveStatus("success");
+        toast.success("Signature créée avec succès !");
         setTimeout(() => {
           setIsModalOpen(false);
           setSaveStatus(null);
+          // Redirection vers le tableau des signatures
+          router.push("/dashboard/outils/signatures-mail");
         }, 2000);
       },
       onError: (error) => {
@@ -94,9 +100,12 @@ const SignatureSave = ({ existingSignatureId = null }) => {
       refetchQueries: ["GetMyEmailSignatures"],
       onCompleted: (data) => {
         setSaveStatus("success");
+        toast.success("Signature mise à jour avec succès !");
         setTimeout(() => {
           setIsModalOpen(false);
           setSaveStatus(null);
+          // Redirection vers le tableau des signatures
+          router.push("/dashboard/outils/signatures-mail");
         }, 2000);
       },
       onError: (error) => {
@@ -129,6 +138,27 @@ const SignatureSave = ({ existingSignatureId = null }) => {
       website: signatureData.website || null,
       address: signatureData.address || null,
       companyName: signatureData.company || signatureData.companyName || null,
+      // Réseaux sociaux
+      socialNetworks: {
+        facebook: signatureData.socialNetworks?.facebook || "",
+        instagram: signatureData.socialNetworks?.instagram || "",
+        linkedin: signatureData.socialNetworks?.linkedin || "",
+        x: signatureData.socialNetworks?.x || "",
+      },
+      // Couleurs personnalisées pour chaque réseau social
+      socialColors: {
+        facebook: signatureData.socialColors?.facebook || "#1877F2",
+        instagram: signatureData.socialColors?.instagram || "#E4405F",
+        linkedin: signatureData.socialColors?.linkedin || "#0077B5",
+        x: signatureData.socialColors?.x || "#000000",
+      },
+      // URLs des icônes personnalisées sur Cloudflare
+      customSocialIcons: {
+        facebook: signatureData.customSocialIcons?.facebook || "",
+        instagram: signatureData.customSocialIcons?.instagram || "",
+        linkedin: signatureData.customSocialIcons?.linkedin || "",
+        x: signatureData.customSocialIcons?.x || "",
+      },
       // Options d'affichage des icônes
       showPhoneIcon: signatureData.showPhoneIcon ?? true,
       showMobileIcon: signatureData.showMobileIcon ?? true,
@@ -149,7 +179,8 @@ const SignatureSave = ({ existingSignatureId = null }) => {
       // Configuration layout
       nameSpacing: signatureData.nameSpacing ?? signatureData.spacings?.nameSpacing ?? 4,
       nameAlignment: signatureData.nameAlignment || "left",
-      layout: signatureData.layout || "horizontal",
+      layout: signatureData.layout || signatureData.orientation || "horizontal",
+      orientation: signatureData.orientation || signatureData.layout || "horizontal",
       columnWidths: {
         photo: signatureData.columnWidths?.photo || 25,
         content: signatureData.columnWidths?.content || 75,

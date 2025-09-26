@@ -5,24 +5,25 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Copy, Monitor, Smartphone, Check } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
+import { useSignatureGenerator } from "../hooks/useSignatureGenerator";
+import { useCustomSocialIcons } from "../hooks/useCustomSocialIcons";
 import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
 import { useImageUpload } from "../hooks/useImageUpload";
 import "@/src/styles/signature-text-selection.css";
-import VerticalSignature from "../components/VerticalSignature";
 import HorizontalSignature from "../components/HorizontalSignature";
+import VerticalSignature from "../components/VerticalSignature";
 import TemplateObama from "../components/templates/TemplateObama";
 import TemplateRangan from "../components/templates/TemplateRangan";
 import TemplateShah from "../components/templates/TemplateShah";
 import TemplateCustom from "../components/templates/TemplateCustom";
 import TemplateSelector from "../components/TemplateSelector";
 // CustomSignatureBuilder supprimé - édition maintenant dans le panneau de droite
-import SignatureSave from "../components/SignatureSave";
 import {
   Tabs,
   TabsContent,
@@ -31,8 +32,10 @@ import {
 } from "@/src/components/ui/tabs";
 
 // Aperçu de l'email avec édition inline
-const EmailPreview = ({ signatureData }) => {
+const EmailPreview = ({ signatureData, editingSignatureId }) => {
   const { updateSignatureData } = useSignatureData();
+  const { copyToClipboard } = useSignatureGenerator();
+  const { regenerateWithPermanentId } = useCustomSocialIcons(signatureData, updateSignatureData);
   const { uploadImageFile, getImageUrl, isUploading, error } = useImageUpload();
   const [isCopying, setIsCopying] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -211,62 +214,27 @@ const EmailPreview = ({ signatureData }) => {
       const photoSrc = signatureData.photo;
       const logoSrc = signatureData.logo;
 
-      // Générer le HTML selon le template sélectionné
-      const template = signatureData.template || signatureData.layout;
+      // Générer le HTML selon l'orientation sélectionnée
+      const orientation = signatureData.orientation || "vertical";
       let htmlSignature;
 
-      switch (template) {
-        case "obama":
-          htmlSignature = generateObamaHTML(
-            signatureData,
-            primaryColor,
-            photoSrc,
-            logoSrc
-          );
-          break;
-        case "rangan":
-          htmlSignature = generateRanganHTML(
-            signatureData,
-            primaryColor,
-            photoSrc,
-            logoSrc
-          );
-          break;
-        case "shah":
-          htmlSignature = generateShahHTML(
-            signatureData,
-            primaryColor,
-            photoSrc,
-            logoSrc
-          );
-          break;
-        case "custom":
-          htmlSignature = generateCustomHTML(
-            signatureData,
-            primaryColor,
-            photoSrc,
-            logoSrc
-          );
-          break;
-        case "horizontal":
-          htmlSignature = generateHorizontalHTML(
-            signatureData,
-            primaryColor,
-            facebookImageUrl,
-            photoSrc,
-            logoSrc
-          );
-          break;
-        case "vertical":
-        default:
-          htmlSignature = generateVerticalHTML(
-            signatureData,
-            primaryColor,
-            facebookImageUrl,
-            photoSrc,
-            logoSrc
-          );
-          break;
+      // Génération HTML basée sur l'orientation uniquement
+      if (orientation === "horizontal") {
+        htmlSignature = generateHorizontalHTML(
+          signatureData,
+          primaryColor,
+          facebookImageUrl,
+          photoSrc,
+          logoSrc
+        );
+      } else {
+        htmlSignature = generateVerticalHTML(
+          signatureData,
+          primaryColor,
+          facebookImageUrl,
+          photoSrc,
+          logoSrc
+        );
       }
 
       return htmlSignature;
@@ -309,7 +277,7 @@ const EmailPreview = ({ signatureData }) => {
         <tbody>
           <tr>
             <!-- Colonne de gauche : Informations personnelles -->
-            <td style="width: 200px; padding-right: 15px; vertical-align: top;">
+            <td style="padding-right: 15px; vertical-align: top;">
               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
                 <tbody>
                   ${
@@ -374,7 +342,7 @@ const EmailPreview = ({ signatureData }) => {
           }
             
             <!-- Colonne de droite : Informations de contact -->
-            <td style="padding-left: 15px; vertical-align: top; width: 200px;">
+            <td style="padding-left: 15px; vertical-align: top;">
               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
                 <tbody>
                   ${
@@ -1228,55 +1196,21 @@ const EmailPreview = ({ signatureData }) => {
     setIsCopying(true);
 
     try {
-      // Générer une PNG colorée pour Facebook si nécessaire
-      let facebookImageUrl = null;
-      if (signatureData.socialLinks?.facebook && signatureData.colors?.social) {
-        try {
-          const { generateColoredSocialLogo } = await import(
-            "../utils/svgToPng"
-          );
-          facebookImageUrl = await generateColoredSocialLogo(
-            "facebook",
-            signatureData.colors.social,
-            signatureData.socialSize || 24
-          );
-        } catch (error) {
-          console.error("❌ Erreur génération PNG:", error);
-        }
-      }
-
-      // Générer le HTML selon l'orientation actuelle
-      const htmlSignature = await generateSignatureHTML(facebookImageUrl);
-
-      // Utiliser l'API moderne du clipboard pour copier du HTML
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            "text/html": new Blob([htmlSignature], { type: "text/html" }),
-            "text/plain": new Blob([htmlSignature.replace(/<[^>]*>/g, "")], {
-              type: "text/plain",
-            }),
-          }),
-        ]);
-
-        toast.success("Signature copiée avec logo PNG pour Gmail !");
+      // Utiliser notre hook optimisé avec sauvegarde automatique et régénération d'icônes
+      const result = await copyToClipboard(regenerateWithPermanentId);
+      
+      if (result.success) {
+        const message = result.signatureId 
+          ? "Signature sauvegardée et copiée avec URLs permanentes !" 
+          : "Signature copiée avec espacements optimisés !";
+        toast.success(message);
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
-      } catch (error) {
-        console.error("Erreur lors de la copie:", error);
-        // Fallback pour les navigateurs plus anciens
-        try {
-          await navigator.clipboard.writeText(htmlSignature);
-          toast.success("Signature copiée (texte brut) !");
-          setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2000);
-        } catch (fallbackError) {
-          console.error("Erreur fallback:", fallbackError);
-          toast.error("Erreur lors de la copie de la signature");
-        }
+      } else {
+        toast.error(result.message);
       }
     } catch (error) {
-      console.error("❌ Erreur lors de la copie:", error);
+      console.error("❌ Erreur copie signature:", error);
       toast.error("Erreur lors de la copie de la signature");
     } finally {
       setIsCopying(false);
@@ -1322,11 +1256,16 @@ const EmailPreview = ({ signatureData }) => {
     }
 
     try {
-      // Déterminer le type d'image pour Cloudflare
-      const imageType = field === "photo" ? "profile" : "company";
+      // Déterminer le type d'image pour la nouvelle structure
+      const imageType = field === "photo" ? "imgProfil" : "logoReseau";
+      
+      // Récupérer ou générer un signatureId
+      const signatureId = editingSignatureId || `temp-${Date.now()}`;
+      
+      console.log(`🔄 Upload ${imageType} pour signature ${signatureId}`);
 
-      // Upload vers Cloudflare
-      const result = await uploadImageFile(file, imageType);
+      // Upload vers Cloudflare avec la nouvelle structure
+      const result = await uploadImageFile(file, imageType, signatureId);
 
       // Stocker l'URL publique et la clé Cloudflare
       updateSignatureData(field, result.url);
@@ -1401,20 +1340,20 @@ const EmailPreview = ({ signatureData }) => {
               logoSrc: signatureData.logo,
             };
 
-            switch (signatureData.template || signatureData.layout) {
-              case "obama":
-                return <TemplateObama {...templateProps} />;
-              case "rangan":
-                return <TemplateRangan {...templateProps} />;
-              case "shah":
-                return <TemplateShah {...templateProps} />;
-              case "custom":
-                return <TemplateCustom {...templateProps} />;
-              case "horizontal":
-                return <HorizontalSignature {...templateProps} />;
-              case "vertical":
-              default:
-                return <VerticalSignature {...templateProps} />;
+            // Rendu basé sur l'orientation uniquement
+            console.log("🔍 DEBUG RENDU - Orientation:", signatureData.orientation);
+            console.log("🔍 DEBUG RENDU - Données signature:", {
+              orientation: signatureData.orientation,
+              template: signatureData.template,
+              layout: signatureData.layout
+            });
+            
+            if (signatureData.orientation === "horizontal") {
+              console.log("✅ DEBUG RENDU - Affichage HorizontalSignature");
+              return <HorizontalSignature {...templateProps} />;
+            } else {
+              console.log("✅ DEBUG RENDU - Affichage VerticalSignature");
+              return <VerticalSignature {...templateProps} />;
             }
           })()}
         </div>
@@ -1674,6 +1613,19 @@ const MobilePreview = ({ signatureData }) => {
 export default function NewSignaturePage() {
   const { signatureData, updateSignatureData, isEditMode, editingSignatureId } =
     useSignatureData();
+  
+  // État pour tracker l'onglet actuel (desktop = horizontal, mobile = vertical)
+  const [currentTab, setCurrentTab] = useState("desktop");
+
+  // Mettre à jour le layout quand l'onglet change
+  useEffect(() => {
+    const newLayout = currentTab === "desktop" ? "horizontal" : "vertical";
+    // Éviter les mises à jour inutiles qui causent des boucles infinies
+    if (signatureData.layout !== newLayout) {
+      console.log(`🔄 Changement d'onglet: ${currentTab} → layout: ${newLayout}`);
+      updateSignatureData("layout", newLayout);
+    }
+  }, [currentTab, signatureData.layout]); // Retirer updateSignatureData des dépendances
 
   // Fonction pour changer de template
   const handleTemplateChange = (templateId) => {
@@ -1693,7 +1645,8 @@ export default function NewSignaturePage() {
     <div className="p-12 h-[calc(100vh-64px)] flex items-center justify-center">
       {/* Onglets Desktop/Mobile - Verticaux à gauche */}
       <Tabs
-        defaultValue="desktop"
+        value={currentTab}
+        onValueChange={setCurrentTab}
         orientation="vertical"
         className="w-full flex-row flex gap-6"
       >
@@ -1715,7 +1668,7 @@ export default function NewSignaturePage() {
         <div className="grow min-w-0 h-[600px]">
           <TabsContent value="desktop" className="mt-0 w-full h-full">
             <div className="flex justify-center items-start h-full">
-              <EmailPreview signatureData={signatureData} />
+              <EmailPreview signatureData={signatureData} editingSignatureId={editingSignatureId} />
             </div>
           </TabsContent>
 

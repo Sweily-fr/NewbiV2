@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { Label } from "@/src/components/ui/label";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
 import {
@@ -18,6 +18,12 @@ export default function DisplayModeSection({
   signatureData,
   updateSignatureData,
 }) {
+  const handleOrientationChange = useCallback((newOrientation) => {
+    // Mettre à jour l'orientation seulement
+    console.log("🔍 DEBUG SÉLECTEUR - Changement orientation vers:", newOrientation);
+    updateSignatureData("orientation", newOrientation);
+  }, [updateSignatureData]);
+
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-sm font-medium">Mode d'affichage</h2>
@@ -26,13 +32,13 @@ export default function DisplayModeSection({
           <Label className="text-xs text-muted-foreground">Orientation</Label>
           <AlignmentSelector
             items={[
-              { value: "horizontal", icon: FlipHorizontalIcon },
-              { value: "vertical", icon: FlipVerticalIcon },
+              { value: "horizontal", icon: FlipVerticalIcon },
+              { value: "vertical", icon: FlipHorizontalIcon },
             ]}
             size="sm"
             className="w-30"
-            value={signatureData.template}
-            onValueChange={(value) => updateSignatureData("template", value)}
+            value={signatureData.orientation}
+            onValueChange={handleOrientationChange}
           />
         </div>
 

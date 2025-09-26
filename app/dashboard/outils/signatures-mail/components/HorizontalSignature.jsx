@@ -79,7 +79,26 @@ const HorizontalSignature = ({
   validateUrl,
   logoSrc,
 }) => {
-  // Debug pour vérifier la valeur du séparateur vertical
+  // Utilisation directe des espacements de signatureData
+  const spacings = signatureData.spacings ?? {};
+
+  // Fonction pour obtenir l'URL de l'icône (personnalisée ou par défaut)
+  const getSocialIconUrl = (platform) => {
+    // Priorité aux icônes personnalisées
+    if (signatureData.customSocialIcons?.[platform]) {
+      return signatureData.customSocialIcons[platform];
+    }
+    
+    // URLs par défaut de Cloudflare
+    const defaultUrls = {
+      facebook: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/facebook.svg',
+      instagram: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/instagram.svg',
+      linkedin: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/linkedin.svg',
+      x: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/x.svg',
+    };
+    
+    return defaultUrls[platform] || '';
+  };
 
   return (
     <table
@@ -886,14 +905,14 @@ const HorizontalSignature = ({
             <td
               colSpan={signatureData.separators?.vertical?.enabled ? "5" : "2"}
               style={{
-                paddingTop: `${signatureData.spacings?.separatorTop ?? 12}px`,
-                paddingBottom: `${signatureData.spacings?.separatorBottom ?? 12}px`,
+                paddingTop: `${signatureData.spacings?.separatorTop ?? 8}px`,
+                paddingBottom: `${signatureData.spacings?.separatorBottom ?? 8}px`,
               }}
             >
               <hr
                 style={{
                   border: "none",
-                  borderTop: `${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || "#e0e0e0"}`,
+                  borderTop: `${signatureData.separators?.horizontal?.width || 0.5}px solid ${signatureData.separators?.horizontal?.color || "#e0e0e0"}`,
                   borderRadius: `${signatureData.separators?.horizontal?.radius || 0}px`,
                   margin: "0",
                   width: "100%",
@@ -961,10 +980,10 @@ const HorizontalSignature = ({
         </tr>
 
         {/* Logos sociaux */}
-        {(signatureData.socialLinks?.linkedin ||
-          signatureData.socialLinks?.facebook ||
-          signatureData.socialLinks?.twitter ||
-          signatureData.socialLinks?.instagram) && (
+        {(signatureData.socialNetworks?.linkedin ||
+          signatureData.socialNetworks?.facebook ||
+          signatureData.socialNetworks?.x ||
+          signatureData.socialNetworks?.instagram) && (
           <tr>
             <td
               colSpan={signatureData.separators?.vertical?.enabled ? "5" : "2"}
@@ -981,10 +1000,10 @@ const HorizontalSignature = ({
               >
                 <tbody>
                   <tr>
-                    {signatureData.socialLinks?.linkedin && (
+                    {signatureData.socialNetworks?.linkedin && (
                       <td style={{ paddingRight: "8px" }}>
                         <a
-                          href={signatureData.socialLinks.linkedin}
+                          href={signatureData.socialNetworks.linkedin}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -1008,15 +1027,13 @@ const HorizontalSignature = ({
                             }}
                           >
                             <img
-                              src={`https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png`}
+                              src={getSocialIconUrl('linkedin')}
                               alt="LinkedIn"
                               width={signatureData.socialSize || 24}
                               height={signatureData.socialSize || 24}
                               style={{
                                 display: "block",
-                                filter: signatureData.colors?.social
-                                  ? getColorFilter(signatureData.colors.social)
-                                  : "none",
+                                // Pas de filtre - les SVG sont déjà colorés
                               }}
                             />
                           </div>
@@ -1024,10 +1041,10 @@ const HorizontalSignature = ({
                       </td>
                     )}
 
-                    {signatureData.socialLinks?.facebook && (
+                    {signatureData.socialNetworks?.facebook && (
                       <td style={{ paddingRight: "8px" }}>
                         <a
-                          href={signatureData.socialLinks.facebook}
+                          href={signatureData.socialNetworks.facebook}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -1066,10 +1083,10 @@ const HorizontalSignature = ({
                       </td>
                     )}
 
-                    {signatureData.socialLinks?.twitter && (
+                    {signatureData.socialNetworks?.x && (
                       <td style={{ paddingRight: "8px" }}>
                         <a
-                          href={signatureData.socialLinks.twitter}
+                          href={signatureData.socialNetworks.x}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -1093,15 +1110,13 @@ const HorizontalSignature = ({
                             }}
                           >
                             <img
-                              src={`https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png`}
+                              src={getSocialIconUrl('x')}
                               alt="X (Twitter)"
                               width={signatureData.socialSize || 24}
                               height={signatureData.socialSize || 24}
                               style={{
                                 display: "block",
-                                filter: signatureData.colors?.social
-                                  ? getColorFilter(signatureData.colors.social)
-                                  : "none",
+                                // Pas de filtre - les SVG sont déjà colorés
                               }}
                             />
                           </div>
@@ -1109,10 +1124,10 @@ const HorizontalSignature = ({
                       </td>
                     )}
 
-                    {signatureData.socialLinks?.instagram && (
+                    {signatureData.socialNetworks?.instagram && (
                       <td>
                         <a
-                          href={signatureData.socialLinks.instagram}
+                          href={signatureData.socialNetworks.instagram}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -1136,15 +1151,13 @@ const HorizontalSignature = ({
                             }}
                           >
                             <img
-                              src={`https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png`}
+                              src={getSocialIconUrl('instagram')}
                               alt="Instagram"
                               width={signatureData.socialSize || 24}
                               height={signatureData.socialSize || 24}
                               style={{
                                 display: "block",
-                                filter: signatureData.colors?.social
-                                  ? getColorFilter(signatureData.colors.social)
-                                  : "none",
+                                // Pas de filtre - les SVG sont déjà colorés
                               }}
                             />
                           </div>

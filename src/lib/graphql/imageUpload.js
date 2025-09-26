@@ -7,8 +7,8 @@ import { apolloClient } from "../apolloClient";
 
 // Mutations GraphQL
 export const UPLOAD_SIGNATURE_IMAGE = gql`
-  mutation UploadSignatureImage($file: Upload!, $imageType: String!) {
-    uploadSignatureImage(file: $file, imageType: $imageType) {
+  mutation UploadSignatureImage($file: Upload!, $imageType: String!, $signatureId: String!) {
+    uploadSignatureImage(file: $file, imageType: $imageType, signatureId: $signatureId) {
       success
       key
       url
@@ -55,22 +55,27 @@ export const GET_IMAGE_URL = gql`
  */
 export class CloudflareImageService {
   /**
-   * Upload une image de signature vers Cloudflare
+   * Upload une image de signature vers Cloudflare (nouvelle structure)
    * @param {File} file - Fichier image à uploader
-   * @param {string} imageType - Type d'image ('profile' ou 'company')
+   * @param {string} imageType - Type d'image ('imgProfil' ou 'logoReseau')
+   * @param {string} signatureId - ID de la signature
    * @param {function} onProgress - Callback pour le progrès (optionnel)
    * @returns {Promise<{success: boolean, key: string, url: string}>}
    */
-  static async uploadImage(file, imageType = "profile", onProgress = null) {
+  static async uploadImage(file, imageType = "imgProfil", signatureId, onProgress = null) {
     try {
       // Validation côté client
       if (!file) {
         throw new Error("Aucun fichier sélectionné");
       }
 
-      if (!["profile", "company"].includes(imageType)) {
+      if (!signatureId) {
+        throw new Error("signatureId est requis pour l'upload d'images de signature");
+      }
+
+      if (!["imgProfil", "logoReseau"].includes(imageType)) {
         throw new Error(
-          'Type d\'image invalide. Utilisez "profile" ou "company"'
+          'Type d\'image invalide. Utilisez "imgProfil" ou "logoReseau"'
         );
       }
 
@@ -105,6 +110,7 @@ export class CloudflareImageService {
         variables: {
           file,
           imageType,
+          signatureId,
         },
         context: {
           hasUpload: true, // Important pour les uploads de fichiers

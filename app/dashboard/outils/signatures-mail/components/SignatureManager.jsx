@@ -147,6 +147,26 @@ const GET_EMAIL_SIGNATURE = gql`
       }
       detailedSpacing
 
+      # Réseaux sociaux
+      socialNetworks {
+        facebook
+        instagram
+        linkedin
+        x
+      }
+      socialColors {
+        facebook
+        instagram
+        linkedin
+        x
+      }
+      customSocialIcons {
+        facebook
+        instagram
+        linkedin
+        x
+      }
+
       # Typographie
       fontFamily
       fontSize {
@@ -518,6 +538,29 @@ const SignatureManager = () => {
                 textDecoration: "none",
               },
             },
+
+            // Réseaux sociaux
+            socialNetworks: signature.socialNetworks || {
+              facebook: "",
+              instagram: "",
+              linkedin: "",
+              x: "",
+            },
+            socialColors: signature.socialColors || {
+              facebook: "#1877F2",
+              instagram: "#E4405F",
+              linkedin: "#0077B5",
+              x: "#000000",
+            },
+            customSocialIcons: signature.customSocialIcons || {
+              facebook: "",
+              instagram: "",
+              linkedin: "",
+              x: "",
+            },
+
+            // Orientation (remplace layout dans certains cas)
+            orientation: signature.orientation || signature.layout || "vertical",
           };
 
           updateSignatureData(mappedData);
@@ -1597,10 +1640,10 @@ export const generateGmailSignatureHTML = (signature) => {
   }
   
   ${
-    signature.socialLinks?.linkedin ||
-    signature.socialLinks?.facebook ||
-    signature.socialLinks?.twitter ||
-    signature.socialLinks?.instagram
+    signature.socialNetworks?.linkedin ||
+    signature.socialNetworks?.facebook ||
+    signature.socialNetworks?.x ||
+    signature.socialNetworks?.instagram
       ? `
   <tr>
     <td colspan="${photoSrc ? (signature.verticalSeparator?.enabled ? "6" : "3") : "1"}" style="padding: 0; margin: 0; padding-top: ${signature.spacings?.logoToSocial || 15}px; text-align: left;">
@@ -1608,12 +1651,12 @@ export const generateGmailSignatureHTML = (signature) => {
         <tbody>
           <tr>
             ${
-              signature.socialLinks?.linkedin
+              signature.socialNetworks?.linkedin
                 ? `
             <td style="padding: 0; margin: 0; padding-right: 8px;">
-              <a href="${signature.socialLinks.linkedin}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
+              <a href="${signature.socialNetworks.linkedin}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
                 <div style="display: inline-block; background-color: ${signature.socialBackground?.enabled ? signature.socialBackground?.color || "#f3f4f6" : "transparent"}; border-radius: ${signature.socialBackground?.enabled && signature.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: ${signature.socialBackground?.enabled ? "6px" : "0"}; margin: 0;">
-                  <img src="https://img.icons8.com/color/${signature.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
+                  <img src="https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/linkedin.svg" alt="LinkedIn" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
                 </div>
               </a>
             </td>
@@ -1621,12 +1664,12 @@ export const generateGmailSignatureHTML = (signature) => {
                 : ""
             }
             ${
-              signature.socialLinks?.facebook
+              signature.socialNetworks?.facebook
                 ? `
             <td style="padding: 0; margin: 0; padding-right: 8px;">
-              <a href="${signature.socialLinks.facebook}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
+              <a href="${signature.socialNetworks.facebook}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
                 <div style="display: inline-block; background-color: ${signature.socialBackground?.enabled ? signature.socialBackground?.color || "#f3f4f6" : "transparent"}; border-radius: ${signature.socialBackground?.enabled && signature.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: ${signature.socialBackground?.enabled ? "6px" : "0"}; margin: 0;">
-                  <img src="${signature.facebookImageUrl || "https://img.icons8.com/fluency/" + (signature.socialSize || 24) + "/facebook-new.png"}" alt="Facebook" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
+                  <img src="${"https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/facebook.svg"}" alt="Facebook" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
                 </div>
               </a>
             </td>
@@ -1634,12 +1677,12 @@ export const generateGmailSignatureHTML = (signature) => {
                 : ""
             }
             ${
-              signature.socialLinks?.twitter
+              signature.socialNetworks?.x
                 ? `
             <td style="padding: 0; margin: 0; padding-right: 8px;">
-              <a href="${signature.socialLinks.twitter}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
+              <a href="${signature.socialNetworks.x}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
                 <div style="display: inline-block; background-color: ${signature.socialBackground?.enabled ? signature.socialBackground?.color || "#f3f4f6" : "transparent"}; border-radius: ${signature.socialBackground?.enabled && signature.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: ${signature.socialBackground?.enabled ? "6px" : "0"}; margin: 0;">
-                  <img src="https://img.icons8.com/color/${signature.socialSize || 24}/x.png" alt="X (Twitter)" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
+                  <img src="https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/x.svg" alt="X (Twitter)" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
                 </div>
               </a>
             </td>
@@ -1647,12 +1690,12 @@ export const generateGmailSignatureHTML = (signature) => {
                 : ""
             }
             ${
-              signature.socialLinks?.instagram
+              signature.socialNetworks?.instagram
                 ? `
             <td style="padding: 0; margin: 0;">
-              <a href="${signature.socialLinks.instagram}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
+              <a href="${signature.socialNetworks.instagram}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; margin: 0; padding: 0;">
                 <div style="display: inline-block; background-color: ${signature.socialBackground?.enabled ? signature.socialBackground?.color || "#f3f4f6" : "transparent"}; border-radius: ${signature.socialBackground?.enabled && signature.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: ${signature.socialBackground?.enabled ? "6px" : "0"}; margin: 0;">
-                  <img src="https://img.icons8.com/fluency/${signature.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
+                  <img src="https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/instagram.svg" alt="Instagram" width="${signature.socialSize || 24}" height="${signature.socialSize || 24}" style="display: block; margin: 0; padding: 0; border: none;" />
                 </div>
               </a>
             </td>
