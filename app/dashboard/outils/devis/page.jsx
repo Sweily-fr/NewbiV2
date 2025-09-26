@@ -79,26 +79,91 @@ export default function QuotesPage() {
 
 function QuoteTableSkeleton() {
   return (
-    <div className="space-y-4 p-6">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-10 w-[300px]" />
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-[100px]" />
-          <Skeleton className="h-10 w-[100px]" />
+    <div className="space-y-4">
+      {/* Filters skeleton */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-60" />
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-9 w-16" />
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-32" />
         </div>
       </div>
-      <div className="rounded-md border">
-        <div className="p-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center space-x-4 py-4">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-[150px]" />
-              <Skeleton className="h-4 w-[200px]" />
-              <Skeleton className="h-4 w-[100px]" />
-              <Skeleton className="h-4 w-[80px]" />
-              <Skeleton className="h-4 w-[120px]" />
+
+      {/* Table skeleton */}
+      <div className="bg-background overflow-hidden rounded-md border">
+        <div className="table-fixed w-full">
+          <div className="border-b">
+            <div className="flex hover:bg-transparent">
+              <div className="h-11 w-7 p-4 flex items-center">
+                <Skeleton className="h-4 w-4 rounded" />
+              </div>
+              <div className="h-11 w-[150px] p-4 flex items-center">
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="h-11 w-[200px] p-4 flex items-center">
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <div className="h-11 w-[100px] p-4 flex items-center">
+                <Skeleton className="h-4 w-12" />
+              </div>
+              <div className="h-11 w-[80px] p-4 flex items-center">
+                <Skeleton className="h-4 w-14" />
+              </div>
+              <div className="h-11 w-[120px] p-4 flex items-center">
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="h-11 w-[60px]"></div>
             </div>
-          ))}
+          </div>
+          <div>
+            {Array.from({ length: 10 }).map((_, index) => (
+              <div key={`skeleton-${index}`} className="flex border-b">
+                <div className="p-4 w-7">
+                  <Skeleton className="h-4 w-4 rounded" />
+                </div>
+                <div className="p-4 w-[150px]">
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <div className="p-4 w-[200px]">
+                  <Skeleton className="h-4 w-40" />
+                </div>
+                <div className="p-4 w-[100px]">
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+                <div className="p-4 w-[80px]">
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                <div className="p-4 w-[120px]">
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="p-4 w-[60px]">
+                  <div className="flex justify-end">
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Pagination skeleton */}
+      <div className="flex items-center justify-between gap-8">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-9 w-16" />
+        </div>
+        <div className="text-muted-foreground flex grow justify-end text-sm whitespace-nowrap">
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-9 w-9" />
+          <Skeleton className="h-9 w-9" />
+          <Skeleton className="h-9 w-9" />
+          <Skeleton className="h-9 w-9" />
         </div>
       </div>
     </div>
