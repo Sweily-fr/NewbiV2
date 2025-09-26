@@ -130,6 +130,25 @@ loading,
 loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getEvent),
 ```
 
+### 6. `src/hooks/useProducts.js`
+**Ligne 20** - Hook `useProducts`
+```javascript
+// Avant
+loading,
+
+// Après
+loading: loading && !data?.products,
+```
+
+**Ligne 34** - Hook `useProduct`
+```javascript
+// Avant
+loading,
+
+// Après
+loading: loading && !data?.product,
+```
+
 ## 🧪 Scénarios de Test
 
 ### Cas 1: Workspace en chargement

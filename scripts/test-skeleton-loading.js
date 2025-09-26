@@ -154,6 +154,19 @@ const testHooks = () => {
       file: 'src/hooks/useEvents.js',
       line: 69,
       fixed: true
+    },
+    // Hooks de produits/catalogue
+    {
+      name: 'useProducts',
+      file: 'src/hooks/useProducts.js',
+      line: 20,
+      fixed: true
+    },
+    {
+      name: 'useProduct',
+      file: 'src/hooks/useProducts.js',
+      line: 34,
+      fixed: true
     }
   ];
 

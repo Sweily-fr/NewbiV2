@@ -17,7 +17,7 @@ export const useProducts = (page = 1, limit = 10, search = '', category = '') =>
     currentPage: page,
     totalPages: Math.ceil((data?.products?.totalCount || 0) / limit),
     hasNextPage: data?.products?.hasNextPage || false,
-    loading,
+    loading: loading && !data?.products,
     error,
     refetch,
   };
@@ -31,7 +31,7 @@ export const useProduct = (id) => {
 
   return {
     product: data?.product,
-    loading,
+    loading: loading && !data?.product,
     error,
   };
 };
