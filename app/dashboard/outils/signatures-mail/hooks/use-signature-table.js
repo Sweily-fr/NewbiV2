@@ -78,6 +78,7 @@ const GET_EMAIL_SIGNATURE = gql`
       nameSpacing
       nameAlignment
       layout
+      orientation
       columnWidths {
         photo
         content
@@ -116,6 +117,26 @@ const GET_EMAIL_SIGNATURE = gql`
         verticalSeparatorRight
       }
       detailedSpacing
+
+      # Réseaux sociaux
+      socialNetworks {
+        facebook
+        instagram
+        linkedin
+        x
+      }
+      socialColors {
+        facebook
+        instagram
+        linkedin
+        x
+      }
+      customSocialIcons {
+        facebook
+        instagram
+        linkedin
+        x
+      }
 
       # Typographie
       fontFamily
@@ -344,11 +365,25 @@ export const useSignatureActions = () => {
       onCompleted: (data) => {
         if (data?.getEmailSignature) {
           const signatureData = data.getEmailSignature;
+          
+          console.log("🔍 [EDIT] Données récupérées de GraphQL:", signatureData);
+          console.log("🎨 [EDIT] Typographie récupérée:", signatureData.typography);
+          console.log("📷 [EDIT] Images récupérées:", {
+            photo: signatureData.photo,
+            photoKey: signatureData.photoKey,
+            logo: signatureData.logo,
+            logoKey: signatureData.logoKey,
+            imageSize: signatureData.imageSize,
+            imageShape: signatureData.imageShape,
+            logoSize: signatureData.logoSize
+          });
 
           localStorage.setItem(
             "editingSignature",
             JSON.stringify(signatureData)
           );
+          
+          console.log("💾 [EDIT] Données stockées dans localStorage");
 
           router.push("/dashboard/outils/signatures-mail/new?edit=true");
         } else {

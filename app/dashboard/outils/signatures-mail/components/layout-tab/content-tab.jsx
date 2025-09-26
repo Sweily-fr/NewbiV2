@@ -9,7 +9,6 @@ import DisplayModeSection from "./sections/DisplayModeSection";
 import ColumnWidthSection from "./sections/ColumnWidthSection";
 import StructureSection from "./sections/StructureSection";
 import SpacingSection from "./sections/SpacingSection";
-import SaveSection from "./sections/SaveSection";
 
 export default function ContentTab() {
   const { signatureData, updateSignatureData } = useSignatureData();
@@ -38,9 +37,6 @@ export default function ContentTab() {
         signatureData={signatureData}
         updateSignatureData={updateSignatureData}
       />
-      {/* <Separator /> */}
-
-      <SaveSection />
     </div>
   );
 }

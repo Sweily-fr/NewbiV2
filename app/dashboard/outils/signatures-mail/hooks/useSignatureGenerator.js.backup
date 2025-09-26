@@ -3,6 +3,7 @@
  */
 
 import { useSignatureData } from '@/src/hooks/use-signature-data';
+import { SocialIcons } from '@/src/components/social-icons';
 
 export function useSignatureGenerator() {
   const { signatureData } = useSignatureData();
@@ -34,28 +35,9 @@ export function useSignatureGenerator() {
       
       // Fallback vers l'ancienne structure
       if (property === 'fontSize') {
-        const fieldMapping = {
-          'fullName': 'name',
-          'position': 'position', 
-          'email': 'contact',
-          'phone': 'contact',
-          'mobile': 'contact',
-          'website': 'contact',
-          'address': 'contact'
-        };
-        return signatureData.fontSize?.[fieldMapping[field] || field] || fallback;
+        return signatureData.fontSize?.[field === 'fullName' ? 'name' : field] || fallback;
       } else if (property === 'color') {
-        const fieldMapping = {
-          'fullName': 'name',
-          'position': 'position',
-          'company': 'company',
-          'email': 'contact',
-          'phone': 'contact',
-          'mobile': 'contact',
-          'website': 'contact',
-          'address': 'contact'
-        };
-        return signatureData.colors?.[fieldMapping[field] || field] || fallback;
+        return signatureData.colors?.[field === 'fullName' ? 'name' : field] || fallback;
       } else if (property === 'fontFamily') {
         return signatureData.fontFamily || fallback;
       } else if (property === 'fontWeight') {
@@ -73,62 +55,6 @@ export function useSignatureGenerator() {
       ? `<img src="${signatureData.logo}" alt="Logo entreprise" style="max-width: ${signatureData.logoSize || 60}px; height: auto; display: block; margin: 0;" />`
       : '';
 
-    // Générer les icônes sociales depuis les URLs Cloudflare (personnalisées ou par défaut)
-    const generateSocialIconsHTML = () => {
-      // URLs par défaut
-      const defaultUrls = {
-        facebook: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/facebook.svg',
-        instagram: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/instagram.svg',
-        linkedin: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/linkedin.svg',
-        x: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/x.svg'
-      };
-
-      const socialNetworks = [
-        { 
-          key: 'facebook', 
-          url: signatureData.socialNetworks?.facebook, 
-          iconUrl: signatureData.customSocialIcons?.facebook || defaultUrls.facebook 
-        },
-        { 
-          key: 'instagram', 
-          url: signatureData.socialNetworks?.instagram, 
-          iconUrl: signatureData.customSocialIcons?.instagram || defaultUrls.instagram 
-        },
-        { 
-          key: 'linkedin', 
-          url: signatureData.socialNetworks?.linkedin, 
-          iconUrl: signatureData.customSocialIcons?.linkedin || defaultUrls.linkedin 
-        },
-        { 
-          key: 'x', 
-          url: signatureData.socialNetworks?.x, 
-          iconUrl: signatureData.customSocialIcons?.x || defaultUrls.x 
-        }
-      ];
-      
-      const activeNetworks = socialNetworks.filter(network => network.url && network.url.trim() !== '');
-      
-      if (activeNetworks.length === 0) {
-        return '';
-      }
-      
-      const iconsHTML = activeNetworks.map(network => {
-        return `
-          <a href="${network.url}" style="text-decoration: none; margin-right: 8px; display: inline-block;">
-            <img src="${network.iconUrl}" alt="${network.key}" style="width: ${signatureData.socialSize || 24}px; height: ${signatureData.socialSize || 24}px; display: block;" />
-          </a>
-        `;
-      }).join('');
-      
-      return `
-        <div style="margin-top: ${getSpacing(signatureData.spacings?.logoToSocial, 12)}px;">
-          ${iconsHTML}
-        </div>
-      `;
-    };
-
-    const socialIconsHTML = generateSocialIconsHTML();
-
     const isHorizontal = signatureData.orientation === 'horizontal';
     console.log("🔍 DEBUG HOOK generateHTML - Orientation:", signatureData.orientation, "isHorizontal:", isHorizontal);
 
@@ -144,7 +70,7 @@ export function useSignatureGenerator() {
                   <tbody>
                     <tr>
                       <td colspan="2" style="text-align: ${signatureData.nameAlignment || 'left'}; padding-bottom: ${getSpacing(signatureData.spacings?.nameBottom, 8)}px;">
-                        <span style="font-size: ${getTypography('fullName', 'fontSize', 16)}px; font-weight: ${getTypography('fullName', 'fontWeight', 'bold')}; color: ${getTypography('fullName', 'color', signatureData.primaryColor || '#2563eb')}; line-height: 1.2; font-family: ${getTypography('fullName', 'fontFamily', 'Arial, sans-serif')}; font-style: ${getTypography('fullName', 'fontStyle', 'normal')}; text-decoration: ${getTypography('fullName', 'textDecoration', 'none')};">
+                        <span style="font-size: ${getTypography('fullName', 'fontSize', 16)}px; font-weight: ${getTypography('fullName', 'fontWeight', 'bold')}; color: ${getTypography('fullName', 'color', signatureData.primaryColor || '#2563eb')}; line-height: 1.2; font-family: ${getTypography('fullName', 'fontFamily', 'Arial, sans-serif')};">
                           ${signatureData.fullName || `${signatureData.firstName || ''} ${signatureData.lastName || ''}`.trim()}
                         </span>
                       </td>
@@ -152,7 +78,7 @@ export function useSignatureGenerator() {
                     ${signatureData.position ? `
                       <tr>
                         <td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.positionBottom, 8)}px;">
-                          <span style="font-size: ${getTypography('position', 'fontSize', 14)}px; color: ${getTypography('position', 'color', 'rgb(102,102,102)')}; font-weight: ${getTypography('position', 'fontWeight', 'normal')}; font-family: ${getTypography('position', 'fontFamily', 'Arial, sans-serif')}; font-style: ${getTypography('position', 'fontStyle', 'normal')}; text-decoration: ${getTypography('position', 'textDecoration', 'none')};">${signatureData.position}</span>
+                          <span style="font-size: ${getTypography('position', 'fontSize', 14)}px; color: ${getTypography('position', 'color', 'rgb(102,102,102)')}; font-weight: ${getTypography('position', 'fontWeight', 'normal')}; font-family: ${getTypography('position', 'fontFamily', 'Arial, sans-serif')};">${signatureData.position}</span>
                         </td>
                       </tr>
                     ` : ''}
@@ -161,8 +87,8 @@ export function useSignatureGenerator() {
                         <td style="padding-bottom: ${getSpacing(signatureData.spacings?.phoneToMobile, 4)}px; padding-right: 10px; vertical-align: top; width: 20px;">
                           <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block; margin-top: 2px; min-width: 16px;" />
                         </td>
-                        <td style="font-size: ${getTypography('phone', 'fontSize', 12)}px; color: ${getTypography('phone', 'color', 'rgb(102,102,102)')}; font-weight: ${getTypography('phone', 'fontWeight', 'normal')}; vertical-align: top; padding-bottom: ${getSpacing(signatureData.spacings?.phoneToMobile, 4)}px; font-family: ${getTypography('phone', 'fontFamily', 'Arial, sans-serif')}; font-style: ${getTypography('phone', 'fontStyle', 'normal')}; text-decoration: ${getTypography('phone', 'textDecoration', 'none')};">
-                          <a href="tel:${signatureData.phone}" style="color: ${getTypography('phone', 'color', 'rgb(102,102,102)')}; text-decoration: ${getTypography('phone', 'textDecoration', 'none')};">${signatureData.phone}</a>
+                        <td style="font-size: ${getTypography('phone', 'fontSize', 12)}px; color: ${getTypography('phone', 'color', 'rgb(102,102,102)')}; font-weight: ${getTypography('phone', 'fontWeight', 'normal')}; vertical-align: top; padding-bottom: ${getSpacing(signatureData.spacings?.phoneToMobile, 4)}px; font-family: ${getTypography('phone', 'fontFamily', 'Arial, sans-serif')};">
+                          <a href="tel:${signatureData.phone}" style="color: ${getTypography('phone', 'color', 'rgb(102,102,102)')}; text-decoration: none;">${signatureData.phone}</a>
                         </td>
                       </tr>
                     ` : ''}
@@ -171,8 +97,8 @@ export function useSignatureGenerator() {
                         <td style="padding-bottom: ${getSpacing(signatureData.spacings?.mobileToEmail, 4)}px; padding-right: 10px; vertical-align: top; width: 20px;">
                           <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block; margin-top: 2px; min-width: 16px;" />
                         </td>
-                        <td style="font-size: ${getTypography('email', 'fontSize', 12)}px; color: ${getTypography('email', 'color', 'rgb(102,102,102)')}; vertical-align: top; padding-bottom: ${getSpacing(signatureData.spacings?.mobileToEmail, 4)}px; font-family: ${getTypography('email', 'fontFamily', 'Arial, sans-serif')}; font-weight: ${getTypography('email', 'fontWeight', 'normal')}; font-style: ${getTypography('email', 'fontStyle', 'normal')}; text-decoration: ${getTypography('email', 'textDecoration', 'none')};">
-                          <a href="mailto:${signatureData.email}" style="color: ${getTypography('email', 'color', 'rgb(102,102,102)')}; text-decoration: ${getTypography('email', 'textDecoration', 'none')};">${signatureData.email}</a>
+                        <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: top; padding-bottom: ${getSpacing(signatureData.spacings?.mobileToEmail, 4)}px; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                          <a href="mailto:${signatureData.email}" style="color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; text-decoration: none;">${signatureData.email}</a>
                         </td>
                       </tr>
                     ` : ''}
@@ -181,8 +107,8 @@ export function useSignatureGenerator() {
                         <td style="padding-bottom: ${getSpacing(signatureData.spacings?.emailToWebsite, 4)}px; padding-right: 10px; vertical-align: top; width: 20px;">
                           <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block; margin-top: 2px; min-width: 16px;" />
                         </td>
-                        <td style="font-size: ${getTypography('website', 'fontSize', 12)}px; color: ${getTypography('website', 'color', 'rgb(102,102,102)')}; vertical-align: top; padding-bottom: ${getSpacing(signatureData.spacings?.emailToWebsite, 4)}px; font-family: ${getTypography('website', 'fontFamily', 'Arial, sans-serif')}; font-weight: ${getTypography('website', 'fontWeight', 'normal')}; font-style: ${getTypography('website', 'fontStyle', 'normal')}; text-decoration: ${getTypography('website', 'textDecoration', 'none')};">
-                          <a href="${signatureData.website}" style="color: ${getTypography('website', 'color', 'rgb(102,102,102)')}; text-decoration: ${getTypography('website', 'textDecoration', 'none')};">${signatureData.website}</a>
+                        <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: top; padding-bottom: ${getSpacing(signatureData.spacings?.emailToWebsite, 4)}px; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
+                          <a href="${signatureData.website}" style="color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; text-decoration: none;">${signatureData.website}</a>
                         </td>
                       </tr>
                     ` : ''}
@@ -191,7 +117,7 @@ export function useSignatureGenerator() {
                         <td style="padding-bottom: ${getSpacing(signatureData.spacings?.websiteToAddress, 4)}px; padding-right: 10px; vertical-align: top; width: 20px;">
                           <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block; margin-top: 2px; min-width: 16px;" />
                         </td>
-                        <td style="font-size: ${getTypography('address', 'fontSize', 12)}px; color: ${getTypography('address', 'color', 'rgb(102,102,102)')}; vertical-align: top; padding-bottom: ${getSpacing(signatureData.spacings?.websiteToAddress, 4)}px; font-family: ${getTypography('address', 'fontFamily', 'Arial, sans-serif')}; font-weight: ${getTypography('address', 'fontWeight', 'normal')}; font-style: ${getTypography('address', 'fontStyle', 'normal')}; text-decoration: ${getTypography('address', 'textDecoration', 'none')};">
+                        <td style="font-size: ${signatureData.fontSize?.contact || 12}px; color: ${signatureData.colors?.contact || 'rgb(102,102,102)'}; vertical-align: top; padding-bottom: ${getSpacing(signatureData.spacings?.websiteToAddress, 4)}px; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                           ${signatureData.address}
                         </td>
                       </tr>
@@ -205,13 +131,6 @@ export function useSignatureGenerator() {
                       <tr>
                         <td colspan="2" style="padding-top: ${getSpacing(signatureData.spacings?.logoBottom, 8)}px; text-align: left;">
                           ${logoHTML}
-                        </td>
-                      </tr>
-                    ` : ''}
-                    ${socialIconsHTML ? `
-                      <tr>
-                        <td colspan="2" style="text-align: left;">
-                          ${socialIconsHTML}
                         </td>
                       </tr>
                     ` : ''}
@@ -241,7 +160,7 @@ export function useSignatureGenerator() {
                     ` : ''}
                     <tr>
                       <td style="padding-bottom: ${getSpacing(signatureData.spacings?.nameBottom, 8)}px; text-align: ${signatureData.nameAlignment || 'left'};">
-                        <div style="font-size: ${getTypography('fullName', 'fontSize', 16)}px; font-weight: ${getTypography('fullName', 'fontWeight', 'bold')}; color: ${getTypography('fullName', 'color', signatureData.primaryColor || '#2563eb')}; line-height: 1.2; font-family: ${getTypography('fullName', 'fontFamily', 'Arial, sans-serif')}; font-style: ${getTypography('fullName', 'fontStyle', 'normal')}; text-decoration: ${getTypography('fullName', 'textDecoration', 'none')};">
+                        <div style="font-size: ${signatureData.fontSize?.name || 16}px; font-weight: bold; color: ${signatureData.colors?.name || signatureData.primaryColor || '#2563eb'}; line-height: 1.2; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                           ${signatureData.fullName || `${signatureData.firstName || ''} ${signatureData.lastName || ''}`.trim()}
                         </div>
                       </td>
@@ -249,7 +168,7 @@ export function useSignatureGenerator() {
                     ${signatureData.position ? `
                       <tr>
                         <td style="padding-bottom: ${getSpacing(signatureData.spacings?.positionBottom, 8)}px; text-align: ${signatureData.nameAlignment || 'left'};">
-                          <div style="font-size: ${getTypography('position', 'fontSize', 14)}px; color: ${getTypography('position', 'color', 'rgb(102,102,102)')}; font-family: ${getTypography('position', 'fontFamily', 'Arial, sans-serif')}; font-weight: ${getTypography('position', 'fontWeight', 'normal')}; font-style: ${getTypography('position', 'fontStyle', 'normal')}; text-decoration: ${getTypography('position', 'textDecoration', 'none')};">
+                          <div style="font-size: ${signatureData.fontSize?.position || 14}px; color: ${signatureData.colors?.position || 'rgb(102,102,102)'}; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                             ${signatureData.position}
                           </div>
                         </td>
@@ -258,7 +177,7 @@ export function useSignatureGenerator() {
                     ${signatureData.companyName ? `
                       <tr>
                         <td style="padding-bottom: ${getSpacing(signatureData.spacings?.companyBottom, 8)}px; text-align: ${signatureData.nameAlignment || 'left'};">
-                          <div style="font-size: ${getTypography('company', 'fontSize', 14)}px; font-weight: ${getTypography('company', 'fontWeight', 'bold')}; color: ${getTypography('company', 'color', signatureData.primaryColor || '#2563eb')}; font-family: ${getTypography('company', 'fontFamily', 'Arial, sans-serif')}; font-style: ${getTypography('company', 'fontStyle', 'normal')}; text-decoration: ${getTypography('company', 'textDecoration', 'none')};">
+                          <div style="font-size: ${signatureData.fontSize?.position || 14}px; font-weight: bold; color: ${signatureData.colors?.company || signatureData.primaryColor || '#2563eb'}; font-family: ${signatureData.fontFamily || 'Arial, sans-serif'};">
                             ${signatureData.companyName}
                           </div>
                         </td>
@@ -394,15 +313,6 @@ export function useSignatureGenerator() {
                               </tr>
                             </tbody>
                           </table>
-                        </td>
-                      </tr>
-                    ` : ''}
-                    
-                    <!-- Icônes sociales personnalisées -->
-                    ${socialIconsHTML ? `
-                      <tr>
-                        <td style="text-align: center;">
-                          ${socialIconsHTML}
                         </td>
                       </tr>
                     ` : ''}
@@ -641,85 +551,9 @@ export function useSignatureGenerator() {
     }
   };
 
-  // Sauvegarder automatiquement la signature avant la copie
-  const autoSaveSignatureForCopy = async () => {
-    try {
-      console.log('💾 Sauvegarde automatique de la signature pour la copie...');
-      
-      // Générer un ID permanent si c'est temporaire
-      let finalSignatureId = signatureData.signatureId;
-      if (!finalSignatureId || finalSignatureId.startsWith('temp-')) {
-        finalSignatureId = `sig-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        console.log('🆔 Génération d\'un ID permanent:', finalSignatureId);
-      }
-
-      // Préparer les données de signature pour la sauvegarde
-      const signatureToSave = {
-        signatureName: signatureData.signatureName || `Signature ${new Date().toLocaleDateString()}`,
-        fullName: signatureData.fullName || `${signatureData.firstName || ''} ${signatureData.lastName || ''}`.trim(),
-        firstName: signatureData.firstName || '',
-        lastName: signatureData.lastName || '',
-        position: signatureData.position || '',
-        company: signatureData.company || '',
-        email: signatureData.email || '',
-        phone: signatureData.phone || '',
-        mobile: signatureData.mobile || '',
-        website: signatureData.website || '',
-        address: signatureData.address || '',
-        photo: signatureData.photo || '',
-        photoKey: signatureData.photoKey || '',
-        logo: signatureData.logo || '',
-        logoKey: signatureData.logoKey || '',
-        orientation: signatureData.orientation || 'vertical',
-        socialNetworks: signatureData.socialNetworks || {},
-        socialColors: signatureData.socialColors || {},
-        customSocialIcons: signatureData.customSocialIcons || {},
-        spacings: signatureData.spacings || {},
-        detailedSpacing: signatureData.detailedSpacing || false,
-        typography: signatureData.typography || {},
-        imageSize: signatureData.imageSize || 80,
-        imageShape: signatureData.imageShape || 'circle',
-        logoSize: signatureData.logoSize || 60,
-      };
-
-      // Appeler l'API de sauvegarde
-      const response = await fetch('/api/signatures/auto-save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          signatureId: finalSignatureId,
-          signatureData: signatureToSave,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erreur sauvegarde: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        console.log('✅ Signature sauvegardée automatiquement:', result.signatureId);
-        // Stocker l'ID permanent pour les futures générations d'icônes
-        sessionStorage.setItem('lastSavedSignatureId', result.signatureId);
-        return { success: true, signatureId: result.signatureId };
-      } else {
-        throw new Error(result.message || 'Erreur lors de la sauvegarde');
-      }
-
-    } catch (error) {
-      console.error('❌ Erreur sauvegarde automatique:', error);
-      // Ne pas bloquer la copie si la sauvegarde échoue
-      return { success: false, error: error.message };
-    }
-  };
-
   // Copier la signature dans le presse-papiers
-  const copyToClipboard = async (regenerateIconsCallback = null) => {
-    // 1. Générer le HTML avec les données actuelles
-    const html = generateHTML();
+  const copyToClipboard = async () => {
+    const html = generateHTML(); // Utiliser la version complète avec toutes les typographies
     
     // Debug : Afficher le HTML généré et les espacements
     console.log('🔍 HTML généré pour la copie:', html);
@@ -728,16 +562,16 @@ export function useSignatureGenerator() {
     console.log('🔍 Espacements actuels:', signatureData.spacings);
     console.log('🔍 Mode détaillé activé:', signatureData.detailedSpacing);
     console.log('🔍 Espacement global:', signatureData.spacings?.global);
+    console.log('🔍 Données signature complètes:', signatureData);
     
     try {
-      // 2. Copier dans le presse-papiers
+      // Utiliser l'API moderne du clipboard pour copier du HTML formaté
       await navigator.clipboard.write([
         new ClipboardItem({
           "text/html": new Blob([html], { type: "text/html" }),
           "text/plain": new Blob([html.replace(/<[^>]*>/g, "")], { type: "text/plain" }),
         }),
       ]);
-      
       return { success: true, message: 'Signature copiée avec formatage HTML' };
     } catch (error) {
       console.warn('⚠️ Erreur copie moderne, fallback vers texte:', error);
@@ -748,63 +582,6 @@ export function useSignatureGenerator() {
       } catch {
         return { success: false, message: 'Erreur lors de la copie' };
       }
-    }
-  };
-
-  // Sauvegarder ET copier la signature
-  const saveAndCopyToClipboard = async (regenerateIconsCallback = null) => {
-    try {
-      // 1. Sauvegarder automatiquement la signature
-      const saveResult = await autoSaveSignatureForCopy();
-      if (saveResult.success) {
-        console.log('💾 Signature sauvegardée avec ID:', saveResult.signatureId);
-        
-        // 2. Régénérer les icônes avec l'ID permanent si callback fourni
-        if (regenerateIconsCallback && typeof regenerateIconsCallback === 'function') {
-          console.log('🔄 Déclenchement régénération icônes avec ID permanent');
-          try {
-            await regenerateIconsCallback(saveResult.signatureId);
-          } catch (error) {
-            console.warn('⚠️ Erreur régénération icônes:', error);
-          }
-        }
-      } else {
-        console.warn('⚠️ Sauvegarde automatique échouée, copie quand même:', saveResult.error);
-      }
-
-      // 3. Générer le HTML avec les données actuelles
-      const html = generateHTML();
-      
-      try {
-        // 4. Copier dans le presse-papiers
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            "text/html": new Blob([html], { type: "text/html" }),
-            "text/plain": new Blob([html.replace(/<[^>]*>/g, "")], { type: "text/plain" }),
-          }),
-        ]);
-        
-        const message = saveResult.success 
-          ? 'Signature sauvegardée et copiée avec URLs permanentes !' 
-          : 'Signature copiée avec formatage HTML';
-          
-        return { success: true, message, signatureId: saveResult.signatureId };
-      } catch (error) {
-        console.warn('⚠️ Erreur copie moderne, fallback vers texte:', error);
-        // Fallback vers la méthode simple
-        try {
-          await navigator.clipboard.writeText(html);
-          const message = saveResult.success 
-            ? 'Signature sauvegardée et copiée (texte brut)' 
-            : 'Signature copiée (texte brut)';
-          return { success: true, message, signatureId: saveResult.signatureId };
-        } catch {
-          return { success: false, message: 'Erreur lors de la copie' };
-        }
-      }
-    } catch (error) {
-      console.error('❌ Erreur sauvegarde et copie:', error);
-      return { success: false, message: error.message };
     }
   };
 
@@ -866,7 +643,6 @@ export function useSignatureGenerator() {
     generateHTML,
     generateCSS,
     copyToClipboard,
-    saveAndCopyToClipboard,
     downloadHTML,
     validateSignature,
   };

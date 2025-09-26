@@ -101,11 +101,20 @@ export function TabSignature({ existingSignatureId = null }) {
       onCompleted: (data) => {
         console.log("✅ Signature créée:", data.createEmailSignature);
         setSaveStatus("success");
-        setTimeout(() => setSaveStatus(null), 3000);
+        toast.success("Signature créée avec succès !");
+        
+        // Redirection après un court délai pour laisser voir la notification
+        setTimeout(() => {
+          setSaveStatus(null);
+          // Nettoyer le brouillon après sauvegarde réussie
+          localStorage.removeItem("draftSignature");
+          router.push("/dashboard/outils/signatures-mail");
+        }, 1500);
       },
       onError: (error) => {
         console.error("❌ Erreur création:", error);
         setSaveStatus("error");
+        toast.error("Erreur lors de la création de la signature");
         setTimeout(() => setSaveStatus(null), 3000);
       },
     }
@@ -120,6 +129,8 @@ export function TabSignature({ existingSignatureId = null }) {
 
         // Redirection après un court délai pour laisser voir la notification
         setTimeout(() => {
+          // Nettoyer le brouillon après sauvegarde réussie
+          localStorage.removeItem("draftSignature");
           router.push("/dashboard/outils/signatures-mail");
         }, 1500);
       },
