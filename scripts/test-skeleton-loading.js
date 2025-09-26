@@ -85,6 +85,7 @@ const testHooks = () => {
   console.log('🔧 Hooks modifiés:\n');
   
   const hooks = [
+    // Hooks de factures et devis
     {
       name: 'useInvoices',
       file: 'src/graphql/invoiceQueries.js',
@@ -108,6 +109,51 @@ const testHooks = () => {
       file: 'src/graphql/quoteQueries.js',
       line: 409,
       fixed: true
+    },
+    // Hooks de clients
+    {
+      name: 'useClients',
+      file: 'src/hooks/useClients.js',
+      line: 22,
+      fixed: true
+    },
+    {
+      name: 'useClient',
+      file: 'src/hooks/useClients.js',
+      line: 38,
+      fixed: true
+    },
+    // Hooks de notes de crédit
+    {
+      name: 'useCreditNote',
+      file: 'src/graphql/creditNoteQueries.js',
+      line: 285,
+      fixed: true
+    },
+    {
+      name: 'useCreditNotes',
+      file: 'src/graphql/creditNoteQueries.js',
+      line: 306,
+      fixed: true
+    },
+    {
+      name: 'useCreditNotesByInvoice',
+      file: 'src/graphql/creditNoteQueries.js',
+      line: 323,
+      fixed: true
+    },
+    // Hooks d'événements
+    {
+      name: 'useEvents',
+      file: 'src/hooks/useEvents.js',
+      line: 45,
+      fixed: true
+    },
+    {
+      name: 'useEvent',
+      file: 'src/hooks/useEvents.js',
+      line: 69,
+      fixed: true
     }
   ];
 
@@ -120,6 +166,12 @@ const testHooks = () => {
   console.log('  Avant: loading = workspaceLoading || queryLoading');
   console.log('  Après: loading = (workspaceLoading && !workspaceId) || (queryLoading && !data)');
   console.log('\n💡 Avantage: Les skeletons disparaissent dès que les données sont disponibles');
+  
+  console.log('\n📊 Statistiques:');
+  const totalHooks = hooks.length;
+  const fixedHooks = hooks.filter(h => h.fixed).length;
+  console.log(`  Total de hooks corrigés: ${fixedHooks}/${totalHooks}`);
+  console.log(`  Pourcentage de correction: ${Math.round((fixedHooks / totalHooks) * 100)}%`);
 };
 
 // Recommandations

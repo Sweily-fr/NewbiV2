@@ -6,9 +6,9 @@ import { useWorkspace } from './useWorkspace';
 import { useErrorHandler } from './useErrorHandler';
 
 export const useClients = (page = 1, limit = 10, search = '') => {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, loading: workspaceLoading } = useWorkspace();
   
-  const { data, loading, error, refetch } = useQuery(GET_CLIENTS, {
+  const { data, loading: queryLoading, error, refetch } = useQuery(GET_CLIENTS, {
     variables: { workspaceId, page, limit, search },
     skip: !workspaceId,
     fetchPolicy: 'cache-and-network',
@@ -19,23 +19,23 @@ export const useClients = (page = 1, limit = 10, search = '') => {
     totalItems: data?.clients?.totalItems || 0,
     currentPage: data?.clients?.currentPage || 1,
     totalPages: data?.clients?.totalPages || 1,
-    loading,
+    loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.clients),
     error,
     refetch,
   };
 };
 
 export const useClient = (id) => {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, loading: workspaceLoading } = useWorkspace();
   
-  const { data, loading, error } = useQuery(GET_CLIENT, {
+  const { data, loading: queryLoading, error } = useQuery(GET_CLIENT, {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
   });
 
   return {
     client: data?.client,
-    loading,
+    loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.client),
     error,
   };
 };

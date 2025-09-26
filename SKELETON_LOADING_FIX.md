@@ -64,6 +64,72 @@ loading: loading || workspaceLoading,
 loading: (workspaceLoading && !workspaceId) || (loading && !data?.quoteStats),
 ```
 
+### 3. `src/hooks/useClients.js`
+**Ligne 22** - Hook `useClients`
+```javascript
+// Avant
+loading,
+
+// Après
+loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.clients),
+```
+
+**Ligne 38** - Hook `useClient`
+```javascript
+// Avant
+loading,
+
+// Après
+loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.client),
+```
+
+### 4. `src/graphql/creditNoteQueries.js`
+**Ligne 285** - Hook `useCreditNote`
+```javascript
+// Avant
+loading,
+
+// Après
+loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.creditNote),
+```
+
+**Ligne 306** - Hook `useCreditNotes`
+```javascript
+// Avant
+loading,
+
+// Après
+loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.creditNotes),
+```
+
+**Ligne 323** - Hook `useCreditNotesByInvoice`
+```javascript
+// Avant
+loading,
+
+// Après
+loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.creditNotesByInvoice),
+```
+
+### 5. `src/hooks/useEvents.js`
+**Ligne 45** - Hook `useEvents`
+```javascript
+// Avant
+loading,
+
+// Après
+loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getEvents),
+```
+
+**Ligne 69** - Hook `useEvent`
+```javascript
+// Avant
+loading,
+
+// Après
+loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getEvent),
+```
+
 ## 🧪 Scénarios de Test
 
 ### Cas 1: Workspace en chargement

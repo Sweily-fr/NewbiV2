@@ -23,10 +23,10 @@ export const useEvents = (options = {}) => {
     workspaceId,
   } = options;
 
-  const { workspaceId: contextWorkspaceId } = useWorkspace();
+  const { workspaceId: contextWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
 
-  const { data, loading, error, refetch } = useQuery(GET_EVENTS, {
+  const { data, loading: queryLoading, error, refetch } = useQuery(GET_EVENTS, {
     variables: {
       startDate,
       endDate,
@@ -42,7 +42,7 @@ export const useEvents = (options = {}) => {
   return {
     events: data?.getEvents?.events || [],
     totalCount: data?.getEvents?.totalCount || 0,
-    loading,
+    loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getEvents),
     error,
     refetch,
     success: data?.getEvents?.success || false,
@@ -55,10 +55,10 @@ export const useEvents = (options = {}) => {
  */
 export const useEvent = (id, options = {}) => {
   const { skip = false, workspaceId } = options;
-  const { workspaceId: contextWorkspaceId } = useWorkspace();
+  const { workspaceId: contextWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
 
-  const { data, loading, error, refetch } = useQuery(GET_EVENT, {
+  const { data, loading: queryLoading, error, refetch } = useQuery(GET_EVENT, {
     variables: { id, workspaceId: finalWorkspaceId },
     skip: skip || !id || !finalWorkspaceId,
     errorPolicy: "all",
@@ -66,7 +66,7 @@ export const useEvent = (id, options = {}) => {
 
   return {
     event: data?.getEvent?.event || null,
-    loading,
+    loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getEvent),
     error,
     refetch,
     success: data?.getEvent?.success || false,
