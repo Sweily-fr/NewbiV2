@@ -358,7 +358,7 @@ export const useQuotes = (filters = {}) => {
     quotes,
     totalCount,
     hasNextPage,
-    loading: loading || workspaceLoading,
+    loading: (workspaceLoading && !workspaceId) || (loading && !quotes),
     error: error || workspaceError,
     loadMore,
     refetch,
@@ -383,7 +383,7 @@ export const useQuote = (id) => {
 
   return {
     quote: data?.quote,
-    loading: loading || workspaceLoading,
+    loading: (workspaceLoading && !workspaceId) || (loading && !data?.quote),
     error: error || workspaceError,
     refetch,
   };
@@ -406,7 +406,7 @@ export const useQuoteStats = () => {
 
   return {
     stats: data?.quoteStats,
-    loading: loading || workspaceLoading,
+    loading: (workspaceLoading && !workspaceId) || (loading && !data?.quoteStats),
     error: error || workspaceError,
     refetch,
   };

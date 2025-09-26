@@ -453,7 +453,7 @@ export const useInvoices = () => {
       invoices: invoicesData?.invoices?.invoices || [],
       totalCount: invoicesData?.invoices?.totalCount || 0,
       hasNextPage: invoicesData?.invoices?.hasNextPage || false,
-      loading: workspaceLoading || queryLoading,
+      loading: (workspaceLoading && !workspaceId) || (queryLoading && !invoicesData),
       error: workspaceError || queryError,
       pagination: {
         ...pagination,
@@ -469,10 +469,8 @@ export const useInvoices = () => {
       refetch: optimizedRefetch,
     }),
     [
-      invoicesData?.invoices?.invoices,
-      invoicesData?.invoices?.totalCount,
-      invoicesData?.invoices?.hasNextPage,
-      invoicesData?.invoices?.pagination?.totalPages,
+      invoicesData,
+      workspaceId,
       workspaceLoading,
       queryLoading,
       workspaceError,
