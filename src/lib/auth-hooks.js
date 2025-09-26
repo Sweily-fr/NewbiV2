@@ -96,7 +96,5 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
         console.error("Erreur même avec le fallback:", fallbackError);
       }
     }
-  } else {
-    console.log("Pas de nouvelle session dans le contexte pour:", ctx.path);
   }
 });

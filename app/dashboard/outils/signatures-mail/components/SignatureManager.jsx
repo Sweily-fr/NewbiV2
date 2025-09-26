@@ -240,10 +240,6 @@ const SignatureManager = () => {
 
   const { data, loading, error, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
     skip: !isMounted,
-    onCompleted: (data) => {
-      console.log("📊 [FRONTEND] Données reçues du serveur:", data);
-      console.log("📋 [FRONTEND] Signatures:", data?.getMyEmailSignatures);
-    },
     onError: (error) => {
       console.error("❌ [FRONTEND] Erreur lors de la récupération:", error);
     },
@@ -284,10 +280,6 @@ const SignatureManager = () => {
     SET_DEFAULT_EMAIL_SIGNATURE,
     {
       onCompleted: (data) => {
-        console.log(
-          "✅ Signature par défaut définie:",
-          data.setDefaultEmailSignature
-        );
         refetch();
       },
       onError: (error) => {
@@ -521,7 +513,6 @@ const SignatureManager = () => {
           };
 
           updateSignatureData(mappedData);
-          console.log("✅ Signature chargée:", signature.signatureName);
         }
       },
       onError: (error) => {
@@ -574,14 +565,8 @@ const SignatureManager = () => {
     const logoSrc = signature.logo || "";
     const template = signature.template || signature.layout || "horizontal";
 
-    // Debug pour voir quelle orientation est détectée
-    console.log("🎯 Template détecté dans generateSignatureHTML:", template);
-    console.log("🎯 signature.template:", signature.template);
-    console.log("🎯 signature.layout:", signature.layout);
-
     // Générer selon l'orientation
     if (template === "vertical") {
-      console.log("📋 Génération HTML VERTICAL");
       return generateVerticalSignatureHTML(
         signature,
         primaryColor,
@@ -589,7 +574,6 @@ const SignatureManager = () => {
         logoSrc
       );
     } else {
-      console.log("📋 Génération HTML HORIZONTAL");
       return generateHorizontalSignatureHTML(
         signature,
         primaryColor,
@@ -856,9 +840,6 @@ const SignatureManager = () => {
       websiteToAddress: signature.spacings?.websiteToAddress || 4,
     };
 
-    // Debug: Afficher les espacements normalisés
-    console.log('Espacements normalisés pour la version verticale:', spacings);
-    
     // HTML optimisé pour Gmail - format vertical
     return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: ${signature.fontFamily || "Arial, sans-serif"}; font-size: 14px; line-height: 1.4; margin: 0; padding: 0;">
 <tbody>
@@ -1158,11 +1139,6 @@ const SignatureManager = () => {
         }
       });
 
-      // Debug: Afficher les détails de la signature à copier
-      console.log("🔍 Signature à copier:", signatureToCopy);
-      console.log("📏 Espacements utilisés:", signatureToCopy.spacings);
-      console.log("📋 Template utilisé:", currentTemplate);
-
       // Générer le HTML avec la signature mise à jour
       const htmlSignature = generateSignatureHTML(signatureToCopy);
 
@@ -1223,15 +1199,6 @@ const SignatureManager = () => {
   }
 
   const signatures = data?.getMyEmailSignatures || [];
-
-  // Debug logs
-  console.log("🔍 [FRONTEND] État du composant SignatureManager:");
-  console.log("  - isMounted:", isMounted);
-  console.log("  - loading:", loading);
-  console.log("  - error:", error);
-  console.log("  - data:", data);
-  console.log("  - signatures:", signatures);
-  console.log("  - signatures.length:", signatures.length);
 
   // Fonction pour changer de template
   const handleTemplateChange = (templateId) => {

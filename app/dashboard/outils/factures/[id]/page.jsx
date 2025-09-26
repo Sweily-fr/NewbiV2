@@ -26,11 +26,6 @@ export default function InvoiceDetailsPage() {
     router.push("/dashboard/outils/factures");
   };
 
-  const handleSendEmail = () => {
-    // TODO: Implement email sending
-    console.log("Send email for invoice:", invoiceId);
-  };
-
   if (loading) {
     return <InvoiceDetailsSkeleton />;
   }
@@ -79,7 +74,6 @@ export default function InvoiceDetailsPage() {
           {!isDraft && (
             <Button
               variant="outline"
-              onClick={handleSendEmail}
               className="gap-2"
             >
               <Send className="h-4 w-4" />
@@ -94,17 +88,16 @@ export default function InvoiceDetailsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => console.log("Duplicate")}>
+              <DropdownMenuItem>
                 Dupliquer
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => console.log("Convert to quote")}>
+              <DropdownMenuItem>
                 Convertir en devis
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {isDraft && (
                 <DropdownMenuItem
                   className="text-destructive"
-                  onClick={() => console.log("Delete")}
                 >
                   Supprimer
                 </DropdownMenuItem>

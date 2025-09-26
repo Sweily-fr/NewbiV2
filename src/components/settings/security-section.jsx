@@ -115,13 +115,11 @@ export function SecuritySection() {
       let { data, error } = await authClient.multiSession
         .listDeviceSessions()
         .catch((err) => {
-          console.log("🔍 API multiSession non disponible:", err);
           return { data: null, error: { message: "API non disponible" } };
         });
 
       // Si ça ne fonctionne pas, essayer avec l'API REST directement
       if (error || !data || (Array.isArray(data) && data.length === 0)) {
-        console.log("🔍 Tentative avec l'API REST directe...");
 
         try {
           const response = await fetch("/api/auth/list-device-sessions", {
@@ -134,7 +132,6 @@ export function SecuritySection() {
 
           if (response.ok) {
             const restData = await response.json();
-            console.log("🔍 Données de l'API REST:", restData);
             data = restData;
             error = null;
           }
@@ -150,8 +147,6 @@ export function SecuritySection() {
         // Ne pas afficher d'erreur si c'est juste un objet vide (pas vraiment une erreur)
         if (error && Object.keys(error).length > 0 && error.message) {
           toast.error("Erreur lors du chargement des sessions");
-        } else {
-          console.log("🔍 Aucune session trouvée ou API non disponible");
         }
         // Continuer avec un tableau vide au lieu de return
         setDevices([]);
@@ -160,8 +155,6 @@ export function SecuritySection() {
       }
 
       if (data) {
-        console.log("🔍 Structure des données de session:", data);
-
         // Vérifier si data est un tableau ou un objet avec session
         let sessionsArray = [];
 
@@ -179,12 +172,8 @@ export function SecuritySection() {
           sessionsArray = [data];
         }
 
-        console.log("🔍 Sessions à traiter:", sessionsArray);
-
         // Transformer les données Better Auth pour l'affichage
         const transformedDevices = sessionsArray.map((sessionData, index) => {
-          console.log(`🔍 Session ${index}:`, sessionData);
-
           // Traiter l'IP vide
           const ipAddress =
             sessionData.ipAddress || sessionData.ip || "127.0.0.1";
@@ -217,7 +206,6 @@ export function SecuritySection() {
           };
         });
 
-        console.log("🔍 Devices transformés:", transformedDevices);
         setDevices(transformedDevices);
       }
     } catch (error) {
@@ -232,7 +220,6 @@ export function SecuritySection() {
   const getUserAgent = (userAgent) => {
     if (!userAgent) return "Navigateur inconnu";
 
-    console.log("🔍 UserAgent reçu:", userAgent);
 
     // Détection plus précise des navigateurs et OS
     let browser = "Navigateur inconnu";
@@ -271,14 +258,12 @@ export function SecuritySection() {
   const formatLastActivity = (updatedAt) => {
     if (!updatedAt) return "Activité inconnue";
 
-    console.log("🔍 Date reçue:", updatedAt, "Type:", typeof updatedAt);
 
     const now = new Date();
     const updated = new Date(updatedAt);
 
     // Vérifier si la date est valide
     if (isNaN(updated.getTime())) {
-      console.log("🔍 Date invalide:", updatedAt);
       return "Activité inconnue";
     }
 
@@ -416,16 +401,7 @@ export function SecuritySection() {
       );
       setShow2FAModal(false);
       setPasswordFor2FA("");
-
-      // Afficher les informations importantes pour l'utilisateur
-      if (data?.totpURI) {
-        console.log("TOTP URI pour QR Code:", data.totpURI);
-        // TODO: Afficher le QR code dans l'interface
-      }
-      if (data?.backupCodes) {
-        console.log("Codes de sauvegarde:", data.backupCodes);
-        // TODO: Afficher les codes de sauvegarde dans l'interface
-      }
+      
     } catch (error) {
       console.error("Erreur 2FA:", error);
       toast.error("Erreur lors de l'activation du 2FA");

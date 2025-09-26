@@ -27,7 +27,6 @@ export function sendSMSInDevelopment(phoneNumber, code, context = "SMS") {
       `[${context} DEV] Code de vérification pour ${phoneNumber}: ${code}`
     );
   }
-
   // TODO: Intégrer un vrai service SMS en production
   // Exemple avec Twilio:
   // const twilio = require('twilio');
@@ -76,7 +75,6 @@ export async function sendVerificationEmail(user, url) {
 
 // Fonction pour envoyer un email d'invitation d'organisation
 export async function sendOrganizationInvitationEmail(data) {
-  console.log("Envoi d'email d'invitation:", data);
 
   // Construire le lien d'invitation avec les informations de base
   const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/accept-invitation/${data.id}?org=${encodeURIComponent(data.organization.name)}&email=${encodeURIComponent(data.email)}&role=${encodeURIComponent(data.role)}`;
@@ -90,7 +88,6 @@ export async function sendOrganizationInvitationEmail(data) {
       from: "Newbi <noreply@newbi.sweily.fr>",
     });
 
-    console.log("Email d'invitation envoyé avec succès à:", data.email);
   } catch (error) {
     console.error("Erreur lors de l'envoi de l'email d'invitation:", error);
     throw error;

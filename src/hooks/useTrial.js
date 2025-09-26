@@ -80,15 +80,6 @@ export function useTrial() {
     const organization = session.user.organization;
     const now = new Date();
     
-    // Debug désactivé pour éviter le spam de logs
-    // console.log("useTrial - Session organization data:", {
-    //   organizationId: organization.id,
-    //   isTrialActive: organization.isTrialActive,
-    //   trialEndDate: organization.trialEndDate,
-    //   hasUsedTrial: organization.hasUsedTrial,
-    //   trialStartDate: organization.trialStartDate
-    // });
-    
     // Vérifier si l'organisation a une période d'essai active
     if (organization.isTrialActive && organization.trialEndDate) {
       const trialEndDate = new Date(organization.trialEndDate);

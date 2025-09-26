@@ -41,10 +41,6 @@ export default function BankBalanceCard({ className }) {
       setAccounts([]);
       setError(null);
 
-      console.log(
-        "📊 Récupération des comptes bancaires désactivée temporairement"
-      );
-
       /* CODE ORIGINAL COMMENTÉ :
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/banking/accounts`,
@@ -190,9 +186,6 @@ export default function BankBalanceCard({ className }) {
             variant="outline"
             className="w-full font-normal mt-auto"
             disabled
-            onClick={() => {
-              console.log("Intégration bancaire en cours de développement");
-            }}
           >
             Connexion bancaire (bientôt disponible)
           </Button>
@@ -254,9 +247,6 @@ export default function BankBalanceCard({ className }) {
           variant="outline"
           className="w-full font-normal mt-auto"
           disabled
-          onClick={() => {
-            console.log("Intégration bancaire en cours de développement");
-          }}
         >
           Connexion bancaire (bientôt disponible)
         </Button>

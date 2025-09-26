@@ -99,23 +99,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       const quoteData = transformQuoteToFormData(existingQuote);
 
       reset(quoteData);
-
-      // Vérifier les données après reset
-      setTimeout(() => {
-        const currentFormData = getValues();
-        console.log("🔍 Données après reset:", {
-          issueDate: currentFormData.issueDate,
-          validUntil: currentFormData.validUntil,
-          status: currentFormData.status,
-          appearance: currentFormData.appearance,
-          client: currentFormData.client ? "Client présent" : "Aucun client",
-        });
-      }, 100);
-    } else {
-      console.log("❌ Conditions non remplies pour le chargement:", {
-        hasExistingQuote: !!existingQuote,
-        isNotCreateMode: mode !== "create",
-      });
     }
   }, [existingQuote, mode, reset, getValues]);
 
@@ -231,18 +214,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       return false;
     }
 
-    // Vérifier les informations de l'entreprise (plus flexible)
-    // Si pas de companyInfo dans le formulaire, on utilise les données de session
-    const hasCompanyInfo =
-      data.companyInfo?.name || session?.user?.company?.name;
-
-    if (!hasCompanyInfo) {
-      console.log(
-        "⚠️ Validation Step 1: Aucune information d'entreprise - mais on continue (temporaire)"
-      );
-      // return false; // Désactivé temporairement
-    }
-
     // Vérifier la date d'émission
     if (!data.issueDate) {
       toast.error("La date d'émission est requise");
@@ -312,10 +283,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           }
         }
 
-        if (!isAutoSave) {
-          console.log("💾 Sauvegarde manuelle déclenchée");
-        }
-
         const input = transformFormDataToInput(
           currentFormData,
           existingQuote?.status,
@@ -332,8 +299,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             if (!isAutoSave) {
               toast.success("Brouillon sauvegardé");
               router.push("/dashboard/outils/devis");
-            } else {
-              console.log("⏸️ Pas de redirection (auto-sauvegarde)");
             }
           }
         } else {
@@ -342,8 +307,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           if (!isAutoSave) {
             toast.success("Brouillon sauvegardé");
             router.push("/dashboard/outils/devis");
-          } else {
-            console.log("⏸️ Pas de redirection (auto-sauvegarde)");
           }
         }
       } catch (error) {
@@ -465,10 +428,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       };
 
       await updateOrganization(activeOrganization.id, organizationData);
-      console.log(
-        "✅ Paramètres sauvegardés dans l'organisation:",
-        organizationData
-      );
     } catch (error) {
       console.error("❌ Erreur lors de la sauvegarde des paramètres:", error);
       throw error;
@@ -744,8 +703,6 @@ function transformQuoteToFormData(quote) {
     quote.validUntil !== ""
   ) {
     validUntil = transformDate(quote.validUntil, "validUntil");
-  } else {
-    console.log("ℹ️ Aucune date de validité trouvée dans le devis");
   }
 
   return {

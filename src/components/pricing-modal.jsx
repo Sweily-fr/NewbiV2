@@ -75,11 +75,6 @@ export function PricingModal({ isOpen, onClose }) {
           (sub) => sub.status === "active" || sub.status === "trialing"
         );
 
-        // if (activeSubscription) {
-        //   console.log("STATUT:", activeSubscription.status);
-        //   console.log("PLAN:", activeSubscription.planName);
-        //   console.log("LIMITES:", activeSubscription.limits);
-        // }
       }
 
       if (error) {

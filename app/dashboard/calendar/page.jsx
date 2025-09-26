@@ -55,11 +55,6 @@ export default function Component() {
         location: event.location,
         type: "MANUAL",
       });
-
-      if (newEvent) {
-        // L'événement sera automatiquement ajouté via le cache Apollo
-        console.log("Événement ajouté avec succès");
-      }
     } catch (error) {
       console.error("Erreur lors de l'ajout de l'événement:", error);
       toast.error("Erreur lors de l'ajout de l'événement");
@@ -80,11 +75,6 @@ export default function Component() {
         location: updatedEvent.location,
         type: updatedEvent.type || "MANUAL",
       });
-
-      if (result) {
-        // L'événement sera automatiquement mis à jour via le cache Apollo
-        console.log("Événement mis à jour avec succès");
-      }
     } catch (error) {
       console.error("Erreur lors de la mise à jour de l'événement:", error);
       toast.error("Erreur lors de la mise à jour de l'événement");
@@ -95,11 +85,6 @@ export default function Component() {
   const handleEventDelete = async (eventId) => {
     try {
       const success = await deleteEvent(eventId);
-
-      if (success) {
-        // L'événement sera automatiquement supprimé via le cache Apollo
-        console.log("Événement supprimé avec succès");
-      }
     } catch (error) {
       console.error("Erreur lors de la suppression de l'événement:", error);
       toast.error("Erreur lors de la suppression de l'événement");

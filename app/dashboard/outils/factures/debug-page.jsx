@@ -12,7 +12,6 @@ export default function DebugInvoicesPage() {
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Test de base</h2>
         <Button 
-          onClick={() => console.log('Bouton cliqué')}
           className="bg-primary text-primary-foreground"
         >
           Tester le clic (vérifiez la console)

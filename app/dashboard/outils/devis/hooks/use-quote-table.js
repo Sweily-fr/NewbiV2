@@ -463,12 +463,6 @@ export function useQuoteTable({ data = [], onRefetch }) {
 
             const isValid = !isNaN(date.getTime());
 
-            console.log("Conversion date:", {
-              isValid: isValid,
-              timestamp: isValid ? date.getTime() : "Invalid",
-              localString: isValid ? date.toLocaleString("fr-FR") : "Invalid",
-              isoString: isValid ? date.toISOString() : "Invalid",
-            });
           } catch (error) {
             console.log(
               "Erreur lors de la conversion de date:",

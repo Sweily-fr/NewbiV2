@@ -74,11 +74,6 @@ export function useInvoiceEditor({
       setTimeout(() => {
         const currentFormData = getValues();
       }, 100);
-    } else {
-      console.log("❌ Conditions non remplies pour le chargement:", {
-        hasExistingInvoice: !!existingInvoice,
-        isNotCreateMode: mode !== "create",
-      });
     }
   }, [existingInvoice, mode, reset, getValues]);
 
@@ -93,8 +88,6 @@ export function useInvoiceEditor({
   // Auto-remplir companyInfo avec les données de l'organisation
   useEffect(() => {
     if (mode === "create" && organization) {
-      // 🔍 Debug: Afficher la structure complète des données d'organisation
-
       const autoFilledCompanyInfo = {
         name: organization?.companyName || "",
         address: {

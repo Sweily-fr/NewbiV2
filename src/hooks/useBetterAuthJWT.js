@@ -10,17 +10,13 @@ export const useBetterAuthJWT = () => {
   const [bearerToken, setBearerToken] = useState(null);
   const [isLoadingToken, setIsLoadingToken] = useState(false);
 
-  console.log('🔍 [useBetterAuthJWT] Hook appelé, session:', session?.user?.email || 'non connecté');
-
   useEffect(() => {
     const initializeToken = () => {
       // Récupérer le Bearer token depuis localStorage
       const storedToken = localStorage.getItem('bearer_token');
-      console.log('🔍 [useBetterAuthJWT] Bearer token localStorage:', storedToken ? 'présent' : 'absent');
       
       if (storedToken) {
         setBearerToken(storedToken);
-        console.log('✅ [useBetterAuthJWT] Bearer token récupéré depuis localStorage');
         return;
       }
     };
@@ -42,7 +38,6 @@ export const useBetterAuthJWT = () => {
     const getTokenFromHeader = async () => {
       if (!session?.user || bearerToken) return;
       
-      console.log('🔍 [useBetterAuthJWT] Tentative récupération Bearer token via header');
       setIsLoadingToken(true);
       
       try {
@@ -52,10 +47,8 @@ export const useBetterAuthJWT = () => {
           fetchOptions: {
             onSuccess: (ctx) => {
               const token = ctx.response.headers.get("set-auth-token");
-              console.log('🔍 [useBetterAuthJWT] Header set-auth-token:', token ? 'présent' : 'absent');
               
               if (token) {
-                console.log('✅ [useBetterAuthJWT] Bearer token récupéré depuis header set-auth-token');
                 setBearerToken(token);
                 localStorage.setItem('bearer_token', token);
               }
@@ -78,7 +71,6 @@ export const useBetterAuthJWT = () => {
   }, [session, bearerToken, isLoadingToken]);
 
   const refreshToken = async () => {
-    console.log('🔄 [useBetterAuthJWT] Rafraîchissement Bearer token demandé');
     setBearerToken(null);
     localStorage.removeItem('bearer_token');
     
@@ -92,7 +84,6 @@ export const useBetterAuthJWT = () => {
             onSuccess: (ctx) => {
               const token = ctx.response.headers.get("set-auth-token");
               if (token) {
-                console.log('✅ [useBetterAuthJWT] Bearer token rafraîchi avec succès');
                 setBearerToken(token);
                 localStorage.setItem('bearer_token', token);
               }

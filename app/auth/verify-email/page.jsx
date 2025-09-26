@@ -19,12 +19,6 @@ function VerifyEmailContent() {
       const token = searchParams.get("token");
       const error = searchParams.get("error");
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log("🔍 Début de la vérification d'email");
-        console.log("🎫 Token:", token);
-        console.log("❌ Erreur URL:", error);
-      }
-      
       if (error === "missing-token") {
         setVerificationStatus("error");
         setMessage("Token de vérification manquant dans le lien");
