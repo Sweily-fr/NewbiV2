@@ -12,6 +12,7 @@ import { TrialBanner } from "@/src/components/trial-banner";
 import { PricingModal } from "@/src/components/pricing-modal";
 import OnboardingModal from "@/src/components/onboarding-modal";
 import { useOnboarding } from "@/src/hooks/useOnboarding";
+import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -99,6 +100,11 @@ function DashboardContent({ children }) {
         onClose={() => setIsOnboardingOpen(false)}
         onComplete={completeOnboarding}
       />
+      
+      {/* Panel de debug du cache (développement uniquement) */}
+      {process.env.NODE_ENV === 'development' && (
+        <CacheDebugPanel />
+      )}
     </SidebarProvider>
   );
 }
