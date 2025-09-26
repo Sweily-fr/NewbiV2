@@ -34,11 +34,9 @@ export function CompanyLogoUpload({
     isAuthenticated
   } = useCompanyLogoUpload({
     onUploadSuccess: (imageUrl) => {
-      console.log("📤 CompanyLogoUpload onUploadSuccess appelé avec:", imageUrl);
       onImageChange(imageUrl);
     },
     onOrganizationUpdate: (imageUrl) => {
-      console.log("🏢 CompanyLogoUpload onOrganizationUpdate appelé avec:", imageUrl);
       if (onOrganizationUpdate) {
         onOrganizationUpdate(imageUrl);
       }
@@ -89,13 +87,9 @@ export function CompanyLogoUpload({
   }, [handleFileSelect]);
 
   const handleRemove = () => {
-    console.log("🗑️ handleRemove appelé - suppression immédiate UI");
-    // Nettoyer l'UI IMMÉDIATEMENT avant même la suppression Cloudflare
     onImageChange(null);
     
-    // Forcer le nettoyage de l'état local immédiatement
     if (typeof window !== 'undefined') {
-      // Nettoyer tous les caches possibles
       try {
         Object.keys(localStorage).forEach(key => {
           if (key.includes('logo') || key.includes('organization') || key.includes('company')) {

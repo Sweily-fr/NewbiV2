@@ -282,11 +282,9 @@ export function SectionCards({ className, activeFilter = "outline" }) {
   // Fonction pour gérer le clic sur un outil nécessitant les informations d'entreprise
   const handleCompanyInfoRequiredClick = (e, toolTitle) => {
     e.preventDefault();
-    console.log(`Clic sur ${toolTitle} - Informations d'entreprise requises`);
     
     // Déterminer quel onglet ouvrir selon les informations manquantes
     const requiredTab = getRequiredSettingsTab();
-    console.log(`Ouverture du modal sur l'onglet: ${requiredTab}`);
     
     // Ouvrir le modal de paramètres sur l'onglet approprié
     openSettings(requiredTab);

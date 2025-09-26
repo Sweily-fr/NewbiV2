@@ -114,7 +114,6 @@ export const useCompanyLogoUpload = ({ onUploadSuccess, onOrganizationUpdate }) 
         
         // Sauvegarder automatiquement dans l'organisation si la fonction est fournie
         if (onOrganizationUpdate) {
-          console.log("🏢 Appel de onOrganizationUpdate avec:", uploadData.url);
           onOrganizationUpdate(uploadData.url);
         }
       } catch (error) {

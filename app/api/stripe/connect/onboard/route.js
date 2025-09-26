@@ -33,10 +33,6 @@ export async function POST(request) {
       type: 'account_onboarding',
     });
 
-    // Ici vous devriez sauvegarder l'ID du compte Stripe dans votre base de données
-    // associé à l'utilisateur
-    console.log('Compte Stripe créé:', account.id, 'pour utilisateur:', userId);
-
     return NextResponse.json({
       url: accountLink.url,
       accountId: account.id,

@@ -271,12 +271,6 @@ export const useSignatures = () => {
   const { data, loading, error, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
     fetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: true,
-    onCompleted: (data) => {
-      console.log(
-        "✅ [QUERY] Signatures récupérées:",
-        data.getMyEmailSignatures?.length
-      );
-    },
     onError: (error) => {
       console.error("❌ [QUERY] Erreur:", error);
     },

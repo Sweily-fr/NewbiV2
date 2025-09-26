@@ -40,9 +40,6 @@ export const auth = betterAuth({
     async beforeSignIn({ user }) {
       // Vérifier si le compte est actif
       if (user.isActive === false) {
-        console.log(
-          `Tentative de connexion d'un compte désactivé: ${user.email}`
-        );
 
         // Envoyer un email de réactivation
         await sendReactivationEmail(user);
@@ -54,10 +51,6 @@ export const auth = betterAuth({
 
       // Vérifier si l'email est vérifié (Better Auth gère cela automatiquement avec requireEmailVerification: true)
       if (!user.emailVerified) {
-        console.log(
-          `Tentative de connexion avec email non vérifié: ${user.email}`
-        );
-
         throw new Error(
           "Veuillez vérifier votre adresse email avant de vous connecter."
         );

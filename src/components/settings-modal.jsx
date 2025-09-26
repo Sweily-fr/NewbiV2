@@ -146,7 +146,6 @@ export function SettingsModal({
         },
       };
 
-      console.log("🔄 Initialisation du formulaire avec:", initialData);
       reset(initialData);
     }
   }, [organization, reset]);
@@ -154,8 +153,6 @@ export function SettingsModal({
   // Fonction de sauvegarde
   const handleSaveAll = async (formData) => {
     try {
-      console.log("🚀 [MODAL] Début de la sauvegarde avec:", formData);
-
       if (!organization?.id) {
         toast.error("Aucune organisation active trouvée");
         return;
@@ -191,8 +188,6 @@ export function SettingsModal({
         hasCommercialActivity: formData.legal?.hasCommercialActivity || false,
       };
 
-      console.log("🔍 [MODAL] Données transformées:", transformedData);
-
       // Sauvegarder via Better Auth
       await updateOrganization(transformedData, {
         onSuccess: () => {
@@ -200,12 +195,10 @@ export function SettingsModal({
         },
         onError: (error) => {
           toast.error("Erreur lors de la sauvegarde");
-          console.error("❌ [MODAL] Erreur sauvegarde:", error);
         },
       });
     } catch (error) {
       toast.error("Erreur lors de la sauvegarde");
-      console.error("❌ [MODAL] Erreur sauvegarde:", error);
     }
   };
 

@@ -99,7 +99,6 @@ export function TabSignature({ existingSignatureId = null }) {
     {
       refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES }],
       onCompleted: (data) => {
-        console.log("✅ Signature créée:", data.createEmailSignature);
         setSaveStatus("success");
         toast.success("Signature créée avec succès !");
         
@@ -247,9 +246,6 @@ export function TabSignature({ existingSignatureId = null }) {
         });
       } else {
         // Création d'une nouvelle signature
-        console.log(
-          "✨ Création d'une nouvelle signature avec TOUS les champs avancés"
-        );
         const result = await createSignature({
           variables: {
             input: finalData,

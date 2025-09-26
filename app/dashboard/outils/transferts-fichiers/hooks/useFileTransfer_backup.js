@@ -190,15 +190,8 @@ export const useFileTransfer = () => {
       const chunks = chunkFile(file);
       const fileId = generateFileId(); // Générer un ID unique pour le fichier
 
-      console.log(
-        `📁 Upload du fichier: ${file.name} (${file.size} bytes) en ${chunks.length} chunks`
-      );
-
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        console.log(
-          `📤 Upload du chunk ${i + 1}/${chunks.length} pour ${file.name}`
-        );
 
         try {
           const { data } = await uploadFileChunkMutation({
@@ -212,11 +205,8 @@ export const useFileTransfer = () => {
             }
           });
 
-          console.log(`Chunk ${i + 1} uploadé:`, data.uploadFileChunk);
-
           // Si le fichier est complètement uploadé, sortir de la boucle
           if (data.uploadFileChunk.fileCompleted) {
-            console.log(`✅ Fichier ${file.name} complètement uploadé`);
             uploadedFileIds.push(data.uploadFileChunk.fileId);
             break;
           }
@@ -227,7 +217,6 @@ export const useFileTransfer = () => {
       }
     }
 
-    console.log(`🎉 Tous les fichiers uploadés. IDs:`, uploadedFileIds);
     return uploadedFileIds;
   };
 
@@ -259,22 +248,12 @@ export const useFileTransfer = () => {
         }
       };
 
-      // Debug: Afficher les fichiers sélectionnés
-      console.log("Fichiers sélectionnés:", selectedFiles);
-
       // Vérifier que les fichiers sont bien des objets File valides
       const validFiles = selectedFiles.filter((f) => {
         const isValid =
           f && f.file && (f.file instanceof File || f.file instanceof Blob);
-        console.log(
-          `Fichier ${f?.name}: valide=${isValid}, type=${typeof f?.file}, constructor=${f?.file?.constructor?.name}`
-        );
         return isValid;
       });
-
-      console.log(
-        `${validFiles.length} fichiers valides sur ${selectedFiles.length}`
-      );
 
       if (validFiles.length === 0) {
         throw new Error(
@@ -283,12 +262,8 @@ export const useFileTransfer = () => {
       }
 
       // ÉTAPE 1: Uploader les fichiers en chunks
-      console.log("🚀 Début de l'upload réel en chunks...");
       const uploadedFileIds = await uploadFileInChunks(validFiles);
-      console.log("✅ Tous les fichiers ont été uploadés avec succès!");
 
-      // ÉTAPE 2: Créer le transfert avec les IDs des fichiers
-      console.log("📄 Création du transfert avec les IDs de fichiers...");
       
       // Préparer l'objet input selon la nouvelle structure backend
       const inputData = {
@@ -308,8 +283,6 @@ export const useFileTransfer = () => {
         // NE PAS inclure le champ 'message' car il n'existe pas dans le schéma
       };
 
-      console.log("Input data pour createFileTransferWithIds:", inputData);
-      console.log("File IDs:", uploadedFileIds);
       // Utiliser la nouvelle mutation avec les IDs de fichiers
       const { data } = await createFileTransferWithIdsMutation({
         variables: {
@@ -318,7 +291,6 @@ export const useFileTransfer = () => {
         },
       });
 
-      console.log("Réponse GraphQL:", data);
       
       // Vérifier que la réponse contient les données nécessaires
       if (data?.createFileTransferWithIds?.fileTransfer) {
@@ -351,7 +323,6 @@ export const useFileTransfer = () => {
 
         return result;
       } else {
-        console.error("Réponse API incorrecte:", data);
         throw new Error(
           "Erreur lors de la création du transfert: données manquantes dans la réponse"
         );

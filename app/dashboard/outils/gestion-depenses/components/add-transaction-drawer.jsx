@@ -46,12 +46,10 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
   // Pré-remplir le formulaire si une transaction est fournie (mode édition)
   useEffect(() => {
     if (transaction && open) {
-      console.log("🔄 AddTransactionDrawer - Transaction reçue:", transaction);
       
       // Formater la date pour l'input date (format YYYY-MM-DD)
       let formattedDate = new Date().toISOString().split("T")[0]; // Défaut
       if (transaction.date) {
-        console.log("📅 Date originale:", transaction.date, "Type:", typeof transaction.date);
         
         if (typeof transaction.date === "string") {
           // Si c'est déjà une string, vérifier le format
@@ -73,8 +71,6 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
         }
       }
       
-      console.log("📅 Date formatée pour l'input:", formattedDate);
-      
       const newFormData = {
         type: transaction.type || "EXPENSE",
         amount: transaction.amount?.toString() || "",
@@ -85,7 +81,6 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
         vendor: transaction.vendor || "",
       };
       
-      console.log("📝 FormData final:", newFormData);
       setFormData(newFormData);
     }
   }, [transaction, open]);
@@ -225,7 +220,6 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                     type="date"
                     value={formData.date}
                     onChange={(e) => {
-                      console.log("📅 Changement de date:", e.target.value);
                       handleChange("date")(e.target.value);
                     }}
                     className="w-40"

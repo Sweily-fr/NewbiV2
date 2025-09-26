@@ -30,10 +30,6 @@ export function CoordonneesBancairesSection({
   // Surveiller les valeurs du formulaire
   const watchedValues = watch();
 
-  // Debug : surveiller les changements
-  useEffect(() => {
-    console.log("🔍 [BANCAIRES] watchedValues changé:", watchedValues);
-  }, [watchedValues]);
   return (
     <div className="space-y-8">
       {/* Titre */}

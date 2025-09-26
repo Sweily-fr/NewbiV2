@@ -300,15 +300,10 @@ function SignatureProviderContent({ children }) {
           setSignatureData(mergedData);
 
           // Stocker l'ID de la signature en cours d'édition
-          console.log("🔍 useSignatureData - ID de signature en édition:", parsedData.id);
           setEditingSignatureId(parsedData.id);
 
           // Nettoyer localStorage après chargement
           localStorage.removeItem("editingSignature");
-        } else {
-          console.log(
-            "⚠️ [SIGNATURE_PROVIDER] Aucune donnée d'édition trouvée dans localStorage"
-          );
         }
       } catch (error) {
         console.error(
@@ -316,21 +311,12 @@ function SignatureProviderContent({ children }) {
           error
         );
       }
-    } else {
-      console.log(
-        "📝 [SIGNATURE_PROVIDER] Mode création - utilisation des données par défaut"
-      );
     }
   }, [isEditMode, defaultSignatureData]);
 
   // Effet pour appliquer automatiquement le logo de l'organisation
   useEffect(() => {
-    console.log("🔍 SignatureProvider - Organization:", organization);
-    console.log("🔍 SignatureProvider - Logo dans organization:", organization?.logo);
-    console.log("🔍 SignatureProvider - Logo actuel signature:", signatureData.logo);
-    
     if (organization?.logo && !signatureData.logo) {
-      console.log("✅ SignatureProvider - Application automatique du logo:", organization.logo);
       setSignatureData(prev => ({
         ...prev,
         logo: organization.logo
@@ -459,10 +445,6 @@ function SignatureProviderContent({ children }) {
 
   // Fonction pour charger manuellement des données d'édition
   const loadEditingData = (editData) => {
-    console.log(
-      "🔄 [SIGNATURE_PROVIDER] Chargement manuel des données d'édition:",
-      editData
-    );
     const mergedData = {
       ...defaultSignatureData,
       ...editData,

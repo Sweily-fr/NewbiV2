@@ -45,9 +45,6 @@ const SignatureSave = ({ existingSignatureId = null }) => {
   // Utiliser editingSignatureId du hook si existingSignatureId n'est pas fourni
   const signatureId = existingSignatureId || editingSignatureId;
   
-  console.log("🔍 SignatureSave - existingSignatureId:", existingSignatureId);
-  console.log("🔍 SignatureSave - editingSignatureId:", editingSignatureId);
-  console.log("🔍 SignatureSave - signatureId final:", signatureId);
   const [isMounted, setIsMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [signatureName, setSignatureName] = useState(
@@ -120,9 +117,6 @@ const SignatureSave = ({ existingSignatureId = null }) => {
 
   // Préparer les données pour l'API
   const prepareSignatureData = () => {
-    console.log("📋 Préparation des données de signature complètes:", signatureData);
-    console.log("🎨 Typographie actuelle:", signatureData.typography);
-    
     return {
       signatureName,
       isDefault,
@@ -296,9 +290,7 @@ const SignatureSave = ({ existingSignatureId = null }) => {
   };
 
   const handleSave = async () => {
-    console.log("🚀 Début de la sauvegarde");
-    console.log("📝 Nom de signature:", signatureName);
-    console.log("🔧 Mode édition:", !!signatureId);
+    
     
     // Utiliser la fonction prepareSignatureData qui contient TOUS les champs avancés
     const completeData = prepareSignatureData();
@@ -310,12 +302,8 @@ const SignatureSave = ({ existingSignatureId = null }) => {
       isDefault,
     };
 
-    console.log("💾 Données finales à sauvegarder:", finalData);
-    console.log("🎨 Typographie dans les données finales:", finalData.typography);
-
     try {
       if (signatureId) {
-        console.log("🔄 Mise à jour de la signature existante:", signatureId);
         await updateSignature({
           variables: {
             input: {
@@ -326,18 +314,11 @@ const SignatureSave = ({ existingSignatureId = null }) => {
         });
       } else {
         // Création d'une nouvelle signature
-        console.log(
-          "✨ Création d'une nouvelle signature avec TOUS les champs avancés"
-        );
         const result = await createSignature({
           variables: {
             input: finalData,
           },
         });
-        console.log(
-          "✅ Signature créée avec succès:",
-          result.data.createEmailSignature
-        );
       }
     } catch (error) {
       console.error("❌ Erreur lors de la sauvegarde:", error);

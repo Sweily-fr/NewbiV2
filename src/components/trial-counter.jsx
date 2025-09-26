@@ -68,18 +68,6 @@ export function TrialCounter() {
     return () => clearInterval(interval);
   }, [trialStatus?.trialEndDate, isTrialActive]);
 
-  // Debug temporaire pour analyser la date problématique
-  if (trialStatus?.trialEndDate === "1759925383067") {
-    console.log("TrialCounter - Analyse date problématique:", {
-      originalValue: trialStatus.trialEndDate,
-      type: typeof trialStatus.trialEndDate,
-      asNumber: parseInt(trialStatus.trialEndDate),
-      asDate: new Date(parseInt(trialStatus.trialEndDate)),
-      dateString: new Date(parseInt(trialStatus.trialEndDate)).toString(),
-      isValid: !isNaN(new Date(parseInt(trialStatus.trialEndDate)).getTime())
-    });
-  }
-
   // Ne pas afficher si pas connecté ou pas de trial actif
   if (!session?.user || !isTrialActive || !trialStatus?.trialEndDate) {
     return null;

@@ -33,8 +33,6 @@ export async function POST(request) {
     const logoType = formData.get('logoType') || 'facebook';
     const color = formData.get('color') || '#1877F2';
 
-    console.log(`🚀 Upload logo ${logoType} couleur ${color} vers bucket logo-rs`);
-
     try {
       // Convertir le fichier en buffer pour l'upload
       const arrayBuffer = await file.arrayBuffer();
@@ -85,8 +83,6 @@ export async function POST(request) {
       if (!data.uploadSocialLogo.success) {
         throw new Error(data.uploadSocialLogo.message || 'Erreur lors de l\'upload');
       }
-
-      console.log(`✅ Logo social uploadé sur Cloudflare: ${data.uploadSocialLogo.url}`);
       
       return NextResponse.json({
         success: true,

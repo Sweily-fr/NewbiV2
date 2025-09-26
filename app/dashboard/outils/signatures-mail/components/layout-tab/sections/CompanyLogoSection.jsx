@@ -12,24 +12,13 @@ export default function CompanyLogoSection({
   signatureData,
   updateSignatureData,
 }) {
-  console.log("🚀 CompanyLogoSection - Composant chargé");
   const { organization } = useActiveOrganization();
-  console.log("🚀 CompanyLogoSection - Hook useActiveOrganization appelé");
   
   // Récupérer automatiquement le logo de l'entreprise au chargement
   useEffect(() => {
-    console.log("🔍 CompanyLogoSection - Organization:", organization);
-    console.log("🔍 CompanyLogoSection - Logo dans organization:", organization?.logo);
-    console.log("🔍 CompanyLogoSection - Logo actuel signature:", signatureData.logo);
-    
-    if (organization?.logo && !signatureData.logo) {
-      console.log("✅ CompanyLogoSection - Application du logo automatique:", organization.logo);
+    if (organization?.logo && !signatureData.logo) { 
       updateSignatureData("logo", organization.logo);
-    } else if (!organization?.logo) {
-      console.log("❌ CompanyLogoSection - Aucun logo trouvé dans l'organisation");
-    } else if (signatureData.logo) {
-      console.log("ℹ️ CompanyLogoSection - Logo déjà présent dans la signature");
-    }
+    } 
   }, [organization?.logo, signatureData.logo, updateSignatureData]);
 
   // Gestion de la taille du logo

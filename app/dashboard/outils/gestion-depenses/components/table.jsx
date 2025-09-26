@@ -836,9 +836,6 @@ export default function TransactionTable() {
     if (!editingTransaction) return;
 
     try {
-      console.log("🔄 handleSaveTransaction - Transaction originale:", editingTransaction);
-      console.log("🔄 handleSaveTransaction - Données modifiées:", updatedTransaction);
-
       // Mapper les données du formulaire vers le format de l'API
       const updateInput = {
         title: updatedTransaction.description || "Transaction modifiée",
@@ -854,12 +851,7 @@ export default function TransactionTable() {
         isVatDeductible: true, // Valeur par défaut
       };
 
-      console.log("📤 handleSaveTransaction - Input final:", updateInput);
-      console.log("🆔 handleSaveTransaction - ID:", editingTransaction.id);
-
       const result = await updateExpense(editingTransaction.id, updateInput);
-
-      console.log("📥 handleSaveTransaction - Résultat:", result);
 
       if (result.success) {
         handleCloseEditModal();

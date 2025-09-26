@@ -233,13 +233,10 @@ export const useUpdateExpense = () => {
 
   const updateExpense = async (id, input) => {
     try {
-      console.log("🔄 Tentative de modification dépense:", { id, input });
       
       const result = await updateExpenseMutation({
         variables: { id, input },
       });
-
-      console.log("📊 Résultat mutation updateExpense:", result);
 
       if (result.data?.updateExpense) {
         toast.success("Dépense modifiée avec succès");

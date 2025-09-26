@@ -17,9 +17,7 @@ export function SettingsFormProvider({ children }) {
 
   // Enregistrer la fonction de soumission d'une section
   const registerSectionSubmit = (sectionId, submitFn) => {
-    console.log(`🔧 [CONTEXT] Enregistrement section: ${sectionId}`);
     sectionsSubmitRef.current[sectionId] = submitFn;
-    console.log(`🔧 [CONTEXT] Sections enregistrées:`, Object.keys(sectionsSubmitRef.current));
   };
 
   // Marquer qu'une section a des changements
@@ -37,21 +35,15 @@ export function SettingsFormProvider({ children }) {
   const submitAllSections = async () => {
     setIsSubmitting(true);
     try {
-      console.log("🚀 [CONTEXT] Début de la sauvegarde globale");
-      console.log("🚀 [CONTEXT] Sections à sauvegarder:", sectionsDataRef.current);
-      
       const promises = Object.entries(sectionsSubmitRef.current).map(
         async ([sectionId, submitFn]) => {
           if (sectionsDataRef.current[sectionId]) {
-            console.log(`🚀 [CONTEXT] Sauvegarde de la section: ${sectionId}`);
             return await submitFn();
           }
         }
       );
 
       await Promise.all(promises.filter(Boolean));
-      
-      console.log("✅ [CONTEXT] Toutes les sauvegardes terminées");
       
       // Reset l'état des changements - sera fait par chaque section individuellement
       // sectionsDataRef.current = {};

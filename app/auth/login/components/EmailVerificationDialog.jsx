@@ -19,11 +19,6 @@ import { Mail, CheckCircle } from "lucide-react";
 export const EmailVerificationDialog = ({ isOpen, onClose, userEmail }) => {
   const [isResending, setIsResending] = useState(false);
 
-  // Debug: Log des props reçues
-  useEffect(() => {
-    console.log("🔧 EmailVerificationDialog - Props:", { isOpen, userEmail });
-  }, [isOpen, userEmail]);
-
   const handleResendVerification = async () => {
     setIsResending(true);
     try {
