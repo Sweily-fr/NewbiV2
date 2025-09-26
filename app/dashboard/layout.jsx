@@ -37,6 +37,14 @@ function DashboardContent({ children }) {
   const isToolPage = pathname.includes("/dashboard/outils/") && 
     (pathname.includes("/new") || pathname.includes("/edit") || pathname.includes("/view"));
   
+  // État pour contrôler l'ouverture de la sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(!isToolPage);
+  
+  // Mettre à jour l'état de la sidebar quand le pathname change
+  useEffect(() => {
+    setSidebarOpen(!isToolPage);
+  }, [isToolPage]);
+  
   // Désactiver complètement le banner - remplacé par le compteur dans le header
   const showTrialBanner = false;
   
@@ -58,7 +66,7 @@ function DashboardContent({ children }) {
   }
 
   return (
-    <SidebarProvider defaultOpen={!isToolPage}>
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <AppSidebar variant="inset" />
       <SidebarInset className="font-polysans font-light md:pt-0 pt-10">
         <SiteHeader />
