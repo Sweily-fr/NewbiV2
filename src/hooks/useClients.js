@@ -3,6 +3,7 @@ import { CREATE_CLIENT, UPDATE_CLIENT, DELETE_CLIENT } from '../graphql/mutation
 import { GET_CLIENTS, GET_CLIENT } from '../graphql/queries/clients';
 import { toast } from '@/src/components/ui/sonner';
 import { useWorkspace } from './useWorkspace';
+import { useErrorHandler } from './useErrorHandler';
 
 export const useClients = (page = 1, limit = 10, search = '') => {
   const { workspaceId } = useWorkspace();
@@ -41,6 +42,7 @@ export const useClient = (id) => {
 
 export const useCreateClient = () => {
   const { workspaceId } = useWorkspace();
+  const { handleMutationError } = useErrorHandler();
   
   const [createClient, { loading, error }] = useMutation(CREATE_CLIENT, {
     update: (cache, { data: { createClient: newClient } }) => {
@@ -69,28 +71,7 @@ export const useCreateClient = () => {
       toast.success('Client créé avec succès');
     },
     onError: (error) => {
-      // Analyser le type d'erreur pour afficher un message approprié
-      const errorMessage = error.message || '';
-      
-      if (errorMessage.includes('existe déjà') || errorMessage.includes('already exists')) {
-        toast.error('Un client avec cet email existe déjà');
-      } else if (errorMessage.includes('email') && errorMessage.includes('requis')) {
-        toast.error('L\'email est requis');
-      } else if (errorMessage.includes('nom') && errorMessage.includes('requis')) {
-        toast.error('Le nom est requis');
-      } else if (errorMessage.includes('SIRET')) {
-        toast.error('Le SIRET doit contenir exactement 14 chiffres');
-      } else if (errorMessage.includes('TVA')) {
-        toast.error('Format de numéro de TVA invalide');
-      } else if (errorMessage.includes('email') && errorMessage.includes('valide')) {
-        toast.error('Veuillez fournir une adresse email valide');
-      } else if (errorMessage.includes('validation')) {
-        toast.error('Données invalides. Veuillez vérifier les champs');
-      } else {
-        toast.error('Erreur lors de la création du client');
-      }
-      
-      console.error('Create client error:', error);
+      handleMutationError(error, 'create', 'client');
     },
   });
 
@@ -103,6 +84,7 @@ export const useCreateClient = () => {
 
 export const useUpdateClient = () => {
   const { workspaceId } = useWorkspace();
+  const { handleMutationError } = useErrorHandler();
   
   const [updateClient, { loading, error }] = useMutation(UPDATE_CLIENT, {
     update: (cache, { data: { updateClient: updatedClient } }) => {
@@ -136,7 +118,7 @@ export const useUpdateClient = () => {
             }
           });
         }
-      } catch (e) {
+      } catch {
         // Si la query n'existe pas dans le cache, on l'ignore
         console.log('GET_CLIENTS not in cache, skipping update');
       }
@@ -145,28 +127,7 @@ export const useUpdateClient = () => {
       toast.success('Client modifié avec succès');
     },
     onError: (error) => {
-      // Analyser le type d'erreur pour afficher un message approprié
-      const errorMessage = error.message || '';
-      
-      if (errorMessage.includes('existe déjà') || errorMessage.includes('already exists')) {
-        toast.error('Un client avec cet email existe déjà');
-      } else if (errorMessage.includes('email') && errorMessage.includes('requis')) {
-        toast.error('L\'email est requis');
-      } else if (errorMessage.includes('nom') && errorMessage.includes('requis')) {
-        toast.error('Le nom est requis');
-      } else if (errorMessage.includes('SIRET')) {
-        toast.error('Le SIRET doit contenir exactement 14 chiffres');
-      } else if (errorMessage.includes('TVA')) {
-        toast.error('Format de numéro de TVA invalide');
-      } else if (errorMessage.includes('email') && errorMessage.includes('valide')) {
-        toast.error('Veuillez fournir une adresse email valide');
-      } else if (errorMessage.includes('validation')) {
-        toast.error('Données invalides. Veuillez vérifier les champs');
-      } else {
-        toast.error('Erreur lors de la modification du client');
-      }
-      
-      console.error('Update client error:', error);
+      handleMutationError(error, 'update', 'client');
     },
   });
 
@@ -179,9 +140,10 @@ export const useUpdateClient = () => {
 
 export const useDeleteClient = () => {
   const { workspaceId } = useWorkspace();
+  const { handleMutationError } = useErrorHandler();
   
   const [deleteClient, { loading, error }] = useMutation(DELETE_CLIENT, {
-    update: (cache, { data }, { variables: { id } }) => {
+    update: (cache, {}, { variables: { id } }) => {
       // Supprimer le client du cache GET_CLIENT
       cache.evict({
         id: cache.identify({ __typename: 'Client', id })
@@ -209,7 +171,7 @@ export const useDeleteClient = () => {
             }
           });
         }
-      } catch (e) {
+      } catch {
         console.log('GET_CLIENTS not in cache, skipping update');
       }
 
@@ -220,8 +182,7 @@ export const useDeleteClient = () => {
       toast.success('Client supprimé avec succès');
     },
     onError: (error) => {
-      toast.error('Erreur lors de la suppression du client');
-      console.error('Delete client error:', error);
+      handleMutationError(error, 'delete', 'client');
     },
   });
 

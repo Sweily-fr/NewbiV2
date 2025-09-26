@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
+import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 import {
   getActiveOrganization,
   updateOrganization,
@@ -24,6 +25,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
+  
+  // Error handler
+  const { handleError } = useErrorHandler();
 
   // GraphQL hooks
   const { quote: existingQuote, loading: loadingQuote } = useQuote(quoteId);
@@ -325,8 +329,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           result = await createQuote(input);
 
           if (result?.id) {
-            const newQuoteId = result.id;
-
             if (!isAutoSave) {
               toast.success("Brouillon sauvegardé");
               router.push("/dashboard/outils/devis");
@@ -347,7 +349,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       } catch (error) {
         console.error("❌ Erreur lors de la sauvegarde:", error);
         if (!isAutoSave) {
-          toast.error("Erreur lors de la sauvegarde");
+          handleError(error, 'quote');
         }
         return false;
       } finally {
@@ -366,6 +368,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       router,
       session,
       validateStep1,
+      handleError,
     ]
   );
 
@@ -406,7 +409,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         }
       } catch (error) {
         console.error("❌ Erreur lors de la soumission:", error);
-        toast.error("Erreur lors de la création du devis");
+        handleError(error, 'quote');
       } finally {
         setSaving(false);
       }
@@ -420,6 +423,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       updateQuote,
       router,
       session,
+      handleError,
     ]
   );
 
