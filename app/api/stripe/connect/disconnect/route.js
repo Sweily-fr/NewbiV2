@@ -23,9 +23,6 @@ export async function POST(request) {
     // Si vous avez l'ID du compte Stripe, vous pouvez le supprimer
     // await stripe.accounts.del(stripeAccountId);
 
-    // Pour l'instant, nous simulons juste la déconnexion
-    console.log('Déconnexion Stripe pour utilisateur:', userId);
-
     // Ici vous devriez supprimer l'ID du compte Stripe de votre base de données
     // await removeUserStripeAccount(userId);
 

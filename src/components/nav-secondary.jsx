@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@tabler/icons-react";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Crown, Settings2, Trash, Settings, Users} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { SettingsModal } from "@/src/components/settings-modal";

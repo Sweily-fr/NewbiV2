@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { gql, useQuery, useMutation } from "@apollo/client";
 
@@ -44,34 +44,50 @@ const START_TRIAL = gql`
 export function useTrial() {
   const { data: session } = useSession();
   const [trialStatus, setTrialStatus] = useState(null);
+  const isMountedRef = useRef(false);
+
+  // Marquer le composant comme monté
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Requête pour obtenir le statut de la période d'essai avec protections
-  const { loading, error, refetch } = useQuery(GET_TRIAL_STATUS, {
+  const { loading, error, refetch, data: queryData } = useQuery(GET_TRIAL_STATUS, {
     skip: !session?.user,
     fetchPolicy: 'cache-first', // Utiliser le cache en priorité pour éviter les requêtes excessives
     errorPolicy: 'all',
     notifyOnNetworkStatusChange: false, // Éviter les re-renders inutiles
     pollInterval: 0, // Pas de polling automatique
-    onCompleted: (data) => {
-      if (data?.getTrialStatus?.success) {
-        setTrialStatus(data.getTrialStatus.data);
-      }
-    },
-    onError: (error) => {
+  });
+
+  // Gérer les données de la requête dans useEffect
+  useEffect(() => {
+    if (isMountedRef.current && queryData?.getTrialStatus?.success) {
+      setTrialStatus(queryData.getTrialStatus.data);
+    }
+  }, [queryData]);
+
+  // Gérer les erreurs dans useEffect
+  useEffect(() => {
+    if (isMountedRef.current && error) {
       console.error('Erreur GraphQL trial:', error);
       // En cas d'erreur, utiliser les données de session comme fallback
       setTrialStatus(null);
-    },
-  });
+    }
+  }, [error]);
 
   // Mutation pour démarrer une période d'essai
-  const [startTrialMutation, { loading: startingTrial }] = useMutation(START_TRIAL, {
-    onCompleted: (data) => {
-      if (data?.startTrial?.success) {
-        setTrialStatus(data.startTrial.data);
-      }
-    },
-  });
+  const [startTrialMutation, { loading: startingTrial, data: mutationData }] = useMutation(START_TRIAL);
+
+  // Gérer les données de la mutation dans useEffect
+  useEffect(() => {
+    if (isMountedRef.current && mutationData?.startTrial?.success) {
+      setTrialStatus(mutationData.startTrial.data);
+    }
+  }, [mutationData]);
 
   // Calculer le statut de la période d'essai à partir des données d'organisation de session
   const getTrialStatusFromSession = useCallback(() => {
@@ -79,15 +95,6 @@ export function useTrial() {
 
     const organization = session.user.organization;
     const now = new Date();
-    
-    // Debug désactivé pour éviter le spam de logs
-    // console.log("useTrial - Session organization data:", {
-    //   organizationId: organization.id,
-    //   isTrialActive: organization.isTrialActive,
-    //   trialEndDate: organization.trialEndDate,
-    //   hasUsedTrial: organization.hasUsedTrial,
-    //   trialStartDate: organization.trialStartDate
-    // });
     
     // Vérifier si l'organisation a une période d'essai active
     if (organization.isTrialActive && organization.trialEndDate) {

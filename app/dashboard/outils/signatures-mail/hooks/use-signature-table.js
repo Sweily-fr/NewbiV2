@@ -363,7 +363,9 @@ export const useSignatureActions = () => {
           const signatureData = data.getEmailSignature;
 
           // Rediriger avec l'ID dans l'URL au lieu d'utiliser localStorage
-          router.push(`/dashboard/outils/signatures-mail/new?edit=true&id=${signatureData.id}`);
+          router.push(
+            `/dashboard/outils/signatures-mail/new?edit=true&id=${signatureData.id}`
+          );
         } else {
           console.error("❌ [EDIT] Aucune signature trouvée dans la réponse");
           toast.error("Signature introuvable");
@@ -510,10 +512,6 @@ export const useSignatureActions = () => {
     handleDeleteMultiple,
     handleDuplicate,
     handleToggleFavorite,
-    loading:
-      deleting ||
-      settingDefault ||
-      duplicating ||
-      deletingMultiple,
+    loading: deleting || settingDefault || duplicating || deletingMultiple,
   };
 };

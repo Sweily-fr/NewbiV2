@@ -34,13 +34,10 @@ export function GeneraleSection({
   updateOrganization,
   refetchOrganization,
 }) {
-  // Utiliser le contexte du formulaire global
-  console.log("🔍 [GENERALE] Tentative d'accès au FormContext...");
   
   let formContext;
   try {
     formContext = useFormContext();
-    console.log("✅ [GENERALE] FormContext reçu avec succès:", formContext);
   } catch (error) {
     console.error("❌ [GENERALE] Erreur FormContext:", error);
     return <div>Erreur: FormContext non disponible</div>;
@@ -62,29 +59,19 @@ export function GeneraleSection({
     watchedValues.address?.country || organization?.addressCountry || "France";
 
   const handleLogoChange = (imageUrl) => {
-    console.log("🖼️ handleLogoChange appelé avec:", imageUrl);
     setValue("logo", imageUrl);
-    console.log("✅ setValue logo appelé");
   };
 
   const handleOrganizationUpdate = async (logoUrl) => {
-    console.log("🏢 handleOrganizationUpdate appelé avec:", logoUrl);
     if (updateOrganization && organization?.id) {
       try {
         await updateOrganization(
           { logo: logoUrl },
           {
             onSuccess: async () => {
-              console.log(
-                "✅ Logo sauvegardé automatiquement dans l'organisation"
-              );
               // Forcer un refetch de l'organisation pour mettre à jour la session
               if (refetchOrganization) {
-                console.log(
-                  "🔄 Refetch de l'organisation pour mise à jour session..."
-                );
                 await refetchOrganization();
-                console.log("✅ Session mise à jour avec le nouveau logo");
               }
             },
             onError: (error) => {

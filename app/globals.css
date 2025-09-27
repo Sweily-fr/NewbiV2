@@ -92,6 +92,15 @@
   html {
     font-family: "Poppins", system-ui, sans-serif;
   }
+  
+  /* Override font for authentication pages */
+  .auth-layout {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  }
+  
+  .auth-layout * {
+    font-family: inherit;
+  }
 }
 
 @custom-variant dark (&:is(.dark *));

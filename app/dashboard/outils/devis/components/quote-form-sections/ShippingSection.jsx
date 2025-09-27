@@ -147,7 +147,7 @@ export default function ShippingSection({ canEdit }) {
 
             {/* Nom complet */}
             <div className="space-y-2">
-              <Label htmlFor="shippingFullName">Nom complet</Label>
+              <Label htmlFor="shippingFullName" className="font-normal">Nom complet</Label>
               <Input
                 id="shippingFullName"
                 placeholder="Nom complet du destinataire"
@@ -163,7 +163,7 @@ export default function ShippingSection({ canEdit }) {
 
             {/* Adresse de livraison */}
             <div className="space-y-2">
-              <Label htmlFor="shippingStreet">Adresse de livraison *</Label>
+              <Label htmlFor="shippingStreet" className="font-normal">Adresse de livraison *</Label>
               <Textarea
                 id="shippingStreet"
                 placeholder="Adresse complète de livraison"
@@ -186,7 +186,7 @@ export default function ShippingSection({ canEdit }) {
             {/* Ville et Code postal */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="shippingCity">Ville *</Label>
+                <Label htmlFor="shippingCity" className="font-normal">Ville *</Label>
                 <Input
                   id="shippingCity"
                   placeholder="Ville"
@@ -206,7 +206,7 @@ export default function ShippingSection({ canEdit }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="shippingPostalCode">Code postal *</Label>
+                <Label htmlFor="shippingPostalCode" className="font-normal">Code postal *</Label>
                 <Input
                   id="shippingPostalCode"
                   placeholder="Code postal"
@@ -228,7 +228,7 @@ export default function ShippingSection({ canEdit }) {
 
             {/* Pays */}
             <div className="space-y-2">
-              <Label htmlFor="shippingCountry">Pays *</Label>
+              <Label htmlFor="shippingCountry" className="font-normal">Pays *</Label>
               <Input
                 id="shippingCountry"
                 placeholder="Pays"
@@ -250,7 +250,7 @@ export default function ShippingSection({ canEdit }) {
             {/* Montant et TVA */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="shippingAmountHT">Montant HT (€) *</Label>
+                <Label htmlFor="shippingAmountHT" className="font-normal">Montant HT (€) *</Label>
                 <Input
                   id="shippingAmountHT"
                   type="number"
@@ -271,7 +271,7 @@ export default function ShippingSection({ canEdit }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="shippingVatRate">TVA (%)</Label>
+                <Label htmlFor="shippingVatRate" className="font-normal">TVA (%)</Label>
                 <Select
                   value={shipping.shippingVatRate?.toString() || "20"}
                   onValueChange={(value) =>

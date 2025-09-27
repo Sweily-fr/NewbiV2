@@ -16,8 +16,7 @@ async function resetOnboarding(organizationId = null) {
   
   try {
     await client.connect();
-    console.log('✅ Connexion MongoDB établie');
-    
+
     const db = client.db(DB_NAME);
     const organizationsCollection = db.collection('organization');
     
@@ -37,30 +36,14 @@ async function resetOnboarding(organizationId = null) {
       }
     );
     
-    console.log(`✅ Onboarding réinitialisé pour ${result.modifiedCount} organisation(s)`);
-    
-    if (organizationId) {
-      console.log(`🎯 Organisation ciblée: ${organizationId}`);
-    } else {
-      console.log('🌍 Toutes les organisations ont été réinitialisées');
-    }
-    
   } catch (error) {
     console.error('❌ Erreur lors de la réinitialisation:', error);
   } finally {
     await client.close();
-    console.log('🔌 Connexion MongoDB fermée');
   }
 }
 
 // Récupérer l'ID d'organisation depuis les arguments
 const organizationId = process.argv[2];
-
-if (organizationId) {
-  console.log(`🚀 Réinitialisation de l'onboarding pour l'organisation: ${organizationId}`);
-} else {
-  console.log('🚀 Réinitialisation de l\'onboarding pour TOUTES les organisations');
-  console.log('⚠️  Pour cibler une organisation spécifique: node scripts/reset-onboarding.js [organizationId]');
-}
 
 resetOnboarding(organizationId);

@@ -19,6 +19,7 @@ export default function CompanyLogoSection({
   updateSignatureData,
 }) {
   const { organization } = useActiveOrganization();
+<<<<<<< HEAD
 
   // Récupérer automatiquement le logo de l'entreprise au chargement
   useEffect(() => {
@@ -33,6 +34,14 @@ export default function CompanyLogoSection({
         "ℹ️ CompanyLogoSection - Logo déjà présent dans la signature"
       );
     }
+=======
+  
+  // Récupérer automatiquement le logo de l'entreprise au chargement
+  useEffect(() => {
+    if (organization?.logo && !signatureData.logo) { 
+      updateSignatureData("logo", organization.logo);
+    } 
+>>>>>>> af67fa2acdc84a022e93f404edd45761d1e3b7d3
   }, [organization?.logo, signatureData.logo, updateSignatureData]);
 
   // Gestion de la taille du logo

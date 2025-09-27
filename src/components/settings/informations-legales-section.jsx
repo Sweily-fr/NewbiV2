@@ -73,11 +73,6 @@ export function InformationsLegalesSection({
   // Surveiller les valeurs du formulaire
   const watchedValues = watch();
 
-  // Debug : surveiller les changements
-  useEffect(() => {
-    console.log("🔍 [LEGALES] watchedValues changé:", watchedValues);
-  }, [watchedValues]);
-
   const isVatSubject = watchedValues.legal?.isVatSubject || false;
   const hasCommercialActivity =
     watchedValues.legal?.hasCommercialActivity || false;

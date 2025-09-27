@@ -33,7 +33,7 @@ export function HeroSection() {
                 variant="outline"
                 className="px-6 py-3 text-base font-medium cursor-pointer w-full sm:w-auto"
               >
-                <a href="#pricing" className="text-nowrap">
+                <a href="/#pricing" className="text-nowrap">
                   Tarifs
                 </a>
               </Button>

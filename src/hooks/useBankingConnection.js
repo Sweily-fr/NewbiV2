@@ -27,8 +27,6 @@ export function useBankingConnection(workspaceId) {
       setBridgeUserExists(false);
       setHasAccounts(false);
 
-      console.log("🏦 Vérification du statut bancaire désactivée temporairement");
-
       /* CODE ORIGINAL COMMENTÉ :
       const response = await fetch("/api/banking-connect/status", {
         headers: {
@@ -63,7 +61,6 @@ export function useBankingConnection(workspaceId) {
     if (!workspaceId) return;
 
     // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Connexion bancaire
-    console.log("🏦 Connexion bancaire désactivée temporairement");
     setError("Intégration bancaire temporairement désactivée");
     return;
 
@@ -98,7 +95,6 @@ export function useBankingConnection(workspaceId) {
     if (!workspaceId) return;
 
     // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Déconnexion bancaire
-    console.log("🏦 Déconnexion bancaire désactivée temporairement");
     return false;
 
     /* CODE ORIGINAL COMMENTÉ :

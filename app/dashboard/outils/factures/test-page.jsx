@@ -60,7 +60,6 @@ export default function InvoiceTestPage() {
 
   const handleSubmit = async (data) => {
     try {
-      console.log("Submitting invoice:", data);
       const updatedData = { ...data, status: "SENT" };
       setInvoiceData(updatedData);
       toast.success("Facture envoyée avec succès");

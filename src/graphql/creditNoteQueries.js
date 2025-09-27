@@ -273,25 +273,25 @@ export const REFUND_METHOD_LABELS = {
 // ==================== HOOKS ====================
 
 export function useCreditNote(id) {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, loading: workspaceLoading } = useWorkspace();
 
-  const { data, loading, error, refetch } = useQuery(GET_CREDIT_NOTE, {
+  const { data, loading: queryLoading, error, refetch } = useQuery(GET_CREDIT_NOTE, {
     variables: { id, workspaceId },
     skip: !id || !workspaceId,
   });
 
   return {
     creditNote: data?.creditNote,
-    loading,
+    loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.creditNote),
     error,
     refetch,
   };
 }
 
 export function useCreditNotes(filters = {}) {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, loading: workspaceLoading } = useWorkspace();
 
-  const { data, loading, error, refetch, fetchMore } = useQuery(GET_CREDIT_NOTES, {
+  const { data, loading: queryLoading, error, refetch, fetchMore } = useQuery(GET_CREDIT_NOTES, {
     variables: {
       workspaceId,
       ...filters,
@@ -303,7 +303,7 @@ export function useCreditNotes(filters = {}) {
     creditNotes: data?.creditNotes?.creditNotes || [],
     totalCount: data?.creditNotes?.totalCount || 0,
     hasNextPage: data?.creditNotes?.hasNextPage || false,
-    loading,
+    loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.creditNotes),
     error,
     refetch,
     fetchMore,
@@ -311,16 +311,16 @@ export function useCreditNotes(filters = {}) {
 }
 
 export function useCreditNotesByInvoice(invoiceId) {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, loading: workspaceLoading } = useWorkspace();
 
-  const { data, loading, error, refetch } = useQuery(GET_CREDIT_NOTES_BY_INVOICE, {
+  const { data, loading: queryLoading, error, refetch } = useQuery(GET_CREDIT_NOTES_BY_INVOICE, {
     variables: { invoiceId, workspaceId },
     skip: !invoiceId || !workspaceId,
   });
 
   return {
     creditNotes: data?.creditNotesByInvoice || [],
-    loading,
+    loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.creditNotesByInvoice),
     error,
     refetch,
   };

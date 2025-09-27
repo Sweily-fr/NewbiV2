@@ -1,12 +1,20 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
+import { SettingsModal } from "@/src/components/settings-modal";
 import {
-  ArrowUpRightIcon,
-  CircleFadingPlusIcon,
-  FileInputIcon,
-  FolderPlusIcon,
   SearchIcon,
+  LayoutDashboard,
+  Receipt,
+  FileText,
+  Users,
+  Settings,
+  CreditCard,
+  Mail,
+  Kanban,
+  BarChart3,
+  User,
 } from "lucide-react";
 
 import {
@@ -26,8 +34,30 @@ export default function Component({
   commandPlaceholder = "Type a command or search...",
 }) {
   const [open, setOpen] = React.useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = React.useState("preferences");
+  const router = useRouter();
+
+  const openSettings = React.useCallback((tab = "preferences") => {
+    console.log("Opening settings with tab:", tab); // Debug
+    setSettingsInitialTab(tab);
+    setSettingsModalOpen(true);
+  }, []);
+
+  // S'assurer que l'onglet initial est bien défini quand le modal s'ouvre
+  React.useEffect(() => {
+    if (settingsModalOpen) {
+      console.log("Settings modal opened with initial tab:", settingsInitialTab); // Debug
+    }
+  }, [settingsModalOpen, settingsInitialTab]);
+
+  const runCommand = React.useCallback((command) => {
+    setOpen(false);
+    command();
+  }, []);
 
   React.useEffect(() => {
+    // Raccourci clavier (Ctrl+K ou Cmd+K) pour la recherche du dashboard
     const down = (e) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -67,65 +97,76 @@ export default function Component({
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder={commandPlaceholder} />
         <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Quick start">
-            <CommandItem>
-              <FolderPlusIcon
-                size={16}
-                className="opacity-60"
-                aria-hidden="true"
-              />
-              <span>New folder</span>
-              <CommandShortcut className="justify-center">⌘N</CommandShortcut>
+          <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
+          <CommandGroup heading="Navigation">
+            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard"))}>
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              <span>Tableau de bord</span>
             </CommandItem>
-            <CommandItem>
-              <FileInputIcon
-                size={16}
-                className="opacity-60"
-                aria-hidden="true"
-              />
-              <span>Import document</span>
-              <CommandShortcut className="justify-center">⌘I</CommandShortcut>
+            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/clients"))}>
+              <Users className="mr-2 h-4 w-4" />
+              <span>Clients</span>
             </CommandItem>
-            <CommandItem>
-              <CircleFadingPlusIcon
-                size={16}
-                className="opacity-60"
-                aria-hidden="true"
-              />
-              <span>Add block</span>
-              <CommandShortcut className="justify-center">⌘B</CommandShortcut>
+            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/account"))}>
+              <User className="mr-2 h-4 w-4" />
+              <span>Mon compte</span>
             </CommandItem>
           </CommandGroup>
           <CommandSeparator />
-          <CommandGroup heading="Navigation">
-            <CommandItem>
-              <ArrowUpRightIcon
-                size={16}
-                className="opacity-60"
-                aria-hidden="true"
-              />
-              <span>Go to dashboard</span>
+          <CommandGroup heading="Outils">
+            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/factures"))}>
+              <Receipt className="mr-2 h-4 w-4" />
+              <span>Factures</span>
             </CommandItem>
-            <CommandItem>
-              <ArrowUpRightIcon
-                size={16}
-                className="opacity-60"
-                aria-hidden="true"
-              />
-              <span>Go to apps</span>
+            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/devis"))}>
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Devis</span>
             </CommandItem>
-            <CommandItem>
-              <ArrowUpRightIcon
-                size={16}
-                className="opacity-60"
-                aria-hidden="true"
-              />
-              <span>Go to connections</span>
+            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/gestion-depenses"))}>
+              <BarChart3 className="mr-2 h-4 w-4" />
+              <span>Gestion des dépenses</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/kanban"))}>
+              <Kanban className="mr-2 h-4 w-4" />
+              <span>Kanban</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/signatures-mail"))}>
+              <Mail className="mr-2 h-4 w-4" />
+              <span>Signatures de mail</span>
+            </CommandItem>
+          </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading="Paramètres">
+            <CommandItem onSelect={() => runCommand(() => openSettings("preferences"))}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Paramètres généraux</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => openSettings("generale"))}>
+              <User className="mr-2 h-4 w-4" />
+              <span>Informations entreprise</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => openSettings("coordonnees-bancaires"))}>
+              <CreditCard className="mr-2 h-4 w-4" />
+              <span>Coordonnées bancaires</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => openSettings("informations-legales"))}>
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Informations légales</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => openSettings("subscription"))}>
+              <CreditCard className="mr-2 h-4 w-4" />
+              <span>Gérer mon abonnement</span>
             </CommandItem>
           </CommandGroup>
         </CommandList>
       </CommandDialog>
+      
+      {/* Modal de paramètres */}
+      <SettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        initialTab={settingsInitialTab}
+      />
     </>
   );
 }

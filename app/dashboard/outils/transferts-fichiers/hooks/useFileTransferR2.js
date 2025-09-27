@@ -253,7 +253,6 @@ export const useFileTransferR2 = (refetchTransfers) => {
   const clearFiles = useCallback(() => {
     setSelectedFiles([]);
     setTransferResult(null);
-    console.log(`🧹 Liste des fichiers R2 vidée`);
   }, []);
 
   return {

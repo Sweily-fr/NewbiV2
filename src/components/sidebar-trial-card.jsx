@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { ClockIcon, CrownIcon, XIcon, ArrowRightIcon } from "lucide-react";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useSession } from "@/src/lib/auth-client";
 import { useRouter } from "next/navigation";
 import PricingModal from "@/src/components/pricing-modal";

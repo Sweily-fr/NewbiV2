@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { addDays, setHours, setMinutes, subDays } from "date-fns";
 import Loading from "./loading";
 
@@ -15,31 +15,28 @@ export default function Component() {
   // Opérations sur les événements
   const { createEvent, updateEvent, deleteEvent } = useEventOperations();
 
-  // État local pour les événements (combine BDD + événements temporaires)
-  const [localEvents, setLocalEvents] = useState([]);
-
-  // Synchroniser les événements de la BDD avec l'état local
-  useEffect(() => {
-    if (dbEvents && dbEvents.length > 0) {
-      // Transformer les événements de la BDD au format attendu par le calendrier
-      const transformedEvents = dbEvents.map((event) => ({
-        id: event.id,
-        title: event.title,
-        description: event.description,
-        start: new Date(event.start),
-        end: new Date(event.end),
-        allDay: event.allDay,
-        color: event.color,
-        location: event.location,
-        type: event.type,
-        invoiceId: event.invoiceId,
-        invoice: event.invoice,
-      }));
-      setLocalEvents(transformedEvents);
-    } else if (!loading) {
-      // Si pas d'événements en BDD et chargement terminé, initialiser avec un tableau vide
-      setLocalEvents([]);
+  // Transformer les événements avec useMemo pour éviter les re-renders inutiles
+  const localEvents = useMemo(() => {
+    if (loading || !dbEvents) {
+      return [];
     }
+
+    // Transformer les événements de la BDD au format attendu par le calendrier
+    const transformed = dbEvents.map((event) => ({
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      start: new Date(event.start),
+      end: new Date(event.end),
+      allDay: event.allDay,
+      color: event.color,
+      location: event.location,
+      type: event.type,
+      invoiceId: event.invoiceId,
+      invoice: event.invoice,
+    }));
+    
+    return transformed;
   }, [dbEvents, loading]);
 
   // Gestionnaire pour ajouter un événement
@@ -55,11 +52,6 @@ export default function Component() {
         location: event.location,
         type: "MANUAL",
       });
-
-      if (newEvent) {
-        // L'événement sera automatiquement ajouté via le cache Apollo
-        console.log("Événement ajouté avec succès");
-      }
     } catch (error) {
       console.error("Erreur lors de l'ajout de l'événement:", error);
       toast.error("Erreur lors de l'ajout de l'événement");
@@ -80,11 +72,6 @@ export default function Component() {
         location: updatedEvent.location,
         type: updatedEvent.type || "MANUAL",
       });
-
-      if (result) {
-        // L'événement sera automatiquement mis à jour via le cache Apollo
-        console.log("Événement mis à jour avec succès");
-      }
     } catch (error) {
       console.error("Erreur lors de la mise à jour de l'événement:", error);
       toast.error("Erreur lors de la mise à jour de l'événement");
@@ -95,11 +82,6 @@ export default function Component() {
   const handleEventDelete = async (eventId) => {
     try {
       const success = await deleteEvent(eventId);
-
-      if (success) {
-        // L'événement sera automatiquement supprimé via le cache Apollo
-        console.log("Événement supprimé avec succès");
-      }
     } catch (error) {
       console.error("Erreur lors de la suppression de l'événement:", error);
       toast.error("Erreur lors de la suppression de l'événement");

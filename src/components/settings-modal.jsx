@@ -109,6 +109,14 @@ export function SettingsModal({
     watch,
   } = formMethods;
 
+  // Synchroniser activeTab avec initialTab quand le modal s'ouvre
+  useEffect(() => {
+    if (open && initialTab) {
+      console.log("Synchronizing activeTab with initialTab:", initialTab); // Debug
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
+
   // Initialiser le formulaire avec les données de l'organisation
   useEffect(() => {
     if (organization) {
@@ -195,12 +203,10 @@ export function SettingsModal({
         },
         onError: (error) => {
           toast.error("Erreur lors de la sauvegarde");
-          console.error("❌ [MODAL] Erreur sauvegarde:", error);
         },
       });
     } catch (error) {
       toast.error("Erreur lors de la sauvegarde");
-      console.error("❌ [MODAL] Erreur sauvegarde:", error);
     }
   };
 
@@ -351,8 +357,8 @@ export function SettingsModal({
     },
     {
       items: [
-        { id: "facturation", label: "Facturation", icon: CreditCard },
         { id: "subscription", label: "Abonnement", icon: Crown },
+        { id: "facturation", label: "Facturation", icon: CreditCard },
       ],
     },
   ];

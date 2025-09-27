@@ -11,12 +11,9 @@ export const useAutoOrganization = () => {
 
         // Si pas d'utilisateur disponible, essayer de récupérer la session actuelle
         if (!user || !user.id) {
-          console.log("🔄 Tentative de récupération de la session actuelle...");
-
           try {
             const { data: currentSession } = await organization.getSession();
             user = currentSession?.user;
-            console.log("👤 Utilisateur récupéré depuis la session:", user);
           } catch (sessionError) {
             console.error(
               "❌ Erreur lors de la récupération de la session:",

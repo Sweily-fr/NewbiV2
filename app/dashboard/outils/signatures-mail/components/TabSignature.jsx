@@ -356,6 +356,10 @@ export function TabSignature({ existingSignatureId = null }) {
           },
         });
       } else {
+<<<<<<< HEAD
+=======
+        // Création d'une nouvelle signature
+>>>>>>> af67fa2acdc84a022e93f404edd45761d1e3b7d3
         const result = await createSignature({
           variables: {
             input: finalData,

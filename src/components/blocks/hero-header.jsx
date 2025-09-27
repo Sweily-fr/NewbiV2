@@ -65,7 +65,7 @@ const menuItems = [
       },
     ],
   },
-  { name: "Tarifs", href: "#pricing" },
+  { name: "Tarifs", href: "/#pricing" },
   // { name: "Ressources", href: "/blog" },
 ];
 
@@ -76,7 +76,6 @@ const HeroHeader = ({ className }) => {
   const [dropdownTimeout, setDropdownTimeout] = React.useState(null);
   const [mobileDropdownOpen, setMobileDropdownOpen] = React.useState(false);
   const session = useUser();
-  console.log(session.session, "session");
 
   React.useEffect(() => {
     const handleScroll = () => {

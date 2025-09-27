@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/src/components/ui/sidebar";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import Link from "next/link";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
@@ -32,8 +32,7 @@ export function NavMain({ items }) {
                 tooltip="Apps"
                 className={cn(
                   "bg-transparent w-full cursor-pointer",
-                  (pathname === "/dashboard/outils" ||
-                    pathname?.startsWith("/dashboard/outils/")) &&
+                  pathname === "/dashboard/outils" &&
                     "bg-[#F0F0F0] hover:bg-[#F0F0F0]/90 active:bg-[#F0F0F0] text-black min-w-8 duration-200 ease-linear"
                 )}
                 //className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"

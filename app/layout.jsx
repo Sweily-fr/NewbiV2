@@ -4,7 +4,7 @@ import { ThemeProvider } from "@/src/components/theme-provider";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
 import { SubscriptionProvider } from "@/src/contexts/subscription-context";
-import CookieBanner from "@/src/components/cookies/CookieBanner";
+import CookieManager from "@/src/components/cookies/CookieManager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +36,7 @@ export default function RootLayout({ children }) {
           <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
             <SubscriptionProvider>
               {children}
-              <CookieBanner />
+              <CookieManager />
             </SubscriptionProvider>
           </ThemeProvider>
         </ApolloWrapper>

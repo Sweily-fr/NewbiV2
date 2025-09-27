@@ -23,7 +23,6 @@ export function AgendaView({ currentDate, events, onEventSelect }) {
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
-    console.log("Agenda view event clicked:", event);
     onEventSelect(event);
   };
 

@@ -54,8 +54,6 @@ export function TransactionDetailDrawer({
     paymentMethodIcons[transaction.paymentMethod] || FileTextIcon;
 
   const formatDate = (dateInput, includeTime = false) => {
-    console.log("formatDate input:", dateInput, typeof dateInput);
-    
     if (!dateInput) return "Date non disponible";
     
     let date;
@@ -90,13 +88,11 @@ export function TransactionDetailDrawer({
     }
     // Autres cas
     else {
-      console.log("Type de date non supporté:", typeof dateInput, dateInput);
       return "Format de date non supporté";
     }
     
     // Vérifier si la date est valide
     if (isNaN(date.getTime())) {
-      console.log("Date invalide après parsing:", dateInput, "->", date);
       return "Date invalide";
     }
     

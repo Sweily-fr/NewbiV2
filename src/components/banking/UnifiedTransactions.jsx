@@ -17,22 +17,19 @@ import {
   FileMinus2,
 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { useExpenses } from "@/src/hooks/useExpenses";
-import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { useState, useEffect, useMemo } from "react";
 
-export default function UnifiedTransactions({ limit = 5, className }) {
+export default function UnifiedTransactions({ 
+  limit = 5, 
+  className, 
+  expenses = [], 
+  invoices = [], 
+  isLoading = false 
+}) {
   const { workspaceId } = useWorkspace();
   const [bankTransactions, setBankTransactions] = useState([]);
   const [bankLoading, setBankLoading] = useState(true);
   const [bankError, setBankError] = useState(null);
-
-  // Récupérer les dépenses et factures
-  const { expenses, loading: expensesLoading } = useExpenses({
-    status: "PAID",
-    limit: 1000,
-  });
-  const { invoices, loading: invoicesLoading } = useInvoices();
 
   const fetchBankTransactions = async () => {
     if (!workspaceId) return;
@@ -74,6 +71,12 @@ export default function UnifiedTransactions({ limit = 5, className }) {
   const allTransactions = useMemo(() => {
     const transactions = [];
 
+    // Debug: Log des données reçues
+    console.log("🔍 Données reçues dans UnifiedTransactions:");
+    console.log("- Expenses:", expenses?.length || 0, expenses?.[0]);
+    console.log("- Invoices:", invoices?.length || 0, invoices?.[0]);
+    console.log("- Bank transactions:", bankTransactions?.length || 0, bankTransactions?.[0]);
+
     // Ajouter les transactions bancaires
     bankTransactions.forEach((transaction) => {
       transactions.push({
@@ -105,11 +108,8 @@ export default function UnifiedTransactions({ limit = 5, className }) {
       });
     });
 
-    // Ajouter les factures payées comme revenus
-    const paidInvoices = invoices.filter(
-      (invoice) => invoice.status === "COMPLETED"
-    );
-    paidInvoices.forEach((invoice) => {
+    // Ajouter les factures payées comme revenus (déjà filtrées dans les props)
+    invoices.forEach((invoice) => {
       transactions.push({
         id: invoice.id,
         type: "invoice",
@@ -122,11 +122,17 @@ export default function UnifiedTransactions({ limit = 5, className }) {
       });
     });
 
+    // Debug: Log des transactions créées
+    console.log("📊 Transactions créées:", transactions.length);
+    if (transactions.length > 0) {
+      console.log("Première transaction:", transactions[0]);
+    }
+
     // Trier par date (plus récent en premier)
     return transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [bankTransactions, expenses, invoices]);
 
-  const loading = bankLoading || expensesLoading || invoicesLoading;
+  const finalLoading = isLoading || bankLoading;
   const error = bankError;
 
   const formatCurrency = (amount) => {
@@ -137,7 +143,35 @@ export default function UnifiedTransactions({ limit = 5, className }) {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
+    if (!dateString) return "";
+    
+    // Log pour debug - voir le format exact des dates reçues
+    console.log("📅 Date reçue:", dateString, "Type:", typeof dateString);
+    
+    let date;
+    
+    // Essayer différents formats de date
+    if (typeof dateString === 'string') {
+      // Si c'est une chaîne, essayer de la parser
+      date = new Date(dateString);
+    } else if (typeof dateString === 'number') {
+      // Si c'est un timestamp
+      date = new Date(dateString);
+    } else if (dateString instanceof Date) {
+      // Si c'est déjà un objet Date
+      date = dateString;
+    } else {
+      console.warn("Format de date non reconnu:", dateString);
+      return "";
+    }
+    
+    // Vérifier si la date est valide
+    if (isNaN(date.getTime())) {
+      console.warn("Date invalide après parsing:", dateString, "→", date);
+      return "";
+    }
+    
+    return date.toLocaleDateString("fr-FR", {
       day: "2-digit",
       month: "2-digit",
     });
@@ -176,7 +210,7 @@ export default function UnifiedTransactions({ limit = 5, className }) {
     return "text-gray-600";
   };
 
-  if (loading) {
+  if (finalLoading) {
     return (
       <Card className={className}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

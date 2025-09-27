@@ -4,7 +4,7 @@ import * as React from "react";
 import { ChevronsUpDown, Plus, Crown, Settings, Users } from "lucide-react";
 import { IconBuilding } from "@tabler/icons-react";
 import { authClient } from "@/src/lib/auth-client";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";

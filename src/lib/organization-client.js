@@ -149,7 +149,6 @@ export function useActiveOrganization() {
 
         // Forcer un refetch après un délai pour s'assurer de la synchronisation
         setTimeout(() => {
-          console.log("🔄 Refetch forcé après suppression logo");
           fetchOrganization();
         }, 100);
       } else {

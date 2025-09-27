@@ -578,21 +578,7 @@ function SignatureProviderContent({ children }) {
 
   // Effet pour appliquer automatiquement le logo de l'organisation
   useEffect(() => {
-    console.log("🔍 SignatureProvider - Organization:", organization);
-    console.log(
-      "🔍 SignatureProvider - Logo dans organization:",
-      organization?.logo
-    );
-    console.log(
-      "🔍 SignatureProvider - Logo actuel signature:",
-      signatureData.logo
-    );
-
     if (organization?.logo && !signatureData.logo) {
-      console.log(
-        "✅ SignatureProvider - Application automatique du logo:",
-        organization.logo
-      );
       setSignatureData((prev) => ({
         ...prev,
         logo: organization.logo,
@@ -759,10 +745,6 @@ function SignatureProviderContent({ children }) {
 
   // Fonction pour charger manuellement des données d'édition
   const loadEditingData = (editData) => {
-    console.log(
-      "🔄 [SIGNATURE_PROVIDER] Chargement manuel des données d'édition:",
-      editData
-    );
     const mergedData = {
       ...defaultSignatureData,
       ...editData,

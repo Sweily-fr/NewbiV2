@@ -77,13 +77,6 @@ export default function InvoiceSidebar({
   const invoice = fullInvoice || initialInvoice;
 
   // Debug: Vérifier si les données complètes sont récupérées
-  if (loadingFullInvoice) {
-    console.log("Loading full invoice...");
-  }
-  if (invoiceError) {
-    console.log("Invoice error:", invoiceError);
-  }
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",

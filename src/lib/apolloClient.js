@@ -2,6 +2,7 @@ import { ApolloClient, InMemoryCache, from } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
+import { persistCache, LocalStorageWrapper } from "apollo3-cache-persist";
 import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "@/src/lib/auth-client";
 import { getErrorMessage, isCriticalError } from "@/src/utils/errorMessages";
@@ -33,33 +34,25 @@ const authLink = setContext(async (_, { headers }) => {
   try {
     // Récupérer le JWT via authClient.getSession avec le header set-auth-jwt
     let jwtToken = null;
-    console.log("🔍 [Apollo] Récupération du token JWT...");
 
     await authClient.getSession({
       fetchOptions: {
         onSuccess: (ctx) => {
           const jwt = ctx.response.headers.get("set-auth-jwt");
-          console.log("🔍 [Apollo] Token JWT reçu:", jwt ? "✅ OUI" : "❌ NON");
           if (jwt && !isTokenExpired(jwt)) {
             jwtToken = jwt;
-            console.log("✅ [Apollo] Token JWT valide et non expiré");
-          } else if (jwt) {
-            console.log("⚠️ [Apollo] Token JWT expiré");
           }
         },
       },
     });
 
     if (jwtToken) {
-      console.log("✅ [Apollo] Envoi du token JWT dans les headers");
       return {
         headers: {
           ...headers,
           authorization: `Bearer ${jwtToken}`,
         },
       };
-    } else {
-      console.log("❌ [Apollo] Aucun token JWT à envoyer");
     }
   } catch (error) {
     // Erreur silencieuse - ne pas exposer les détails d'authentification
@@ -124,37 +117,165 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
   }
 });
 
-export const apolloClient = new ApolloClient({
-  link: from([authLink, errorLink, uploadLink]),
-  cache: new InMemoryCache({
-    // Configuration pour améliorer la synchronisation du cache
-    typePolicies: {
-      Query: {
-        fields: {
-          getMyEmailSignatures: {
-            // Toujours refetch depuis le serveur pour garantir la fraîcheur
-            fetchPolicy: "cache-and-network",
+// Configuration avancée du cache avec persistance
+const cache = new InMemoryCache({
+  typePolicies: {
+    Query: {
+      fields: {
+        // Stratégies de cache optimisées pour différents types de données
+        getInvoices: {
+          keyArgs: ["workspaceId", "status", "sortBy", "sortOrder"],
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
+        getQuotes: {
+          keyArgs: ["workspaceId", "status", "sortBy", "sortOrder"],
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
+        getClients: {
+          keyArgs: ["workspaceId"],
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
+        getProducts: {
+          keyArgs: ["workspaceId"],
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
+        getExpenses: {
+          keyArgs: ["workspaceId", "status", "sortBy", "sortOrder"],
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
+        getMyEmailSignatures: {
+          keyArgs: ["workspaceId"],
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
+        // Cache plus long pour les données statiques
+        getActiveOrganization: {
+          keyArgs: false,
+          merge(_, incoming) {
+            return incoming;
           },
         },
       },
     },
-  }),
-  defaultOptions: {
-    watchQuery: {
-      fetchPolicy: "cache-and-network",
-      errorPolicy: "all",
-      // Forcer la notification des changements
-      notifyOnNetworkStatusChange: true,
+    // Optimisations pour les types d'entités
+    Invoice: {
+      keyFields: ["id"],
+      fields: {
+        items: {
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
+      },
     },
-    query: {
-      fetchPolicy: "cache-and-network",
-      errorPolicy: "all",
+    Quote: {
+      keyFields: ["id"],
+      fields: {
+        items: {
+          merge(_, incoming) {
+            return incoming;
+          },
+        },
+      },
     },
-    mutate: {
-      // Configuration pour les mutations
-      errorPolicy: "all",
-      // Forcer la mise à jour du cache après mutation
-      awaitRefetchQueries: true,
+    Client: {
+      keyFields: ["id"],
+    },
+    Product: {
+      keyFields: ["id"],
+    },
+    Expense: {
+      keyFields: ["id"],
+    },
+    EmailSignature: {
+      keyFields: ["id"],
+    },
+    Organization: {
+      keyFields: ["id"],
     },
   },
+  // Optimisation de la normalisation
+  possibleTypes: {},
+  // Configuration pour éviter les warnings
+  addTypename: true,
 });
+
+// Variable pour stocker l'instance Apollo Client
+let apolloClientInstance = null;
+
+// Fonction pour initialiser le cache persistant
+const initializePersistentCache = async () => {
+  try {
+    await persistCache({
+      cache,
+      storage: new LocalStorageWrapper(window.localStorage),
+      key: 'newbi-apollo-cache',
+      // Durée de vie du cache : 7 jours
+      maxSize: 1048576 * 5, // 5MB
+      serialize: true,
+      // Invalider le cache après 7 jours
+      trigger: 'write',
+    });
+    console.log('✅ Cache Apollo persistant initialisé');
+  } catch (error) {
+    console.warn('⚠️ Impossible d\'initialiser le cache persistant:', error);
+    // Continuer sans cache persistant
+  }
+};
+
+// Fonction pour créer le client Apollo
+const createApolloClient = () => {
+  return new ApolloClient({
+    link: from([authLink, errorLink, uploadLink]),
+    cache,
+    defaultOptions: {
+      watchQuery: {
+        // Stratégie optimisée : utiliser le cache d'abord, puis réseau en arrière-plan
+        fetchPolicy: "cache-first",
+        errorPolicy: "all",
+        // Réduire les notifications pour améliorer les performances
+        notifyOnNetworkStatusChange: false,
+      },
+      query: {
+        // Pour les requêtes ponctuelles, privilégier le cache
+        fetchPolicy: "cache-first",
+        errorPolicy: "all",
+      },
+      mutate: {
+        errorPolicy: "all",
+        // Optimiser les refetch après mutations
+        awaitRefetchQueries: false,
+        // Mise à jour optimiste du cache
+        optimisticResponse: false,
+      },
+    },
+    // Améliorer les performances avec le mode de développement
+    connectToDevTools: process.env.NODE_ENV === 'development',
+  });
+};
+
+// Fonction pour obtenir l'instance Apollo Client
+export const getApolloClient = async () => {
+  if (!apolloClientInstance) {
+    // Initialiser le cache persistant seulement côté client
+    if (typeof window !== 'undefined') {
+      await initializePersistentCache();
+    }
+    apolloClientInstance = createApolloClient();
+  }
+  return apolloClientInstance;
+};
+
+// Export de l'instance pour compatibilité
+export const apolloClient = createApolloClient();

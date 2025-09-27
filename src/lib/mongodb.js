@@ -12,7 +12,6 @@ if (!global._mongoClient) {
   client
     .connect()
     .then(() => {
-      console.log("✅ MongoDB connected successfully");
       global._mongoDb = client.db(dbName);
     })
     .catch((err) => {
@@ -29,7 +28,6 @@ const ensureConnection = async () => {
     if (!global._mongoDb) {
       await client.connect();
       global._mongoDb = client.db(dbName);
-      console.log("✅ MongoDB reconnected successfully");
     }
     return global._mongoDb;
   } catch (error) {
