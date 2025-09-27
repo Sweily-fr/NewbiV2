@@ -49,6 +49,8 @@ import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
 
 import LoadingSkeleton from "./loading";
+import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
+import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useState, useEffect, useMemo } from "react";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import {
@@ -60,72 +62,48 @@ import {
 
 function DashboardContent() {
   const { session } = useUser();
-  const { workspaceId } = useWorkspace();
-
-  // Utilisation des données de dépenses et factures existantes - sans paramètres pour éviter les problèmes
+  
+  // Utilisation du hook de cache intelligent pour les données du dashboard
   const {
     expenses,
-    loading: expensesLoading,
-    refetch: refetchExpenses,
-  } = useExpenses();
-  const { invoices, loading: invoicesLoading } = useInvoices();
-  const [transactions, setTransactions] = useState([]);
-  const [transactionsLoading, setTransactionsLoading] = useState(true);
+    invoices,
+    paidInvoices,
+    paidExpenses,
+    totalIncome,
+    totalExpenses,
+    transactions,
+    isLoading,
+    isInitialized,
+    formatCurrency,
+    refreshData,
+    cacheInfo,
+  } = useDashboardData();
 
-  // Filtrer les factures payées
-  const paidInvoices = useMemo(() => {
-    const paid = invoices.filter((invoice) => invoice.status === "COMPLETED");
-    // Debug des dates de factures
-    paid.forEach((invoice) => {
-      const date = new Date(parseInt(invoice.issueDate));
-    });
-    return paid;
-  }, [invoices]);
-
-  const loading = expensesLoading || invoicesLoading || transactionsLoading;
-
-  // Local formatCurrency function to replace the removed hook
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount || 0);
-  };
-
-  // Désactiver le chargement des transactions bancaires pour l'instant
-  useEffect(() => {
-    setTransactionsLoading(false);
-  }, []);
-
-  // Utiliser les fonctions utilitaires importées
-
-  // Filtrer les dépenses payées (exclure les DRAFT)
-  const paidExpenses = expenses.filter((expense) => expense.status === "PAID");
-
-  // Calculate totals from real data - uniquement factures payées et dépenses payées
-  const totalIncome = paidInvoices.reduce(
-    (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
-    0
-  );
-  const totalExpenses = paidExpenses.reduce(
-    (sum, expense) => sum + (expense.amount || 0),
-    0
-  );
-
-  // Force recalculation when expenses change
+  // Données pour les graphiques
   const incomeChartData = useMemo(
-    () => processInvoicesForCharts(paidInvoices),
-    [expenses, paidInvoices]
+    () => paidInvoices ? processInvoicesForCharts(paidInvoices) : [],
+    [paidInvoices]
   );
   const expenseChartData = useMemo(
-    () => processExpensesForCharts(paidExpenses),
+    () => paidExpenses ? processExpensesForCharts(paidExpenses) : [],
     [paidExpenses]
   );
 
+  // Debug pour vérifier l'état du cache
+  console.log('🔍 Dashboard render:', { 
+    isLoading, 
+    isInitialized, 
+    hasCache: !!cacheInfo?.isFromCache,
+    lastUpdate: cacheInfo?.lastUpdate 
+  });
+
   // Si les données sont en cours de chargement, afficher le skeleton
-  if (loading) {
-    return <LoadingSkeleton />;
+  if (isLoading || !isInitialized) {
+    console.log('📊 Dashboard: Affichage du skeleton');
+    return <DashboardSkeleton />;
   }
+
+  console.log('📊 Dashboard: Affichage du contenu réel');
 
   // Note: Les transactions sont maintenant gérées par le composant BridgeTransactions
 
@@ -152,7 +130,15 @@ function DashboardContent() {
   return (
     <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
       <div className="flex items-center justify-between w-full mb-4 md:mb-6">
-        <h1 className="text-2xl font-medium">Bonjour {session?.user?.name},</h1>
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-medium">Bonjour {session?.user?.name},</h1>
+          {process.env.NODE_ENV === 'development' && cacheInfo?.lastUpdate && (
+            <p className="text-xs text-gray-500 mt-1">
+              📊 Données mises à jour : {cacheInfo.lastUpdate.toLocaleTimeString()}
+              {cacheInfo.isFromCache && " (cache)"}
+            </p>
+          )}
+        </div>
         {/* <BankingConnectButton /> */}
       </div>
       <div className="flex flex-col gap-3 w-full">
