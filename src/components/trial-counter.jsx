@@ -1,21 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useTrial } from "@/src/hooks/useTrial";
-import { useSession } from "@/src/lib/auth-client";
+import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 
 /**
  * Composant compteur de période d'essai qui s'affiche à côté du bouton de thème
  * Format: "Essais + date + 0d:00:00:00"
  */
 export function TrialCounter() {
-  const { data: session } = useSession();
-  const { trialStatus, isTrialActive, daysRemaining } = useTrial();
+  const { user, trial } = useDashboardLayoutContext();
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   // Calculer le temps restant en temps réel
   useEffect(() => {
-    if (!trialStatus?.trialEndDate || !isTrialActive) {
+    if (!trial?.trialStatus?.trialEndDate || !trial?.isTrialActive) {
       return;
     }
 
@@ -24,7 +22,7 @@ export function TrialCounter() {
       
       // Gérer différents formats de date pour trialEndDate
       let endDate;
-      const trialEndDateValue = trialStatus.trialEndDate;
+      const trialEndDateValue = trial.trialStatus.trialEndDate;
       
       if (typeof trialEndDateValue === 'string' && /^\d+$/.test(trialEndDateValue)) {
         // Timestamp en string
@@ -66,10 +64,10 @@ export function TrialCounter() {
     const interval = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(interval);
-  }, [trialStatus?.trialEndDate, isTrialActive]);
+  }, [trial?.trialStatus?.trialEndDate, trial?.isTrialActive]);
 
   // Ne pas afficher si pas connecté ou pas de trial actif
-  if (!session?.user || !isTrialActive || !trialStatus?.trialEndDate) {
+  if (!user || !trial?.isTrialActive || !trial?.trialStatus?.trialEndDate) {
     return null;
   }
 
@@ -124,7 +122,7 @@ export function TrialCounter() {
     }}>
       <span className="font-medium">Essais</span>
       <span className="opacity-70">
-        {formatDate(trialStatus.trialEndDate)}
+        {formatDate(trial.trialStatus.trialEndDate)}
       </span>
       <span className="font-bold tabular-nums">
         {formatTime(timeLeft)}

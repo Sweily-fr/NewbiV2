@@ -53,7 +53,7 @@ import {
 import { getCurrentUser } from "../lib/auth/api";
 import { useUser } from "../lib/auth/hooks";
 import { TeamSwitcher } from "@/src/components/team-switcher";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 
 const data = {
   teams: [

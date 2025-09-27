@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Clock, Crown, X } from "lucide-react";

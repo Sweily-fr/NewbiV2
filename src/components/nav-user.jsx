@@ -31,7 +31,7 @@ import {
   useSidebar,
 } from "@/src/components/ui/sidebar";
 import { Badge } from "@/src/components/ui/badge";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import Link from "next/link";
 import { ModeToggle } from "@/src/components/ui/mode-toggle";
 import { signOut } from "../lib/auth-client";

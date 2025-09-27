@@ -11,7 +11,7 @@ import { SignatureProvider, useSignatureData } from "@/src/hooks/use-signature-d
 import { TrialBanner } from "@/src/components/trial-banner";
 import { PricingModal } from "@/src/components/pricing-modal";
 import OnboardingModal from "@/src/components/onboarding-modal";
-import { useOnboarding } from "@/src/hooks/useOnboarding";
+import { DashboardLayoutProvider, useOnboarding } from "@/src/contexts/dashboard-layout-context";
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 
 // Composant interne qui utilise le contexte
@@ -121,15 +121,22 @@ export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
 
-  // Si on est sur la page de signature, wrapper avec le provider
+  // Wrapper avec le provider de layout optimisé
+  const content = (
+    <DashboardLayoutProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </DashboardLayoutProvider>
+  );
+
+  // Si on est sur la page de signature, ajouter le provider de signature
   if (isSignaturePage) {
     return (
       <SignatureProvider>
-        <DashboardContent>{children}</DashboardContent>
+        {content}
       </SignatureProvider>
     );
   }
 
-  // Sinon, rendu normal sans le provider
-  return <DashboardContent>{children}</DashboardContent>;
+  // Sinon, rendu normal avec le provider de layout
+  return content;
 }

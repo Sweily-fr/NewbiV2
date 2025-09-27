@@ -20,11 +20,10 @@ import {
 } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Crown, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/src/lib/auth-client";
-import { useActiveOrganization } from "@/src/lib/organization-client";
+import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
 import { useSettingsModal } from "@/src/hooks/useSettingsModal";
 import { SettingsModal } from "@/src/components/settings-modal";
@@ -186,10 +185,8 @@ const cards = [
 ];
 
 export function SectionCards({ className, activeFilter = "outline" }) {
-  const { isActive } = useSubscription();
+  const { isActive, user, organization } = useDashboardLayoutContext();
   const router = useRouter();
-  const { data: session } = useSession();
-  const { organization } = useActiveOrganization();
   const { isOpen, initialTab, openSettings, closeSettings } = useSettingsModal();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState(null);
@@ -197,30 +194,9 @@ export function SectionCards({ className, activeFilter = "outline" }) {
   
   // Fonction pour vérifier si les informations d'entreprise sont complètes
   const checkCompanyInfo = () => {
-    // Vérifier d'abord les données de session
-    if (session?.user?.organization) {
-      return isCompanyInfoComplete(session.user.organization);
-    }
-    
-    // Fallback sur les données d'organisation
+    // Utiliser les données en cache du contexte optimisé
     if (organization) {
-      const companyData = {
-        companyName: organization.companyName,
-        companyEmail: organization.companyEmail,
-        addressStreet: organization.addressStreet,
-        addressCity: organization.addressCity,
-        addressZipCode: organization.addressZipCode,
-        addressCountry: organization.addressCountry,
-      };
-      
-      return !!(
-        companyData.companyName &&
-        companyData.companyEmail &&
-        companyData.addressStreet &&
-        companyData.addressCity &&
-        companyData.addressZipCode &&
-        companyData.addressCountry
-      );
+      return isCompanyInfoComplete(organization);
     }
     
     return false;
@@ -228,34 +204,17 @@ export function SectionCards({ className, activeFilter = "outline" }) {
 
   // Fonction pour déterminer quel onglet ouvrir selon les informations manquantes
   const getRequiredSettingsTab = () => {
-    let orgData = null;
-    
-    // Récupérer les données d'organisation
-    if (session?.user?.organization) {
-      orgData = session.user.organization;
-    } else if (organization) {
-      orgData = {
-        companyName: organization.companyName,
-        companyEmail: organization.companyEmail,
-        addressStreet: organization.addressStreet,
-        addressCity: organization.addressCity,
-        addressZipCode: organization.addressZipCode,
-        addressCountry: organization.addressCountry,
-        siret: organization.siret,
-        legalForm: organization.legalForm,
-      };
-    }
-
-    if (!orgData) return "generale";
+    // Utiliser les données en cache du contexte optimisé
+    if (!organization) return "generale";
 
     // Vérifier les informations générales d'abord
     const hasGeneralInfo = !!(
-      orgData.companyName &&
-      orgData.companyEmail &&
-      orgData.addressStreet &&
-      orgData.addressCity &&
-      orgData.addressZipCode &&
-      orgData.addressCountry
+      organization.companyName &&
+      organization.companyEmail &&
+      organization.addressStreet &&
+      organization.addressCity &&
+      organization.addressZipCode &&
+      organization.addressCountry
     );
 
     if (!hasGeneralInfo) {
@@ -263,7 +222,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     }
 
     // Si les informations générales sont OK, vérifier les informations légales
-    const hasLegalInfo = !!(orgData.siret && orgData.legalForm);
+    const hasLegalInfo = !!(organization.siret && organization.legalForm);
     
     if (!hasLegalInfo) {
       return "informations-legales";
