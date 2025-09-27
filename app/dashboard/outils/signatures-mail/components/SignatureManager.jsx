@@ -261,8 +261,7 @@ const SignatureManager = () => {
   const { data, loading, error, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
     skip: !isMounted,
     onCompleted: (data) => {
-      console.log("📊 [FRONTEND] Données reçues du serveur:", data);
-      console.log("📋 [FRONTEND] Signatures:", data?.getMyEmailSignatures);
+      console.log("📋 [FRONTEND] Signatures:");
     },
     onError: (error) => {
       console.error("❌ [FRONTEND] Erreur lors de la récupération:", error);
@@ -304,10 +303,6 @@ const SignatureManager = () => {
     SET_DEFAULT_EMAIL_SIGNATURE,
     {
       onCompleted: (data) => {
-        console.log(
-          "✅ Signature par défaut définie:",
-          data.setDefaultEmailSignature
-        );
         refetch();
       },
       onError: (error) => {
@@ -395,7 +390,7 @@ const SignatureManager = () => {
               verticalSeparatorLeft: 22,
               verticalSeparatorRight: 22,
             },
-            
+
             // Mode espacement détaillé
             detailedSpacing: signature.detailedSpacing || false,
 
@@ -407,137 +402,179 @@ const SignatureManager = () => {
               contact: 13,
             },
             // Typographie détaillée
-            typography: signature.typography ? {
-              fullName: {
-                fontFamily: signature.typography.fullName?.fontFamily || "Arial, sans-serif",
-                fontSize: signature.typography.fullName?.fontSize || 16,
-                color: signature.typography.fullName?.color || "#171717",
-                fontWeight: signature.typography.fullName?.fontWeight || "normal",
-                fontStyle: signature.typography.fullName?.fontStyle || "normal",
-                textDecoration: signature.typography.fullName?.textDecoration || "none",
-              },
-              position: {
-                fontFamily: signature.typography.position?.fontFamily || "Arial, sans-serif",
-                fontSize: signature.typography.position?.fontSize || 14,
-                color: signature.typography.position?.color || "#666666",
-                fontWeight: signature.typography.position?.fontWeight || "normal",
-                fontStyle: signature.typography.position?.fontStyle || "normal",
-                textDecoration: signature.typography.position?.textDecoration || "none",
-              },
-              company: {
-                fontFamily: signature.typography.company?.fontFamily || "Arial, sans-serif",
-                fontSize: signature.typography.company?.fontSize || 14,
-                color: signature.typography.company?.color || "#171717",
-                fontWeight: signature.typography.company?.fontWeight || "normal",
-                fontStyle: signature.typography.company?.fontStyle || "normal",
-                textDecoration: signature.typography.company?.textDecoration || "none",
-              },
-              email: {
-                fontFamily: signature.typography.email?.fontFamily || "Arial, sans-serif",
-                fontSize: signature.typography.email?.fontSize || 12,
-                color: signature.typography.email?.color || "#666666",
-                fontWeight: signature.typography.email?.fontWeight || "normal",
-                fontStyle: signature.typography.email?.fontStyle || "normal",
-                textDecoration: signature.typography.email?.textDecoration || "none",
-              },
-              phone: {
-                fontFamily: signature.typography.phone?.fontFamily || "Arial, sans-serif",
-                fontSize: signature.typography.phone?.fontSize || 12,
-                color: signature.typography.phone?.color || "#666666",
-                fontWeight: signature.typography.phone?.fontWeight || "normal",
-                fontStyle: signature.typography.phone?.fontStyle || "normal",
-                textDecoration: signature.typography.phone?.textDecoration || "none",
-              },
-              mobile: {
-                fontFamily: signature.typography.mobile?.fontFamily || "Arial, sans-serif",
-                fontSize: signature.typography.mobile?.fontSize || 12,
-                color: signature.typography.mobile?.color || "#666666",
-                fontWeight: signature.typography.mobile?.fontWeight || "normal",
-                fontStyle: signature.typography.mobile?.fontStyle || "normal",
-                textDecoration: signature.typography.mobile?.textDecoration || "none",
-              },
-              website: {
-                fontFamily: signature.typography.website?.fontFamily || "Arial, sans-serif",
-                fontSize: signature.typography.website?.fontSize || 12,
-                color: signature.typography.website?.color || "#666666",
-                fontWeight: signature.typography.website?.fontWeight || "normal",
-                fontStyle: signature.typography.website?.fontStyle || "normal",
-                textDecoration: signature.typography.website?.textDecoration || "none",
-              },
-              address: {
-                fontFamily: signature.typography.address?.fontFamily || "Arial, sans-serif",
-                fontSize: signature.typography.address?.fontSize || 12,
-                color: signature.typography.address?.color || "#666666",
-                fontWeight: signature.typography.address?.fontWeight || "normal",
-                fontStyle: signature.typography.address?.fontStyle || "normal",
-                textDecoration: signature.typography.address?.textDecoration || "none",
-              },
-            } : {
-              fullName: {
-                fontFamily: "Arial, sans-serif",
-                fontSize: 16,
-                color: "#171717",
-                fontWeight: "normal",
-                fontStyle: "normal",
-                textDecoration: "none",
-              },
-              position: {
-                fontFamily: "Arial, sans-serif",
-                fontSize: 14,
-                color: "#666666",
-                fontWeight: "normal",
-                fontStyle: "normal",
-                textDecoration: "none",
-              },
-              company: {
-                fontFamily: "Arial, sans-serif",
-                fontSize: 14,
-                color: "#171717",
-                fontWeight: "normal",
-                fontStyle: "normal",
-                textDecoration: "none",
-              },
-              email: {
-                fontFamily: "Arial, sans-serif",
-                fontSize: 12,
-                color: "#666666",
-                fontWeight: "normal",
-                fontStyle: "normal",
-                textDecoration: "none",
-              },
-              phone: {
-                fontFamily: "Arial, sans-serif",
-                fontSize: 12,
-                color: "#666666",
-                fontWeight: "normal",
-                fontStyle: "normal",
-                textDecoration: "none",
-              },
-              mobile: {
-                fontFamily: "Arial, sans-serif",
-                fontSize: 12,
-                color: "#666666",
-                fontWeight: "normal",
-                fontStyle: "normal",
-                textDecoration: "none",
-              },
-              website: {
-                fontFamily: "Arial, sans-serif",
-                fontSize: 12,
-                color: "#666666",
-                fontWeight: "normal",
-                fontStyle: "normal",
-                textDecoration: "none",
-              },
-              address: {
-                fontFamily: "Arial, sans-serif",
-                fontSize: 12,
-                color: "#666666",
-                fontWeight: "normal",
-                fontStyle: "normal",
-                textDecoration: "none",
-              },
-            },
+            typography: signature.typography
+              ? {
+                  fullName: {
+                    fontFamily:
+                      signature.typography.fullName?.fontFamily ||
+                      "Arial, sans-serif",
+                    fontSize: signature.typography.fullName?.fontSize || 16,
+                    color: signature.typography.fullName?.color || "#171717",
+                    fontWeight:
+                      signature.typography.fullName?.fontWeight || "normal",
+                    fontStyle:
+                      signature.typography.fullName?.fontStyle || "normal",
+                    textDecoration:
+                      signature.typography.fullName?.textDecoration || "none",
+                  },
+                  position: {
+                    fontFamily:
+                      signature.typography.position?.fontFamily ||
+                      "Arial, sans-serif",
+                    fontSize: signature.typography.position?.fontSize || 14,
+                    color: signature.typography.position?.color || "#666666",
+                    fontWeight:
+                      signature.typography.position?.fontWeight || "normal",
+                    fontStyle:
+                      signature.typography.position?.fontStyle || "normal",
+                    textDecoration:
+                      signature.typography.position?.textDecoration || "none",
+                  },
+                  company: {
+                    fontFamily:
+                      signature.typography.company?.fontFamily ||
+                      "Arial, sans-serif",
+                    fontSize: signature.typography.company?.fontSize || 14,
+                    color: signature.typography.company?.color || "#171717",
+                    fontWeight:
+                      signature.typography.company?.fontWeight || "normal",
+                    fontStyle:
+                      signature.typography.company?.fontStyle || "normal",
+                    textDecoration:
+                      signature.typography.company?.textDecoration || "none",
+                  },
+                  email: {
+                    fontFamily:
+                      signature.typography.email?.fontFamily ||
+                      "Arial, sans-serif",
+                    fontSize: signature.typography.email?.fontSize || 12,
+                    color: signature.typography.email?.color || "#666666",
+                    fontWeight:
+                      signature.typography.email?.fontWeight || "normal",
+                    fontStyle:
+                      signature.typography.email?.fontStyle || "normal",
+                    textDecoration:
+                      signature.typography.email?.textDecoration || "none",
+                  },
+                  phone: {
+                    fontFamily:
+                      signature.typography.phone?.fontFamily ||
+                      "Arial, sans-serif",
+                    fontSize: signature.typography.phone?.fontSize || 12,
+                    color: signature.typography.phone?.color || "#666666",
+                    fontWeight:
+                      signature.typography.phone?.fontWeight || "normal",
+                    fontStyle:
+                      signature.typography.phone?.fontStyle || "normal",
+                    textDecoration:
+                      signature.typography.phone?.textDecoration || "none",
+                  },
+                  mobile: {
+                    fontFamily:
+                      signature.typography.mobile?.fontFamily ||
+                      "Arial, sans-serif",
+                    fontSize: signature.typography.mobile?.fontSize || 12,
+                    color: signature.typography.mobile?.color || "#666666",
+                    fontWeight:
+                      signature.typography.mobile?.fontWeight || "normal",
+                    fontStyle:
+                      signature.typography.mobile?.fontStyle || "normal",
+                    textDecoration:
+                      signature.typography.mobile?.textDecoration || "none",
+                  },
+                  website: {
+                    fontFamily:
+                      signature.typography.website?.fontFamily ||
+                      "Arial, sans-serif",
+                    fontSize: signature.typography.website?.fontSize || 12,
+                    color: signature.typography.website?.color || "#666666",
+                    fontWeight:
+                      signature.typography.website?.fontWeight || "normal",
+                    fontStyle:
+                      signature.typography.website?.fontStyle || "normal",
+                    textDecoration:
+                      signature.typography.website?.textDecoration || "none",
+                  },
+                  address: {
+                    fontFamily:
+                      signature.typography.address?.fontFamily ||
+                      "Arial, sans-serif",
+                    fontSize: signature.typography.address?.fontSize || 12,
+                    color: signature.typography.address?.color || "#666666",
+                    fontWeight:
+                      signature.typography.address?.fontWeight || "normal",
+                    fontStyle:
+                      signature.typography.address?.fontStyle || "normal",
+                    textDecoration:
+                      signature.typography.address?.textDecoration || "none",
+                  },
+                }
+              : {
+                  fullName: {
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: 16,
+                    color: "#171717",
+                    fontWeight: "normal",
+                    fontStyle: "normal",
+                    textDecoration: "none",
+                  },
+                  position: {
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: 14,
+                    color: "#666666",
+                    fontWeight: "normal",
+                    fontStyle: "normal",
+                    textDecoration: "none",
+                  },
+                  company: {
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: 14,
+                    color: "#171717",
+                    fontWeight: "normal",
+                    fontStyle: "normal",
+                    textDecoration: "none",
+                  },
+                  email: {
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: 12,
+                    color: "#666666",
+                    fontWeight: "normal",
+                    fontStyle: "normal",
+                    textDecoration: "none",
+                  },
+                  phone: {
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: 12,
+                    color: "#666666",
+                    fontWeight: "normal",
+                    fontStyle: "normal",
+                    textDecoration: "none",
+                  },
+                  mobile: {
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: 12,
+                    color: "#666666",
+                    fontWeight: "normal",
+                    fontStyle: "normal",
+                    textDecoration: "none",
+                  },
+                  website: {
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: 12,
+                    color: "#666666",
+                    fontWeight: "normal",
+                    fontStyle: "normal",
+                    textDecoration: "none",
+                  },
+                  address: {
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: 12,
+                    color: "#666666",
+                    fontWeight: "normal",
+                    fontStyle: "normal",
+                    textDecoration: "none",
+                  },
+                },
 
             // Réseaux sociaux
             socialNetworks: signature.socialNetworks || {
@@ -560,11 +597,11 @@ const SignatureManager = () => {
             },
 
             // Orientation (remplace layout dans certains cas)
-            orientation: signature.orientation || signature.layout || "vertical",
+            orientation:
+              signature.orientation || signature.layout || "vertical",
           };
 
           updateSignatureData(mappedData);
-          console.log("✅ Signature chargée:", signature.signatureName);
         }
       },
       onError: (error) => {
@@ -617,14 +654,8 @@ const SignatureManager = () => {
     const logoSrc = signature.logo || "";
     const template = signature.template || signature.layout || "horizontal";
 
-    // Debug pour voir quelle orientation est détectée
-    console.log("🎯 Template détecté dans generateSignatureHTML:", template);
-    console.log("🎯 signature.template:", signature.template);
-    console.log("🎯 signature.layout:", signature.layout);
-
     // Générer selon l'orientation
     if (template === "vertical") {
-      console.log("📋 Génération HTML VERTICAL");
       return generateVerticalSignatureHTML(
         signature,
         primaryColor,
@@ -632,7 +663,6 @@ const SignatureManager = () => {
         logoSrc
       );
     } else {
-      console.log("📋 Génération HTML HORIZONTAL");
       return generateHorizontalSignatureHTML(
         signature,
         primaryColor,
@@ -875,15 +905,27 @@ const SignatureManager = () => {
       nameBottom: signature.spacings?.nameBottom || 8,
       positionBottom: signature.spacings?.positionBottom || 8,
       companyBottom: signature.spacings?.companyBottom || 12,
-      phoneBottom: signature.spacings?.phoneBottom || signature.spacings?.phoneToMobile || 4,
-      mobileBottom: signature.spacings?.mobileBottom || signature.spacings?.mobileToEmail || 4,
+      phoneBottom:
+        signature.spacings?.phoneBottom ||
+        signature.spacings?.phoneToMobile ||
+        4,
+      mobileBottom:
+        signature.spacings?.mobileBottom ||
+        signature.spacings?.mobileToEmail ||
+        4,
       emailBottom: signature.spacings?.emailBottom || 4,
-      websiteBottom: signature.spacings?.websiteBottom || signature.spacings?.emailToWebsite || 4,
-      addressBottom: signature.spacings?.addressBottom || signature.spacings?.websiteToAddress || 12,
-      
+      websiteBottom:
+        signature.spacings?.websiteBottom ||
+        signature.spacings?.emailToWebsite ||
+        4,
+      addressBottom:
+        signature.spacings?.addressBottom ||
+        signature.spacings?.websiteToAddress ||
+        12,
+
       // Espacements verticaux
-      photoBottom: signature.spacings?.photoBottom || 16,  // Espace sous la photo en vertical
-      
+      photoBottom: signature.spacings?.photoBottom || 16, // Espace sous la photo en vertical
+
       // Espacements généraux
       logoTop: signature.spacings?.logoTop || 15,
       logoBottom: signature.spacings?.logoBottom || 15,
@@ -891,7 +933,7 @@ const SignatureManager = () => {
       socialBottom: signature.spacings?.socialBottom || 10,
       separatorTop: signature.spacings?.separatorTop || 8,
       separatorBottom: signature.spacings?.separatorBottom || 8,
-      
+
       // Espacements entre les éléments de contact
       phoneToMobile: signature.spacings?.phoneToMobile || 4,
       mobileToEmail: signature.spacings?.mobileToEmail || 4,
@@ -899,9 +941,6 @@ const SignatureManager = () => {
       websiteToAddress: signature.spacings?.websiteToAddress || 4,
     };
 
-    // Debug: Afficher les espacements normalisés
-    console.log('Espacements normalisés pour la version verticale:', spacings);
-    
     // HTML optimisé pour Gmail - format vertical
     return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: ${signature.fontFamily || "Arial, sans-serif"}; font-size: 14px; line-height: 1.4; margin: 0; padding: 0;">
 <tbody>
@@ -1122,20 +1161,20 @@ const SignatureManager = () => {
     try {
       // Créer une copie profonde des données actuelles de l'éditeur
       const currentSignatureData = JSON.parse(JSON.stringify(signatureData));
-      
+
       // Créer la signature à copier en fusionnant les données
       const signatureToCopy = {
-        ...signature,                // Données de base de la signature sauvegardée
-        ...currentSignatureData,     // Données actuelles de l'éditeur
-        id: signature.id,           // Conserver l'ID original
-        signatureName: signature.signatureName // Conserver le nom original
+        ...signature, // Données de base de la signature sauvegardée
+        ...currentSignatureData, // Données actuelles de l'éditeur
+        id: signature.id, // Conserver l'ID original
+        signatureName: signature.signatureName, // Conserver le nom original
       };
-      
+
       // Forcer l'orientation actuelle
       const currentTemplate = currentSignatureData.template || "horizontal";
       signatureToCopy.template = currentTemplate;
       signatureToCopy.layout = currentTemplate;
-      
+
       // S'assurer que les espacements sont correctement définis
       if (!signatureToCopy.spacings) {
         signatureToCopy.spacings = {};
@@ -1153,13 +1192,13 @@ const SignatureManager = () => {
         emailBottom: 4,
         websiteBottom: 4,
         addressBottom: 12,
-        
+
         // Espacements horizontaux
-        nameSpacing: 12,  // Espacement entre la photo et le nom en horizontal
-        
+        nameSpacing: 12, // Espacement entre la photo et le nom en horizontal
+
         // Espacements verticaux
-        photoBottom: 16,  // Espace sous la photo en vertical
-        
+        photoBottom: 16, // Espace sous la photo en vertical
+
         // Espacements généraux
         logoTop: 15,
         logoBottom: 15,
@@ -1167,21 +1206,23 @@ const SignatureManager = () => {
         socialBottom: 10,
         separatorTop: 8,
         separatorBottom: 8,
-        
+
         // Espacements entre les éléments de contact
         phoneToMobile: 4,
         mobileToEmail: 4,
         emailToWebsite: 4,
         websiteToAddress: 4,
-        
+
         // Valeurs spécifiques aux templates
-        ...(currentTemplate === 'horizontal' ? {
-          // Valeurs spécifiques au mode horizontal
-          nameSpacing: 12,  // Espacement entre photo et contenu
-        } : {
-          // Valeurs spécifiques au mode vertical
-          photoBottom: 16,  // Espace sous la photo
-        })
+        ...(currentTemplate === "horizontal"
+          ? {
+              // Valeurs spécifiques au mode horizontal
+              nameSpacing: 12, // Espacement entre photo et contenu
+            }
+          : {
+              // Valeurs spécifiques au mode vertical
+              photoBottom: 16, // Espace sous la photo
+            }),
       };
 
       // Fusionner les espacements en respectant la priorité :
@@ -1191,20 +1232,18 @@ const SignatureManager = () => {
       signatureToCopy.spacings = {
         ...defaultSpacings,
         ...(signature.spacings || {}),
-        ...(currentSignatureData.spacings || {})
+        ...(currentSignatureData.spacings || {}),
       };
-      
+
       // S'assurer que les valeurs numériques sont bien des nombres
-      Object.keys(signatureToCopy.spacings).forEach(key => {
-        if (typeof signatureToCopy.spacings[key] === 'string') {
-          signatureToCopy.spacings[key] = parseInt(signatureToCopy.spacings[key], 10) || defaultSpacings[key] || 0;
+      Object.keys(signatureToCopy.spacings).forEach((key) => {
+        if (typeof signatureToCopy.spacings[key] === "string") {
+          signatureToCopy.spacings[key] =
+            parseInt(signatureToCopy.spacings[key], 10) ||
+            defaultSpacings[key] ||
+            0;
         }
       });
-
-      // Debug: Afficher les détails de la signature à copier
-      console.log("🔍 Signature à copier:", signatureToCopy);
-      console.log("📏 Espacements utilisés:", signatureToCopy.spacings);
-      console.log("📋 Template utilisé:", currentTemplate);
 
       // Générer le HTML avec la signature mise à jour
       const htmlSignature = generateSignatureHTML(signatureToCopy);
@@ -1235,7 +1274,6 @@ const SignatureManager = () => {
         );
       }
     } catch (error) {
-      console.error("Erreur lors de la copie:", error);
       toast.error("Erreur lors de la copie de la signature");
     } finally {
       setCopyingId(null);
@@ -1266,15 +1304,6 @@ const SignatureManager = () => {
   }
 
   const signatures = data?.getMyEmailSignatures || [];
-
-  // Debug logs
-  console.log("🔍 [FRONTEND] État du composant SignatureManager:");
-  console.log("  - isMounted:", isMounted);
-  console.log("  - loading:", loading);
-  console.log("  - error:", error);
-  console.log("  - data:", data);
-  console.log("  - signatures:", signatures);
-  console.log("  - signatures.length:", signatures.length);
 
   // Fonction pour changer de template
   const handleTemplateChange = (templateId) => {

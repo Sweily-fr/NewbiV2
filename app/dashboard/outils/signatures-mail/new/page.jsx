@@ -6,8 +6,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Copy, Monitor, Smartphone, Check } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
 import { toast } from "@/src/components/ui/sonner";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { useSignatureGenerator } from "../hooks/useSignatureGenerator";
@@ -24,18 +25,15 @@ import TemplateShah from "../components/templates/TemplateShah";
 import TemplateCustom from "../components/templates/TemplateCustom";
 import TemplateSelector from "../components/TemplateSelector";
 // CustomSignatureBuilder supprimé - édition maintenant dans le panneau de droite
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/src/components/ui/tabs";
 
 // Aperçu de l'email avec édition inline
-const EmailPreview = ({ signatureData, editingSignatureId }) => {
+const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   const { updateSignatureData } = useSignatureData();
   const { copyToClipboard } = useSignatureGenerator();
-  const { regenerateWithPermanentId } = useCustomSocialIcons(signatureData, updateSignatureData);
+  const { regenerateWithPermanentId } = useCustomSocialIcons(
+    signatureData,
+    updateSignatureData
+  );
   const { uploadImageFile, getImageUrl, isUploading, error } = useImageUpload();
   const [isCopying, setIsCopying] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -107,12 +105,6 @@ const EmailPreview = ({ signatureData, editingSignatureId }) => {
       const convertToBase64 = (blob, compress = false) => {
         return new Promise((resolve, reject) => {
           if (compress && blob.size > 100000) {
-            console.warn(
-              "⚠️ Image trop lourde pour Gmail:",
-              blob.size,
-              "bytes. Compression..."
-            );
-
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
             const img = new Image();
@@ -1198,10 +1190,10 @@ const EmailPreview = ({ signatureData, editingSignatureId }) => {
     try {
       // Utiliser notre hook optimisé avec sauvegarde automatique et régénération d'icônes
       const result = await copyToClipboard(regenerateWithPermanentId);
-      
+
       if (result.success) {
-        const message = result.signatureId 
-          ? "Signature sauvegardée et copiée avec URLs permanentes !" 
+        const message = result.signatureId
+          ? "Signature sauvegardée et copiée avec URLs permanentes !"
           : "Signature copiée avec espacements optimisés !";
         toast.success(message);
         setIsCopied(true);
@@ -1258,11 +1250,9 @@ const EmailPreview = ({ signatureData, editingSignatureId }) => {
     try {
       // Déterminer le type d'image pour la nouvelle structure
       const imageType = field === "photo" ? "imgProfil" : "logoReseau";
-      
+
       // Récupérer ou générer un signatureId
       const signatureId = editingSignatureId || `temp-${Date.now()}`;
-      
-      console.log(`🔄 Upload ${imageType} pour signature ${signatureId}`);
 
       // Upload vers Cloudflare avec la nouvelle structure
       const result = await uploadImageFile(file, imageType, signatureId);
@@ -1288,6 +1278,11 @@ const EmailPreview = ({ signatureData, editingSignatureId }) => {
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
           </div>
           <span className="text-sm">Nouveau message</span>
+          {isEditMode && (
+            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+              Modification
+            </Badge>
+          )}
         </div>
         <Button
           size="sm"
@@ -1340,19 +1335,9 @@ const EmailPreview = ({ signatureData, editingSignatureId }) => {
               logoSrc: signatureData.logo,
             };
 
-            // Rendu basé sur l'orientation uniquement
-            console.log("🔍 DEBUG RENDU - Orientation:", signatureData.orientation);
-            console.log("🔍 DEBUG RENDU - Données signature:", {
-              orientation: signatureData.orientation,
-              template: signatureData.template,
-              layout: signatureData.layout
-            });
-            
             if (signatureData.orientation === "horizontal") {
-              console.log("✅ DEBUG RENDU - Affichage HorizontalSignature");
               return <HorizontalSignature {...templateProps} />;
             } else {
-              console.log("✅ DEBUG RENDU - Affichage VerticalSignature");
               return <VerticalSignature {...templateProps} />;
             }
           })()}
@@ -1611,21 +1596,26 @@ const MobilePreview = ({ signatureData }) => {
 
 // Composant principal de la page
 export default function NewSignaturePage() {
-  const { signatureData, updateSignatureData, isEditMode, editingSignatureId } =
-    useSignatureData();
-  
-  // État pour tracker l'onglet actuel (desktop = horizontal, mobile = vertical)
-  const [currentTab, setCurrentTab] = useState("desktop");
+  const {
+    signatureData,
+    updateSignatureData,
+    isEditMode,
+    editingSignatureId,
+    loadingSignature,
+  } = useSignatureData();
 
-  // Mettre à jour le layout quand l'onglet change
-  useEffect(() => {
-    const newLayout = currentTab === "desktop" ? "horizontal" : "vertical";
-    // Éviter les mises à jour inutiles qui causent des boucles infinies
-    if (signatureData.layout !== newLayout) {
-      console.log(`🔄 Changement d'onglet: ${currentTab} → layout: ${newLayout}`);
-      updateSignatureData("layout", newLayout);
-    }
-  }, [currentTab, signatureData.layout]); // Retirer updateSignatureData des dépendances
+
+  // Afficher un indicateur de chargement pendant le chargement des données d'édition
+  if (isEditMode && loadingSignature) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Chargement de la signature...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Fonction pour changer de template
   const handleTemplateChange = (templateId) => {
@@ -1643,42 +1633,11 @@ export default function NewSignaturePage() {
 
   return (
     <div className="p-12 h-[calc(100vh-64px)] flex items-center justify-center">
-      {/* Onglets Desktop/Mobile - Verticaux à gauche */}
-      <Tabs
-        value={currentTab}
-        onValueChange={setCurrentTab}
-        orientation="vertical"
-        className="w-full flex-row flex gap-6"
-      >
-        <TabsList className="flex-col h-fit w-fit p-1">
-          <TabsTrigger
-            value="desktop"
-            className="flex flex-col items-center gap-2 p-3 w-10 h-15"
-          >
-            <Monitor className="w-6 h-6" />
-          </TabsTrigger>
-          <TabsTrigger
-            value="mobile"
-            className="flex flex-col items-center gap-2 p-3 w-10 h-15"
-          >
-            <Smartphone className="w-6 h-6" />
-          </TabsTrigger>
-        </TabsList>
-
-        <div className="grow min-w-0 h-[600px]">
-          <TabsContent value="desktop" className="mt-0 w-full h-full">
-            <div className="flex justify-center items-start h-full">
-              <EmailPreview signatureData={signatureData} editingSignatureId={editingSignatureId} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="mobile" className="mt-0 w-full h-full">
-            <div className="flex justify-center items-center h-full">
-              <MobilePreview signatureData={signatureData} />
-            </div>
-          </TabsContent>
-        </div>
-      </Tabs>
+      <EmailPreview
+        signatureData={signatureData}
+        editingSignatureId={editingSignatureId}
+        isEditMode={isEditMode}
+      />
     </div>
   );
 }

@@ -48,6 +48,7 @@ function FieldTypographyControls({
   fieldLabel,
   typography,
   updateTypography,
+  isLast = false,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const fieldTypo = typography?.[fieldKey] || {};
@@ -63,7 +64,7 @@ function FieldTypographyControls({
   };
 
   return (
-    <div className="border-b border-[#E5E5E5] p-3 bg-gray-50/50 dark:bg-[#212121] dark:border dark:border-[#434343] dark:rounded-md">
+    <div className={`p-3 bg-gray-50/50 dark:bg-[#212121] dark:border dark:border-[#434343] dark:rounded-md ${!isLast ? 'border-b border-[#E5E5E5]' : ''}`}>
       <div
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -240,13 +241,14 @@ export default function TypographySection({
     <div className="flex flex-col gap-3">
       <h2 className="text-sm font-medium">Typographie</h2>
       <div className="flex flex-col gap-3">
-        {Object.entries(fieldLabels).map(([fieldKey, fieldLabel]) => (
+        {Object.entries(fieldLabels).map(([fieldKey, fieldLabel], index, array) => (
           <FieldTypographyControls
             key={fieldKey}
             fieldKey={fieldKey}
             fieldLabel={fieldLabel}
             typography={signatureData.typography}
             updateTypography={updateTypography}
+            isLast={index === array.length - 1}
           />
         ))}
       </div>

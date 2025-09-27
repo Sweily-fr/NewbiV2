@@ -6,7 +6,7 @@ import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
-import { Square, X, Upload, Circle } from "lucide-react";
+import { Square, X, Upload, Circle, Trash2 } from "lucide-react";
 
 export default function ProfileImageSection({
   signatureData,
@@ -36,28 +36,32 @@ export default function ProfileImageSection({
         {/* Upload de la photo de profil */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Image</Label>
-          <div className="flex items-center gap-2 w-30">
+          <div className="flex items-center gap-3">
             {signatureData.photo ? (
-              <>
+              <div className="relative group">
                 <img
                   src={signatureData.photo}
                   alt="Photo de profil"
-                  className="w-8 h-8 object-cover rounded border"
+                  className="w-14 h-14 object-cover border-2 border-gray-200 dark:border-gray-700 transition-all duration-200"
                   style={{
                     borderRadius:
-                      signatureData.imageShape === "square" ? "4px" : "50%",
+                      signatureData.imageShape === "square" ? "6px" : "50%",
                   }}
                 />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => updateSignatureData("photo", null)}
-                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                  className="absolute -top-1 -right-1 h-5 w-5 p-0 bg-white cursor-pointer dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800"
                   title="Supprimer la photo"
                 >
-                  <X className="w-3 h-3" />
+                  <X
+                    className="w-1 h-1 text-gray-500 hover:text-red-500 transition-colors"
+                    width={2}
+                    height={2}
+                  />
                 </Button>
-              </>
+              </div>
             ) : (
               <div
                 onClick={() => {
@@ -75,14 +79,9 @@ export default function ProfileImageSection({
                   };
                   input.click();
                 }}
-                className="flex items-center w-full gap-2 bg-[#efefef] dark:bg-[#1F1F1F] dark:border-[#2F2F2F] dark:border rounded-md px-2 py-1 cursor-pointer hover:bg-[#efefef]/80 transition-colors"
+                className="flex items-center justify-center w-10 h-10 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group"
               >
-                <div className="w-6 h-6 pr-2 border-r flex items-center justify-center">
-                  <Upload className="w-3 h-3" />
-                </div>
-                <span className="text-xs text-gray-600 dark:text-white">
-                  Ajouter...
-                </span>
+                <Upload className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
               </div>
             )}
           </div>

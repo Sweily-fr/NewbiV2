@@ -31,21 +31,17 @@ export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
       const savedSignatureId = sessionStorage.getItem('lastSavedSignatureId');
       if (savedSignatureId && !savedSignatureId.startsWith('temp-')) {
         currentSignatureId = savedSignatureId;
-        console.log('🔍 Utilisation ID permanent récupéré:', currentSignatureId);
       } else {
         currentSignatureId = currentSignatureId || `temp-${Date.now()}`;
-        console.log('🔍 Utilisation ID temporaire:', currentSignatureId);
       }
     }
     
-    console.log('🔍 SignatureId final utilisé:', currentSignatureId);
 
     // Vérifier qu'il y a au moins un réseau social avec une URL
     const hasActiveSocialNetworks = Object.values(signatureData.socialNetworks || {})
       .some(url => url && url.trim() !== '');
     
     if (!hasActiveSocialNetworks) {
-      console.log('📝 Aucun réseau social actif, pas de génération d\'icônes');
       return;
     }
 
@@ -53,7 +49,6 @@ export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
     setGenerationError(null);
 
     try {
-      console.log('🎨 Génération des icônes personnalisées...');
       
       const response = await fetch('/api/custom-social-icons/generate', {
         method: 'POST',
@@ -78,10 +73,8 @@ export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
       // Mettre à jour les URLs des icônes personnalisées dans signatureData
       updateSignatureData('customSocialIcons', result.customIcons);
       
-      console.log('✅ Icônes personnalisées générées:', result.customIcons);
       
     } catch (error) {
-      console.error('❌ Erreur génération icônes personnalisées:', error);
       setGenerationError(error.message);
     } finally {
       setIsGenerating(false);
@@ -93,12 +86,10 @@ export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
    */
   const deleteCustomSocialIcons = useCallback(async () => {
     if (!session?.user?.id || !signatureData.signatureId) {
-      console.warn('⚠️ Session utilisateur ou signatureId manquant pour la suppression');
       return;
     }
 
     try {
-      console.log('🗑️ Suppression des icônes personnalisées...');
       
       const response = await fetch('/api/custom-social-icons/delete', {
         method: 'DELETE',
@@ -124,10 +115,8 @@ export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
         x: '',
       });
       
-      console.log('✅ Icônes personnalisées supprimées');
       
     } catch (error) {
-      console.error('❌ Erreur suppression icônes personnalisées:', error);
       setGenerationError(error.message);
     }
   }, [session?.user?.id, signatureData.signatureId, updateSignatureData]);
@@ -215,7 +204,6 @@ export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
       return;
     }
 
-    console.log('🔄 Régénération des icônes avec ID permanent:', permanentSignatureId);
     
     // Stocker l'ID permanent
     sessionStorage.setItem('lastSavedSignatureId', permanentSignatureId);

@@ -80,22 +80,24 @@ const VerticalSignature = ({
   // Utilisation directe des espacements de signatureData
   const spacings = signatureData.spacings ?? {};
 
-  // Fonction pour obtenir l'URL de l'icône (personnalisée ou par défaut)
+  // Liste des réseaux sociaux disponibles
+  const availableSocialNetworks = [
+    { key: "linkedin", label: "LinkedIn" },
+    { key: "facebook", label: "Facebook" },
+    { key: "instagram", label: "Instagram" },
+    { key: "twitter", label: "Twitter/X" },
+    { key: "github", label: "GitHub" },
+    { key: "youtube", label: "YouTube" },
+  ];
+
+  // Fonction pour obtenir l'URL de l'icône avec le nouveau CDN R2
   const getSocialIconUrl = (platform) => {
-    // Priorité aux icônes personnalisées
-    if (signatureData.customSocialIcons?.[platform]) {
-      return signatureData.customSocialIcons[platform];
-    }
+    const baseUrl = "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social";
+    const color = signatureData.socialGlobalColor;
     
-    // URLs par défaut de Cloudflare
-    const defaultUrls = {
-      facebook: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/facebook.svg',
-      instagram: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/instagram.svg',
-      linkedin: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/linkedin.svg',
-      x: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/x.svg',
-    };
-    
-    return defaultUrls[platform] || '';
+    // Construction de l'URL avec ou sans couleur
+    const iconName = color ? `${platform}-${color}` : platform;
+    return `${baseUrl}/${platform}/${iconName}.png`;
   };
   // Calcul des largeurs de colonnes dynamiques pour la signature verticale
   const photoColumnWidth = signatureData.columnWidths?.photo || 25;
@@ -384,13 +386,13 @@ const VerticalSignature = ({
           </td>
 
           {/* Séparateur vertical - Gmail compatible */}
-          {signatureData.separators?.vertical?.enabled && (
+          {signatureData.separatorVerticalEnabled && (
             <td
               style={{
-                width: `${signatureData.separators?.vertical?.width || signatureData.separatorVerticalWidth || 1}px`,
+                width: "1px",
                 backgroundColor:
-                  signatureData.separators?.vertical?.color || "#e0e0e0",
-                borderRadius: `${signatureData.separators?.vertical?.radius || 0}px`,
+                  signatureData.colors?.separatorVertical || "#e0e0e0",
+                borderRadius: "0px",
                 padding: "0",
                 fontSize: "1px",
                 lineHeight: "1px",
@@ -673,7 +675,11 @@ const VerticalSignature = ({
                 {/* Adresse */}
                 {signatureData.address && (
                   <tr>
-                    <td style={{ paddingBottom: `${spacings.addressBottom ?? spacings.websiteToAddress ?? 12}px` }}>
+                    <td
+                      style={{
+                        paddingBottom: `${spacings.addressBottom ?? spacings.websiteToAddress ?? 12}px`,
+                      }}
+                    >
                       <div
                         style={{
                           display: "flex",
@@ -736,12 +742,12 @@ const VerticalSignature = ({
                       paddingBottom: `${spacings.separatorBottom ?? 12}px`,
                     }}
                   >
-                    {signatureData.separators?.horizontal?.enabled && (
+                    {signatureData.separatorHorizontalEnabled && (
                       <hr
                         style={{
                           border: "none",
-                          borderTop: `${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || "#e0e0e0"}`,
-                          borderRadius: `${signatureData.separators?.horizontal?.radius || 0}px`,
+                          borderTop: `${signatureData.separatorHorizontalWidth || 1}px solid ${signatureData.colors?.separatorHorizontal || "#e0e0e0"}`,
+                          borderRadius: "0px",
                           margin: "0",
                           width: "100%",
                         }}
@@ -809,11 +815,8 @@ const VerticalSignature = ({
           </td>
         </tr>
 
-        {/* Logos sociaux */}
-        {(signatureData.socialLinks?.linkedin ||
-          signatureData.socialLinks?.facebook ||
-          signatureData.socialLinks?.twitter ||
-          signatureData.socialLinks?.instagram) && (
+        {/* Logos sociaux - Toujours affichés */}
+        {true && (
           <tr>
             <td
               style={{
@@ -825,173 +828,70 @@ const VerticalSignature = ({
                 cellPadding="0"
                 cellSpacing="0"
                 border="0"
-                style={{ borderCollapse: "collapse" }}
+                style={{ 
+                  borderCollapse: "collapse",
+                  width: "auto",
+                  minWidth: "fit-content"
+                }}
               >
                 <tbody>
                   <tr>
-                    {signatureData.socialNetworks?.linkedin && (
-                      <td style={{ paddingRight: "8px" }}>
-                        <a
-                          href={signatureData.socialNetworks.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                    {availableSocialNetworks
+                      .filter(social => signatureData.socialNetworks?.hasOwnProperty(social.key))
+                      .map((social, index) => (
+                      <td
+                        key={social.key}
+                        style={{
+                          paddingRight:
+                            index < availableSocialNetworks.filter(s => signatureData.socialNetworks?.hasOwnProperty(s.key)).length - 1
+                              ? "8px"
+                              : "0",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "inline-block",
+                            backgroundColor: signatureData.socialBackground
+                              ?.enabled
+                              ? signatureData.socialBackground?.color ||
+                                "#f3f4f6"
+                              : "transparent",
+                            borderRadius:
+                              signatureData.socialBackground?.enabled &&
+                              signatureData.socialBackground?.shape === "round"
+                                ? "50%"
+                                : "4px",
+                            padding: signatureData.socialBackground?.enabled
+                              ? "6px"
+                              : "0",
+                            cursor: "pointer",
+                            position: "relative",
+                            minWidth: `${(signatureData.socialSize || 40) + (signatureData.socialBackground?.enabled ? 12 : 0)}px`,
+                            minHeight: `${(signatureData.socialSize || 40) + (signatureData.socialBackground?.enabled ? 12 : 0)}px`,
+                          }}
+                          title={`Cliquez pour configurer ${social.label}`}
                         >
-                          <div
+                          <img
+                            src={getSocialIconUrl(social.key)}
+                            alt={social.label}
+                            width={signatureData.socialSize || 40}
+                            height={signatureData.socialSize || 40}
                             style={{
-                              display: "inline-block",
-                              backgroundColor: signatureData.socialBackground
-                                ?.enabled
-                                ? signatureData.socialBackground?.color ||
-                                  "#f3f4f6"
-                                : "transparent",
-                              borderRadius:
-                                signatureData.socialBackground?.enabled &&
-                                signatureData.socialBackground?.shape ===
-                                  "round"
-                                  ? "50%"
-                                  : "4px",
-                              padding: signatureData.socialBackground?.enabled
-                                ? "6px"
-                                : "0",
+                              display: "block",
+                              opacity: signatureData.socialNetworks?.[
+                                social.key
+                              ]
+                                ? 1
+                                : 0.9,
+                              minWidth: `${signatureData.socialSize || 40}px`,
+                              minHeight: `${signatureData.socialSize || 40}px`,
+                              maxWidth: "none",
+                              maxHeight: "none",
                             }}
-                          >
-                            <img
-                              src={getSocialIconUrl('linkedin')}
-                              alt="LinkedIn"
-                              width={signatureData.socialSize || 24}
-                              height={signatureData.socialSize || 24}
-                              style={{
-                                display: "block",
-                                // Pas de filtre - les SVG sont déjà colorés
-                              }}
-                            />
-                          </div>
-                        </a>
+                          />
+                        </div>
                       </td>
-                    )}
-
-                    {signatureData.socialNetworks?.facebook && (
-                      <td style={{ paddingRight: "8px" }}>
-                        <a
-                          href={signatureData.socialNetworks.facebook}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <div
-                            style={{
-                              display: "inline-block",
-                              backgroundColor: signatureData.socialBackground
-                                ?.enabled
-                                ? signatureData.socialBackground?.color ||
-                                  "#f3f4f6"
-                                : "transparent",
-                              borderRadius:
-                                signatureData.socialBackground?.enabled &&
-                                signatureData.socialBackground?.shape ===
-                                  "round"
-                                  ? "50%"
-                                  : "4px",
-                              padding: signatureData.socialBackground?.enabled
-                                ? "6px"
-                                : "0",
-                            }}
-                          >
-                            <img
-                              src={getSocialIconUrl('facebook')}
-                              alt="Facebook"
-                              width={signatureData.socialSize || 24}
-                              height={signatureData.socialSize || 24}
-                              style={{
-                                display: "block",
-                                // Pas de filtre - les SVG sont déjà colorés
-                              }}
-                            />
-                          </div>
-                        </a>
-                      </td>
-                    )}
-
-                    {signatureData.socialNetworks?.instagram && (
-                      <td style={{ paddingRight: "8px" }}>
-                        <a
-                          href={signatureData.socialNetworks.instagram}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <div
-                            style={{
-                              display: "inline-block",
-                              backgroundColor: signatureData.socialBackground
-                                ?.enabled
-                                ? signatureData.socialBackground?.color ||
-                                  "#f3f4f6"
-                                : "transparent",
-                              borderRadius:
-                                signatureData.socialBackground?.enabled &&
-                                signatureData.socialBackground?.shape ===
-                                  "round"
-                                  ? "50%"
-                                  : "4px",
-                              padding: signatureData.socialBackground?.enabled
-                                ? "6px"
-                                : "0",
-                            }}
-                          >
-                            <img
-                              src={getSocialIconUrl('instagram')}
-                              alt="Instagram"
-                              width={signatureData.socialSize || 24}
-                              height={signatureData.socialSize || 24}
-                              style={{
-                                display: "block",
-                                // Pas de filtre - les SVG sont déjà colorés
-                              }}
-                            />
-                          </div>
-                        </a>
-                      </td>
-                    )}
-
-                    {signatureData.socialNetworks?.x && (
-                      <td style={{ paddingRight: "8px" }}>
-                        <a
-                          href={signatureData.socialNetworks.x}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <div
-                            style={{
-                              display: "inline-block",
-                              backgroundColor: signatureData.socialBackground
-                                ?.enabled
-                                ? signatureData.socialBackground?.color ||
-                                  "#f3f4f6"
-                                : "transparent",
-                              borderRadius:
-                                signatureData.socialBackground?.enabled &&
-                                signatureData.socialBackground?.shape ===
-                                  "round"
-                                  ? "50%"
-                                  : "4px",
-                              padding: signatureData.socialBackground?.enabled
-                                ? "6px"
-                                : "0",
-                            }}
-                          >
-                            <img
-                              src={getSocialIconUrl('x')}
-                              alt="X (Twitter)"
-                              width={signatureData.socialSize || 24}
-                              height={signatureData.socialSize || 24}
-                              style={{
-                                display: "block",
-                                // Pas de filtre - les SVG sont déjà colorés
-                              }}
-                            />
-                          </div>
-                        </a>
-                      </td>
-                    )}
+                    ))}
                   </tr>
                 </tbody>
               </table>

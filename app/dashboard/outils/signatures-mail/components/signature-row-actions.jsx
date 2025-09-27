@@ -29,23 +29,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import SignaturePreviewModal from "./signature-preview-modal";
 
-export default function SignatureRowActions({ 
-  signature, 
-  onEdit, 
-  onDelete, 
-  onDuplicate, 
-  onToggleFavorite 
+export default function SignatureRowActions({
+  signature,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onToggleFavorite,
 }) {
   const router = useRouter();
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const handleEdit = () => {
     onEdit?.(signature);
   };
 
   const handleView = () => {
-    router.push(`/dashboard/outils/signatures-mail/${signature.id}`);
+    setShowPreviewModal(true);
   };
 
   const handleDuplicate = () => {
@@ -105,8 +107,8 @@ export default function SignatureRowActions({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer la signature "{signature.signatureName}" ?
-              Cette action est irréversible.
+              Êtes-vous sûr de vouloir supprimer la signature "
+              {signature.signatureName}" ? Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -120,6 +122,12 @@ export default function SignatureRowActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SignaturePreviewModal
+        signatureId={signature.id}
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+      />
     </>
   );
 }

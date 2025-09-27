@@ -272,10 +272,7 @@ export const useSignatures = () => {
     fetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: true,
     onCompleted: (data) => {
-      console.log(
-        "✅ [QUERY] Signatures récupérées:",
-        data.getMyEmailSignatures?.length
-      );
+      console.log("✅ [QUERY] Signatures récupérées:");
     },
     onError: (error) => {
       console.error("❌ [QUERY] Erreur:", error);
@@ -324,7 +321,6 @@ export const useSignatureActions = () => {
         toast.success("Signature supprimée avec succès");
       },
       onError: (error) => {
-        console.error("Erreur lors de la suppression:", error);
         toast.error("Erreur lors de la suppression de la signature");
       },
     }
@@ -336,10 +332,11 @@ export const useSignatureActions = () => {
       refetchQueries: ["GetMyEmailSignatures"],
       onCompleted: (data) => {
         const count = data?.deleteMultipleEmailSignatures || 0;
-        toast.success(`${count} signature${count > 1 ? 's' : ''} supprimée${count > 1 ? 's' : ''} avec succès`);
+        toast.success(
+          `${count} signature${count > 1 ? "s" : ""} supprimée${count > 1 ? "s" : ""} avec succès`
+        );
       },
       onError: (error) => {
-        console.error("Erreur lors de la suppression multiple:", error);
         toast.error("Erreur lors de la suppression des signatures");
       },
     }
@@ -353,51 +350,26 @@ export const useSignatureActions = () => {
         toast.success("Signature définie comme défaut");
       },
       onError: (error) => {
-        console.error("❌ Erreur définition défaut:", error);
         toast.error("Erreur lors de la définition par défaut");
       },
     }
   );
 
-  const [getSignatureForEdit, { loading: loadingSignature }] = useLazyQuery(
+  const [getSignatureForEdit, { loading: loadingEdit }] = useLazyQuery(
     GET_EMAIL_SIGNATURE,
     {
       onCompleted: (data) => {
         if (data?.getEmailSignature) {
           const signatureData = data.getEmailSignature;
-          
-          console.log("🔍 [EDIT] Données récupérées de GraphQL:", signatureData);
-          console.log("🎨 [EDIT] Typographie récupérée:", signatureData.typography);
-          console.log("📷 [EDIT] Images récupérées:", {
-            photo: signatureData.photo,
-            photoKey: signatureData.photoKey,
-            logo: signatureData.logo,
-            logoKey: signatureData.logoKey,
-            imageSize: signatureData.imageSize,
-            imageShape: signatureData.imageShape,
-            logoSize: signatureData.logoSize
-          });
 
-          localStorage.setItem(
-            "editingSignature",
-            JSON.stringify(signatureData)
-          );
-          
-          console.log("💾 [EDIT] Données stockées dans localStorage");
-
-          router.push("/dashboard/outils/signatures-mail/new?edit=true");
+          // Rediriger avec l'ID dans l'URL au lieu d'utiliser localStorage
+          router.push(`/dashboard/outils/signatures-mail/new?edit=true&id=${signatureData.id}`);
         } else {
           console.error("❌ [EDIT] Aucune signature trouvée dans la réponse");
           toast.error("Signature introuvable");
         }
       },
       onError: (error) => {
-        console.error("❌ [EDIT] Erreur lors de la récupération:", error);
-        console.error(
-          "❌ [EDIT] Détails de l'erreur:",
-          error.message,
-          error.graphQLErrors
-        );
         toast.error("Erreur lors de la récupération de la signature");
       },
     }
@@ -469,7 +441,6 @@ export const useSignatureActions = () => {
 
       toast.success("Signature supprimée avec succès");
     } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
       toast.error("Erreur lors de la suppression de la signature");
     }
   };
@@ -507,7 +478,6 @@ export const useSignatureActions = () => {
         await createSignature({ variables: { input: filteredData } });
       }
     } catch (error) {
-      console.error("Erreur lors de la duplication:", error);
       toast.error("Erreur lors de la duplication de la signature");
     }
   };
@@ -540,6 +510,10 @@ export const useSignatureActions = () => {
     handleDeleteMultiple,
     handleDuplicate,
     handleToggleFavorite,
-    loading: deleting || settingDefault || loadingSignature || duplicating || deletingMultiple,
+    loading:
+      deleting ||
+      settingDefault ||
+      duplicating ||
+      deletingMultiple,
   };
 };

@@ -91,6 +91,7 @@ function DashboardContent({ children }) {
         <SignatureSidebar 
           signatureData={signatureContextData.signatureData}
           updateSignatureData={signatureContextData.updateSignatureData}
+          editingSignatureId={signatureContextData.editingSignatureId}
         />
       )}
       <SearchCommand />

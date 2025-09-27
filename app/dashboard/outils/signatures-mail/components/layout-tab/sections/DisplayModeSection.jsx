@@ -18,11 +18,13 @@ export default function DisplayModeSection({
   signatureData,
   updateSignatureData,
 }) {
-  const handleOrientationChange = useCallback((newOrientation) => {
-    // Mettre à jour l'orientation seulement
-    console.log("🔍 DEBUG SÉLECTEUR - Changement orientation vers:", newOrientation);
-    updateSignatureData("orientation", newOrientation);
-  }, [updateSignatureData]);
+  const handleOrientationChange = useCallback(
+    (newOrientation) => {
+      // Mettre à jour l'orientation seulement
+      updateSignatureData("orientation", newOrientation);
+    },
+    [updateSignatureData]
+  );
 
   return (
     <div className="flex flex-col gap-3">

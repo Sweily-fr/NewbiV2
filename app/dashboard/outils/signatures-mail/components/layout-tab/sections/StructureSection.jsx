@@ -6,6 +6,7 @@ import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
 import { Switch } from "@/src/components/ui/switch";
+import { ColorPicker } from "@/src/components/ui/color-picker";
 import { CircleOff, Minus, Dot, Slash } from "lucide-react";
 
 export default function StructureSection({
@@ -41,23 +42,17 @@ export default function StructureSection({
           </Label>
           <div className="flex items-center gap-3">
             <Switch
-              checked={signatureData.separators?.vertical?.enabled || false}
+              checked={signatureData.separatorVerticalEnabled || false}
               onCheckedChange={(checked) =>
-                updateSignatureData("separators", {
-                  ...signatureData.separators,
-                  vertical: {
-                    ...signatureData.separators?.vertical,
-                    enabled: checked,
-                  },
-                })
+                updateSignatureData("separatorVerticalEnabled", checked)
               }
-              className="scale-75"
+              className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
             />
           </div>
         </div>
 
         {/* Contrôles du séparateur vertical si activé */}
-        {signatureData.separators?.vertical?.enabled && (
+        {signatureData.separatorVerticalEnabled && (
           <>
             {/* Épaisseur du séparateur vertical */}
             {/* <div className="flex items-center justify-between">
@@ -108,37 +103,18 @@ export default function StructureSection({
               <Label className="text-xs text-muted-foreground">
                 Couleur verticale
               </Label>
-              <div className="flex items-center gap-2 bg-[#efefef] dark:bg-[#1F1F1F] dark:border-[#2F2F2F] dark:border rounded-md px-2 py-2">
-                <div
-                  className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
-                  style={{
-                    backgroundColor:
-                      signatureData.separators?.vertical?.color || "#e0e0e0",
-                  }}
-                  onClick={() => {
-                    const input = document.createElement("input");
-                    input.type = "color";
-                    input.value =
-                      signatureData.separators?.vertical?.color || "#e0e0e0";
-                    input.onchange = (e) => {
-                      updateSignatureData("separators", {
-                        ...signatureData.separators,
-                        vertical: {
-                          ...signatureData.separators?.vertical,
-                          color: e.target.value,
-                        },
-                      });
-                    };
-                    input.click();
-                  }}
-                  title="Couleur du séparateur vertical"
-                />
-                <span className="text-xs text-gray-600 dark:text-white font-mono">
-                  {(
-                    signatureData.separators?.vertical?.color || "#e0e0e0"
-                  ).toUpperCase()}
-                </span>
-              </div>
+              <ColorPicker
+                color={signatureData.colors?.separatorVertical || "#e0e0e0"}
+                onChange={(color) => {
+                  updateSignatureData("colors", {
+                    ...signatureData.colors,
+                    separatorVertical: color,
+                  });
+                }}
+                align="end"
+                sideOffset={5}
+                className="w-auto"
+              />
             </div>
 
             {/* Radius du séparateur vertical */}
@@ -194,23 +170,17 @@ export default function StructureSection({
           </Label>
           <div className="flex items-center gap-3">
             <Switch
-              checked={signatureData.separators?.horizontal?.enabled || false}
+              checked={signatureData.separatorHorizontalEnabled || false}
               onCheckedChange={(checked) =>
-                updateSignatureData("separators", {
-                  ...signatureData.separators,
-                  horizontal: {
-                    ...signatureData.separators?.horizontal,
-                    enabled: checked,
-                  },
-                })
+                updateSignatureData("separatorHorizontalEnabled", checked)
               }
-              className="scale-75"
+              className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
             />
           </div>
         </div>
 
         {/* Contrôles du séparateur horizontal si activé */}
-        {signatureData.separators?.horizontal?.enabled && (
+        {signatureData.separatorHorizontalEnabled && (
           <>
             {/* Épaisseur du séparateur horizontal */}
             {/* <div className="flex items-center justify-between">
@@ -257,37 +227,18 @@ export default function StructureSection({
               <Label className="text-xs text-muted-foreground">
                 Couleur horizontale
               </Label>
-              <div className="flex items-center gap-2 bg-[#efefef] dark:bg-[#1F1F1F] dark:border-[#2F2F2F] dark:border rounded-md px-2 py-2">
-                <div
-                  className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
-                  style={{
-                    backgroundColor:
-                      signatureData.separators?.horizontal?.color || "#e0e0e0",
-                  }}
-                  onClick={() => {
-                    const input = document.createElement("input");
-                    input.type = "color";
-                    input.value =
-                      signatureData.separators?.horizontal?.color || "#e0e0e0";
-                    input.onchange = (e) => {
-                      updateSignatureData("separators", {
-                        ...signatureData.separators,
-                        horizontal: {
-                          ...signatureData.separators?.horizontal,
-                          color: e.target.value,
-                        },
-                      });
-                    };
-                    input.click();
-                  }}
-                  title="Couleur du séparateur horizontal"
-                />
-                <span className="text-xs text-gray-600 dark:text-white font-mono">
-                  {(
-                    signatureData.separators?.horizontal?.color || "#e0e0e0"
-                  ).toUpperCase()}
-                </span>
-              </div>
+              <ColorPicker
+                color={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
+                onChange={(color) => {
+                  updateSignatureData("colors", {
+                    ...signatureData.colors,
+                    separatorHorizontal: color,
+                  });
+                }}
+                align="end"
+                sideOffset={5}
+                className="w-auto"
+              />
             </div>
 
             {/* Radius du séparateur horizontal */}

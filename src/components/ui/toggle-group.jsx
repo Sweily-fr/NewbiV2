@@ -30,9 +30,16 @@ function ToggleGroup({ className, variant, size, children, ...props }) {
   );
 }
 
-function ToggleGroupItem({ className, children, variant, size, disabled, ...props }) {
+function ToggleGroupItem({
+  className,
+  children,
+  variant,
+  size,
+  disabled,
+  ...props
+}) {
   const context = React.useContext(ToggleGroupContext);
-  const isSelected = props['data-state'] === 'on';
+  const isSelected = props["data-state"] === "on";
 
   return (
     <ToggleGroupPrimitive.Item

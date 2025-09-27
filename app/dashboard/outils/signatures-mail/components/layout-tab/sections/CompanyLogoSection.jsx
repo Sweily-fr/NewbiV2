@@ -5,30 +5,33 @@ import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
-import { X, Upload, Building } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import { X, Upload, Building, Info } from "lucide-react";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 
 export default function CompanyLogoSection({
   signatureData,
   updateSignatureData,
 }) {
-  console.log("🚀 CompanyLogoSection - Composant chargé");
   const { organization } = useActiveOrganization();
-  console.log("🚀 CompanyLogoSection - Hook useActiveOrganization appelé");
-  
+
   // Récupérer automatiquement le logo de l'entreprise au chargement
   useEffect(() => {
-    console.log("🔍 CompanyLogoSection - Organization:", organization);
-    console.log("🔍 CompanyLogoSection - Logo dans organization:", organization?.logo);
-    console.log("🔍 CompanyLogoSection - Logo actuel signature:", signatureData.logo);
-    
     if (organization?.logo && !signatureData.logo) {
-      console.log("✅ CompanyLogoSection - Application du logo automatique:", organization.logo);
       updateSignatureData("logo", organization.logo);
     } else if (!organization?.logo) {
-      console.log("❌ CompanyLogoSection - Aucun logo trouvé dans l'organisation");
+      console.log(
+        "❌ CompanyLogoSection - Aucun logo trouvé dans l'organisation"
+      );
     } else if (signatureData.logo) {
-      console.log("ℹ️ CompanyLogoSection - Logo déjà présent dans la signature");
+      console.log(
+        "ℹ️ CompanyLogoSection - Logo déjà présent dans la signature"
+      );
     }
   }, [organization?.logo, signatureData.logo, updateSignatureData]);
 
@@ -44,19 +47,33 @@ export default function CompanyLogoSection({
       <div className="flex flex-col gap-3 ml-4">
         {/* Logo entreprise automatique */}
         <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">Logo entreprise</Label>
-          <div className="flex items-center gap-2 w-30">
+          <div className="flex items-center">
+            <Label className="text-xs text-muted-foreground mr-2">
+              Logo entreprise
+            </Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="w-64">
+                  <p>
+                    Le logo de votre entreprise est récupéré automatiquement
+                    depuis votre profil. Pour le modifier, rendez-vous dans
+                    Paramètres → Informations entreprise.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className="flex items-center gap-2">
             {signatureData.logo ? (
               <>
                 <img
                   src={signatureData.logo}
                   alt="Logo entreprise"
-                  className="w-8 h-8 object-contain rounded border bg-white"
+                  className="w-14 h-14 object-contain"
                 />
-                <div className="flex items-center gap-1 text-xs text-green-600">
-                  <Building className="w-3 h-3" />
-                  <span>Auto</span>
-                </div>
               </>
             ) : (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -64,20 +81,6 @@ export default function CompanyLogoSection({
                 <span>Aucun logo d'entreprise</span>
               </div>
             )}
-          </div>
-        </div>
-        
-        {/* Message informatif */}
-        <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-2 rounded-md">
-          <div className="flex items-start gap-2">
-            <Building className="w-3 h-3 mt-0.5 text-blue-600" />
-            <div>
-              <p className="font-medium text-blue-700 dark:text-blue-400">Logo automatique</p>
-              <p className="text-blue-600 dark:text-blue-300">
-                Le logo de votre entreprise est récupéré automatiquement depuis votre profil. 
-                Pour le modifier, rendez-vous dans Paramètres → Informations entreprise.
-              </p>
-            </div>
           </div>
         </div>
 

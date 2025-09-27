@@ -50,18 +50,18 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium">Espacements</h2>
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">Détaillé</Label>
           <div className="relative inline-flex items-center">
             <Switch
-              className="scale-75"
+              className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
               checked={signatureData.detailedSpacing || false}
               onCheckedChange={(checked) =>
                 updateSignatureData("detailedSpacing", checked)
               }
             />
           </div>
-        </div>
+        </div> */}
       </div>
 
       <div className="flex flex-col gap-3">

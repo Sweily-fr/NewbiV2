@@ -29,29 +29,29 @@ export async function updateOrganization(organizationId, data, options = {}) {
   try {
     // Vérifier la session utilisateur
     const { data: session } = await authClient.getSession();
-    console.log(
-      "👤 Utilisateur actuel:",
-      session?.user?.id,
-      session?.user?.email
-    );
+    // console.log(
+    //   "👤 Utilisateur actuel:",
+    //   session?.user?.id,
+    //   session?.user?.email
+    // );
 
-    console.log("🔄 Mise à jour de l'organisation:", organizationId);
-    console.log("🔄 Données à envoyer:", data);
-    console.log(
-      "🔄 Structure exacte de l'appel:",
-      JSON.stringify({ organizationId, data }, null, 2)
-    );
+    // console.log("🔄 Mise à jour de l'organisation:", organizationId);
+    // console.log("🔄 Données à envoyer:", data);
+    // console.log(
+    //   "🔄 Structure exacte de l'appel:",
+    //   JSON.stringify({ organizationId, data }, null, 2)
+    // );
 
     const result = await authClient.organization.update({
       organizationId,
       data,
     });
 
-    console.log("✅ Résultat de la mise à jour:", result);
-    console.log(
-      "✅ Données dans result.data:",
-      JSON.stringify(result.data, null, 2)
-    );
+    // console.log("✅ Résultat de la mise à jour:", result);
+    // console.log(
+    //   "✅ Données dans result.data:",
+    //   JSON.stringify(result.data, null, 2)
+    // );
 
     if (options.onSuccess) {
       options.onSuccess(result);
@@ -121,9 +121,9 @@ export function useActiveOrganization() {
       setLoading(true);
       setError(null);
       const org = await getActiveOrganization();
-      console.log("🔍 Organisation récupérée:", org);
-      console.log("🔍 Logo dans l'organisation:", org?.logo);
-      console.log("🔍 Organisation complète:", JSON.stringify(org, null, 2));
+      // console.log("🔍 Organisation récupérée:", org);
+      // console.log("🔍 Logo dans l'organisation:", org?.logo);
+      // console.log("🔍 Organisation complète:", JSON.stringify(org, null, 2));
       setOrganization(org);
     } catch (err) {
       setError(err);
@@ -143,7 +143,7 @@ export function useActiveOrganization() {
 
       // Si on supprime le logo (data.logo === null), forcer le nettoyage complet
       if (data.logo === null || data.logo === undefined) {
-        console.log("🧹 Suppression logo détectée - nettoyage forcé de l'état");
+        // console.log("🧹 Suppression logo détectée - nettoyage forcé de l'état");
         const cleanedOrg = { ...organization, ...data, logo: null };
         setOrganization(cleanedOrg);
 
@@ -154,10 +154,10 @@ export function useActiveOrganization() {
         }, 100);
       } else {
         // Mettre à jour l'état local avec les données envoyées (pas result.data qui contient les anciennes valeurs)
-        console.log("🔄 Mise à jour de l'état local avec les données envoyées:", data);
+        // console.log("🔄 Mise à jour de l'état local avec les données envoyées:", data);
         const updatedOrg = { ...organization, ...data };
         setOrganization(updatedOrg);
-        console.log("✅ État organization mis à jour:", updatedOrg);
+        // console.log("✅ État organization mis à jour:", updatedOrg);
       }
 
       return result;

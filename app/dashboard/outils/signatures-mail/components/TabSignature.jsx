@@ -82,6 +82,60 @@ const GET_MY_EMAIL_SIGNATURES = gql`
   }
 `;
 
+// Fonction utilitaire pour convertir HSL en HEX
+const hslToHex = (hslString) => {
+  if (!hslString || hslString.startsWith("#")) return hslString;
+  
+  const hslMatch = hslString.match(/hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/);
+  if (!hslMatch) return hslString;
+  
+  const h = parseFloat(hslMatch[1]) / 360;
+  const s = parseFloat(hslMatch[2]) / 100;
+  const l = parseFloat(hslMatch[3]) / 100;
+  
+  const hue2rgb = (p, q, t) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1/6) return p + (q - p) * 6 * t;
+    if (t < 1/2) return q;
+    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    return p;
+  };
+  
+  let r, g, b;
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  
+  const toHex = (c) => {
+    const hex = Math.round(c * 255).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+  
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
+// Fonction utilitaire pour nettoyer les champs __typename
+const cleanGraphQLData = (obj) => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return obj.map(cleanGraphQLData);
+
+  const cleaned = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (key !== "__typename") {
+      cleaned[key] = cleanGraphQLData(value);
+    }
+  }
+  return cleaned;
+};
+
 export function TabSignature({ existingSignatureId = null }) {
   const { signatureData } = useSignatureData();
   const { workspaceId } = useRequiredWorkspace();
@@ -94,15 +148,24 @@ export function TabSignature({ existingSignatureId = null }) {
   const [saveStatus, setSaveStatus] = useState(null); // null, 'success', 'error'
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
+  // Effet pour synchroniser le nom de la signature avec les données chargées
+  useEffect(() => {
+    if (signatureData.signatureName) {
+      setSignatureName(signatureData.signatureName);
+    }
+    if (signatureData.isDefault !== undefined) {
+      setIsDefault(signatureData.isDefault);
+    }
+  }, [signatureData.signatureName, signatureData.isDefault]);
+
   const [createSignature, { loading: creating }] = useMutation(
     CREATE_EMAIL_SIGNATURE,
     {
       refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES }],
       onCompleted: (data) => {
-        console.log("✅ Signature créée:", data.createEmailSignature);
         setSaveStatus("success");
         toast.success("Signature créée avec succès !");
-        
+
         // Redirection après un court délai pour laisser voir la notification
         setTimeout(() => {
           setSaveStatus(null);
@@ -145,13 +208,35 @@ export function TabSignature({ existingSignatureId = null }) {
 
   // Préparer les données pour l'API
   const prepareSignatureData = () => {
+    // Extraire firstName et lastName du fullName si ils ne sont pas définis
+    let firstName = signatureData.firstName || "";
+    let lastName = signatureData.lastName || "";
+
+    if (!firstName && !lastName && signatureData.fullName) {
+      const nameParts = signatureData.fullName.trim().split(" ");
+      if (nameParts.length >= 2) {
+        firstName = nameParts[0];
+        lastName = nameParts.slice(1).join(" ");
+      } else if (nameParts.length === 1) {
+        firstName = nameParts[0];
+        lastName = "";
+      }
+    }
+
+    console.log(
+      "👤 TabSignature - Noms extraits - firstName:",
+      firstName,
+      "lastName:",
+      lastName
+    );
+
     return {
       signatureName,
       isDefault,
       workspaceId, // Ajouter le workspaceId dans les données
       // Informations personnelles
-      firstName: signatureData.firstName || "",
-      lastName: signatureData.lastName || "",
+      firstName,
+      lastName,
       position: signatureData.position || "",
       // Informations de contact
       email: signatureData.email || "",
@@ -173,9 +258,8 @@ export function TabSignature({ existingSignatureId = null }) {
         position: signatureData.colors?.position || "#666666",
         company: signatureData.colors?.company || "#2563eb",
         contact: signatureData.colors?.contact || "#666666",
-        separatorVertical: signatureData.colors?.separatorVertical || "#e0e0e0",
-        separatorHorizontal:
-          signatureData.colors?.separatorHorizontal || "#e0e0e0",
+        separatorVertical: hslToHex(signatureData.colors?.separatorVertical || "#e0e0e0"),
+        separatorHorizontal: hslToHex(signatureData.colors?.separatorHorizontal || "#e0e0e0"),
       },
       // Configuration layout
       nameSpacing: signatureData.nameSpacing || 4,
@@ -212,6 +296,23 @@ export function TabSignature({ existingSignatureId = null }) {
         separatorTop: signatureData.spacings?.separatorTop || 12,
         separatorBottom: signatureData.spacings?.separatorBottom || 12,
       },
+      // Réseaux sociaux (seulement ceux qui ont une URL et sont supportés par le backend)
+      socialNetworks: (() => {
+        const networks = {};
+        const socialData = signatureData.socialNetworks || {};
+        
+        // Liste des réseaux sociaux supportés par le backend GraphQL
+        const supportedNetworks = ['facebook', 'instagram', 'linkedin', 'x', 'github', 'youtube'];
+
+        // Ne garder que les réseaux supportés qui ont une URL non vide
+        supportedNetworks.forEach((platform) => {
+          if (socialData[platform] && socialData[platform].trim() !== "") {
+            networks[platform] = socialData[platform];
+          }
+        });
+
+        return networks;
+      })(),
       // Typographie
       fontFamily: signatureData.fontFamily || "Arial, sans-serif",
       fontSize: {
@@ -227,11 +328,20 @@ export function TabSignature({ existingSignatureId = null }) {
     const completeData = prepareSignatureData();
 
     // Remplacer le nom et le statut par défaut avec les valeurs du modal
-    const finalData = {
+    const rawData = {
       ...completeData,
       signatureName: signatureName || "Ma signature",
       isDefault: isDefault || false,
     };
+
+    // Nettoyer les données pour supprimer tous les champs __typename
+    const finalData = cleanGraphQLData(rawData);
+
+    console.log("🔍 [SAVE] Données nettoyées avant envoi:", finalData);
+    console.log("🎨 [SAVE] Couleurs des séparateurs:", {
+      vertical: finalData.colors?.separatorVertical,
+      horizontal: finalData.colors?.separatorHorizontal,
+    });
 
     try {
       if (existingSignatureId) {
@@ -246,10 +356,6 @@ export function TabSignature({ existingSignatureId = null }) {
           },
         });
       } else {
-        // Création d'une nouvelle signature
-        console.log(
-          "✨ Création d'une nouvelle signature avec TOUS les champs avancés"
-        );
         const result = await createSignature({
           variables: {
             input: finalData,
@@ -257,7 +363,6 @@ export function TabSignature({ existingSignatureId = null }) {
         });
       }
     } catch (error) {
-      console.error("❌ Erreur lors de la sauvegarde:", error);
       toast.error("Erreur lors de la sauvegarde", {
         description:
           error.message || "Une erreur est survenue lors de la sauvegarde.",
@@ -291,13 +396,13 @@ export function TabSignature({ existingSignatureId = null }) {
         <div className="flex-shrink-0 p-5 pb-0">
           <ScrollArea className="w-full">
             <TabsList className="mb-3 w-full">
-              <TabsTrigger value="tab-1">
+              <TabsTrigger value="tab-1" className="flex-1">
                 <LayoutDashboard size={16} aria-hidden="true" />
               </TabsTrigger>
-              <TabsTrigger value="tab-2" className="group">
+              <TabsTrigger value="tab-2" className="group flex-1">
                 <Palette size={16} aria-hidden="true" />
               </TabsTrigger>
-              <TabsTrigger value="tab-3" className="group">
+              <TabsTrigger value="tab-3" className="group flex-1">
                 <ScanEye size={16} aria-hidden="true" />
               </TabsTrigger>
               {/* <TabsTrigger value="tab-4" className="group">
@@ -328,8 +433,8 @@ export function TabSignature({ existingSignatureId = null }) {
       {/* Footer fixe avec les boutons */}
       <div className="flex-shrink-0 py-4 mx-4 border-t">
         <div className="flex justify-between">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="cursor-pointer"
             onClick={handleCancelClick}
           >

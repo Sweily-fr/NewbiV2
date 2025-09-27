@@ -1,12 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
 import { Switch } from "@/src/components/ui/switch";
-import { Button } from "@/src/components/ui/button";
-import { Loader2, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
+import { Info } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -14,32 +13,127 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { useCustomSocialIcons } from "../../../hooks/useCustomSocialIcons";
+
+// Nouvelle configuration des icônes sociales - SINGLE SOURCE OF TRUTH
+const ICONS_SOCIAL_BUCKET_NAME =
+  process.env.NEXT_PUBLIC_ICONS_SOCIAL_BUCKET_NAME || "newbi-social-icons";
+const ICONS_SOCIAL_URL =
+  process.env.NEXT_PUBLIC_ICONS_SOCIAL_URL || "https://social-icons.newbi.fr";
+
+// Réseaux AUTORISÉS uniquement
+const ALLOWED_SOCIAL_NETWORKS = [
+  "facebook",
+  "github",
+  "instagram",
+  "linkedin",
+  "twitter",
+  "youtube",
+];
+
+// Couleurs AUTORISÉES uniquement
+const ALLOWED_COLORS = [
+  "black",
+  "green",
+  "yellow",
+  "pink",
+  "sky",
+  "orange",
+  "blue",
+  "purple",
+  "indigo",
+];
+
 export default function SocialNetworksSection({
   signatureData,
   updateSignatureData,
 }) {
-  // Hook pour les icônes personnalisées
-  const {
-    isGenerating,
-    generationError,
-    generateCustomSocialIcons,
-    getGenerationStatus,
-    hasCustomSocialIcons,
-  } = useCustomSocialIcons(signatureData, updateSignatureData);
+  // Construction de l'URL d'icône selon la nouvelle logique
+  const buildSocialIconUrl = useCallback((socialNetwork, color = null) => {
+    // Vérifier que les variables d'environnement sont définies
+    if (!ICONS_SOCIAL_URL) {
+      return null;
+    }
+
+    // Vérifier que le réseau social est autorisé
+    if (!ALLOWED_SOCIAL_NETWORKS.includes(socialNetwork)) {
+      return null;
+    }
+
+    // Si couleur fournie, vérifier qu'elle est autorisée
+    if (color && !ALLOWED_COLORS.includes(color)) {
+      color = null; // Utiliser l'icône par défaut si couleur invalide
+    }
+
+    // Construction de l'URL
+    const baseUrl = `${ICONS_SOCIAL_URL}/social/${socialNetwork}/${socialNetwork}`;
+    const finalUrl = color ? `${baseUrl}-${color}.png` : `${baseUrl}.png`;
+
+    return finalUrl;
+  }, []);
 
   // Gestion de la taille des logos sociaux
   const handleSocialSizeChange = (value) => {
     const numValue = parseInt(value) || 24;
-    updateSignatureData("socialSize", Math.max(16, Math.min(48, numValue))); // Entre 16 et 48px
+    updateSignatureData("socialSize", Math.max(16, Math.min(48, numValue)));
   };
 
-  // Gestion des liens sociaux
-  const handleSocialLinkChange = (platform, value) => {
-    updateSignatureData("socialNetworks", {
-      ...signatureData.socialNetworks,
-      [platform]: value,
+  // Gestion de l'activation/désactivation des réseaux sociaux
+  const handleSocialToggle = useCallback(
+    (platform, enabled) => {
+      const updatedNetworks = {
+        ...signatureData.socialNetworks,
+      };
+
+      if (enabled) {
+        // Activer le réseau social avec une URL vide pour forcer la saisie
+        updatedNetworks[platform] = "";
+      } else {
+        // Désactiver le réseau social
+        delete updatedNetworks[platform];
+
+        // Supprimer aussi l'URL d'icône
+        const updatedIcons = { ...signatureData.socialIcons };
+        delete updatedIcons[platform];
+        updateSignatureData("socialIcons", updatedIcons);
+      }
+
+      updateSignatureData("socialNetworks", updatedNetworks);
+    },
+    [
+      signatureData.socialNetworks,
+      signatureData.socialIcons,
+      updateSignatureData,
+    ]
+  );
+
+  // Gestion des changements d'URL
+  const handleSocialUrlChange = useCallback(
+    (platform, url) => {
+      updateSignatureData("socialNetworks", {
+        ...signatureData.socialNetworks,
+        [platform]: url,
+      });
+    },
+    [signatureData.socialNetworks, updateSignatureData]
+  );
+
+  // Gestion de la couleur globale des icônes
+  const handleGlobalColorChange = (color) => {
+    const globalColor = color === "default" ? null : color;
+    updateSignatureData("socialGlobalColor", globalColor);
+
+    // Mettre à jour toutes les URLs d'icônes avec la nouvelle couleur
+    const updatedIcons = {};
+    ALLOWED_SOCIAL_NETWORKS.forEach((platform) => {
+      if (signatureData.socialNetworks?.[platform]) {
+        const iconUrl = buildSocialIconUrl(platform, globalColor);
+        if (iconUrl) {
+          updatedIcons[platform] = iconUrl;
+        }
+      }
     });
+
+    updateSignatureData("socialIcons", updatedIcons);
   };
 
   // Gestion du background social
@@ -50,188 +144,104 @@ export default function SocialNetworksSection({
     });
   };
 
-  // Gestion des couleurs personnalisées pour chaque réseau social
-  const handleSocialColorChange = (platform, color) => {
-    updateSignatureData("socialColors", {
-      ...signatureData.socialColors,
-      [platform]: color,
-    });
+  // Mapping des noms d'affichage pour les réseaux sociaux
+  const socialNetworkLabels = {
+    facebook: "Facebook",
+    github: "GitHub",
+    instagram: "Instagram",
+    linkedin: "LinkedIn",
+    twitter: "Twitter/X",
+    youtube: "YouTube",
   };
 
-  // Couleurs par défaut pour chaque réseau social
-  const defaultColors = {
-    linkedin: "#0077B5",
-    facebook: "#1877F2", 
-    instagram: "#E4405F",
-    x: "#000000"
+  // Initialisation des réseaux sociaux par défaut (seulement si pas défini)
+  React.useEffect(() => {
+    if (!signatureData.socialNetworks) {
+      // Initialiser avec un objet vide au lieu de tous les réseaux
+      updateSignatureData("socialNetworks", {});
+    }
+  }, [signatureData.socialNetworks, updateSignatureData]);
+
+  // Fonction pour obtenir une couleur de preview pour les sélecteurs
+  const getColorPreview = (colorName) => {
+    const colorMap = {
+      black: "#000000",
+      green: "#22c55e",
+      yellow: "#eab308",
+      pink: "#ec4899",
+      sky: "#0ea5e9",
+      orange: "#f97316",
+      blue: "#3b82f6",
+      purple: "#a855f7",
+      indigo: "#6366f1",
+    };
+    return colorMap[colorName] || "#6b7280";
   };
 
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-sm font-medium">Réseaux sociaux</h2>
       <div className="flex flex-col gap-3 ml-4">
-        {/* LinkedIn */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">LinkedIn</Label>
-            <div className="flex items-center gap-2 w-30">
-              <Input
-                className="h-8 w-full px-2 py-1 text-xs placeholder:text-xs"
-                type="url"
-                value={signatureData.socialNetworks?.linkedin || ""}
-                onChange={(e) =>
-                  handleSocialLinkChange("linkedin", e.target.value)
+        {/* Génération dynamique des switches pour chaque réseau autorisé */}
+        {ALLOWED_SOCIAL_NETWORKS.map((network) => (
+          <div key={network} className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">
+                {socialNetworkLabels[network]}
+              </Label>
+              <Switch
+                checked={signatureData.socialNetworks?.hasOwnProperty(network)}
+                className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+                onCheckedChange={(checked) =>
+                  handleSocialToggle(network, checked)
                 }
-                placeholder="linkedin.com/in/..."
               />
             </div>
-          </div>
-          {signatureData.socialNetworks?.linkedin && (
-            <div className="flex items-center justify-between ml-4">
-              <Label className="text-xs text-muted-foreground">Couleur</Label>
-              <div className="flex items-center gap-2 bg-[#efefef] rounded-md px-2 py-2 w-20">
-                <div
-                  className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
-                  style={{
-                    backgroundColor: signatureData.socialColors?.linkedin || defaultColors.linkedin,
-                  }}
-                  onClick={() => {
-                    const input = document.createElement("input");
-                    input.type = "color";
-                    input.value = signatureData.socialColors?.linkedin || defaultColors.linkedin;
-                    input.onchange = (e) => {
-                      handleSocialColorChange("linkedin", e.target.value);
-                    };
-                    input.click();
-                  }}
-                  title="Couleur LinkedIn"
+            {signatureData.socialNetworks?.hasOwnProperty(network) && (
+              <div className="flex flex-col gap-2 ml-4">
+                <Input
+                  className="h-8 w-full px-2 py-1 text-xs placeholder:text-xs"
+                  type="url"
+                  value={signatureData.socialNetworks?.[network] || ""}
+                  onChange={(e) =>
+                    handleSocialUrlChange(network, e.target.value)
+                  }
+                  placeholder={`URL de votre profil ${socialNetworkLabels[network]}`}
                 />
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        ))}
 
-        {/* Facebook */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Facebook</Label>
-            <div className="flex items-center gap-2 w-30">
-              <Input
-                className="h-8 w-full px-2 py-1 text-xs placeholder:text-xs"
-                type="url"
-                value={signatureData.socialNetworks?.facebook || ""}
-                onChange={(e) =>
-                  handleSocialLinkChange("facebook", e.target.value)
-                }
-                placeholder="facebook.com/..."
-              />
-            </div>
-          </div>
-          {signatureData.socialNetworks?.facebook && (
-            <div className="flex items-center justify-between ml-4">
-              <Label className="text-xs text-muted-foreground">Couleur</Label>
-              <div className="flex items-center gap-2 bg-[#efefef] rounded-md px-2 py-2 w-20">
-                <div
-                  className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
-                  style={{
-                    backgroundColor: signatureData.socialColors?.facebook || defaultColors.facebook,
-                  }}
-                  onClick={() => {
-                    const input = document.createElement("input");
-                    input.type = "color";
-                    input.value = signatureData.socialColors?.facebook || defaultColors.facebook;
-                    input.onchange = (e) => {
-                      handleSocialColorChange("facebook", e.target.value);
-                    };
-                    input.click();
-                  }}
-                  title="Couleur Facebook"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Twitter/X */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Twitter/X</Label>
-            <div className="flex items-center gap-2 w-30">
-              <Input
-                className="h-8 w-full px-2 py-1 text-xs placeholder:text-xs"
-                type="url"
-                value={signatureData.socialNetworks?.x || ""}
-                onChange={(e) =>
-                  handleSocialLinkChange("x", e.target.value)
-                }
-                placeholder="x.com/..."
-              />
-            </div>
-          </div>
-          {signatureData.socialNetworks?.x && (
-            <div className="flex items-center justify-between ml-4">
-              <Label className="text-xs text-muted-foreground">Couleur</Label>
-              <div className="flex items-center gap-2 bg-[#efefef] rounded-md px-2 py-2 w-20">
-                <div
-                  className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
-                  style={{
-                    backgroundColor: signatureData.socialColors?.x || defaultColors.x,
-                  }}
-                  onClick={() => {
-                    const input = document.createElement("input");
-                    input.type = "color";
-                    input.value = signatureData.socialColors?.x || defaultColors.x;
-                    input.onchange = (e) => {
-                      handleSocialColorChange("x", e.target.value);
-                    };
-                    input.click();
-                  }}
-                  title="Couleur X"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Instagram */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Instagram</Label>
-            <div className="flex items-center gap-2 w-30">
-              <Input
-                className="h-8 w-full px-2 py-1 text-xs placeholder:text-xs"
-                type="url"
-                value={signatureData.socialNetworks?.instagram || ""}
-                onChange={(e) =>
-                  handleSocialLinkChange("instagram", e.target.value)
-                }
-                placeholder="instagram.com/..."
-              />
-            </div>
-          </div>
-          {signatureData.socialNetworks?.instagram && (
-            <div className="flex items-center justify-between ml-4">
-              <Label className="text-xs text-muted-foreground">Couleur</Label>
-              <div className="flex items-center gap-2 bg-[#efefef] rounded-md px-2 py-2 w-20">
-                <div
-                  className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
-                  style={{
-                    backgroundColor: signatureData.socialColors?.instagram || defaultColors.instagram,
-                  }}
-                  onClick={() => {
-                    const input = document.createElement("input");
-                    input.type = "color";
-                    input.value = signatureData.socialColors?.instagram || defaultColors.instagram;
-                    input.onchange = (e) => {
-                      handleSocialColorChange("instagram", e.target.value);
-                    };
-                    input.click();
-                  }}
-                  title="Couleur Instagram"
-                />
-              </div>
-            </div>
-          )}
+        {/* Couleur globale */}
+        <div className="flex items-center justify-between mt-4 pt-3 border-t">
+          <Label className="text-xs text-muted-foreground">
+            Couleur globale
+          </Label>
+          <Select
+            value={signatureData.socialGlobalColor || "default"}
+            onValueChange={handleGlobalColorChange}
+          >
+            <SelectTrigger className="h-8 w-24 text-xs">
+              <SelectValue placeholder="Défaut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Défaut</SelectItem>
+              {ALLOWED_COLORS.map((color) => (
+                <SelectItem key={color} value={color}>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded border border-gray-300"
+                      style={{
+                        backgroundColor: getColorPreview(color),
+                      }}
+                    />
+                    {color.charAt(0).toUpperCase() + color.slice(1)}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Taille des logos sociaux */}
@@ -267,22 +277,21 @@ export default function SocialNetworksSection({
         </div>
 
         {/* Background social */}
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Arrière-plan</Label>
           <div className="flex items-center gap-3">
             <Switch
-              className="scale-75"
+              className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
               checked={signatureData.socialBackground?.enabled || false}
               onCheckedChange={(checked) =>
                 handleSocialBackgroundChange("enabled", checked)
               }
             />
           </div>
-        </div>
+        </div> */}
 
-        {signatureData.socialBackground?.enabled && (
+        {/* {signatureData.socialBackground?.enabled && (
           <>
-            {/* Couleur background */}
             <div className="flex items-center justify-between">
               <Label className="text-xs text-muted-foreground">
                 Couleur fond
@@ -314,7 +323,6 @@ export default function SocialNetworksSection({
               </div>
             </div>
 
-            {/* Forme background */}
             <div className="flex items-center justify-between">
               <Label className="text-xs text-muted-foreground">
                 Forme fond
@@ -338,65 +346,34 @@ export default function SocialNetworksSection({
               </div>
             </div>
           </>
-        )}
+        )} */}
 
-        {/* Statut des icônes personnalisées */}
-        {(signatureData.socialNetworks?.linkedin || 
-          signatureData.socialNetworks?.facebook || 
-          signatureData.socialNetworks?.instagram || 
-          signatureData.socialNetworks?.x) && (
+        {/* Informations sur les URLs générées */}
+        {/* {Object.keys(signatureData.socialNetworks || {}).some(
+          (key) => signatureData.socialNetworks[key]
+        ) && (
           <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border">
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Icônes personnalisées</Label>
-              <div className="flex items-center gap-2">
-                {getGenerationStatus() === 'generating' && (
-                  <div className="flex items-center gap-1 text-xs text-blue-600">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span>Génération...</span>
-                  </div>
-                )}
-                {getGenerationStatus() === 'updating' && (
-                  <div className="flex items-center gap-1 text-xs text-orange-600">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span>Mise à jour...</span>
-                  </div>
-                )}
-                {getGenerationStatus() === 'ready' && (
-                  <div className="flex items-center gap-1 text-xs text-green-600">
-                    <CheckCircle className="w-3 h-3" />
-                    <span>Prêt</span>
-                  </div>
-                )}
-                {getGenerationStatus() === 'error' && (
-                  <div className="flex items-center gap-1 text-xs text-red-600">
-                    <AlertCircle className="w-3 h-3" />
-                    <span>Erreur</span>
-                  </div>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={generateCustomSocialIcons}
-                  disabled={isGenerating}
-                  className="h-6 px-2 text-xs"
-                >
-                  <RefreshCw className="w-3 h-3 mr-1" />
-                  Régénérer
-                </Button>
-              </div>
+              <Label className="text-xs text-muted-foreground">
+                URLs d'icônes générées
+              </Label>
             </div>
-            {generationError && (
-              <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-                {generationError}
-              </div>
-            )}
-            {hasCustomSocialIcons() && (
-              <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
-                Icônes personnalisées actives avec vos couleurs
-              </div>
-            )}
+            <div className="text-xs text-gray-500 space-y-1">
+              {Object.entries(signatureData.socialIcons || {}).map(
+                ([network, url]) => (
+                  <div key={network} className="flex items-center gap-2">
+                    <span className="font-mono text-xs">
+                      {socialNetworkLabels[network]}:
+                    </span>
+                    <span className="text-xs text-blue-600 truncate">
+                      {url}
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

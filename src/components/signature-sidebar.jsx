@@ -32,6 +32,7 @@ const ConfigSection = ({ title, icon: Icon, children, isActive = false }) => (
 export function SignatureSidebar({
   signatureData,
   updateSignatureData,
+  editingSignatureId,
   ...props
 }) {
   return (
@@ -42,7 +43,7 @@ export function SignatureSidebar({
       {...props}
     >
       <SidebarContent className="p-0 h-full overflow-hidden">
-        <TabSignature />
+        <TabSignature existingSignatureId={editingSignatureId} />
       </SidebarContent>
     </Sidebar>
   );

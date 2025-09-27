@@ -10,6 +10,174 @@ import React, {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import { useActiveOrganization } from "@/src/lib/organization-client";
+import { useLazyQuery, gql } from "@apollo/client";
+
+// Query pour récupérer une signature spécifique (pour l'édition)
+const GET_EMAIL_SIGNATURE = gql`
+  query GetEmailSignature($id: ID!) {
+    getEmailSignature(id: $id) {
+      id
+      signatureName
+      isDefault
+      firstName
+      lastName
+      position
+      email
+      phone
+      mobile
+      website
+      address
+      companyName
+      showPhoneIcon
+      showMobileIcon
+      showEmailIcon
+      showAddressIcon
+      showWebsiteIcon
+      primaryColor
+      colors {
+        name
+        position
+        company
+        contact
+        separatorVertical
+        separatorHorizontal
+      }
+      nameSpacing
+      nameAlignment
+      layout
+      columnWidths {
+        photo
+        content
+      }
+      photo
+      photoKey
+      logo
+      logoKey
+      imageSize
+      imageShape
+      logoSize
+      separatorVerticalWidth
+      separatorHorizontalWidth
+      spacings {
+        global
+        photoBottom
+        logoBottom
+        nameBottom
+        positionBottom
+        companyBottom
+        contactBottom
+        phoneToMobile
+        mobileToEmail
+        emailToWebsite
+        websiteToAddress
+        separatorTop
+        separatorBottom
+        logoToSocial
+        verticalSeparatorLeft
+        verticalSeparatorRight
+      }
+      detailedSpacing
+      socialNetworks {
+        facebook
+        instagram
+        linkedin
+        x
+        github
+        youtube
+      }
+      socialColors {
+        facebook
+        instagram
+        linkedin
+        x
+        github
+        youtube
+      }
+      customSocialIcons {
+        facebook
+        instagram
+        linkedin
+        x
+        github
+        youtube
+      }
+      fontFamily
+      fontSize {
+        name
+        position
+        contact
+      }
+      typography {
+        fullName {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        position {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        company {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        email {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        phone {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        mobile {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        website {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+        address {
+          fontFamily
+          fontSize
+          color
+          fontWeight
+          fontStyle
+          textDecoration
+        }
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
 
 // Context pour les données de signature
 const SignatureContext = createContext();
@@ -27,7 +195,100 @@ export const useSignatureData = () => {
 function SignatureProviderContent({ children }) {
   const searchParams = useSearchParams();
   const isEditMode = searchParams?.get("edit") === "true";
+  const signatureIdFromUrl = searchParams?.get("id");
   const { organization } = useActiveOrganization();
+
+  // Hook pour récupérer une signature spécifique
+  const [getSignature, { loading: loadingSignature }] = useLazyQuery(
+    GET_EMAIL_SIGNATURE,
+    {
+      onCompleted: (data) => {
+        if (data?.getEmailSignature) {
+          const signatureData = data.getEmailSignature;
+          console.log(
+            "🔍 [SIGNATURE_DATA] Données récupérées via GraphQL:",
+            signatureData
+          );
+
+          // Transformer firstName + lastName en fullName pour compatibilité
+          const transformedData = {
+            ...signatureData,
+            fullName:
+              signatureData.firstName && signatureData.lastName
+                ? `${signatureData.firstName} ${signatureData.lastName}`.trim()
+                : signatureData.firstName || signatureData.lastName || "",
+          };
+
+          // Merger les données récupérées avec les données par défaut
+          const mergedData = {
+            ...defaultSignatureData,
+            ...transformedData,
+            // S'assurer que les objets imbriqués sont bien mergés
+            colors: {
+              ...defaultSignatureData.colors,
+              ...(signatureData.colors || {}),
+            },
+            columnWidths: {
+              ...defaultSignatureData.columnWidths,
+              ...(signatureData.columnWidths || {}),
+            },
+            spacings: {
+              ...defaultSignatureData.spacings,
+              ...(signatureData.spacings || {}),
+            },
+            fontSize: {
+              ...defaultSignatureData.fontSize,
+              ...(signatureData.fontSize || {}),
+            },
+            socialNetworks: {
+              ...defaultSignatureData.socialNetworks,
+              ...(signatureData.socialNetworks || {}),
+            },
+            typography: {
+              fullName: {
+                ...defaultSignatureData.typography.fullName,
+                ...(signatureData.typography?.fullName || {}),
+              },
+              position: {
+                ...defaultSignatureData.typography.position,
+                ...(signatureData.typography?.position || {}),
+              },
+              company: {
+                ...defaultSignatureData.typography.company,
+                ...(signatureData.typography?.company || {}),
+              },
+              email: {
+                ...defaultSignatureData.typography.email,
+                ...(signatureData.typography?.email || {}),
+              },
+              phone: {
+                ...defaultSignatureData.typography.phone,
+                ...(signatureData.typography?.phone || {}),
+              },
+              mobile: {
+                ...defaultSignatureData.typography.mobile,
+                ...(signatureData.typography?.mobile || {}),
+              },
+              website: {
+                ...defaultSignatureData.typography.website,
+                ...(signatureData.typography?.website || {}),
+              },
+              address: {
+                ...defaultSignatureData.typography.address,
+                ...(signatureData.typography?.address || {}),
+              },
+            },
+          };
+
+          setSignatureData(mergedData);
+          console.log("✅ [SIGNATURE_DATA] Données mergées et chargées");
+        }
+      },
+      onError: (error) => {
+        console.error("❌ [SIGNATURE_DATA] Erreur lors du chargement:", error);
+      },
+    }
+  );
 
   // Données par défaut (mémorisées pour éviter les re-renders)
   const defaultSignatureData = useMemo(
@@ -36,6 +297,8 @@ function SignatureProviderContent({ children }) {
       isDefault: true,
       signatureId: null, // ID de la signature (généré lors de la sauvegarde)
       fullName: "Jean Dupont",
+      firstName: "Jean",
+      lastName: "Dupont",
       position: "Fondateur & CEO",
       email: "newbi@contact.fr",
       phone: "+33 7 34 64 06 18",
@@ -54,7 +317,12 @@ function SignatureProviderContent({ children }) {
         instagram: "",
         linkedin: "",
         x: "",
+        github: "",
+        youtube: "",
       },
+      // Séparateurs (activation)
+      separatorVerticalEnabled: true,
+      separatorHorizontalEnabled: true,
       primaryColor: "#171717",
       // Espacement entre prénom et nom (en pixels)
       nameSpacing: 4,
@@ -203,28 +471,30 @@ function SignatureProviderContent({ children }) {
   const [signatureData, setSignatureData] = useState(defaultSignatureData);
   const [editingSignatureId, setEditingSignatureId] = useState(null);
 
-  // Effet pour charger les données d'édition depuis localStorage
+  // Effet pour charger les données d'édition via GraphQL ou localStorage
   useEffect(() => {
-    if (isEditMode) {
+    if (isEditMode && signatureIdFromUrl) {
+      // Mode édition avec ID dans l'URL - charger via GraphQL
+      console.log(
+        "🔍 [SIGNATURE_DATA] Mode édition avec ID:",
+        signatureIdFromUrl
+      );
+      setEditingSignatureId(signatureIdFromUrl);
+      getSignature({ variables: { id: signatureIdFromUrl } });
+    } else if (isEditMode) {
+      // Mode édition sans ID - fallback sur localStorage (compatibilité)
       try {
         const editingSignature = localStorage.getItem("editingSignature");
 
         if (editingSignature) {
           const parsedData = JSON.parse(editingSignature);
-          
-          console.log("🔍 [SIGNATURE_DATA] Données récupérées de localStorage:", parsedData);
-          console.log("🎨 [SIGNATURE_DATA] Typographie dans localStorage:", parsedData.typography);
-          console.log("📷 [SIGNATURE_DATA] Images dans localStorage:", {
-            photo: parsedData.photo,
-            photoKey: parsedData.photoKey,
-            logo: parsedData.logo,
-            logoKey: parsedData.logoKey,
-            imageSize: parsedData.imageSize,
-            imageShape: parsedData.imageShape,
-            logoSize: parsedData.logoSize
-          });
 
-          // Merger les données existantes avec les données par défaut pour éviter les champs manquants
+          console.log(
+            "🔍 [SIGNATURE_DATA] Données récupérées de localStorage (fallback):",
+            parsedData
+          );
+
+          // Merger les données existantes avec les données par défaut
           const mergedData = {
             ...defaultSignatureData,
             ...parsedData,
@@ -284,56 +554,48 @@ function SignatureProviderContent({ children }) {
               },
             },
           };
-          
-          console.log("🔄 [SIGNATURE_DATA] Données après merge:", mergedData);
-          console.log("🎨 [SIGNATURE_DATA] Typographie après merge:", mergedData.typography);
-          console.log("📷 [SIGNATURE_DATA] Images après merge:", {
-            photo: mergedData.photo,
-            photoKey: mergedData.photoKey,
-            logo: mergedData.logo,
-            logoKey: mergedData.logoKey,
-            imageSize: mergedData.imageSize,
-            imageShape: mergedData.imageShape,
-            logoSize: mergedData.logoSize
-          });
 
           setSignatureData(mergedData);
-
-          // Stocker l'ID de la signature en cours d'édition
-          console.log("🔍 useSignatureData - ID de signature en édition:", parsedData.id);
           setEditingSignatureId(parsedData.id);
 
           // Nettoyer localStorage après chargement
           localStorage.removeItem("editingSignature");
         } else {
           console.log(
-            "⚠️ [SIGNATURE_PROVIDER] Aucune donnée d'édition trouvée dans localStorage"
+            "⚠️ [SIGNATURE_PROVIDER] Aucune donnée d'édition trouvée"
           );
         }
       } catch (error) {
         console.error(
-          "❌ [SIGNATURE_PROVIDER] Erreur lors du chargement des données d'édition:",
+          "❌ [SIGNATURE_PROVIDER] Erreur lors du chargement:",
           error
         );
       }
     } else {
-      console.log(
-        "📝 [SIGNATURE_PROVIDER] Mode création - utilisation des données par défaut"
-      );
+      console.log("📝 [SIGNATURE_PROVIDER] Mode création - données par défaut");
     }
-  }, [isEditMode, defaultSignatureData]);
+  }, [isEditMode, signatureIdFromUrl, defaultSignatureData, getSignature]);
 
   // Effet pour appliquer automatiquement le logo de l'organisation
   useEffect(() => {
     console.log("🔍 SignatureProvider - Organization:", organization);
-    console.log("🔍 SignatureProvider - Logo dans organization:", organization?.logo);
-    console.log("🔍 SignatureProvider - Logo actuel signature:", signatureData.logo);
-    
+    console.log(
+      "🔍 SignatureProvider - Logo dans organization:",
+      organization?.logo
+    );
+    console.log(
+      "🔍 SignatureProvider - Logo actuel signature:",
+      signatureData.logo
+    );
+
     if (organization?.logo && !signatureData.logo) {
-      console.log("✅ SignatureProvider - Application automatique du logo:", organization.logo);
-      setSignatureData(prev => ({
+      console.log(
+        "✅ SignatureProvider - Application automatique du logo:",
+        organization.logo
+      );
+      setSignatureData((prev) => ({
         ...prev,
-        logo: organization.logo
+        logo: organization.logo,
       }));
     }
   }, [organization?.logo, signatureData.logo, organization]);
@@ -342,7 +604,12 @@ function SignatureProviderContent({ children }) {
   useEffect(() => {
     if (!isEditMode && signatureData && Object.keys(signatureData).length > 0) {
       // Éviter de sauvegarder les données par défaut vides
-      if (signatureData.fullName || signatureData.email || signatureData.position || signatureData.photo) {
+      if (
+        signatureData.fullName ||
+        signatureData.email ||
+        signatureData.position ||
+        signatureData.photo
+      ) {
         console.log("💾 [AUTO_SAVE] Sauvegarde automatique dans localStorage");
         localStorage.setItem("draftSignature", JSON.stringify(signatureData));
       }
@@ -356,8 +623,11 @@ function SignatureProviderContent({ children }) {
       if (draftData) {
         try {
           const parsedDraft = JSON.parse(draftData);
-          console.log("📋 [DRAFT] Chargement du brouillon depuis localStorage:", parsedDraft);
-          
+          console.log(
+            "📋 [DRAFT] Chargement du brouillon depuis localStorage:",
+            parsedDraft
+          );
+
           // Merger avec les données par défaut pour éviter les champs manquants
           const mergedData = {
             ...defaultSignatureData,
@@ -417,11 +687,14 @@ function SignatureProviderContent({ children }) {
               },
             },
           };
-          
+
           setSignatureData(mergedData);
           console.log("✅ [DRAFT] Brouillon chargé et mergé avec succès");
         } catch (error) {
-          console.error("❌ [DRAFT] Erreur lors du chargement du brouillon:", error);
+          console.error(
+            "❌ [DRAFT] Erreur lors du chargement du brouillon:",
+            error
+          );
           localStorage.removeItem("draftSignature");
         }
       }
@@ -448,6 +721,33 @@ function SignatureProviderContent({ children }) {
           },
         };
       }
+
+      // Gestion spéciale pour fullName - le diviser en firstName et lastName
+      if (key === "fullName") {
+        const nameParts = (value || "").trim().split(" ");
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        return {
+          ...prev,
+          fullName: value,
+          firstName,
+          lastName,
+        };
+      }
+
+      // Gestion spéciale pour firstName et lastName - reconstruire fullName
+      if (key === "firstName" || key === "lastName") {
+        const updatedData = { ...prev, [key]: value };
+        const fullName =
+          `${updatedData.firstName || ""} ${updatedData.lastName || ""}`.trim();
+
+        return {
+          ...updatedData,
+          fullName,
+        };
+      }
+
       // Handle simple property updates
       return { ...prev, [key]: value };
     });
@@ -534,6 +834,7 @@ function SignatureProviderContent({ children }) {
     loadEditingData,
     isEditMode,
     editingSignatureId,
+    loadingSignature,
   };
 
   return (
