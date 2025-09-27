@@ -35,10 +35,12 @@ import {
   useSidebar,
 } from "@/src/components/ui/sidebar";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function NavDocuments({ items }) {
   const { isMobile } = useSidebar();
   const { isActive } = useSubscription();
+  const pathname = usePathname();
   // Initialiser avec seulement Factures par défaut
   const [pinnedApps, setPinnedApps] = useState(items || []);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -172,13 +174,18 @@ export function NavDocuments({ items }) {
           const isProTool = item.isPro || proTools.includes(item.name);
           const hasAccess = !isProTool || isActive();
           
+          // Vérifier si le lien est actif
+          const isActiveLink = pathname === item.url || 
+            (item.url !== "/dashboard" && pathname?.startsWith(item.url + "/"));
+          
           return (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton 
               asChild={hasAccess}
               className={cn(
                 "relative",
-                !hasAccess && "opacity-60 cursor-not-allowed"
+                !hasAccess && "opacity-60 cursor-not-allowed",
+                isActiveLink && hasAccess && "bg-[#F0F0F0] hover:bg-[#F0F0F0]/90 active:bg-[#F0F0F0] text-black min-w-8 duration-200 ease-linear"
               )}
               disabled={!hasAccess}
             >
