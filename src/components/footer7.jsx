@@ -22,7 +22,7 @@ const defaultSections = [
     links: [
       // { name: "Blog", href: "#" },
       { name: "FAQ", href: "#" },
-      { name: "Tarifs", href: "#" },
+      { name: "Tarifs", href: "/#pricing" },
       { name: "Communauté", href: "#" },
     ],
   },
@@ -184,14 +184,14 @@ const Footer7 = ({
                   Ressources
                 </h3>
                 <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
-                  <li>
+                  {/* <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
                       href="/blog"
                     >
                       Blog
                     </a>
-                  </li>
+                  </li> */}
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"

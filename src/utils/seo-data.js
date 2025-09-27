@@ -506,6 +506,102 @@ export const seoData = {
         "priceCurrency": "EUR"
       }
     }
+  },
+
+  // Page FAQ
+  faq: {
+    title: "FAQ - Questions Fréquentes sur Newbi",
+    description: "Trouvez rapidement les réponses à vos questions sur Newbi : facturation, devis, signatures, tarifs, fonctionnalités. Support et aide complète.",
+    keywords: "faq newbi, questions fréquentes, aide newbi, support client, guide utilisation, facturation aide, devis questions, tarifs newbi",
+    canonical: `${baseUrl}/faq`,
+    robots: "index,follow",
+    openGraph: {
+      title: "FAQ - Toutes vos questions sur Newbi",
+      description: "Découvrez les réponses aux questions les plus fréquentes sur Newbi. Support complet et aide détaillée.",
+      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      type: "website",
+      locale: "fr_FR",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "FAQ - Toutes vos questions sur Newbi",
+      description: "Découvrez les réponses aux questions les plus fréquentes sur Newbi.",
+      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+    },
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "name": "FAQ Newbi",
+      "description": "Questions fréquentes et réponses sur l'utilisation de Newbi",
+      "url": `${baseUrl}/faq`,
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Qu'est-ce que Newbi ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Newbi est une plateforme tout-en-un pour gérer simplement et efficacement votre activité: devis, factures, signature de mail, gestion de tâches en Kanban et transfert de fichiers sécurisé."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "À qui s'adresse Newbi ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Newbi est une plateforme pensée pour les indépendants, TPE/PME, agences et associations qui veulent centraliser leurs outils commerciaux et administratifs, sans complexité."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Y a-t-il un essai gratuit ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, vous bénéficiez de 14 jours gratuits à l'inscription, durant lesquels vous pouvez résilier votre abonnement à tout moment."
+          }
+        }
+      ]
+    }
+  },
+
+  // Page CGV
+  cgv: {
+    title: "Conditions Générales de Vente - CGV Newbi",
+    description: "Consultez les conditions générales de vente de Newbi : modalités d'abonnement, facturation, résiliation, garanties et conditions d'utilisation.",
+    keywords: "cgv newbi, conditions générales vente, modalités abonnement, facturation, résiliation, garanties, conditions utilisation",
+    canonical: `${baseUrl}/cgv`,
+    robots: "index,nofollow",
+    openGraph: {
+      title: "Conditions Générales de Vente - Newbi",
+      description: "Découvrez les conditions générales de vente et d'utilisation de la plateforme Newbi.",
+      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      type: "website",
+      locale: "fr_FR",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Conditions Générales de Vente - Newbi",
+      description: "Conditions générales de vente et d'utilisation de Newbi.",
+      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+    },
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Conditions Générales de Vente",
+      "description": "Conditions générales de vente et d'utilisation de la plateforme Newbi",
+      "url": `${baseUrl}/cgv`,
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "Newbi",
+        "url": baseUrl
+      },
+      "inLanguage": "fr-FR",
+      "dateModified": "2024-01-01",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": baseUrl
+      }
+    }
   }
 };
 

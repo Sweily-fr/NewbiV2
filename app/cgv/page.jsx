@@ -4,10 +4,10 @@ import HeroHeader from "@/src/components/blocks/hero-header";
 import Footer7 from "@/src/components/footer7";
 import SEOHead from "@/src/components/seo/seo-head";
 import { JsonLd } from "@/src/components/seo/seo-metadata";
-import { useLegalSEO } from "@/src/hooks/use-seo";
+import { useSEO } from "@/src/hooks/use-seo";
 
 export default function CGVPage() {
-  const seoData = useLegalSEO("cgv");
+  const seoData = useSEO("cgv");
 
   return (
     <>
