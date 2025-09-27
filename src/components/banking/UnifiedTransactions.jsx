@@ -71,6 +71,12 @@ export default function UnifiedTransactions({
   const allTransactions = useMemo(() => {
     const transactions = [];
 
+    // Debug: Log des données reçues
+    console.log("🔍 Données reçues dans UnifiedTransactions:");
+    console.log("- Expenses:", expenses?.length || 0, expenses?.[0]);
+    console.log("- Invoices:", invoices?.length || 0, invoices?.[0]);
+    console.log("- Bank transactions:", bankTransactions?.length || 0, bankTransactions?.[0]);
+
     // Ajouter les transactions bancaires
     bankTransactions.forEach((transaction) => {
       transactions.push({
@@ -116,6 +122,12 @@ export default function UnifiedTransactions({
       });
     });
 
+    // Debug: Log des transactions créées
+    console.log("📊 Transactions créées:", transactions.length);
+    if (transactions.length > 0) {
+      console.log("Première transaction:", transactions[0]);
+    }
+
     // Trier par date (plus récent en premier)
     return transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [bankTransactions, expenses, invoices]);
@@ -131,7 +143,35 @@ export default function UnifiedTransactions({
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
+    if (!dateString) return "";
+    
+    // Log pour debug - voir le format exact des dates reçues
+    console.log("📅 Date reçue:", dateString, "Type:", typeof dateString);
+    
+    let date;
+    
+    // Essayer différents formats de date
+    if (typeof dateString === 'string') {
+      // Si c'est une chaîne, essayer de la parser
+      date = new Date(dateString);
+    } else if (typeof dateString === 'number') {
+      // Si c'est un timestamp
+      date = new Date(dateString);
+    } else if (dateString instanceof Date) {
+      // Si c'est déjà un objet Date
+      date = dateString;
+    } else {
+      console.warn("Format de date non reconnu:", dateString);
+      return "";
+    }
+    
+    // Vérifier si la date est valide
+    if (isNaN(date.getTime())) {
+      console.warn("Date invalide après parsing:", dateString, "→", date);
+      return "";
+    }
+    
+    return date.toLocaleDateString("fr-FR", {
       day: "2-digit",
       month: "2-digit",
     });
