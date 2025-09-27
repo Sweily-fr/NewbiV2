@@ -134,7 +134,7 @@ function DashboardContent() {
           <h1 className="text-2xl font-medium">Bonjour {session?.user?.name},</h1>
           {process.env.NODE_ENV === 'development' && cacheInfo?.lastUpdate && (
             <p className="text-xs text-gray-500 mt-1">
-              📊 Données mises à jour : {cacheInfo.lastUpdate.toLocaleTimeString()}
+              Données mises à jour : {cacheInfo.lastUpdate.toLocaleTimeString()}
               {cacheInfo.isFromCache && " (cache)"}
             </p>
           )}
@@ -228,8 +228,21 @@ function DashboardContent() {
         </div>
       </div>
       <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full mt-4">
-        <BankBalanceCard className="shadow-xs w-full md:w-1/2" />
-        <UnifiedTransactions limit={5} className="shadow-xs w-full md:w-1/2" />
+        <BankBalanceCard 
+          className="shadow-xs w-full md:w-1/2" 
+          expenses={paidExpenses}
+          invoices={paidInvoices}
+          totalIncome={totalIncome}
+          totalExpenses={totalExpenses}
+          isLoading={isLoading}
+        />
+        <UnifiedTransactions 
+          limit={5} 
+          className="shadow-xs w-full md:w-1/2"
+          expenses={paidExpenses}
+          invoices={paidInvoices}
+          isLoading={isLoading}
+        />
       </div>
       <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
         <ChartAreaInteractive

@@ -9,22 +9,20 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Building2, Landmark } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { useExpenses } from "@/src/hooks/useExpenses";
-import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { useState, useEffect, useMemo } from "react";
 
-export default function BankBalanceCard({ className }) {
+export default function BankBalanceCard({ 
+  className, 
+  expenses = [], 
+  invoices = [], 
+  totalIncome = 0, 
+  totalExpenses = 0, 
+  isLoading = false 
+}) {
   const { workspaceId } = useWorkspace();
   const [accounts, setAccounts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [bankLoading, setBankLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Récupérer les dépenses et factures pour calculer le solde total
-  const { expenses, loading: expensesLoading } = useExpenses({
-    status: "PAID",
-    limit: 1000,
-  });
-  const { invoices, loading: invoicesLoading } = useInvoices();
 
   const fetchAccounts = async () => {
     if (!workspaceId) return;
@@ -32,7 +30,7 @@ export default function BankBalanceCard({ className }) {
     // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Récupération des comptes bancaires
     // Pour éviter les erreurs sur le dashboard
     try {
-      setLoading(true);
+      setBankLoading(true);
 
       // Simulation d'un délai pour l'UX
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -67,7 +65,7 @@ export default function BankBalanceCard({ className }) {
       setAccounts([]);
       setError(null); // On n'affiche plus l'erreur
     } finally {
-      setLoading(false);
+      setBankLoading(false);
     }
   };
 
@@ -90,39 +88,14 @@ export default function BankBalanceCard({ className }) {
 
   // Calculer le solde total incluant toutes les transactions
   const totalBalance = useMemo(() => {
-    // Revenus des factures payées
-    const paidInvoices = invoices.filter(
-      (invoice) => invoice.status === "COMPLETED"
-    );
-    const invoiceIncome = paidInvoices.reduce(
-      (sum, invoice) => sum + (invoice.finalTotalTTC || invoice.totalTTC || 0),
-      0
-    );
-
-    // Revenus et dépenses des expenses
-    const incomeExpenses = expenses.filter(
-      (e) => e.notes && e.notes.includes("[INCOME]")
-    );
-    const regularExpenses = expenses.filter(
-      (e) => !e.notes || !e.notes.includes("[INCOME]")
-    );
-
-    const manualIncome = incomeExpenses.reduce(
-      (sum, expense) => sum + (expense.amount || 0),
-      0
-    );
-    const totalExpenses = regularExpenses.reduce(
-      (sum, expense) => sum + (expense.amount || 0),
-      0
-    );
-
+    // Utiliser les données pré-calculées du cache
     // Solde total = Solde bancaire + Revenus - Dépenses
-    return bankBalance + invoiceIncome + manualIncome - totalExpenses;
-  }, [accounts, expenses, invoices, bankBalance]);
+    return bankBalance + totalIncome - totalExpenses;
+  }, [bankBalance, totalIncome, totalExpenses]);
 
-  const isLoading = loading || expensesLoading || invoicesLoading;
+  const finalLoading = isLoading || bankLoading;
 
-  if (isLoading) {
+  if (finalLoading) {
     return (
       <Card className={className}>
         <CardContent className="px-6">

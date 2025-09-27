@@ -17,22 +17,19 @@ import {
   FileMinus2,
 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { useExpenses } from "@/src/hooks/useExpenses";
-import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { useState, useEffect, useMemo } from "react";
 
-export default function UnifiedTransactions({ limit = 5, className }) {
+export default function UnifiedTransactions({ 
+  limit = 5, 
+  className, 
+  expenses = [], 
+  invoices = [], 
+  isLoading = false 
+}) {
   const { workspaceId } = useWorkspace();
   const [bankTransactions, setBankTransactions] = useState([]);
   const [bankLoading, setBankLoading] = useState(true);
   const [bankError, setBankError] = useState(null);
-
-  // Récupérer les dépenses et factures
-  const { expenses, loading: expensesLoading } = useExpenses({
-    status: "PAID",
-    limit: 1000,
-  });
-  const { invoices, loading: invoicesLoading } = useInvoices();
 
   const fetchBankTransactions = async () => {
     if (!workspaceId) return;
@@ -105,11 +102,8 @@ export default function UnifiedTransactions({ limit = 5, className }) {
       });
     });
 
-    // Ajouter les factures payées comme revenus
-    const paidInvoices = invoices.filter(
-      (invoice) => invoice.status === "COMPLETED"
-    );
-    paidInvoices.forEach((invoice) => {
+    // Ajouter les factures payées comme revenus (déjà filtrées dans les props)
+    invoices.forEach((invoice) => {
       transactions.push({
         id: invoice.id,
         type: "invoice",
@@ -126,7 +120,7 @@ export default function UnifiedTransactions({ limit = 5, className }) {
     return transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [bankTransactions, expenses, invoices]);
 
-  const loading = bankLoading || expensesLoading || invoicesLoading;
+  const finalLoading = isLoading || bankLoading;
   const error = bankError;
 
   const formatCurrency = (amount) => {
@@ -176,7 +170,7 @@ export default function UnifiedTransactions({ limit = 5, className }) {
     return "text-gray-600";
   };
 
-  if (loading) {
+  if (finalLoading) {
     return (
       <Card className={className}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
