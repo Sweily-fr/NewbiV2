@@ -183,18 +183,64 @@ export default function InvoiceTable() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+        </div>
 
-          {/* Bouton de suppression à côté du filtre de statut */}
+        <div className="flex items-center space-x-2">
+          {/* Column visibility */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto font-normal">
+                <Columns3Icon className="mr-2 h-4 w-4" />
+                Colonnes
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[180px]">
+              <DropdownMenuLabel>Colonnes visibles</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {table
+                .getAllColumns()
+                .filter(
+                  (column) =>
+                    typeof column.accessorFn !== "undefined" &&
+                    column.getCanHide()
+                )
+                .map((column) => {
+                  // Utiliser le libellé personnalisé s'il existe, sinon utiliser l'ID avec une mise en forme
+                  const getColumnLabel = () => {
+                    if (column.columnDef.meta?.label) {
+                      return column.columnDef.meta.label;
+                    }
+                    return column.id
+                      .split(".")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
+                      .join(" ");
+                  };
+
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {getColumnLabel()}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Bulk actions */}
           {selectedRows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" className="ml-2">
+                <Button variant="destructive" disabled={isDeleting}>
                   <TrashIcon className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Supprimer</span>
-                  <span className="sm:hidden">({selectedRows.length})</span>
-                  <span className="hidden sm:inline">
-                    ({selectedRows.length})
-                  </span>
+                  Supprimer ({selectedRows.length})
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -202,8 +248,12 @@ export default function InvoiceTable() {
                   <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
                   <AlertDialogDescription>
                     Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                    facture(s) ? Cette action est irréversible et ne peut être
-                    effectuée que sur les brouillons.
+                    facture(s) sélectionnée(s) ? Cette action ne peut pas être
+                    annulée.
+                    <br />
+                    <br />
+                    <strong>Note :</strong> Seules les factures en brouillon peuvent
+                    être supprimées.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -222,8 +272,8 @@ export default function InvoiceTable() {
       </div>
 
       {/* Table - Desktop style (original) */}
-      <div className="hidden md:block rounded-md border overflow-x-auto">
-        <Table className="min-w-full">
+      <div className="hidden md:block rounded-md border">
+        <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -231,6 +281,7 @@ export default function InvoiceTable() {
                   <TableHead
                     key={header.id}
                     style={{ width: header.getSize() }}
+                    className="font-normal"
                   >
                     {header.isPlaceholder
                       ? null
@@ -266,7 +317,7 @@ export default function InvoiceTable() {
                   colSpan={table.getAllColumns().length}
                   className="h-24 text-center"
                 >
-                  Aucune facture trouvée.
+                  {loading ? "Chargement..." : "Aucune facture trouvée."}
                 </TableCell>
               </TableRow>
             )}
@@ -377,12 +428,12 @@ export default function InvoiceTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className="py-3 px-4 whitespace-nowrap"
+                      className="py-3 px-4 text-sm"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -396,9 +447,9 @@ export default function InvoiceTable() {
               <TableRow>
                 <TableCell
                   colSpan={table.getAllColumns().length}
-                  className="h-24 text-center"
+                  className="h-24 text-center text-gray-500 dark:text-gray-400"
                 >
-                  Aucune facture trouvée.
+                  {loading ? "Chargement..." : "Aucune facture trouvée."}
                 </TableCell>
               </TableRow>
             )}
@@ -408,13 +459,13 @@ export default function InvoiceTable() {
 
       {/* Pagination - Visible sur desktop seulement */}
       <div className="hidden md:flex items-center justify-between">
-        <div className="flex-1 text-sm font-normal text-muted-foreground hidden sm:block">
+        <div className="flex-1 text-sm font-normal text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center gap-2">
-            <p className="whitespace-nowrap text-sm font-normal hidden sm:block">
+            <p className="whitespace-nowrap text-sm font-normal">
               Lignes par page
             </p>
             <Select
@@ -507,7 +558,6 @@ function InvoiceTableSkeleton() {
         <div className="flex items-center gap-3">
           <Skeleton className="h-9 w-60" />
           <Skeleton className="h-9 w-20" />
-          <Skeleton className="h-9 w-16" />
         </div>
         <div className="flex items-center gap-3">
           <Skeleton className="h-9 w-32" />

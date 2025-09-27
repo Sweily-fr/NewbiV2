@@ -179,14 +179,14 @@ export default function ItemsSection({
                   <AccordionTrigger className="w-full justify-start gap-3 text-[15px] leading-6 hover:no-underline focus-visible:ring-0 py-3 [&[data-state=open]>svg]:rotate-180">
                     <div className="flex items-center justify-between w-full gap-3">
                       <div className="flex-1 text-left">
-                        <div className="font-medium">{description}</div>
+                        <div className="font-normal">{description}</div>
                         <div className="text-sm mt-1 space-y-1">
                           <div className="flex items-center gap-2 text-muted-foreground">
-                            <span>
+                            <span className="font-normal">
                               {quantity} {unit}
                             </span>
-                            <span>•</span>
-                            <span>
+                            <span className="font-normal">•</span>
+                            <span className="font-normal">
                               {formatCurrency(unitPrice)}/
                               {unit === "heure"
                                 ? "h"
@@ -202,7 +202,7 @@ export default function ItemsSection({
                               </span>
                             )}
                           </div>
-                          <div className="font-medium">
+                          <div className="font-normal">
                             {formatCurrency(subtotal)} HT • {vatRate}% TVA •{" "}
                             {formatCurrency(totalTTC)} TTC
                           </div>

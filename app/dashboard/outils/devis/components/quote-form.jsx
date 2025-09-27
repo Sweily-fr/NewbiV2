@@ -154,9 +154,13 @@ function ProductSearchCombobox({
           />
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="border-input w-full min-w-[var(--radix-popper-anchor-width)] p-0"
-        align="start"
+      <PopoverContent 
+        className="p-0" 
+        align="start" 
+        sideOffset={4}
+        style={{ 
+          width: 'calc(var(--radix-popover-trigger-width) + 12rem)'
+        }}
       >
         <Command>
           <CommandInput
@@ -164,41 +168,35 @@ function ProductSearchCombobox({
             onValueChange={handleSearchChange}
           />
           <CommandList>
-            {loading ? (
-              <div className="flex items-center justify-center p-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-sm text-muted-foreground">
-                  Recherche en cours...
-                </span>
-              </div>
-            ) : error ? (
-              <div className="p-4 text-center text-red-600">
-                <span className="text-sm">
-                  Erreur lors du chargement des produits
-                </span>
-              </div>
-            ) : products.length === 0 ? (
+            {loading && <CommandEmpty>Recherche en cours...</CommandEmpty>}
+            {!loading && products.length === 0 && (
               <CommandEmpty>Aucun produit trouvé.</CommandEmpty>
-            ) : (
+            )}
+            {!loading && products.length > 0 && (
               <CommandGroup>
                 {products.map((product) => (
                   <CommandItem
                     key={product.value}
                     value={product.value}
-                    onSelect={handleSelect}
-                    className="flex items-center justify-between p-3 hover:bg-gray-50"
+                    onSelect={() => handleSelect(product.value)}
+                    className="flex flex-col items-start gap-1 p-3"
                   >
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">{product.label}</span>
-                      {product.description && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                          {product.description}
-                        </span>
-                      )}
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-normal">{product.label}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {product.price ? `${product.price}€` : ""}
+                      </span>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {product.price ? `${product.price}€` : "Prix non défini"}
-                    </div>
+                    {product.description && (
+                      <span className="text-sm text-muted-foreground">
+                        {product.description}
+                      </span>
+                    )}
+                    {product.reference && (
+                      <span className="text-xs text-muted-foreground">
+                        Réf: {product.reference}
+                      </span>
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>

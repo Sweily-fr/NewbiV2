@@ -93,7 +93,7 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
           // Supprimer les doublons
           value && self.indexOf(value) === index
       );
-    } catch (error) {
+    } catch (_) {
       return [];
     }
   };
@@ -202,6 +202,9 @@ export function useInvoiceTable({ data = [], onRefetch }) {
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </div>
         ),
+        meta: {
+          label: "Client",
+        },
         cell: ({ row }) => {
           const client = row.original.client;
           const invoice = row.original;
@@ -234,10 +237,13 @@ export function useInvoiceTable({ data = [], onRefetch }) {
             className="flex items-center cursor-pointer font-normal"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Date d'émission
+            Date d&apos;émission
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </div>
         ),
+        meta: {
+          label: "Date d'émission",
+        },
         cell: ({ row }) => {
           const dateFromGetter = row.getValue("issueDate");
           const dateFromOriginal = row.original.issueDate;
@@ -276,7 +282,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
             const formattedDate = parsedDate.toLocaleDateString("fr-FR");
 
             return formattedDate;
-          } catch (error) {
+          } catch (_) {
             return "-";
           }
         },
@@ -293,6 +299,9 @@ export function useInvoiceTable({ data = [], onRefetch }) {
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </div>
         ),
+        meta: {
+          label: "Échéance",
+        },
         cell: ({ row }) => {
           const dateFromGetter = row.getValue("dueDate");
           const dateFromOriginal = row.original.dueDate;
@@ -344,7 +353,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
                 {isOverdue && <div className="text-xs">En retard</div>}
               </div>
             );
-          } catch (error) {
+          } catch (_) {
             return "-";
           }
         },
@@ -361,6 +370,9 @@ export function useInvoiceTable({ data = [], onRefetch }) {
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </div>
         ),
+        meta: {
+          label: "Statut",
+        },
         cell: ({ row }) => {
           const status = row.getValue("status");
           const label = INVOICE_STATUS_LABELS[status] || status;
@@ -385,6 +397,9 @@ export function useInvoiceTable({ data = [], onRefetch }) {
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
+        meta: {
+          label: "Montant TTC",
+        },
         cell: ({ row }) => {
           const amount = row.getValue("finalTotalTTC");
           if (!amount || isNaN(amount)) return "-";
@@ -478,7 +493,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       const batch = draftInvoices.slice(i, i + BATCH_SIZE);
       try {
         await Promise.all(batch.map((invoice) => deleteInvoice(invoice.id)));
-      } catch (error) {
+      } catch (_) {
         toast.error(
           `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`
         );
