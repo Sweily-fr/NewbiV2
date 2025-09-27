@@ -260,12 +260,9 @@ const SignatureManager = () => {
 
   const { data, loading, error, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
     skip: !isMounted,
-<<<<<<< HEAD
     onCompleted: (data) => {
       console.log("📋 [FRONTEND] Signatures:");
     },
-=======
->>>>>>> af67fa2acdc84a022e93f404edd45761d1e3b7d3
     onError: (error) => {
       console.error("❌ [FRONTEND] Erreur lors de la récupération:", error);
     },
