@@ -149,6 +149,38 @@ loading,
 loading: loading && !data?.product,
 ```
 
+## 🗓️ **Correction Spéciale : Calendrier**
+
+### Problème Unique : Boucle Infinie
+Le calendrier avait un problème différent - une boucle infinie causée par un `useEffect` mal configuré.
+
+**Fichier :** `app/dashboard/calendar/page.jsx`
+
+```javascript
+// ❌ AVANT - Boucle infinie
+const [localEvents, setLocalEvents] = useState([]);
+useEffect(() => {
+  if (dbEvents && dbEvents.length > 0) {
+    setLocalEvents(transformedEvents); // ← Cause la boucle
+  }
+}, [dbEvents, loading]);
+
+// ✅ APRÈS - useMemo
+const localEvents = useMemo(() => {
+  if (loading || !dbEvents) return [];
+  return dbEvents.map(/* transformation */);
+}, [dbEvents, loading]);
+```
+
+**Correction du hook useEvents :**
+```javascript
+// ❌ AVANT - Trop restrictif
+loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getEvents)
+
+// ✅ APRÈS - Logique corrigée  
+loading: workspaceLoading || (queryLoading && !data?.getEvents)
+```
+
 ## 🧪 Scénarios de Test
 
 ### Cas 1: Workspace en chargement

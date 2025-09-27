@@ -25,6 +25,7 @@ export const useEvents = (options = {}) => {
 
   const { workspaceId: contextWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
+  
 
   const { data, loading: queryLoading, error, refetch } = useQuery(GET_EVENTS, {
     variables: {
@@ -39,10 +40,11 @@ export const useEvents = (options = {}) => {
     errorPolicy: "all",
   });
 
+
   return {
     events: data?.getEvents?.events || [],
     totalCount: data?.getEvents?.totalCount || 0,
-    loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getEvents),
+    loading: workspaceLoading || (queryLoading && !data?.getEvents),
     error,
     refetch,
     success: data?.getEvents?.success || false,
@@ -66,7 +68,7 @@ export const useEvent = (id, options = {}) => {
 
   return {
     event: data?.getEvent?.event || null,
-    loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getEvent),
+    loading: workspaceLoading || (queryLoading && !data?.getEvent),
     error,
     refetch,
     success: data?.getEvent?.success || false,
