@@ -109,6 +109,14 @@ export function SettingsModal({
     watch,
   } = formMethods;
 
+  // Synchroniser activeTab avec initialTab quand le modal s'ouvre
+  useEffect(() => {
+    if (open && initialTab) {
+      console.log("Synchronizing activeTab with initialTab:", initialTab); // Debug
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
+
   // Initialiser le formulaire avec les données de l'organisation
   useEffect(() => {
     if (organization) {
