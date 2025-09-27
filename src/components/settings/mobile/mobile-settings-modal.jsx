@@ -50,9 +50,9 @@ export function MobileSettingsModal({
     { id: "espaces", label: "Espaces", icon: "Settings" },
     { id: "personnes", label: "Personnes", icon: "Users" },
     { id: "facturation", label: "Facturation", icon: "CreditCard" },
-    { id: "subscription", label: "Abonnement", icon: "Crown" },
     { id: "preferences", label: "Préférences", icon: "Settings2" },
     { id: "security", label: "Sécurité", icon: "Shield" },
+    { id: "subscription", label: "Abonnement", icon: "Crown" },
   ];
 
   const currentTab = tabs.find((tab) => tab.id === activeTab);

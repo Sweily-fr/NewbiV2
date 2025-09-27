@@ -349,8 +349,8 @@ export function SettingsModal({
     },
     {
       items: [
-        { id: "facturation", label: "Facturation", icon: CreditCard },
         { id: "subscription", label: "Abonnement", icon: Crown },
+        { id: "facturation", label: "Facturation", icon: CreditCard },
       ],
     },
   ];
