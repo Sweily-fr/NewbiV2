@@ -105,12 +105,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // Set next quote number for new quotes
   useEffect(() => {
     if (mode === "create") {
-      // Set the next sequential number or 000001 for first quote
-      const numberToUse = nextQuoteNumber || 1;
-      const formattedNumber = String(numberToUse).padStart(6, "0");
-      setValue("number", formattedNumber);
+      // Pour les nouveaux devis, ne pas définir de numéro côté frontend
+      // Laisser le backend générer le numéro approprié (avec DRAFT- pour les brouillons)
+      setValue("number", "");
     }
-  }, [mode, nextQuoteNumber, setValue]);
+  }, [mode, setValue]);
 
   // Effet pour charger les données d'organisation au démarrage
   useEffect(() => {
@@ -296,6 +295,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           result = await createQuote(input);
 
           if (result?.id) {
+            // Mettre à jour le numéro dans le formulaire avec celui retourné par le backend
+            if (result.number) {
+              setValue("number", result.number);
+            }
+            
             if (!isAutoSave) {
               toast.success("Brouillon sauvegardé");
               router.push("/dashboard/outils/devis");
@@ -326,6 +330,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       quoteId,
       existingQuote,
       getValues,
+      setValue,
       createQuote,
       updateQuote,
       router,
@@ -363,6 +368,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         }
 
         if (result?.id) {
+          // Mettre à jour le numéro dans le formulaire avec celui retourné par le backend
+          if (result.number) {
+            setValue("number", result.number);
+          }
+          
           toast.success(
             existingQuote?.id
               ? "Devis mis à jour avec succès"
@@ -380,6 +390,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     [
       existingQuote,
       getValues,
+      setValue,
       validateStep1,
       validateStep2,
       createQuote,
