@@ -29,6 +29,7 @@ import { useSettingsModal } from "@/src/hooks/useSettingsModal";
 import { SettingsModal } from "@/src/components/settings-modal";
 import { PricingModal } from "./pricing-modal";
 import { GridBackground } from "@/src/components/ui/grid-background";
+import { SectionCardsSkeleton } from "@/src/components/section-cards-skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -185,7 +186,7 @@ const cards = [
 ];
 
 export function SectionCards({ className, activeFilter = "outline" }) {
-  const { isActive, user, organization } = useDashboardLayoutContext();
+  const { isActive, user, organization, isLoading, isInitialized } = useDashboardLayoutContext();
   const router = useRouter();
   const { isOpen, initialTab, openSettings, closeSettings } = useSettingsModal();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
@@ -264,6 +265,11 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     if (activeFilter === "focus-documents") return card.category === "automatisation";
     return true;
   });
+  
+  // Afficher le skeleton pendant le chargement des données
+  if (isLoading) {
+    return <SectionCardsSkeleton className={className} />;
+  }
   
   return (
     <div

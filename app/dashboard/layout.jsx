@@ -11,8 +11,9 @@ import { SignatureProvider, useSignatureData } from "@/src/hooks/use-signature-d
 import { TrialBanner } from "@/src/components/trial-banner";
 import { PricingModal } from "@/src/components/pricing-modal";
 import OnboardingModal from "@/src/components/onboarding-modal";
-import { DashboardLayoutProvider, useOnboarding } from "@/src/contexts/dashboard-layout-context";
+import { DashboardLayoutProvider, useOnboarding, useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
+import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -21,12 +22,13 @@ function DashboardContent({ children }) {
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   
-  // Hook pour gérer l'onboarding
+  // Hook pour gérer l'onboarding et les données du layout
   const { 
     isOnboardingOpen, 
     setIsOnboardingOpen, 
     completeOnboarding, 
-    isLoading 
+    isLoading: onboardingLoading,
+    isInitialized: layoutInitialized
   } = useOnboarding();
 
   // Protection contre l'erreur d'hydratation

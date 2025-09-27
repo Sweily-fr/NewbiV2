@@ -1,18 +1,18 @@
 "use client";
 
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 export function ProRouteGuard({ children, pageName }) {
-  const { isActive, loading, subscription, hasInitialized } = useSubscription();
+  const { isActive, isLoading, subscription, isInitialized } = useSubscription();
   const router = useRouter();
   const [hasChecked, setHasChecked] = useState(false);
 
   useEffect(() => {
     // Attendre que l'initialisation soit complète
-    if (!loading && hasInitialized && !hasChecked) {
+    if (!isLoading && isInitialized && !hasChecked) {
       setHasChecked(true);
 
       // Vérifier si l'utilisateur a un abonnement actif
@@ -23,8 +23,8 @@ export function ProRouteGuard({ children, pageName }) {
       }
     }
   }, [
-    loading,
-    hasInitialized,
+    isLoading,
+    isInitialized,
     subscription,
     router,
     isActive,
@@ -32,7 +32,7 @@ export function ProRouteGuard({ children, pageName }) {
     pageName,
   ]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
         <Skeleton className="h-[40px] w-[100px] rounded-xl" />

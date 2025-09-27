@@ -192,7 +192,7 @@ const data = {
 export function AppSidebar({ ...props }) {
   const { session } = useUser();
   const {
-    loading: subscriptionLoading,
+    isLoading: subscriptionLoading,
     isActive,
     subscription,
   } = useSubscription();

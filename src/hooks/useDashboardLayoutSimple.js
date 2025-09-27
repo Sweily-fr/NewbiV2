@@ -3,13 +3,12 @@ import { useSession } from '@/src/lib/auth-client';
 import { useTrial } from '@/src/hooks/useTrial';
 import { authClient } from '@/src/lib/auth-client';
 import { updateOrganization } from '@/src/lib/organization-client';
-import { toast } from 'sonner';
-
 /**
  * Version simplifiée du hook dashboard layout sans cache pour éviter les boucles infinies
  * Version temporaire pendant que nous résolvons les problèmes de cache
  */
 export function useDashboardLayoutSimple() {
+  // États de chargement
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -17,7 +16,6 @@ export function useDashboardLayoutSimple() {
 
   // Données de session
   const { data: session, isPending: sessionLoading } = useSession();
-  
   // Données de trial
   const trial = useTrial();
 
@@ -251,7 +249,7 @@ export function useDashboardLayoutSimple() {
     
     // États de chargement
     isLoading: isLoading || sessionLoading || trial.loading,
-    isInitialized,
+    isInitialized: isInitialized && isHydrated,
     isHydrated,
     
     // Fonctions de cache (simplifiées)
