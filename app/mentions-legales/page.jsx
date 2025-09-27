@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import HeroHeader from "@/src/components/blocks/hero-header";
 import Footer7 from "@/src/components/footer7";
 import SEOHead from "@/src/components/seo/seo-head";
 import { JsonLd } from "@/src/components/seo/seo-metadata";
@@ -13,9 +14,9 @@ export default function MentionsLegales() {
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
       <div className="font-poppins">
-      <div className="min-h-screen bg-gray-50 py-12">
+        <HeroHeader />
+      <div className="min-h-screen bg-gray-50 py-42">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg shadow-sm p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Mentions Légales</h1>
           
           <div className="prose prose-gray max-w-none">
@@ -102,8 +103,14 @@ export default function MentionsLegales() {
                 className="text-blue-600 hover:text-blue-800 underline">contact@newbi.fr</a>
               </p>
             </section>
+
+            <div className="mt-16 pt-8 border-t border-gray-300">
+              <p className="text-sm text-gray-500 text-center">
+                Ces mentions légales peuvent être modifiées à tout moment. 
+                La version en vigueur est celle publiée sur cette page.
+              </p>
+            </div>
           </div>
-        </div>
         </div>
       </div>
       <Footer7 />

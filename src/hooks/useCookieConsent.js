@@ -25,11 +25,8 @@ export const useCookieConsent = () => {
   };
 
   const openCookieSettings = () => {
-    // Remove consent to show the banner again
-    localStorage.removeItem('cookie_consent');
-    setCookieConsent(null);
-    // Trigger a page reload to show the consent banner
-    window.location.reload();
+    // Dispatch a custom event to open the preferences modal
+    window.dispatchEvent(new CustomEvent('openCookiePreferences'));
   };
 
   return {

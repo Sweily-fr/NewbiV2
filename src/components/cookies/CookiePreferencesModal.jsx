@@ -1,28 +1,34 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Switch } from "@/src/components/ui/switch";
 import { X } from "lucide-react";
 
 const CookiePreferencesModal = ({ isOpen, onClose }) => {
-  const [preferences, setPreferences] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cookie_consent');
-      return saved ? JSON.parse(saved) : {
-        necessary: true,
-        functional: true,
-        analytics: false,
-        marketing: false,
-      };
-    }
-    return {
-      necessary: true,
-      functional: true,
-      analytics: false,
-      marketing: false,
-    };
+  const [preferences, setPreferences] = useState({
+    necessary: true,
+    functional: false,
+    analytics: false,
+    marketing: false,
   });
+
+  // Load preferences when modal opens
+  useEffect(() => {
+    if (isOpen && typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cookie_consent');
+      if (saved) {
+        setPreferences(JSON.parse(saved));
+      } else {
+        setPreferences({
+          necessary: true,
+          functional: false,
+          analytics: false,
+          marketing: false,
+        });
+      }
+    }
+  }, [isOpen]);
 
   const handlePreferenceChange = (key, value) => {
     if (key === 'necessary') return; // Cannot disable necessary cookies
