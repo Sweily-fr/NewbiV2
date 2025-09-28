@@ -478,12 +478,15 @@ export default function ClientSelector({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="border-input p-0 w-[var(--radix-popover-trigger-width)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)]"
+                      className="border-input p-0"
                       align="start"
-                      side="bottom"
+                      side={typeof window !== 'undefined' && window.innerWidth < 640 ? "top" : "bottom"}
                       sideOffset={4}
                       avoidCollisions={false}
                       sticky="always"
+                      style={{
+                        width: 'var(--radix-popover-trigger-width)'
+                      }}
                     >
                       <Command>
                         <CommandInput
@@ -538,7 +541,7 @@ export default function ClientSelector({
                                         <IconComponent className="h-4 w-4 text-muted-foreground" />
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <div className="font-medium truncate">
+                                        <div className="font-normal truncate">
                                           {client.name}
                                         </div>
                                         <div className="text-sm truncate">
@@ -547,7 +550,7 @@ export default function ClientSelector({
                                       </div>
                                       <Badge
                                         variant="outline"
-                                        className="text-xs"
+                                        className="text-xs font-normal"
                                       >
                                         {CLIENT_TYPE_LABELS[client.type]}
                                       </Badge>
@@ -581,14 +584,14 @@ export default function ClientSelector({
                             )}
                           </div>
                           <div>
-                            <div className="font-medium">
+                            <div className="font-normal">
                               {selectedClient.name}
                             </div>
                             <div className="text-sm">
                               {selectedClient.email}
                             </div>
                           </div>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs font-normal">
                             {CLIENT_TYPE_LABELS[selectedClient.type]}
                           </Badge>
                         </div>
