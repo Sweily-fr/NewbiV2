@@ -32,7 +32,16 @@ export default function BankBalanceCard({
     try {
       setBankLoading(true);
 
-      // Simulation d'un délai pour l'UX
+      // Pas de délai si les données du dashboard viennent du cache
+      if (!isLoading) {
+        // Données en cache, pas de délai
+        setAccounts([]);
+        setError(null);
+        setBankLoading(false);
+        return;
+      }
+
+      // Simulation d'un délai pour l'UX seulement si pas de cache
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Pas de comptes bancaires pour l'instant
@@ -71,7 +80,7 @@ export default function BankBalanceCard({
 
   useEffect(() => {
     fetchAccounts();
-  }, [workspaceId]);
+  }, [workspaceId, isLoading]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("fr-FR", {
