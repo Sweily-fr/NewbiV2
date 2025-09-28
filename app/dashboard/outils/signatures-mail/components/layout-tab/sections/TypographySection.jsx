@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
+import { ColorPicker } from "@/src/components/ui/color-picker";
 
 const fontOptions = [
   { value: "Arial, sans-serif", label: "Arial" },
@@ -146,25 +147,10 @@ function FieldTypographyControls({
           {/* Couleur */}
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Couleur</Label>
-            <div className="flex items-center gap-2 bg-[#efefef] rounded-md px-2 py-2 w-30">
-              <div
-                className="w-4 h-4 rounded border border-gray-200 cursor-pointer"
-                style={{ backgroundColor: fieldTypo.color || "#000000" }}
-                onClick={() => {
-                  const input = document.createElement("input");
-                  input.type = "color";
-                  input.value = fieldTypo.color || "#000000";
-                  input.onchange = (e) => {
-                    updateField("color", e.target.value);
-                  };
-                  input.click();
-                }}
-                title="Couleur du texte"
-              />
-              <span className="text-xs text-gray-600 font-mono">
-                {(fieldTypo.color || "#000000").toUpperCase()}
-              </span>
-            </div>
+            <ColorPicker
+              color={fieldTypo.color || "#000000"}
+              onChange={(color) => updateField("color", color)}
+            />
           </div>
 
           {/* Effets de texte */}

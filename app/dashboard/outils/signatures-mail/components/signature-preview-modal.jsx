@@ -11,7 +11,9 @@ import {
 import { useQuery } from "@apollo/client";
 import { gql } from "@apollo/client";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { generateSignatureHTML } from "../utils/standalone-signature-generator";
+import { LoaderCircleIcon } from "lucide-react";
+import HorizontalSignature from "./HorizontalSignature";
+import VerticalSignature from "./VerticalSignature";
 
 // Query pour récupérer une signature complète avec tous les champs nécessaires
 // Query pour récupérer une signature complète (copiée de use-signature-table.js)
@@ -191,7 +193,6 @@ const GET_EMAIL_SIGNATURE = gql`
         }
       }
 
-
       createdAt
       updatedAt
     }
@@ -206,10 +207,11 @@ function transformSignatureData(signature) {
     fullName:
       signature.firstName && signature.lastName
         ? `${signature.firstName} ${signature.lastName}`
-        : "",
+        : signature.firstName || signature.lastName || "",
     firstName: signature.firstName || "",
     lastName: signature.lastName || "",
     position: signature.position || "",
+    company: signature.companyName || "",
     companyName: signature.companyName || "",
     email: signature.email || "",
     phone: signature.phone || "",
@@ -229,12 +231,21 @@ function transformSignatureData(signature) {
     orientation: signature.orientation || "vertical",
     detailedSpacing: signature.detailedSpacing || false,
 
+    // Séparateurs activés
+    separatorVerticalEnabled: true,
+    separatorHorizontalEnabled: true,
+    separatorVerticalWidth: signature.separatorVerticalWidth || 1,
+    separatorHorizontalWidth: signature.separatorHorizontalWidth || 1,
+
     // Couleurs
-    colors: signature.colors || {
+    colors: {
       name: signature.primaryColor || "#2563eb",
-      position: "rgb(102,102,102)",
-      company: signature.primaryColor || "#2563eb",
-      contact: "rgb(102,102,102)",
+      position: signature.colors?.position || "rgb(102,102,102)",
+      company: signature.colors?.company || signature.primaryColor || "#2563eb",
+      contact: signature.colors?.contact || "rgb(102,102,102)",
+      separatorVertical: signature.colors?.separatorVertical || "#e0e0e0",
+      separatorHorizontal: signature.colors?.separatorHorizontal || "#e0e0e0",
+      ...signature.colors
     },
 
     // Tailles de police
@@ -259,18 +270,8 @@ function transformSignatureData(signature) {
       separatorBottom: 12,
       logoBottom: 15,
       logoToSocial: 12,
-    },
-
-    // Séparateurs
-    separators: signature.separators || {
-      horizontal: {
-        width: 1,
-        color: "#e0e0e0",
-      },
-      vertical: {
-        width: 1,
-        color: "#e0e0e0",
-      },
+      verticalSeparatorLeft: 8,
+      verticalSeparatorRight: 8,
     },
 
     // Réseaux sociaux
@@ -293,20 +294,55 @@ export default function SignaturePreviewModal({
     skip: !signatureId || !isOpen,
   });
 
-  const [signatureHTML, setSignatureHTML] = useState("");
+  const [signatureData, setSignatureData] = useState(null);
+
+  // Fonction de copie indépendante pour le modal
+  const copySignatureToClipboard = async (data) => {
+    try {
+      // Créer un élément temporaire pour générer le HTML
+      const tempDiv = document.createElement("div");
+
+      // Déterminer quel composant utiliser
+      const isHorizontal = data.orientation === "horizontal";
+
+      // Pour simplifier, on copie juste un message ou on utilise le générateur standalone
+      const signatureHTML = `
+        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+          <tr>
+            <td>
+              <div style="font-size: 16px; font-weight: bold; color: ${data.primaryColor || "#171717"};">
+                ${data.fullName || ""}
+              </div>
+              ${data.position ? `<div style="font-size: 14px; color: #666666; margin-top: 2px;">${data.position}</div>` : ""}
+              ${data.email ? `<div style="font-size: 12px; color: #666666; margin-top: 4px;">${data.email}</div>` : ""}
+              ${data.phone ? `<div style="font-size: 12px; color: #666666; margin-top: 2px;">${data.phone}</div>` : ""}
+            </td>
+          </tr>
+        </table>
+      `;
+
+      await navigator.clipboard.writeText(signatureHTML);
+
+      // Optionnel : afficher un toast de succès
+      console.log("Signature copiée avec succès");
+    } catch (error) {
+      console.error("Erreur lors de la copie:", error);
+      throw error;
+    }
+  };
 
   useEffect(() => {
     if (data?.getEmailSignature) {
       try {
-        // Transformer les données et générer avec le générateur complet
+        // Transformer les données pour les composants de signature
         const transformedData = transformSignatureData(data.getEmailSignature);
-        const html = generateSignatureHTML(transformedData);
-        setSignatureHTML(html);
+        setSignatureData(transformedData);
       } catch (error) {
-        console.error("Erreur lors de la génération de la signature:", error);
-        setSignatureHTML(
-          '<p style="color: red;">Erreur lors de la génération de la signature</p>'
+        console.error(
+          "Erreur lors de la transformation de la signature:",
+          error
         );
+        setSignatureData(null);
       }
     }
   }, [data]);
@@ -315,7 +351,14 @@ export default function SignaturePreviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto"
+        style={{
+          width: "75vw",
+          maxWidth: "75vw",
+          minWidth: "800px",
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             Aperçu de la signature
@@ -329,9 +372,15 @@ export default function SignaturePreviewModal({
 
         <div className="mt-4">
           {loading && (
-            <div className="space-y-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-20 w-full" />
+            <div className="flex items-center justify-center py-8">
+              <LoaderCircleIcon
+                className="-ms-1 animate-spin"
+                size={16}
+                aria-hidden="true"
+              />
+              <span className="ml-2 text-sm text-muted-foreground">
+                Chargement de la signature...
+              </span>
             </div>
           )}
 
@@ -344,10 +393,71 @@ export default function SignaturePreviewModal({
             </div>
           )}
 
-          {signatureHTML && (
+          {signatureData && (
             <div className="space-y-4">
-              <div className="border rounded-lg p-6 bg-white">
-                <div dangerouslySetInnerHTML={{ __html: signatureHTML }} />
+              {/* Aperçu dans un style email */}
+              <div className="rounded-lg border w-full">
+                <div className="bg-[#171717] text-white px-4 py-2 rounded-t-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    </div>
+                    <span className="text-sm">Aperçu de la signature</span>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-3 text-sm dark:bg-white">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs dark:text-black">De :</span>
+                    <span className="text-xs dark:text-black">
+                      {signatureData.email || "exemple@contact.fr"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs dark:text-black">À :</span>
+                    <span className="text-xs dark:text-black">
+                      client@contact.fr
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs dark:text-black">Obj :</span>
+                    <span className="text-xs dark:text-black">
+                      Votre demande de renseignements
+                    </span>
+                  </div>
+
+                  <div className="border-t pt-4 mt-4">
+                    {/* Rendu de la signature avec les composants complets */}
+                    <div 
+                      className="flex justify-start"
+                      style={{ pointerEvents: 'none', userSelect: 'none' }}
+                    >
+                      {signatureData.orientation === "horizontal" ? (
+                        <HorizontalSignature
+                          signatureData={signatureData}
+                          handleFieldChange={() => {}}
+                          handleImageChange={() => {}}
+                          validatePhone={() => true}
+                          validateEmail={() => true}
+                          validateUrl={() => true}
+                          logoSrc={signatureData.logo}
+                        />
+                      ) : (
+                        <VerticalSignature
+                          signatureData={signatureData}
+                          handleFieldChange={() => {}}
+                          handleImageChange={() => {}}
+                          validatePhone={() => true}
+                          validateEmail={() => true}
+                          validateUrl={() => true}
+                          logoSrc={signatureData.logo}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-between items-center pt-4 border-t">
@@ -357,9 +467,15 @@ export default function SignaturePreviewModal({
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => navigator.clipboard.writeText(signatureHTML)}
+                    onClick={async () => {
+                      try {
+                        await copySignatureToClipboard(signatureData);
+                      } catch (error) {
+                        console.error("Erreur lors de la copie:", error);
+                      }
+                    }}
                   >
-                    Copier le HTML
+                    Copier la signature
                   </Button>
                   <Button onClick={onClose}>Fermer</Button>
                 </div>

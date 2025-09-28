@@ -942,39 +942,28 @@ const HorizontalSignature = ({
                   height: "auto",
                   maxHeight: `${signatureData.logoSize || 60}px`,
                   objectFit: "contain",
-                  cursor: "pointer",
+                  cursor: "default",
                 }}
-                onClick={() => {
-                  const input = document.createElement("input");
-                  input.type = "file";
-                  input.accept = "image/*";
-                  input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (e) =>
-                        handleImageChange("logo", e.target.result);
-                      reader.readAsDataURL(file);
-                    }
-                  };
-                  input.click();
-                }}
-                title="Cliquer pour changer le logo"
               />
             ) : (
-              <ImageDropZone
-                currentImage={signatureData.logo}
-                onImageChange={(imageUrl) =>
-                  handleImageChange("logo", imageUrl)
-                }
-                placeholder="Logo entreprise"
-                size="sm"
-                type="logo"
+              <div
                 style={{
                   width: `${signatureData.logoSize || 60}px`,
                   height: `${signatureData.logoSize || 60}px`,
+                  border: "1px dashed #e5e7eb",
+                  borderRadius: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#9ca3af",
+                  fontSize: "10px",
+                  userSelect: "none",
                 }}
-              />
+                aria-label="Logo entreprise (upload désactivé)"
+                title="Upload de logo désactivé"
+              >
+                Logo
+              </div>
             )}
           </td>
           <td style={{ textAlign: "right", verticalAlign: "top" }}>

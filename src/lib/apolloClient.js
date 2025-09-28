@@ -21,8 +21,8 @@ const isTokenExpired = (token) => {
 
 // Configuration Upload Link avec support des uploads de fichiers
 const uploadLink = createUploadLink({
-  uri: process.env.NEXT_PUBLIC_API_URL 
-    ? process.env.NEXT_PUBLIC_API_URL + "graphql" 
+  uri: process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL + "graphql"
     : "http://localhost:4000/graphql",
   credentials: "include", // Important pour better-auth (cookies)
   headers: {
@@ -72,15 +72,15 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
     graphQLErrors.forEach((error) => {
       const { message, extensions } = error;
       const errorWithCode = { message, code: extensions?.code };
-      
+
       // Utiliser notre système centralisé pour obtenir le message utilisateur
-      const userMessage = getErrorMessage(errorWithCode, 'generic');
-      
+      const userMessage = getErrorMessage(errorWithCode, "generic");
+
       // Si l'erreur est critique (authentification), gérer la redirection
       if (isCriticalError(errorWithCode)) {
         toast.error(userMessage, {
           duration: 5000,
-          description: "Vous allez être redirigé vers la page de connexion"
+          description: "Vous allez être redirigé vers la page de connexion",
         });
 
         // Rediriger vers la page de connexion après un délai
@@ -90,7 +90,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
       } else {
         // Afficher les autres erreurs GraphQL avec message utilisateur
         toast.error(userMessage, {
-          duration: 4000
+          duration: 4000,
         });
       }
     });
@@ -98,12 +98,12 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
   if (networkError) {
     // Utiliser notre système centralisé pour les erreurs réseau
-    const userMessage = getErrorMessage(networkError, 'network');
-    
+    const userMessage = getErrorMessage(networkError, "network");
+
     if (networkError.message === "Failed to fetch") {
       toast.error(userMessage, {
         duration: 5000,
-        description: "Vérifiez votre connexion internet et réessayez"
+        description: "Vérifiez votre connexion internet et réessayez",
       });
     } else if (networkError.message.includes("NetworkError")) {
       toast.warning(userMessage, {
@@ -220,16 +220,16 @@ const initializePersistentCache = async () => {
     await persistCache({
       cache,
       storage: new LocalStorageWrapper(window.localStorage),
-      key: 'newbi-apollo-cache',
+      key: "newbi-apollo-cache",
       // Durée de vie du cache : 7 jours
       maxSize: 1048576 * 5, // 5MB
       serialize: true,
       // Invalider le cache après 7 jours
-      trigger: 'write',
+      trigger: "write",
     });
-    console.log('✅ Cache Apollo persistant initialisé');
+    console.log("✅ Cache Apollo persistant initialisé");
   } catch (error) {
-    console.warn('⚠️ Impossible d\'initialiser le cache persistant:', error);
+    console.warn("⚠️ Impossible d'initialiser le cache persistant:", error);
     // Continuer sans cache persistant
   }
 };
@@ -261,7 +261,7 @@ const createApolloClient = () => {
       },
     },
     // Améliorer les performances avec le mode de développement
-    connectToDevTools: process.env.NODE_ENV === 'development',
+    connectToDevTools: process.env.NODE_ENV === "development",
   });
 };
 
@@ -269,7 +269,7 @@ const createApolloClient = () => {
 export const getApolloClient = async () => {
   if (!apolloClientInstance) {
     // Initialiser le cache persistant seulement côté client
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       await initializePersistentCache();
     }
     apolloClientInstance = createApolloClient();

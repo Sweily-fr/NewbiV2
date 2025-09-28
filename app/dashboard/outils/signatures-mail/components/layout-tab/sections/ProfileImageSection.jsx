@@ -79,9 +79,9 @@ export default function ProfileImageSection({
                   };
                   input.click();
                 }}
-                className="flex items-center justify-center w-10 h-10 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group"
+                className="flex items-center justify-center w-10 h-10 border-1 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-[#5a50ff] hover:bg-[#5a50ff]/10 transition-all duration-200 group bg-[#5a50ff]/5"
               >
-                <Upload className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                <Upload className="w-4 h-4 text-gray-400 group-hover:text-[#5a50ff] transition-colors" />
               </div>
             )}
           </div>

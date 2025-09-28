@@ -85,39 +85,41 @@ const GET_MY_EMAIL_SIGNATURES = gql`
 // Fonction utilitaire pour convertir HSL en HEX
 const hslToHex = (hslString) => {
   if (!hslString || hslString.startsWith("#")) return hslString;
-  
-  const hslMatch = hslString.match(/hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/);
+
+  const hslMatch = hslString.match(
+    /hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/
+  );
   if (!hslMatch) return hslString;
-  
+
   const h = parseFloat(hslMatch[1]) / 360;
   const s = parseFloat(hslMatch[2]) / 100;
   const l = parseFloat(hslMatch[3]) / 100;
-  
+
   const hue2rgb = (p, q, t) => {
     if (t < 0) t += 1;
     if (t > 1) t -= 1;
-    if (t < 1/6) return p + (q - p) * 6 * t;
-    if (t < 1/2) return q;
-    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
     return p;
   };
-  
+
   let r, g, b;
   if (s === 0) {
     r = g = b = l;
   } else {
     const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
     const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1/3);
+    r = hue2rgb(p, q, h + 1 / 3);
     g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1/3);
+    b = hue2rgb(p, q, h - 1 / 3);
   }
-  
+
   const toHex = (c) => {
     const hex = Math.round(c * 255).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
+    return hex.length === 1 ? "0" + hex : hex;
   };
-  
+
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 };
 
@@ -258,8 +260,12 @@ export function TabSignature({ existingSignatureId = null }) {
         position: signatureData.colors?.position || "#666666",
         company: signatureData.colors?.company || "#2563eb",
         contact: signatureData.colors?.contact || "#666666",
-        separatorVertical: hslToHex(signatureData.colors?.separatorVertical || "#e0e0e0"),
-        separatorHorizontal: hslToHex(signatureData.colors?.separatorHorizontal || "#e0e0e0"),
+        separatorVertical: hslToHex(
+          signatureData.colors?.separatorVertical || "#e0e0e0"
+        ),
+        separatorHorizontal: hslToHex(
+          signatureData.colors?.separatorHorizontal || "#e0e0e0"
+        ),
       },
       // Configuration layout
       nameSpacing: signatureData.nameSpacing || 4,
@@ -300,9 +306,16 @@ export function TabSignature({ existingSignatureId = null }) {
       socialNetworks: (() => {
         const networks = {};
         const socialData = signatureData.socialNetworks || {};
-        
+
         // Liste des réseaux sociaux supportés par le backend GraphQL
-        const supportedNetworks = ['facebook', 'instagram', 'linkedin', 'x', 'github', 'youtube'];
+        const supportedNetworks = [
+          "facebook",
+          "instagram",
+          "linkedin",
+          "x",
+          "github",
+          "youtube",
+        ];
 
         // Ne garder que les réseaux supportés qui ont une URL non vide
         supportedNetworks.forEach((platform) => {
@@ -402,9 +415,9 @@ export function TabSignature({ existingSignatureId = null }) {
               <TabsTrigger value="tab-2" className="group flex-1">
                 <Palette size={16} aria-hidden="true" />
               </TabsTrigger>
-              <TabsTrigger value="tab-3" className="group flex-1">
+              {/* <TabsTrigger value="tab-3" className="group flex-1">
                 <ScanEye size={16} aria-hidden="true" />
-              </TabsTrigger>
+              </TabsTrigger> */}
               {/* <TabsTrigger value="tab-4" className="group">
                 <Columns3Cog size={16} aria-hidden="true" />
               </TabsTrigger> */}

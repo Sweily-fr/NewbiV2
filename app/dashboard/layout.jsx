@@ -7,11 +7,18 @@ import { SignatureSidebar } from "@/src/components/signature-sidebar";
 import { SiteHeader } from "@/src/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/src/components/ui/sidebar";
 import { SearchCommand } from "@/src/components/search-command";
-import { SignatureProvider, useSignatureData } from "@/src/hooks/use-signature-data";
+import {
+  SignatureProvider,
+  useSignatureData,
+} from "@/src/hooks/use-signature-data";
 import { TrialBanner } from "@/src/components/trial-banner";
 import { PricingModal } from "@/src/components/pricing-modal";
 import OnboardingModal from "@/src/components/onboarding-modal";
-import { DashboardLayoutProvider, useOnboarding, useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
+import {
+  DashboardLayoutProvider,
+  useOnboarding,
+  useDashboardLayoutContext,
+} from "@/src/contexts/dashboard-layout-context";
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 
@@ -21,36 +28,39 @@ function DashboardContent({ children }) {
   const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
-  
+
   // Hook pour gérer l'onboarding et les données du layout
-  const { 
-    isOnboardingOpen, 
-    setIsOnboardingOpen, 
-    completeOnboarding, 
+  const {
+    isOnboardingOpen,
+    setIsOnboardingOpen,
+    completeOnboarding,
     isLoading: onboardingLoading,
-    isInitialized: layoutInitialized
+    isInitialized: layoutInitialized,
   } = useOnboarding();
 
   // Protection contre l'erreur d'hydratation
   useEffect(() => {
     setIsHydrated(true);
   }, []);
-  
+
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
-  const isToolPage = pathname.includes("/dashboard/outils/") && 
-    (pathname.includes("/new") || pathname.includes("/edit") || pathname.includes("/view"));
-  
+  const isToolPage =
+    pathname.includes("/dashboard/outils/") &&
+    (pathname.includes("/new") ||
+      pathname.includes("/edit") ||
+      pathname.includes("/view"));
+
   // État pour contrôler l'ouverture de la sidebar
   const [sidebarOpen, setSidebarOpen] = useState(!isToolPage);
-  
+
   // Mettre à jour l'état de la sidebar quand le pathname change
   useEffect(() => {
     setSidebarOpen(!isToolPage);
   }, [isToolPage]);
-  
+
   // Désactiver complètement le banner - remplacé par le compteur dans le header
   const showTrialBanner = false;
-  
+
   // Utiliser les données de signature si on est sur la page de signature
   let signatureContextData = null;
   try {
@@ -76,7 +86,7 @@ function DashboardContent({ children }) {
         <div className="flex flex-1 flex-col">
           {showTrialBanner && (
             <div className="p-4 pb-0">
-              <TrialBanner 
+              <TrialBanner
                 onUpgrade={() => setIsPricingModalOpen(true)}
                 onStartTrial={() => {
                   // Le hook useTrial gère automatiquement le démarrage
@@ -91,31 +101,31 @@ function DashboardContent({ children }) {
         </div>
       </SidebarInset>
       {isSignaturePage && signatureContextData && (
-        <SignatureSidebar 
+        <SignatureSidebar
           signatureData={signatureContextData.signatureData}
           updateSignatureData={signatureContextData.updateSignatureData}
           editingSignatureId={signatureContextData.editingSignatureId}
         />
       )}
       <SearchCommand />
-      
+
       {/* Modal de pricing pour upgrade */}
-      <PricingModal 
-        isOpen={isPricingModalOpen} 
-        onClose={() => setIsPricingModalOpen(false)} 
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
       />
-      
+
       {/* Modal d'onboarding pour les nouveaux utilisateurs */}
       <OnboardingModal
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
         onComplete={completeOnboarding}
       />
-      
-      {/* Panel de debug du cache (développement uniquement) */}
-      {process.env.NODE_ENV === 'development' && (
+
+      {/* Panel de debug du cache (développement uniquement) - DÉSACTIVÉ */}
+      {/* {process.env.NODE_ENV === 'development' && (
         <CacheDebugPanel />
-      )}
+      )} */}
     </SidebarProvider>
   );
 }
@@ -133,11 +143,7 @@ export default function DashboardLayout({ children }) {
 
   // Si on est sur la page de signature, ajouter le provider de signature
   if (isSignaturePage) {
-    return (
-      <SignatureProvider>
-        {content}
-      </SignatureProvider>
-    );
+    return <SignatureProvider>{content}</SignatureProvider>;
   }
 
   // Sinon, rendu normal avec le provider de layout
