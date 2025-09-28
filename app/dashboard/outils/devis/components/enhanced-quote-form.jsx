@@ -161,7 +161,10 @@ function ProductSearchCombobox({
       <PopoverContent 
         className="p-0 w-[var(--radix-popover-trigger-width)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)]" 
         align="start" 
+        side="bottom"
         sideOffset={4}
+        avoidCollisions={false}
+        sticky="always"
       >
         <Command>
           <CommandInput
