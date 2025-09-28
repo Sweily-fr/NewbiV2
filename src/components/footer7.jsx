@@ -124,7 +124,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={getToolLink("factures")}
+                      href={'/produits/factures'}
                     >
                       Facturation
                     </a>
@@ -132,7 +132,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={getToolLink("devis")}
+                      href={'/produits/devis'}
                     >
                       Devis
                     </a>
@@ -140,7 +140,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={getToolLink("transferts-fichiers")}
+                      href={'/produits/transfers'}
                     >
                       Transferts fichiers
                     </a>
@@ -148,15 +148,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={getToolLink("gestion-depenses")}
-                    >
-                      Gestion des dépenses
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      className="font-regular text-gray-950 hover:text-gray-700"
-                      href={getToolLink("kanban")}
+                      href={'/produits/kanban'}
                     >
                       Tableau Kanban
                     </a>
@@ -164,17 +156,9 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={getToolLink("signatures-mail")}
+                      href={'/produits/signatures'}
                     >
                       Signatures de mail
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      className="font-regular text-gray-950 hover:text-gray-700"
-                      href={session?.user ? "/dashboard/outils" : "/auth/login"}
-                    >
-                      Tous nos outils
                     </a>
                   </li>
                 </ul>
