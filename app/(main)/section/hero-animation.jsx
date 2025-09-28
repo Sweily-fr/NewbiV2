@@ -70,13 +70,14 @@ const HeroAnimation = () => {
         <div className="flex flex-col items-center justify-center text-center px-3 py-8">
           <h1
             className="max-w-sm text-center mx-auto font-medium font-['Poppins'] leading-tight"
-            style={{ fontSize: "27px" }}
+            style={{ fontSize: "34px" }}
           >
             <span className="text-[#2E2E2E] block mb-1">
               Les meilleurs outils
             </span>
+            <span className="text-[#2E2E2E] block my-1">pour être</span>
             <span className="bg-gradient-to-r from-[#171717] to-[#171717]/90 px-4 py-2 text-white rounded-lg inline-block my-3">
-              pour être indépendant,
+              indépendant,
             </span>
             <span className="text-[#2E2E2E] mt-1 block">sans le prix fort</span>
           </h1>

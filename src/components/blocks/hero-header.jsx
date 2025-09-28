@@ -102,8 +102,8 @@ const HeroHeader = ({ className }) => {
               aria-label={menuState == true ? "Close Menu" : "Open Menu"}
               className="relative z-20 p-2 cursor-pointer"
             >
-              <Menu className="group-data-[state=active]:scale-0 group-data-[state=active]:opacity-0 size-6 duration-200" />
-              <X className="group-data-[state=active]:rotate-0 group-data-[state=active]:scale-100 group-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
+              <Menu className="group-data-[state=active]:scale-0 group-data-[state=active]:opacity-0 size-5 duration-200" />
+              <X className="group-data-[state=active]:rotate-0 group-data-[state=active]:scale-100 group-data-[state=active]:opacity-100 absolute inset-0 m-auto size-5 -rotate-180 scale-0 opacity-0 duration-200" />
             </button>
           </div>
         </div>
@@ -246,87 +246,98 @@ const HeroHeader = ({ className }) => {
         {/* Mobile menu overlay */}
         {menuState && (
           <div className="lg:hidden fixed inset-0 top-16 bg-white z-10">
-            <div className="px-4 py-6">
-              <ul className="space-y-6 text-base">
-                {menuItems.map((item, index) => (
-                  <li key={index}>
-                    {item.hasDropdown ? (
-                      <div>
-                        <button
-                          onClick={() => setMobileDropdownOpen(!mobileDropdownOpen)}
-                          className="text-muted-foreground hover:text-accent-foreground flex items-center justify-between w-full duration-150"
+            <div className="flex flex-col h-full">
+              {/* Menu content */}
+              <div className="flex-1 px-4 py-6 overflow-y-auto">
+                <ul className="space-y-6 text-base">
+                  {menuItems.map((item, index) => (
+                    <li key={index}>
+                      {item.hasDropdown ? (
+                        <div>
+                          <button
+                            onClick={() =>
+                              setMobileDropdownOpen(!mobileDropdownOpen)
+                            }
+                            className="text-muted-foreground hover:text-accent-foreground flex items-center justify-between w-full duration-150"
+                          >
+                            <span>{item.name}</span>
+                            {mobileDropdownOpen ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </button>
+                          {mobileDropdownOpen && (
+                            <div className="mt-3 ml-4 space-y-3">
+                              {item.dropdownItems.map(
+                                (dropdownItem, dropdownIndex) => (
+                                  <Link
+                                    key={dropdownIndex}
+                                    href={dropdownItem.href}
+                                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                                    onClick={() => {
+                                      setMenuState(false);
+                                      setMobileDropdownOpen(false);
+                                    }}
+                                  >
+                                    <div
+                                      className={`w-8 h-8 ${dropdownItem.bgColor} rounded-lg flex items-center justify-center ${dropdownItem.textColor} flex-shrink-0 bg-opacity-30`}
+                                    >
+                                      {dropdownItem.icon}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="text-[#171717] text-sm font-medium mb-1">
+                                        {dropdownItem.name}
+                                      </h3>
+                                      <p className="text-xs text-gray-500 leading-relaxed">
+                                        {dropdownItem.description}
+                                      </p>
+                                    </div>
+                                  </Link>
+                                )
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className="text-muted-foreground hover:text-accent-foreground block duration-150"
+                          onClick={() => setMenuState(false)}
                         >
                           <span>{item.name}</span>
-                          {mobileDropdownOpen ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </button>
-                        {mobileDropdownOpen && (
-                          <div className="mt-3 ml-4 space-y-3">
-                            {item.dropdownItems.map((dropdownItem, dropdownIndex) => (
-                              <Link
-                                key={dropdownIndex}
-                                href={dropdownItem.href}
-                                className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                                onClick={() => {
-                                  setMenuState(false);
-                                  setMobileDropdownOpen(false);
-                                }}
-                              >
-                                <div
-                                  className={`w-8 h-8 ${dropdownItem.bgColor} rounded-lg flex items-center justify-center ${dropdownItem.textColor} flex-shrink-0 bg-opacity-30`}
-                                >
-                                  {dropdownItem.icon}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="text-[#171717] text-sm font-medium mb-1">
-                                    {dropdownItem.name}
-                                  </h3>
-                                  <p className="text-xs text-gray-500 leading-relaxed">
-                                    {dropdownItem.description}
-                                  </p>
-                                </div>
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        className="text-muted-foreground hover:text-accent-foreground block duration-150"
-                        onClick={() => setMenuState(false)}
-                      >
-                        <span>{item.name}</span>
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-8 flex flex-col space-y-3">
-                {session.session ? (
-                  <Button asChild size="sm" variant="default">
-                    <Link href="/dashboard" className="flex items-center gap-2">
-                      <LayoutDashboard className="h-4 w-4" />
-                      <span>Dashboard</span>
-                    </Link>
-                  </Button>
-                ) : (
-                  <>
-                    <Button asChild variant="outline" size="sm">
-                      <Link href="/auth/login">
-                        <span>Connexion</span>
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              {/* Buttons at bottom */}
+              <div className="px-4 pb-6 pt-4 border-t border-gray-100 bg-white">
+                <div className="flex flex-col space-y-3">
+                  {session.session ? (
+                    <Button asChild size="sm" variant="default" className="w-full">
+                      <Link href="/dashboard" className="flex items-center justify-center gap-2">
+                        <LayoutDashboard className="h-4 w-4" />
+                        <span>Dashboard</span>
                       </Link>
                     </Button>
-                    <Button asChild size="sm">
-                      <Link href="/auth/signup">
-                        <span>Inscription</span>
-                      </Link>
-                    </Button>
-                  </>
-                )}
+                  ) : (
+                    <>
+                      <Button asChild variant="outline" size="sm" className="w-full">
+                        <Link href="/auth/login" className="flex items-center justify-center">
+                          <span>Connexion</span>
+                        </Link>
+                      </Button>
+                      <Button asChild size="sm" className="w-full">
+                        <Link href="/auth/signup" className="flex items-center justify-center">
+                          <span>Inscription</span>
+                        </Link>
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

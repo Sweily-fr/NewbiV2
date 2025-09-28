@@ -81,10 +81,10 @@ export default function SignatureRowActions({
             <EditIcon className="mr-2 h-4 w-4" />
             Modifier
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleDuplicate}>
+          {/* <DropdownMenuItem onClick={handleDuplicate}>
             <CopyIcon className="mr-2 h-4 w-4" />
             Dupliquer
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
           {!signature.isDefault && (
             <DropdownMenuItem onClick={handleSetDefault}>
               <StarIcon className="mr-2 h-4 w-4" />
@@ -96,7 +96,7 @@ export default function SignatureRowActions({
             onClick={() => setShowDeleteAlert(true)}
             className="text-red-600"
           >
-            <TrashIcon className="mr-2 h-4 w-4" />
+            <TrashIcon className="mr-2 h-4 w-4 text-red-600" />
             Supprimer
           </DropdownMenuItem>
         </DropdownMenuContent>

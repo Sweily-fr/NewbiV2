@@ -21,7 +21,7 @@ import {
   Download,
   Star,
   StarOff,
-  Loader2,
+  LoaderCircleIcon,
   AlertCircle,
   Copy,
 } from "lucide-react";
@@ -1288,7 +1288,7 @@ const SignatureManager = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+        <LoaderCircleIcon className="-ms-1 animate-spin mr-2" size={24} aria-hidden="true" />
         <span>Chargement des signatures...</span>
       </div>
     );
@@ -1358,7 +1358,7 @@ const SignatureManager = () => {
                         title="Copier la signature"
                       >
                         {copyingId === signature.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />
                         ) : (
                           <Copy className="w-4 h-4" />
                         )}
@@ -1431,7 +1431,7 @@ const SignatureManager = () => {
                       size="sm"
                     >
                       {loadingSignature ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />
                       ) : (
                         <Download className="w-4 h-4" />
                       )}

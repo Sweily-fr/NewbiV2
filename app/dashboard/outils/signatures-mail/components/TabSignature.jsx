@@ -4,7 +4,7 @@ import {
   Palette,
   Columns3Cog,
   Save,
-  Loader2,
+  LoaderCircleIcon,
   Check,
   AlertCircle,
 } from "lucide-react";
@@ -458,13 +458,12 @@ export function TabSignature({ existingSignatureId = null }) {
             onClick={handleOpenModal}
             disabled={isLoading}
           >
-            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
             <Save className="w-4 h-4" />
             {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}
           </Button>
         </div>
       </div>
-
       {/* Modal de sauvegarde */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -524,7 +523,7 @@ export function TabSignature({ existingSignatureId = null }) {
                 disabled={isLoading || !signatureName.trim()}
                 className="flex items-center font-normal gap-2"
               >
-                {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
                 {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}
               </Button>
             </div>

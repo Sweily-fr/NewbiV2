@@ -7,7 +7,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
-import { Save, Loader2, Check, AlertCircle } from "lucide-react";
+import { Save, LoaderCircleIcon, Check, AlertCircle } from "lucide-react";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useRouter } from "next/navigation";
@@ -414,7 +414,7 @@ const SignatureSave = ({ existingSignatureId = null }) => {
                 disabled={isLoading || !signatureName.trim()}
                 className="flex items-center gap-2"
               >
-                {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
                 {signatureId ? "Mettre à jour" : "Sauvegarder"}
               </Button>
             </div>
