@@ -36,6 +36,14 @@ export default function UnifiedTransactions({
 
     try {
       setBankLoading(true);
+      
+      // Si les données du dashboard viennent du cache, pas besoin d'attendre l'API bancaire
+      if (!isLoading) {
+        setBankTransactions([]);
+        setBankLoading(false);
+        return;
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/banking/transactions`,
         {
@@ -65,7 +73,7 @@ export default function UnifiedTransactions({
 
   useEffect(() => {
     fetchBankTransactions();
-  }, [workspaceId]);
+  }, [workspaceId, isLoading]);
 
   // Combiner toutes les transactions
   const allTransactions = useMemo(() => {
