@@ -2,6 +2,12 @@ import React from "react";
 import Image from "next/image";
 
 const TestimonialsSection = () => {
+  const getInitials = (name) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase())
+      .join('');
+  };
   const testimonials = [
     // Column 1
     [
@@ -9,13 +15,11 @@ const TestimonialsSection = () => {
         text: "Devis-factures en 2 clics, plus de temps pour coder.",
         author: "Pedro Dos Santos",
         role: "Développeur web",
-        avatar: "https://i.pravatar.cc/150?img=1",
       },
       {
         text: "Transferts rapides et sécurisés, mes livrables restent impeccables.",
         author: "Kaly Mbinda",
         role: "Motion designer",
-        avatar: "https://i.pravatar.cc/150?img=2",
       },
     ],
     // Column 2
@@ -24,19 +28,16 @@ const TestimonialsSection = () => {
         text: "Factures propres, paiements fluides, zéro prise de tête administrative.",
         author: "Pierre Lefevre",
         role: "Rédacteur",
-        avatar: "https://i.pravatar.cc/150?img=4",
       },
       {
         text: "Planning simple, facturation rapide, je me concentre sur mes clients.",
         author: "Cathy Lee",
         role: "Coach",
-        avatar: "https://i.pravatar.cc/150?img=5",
       },
       {
         text: "Tarif doux, interface claire, support qui répond vite.",
         author: "David Pinto",
         role: "Traducteur",
-        avatar: "https://i.pravatar.cc/150?img=6",
       },
     ],
     // Column 3
@@ -45,34 +46,29 @@ const TestimonialsSection = () => {
         text: "Kanban + deadlines visibles: priorités sous contrôle.",
         author: "George Ludovic",
         role: "Chef de projet",
-        avatar: "https://i.pravatar.cc/150?img=7",
       },
       {
         text: "Le rapport qualité‑prix est idéal pour une petite agence en lancement.",
         author: "Frank Lawson",
         role: "Architecte",
-        avatar: "https://i.pravatar.cc/150?img=8",
       },
       {
         text: "Tout est fluide: modèles, envois, devis/factures. Je ne perds plus de temps dans les réglages.",
         author: "Grace Marchand",
         role: "Graphiste",
-        avatar: "https://i.pravatar.cc/150?img=9",
       },
     ],
     // Column 4
     [
       {
-        text: "Pour un tarif aussi abordable, c’est devenu mon outil central.",
+        text: "Pour un tarif aussi abordable, c'est devenu mon outil central.",
         author: "Henry Ducouret",
         role: "Développeur web",
-        avatar: "https://i.pravatar.cc/150?img=10",
       },
       {
         text: "Devis signés en ligne, suivi facile, plus de créations. Le tout à un prix parfait pour une freelance qui démarre.",
         author: "Ivy Thurin",
         role: "Illustrateur·rice",
-        avatar: "https://i.pravatar.cc/150?img=11",
       },
     ],
   ];
@@ -99,14 +95,9 @@ const TestimonialsSection = () => {
         {testimonial.text}
       </h3>
       <div className="flex gap-2 items-center mt-8">
-        <Image
-          alt={testimonial.author}
-          loading="lazy"
-          width={40}
-          height={40}
-          className="rounded-full"
-          src={testimonial.avatar}
-        />
+      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 text-sm font-medium">
+          {getInitials(testimonial.author)}
+        </div>
         <div className="flex flex-col">
           <p className="text-xs font-normal dark:text-neutral-400 text-neutral-600 max-w-sm">
             {testimonial.author}
