@@ -478,8 +478,12 @@ export default function ClientSelector({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="border-input w-full min-w-[var(--radix-popper-anchor-width)] p-0"
+                      className="border-input p-0 w-[var(--radix-popover-trigger-width)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)]"
                       align="start"
+                      side="bottom"
+                      sideOffset={4}
+                      avoidCollisions={false}
+                      sticky="always"
                     >
                       <Command>
                         <CommandInput
