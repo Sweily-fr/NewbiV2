@@ -159,12 +159,9 @@ function ProductSearchCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="p-0" 
+        className="p-0 w-[calc(100vw-2rem)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)] max-w-[calc(100vw-2rem)]" 
         align="start" 
         sideOffset={4}
-        style={{ 
-          width: 'calc(var(--radix-popover-trigger-width) + 12rem)'
-        }}
       >
         <Command>
           <CommandInput
