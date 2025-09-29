@@ -146,7 +146,11 @@ export const stripePlugin = stripe({
   },
   // Webhooks Stripe pour mettre à jour automatiquement le statut
   onEvent: async (event, adapter) => {
+    console.log(`\n========================================`);
     console.log(`🔔 [STRIPE WEBHOOK] Événement reçu: ${event.type}`);
+    console.log(`📅 [STRIPE WEBHOOK] Date: ${new Date().toISOString()}`);
+    console.log(`📦 [STRIPE WEBHOOK] Event ID: ${event.id}`);
+    console.log(`========================================\n`);
     
     try {
       switch (event.type) {
