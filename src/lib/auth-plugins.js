@@ -102,10 +102,6 @@ export const stripePlugin = stripe({
     },
     plans: [
       {
-        name: "free",
-        priceId: process.env.STRIPE_FREE_PRICE_ID,
-      },
-      {
         name: "pro",
         priceId: process.env.STRIPE_PRICE_ID_MONTH,
         annualDiscountPriceId: process.env.STRIPE_PRICE_ID_YEARS,
