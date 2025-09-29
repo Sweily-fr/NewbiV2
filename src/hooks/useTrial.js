@@ -89,25 +89,57 @@ export function useTrial() {
     }
   }, [mutationData]);
 
-  // Calculer le statut de la période d'essai à partir des données d'organisation de session
+  // Extraire les informations de trial depuis la session (support des deux structures)
   const getTrialStatusFromSession = useCallback(() => {
     if (!session?.user?.organization) return null;
 
     const organization = session.user.organization;
     const now = new Date();
-    
-    // Vérifier si l'organisation a une période d'essai active
+
+    // Structure moderne : subscription.plan = 'trial'
+    if (organization.subscription && organization.subscription.plan === 'trial') {
+      const subscription = organization.subscription;
+      const isActive = subscription.status === 'active';
+      const trialEndDate = subscription.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
+      
+      if (!trialEndDate || trialEndDate <= now) {
+        // Trial expiré ou pas de date de fin
+        return {
+          isTrialActive: false,
+          trialEndDate: trialEndDate,
+          daysRemaining: 0,
+          hasPremiumAccess: false,
+          hasUsedTrial: subscription.hasUsedTrial || true, // Si plan=trial, alors utilisé
+          structure: 'modern'
+        };
+      }
+
+      const diffTime = trialEndDate - now;
+      const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      return {
+        isTrialActive: isActive,
+        trialEndDate: trialEndDate,
+        daysRemaining: Math.max(0, daysRemaining),
+        hasPremiumAccess: isActive,
+        hasUsedTrial: subscription.hasUsedTrial || true,
+        structure: 'modern'
+      };
+    }
+
+    // Structure ancienne : champs plats
     if (organization.isTrialActive && organization.trialEndDate) {
       const trialEndDate = new Date(organization.trialEndDate);
-      const isExpired = now > trialEndDate;
       
-      if (isExpired) {
+      if (trialEndDate <= now) {
+        // Trial expiré
         return {
           isTrialActive: false,
           trialEndDate: organization.trialEndDate,
           daysRemaining: 0,
           hasPremiumAccess: false,
           hasUsedTrial: organization.hasUsedTrial || false,
+          structure: 'legacy'
         };
       }
 
@@ -120,24 +152,26 @@ export function useTrial() {
         daysRemaining: Math.max(0, daysRemaining),
         hasPremiumAccess: true,
         hasUsedTrial: organization.hasUsedTrial || false,
+        structure: 'legacy'
       };
     }
 
+    // Aucun trial actif
     return {
       isTrialActive: false,
       trialEndDate: null,
       daysRemaining: 0,
       hasPremiumAccess: false,
-      hasUsedTrial: organization.hasUsedTrial || false,
+      hasUsedTrial: organization.hasUsedTrial || organization.subscription?.hasUsedTrial || false,
+      structure: organization.subscription ? 'modern' : 'legacy'
     };
   }, [session]);
 
   // Utiliser les données GraphQL si disponibles, sinon les données de session
   const currentTrialStatus = trialStatus || getTrialStatusFromSession();
-
   // DÉSACTIVÉ TEMPORAIREMENT - Démarrer automatiquement la période d'essai à la première connexion
   // Cause une boucle infinie avec rate limiting
-  /*
+  // Activation automatique du trial à la première connexion
   useEffect(() => {
     const autoStartTrial = async () => {
       if (!session?.user || loading || startingTrial) return;
@@ -159,7 +193,6 @@ export function useTrial() {
 
     autoStartTrial();
   }, [session?.user, loading, startingTrial, getTrialStatusFromSession, startTrialMutation]);
-  */
 
   // Démarrer une période d'essai
   const startTrial = useCallback(async () => {
