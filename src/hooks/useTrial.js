@@ -135,8 +135,8 @@ export function useTrial() {
   // Utiliser les données GraphQL si disponibles, sinon les données de session
   const currentTrialStatus = trialStatus || getTrialStatusFromSession();
 
-  // DÉSACTIVÉ TEMPORAIREMENT - Démarrer automatiquement la période d'essai à la première connexion
-  // Cause une boucle infinie avec rate limiting
+  // Activation automatique du trial à la première connexion (désactivée car trials déjà en base)
+  // Cette fonction n'est plus nécessaire car les trials sont gérés par les scripts de migration
   /*
   useEffect(() => {
     const autoStartTrial = async () => {
