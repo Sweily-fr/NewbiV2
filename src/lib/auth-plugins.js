@@ -112,6 +112,39 @@ export const stripePlugin = stripe({
         },
       },
     ],
+    // Paramètres personnalisés pour le checkout Stripe
+    getCheckoutSessionParams: async ({ user, plan }) => {
+      return {
+        params: {
+          // Permettre les codes promo (pour la réduction de 20%)
+          allow_promotion_codes: true,
+          // Appliquer automatiquement une réduction de 20% sur la première année
+          discounts: [
+            {
+              coupon: process.env.STRIPE_FIRST_YEAR_DISCOUNT_COUPON_ID, // ID du coupon de réduction
+            }
+          ],
+          // Collecter l'adresse de facturation
+          billing_address_collection: "required",
+          // Message personnalisé
+          custom_text: {
+            submit: {
+              message: "🎉 Réduction de 20% appliquée sur votre première année !"
+            }
+          },
+          // Métadonnées pour le suivi
+          metadata: {
+            planType: plan.name,
+            discountApplied: "first_year_20_percent",
+            userId: user.id
+          }
+        },
+        options: {
+          // Clé d'idempotence pour éviter les doublons
+          idempotencyKey: `sub_${user.id}_${plan.name}_${Date.now()}`
+        }
+      };
+    },
   },
   // Webhooks Stripe pour mettre à jour automatiquement le statut
   onEvent: async (event, adapter) => {
