@@ -146,97 +146,176 @@ export const stripePlugin = stripe({
   },
   // Webhooks Stripe pour mettre à jour automatiquement le statut
   onEvent: async (event, adapter) => {
-    switch (event.type) {
-      case "checkout.session.completed":
-        const session = event.data.object;
+    console.log(`🔔 [STRIPE WEBHOOK] Événement reçu: ${event.type}`);
+    
+    try {
+      switch (event.type) {
+        case "customer.subscription.created":
+        case "checkout.session.completed":
+          let subscription;
+          let referenceId;
 
-        if (session.subscription && session.metadata?.referenceId) {
-          try {
+          if (event.type === "customer.subscription.created") {
+            // Événement direct de création d'abonnement
+            subscription = event.data.object;
+            referenceId = subscription.metadata?.referenceId;
+            
+            console.log(`📦 [STRIPE WEBHOOK] Abonnement créé:`, {
+              subscriptionId: subscription.id,
+              customerId: subscription.customer,
+              status: subscription.status,
+              referenceId
+            });
+          } else {
+            // Événement de checkout complété
+            const session = event.data.object;
+            
+            if (!session.subscription) {
+              console.log(`⚠️ [STRIPE WEBHOOK] Pas d'abonnement dans la session`);
+              break;
+            }
+
             // Récupérer les détails de l'abonnement depuis Stripe
             const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-            const subscription = await stripe.subscriptions.retrieve(
-              session.subscription
-            );
+            subscription = await stripe.subscriptions.retrieve(session.subscription);
+            referenceId = session.metadata?.referenceId || subscription.metadata?.referenceId;
+            
+            console.log(`📦 [STRIPE WEBHOOK] Checkout complété:`, {
+              sessionId: session.id,
+              subscriptionId: subscription.id,
+              customerId: subscription.customer,
+              referenceId
+            });
+          }
 
-            // Créer l'abonnement dans Better Auth
-            await adapter.create({
+          if (!referenceId) {
+            console.error(`❌ [STRIPE WEBHOOK] referenceId manquant dans les métadonnées`);
+            break;
+          }
+
+          try {
+            // Vérifier si l'abonnement existe déjà
+            const existingSub = await adapter.findFirst({
               model: "subscription",
+              where: { stripeSubscriptionId: subscription.id }
+            });
+
+            if (existingSub) {
+              console.log(`✅ [STRIPE WEBHOOK] Abonnement existe déjà, mise à jour`);
+              await adapter.update({
+                model: "subscription",
+                where: { stripeSubscriptionId: subscription.id },
+                data: {
+                  status: subscription.status,
+                  currentPeriodStart: new Date(subscription.current_period_start * 1000),
+                  currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                  updatedAt: new Date(),
+                },
+              });
+            } else {
+              console.log(`✅ [STRIPE WEBHOOK] Création nouvel abonnement`);
+              await adapter.create({
+                model: "subscription",
+                data: {
+                  id: subscription.id,
+                  referenceId: referenceId,
+                  status: subscription.status,
+                  planName: "pro",
+                  stripeSubscriptionId: subscription.id,
+                  stripeCustomerId: subscription.customer,
+                  currentPeriodStart: new Date(subscription.current_period_start * 1000),
+                  currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                },
+              });
+            }
+            
+            console.log(`✅ [STRIPE WEBHOOK] Abonnement traité avec succès`);
+          } catch (error) {
+            console.error(`❌ [STRIPE WEBHOOK] Erreur création/mise à jour abonnement:`, error);
+            console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
+          }
+          break;
+
+        case "customer.subscription.updated":
+          const updatedSub = event.data.object;
+          
+          console.log(`🔄 [STRIPE WEBHOOK] Mise à jour abonnement:`, {
+            subscriptionId: updatedSub.id,
+            status: updatedSub.status,
+            customerId: updatedSub.customer
+          });
+
+          try {
+            await adapter.update({
+              model: "subscription",
+              where: { stripeSubscriptionId: updatedSub.id },
               data: {
-                id: subscription.id,
-                referenceId: session.metadata.referenceId,
-                status: subscription.status,
-                planName: "pro", // ou récupérer depuis les métadonnées
-                stripeSubscriptionId: subscription.id,
-                stripeCustomerId: subscription.customer,
-                currentPeriodStart: new Date(
-                  subscription.current_period_start * 1000
-                ),
-                currentPeriodEnd: new Date(
-                  subscription.current_period_end * 1000
-                ),
-                createdAt: new Date(),
+                status: updatedSub.status,
+                currentPeriodStart: new Date(updatedSub.current_period_start * 1000),
+                currentPeriodEnd: new Date(updatedSub.current_period_end * 1000),
                 updatedAt: new Date(),
               },
             });
+            console.log(`✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès`);
           } catch (error) {
-            console.error(
-              `[STRIPE WEBHOOK] Erreur création abonnement:`,
-              error
-            );
+            console.error(`❌ [STRIPE WEBHOOK] Erreur mise à jour abonnement:`, error);
+            console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
           }
-        }
-        break;
+          break;
 
-      case "customer.subscription.updated":
-        const updatedSub = event.data.object;
-
-        try {
-          await adapter.update({
-            model: "subscription",
-            where: { stripeSubscriptionId: updatedSub.id },
-            data: {
-              status: updatedSub.status,
-              currentPeriodStart: new Date(
-                updatedSub.current_period_start * 1000
-              ),
-              currentPeriodEnd: new Date(updatedSub.current_period_end * 1000),
-              updatedAt: new Date(),
-            },
+        case "customer.subscription.deleted":
+          const deletedSub = event.data.object;
+          
+          console.log(`🗑️ [STRIPE WEBHOOK] Suppression abonnement:`, {
+            subscriptionId: deletedSub.id,
+            customerId: deletedSub.customer
           });
-        } catch (error) {
-          console.error(
-            `[STRIPE WEBHOOK] Erreur mise à jour abonnement:`,
-            error
-          );
-        }
-        break;
 
-      case "customer.subscription.deleted":
-        const deletedSub = event.data.object;
+          try {
+            await adapter.update({
+              model: "subscription",
+              where: { stripeSubscriptionId: deletedSub.id },
+              data: {
+                status: "canceled",
+                updatedAt: new Date(),
+              },
+            });
+            console.log(`✅ [STRIPE WEBHOOK] Abonnement annulé avec succès`);
+          } catch (error) {
+            console.error(`❌ [STRIPE WEBHOOK] Erreur annulation abonnement:`, error);
+            console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
+          }
+          break;
 
-        try {
-          await adapter.update({
-            model: "subscription",
-            where: { stripeSubscriptionId: deletedSub.id },
-            data: {
-              status: "canceled",
-              updatedAt: new Date(),
-            },
-          });
-        } catch (error) {
-          console.error(
-            `[STRIPE WEBHOOK] Erreur annulation abonnement:`,
-            error
-          );
-        }
-        break;
+        case "invoice.payment_succeeded":
+        case "invoice.paid":
+          console.log(`💰 [STRIPE WEBHOOK] Paiement facture réussi`);
+          // Ces événements sont gérés automatiquement par Stripe
+          // Pas besoin d'action supplémentaire
+          break;
+          
+        case "invoice.created":
+        case "invoice.finalized":
+          console.log(`📄 [STRIPE WEBHOOK] Facture créée/finalisée`);
+          // Ces événements sont informatifs
+          break;
+          
+        case "customer.discount.created":
+          console.log(`🎁 [STRIPE WEBHOOK] Réduction appliquée`);
+          break;
 
-      case "invoice.paid":
-        break;
-      case "payment_intent.succeeded":
-        break;
-      default:
-        console.log(`[STRIPE WEBHOOK] Événement non géré: ${event.type}`);
+        case "payment_intent.succeeded":
+          console.log(`✅ [STRIPE WEBHOOK] Paiement réussi`);
+          break;
+          
+        default:
+          console.log(`⚠️ [STRIPE WEBHOOK] Événement non géré: ${event.type}`);
+      }
+    } catch (error) {
+      console.error(`❌ [STRIPE WEBHOOK] Erreur globale:`, error);
+      console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
     }
   },
 });
