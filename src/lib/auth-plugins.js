@@ -110,9 +110,6 @@ export const stripePlugin = stripe({
           storage: 100,
           invoices: 1000,
         },
-        freeTrial: {
-          days: 0,
-        },
       },
     ],
   },
