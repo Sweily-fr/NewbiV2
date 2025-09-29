@@ -104,10 +104,12 @@ export const stripePlugin = stripe({
       {
         name: "pro",
         priceId: process.env.STRIPE_PRICE_ID_MONTH,
-      },
-      {
-        name: "pro-annual",
-        priceId: process.env.STRIPE_PRICE_ID_YEARS,
+        annualDiscountPriceId: process.env.STRIPE_PRICE_ID_YEARS,
+        limits: {
+          projects: 100,
+          storage: 100,
+          invoices: 1000,
+        },
       },
     ],
   },
