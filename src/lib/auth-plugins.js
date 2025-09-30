@@ -146,11 +146,7 @@ export const stripePlugin = stripe({
   },
   // Webhooks Stripe pour mettre à jour automatiquement le statut
   onEvent: async (event, adapter) => {
-    console.log(`\n========================================`);
     console.log(`🔔 [STRIPE WEBHOOK] Événement reçu: ${event.type}`);
-    console.log(`📅 [STRIPE WEBHOOK] Date: ${new Date().toISOString()}`);
-    console.log(`📦 [STRIPE WEBHOOK] Event ID: ${event.id}`);
-    console.log(`========================================\n`);
     
     try {
       switch (event.type) {
@@ -163,13 +159,6 @@ export const stripePlugin = stripe({
             // Événement direct de création d'abonnement
             subscription = event.data.object;
             referenceId = subscription.metadata?.referenceId;
-            
-            console.log(`📦 [STRIPE WEBHOOK] Abonnement créé:`, {
-              subscriptionId: subscription.id,
-              customerId: subscription.customer,
-              status: subscription.status,
-              referenceId
-            });
           } else {
             // Événement de checkout complété
             const session = event.data.object;
@@ -183,13 +172,6 @@ export const stripePlugin = stripe({
             const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
             subscription = await stripe.subscriptions.retrieve(session.subscription);
             referenceId = session.metadata?.referenceId || subscription.metadata?.referenceId;
-            
-            console.log(`📦 [STRIPE WEBHOOK] Checkout complété:`, {
-              sessionId: session.id,
-              subscriptionId: subscription.id,
-              customerId: subscription.customer,
-              referenceId
-            });
           }
 
           if (!referenceId) {
@@ -245,12 +227,6 @@ export const stripePlugin = stripe({
         case "customer.subscription.updated":
           const updatedSub = event.data.object;
           
-          console.log(`🔄 [STRIPE WEBHOOK] Mise à jour abonnement:`, {
-            subscriptionId: updatedSub.id,
-            status: updatedSub.status,
-            customerId: updatedSub.customer
-          });
-
           try {
             await adapter.update({
               model: "subscription",
@@ -272,11 +248,6 @@ export const stripePlugin = stripe({
         case "customer.subscription.deleted":
           const deletedSub = event.data.object;
           
-          console.log(`🗑️ [STRIPE WEBHOOK] Suppression abonnement:`, {
-            subscriptionId: deletedSub.id,
-            customerId: deletedSub.customer
-          });
-
           try {
             await adapter.update({
               model: "subscription",

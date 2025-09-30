@@ -297,7 +297,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
           <Card 
             key={index} 
             className={cn(
-              "border border-gray-200 hover:border-gray-300 transition-all duration-200 group bg-gray-50 shadow-none relative overflow-hidden",
+              "hover:border-primary/50 transition-all duration-200 group relative overflow-hidden",
               !hasFullAccess && "cursor-pointer",
               !hasCompanyInfoAccess && requiresCompanyInfo && "opacity-75 grayscale-[0.3]",
               !hasSubscriptionAccess && "opacity-75 grayscale-[0.3]"
@@ -316,8 +316,8 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                   {/* Header avec titre et description */}
                   <div className="space-y-3">
                     <div className="space-y-2">
-                      <h3 className="font-medium text-xl text-gray-900">{card.title}</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">
+                      <h3 className="font-medium text-xl">{card.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         {card.subtitle}
                       </p>
                     </div>
@@ -330,7 +330,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                         <Link href={card.href || "#"}>
                           <Button 
                             size="sm" 
-                            className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 text-sm font-medium cursor-pointer"
+                            className="px-4 py-2 text-sm font-medium cursor-pointer"
                           >
                             Accéder
                           </Button>
@@ -338,7 +338,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                         <Button 
                           size="sm"
                           variant="outline"
-                          className="border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium cursor-pointer"
+                          className="px-4 py-2 text-sm font-medium cursor-pointer"
                           onClick={(e) => handleToolInfoClick(e, card.title)}
                         >
                           En savoir plus
@@ -352,7 +352,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                             <Button 
                               size="sm"
                               variant="outline"
-                              className="border-orange-200 text-orange-700 hover:bg-orange-50 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                              className="border-orange-500/50 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
                             >
                               <Crown className="w-4 h-4" />
                               Passer Pro
@@ -360,7 +360,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                             <Button 
                               size="sm"
                               variant="outline"
-                              className="border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium cursor-pointer"
+                              className="px-4 py-2 text-sm font-medium cursor-pointer"
                               onClick={(e) => handleToolInfoClick(e, card.title)}
                             >
                               En savoir plus
@@ -372,7 +372,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                             <Button 
                               size="sm"
                               variant="outline"
-                              className="border-red-200 text-red-700 hover:bg-red-50 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                              className="border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
                             >
                               <Lock className="w-4 h-4" />
                               Configuration requise
@@ -380,7 +380,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                             <Button 
                               size="sm"
                               variant="outline"
-                              className="border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium cursor-pointer"
+                              className="px-4 py-2 text-sm font-medium cursor-pointer"
                               onClick={(e) => handleToolInfoClick(e, card.title)}
                             >
                               En savoir plus

@@ -49,7 +49,7 @@ export default function Outils() {
         {/* Skeleton des cards */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 w-full">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="border border-gray-200 bg-gray-50 shadow-none relative overflow-hidden rounded-xl">
+            <div key={i} className="bg-card text-card-foreground border shadow-sm relative overflow-hidden rounded-xl">
               {/* GridBackground skeleton */}
               <div className="absolute inset-0 opacity-20">
                 <div className="absolute inset-0" style={{

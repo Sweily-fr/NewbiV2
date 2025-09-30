@@ -9,7 +9,7 @@ export function GridBackground({ className = "" }) {
     >
       {/* Grille de base */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 opacity-50 dark:opacity-20"
         style={{
           backgroundImage: `
             linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
@@ -18,9 +18,9 @@ export function GridBackground({ className = "" }) {
           backgroundSize: "20px 20px",
         }}
       />
-      {/* Gradient de masquage pour effet de fondu */}
+      {/* Gradient de masquage pour effet de fondu - uniquement en mode light */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 dark:hidden"
         style={{
           background: `linear-gradient(to right, rgba(249, 250, 251, 1) 0%, rgba(249, 250, 251, 0.7) 30%, rgba(249, 250, 251, 0.3) 60%, rgba(249, 250, 251, 0) 100%)`,
         }}
