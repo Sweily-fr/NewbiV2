@@ -117,7 +117,7 @@ export const stripePlugin = stripe({
       return {
         params: {
           tax_id_collection: {
-            enabled: true
+            enabled: false
           },
           automatic_tax: {
             enabled: false
