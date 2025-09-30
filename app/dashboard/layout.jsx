@@ -21,6 +21,7 @@ import {
 } from "@/src/contexts/dashboard-layout-context";
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
+import { PricingModalTest } from "@/src/components/pricing-modal-test";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -129,6 +130,11 @@ function DashboardContent({ children }) {
       {/* {process.env.NODE_ENV === 'development' && (
         <CacheDebugPanel />
       )} */}
+
+      {/* Bouton de test pour la PricingModal (développement uniquement) */}
+      {process.env.NODE_ENV === 'development' && (
+        <PricingModalTest />
+      )}
     </SidebarProvider>
   );
 }
