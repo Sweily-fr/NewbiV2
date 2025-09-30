@@ -8,6 +8,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { cn } from "@/src/lib/utils";
+import { VALIDATION_PATTERNS, validateField } from "@/src/lib/validation";
 
 import { Button } from "@/src/components/ui/button";
 import {
