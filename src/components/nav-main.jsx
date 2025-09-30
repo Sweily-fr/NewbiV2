@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/src/components/ui/sidebar";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import Link from "next/link";
@@ -19,15 +20,24 @@ import { usePathname } from "next/navigation";
 export function NavMain({ items }) {
   const pathname = usePathname();
   const { isActive } = useSubscription();
+  const { setOpenMobile, isMobile } = useSidebar();
 
   // Définir les onglets qui nécessitent un abonnement Pro
   const proTabs = ["Tableau de bord", "Clients"]; // "Catalogues" retiré
+  
+  // Fonction pour fermer la sidebar sur mobile lors du clic
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2 pt-2">
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
-            <Link href={"/dashboard/outils"} className="w-full">
+            <Link href={"/dashboard/outils"} className="w-full" onClick={handleLinkClick}>
               <SidebarMenuButton
                 tooltip="Apps"
                 className={cn(
@@ -50,7 +60,7 @@ export function NavMain({ items }) {
 
             return (
               <SidebarMenuItem key={item.title}>
-                <Link href={hasAccess ? item.url : "#"} className="w-full">
+                <Link href={hasAccess ? item.url : "#"} className="w-full" onClick={hasAccess ? handleLinkClick : undefined}>
                   <SidebarMenuButton
                     className={cn(
                       "bg-transparent w-full cursor-pointer relative",

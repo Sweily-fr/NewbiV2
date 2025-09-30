@@ -341,7 +341,8 @@ export function EventCalendar({
                 setIsEventDialogOpen(true);
               }}
             >
-              Nouvel événement
+              <PlusIcon className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">Nouvel événement</span>
             </Button>
           </div>
         </div>

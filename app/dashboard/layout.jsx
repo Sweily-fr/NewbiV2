@@ -47,8 +47,11 @@ function DashboardContent({ children }) {
   const isToolPage =
     pathname.includes("/dashboard/outils/") &&
     (pathname.includes("/new") ||
+      pathname.includes("/nouveau") ||
       pathname.includes("/edit") ||
-      pathname.includes("/view"));
+      pathname.includes("/editer") ||
+      pathname.includes("/view") ||
+      pathname.includes("/avoir/"));
 
   // État pour contrôler l'ouverture de la sidebar
   const [sidebarOpen, setSidebarOpen] = useState(!isToolPage);

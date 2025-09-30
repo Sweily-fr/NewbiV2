@@ -109,22 +109,23 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           Ajouter un collaborateur
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="text-left">
-            {client ? "Modifier le client" : "Ajouter un client"}
-          </DialogTitle>
-          <DialogDescription className="text-left">
-            {client
-              ? "Modifiez les informations du client"
-              : "Créez un nouveau client pour votre entreprise"}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="w-full h-full max-w-full md:max-w-lg md:h-auto">
+        <div className="p-6 md:p-0">
+          <DialogHeader>
+            <DialogTitle className="text-left">
+              {client ? "Modifier le client" : "Ajouter un client"}
+            </DialogTitle>
+            <DialogDescription className="text-left">
+              {client
+                ? "Modifiez les informations du client"
+                : "Créez un nouveau client pour votre entreprise"}
+            </DialogDescription>
+          </DialogHeader>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-5 max-h-[70vh] p-1 overflow-y-auto"
-        >
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-5 max-h-[70vh] md:max-h-[70vh] p-1 overflow-y-auto"
+          >
           <div className="space-y-4">
             {/* Type de client */}
             <div className="space-y-2">
@@ -326,6 +327,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
             </Button>
           </div>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

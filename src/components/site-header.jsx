@@ -127,8 +127,10 @@ function SiteHeaderContent() {
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
-        <Breadcrumb>
-          <BreadcrumbList>{pathname !== "/" && breadcrumbs}</BreadcrumbList>
+        <Breadcrumb className="flex-1 min-w-0">
+          <BreadcrumbList className="overflow-x-auto scrollbar-none flex-nowrap max-w-full">
+            {pathname !== "/" && breadcrumbs}
+          </BreadcrumbList>
         </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
           {/* <SignatureSaveButton /> */}

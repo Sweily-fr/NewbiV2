@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Eye,
@@ -52,6 +52,7 @@ export default function InvoiceSidebar({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedCreditNote, setSelectedCreditNote] = useState(null);
   const [isCreditNotePreviewOpen, setIsCreditNotePreviewOpen] = useState(false);
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
 
   const router = useRouter();
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
@@ -70,6 +71,13 @@ export default function InvoiceSidebar({
     loading: loadingFullInvoice,
     error: invoiceError,
   } = useInvoice(initialInvoice?.id);
+
+  // Réinitialiser showMobileDetails quand la sidebar se ferme
+  useEffect(() => {
+    if (!isOpen) {
+      setShowMobileDetails(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen || !initialInvoice) return null;
 
@@ -176,23 +184,32 @@ export default function InvoiceSidebar({
         onClick={onClose}
       />
 
-      {/* PDF Preview Panel */}
+      {/* PDF Preview Section */}
       <div
-        className={`fixed inset-y-0 left-0 right-[35%] z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 md:right-[35%] right-0 z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-12 px-24">
+        <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
             <UniversalPreviewPDF data={invoice} type="invoice" />
           </div>
         </div>
+        
+        {/* Bouton flottant pour ouvrir les détails sur mobile */}
+        <Button
+          onClick={() => setShowMobileDetails(true)}
+          className="md:hidden fixed bottom-6 right-6 z-[60] rounded-full h-14 w-14 shadow-lg"
+          size="icon"
+        >
+          <Eye className="h-5 w-5" />
+        </Button>
       </div>
 
-      {/* Main Sidebar */}
+      {/* Main Sidebar - Hidden on mobile by default, shown in modal */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 w-[35%] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed inset-y-0 right-0 z-50 md:w-[35%] w-full bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col ${
+          isOpen ? (showMobileDetails ? "translate-x-0" : "md:translate-x-0 translate-x-full") : "translate-x-full"
         }`}
       >
         {/* Header */}
@@ -214,7 +231,15 @@ export default function InvoiceSidebar({
             <Button
               variant="ghost"
               size="icon"
-              onClick={onClose}
+              onClick={() => {
+                // Sur mobile, fermer d'abord les détails, puis la sidebar
+                if (window.innerWidth < 768 && showMobileDetails) {
+                  setShowMobileDetails(false);
+                } else {
+                  setShowMobileDetails(false);
+                  onClose();
+                }
+              }}
               className="h-8 w-8"
             >
               <X className="h-4 w-4" />

@@ -80,64 +80,78 @@ function GestionDepensesContent() {
   const expenseChartConfig = getExpenseChartConfig();
 
   return (
-    <div className="flex flex-col gap-2 py-4 md:gap-6 md:py-6 p-6">
-      <div className="w-full flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-medium mb-2">Gestion des dépenses</h1>
-          <p className="text-muted-foreground text-sm">
-            Gérer vos dépenses en toute simplicité avec la lecture OCR de vos
-            reçus
-          </p>
+    <>
+      {/* Desktop Layout */}
+      <div className="hidden md:block space-y-6 p-4 sm:p-6">
+        {/* Header */}
+        <div className="w-full flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-medium mb-2">Gestion des dépenses</h1>
+            <p className="text-muted-foreground text-sm">
+              Gérer vos dépenses en toute simplicité avec la lecture OCR de vos
+              reçus
+            </p>
+          </div>
+          <Button 
+            onClick={handleRefreshData}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2 font-normal"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Actualiser les données
+          </Button>
         </div>
-        <Button 
-          onClick={handleRefreshData}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2 font-normal"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Actualiser les données
-        </Button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Graphique des entrées avec vraies données */}
-        <ChartAreaInteractive
-          title="Entrées"
-          description={loading ? "Chargement..." : formatCurrency(totalIncome)}
-          height="150px"
-          className="shadow-xs"
-          config={incomeChartConfig}
-          data={incomeChartData}
-          hideMobileCurve={true}
-        />
-        {/* Graphique des sorties avec vraies données */}
-        <ChartAreaInteractive
-          title="Sorties"
-          description={
-            loading ? "Chargement..." : formatCurrency(totalExpenses)
-          }
-          height="150px"
-          className="shadow-xs"
-          config={expenseChartConfig}
-          data={expenseChartData}
-          hideMobileCurve={true}
-        />
-        {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ChartAreaInteractive 
-            height="200px"
-            title="Vue compacte"
-            description="Graphique simplifié"
-            shortDescription="Compact"
-            showTimeRange={false}
-            showGradient={false}
-            aspectRatio="[4/3]"
+        
+        {/* Graphiques */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Graphique des entrées avec vraies données */}
+          <ChartAreaInteractive
+            title="Entrées"
+            description={loading ? "Chargement..." : formatCurrency(totalIncome)}
+            height="150px"
+            className="shadow-xs"
+            config={incomeChartConfig}
+            data={incomeChartData}
+            hideMobileCurve={true}
           />
-        </div> */}
+          {/* Graphique des sorties avec vraies données */}
+          <ChartAreaInteractive
+            title="Sorties"
+            description={
+              loading ? "Chargement..." : formatCurrency(totalExpenses)
+            }
+            height="150px"
+            className="shadow-xs"
+            config={expenseChartConfig}
+            data={expenseChartData}
+            hideMobileCurve={true}
+          />
+        </div>
+        
+        {/* Tableau */}
+        <div className="mt-4">
+          <TransactionTable />
+        </div>
       </div>
-      <div className="mt-4">
+
+      {/* Mobile Layout - Style Notion */}
+      <div className="md:hidden">
+        {/* Header - Style Notion sur mobile */}
+        <div className="px-4 py-6">
+          <div>
+            <h1 className="text-2xl font-medium mb-2">Gestion des dépenses</h1>
+            <p className="text-muted-foreground text-sm">
+              Gérer vos dépenses en toute simplicité avec la lecture OCR de vos
+              reçus
+            </p>
+          </div>
+        </div>
+
+        {/* Table */}
         <TransactionTable />
       </div>
-    </div>
+    </>
   );
 }
 

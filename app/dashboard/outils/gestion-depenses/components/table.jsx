@@ -38,6 +38,7 @@ import {
   TrashIcon,
   TrendingUp,
   TrendingDown,
+  Upload,
 } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
@@ -388,8 +389,8 @@ const columns = [
     cell: ({ row, table }) => {
       return (
         <div onClick={(e) => e.stopPropagation()}>
-          <RowActions 
-            row={row} 
+          <RowActions
+            row={row}
             onEdit={table.options.meta?.onEdit}
             onRefresh={table.options.meta?.onRefresh}
             onDownloadAttachment={table.options.meta?.onDownloadAttachment}
@@ -963,8 +964,8 @@ export default function TransactionTable() {
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Filters - Desktop */}
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           {/* Filter by description, category, amount */}
           <div className="relative">
@@ -1174,8 +1175,8 @@ export default function TransactionTable() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-background overflow-hidden rounded-md border">
+      {/* Table - Desktop */}
+      <div className="hidden md:block bg-background overflow-hidden rounded-md border">
         <Table className="table-fixed">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -1288,8 +1289,145 @@ export default function TransactionTable() {
         </Table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between gap-8">
+      {/* Mobile Toolbar - Style Notion */}
+      <div className="md:hidden px-4 py-3">
+        <div className="flex items-center gap-2">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <Input
+              ref={inputRef}
+              className={cn(
+                "peer w-full ps-9",
+                Boolean(globalFilter) && "pe-9"
+              )}
+              value={globalFilter}
+              onChange={(e) => {
+                setGlobalFilter(e.target.value);
+              }}
+              placeholder="Rechercher..."
+              type="text"
+              aria-label="Filter transactions"
+            />
+            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+              <ListFilterIcon size={16} aria-hidden="true" />
+            </div>
+            {Boolean(globalFilter) && (
+              <button
+                className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Clear filter"
+                onClick={() => {
+                  setGlobalFilter("");
+                  if (inputRef.current) {
+                    inputRef.current.focus();
+                  }
+                }}
+              >
+                <CircleXIcon size={16} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
+          {/* Bouton Ajouter un reçu - Icône seulement */}
+          <Button
+            size="icon"
+            variant="default"
+            className="bg-[#5A50FF]"
+            onClick={() => setIsReceiptUploadDrawerOpen(true)}
+            aria-label="Ajouter un reçu"
+          >
+            <Upload size={16} />
+          </Button>
+
+          {/* Bouton Ajouter manuellement - Icône seulement */}
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => setIsAddTransactionDrawerOpen(true)}
+            aria-label="Ajouter manuellement"
+          >
+            <Plus size={16} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Table - Mobile style (Notion-like) */}
+      <div className="md:hidden overflow-x-auto">
+        <Table className="w-max">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow
+                key={headerGroup.id}
+                className="border-b border-gray-100 dark:border-gray-400"
+              >
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    style={{ width: header.getSize() }}
+                    className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="py-3 px-4 text-sm">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : error ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-red-500"
+                >
+                  Erreur lors du chargement des transactions
+                </TableCell>
+              </TableRow>
+            ) : loading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Chargement...
+                </TableCell>
+              </TableRow>
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Aucune transaction trouvée.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination - Desktop only */}
+      <div className="hidden md:flex items-center justify-between gap-8">
         {/* Results per page */}
         <div className="flex items-center gap-3">
           <Label htmlFor={id} className="max-sm:sr-only font-normal">
@@ -1449,7 +1587,7 @@ function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
     try {
       const result = await deleteExpense(transaction.id);
       setShowDeleteDialog(false);
-      
+
       // Si la suppression a réussi, forcer le rafraîchissement
       if (result.success && onRefresh) {
         onRefresh();
@@ -1497,12 +1635,14 @@ function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
             </DropdownMenuItem>
             {transaction.attachment && (
               <DropdownMenuItem
-                onClick={() => onDownloadAttachment && onDownloadAttachment(transaction)}
+                onClick={() =>
+                  onDownloadAttachment && onDownloadAttachment(transaction)
+                }
               >
                 <span>Afficher le justificatif</span>
                 <DropdownMenuShortcut>⌘V</DropdownMenuShortcut>
               </DropdownMenuItem>
-            )}  
+            )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -1522,7 +1662,8 @@ function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer cette transaction ? Cette action est irréversible.
+              Êtes-vous sûr de vouloir supprimer cette transaction ? Cette
+              action est irréversible.
               <br />
               <strong>Description :</strong> {transaction.description}
               <br />

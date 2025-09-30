@@ -7,60 +7,142 @@ const HeroAnimation = () => {
   const svgRef = useRef(null);
 
   useEffect(() => {
-    // Créer l'effet de trait lumineux qui traverse les dash (comme Lottie)
     const createLightTrailEffect = () => {
       if (!svgRef.current) return;
 
-      // Sélectionner tous les chemins avec stroke blanc et dasharray
-      const paths = svgRef.current.querySelectorAll(
-        'path[stroke="rgb(255,255,255)"]'
+      // Sélectionner le path avec les lignes en pointillés
+      const dashedPath = svgRef.current.querySelector(
+        'path[stroke-dasharray=" 4 4"]'
       );
 
-      paths.forEach((path, index) => {
-        const dashArray = path.getAttribute("stroke-dasharray");
-        if (dashArray && dashArray.includes("4")) {
-          // Obtenir la longueur du chemin
-          const pathLength = path.getTotalLength ? path.getTotalLength() : 1000;
+      if (!dashedPath) return;
 
-          // Configurer le chemin pour l'effet de trait lumineux
-          path.style.stroke = "rgb(99,102,241)";
-          path.style.strokeWidth = "2";
-          path.style.filter = "drop-shadow(0 0 6px rgba(99, 102, 241, 0.8))";
+      // Extraire les segments du path d attribute
+      const pathData = dashedPath.getAttribute("d");
 
-          // Créer l'effet de trait lumineux avec stroke-dasharray animé
-          const dashLength = 20; // Longueur du trait lumineux
-          const gapLength = pathLength; // Espace entre les traits
+      // Diviser le path en segments basés sur les commandes M (moveTo)
+      // Chaque M indique le début d'un nouveau segment
+      const segments = pathData
+        .split("M")
+        .filter((s) => s.trim())
+        .map((s) => "M" + s);
 
-          path.style.strokeDasharray = `${dashLength} ${gapLength}`;
-          path.style.strokeDashoffset = `${pathLength + dashLength}`;
-
-          // Animation du trait lumineux qui traverse le chemin
-          const animateTrail = () => {
-            path.style.transition = "none";
-            path.style.strokeDashoffset = `${pathLength + dashLength}`;
-
-            // Petite pause puis démarrer l'animation
-            setTimeout(() => {
-              path.style.transition = "stroke-dashoffset 2s ease-in-out";
-              path.style.strokeDashoffset = `-${dashLength}`;
-            }, 50);
-          };
-
-          // Démarrer l'animation avec délai échelonné
-          setTimeout(() => {
-            animateTrail();
-
-            // Répéter l'animation en boucle
-            setInterval(animateTrail, 3000);
-          }, index * 400);
-        }
+      // Créer un path temporaire pour chaque segment pour calculer leur longueur
+      const allSegmentData = segments.map((segmentPath, index) => {
+        const tempPath = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path"
+        );
+        tempPath.setAttribute("d", segmentPath);
+        svgRef.current.appendChild(tempPath);
+        const length = tempPath.getTotalLength();
+        svgRef.current.removeChild(tempPath);
+        return { path: segmentPath, length, originalIndex: index };
       });
+
+      // Trier les segments par longueur décroissante et ne garder que les 6 plus longs
+      const segmentData = allSegmentData
+        .sort((a, b) => b.length - a.length)
+        .slice(0, 6)
+        .sort((a, b) => a.originalIndex - b.originalIndex); // Remettre dans l'ordre original pour l'animation
+
+      // Créer le conteneur pour les paths lumineux
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      dashedPath.parentNode.insertBefore(g, dashedPath.nextSibling);
+
+      // Configuration de l'animation
+      const lightLength = 40; // Longueur de la ligne lumineuse
+      const segmentDuration = 900; // Durée pour parcourir un segment (ms)
+      const pauseDuration = 1000; // Pause entre segments (ms)
+
+      let currentSegmentIndex = 0;
+      let animationId;
+      let currentLightPath = null;
+
+      const animateSegment = () => {
+        // Nettoyer le path précédent
+        if (currentLightPath && g.contains(currentLightPath)) {
+          g.removeChild(currentLightPath);
+        }
+
+        // Créer un nouveau path pour le segment actuel
+        const segment = segmentData[currentSegmentIndex];
+        currentLightPath = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path"
+        );
+        currentLightPath.setAttribute("d", segment.path);
+        currentLightPath.setAttribute("fill", "none");
+        currentLightPath.style.stroke = "#000";
+        currentLightPath.style.strokeWidth = "1.5";
+        // currentLightPath.style.filter =
+        //   "drop-shadow(0 0 8px rgb(152, 154, 255)) drop-shadow(0 0 16px rgba(99, 102, 241, 0.6))";
+        currentLightPath.style.strokeLinecap = "round";
+        g.appendChild(currentLightPath);
+
+        let startTime = null;
+
+        const animate = (timestamp) => {
+          if (!startTime) startTime = timestamp;
+          const elapsed = timestamp - startTime;
+
+          if (elapsed < segmentDuration) {
+            // Animation du segment
+            const progress = elapsed / segmentDuration;
+            const currentLength = segment.length * progress;
+
+            // Créer l'effet de ligne qui se déplace
+            currentLightPath.style.strokeDasharray = `${lightLength} ${segment.length}`;
+            currentLightPath.style.strokeDashoffset = `${segment.length - currentLength + lightLength / 2}`;
+
+            // Effet de fade in/out
+            let opacity = 1;
+            if (progress < 0.1) {
+              opacity = progress * 10;
+            } else if (progress > 0.9) {
+              opacity = (1 - progress) * 10;
+            }
+            currentLightPath.style.opacity = opacity;
+
+            // Variation subtile du glow
+            const glowIntensity = 0.8 + Math.sin(progress * Math.PI) * 0.2;
+            // currentLightPath.style.filter = `drop-shadow(0 0 ${6 + glowIntensity * 4}px rgba(99, 102, 241, ${glowIntensity})) drop-shadow(0 0 ${12 + glowIntensity * 8}px rgba(99, 102, 241, ${glowIntensity * 0.5}))`;
+
+            animationId = requestAnimationFrame(animate);
+          } else if (elapsed < segmentDuration + pauseDuration) {
+            // Pause - masquer complètement
+            currentLightPath.style.opacity = "0";
+            animationId = requestAnimationFrame(animate);
+          } else {
+            // Passer au segment suivant
+            currentSegmentIndex =
+              (currentSegmentIndex + 1) % segmentData.length;
+            animateSegment();
+          }
+        };
+
+        animationId = requestAnimationFrame(animate);
+      };
+
+      // Démarrer l'animation
+      setTimeout(animateSegment, 500);
+
+      // Retourner la fonction de nettoyage
+      return () => {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+        if (g && g.parentNode) {
+          g.parentNode.removeChild(g);
+        }
+      };
     };
 
-    // Démarrer l'effet après un délai
-    const timer = setTimeout(createLightTrailEffect, 500);
+    const cleanup = createLightTrailEffect();
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, []);
 
   return (

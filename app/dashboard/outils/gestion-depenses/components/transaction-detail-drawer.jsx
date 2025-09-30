@@ -127,8 +127,8 @@ export function TransactionDetailDrawer({
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent
-        className="w-[620px] max-w-[620px]"
-        style={{ width: "620px", maxWidth: "620px", minWidth: "620px" }}
+        className="w-full h-full md:w-[620px] md:max-w-[620px] md:min-w-[620px] md:h-auto"
+        style={{ width: '100vw', height: '100vh' }}
       >
         {/* Header */}
         <DrawerHeader className="flex flex-row items-center justify-between p-6 border-b space-y-0">

@@ -38,9 +38,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export function NavDocuments({ items }) {
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const { isActive } = useSubscription();
   const pathname = usePathname();
+  
+  // Fonction pour fermer la sidebar sur mobile lors du clic
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
   // Initialiser avec seulement Factures par défaut
   const [pinnedApps, setPinnedApps] = useState(items || []);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -190,7 +197,7 @@ export function NavDocuments({ items }) {
               disabled={!hasAccess}
             >
               {hasAccess ? (
-                <Link href={item.url}>
+                <Link href={item.url} onClick={handleLinkClick}>
                   <item.icon />
                   <span className="font-polysans font-light">{item.name}</span>
                 </Link>
@@ -220,7 +227,7 @@ export function NavDocuments({ items }) {
                 align={isMobile ? "end" : "start"}
               >
                 <DropdownMenuItem asChild>
-                  <a href={item.url}>
+                  <a href={item.url} onClick={handleLinkClick}>
                     <IconFolder />
                     <span>Accéder</span>
                   </a>
