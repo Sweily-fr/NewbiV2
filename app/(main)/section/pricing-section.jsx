@@ -91,12 +91,12 @@ export default function PricingSection() {
                 <>
                   <div className="flex items-baseline justify-center gap-2 md:gap-3">
                     <span className="text-base md:text-xl line-through text-red-400">
-                      14,99€
+                      17,99€ TTC
                     </span>
                     <div className="flex flex-col items-center">
                       <div className="flex items-baseline">
-                        <span className="text-[#5B4FFF] text-3xl md:text-5xl font-medium">12,49€</span>
-                        <span className="text-sm md:text-base text-[#5B4FFF] ml-1">/mois</span>
+                        <span className="text-[#5B4FFF] text-3xl md:text-5xl font-medium">14,39€</span>
+                        <span className="text-sm md:text-base text-[#5B4FFF] ml-1">TTC/mois</span>
                       </div>
                       <span className="text-xs text-gray-500 font-medium mt-1">La première année</span>
                     </div>
@@ -106,12 +106,12 @@ export default function PricingSection() {
                 <>
                   <div className="flex items-baseline justify-center gap-2 md:gap-3">
                     <span className="text-base md:text-xl line-through text-red-400">
-                      13,49€
+                      16,19€ TTC
                     </span>
                     <div className="flex flex-col items-center">
                       <div className="flex items-baseline">
-                        <span className="text-[#5B4FFF] text-3xl md:text-5xl font-medium">11,24€</span>
-                        <span className="text-sm md:text-base text-[#5B4FFF] ml-1">/mois</span>
+                        <span className="text-[#5B4FFF] text-3xl md:text-5xl font-medium">12,95€</span>
+                        <span className="text-sm md:text-base text-[#5B4FFF] ml-1">TTC/mois</span>
                       </div>
                       <span className="text-xs text-gray-500 font-medium mt-1">La première année</span>
                     </div>
@@ -122,9 +122,9 @@ export default function PricingSection() {
             {billingCycle === "yearly" && (
               <p className="text-xs md:text-sm text-gray-600 mb-2">
                 <span className="relative mr-1 line-through text-gray-500">
-                  161,88€
+                  194,28€ TTC
                 </span>
-                <span className="text-[#5B4FFF] font-medium">134,88€</span> facturé annuellement
+                <span className="text-[#5B4FFF] font-medium">155,42€ TTC</span> facturé annuellement
               </p>
             )}
             <a

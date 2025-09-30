@@ -132,9 +132,9 @@ export function PricingModal({ isOpen, onClose }) {
     }).format(amount);
   };
 
-  // Récupérer le prix depuis Stripe
+  // Récupérer le prix depuis Stripe (TTC)
   const getSubscriptionPrice = () => {
-    return subscription?.plan === "pro" ? 14.99 : 0;
+    return subscription?.plan === "pro" ? 17.99 : 0;
   };
 
   const plans = [
@@ -153,14 +153,14 @@ export function PricingModal({ isOpen, onClose }) {
     },
     {
       name: "Pro",
-      annualPrice: "11,24 €",
-      monthlyPrice: "12,49 €",
-      annualTotal: "134,88 € la première année",
-      monthlyTotal: "12,49 € par mois la première année",
-      annualPriceAfter: "13,49 €",
-      monthlyPriceAfter: "14,99 €",
-      annualTotalAfter: "161,88 € par an",
-      monthlyTotalAfter: "14,99 € par mois",
+      annualPrice: "12,95 € TTC",
+      monthlyPrice: "14,39 € TTC",
+      annualTotal: "155,42 € TTC la première année",
+      monthlyTotal: "14,39 € TTC par mois la première année",
+      annualPriceAfter: "16,19 € TTC",
+      monthlyPriceAfter: "17,99 € TTC",
+      annualTotalAfter: "194,28 € TTC par an",
+      monthlyTotalAfter: "17,99 € TTC par mois",
       description: "Toutes les fonctionnalités pour développer votre activité",
       features: [
         "Facturation complète (devis → factures, TVA)",
