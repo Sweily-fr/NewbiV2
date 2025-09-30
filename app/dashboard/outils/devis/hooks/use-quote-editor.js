@@ -178,8 +178,8 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
                 ""
             );
 
-            // Mettre à jour les coordonnées bancaires
-            setValue("showBankDetails", organization.showBankDetails || false);
+            // Ne pas activer showBankDetails par défaut, même si l'organisation a des coordonnées bancaires
+            setValue("showBankDetails", false);
             setValue("companyInfo.bankDetails", {
               bankName: organization.bankName || "",
               iban: organization.bankIban || "",
@@ -245,7 +245,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }
 
     return true;
-  }, [getValues, session?.user?.company?.name]);
+  }, [getValues]);
 
   const validateStep2 = useCallback(() => {
     const data = getValues();
@@ -811,12 +811,8 @@ function transformQuoteToFormData(quote) {
         value: field.value,
       })) || [],
 
-    showBankDetails: !!(
-      quote.companyInfo?.bankDetails &&
-      (quote.companyInfo.bankDetails.iban ||
-        quote.companyInfo.bankDetails.bic ||
-        quote.companyInfo.bankDetails.bankName)
-    ),
+    // Récupérer showBankDetails depuis le devis existant, par défaut false
+    showBankDetails: quote.showBankDetails || false,
 
     // Nettoyer les métadonnées GraphQL des coordonnées bancaires
     bankDetails: quote.companyInfo?.bankDetails

@@ -871,22 +871,24 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
         {/* TOTAUX */}
         <div className="flex justify-end mb-6">
           <div className="w-72 space-y-1 text-xs">
-            {/* 1. Total HT */}
-            <div className="flex justify-between py-1 px-3">
-              <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
-                Total HT
-              </span>
-              <div className="flex flex-col items-end">
-                {subtotalAfterItemDiscounts < subtotal && (
-                  <span className="line-through text-gray-400 text-[9px] mb-[-2px]">
-                    {formatCurrency(subtotal)}
-                  </span>
-                )}
-                <span className="dark:text-[#0A0A0A] text-[10px] font-medium">
-                  {formatCurrency(subtotalAfterItemDiscounts)}
+            {/* 1. Total HT - Affiché seulement s'il y a des remises sur articles ou des remises globales */}
+            {(subtotalAfterItemDiscounts < subtotal || discount > 0) && (
+              <div className="flex justify-between py-1 px-3">
+                <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                  Total HT
                 </span>
+                <div className="flex flex-col items-end">
+                  {subtotalAfterItemDiscounts < subtotal && (
+                    <span className="line-through text-gray-400 text-[9px] mb-[-2px]">
+                      {formatCurrency(subtotal)}
+                    </span>
+                  )}
+                  <span className="dark:text-[#0A0A0A] text-[10px] font-medium">
+                    {formatCurrency(subtotalAfterItemDiscounts)}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 2. Remise */}
             {discount > 0 && (
@@ -906,15 +908,29 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
               </div>
             )}
 
-            {/* 3. Total HT après remise */}
-            <div className="flex justify-between py-1 px-3">
-              <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
-                Total HT après remise
-              </span>
-              <span className="dark:text-[#0A0A0A] text-[10px] font-medium">
-                {formatCurrency(totalAfterDiscount)}
-              </span>
-            </div>
+            {/* 3. Total HT final - Affiché avec le bon libellé selon les remises */}
+            {discount > 0 ? (
+              <div className="flex justify-between py-1 px-3">
+                <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                  Total HT après remise
+                </span>
+                <span className="dark:text-[#0A0A0A] text-[10px] font-medium">
+                  {formatCurrency(totalAfterDiscount)}
+                </span>
+              </div>
+            ) : (
+              // Si pas de remise globale ET pas de remise sur articles, afficher le total HT simple
+              subtotalAfterItemDiscounts >= subtotal && (
+                <div className="flex justify-between py-1 px-3">
+                  <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                    Total HT
+                  </span>
+                  <span className="dark:text-[#0A0A0A] text-[10px] font-medium">
+                    {formatCurrency(totalAfterDiscount)}
+                  </span>
+                </div>
+              )
+            )}
 
             {/* 3.5. Frais de livraison */}
             {(() => {
@@ -1046,8 +1062,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
       {/* FOOTER - DÉTAILS BANCAIRES */}
       <div className="bg-[#F3F3F3] pt-8 pb-8 px-14 w-full">
         {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un devis NI un avoir */}
-        {(data.showBankDetails === undefined ||
-          data.showBankDetails === true) &&
+        {data.showBankDetails === true &&
           type !== "quote" &&
           !isCreditNote && (
             <div className="mb-3">
@@ -1064,19 +1079,19 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
                 <div className="flex">
                   <span className="font-medium w-32">Nom de la banque</span>
                   <span className="font-normal">
-                    {data.bankDetails?.bankName || "Sweily"}
+                    {data.bankDetails?.bankName || data.userBankDetails?.bankName || data.companyInfo?.bankDetails?.bankName || ""}
                   </span>
                 </div>
                 <div className="flex">
                   <span className="font-medium w-32">BIC</span>
                   <span className="font-normal">
-                    {data.bankDetails?.bic || data.bankDetails?.bic || ""}
+                    {data.bankDetails?.bic || data.userBankDetails?.bic || data.companyInfo?.bankDetails?.bic || ""}
                   </span>
                 </div>
                 <div className="flex">
                   <span className="font-medium w-32">IBAN</span>
                   <span className="font-normal">
-                    {data.bankDetails?.iban || data.bankDetails?.iban || ""}
+                    {data.bankDetails?.iban || data.userBankDetails?.iban || data.companyInfo?.bankDetails?.iban || ""}
                   </span>
                 </div>
               </div>
@@ -1095,8 +1110,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
         {/* Afficher le trait de séparation seulement si des coordonnées bancaires ou des notes sont présentes */}
         <div
           className={`text-[10px] dark:text-[#0A0A0A] ${
-            ((data.showBankDetails === undefined ||
-              data.showBankDetails === true) &&
+            (data.showBankDetails === true &&
               type !== "quote" &&
               !isCreditNote) ||
             (data.footerNotes && !isCreditNote)

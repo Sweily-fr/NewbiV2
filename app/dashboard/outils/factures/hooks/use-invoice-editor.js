@@ -70,10 +70,7 @@ export function useInvoiceEditor({
 
       reset(invoiceData);
 
-      // Vérifier les données après reset
-      setTimeout(() => {
-        const currentFormData = getValues();
-      }, 100);
+      // Les données sont maintenant chargées dans le formulaire
     }
   }, [existingInvoice, mode, reset, getValues]);
 
@@ -233,7 +230,7 @@ export function useInvoiceEditor({
       const input = transformFormDataToInput(currentFormData);
 
       if (mode === "create") {
-        const result = await createInvoice(input);
+        await createInvoice(input);
 
         router.push("/dashboard/outils/factures");
         return true;
@@ -294,7 +291,7 @@ export function useInvoiceEditor({
       const input = transformFormDataToInput(dataToTransform, previousStatus);
 
       if (mode === "create") {
-        const result = await createInvoice(input);
+        await createInvoice(input);
 
         router.push("/dashboard/outils/factures");
         return true;
@@ -425,7 +422,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     isDepositInvoice: false,
     purchaseOrderNumber: "",
     // Récupérer les données bancaires si elles existent dans la facture
-    showBankDetails: false,
+    showBankDetails: organization?.showBankDetails || false,
     bankDetails: {
       iban: "",
       bic: "",
