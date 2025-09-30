@@ -8,11 +8,10 @@ import { getBorderRadiusClasses, getEventColorClasses } from "./index";
 import { cn } from "@/src/lib/utils";
 
 // Using date-fns format with custom formatting:
-// 'h' - hours (1-12)
-// 'a' - am/pm
+// 'H' - hours (0-23)
 // ':mm' - minutes with leading zero (only if the token 'mm' is present)
 const formatTimeWithOptionalMinutes = (date) => {
-  return format(date, getMinutes(date) === 0 ? "ha" : "h:mma").toLowerCase();
+  return format(date, getMinutes(date) === 0 ? "H'h'" : "H:mm");
 };
 
 // EventWrapper props converted to JSDoc
@@ -133,7 +132,7 @@ export function EventItem({
   }, [displayStart, displayEnd]);
 
   const getEventTime = () => {
-    if (event.allDay) return "All day";
+    if (event.allDay) return "Toute la journée";
 
     // For short events (less than 45 minutes), only show start time
     if (durationMinutes < 45) {
@@ -237,7 +236,7 @@ export function EventItem({
       <div className="text-sm font-medium">{event.title}</div>
       <div className="text-xs opacity-70">
         {event.allDay ? (
-          <span>All day</span>
+          <span>Toute la journée</span>
         ) : (
           <span className="uppercase">
             {formatTimeWithOptionalMinutes(displayStart)} -{" "}

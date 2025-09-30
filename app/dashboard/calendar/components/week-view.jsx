@@ -244,7 +244,7 @@ export function WeekView({
           <div className="grid grid-cols-8">
             <div className="border-border/70 relative border-r">
               <span className="text-muted-foreground/70 absolute bottom-0 left-0 h-6 w-16 max-w-full pe-2 text-right text-[10px] sm:pe-4 sm:text-xs">
-                All day
+                Toute la journée
               </span>
             </div>
             {days.map((day, dayIndex) => {
@@ -313,7 +313,7 @@ export function WeekView({
             >
               {index > 0 && (
                 <span className="bg-background text-muted-foreground/70 absolute -top-3 left-0 flex h-6 w-16 max-w-full items-center justify-end pe-2 text-[10px] sm:pe-4 sm:text-xs">
-                  {format(hour, "h a")}
+                  {format(hour, "H'h'")}
                 </span>
               )}
             </div>
