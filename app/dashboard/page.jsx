@@ -48,7 +48,6 @@ import BankingConnectButton from "@/src/components/banking/BankingConnectButton"
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
 
-import LoadingSkeleton from "./loading";
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useState, useEffect, useMemo } from "react";
