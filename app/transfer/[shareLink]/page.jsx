@@ -100,20 +100,11 @@ export default function TransferPage() {
     setIsDownloading(true);
     const startTime = Date.now();
     try {
-      // Vérifier que les données nécessaires sont présentes
-      if (!transfer?.fileTransfer?.id) {
-        throw new Error("ID de transfert manquant");
-      }
-      if (!fileId) {
-        throw new Error("ID de fichier manquant");
-      }
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      // S'assurer que l'URL se termine par un slash
-      const baseUrl = apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
 
       // Demander l'autorisation de téléchargement au serveur
       const authResponse = await fetch(
-        `${baseUrl}api/transfers/${transfer?.fileTransfer?.id}/authorize`,
+        `${apiUrl}api/transfers/${transfer?.fileTransfer?.id}/authorize`,
         {
           method: "POST",
           headers: {
@@ -121,22 +112,14 @@ export default function TransferPage() {
           },
           body: JSON.stringify({
             fileId,
-            email: "anonymous@user.com", // Email non important maintenant
+            email: "guest@newbi.fr", // Email générique pour les téléchargements anonymes
           }),
         }
       );
 
       if (!authResponse.ok) {
         const errorText = await authResponse.text();
-        console.error('Erreur d\'autorisation (downloadFile):', {
-          status: authResponse.status,
-          statusText: authResponse.statusText,
-          url: authResponse.url,
-          errorText,
-          transferId: transfer?.fileTransfer?.id,
-          fileId
-        });
-        throw new Error(`Erreur d'autorisation: ${authResponse.status} - ${errorText}`);
+        throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
       }
 
       const authData = await authResponse.json();
@@ -156,7 +139,7 @@ export default function TransferPage() {
       }
 
       // Utiliser la route proxy du serveur pour un vrai téléchargement
-      const proxyUrl = `${baseUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`;
+      const proxyUrl = `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`;
 
       const a = document.createElement("a");
       a.href = proxyUrl;
@@ -169,7 +152,7 @@ export default function TransferPage() {
       // Marquer le téléchargement comme terminé
       if (downloadInfo.downloadEventId) {
         await fetch(
-          `${baseUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
+          `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
           {
             method: "POST",
             headers: {
@@ -206,7 +189,7 @@ export default function TransferPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: "anonymous@user.com", // Email non important maintenant
+            email: "guest@newbi.fr", // Email générique pour les téléchargements anonymes
           }),
         }
       );
