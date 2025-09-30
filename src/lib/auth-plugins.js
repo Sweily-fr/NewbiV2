@@ -116,6 +116,12 @@ export const stripePlugin = stripe({
     getCheckoutSessionParams: async ({ user, plan }) => {
       return {
         params: {
+          tax_id_collection: {
+            enabled: true
+          },
+          automatic_tax: {
+            enabled: false
+        },
           // Appliquer automatiquement une réduction de 20% sur la première année
           discounts: [
             {
