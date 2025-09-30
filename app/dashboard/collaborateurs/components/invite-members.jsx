@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { UserRoundPlusIcon } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -29,6 +31,19 @@ export default function InviteMembers({
   onOpenChange,
   onInvitationSent,
 }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -68,7 +83,13 @@ export default function InviteMembers({
           Ajouter un collaborateur
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent
+        className={`overflow-y-auto overflow-x-hidden ${
+          isMobile
+            ? "!fixed !inset-0 !w-screen !h-screen !max-w-none !max-h-none !m-0 !rounded-none !translate-x-0 !translate-y-0 !p-6"
+            : "sm:max-w-lg"
+        }`}
+      >
         <div className="flex flex-col items-center justify-center gap-2">
           <div
             className="flex size-11 shrink-0 items-center justify-center rounded-full border"
@@ -80,7 +101,7 @@ export default function InviteMembers({
             <DialogTitle className="text-center font-medium">
               Inviter des membres
             </DialogTitle>
-            <DialogDescription className="text-center w-sm">
+            <DialogDescription className="text-center w-full max-w-sm mx-auto">
               Inviter des membres pour qu'ils puissent utiliser vos outils.
             </DialogDescription>
           </DialogHeader>
@@ -160,13 +181,15 @@ export default function InviteMembers({
             >
               {inviting ? "Envoi en cours..." : "Envoyer l'invitation"}
             </Button>
-            <Button
-              type="button"
-              className="w-full cursor-pointer"
-              variant="outline"
-            >
-              Annuler
-            </Button>
+            <DialogClose asChild>
+              <Button
+                type="button"
+                className="w-full cursor-pointer"
+                variant="outline"
+              >
+                Annuler
+              </Button>
+            </DialogClose>
           </div>
         </form>
       </DialogContent>

@@ -5,12 +5,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { Input } from "@/src/components/ui/input";
+import { Input, InputPassword } from "@/src/components/ui/input";
 import { SubmitButton } from "@/src/components/ui/submit-button";
 import { resetPassword } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import Link from "next/link";
 
 export default function ResetPasswordPage() {
@@ -19,6 +19,7 @@ export default function ResetPasswordPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
     setError: setFormError,
   } = useForm();
@@ -59,38 +60,48 @@ export default function ResetPasswordPage() {
             <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
               Entrez votre nouveau mot de passe pour sécuriser votre compte.
             </p>
-            
+
             <div className="mt-8">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div>
-                  <Input
-                    type="password"
-                    id="password"
-                    autoComplete="new-password"
-                    placeholder="Nouveau mot de passe"
-                    {...register("password", {
-                      required: "Mot de passe est requis",
+                  <Controller
+                    name="password"
+                    control={control}
+                    rules={{
+                      required: "Le mot de passe est requis",
                       minLength: {
                         value: 8,
-                        message: "Le mot de passe doit contenir au moins 8 caractères"
-                      }
-                    })}
+                        message: "Le mot de passe doit contenir au moins 8 caractères",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <InputPassword
+                        {...field}
+                        id="password"
+                        autoComplete="new-password"
+                        placeholder="Nouveau mot de passe"
+                      />
+                    )}
                   />
                   {errors.password && (
-                    <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.password.message}
+                    </p>
                   )}
                 </div>
-                
+
                 <SubmitButton
                   type="submit"
-                  className="w-full py-2 font-medium"
+                  className="w-full py-2 font-normal cursor-pointer"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Réinitialisation..." : "Réinitialiser le mot de passe"}
+                  {isSubmitting
+                    ? "Réinitialisation..."
+                    : "Réinitialiser le mot de passe"}
                 </SubmitButton>
               </form>
             </div>
-            
+
             <p className="mt-6 text-sm text-muted-foreground dark:text-muted-foreground text-center">
               Vous vous souvenez de votre mot de passe ?{" "}
               <Link
@@ -144,30 +155,40 @@ export default function ResetPasswordPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <Input
-                type="password"
-                id="password"
-                autoComplete="new-password"
-                placeholder="Nouveau mot de passe"
-                {...register("password", {
-                  required: "Mot de passe est requis",
+              <Controller
+                name="password"
+                control={control}
+                rules={{
+                  required: "Le mot de passe est requis",
                   minLength: {
                     value: 8,
-                    message: "Le mot de passe doit contenir au moins 8 caractères"
-                  }
-                })}
+                    message: "Le mot de passe doit contenir au moins 8 caractères",
+                  },
+                }}
+                render={({ field }) => (
+                  <InputPassword
+                    {...field}
+                    id="password"
+                    autoComplete="new-password"
+                    placeholder="Nouveau mot de passe"
+                  />
+                )}
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
               )}
             </div>
-            
+
             <SubmitButton
               type="submit"
               className="w-full py-2 font-medium"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Réinitialisation..." : "Réinitialiser le mot de passe"}
+              {isSubmitting
+                ? "Réinitialisation..."
+                : "Réinitialiser le mot de passe"}
             </SubmitButton>
           </form>
 

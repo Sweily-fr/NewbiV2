@@ -55,6 +55,18 @@ export default function EspacesSection() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const {
     register,
@@ -330,7 +342,13 @@ export default function EspacesSection() {
 
       {/* Invite Member Dialog */}
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent>
+        <DialogContent
+          className={`overflow-y-auto overflow-x-hidden ${
+            isMobile
+              ? "!fixed !inset-0 !w-screen !h-screen !max-w-none !max-h-none !m-0 !rounded-none !translate-x-0 !translate-y-0 !p-6"
+              : "sm:max-w-lg"
+          }`}
+        >
           <div className="flex flex-col items-center justify-center gap-2">
             <div
               className="flex size-11 shrink-0 items-center justify-center rounded-full border"
@@ -342,7 +360,7 @@ export default function EspacesSection() {
               <DialogTitle className="text-center font-medium">
                 Inviter des membres
               </DialogTitle>
-              <DialogDescription className="text-center w-sm">
+              <DialogDescription className="text-center w-full max-w-sm mx-auto">
                 Inviter des membres pour qu'ils puissent utiliser vos outils.
               </DialogDescription>
             </DialogHeader>

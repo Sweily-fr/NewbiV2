@@ -50,10 +50,11 @@ function TransfertsContent() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6">
-      <div className="space-y-4 sm:space-y-0">
-        {/* Title, description and button */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+    <>
+      {/* Desktop Layout */}
+      <div className="hidden md:block space-y-6 p-4 sm:p-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-medium mb-2">
               Gestion des Transferts Fichiers
@@ -62,24 +63,53 @@ function TransfertsContent() {
               Gérez vos transferts de fichiers et suivez les téléchargements
             </p>
           </div>
-          
-          {/* Action button */}
-          <div className="sm:flex-shrink-0">
-            <Link href="/dashboard/outils/transferts-fichiers/new">
-              <Button className="font-normal cursor-pointer w-full sm:w-auto">
-                {/* <IconPlus size={16} className="mr-2" /> */}
-                Transfert un fichier
-              </Button>
-            </Link>
+          <Link href="/dashboard/outils/transferts-fichiers/new">
+            <Button className="font-normal cursor-pointer w-full sm:w-auto">
+              <IconPlus className="mr-2 h-4 w-4" />
+              Transfert un fichier
+            </Button>
+          </Link>
+        </div>
+        
+        {/* Table */}
+        <TransferTable
+          transfers={transfers}
+          onRefresh={refetchTransfers}
+          loading={transfersLoading}
+        />
+      </div>
+
+      {/* Mobile Layout - Style Notion */}
+      <div className="md:hidden">
+        {/* Header - Style Notion sur mobile */}
+        <div className="px-4 py-6">
+          <div>
+            <h1 className="text-2xl font-medium mb-2">
+              Transferts Fichiers
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Gérez vos transferts de fichiers et suivez les téléchargements
+            </p>
           </div>
         </div>
+
+        {/* Table */}
+        <TransferTable
+          transfers={transfers}
+          onRefresh={refetchTransfers}
+          loading={transfersLoading}
+        />
+
+        {/* Bouton flottant mobile */}
+        <Link href="/dashboard/outils/transferts-fichiers/new">
+          <Button
+            className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
+            size="icon"
+          >
+            <IconPlus className="h-6 w-6" />
+          </Button>
+        </Link>
       </div>
-      
-      <TransferTable
-        transfers={transfers}
-        onRefresh={refetchTransfers}
-        loading={transfersLoading}
-      />
 
       {/* Dialog de succès après création */}
       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
@@ -124,7 +154,7 @@ function TransfertsContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
 

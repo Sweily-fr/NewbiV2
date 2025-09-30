@@ -1125,22 +1125,24 @@ function RowActions({ row, onEdit, onDelete }) {
 // Composant skeleton adaptatif pour le catalogue
 function CatalogSkeleton() {
   return (
-    <div className="space-y-4">
-      {/* Filters skeleton */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          {/* Search input skeleton */}
-          <Skeleton className="h-10 w-60" />
-          {/* Category filter skeleton */}
-          <Skeleton className="h-10 w-24" />
-          {/* Column filter skeleton */}
-          <Skeleton className="h-10 w-20 sm:w-24" />
+    <>
+      {/* Desktop Skeleton */}
+      <div className="hidden md:block space-y-4">
+        {/* Filters skeleton */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {/* Search input skeleton */}
+            <Skeleton className="h-10 w-60" />
+            {/* Category filter skeleton */}
+            <Skeleton className="h-10 w-24" />
+            {/* Column filter skeleton */}
+            <Skeleton className="h-10 w-20 sm:w-24" />
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Add product button skeleton */}
+            <Skeleton className="h-10 w-32 sm:w-40" />
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Add product button skeleton */}
-          <Skeleton className="h-10 w-32 sm:w-40" />
-        </div>
-      </div>
 
       {/* Table skeleton */}
       <div className="bg-background overflow-hidden rounded-md border">
@@ -1224,6 +1226,38 @@ function CatalogSkeleton() {
           <Skeleton className="h-10 w-10" />
         </div>
       </div>
-    </div>
+      </div>
+
+      {/* Mobile Skeleton */}
+      <div className="md:hidden space-y-4">
+        {/* Toolbar */}
+        <div className="px-4 py-3 space-y-3">
+          <Skeleton className="h-10 w-full" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 flex-1" />
+            <Skeleton className="h-9 w-20" />
+          </div>
+        </div>
+
+        {/* Product Cards */}
+        <div className="px-4 space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="border rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-12 w-12 rounded" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                  <div className="flex gap-2 mt-2">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
