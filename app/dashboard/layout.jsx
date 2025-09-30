@@ -22,6 +22,7 @@ import {
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { PricingModalTest } from "@/src/components/pricing-modal-test";
+import { LoaderCircle } from "lucide-react";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -77,7 +78,7 @@ function DashboardContent({ children }) {
   if (!isHydrated) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <LoaderCircle />
       </div>
     );
   }

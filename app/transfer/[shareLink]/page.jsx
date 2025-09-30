@@ -112,7 +112,7 @@ export default function TransferPage() {
           },
           body: JSON.stringify({
             fileId,
-            email: "guest@newbi.fr", // Email générique pour les téléchargements anonymes
+            email: `guest-${Date.now()}@newbi.fr`, // Email unique pour traçabilité
           }),
         }
       );
@@ -189,7 +189,7 @@ export default function TransferPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: "guest@newbi.fr", // Email générique pour les téléchargements anonymes
+            email: `guest-${Date.now()}@newbi.fr`, // Email unique pour traçabilité
           }),
         }
       );

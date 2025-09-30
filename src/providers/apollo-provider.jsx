@@ -3,6 +3,7 @@
 import { ApolloProvider } from "@apollo/client";
 import { apolloClient, getApolloClient } from "@/src/lib/apolloClient";
 import { useEffect, useState } from "react";
+import { LoaderCircle } from "lucide-react";
 
 export function ApolloWrapper({ children }) {
   const [client, setClient] = useState(apolloClient);
@@ -30,7 +31,7 @@ export function ApolloWrapper({ children }) {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <LoaderCircle />
         </div>
       </div>
     );
