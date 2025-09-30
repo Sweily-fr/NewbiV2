@@ -13,6 +13,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
+import { fr } from "date-fns/locale";
 
 import {
   DraggableEvent,
@@ -58,8 +59,8 @@ export function MonthView({
 
   const weekdays = useMemo(() => {
     return Array.from({ length: 7 }).map((_, i) => {
-      const date = addDays(startOfWeek(new Date()), i);
-      return format(date, "EEE");
+      const date = addDays(startOfWeek(new Date(), { weekStartsOn: 0 }), i);
+      return format(date, "EEE", { locale: fr });
     });
   }, []);
 
@@ -235,7 +236,7 @@ export function MonthView({
                           >
                             <div className="space-y-2">
                               <div className="text-sm font-medium">
-                                {format(day, "EEE d")}
+                                {format(day, "EEE d", { locale: fr })}
                               </div>
                               <div className="space-y-1">
                                 {sortEvents(allEvents).map((event) => {

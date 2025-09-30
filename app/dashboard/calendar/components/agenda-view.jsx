@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { RiCalendarEventLine } from "@remixicon/react";
 import { addDays, format, isToday } from "date-fns";
+import { fr } from "date-fns/locale";
 
 import { AgendaDaysToShow, EventItem, getAgendaEventsForDay } from "./index";
 
@@ -59,7 +60,7 @@ export function AgendaView({ currentDate, events, onEventSelect }) {
                 className="bg-background absolute -top-3 left-0 flex h-6 items-center pe-4 text-[10px] uppercase data-today:font-medium sm:pe-4 sm:text-xs"
                 data-today={isToday(day) || undefined}
               >
-                {format(day, "d MMM, EEEE")}
+                {format(day, "d MMM, EEEE", { locale: fr })}
               </span>
               <div className="mt-6 space-y-2">
                 {dayEvents.map((event) => (
