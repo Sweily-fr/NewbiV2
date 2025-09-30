@@ -28,7 +28,6 @@ function CataloguesContent() {
           </div>
         </div>
         <TableProduct handleAddProduct={handleOpenProductDialog} />
-        <ProductModal open={dialogOpen} onOpenChange={setDialogOpen} />
       </div>
 
       {/* Mobile Layout - Style Notion */}
@@ -45,7 +44,6 @@ function CataloguesContent() {
 
         {/* Table */}
         <TableProduct handleAddProduct={handleOpenProductDialog} />
-        <ProductModal open={dialogOpen} onOpenChange={setDialogOpen} />
 
         {/* Bouton flottant mobile */}
         <Button
@@ -56,6 +54,9 @@ function CataloguesContent() {
           <Plus className="h-6 w-6" />
         </Button>
       </div>
+
+      {/* Modal unique pour desktop et mobile */}
+      <ProductModal open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
   );
 }

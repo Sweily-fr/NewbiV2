@@ -28,7 +28,6 @@ function ClientsContent() {
           </div>
         </div>
         <TableUser handleAddUser={handleOpenInviteDialog} />
-        <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
       </div>
 
       {/* Mobile Layout - Style Notion */}
@@ -45,7 +44,6 @@ function ClientsContent() {
 
         {/* Table */}
         <TableUser handleAddUser={handleOpenInviteDialog} />
-        <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
 
         {/* Bouton flottant mobile */}
         <Button
@@ -56,6 +54,9 @@ function ClientsContent() {
           <Plus className="h-6 w-6" />
         </Button>
       </div>
+
+      {/* Modal unique pour desktop et mobile */}
+      <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
   );
 }

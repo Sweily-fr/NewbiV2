@@ -292,7 +292,7 @@ export function PreferencesSection() {
           </div>
 
           {/* Visibilité du profil */}
-          <div className="flex items-start justify-between">
+          {/* <div className="flex items-start justify-between">
             <div className="flex-1">
               <h3 className="text-sm font-medium mb-1">Visibilité du profil</h3>
               <p className="text-xs text-gray-400">
@@ -308,7 +308,7 @@ export function PreferencesSection() {
               defaultChecked={true}
               className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
             />
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
