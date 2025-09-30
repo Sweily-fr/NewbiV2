@@ -364,7 +364,7 @@ export default function TransferPage() {
 
   return (
     <div className="flex flex-col lg:flex-row h-screen relative">
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-2 relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-2 relative pt-16 lg:pt-2">
         {/* Confetti Canvas - limité à la partie gauche */}
         {paymentStatus === "success" && (
           <Confetti
@@ -378,7 +378,7 @@ export default function TransferPage() {
               Téléchargez les fichiers partagés avec vous
             </h1>
             <p className="text-sm text-gray-600">
-              Téléchargez les fichiers partagés avec vous
+              Accédez aux fichiers qui ont été partagés avec vous de manière sécurisée
             </p>
           </div>
 

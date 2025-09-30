@@ -1,6 +1,13 @@
 "use client";
 
-import { UserRoundPlusIcon, Search, Building, Loader2, ExternalLink } from "lucide-react";
+import {
+  UserRoundPlusIcon,
+  Search,
+  Building,
+  Loader2,
+  ExternalLink,
+} from "lucide-react";
+import { useState, useEffect } from "react";
 
 import { Button } from "@/src/components/ui/button";
 import {
@@ -26,14 +33,24 @@ import { Badge } from "@/src/components/ui/badge";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { useCreateClient, useUpdateClient } from "@/src/hooks/useClients";
-import { useState, useEffect } from "react";
-import { validateField, VALIDATION_PATTERNS } from "@/src/lib/validation";
-import { cn } from "@/src/lib/utils";
 
 // Import API Gouv utilities
 import { searchCompanies, convertCompanyToClient } from "@/src/utils/api-gouv";
 
 export default function ClientsModal({ client, onSave, open, onOpenChange }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const { createClient, loading: createLoading } = useCreateClient();
   const { updateClient, loading: updateLoading } = useUpdateClient();
   const isEditing = !!client;
@@ -208,9 +225,9 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
   // Fonction pour calculer le numéro de TVA français à partir du SIREN
   const calculateFrenchVAT = (siren) => {
-    if (!siren || siren.length !== 9) return '';
+    if (!siren || siren.length !== 9) return "";
     const key = (12 + 3 * (parseInt(siren) % 97)) % 97;
-    return `FR${key.toString().padStart(2, '0')}${siren}`;
+    return `FR${key.toString().padStart(2, "0")}${siren}`;
   };
 
   // Fonction pour sélectionner une entreprise de l'API Gouv
@@ -218,7 +235,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
     try {
       // Convertir l'entreprise en format client
       const clientData = convertCompanyToClient(company);
-      
+
       // Calculer le numéro de TVA automatiquement
       if (company.id) {
         clientData.vatNumber = calculateFrenchVAT(company.id);
@@ -244,7 +261,6 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
       // Notification de succès
       toast.success(`Entreprise "${company.name}" importée avec succès`);
-
     } catch (error) {
       console.error("Erreur lors de l'import de l'entreprise:", error);
       toast.error("Erreur lors de l'import de l'entreprise");
@@ -298,7 +314,13 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           Ajouter un collaborateur
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex flex-col max-h-[90vh] my-4 p-0 overflow-hidden">
+      <DialogContent
+        className={`flex flex-col p-0 overflow-hidden ${
+          isMobile
+            ? "!fixed !inset-0 !w-screen !h-screen !max-w-none !max-h-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
+            : "max-h-[90vh] my-4 sm:max-w-lg"
+        }`}
+      >
         <div className="flex flex-col gap-2 p-6 pb-0">
           <DialogHeader>
             <DialogTitle className="text-left">
@@ -320,7 +342,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
             <div className="space-y-4">
               {/* Type de client */}
               <div className="space-y-2">
-                <Label>Type de client *</Label>
+                <Label className="font-normal">Type de client *</Label>
                 <Controller
                   name="type"
                   control={control}
@@ -340,33 +362,41 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
               {/* Recherche d'entreprises via API Gouv Data */}
               {clientType === "COMPANY" && !showCompanySearch && (
-                <div className="space-y-3 p-4 border rounded-lg bg-blue-50 border-blue-200">
-                  <div className="flex items-center gap-2 text-blue-700">
-                    <Building className="h-4 w-4" />
-                    <span className="font-medium text-sm">Rechercher une entreprise française</span>
+                <div className="space-y-3 p-4 border rounded-lg bg-[#5a50ff]/5 border-[#5a50ff]/20">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10">
+                      <Building className="h-4 w-4 text-[#5a50ff]" />
+                    </div>
+                    <span className="font-medium text-sm text-[#5a50ff]">
+                      Rechercher une entreprise
+                    </span>
                   </div>
-                  <p className="text-xs text-blue-600">
-                    Importez automatiquement les informations d'une entreprise depuis la base officielle
+                  <p className="text-xs text-muted-foreground">
+                    Importez automatiquement les informations depuis la base
+                    officielle
                   </p>
                   <Button
                     type="button"
-                    variant="outline"
                     onClick={() => setShowCompanySearch(true)}
-                    className="w-full h-9 text-sm border-blue-300 hover:bg-blue-100"
+                    className="w-full h-9 text-sm bg-[#5a50ff] hover:bg-[#5a50ff]/90 text-white"
                   >
                     <Search className="h-4 w-4 mr-2" />
-                    Rechercher via API Data.gouv
+                    Rechercher
                   </Button>
                 </div>
               )}
 
               {/* Interface de recherche d'entreprises */}
               {clientType === "COMPANY" && showCompanySearch && (
-                <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+                <div className="space-y-4 p-4 border rounded-lg bg-[#5a50ff]/5 border-[#5a50ff]/20">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Building className="h-4 w-4 text-primary" />
-                      <Label className="font-medium">Rechercher une entreprise</Label>
+                      <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10">
+                        <Building className="h-4 w-4 text-[#5a50ff]" />
+                      </div>
+                      <Label className="font-medium text-[#5a50ff]">
+                        Rechercher une entreprise
+                      </Label>
                     </div>
                     <Button
                       type="button"
@@ -377,7 +407,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                         setCompanyQuery("");
                         setCompanies([]);
                       }}
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 hover:bg-[#5a50ff]/10 text-[#5a50ff]"
                     >
                       ×
                     </Button>
@@ -394,7 +424,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Recherchez une entreprise française via la base de données officielle
+                      Recherchez une entreprise française via la base de données
+                      officielle
                     </p>
                   </div>
 
@@ -411,20 +442,20 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                       {companies.map((company) => (
                         <div
                           key={company.id}
-                          className="p-3 border rounded-lg hover:bg-white cursor-pointer transition-colors"
+                          className="p-3 border rounded-lg bg-white hover:border-[#5a50ff] hover:shadow-sm cursor-pointer transition-all"
                           onClick={() => handleCompanySelect(company)}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <Building className="h-4 w-4 text-primary flex-shrink-0" />
+                                <Building className="h-4 w-4 text-[#5a50ff] flex-shrink-0" />
                                 <h4 className="font-medium text-sm truncate">
                                   {company.name}
                                 </h4>
                                 {company.status === "A" && (
                                   <Badge
                                     variant="outline"
-                                    className="text-xs bg-green-50 text-green-700 border-green-200"
+                                    className="text-xs bg-[#5a50ff]/10 text-[#5a50ff] border-[#5a50ff]/20"
                                   >
                                     Active
                                   </Badge>
@@ -436,31 +467,34 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                                 </p>
                                 {company.address && (
                                   <p className="text-xs text-muted-foreground truncate">
-                                    <strong>Adresse:</strong> {company.address}, {company.postalCode} {company.city}
+                                    <strong>Adresse:</strong> {company.address},{" "}
+                                    {company.postalCode} {company.city}
                                   </p>
                                 )}
                               </div>
                             </div>
-                            <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
+                            <ExternalLink className="h-4 w-4 text-[#5a50ff]/50 flex-shrink-0 ml-2" />
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {companyQuery && !loadingCompanies && companies.length === 0 && (
-                    <div className="text-center p-6 text-muted-foreground">
-                      <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">
-                        Aucune entreprise trouvée pour "{companyQuery}"
-                      </p>
-                      <p className="text-xs mt-1">
-                        Essayez avec un nom d'entreprise ou un SIRET
-                      </p>
-                    </div>
-                  )}
+                  {companyQuery &&
+                    !loadingCompanies &&
+                    companies.length === 0 && (
+                      <div className="text-center p-6 text-muted-foreground">
+                        <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">
+                          Aucune entreprise trouvée pour "{companyQuery}"
+                        </p>
+                        <p className="text-xs mt-1">
+                          Essayez avec un nom d'entreprise ou un SIRET
+                        </p>
+                      </div>
+                    )}
 
-                  <div className="pt-2 border-t">
+                  <div className="pt-2 border-t border-[#5a50ff]/10">
                     <Button
                       type="button"
                       variant="outline"
@@ -469,7 +503,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                         setCompanyQuery("");
                         setCompanies([]);
                       }}
-                      className="w-full h-9 text-sm"
+                      className="w-full h-9 text-sm border-[#5a50ff]/20 text-[#5a50ff] hover:bg-[#5a50ff]/5"
                     >
                       Saisir manuellement
                     </Button>
@@ -481,7 +515,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               {/* Raison sociale uniquement pour les entreprises */}
               {clientType === "COMPANY" && !showCompanySearch && (
                 <div className="space-y-2">
-                  <Label>Raison sociale *</Label>
+                  <Label className="font-normal">Raison sociale *</Label>
                   <Input
                     placeholder="Nom de l'entreprise"
                     className={cn(errors.name && "border-red-500 focus:border-red-500")}
@@ -521,7 +555,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
                   {/* Nom de famille */}
                   <div className="space-y-2">
-                    <Label>Nom *</Label>
+                    <Label className="font-normal">Nom *</Label>
                     <Input
                       placeholder="Nom"
                       className={cn(errors.lastName && "border-red-500 focus:border-red-500")}
@@ -544,7 +578,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                 <div className="grid grid-cols-2 gap-4">
                   {/* Contact pour entreprises */}
                   <div className="space-y-2">
-                    <Label>Contact</Label>
+                    <Label className="font-normal">Contact</Label>
                     <Input
                       placeholder="Nom du contact"
                       className={cn(errors.firstName && "border-red-500 focus:border-red-500")}
@@ -564,7 +598,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
                   {/* Email (pour tous les types) */}
                   <div className="space-y-2">
-                    <Label>Email *</Label>
+                    <Label className="font-normal">Email *</Label>
                     <InputEmail
                       placeholder="contact@entreprise.com"
                       className={cn(errors.email && "border-red-500 focus:border-red-500")}
@@ -582,7 +616,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               {/* Email pour particuliers (ligne séparée) */}
               {clientType === "INDIVIDUAL" && (
                 <div className="space-y-2">
-                  <Label>Email *</Label>
+                  <Label className="font-normal">Email *</Label>
                   <InputEmail
                     placeholder="client@exemple.com"
                     className={cn(errors.email && "border-red-500 focus:border-red-500")}
@@ -598,9 +632,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
               {/* Adresse de facturation */}
               <div className="space-y-3 py-2">
-
                 <div className="space-y-2">
-                  <Label>Adresse de facturation *</Label>
+                  <Label className="font-normal">Adresse de facturation</Label>
                   <Textarea
                     placeholder="123 Rue de la Paix"
                     className={cn(errors.address?.street && "border-red-500 focus:border-red-500")}
@@ -616,7 +649,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Ville *</Label>
+                    <Label className="font-normal">Ville</Label>
                     <Input
                       placeholder="Paris"
                       className={cn(errors.address?.city && "border-red-500 focus:border-red-500")}
@@ -629,7 +662,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Code postal *</Label>
+                    <Label className="font-normal">Code postal</Label>
                     <Input
                       placeholder="75001"
                       className={cn(errors.address?.postalCode && "border-red-500 focus:border-red-500")}
@@ -644,7 +677,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Pays *</Label>
+                  <Label className="font-normal">Pays</Label>
                   <Input
                     placeholder="France"
                     className={cn(errors.address?.country && "border-red-500 focus:border-red-500")}
@@ -665,7 +698,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   checked={hasDifferentShipping}
                   onCheckedChange={setHasDifferentShipping}
                 />
-                <Label htmlFor="differentShipping">
+                <Label htmlFor="differentShipping" className="font-normal">
                   Adresse de livraison différente
                 </Label>
               </div>
@@ -673,29 +706,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               {/* Adresse de livraison */}
               {hasDifferentShipping && (
                 <div className="space-y-3 border-l-2 border-gray-200 pl-4">
-                  <Label className="text-base font-medium">Adresse de livraison</Label>
-
                   <div className="space-y-2">
-                    <Label>Nom complet du destinataire</Label>
-                    <Input
-                      placeholder="Nom complet du destinataire"
-                      className={cn(errors.shippingAddress?.fullName && "border-red-500 focus:border-red-500")}
-                      {...register("shippingAddress.fullName", {
-                        pattern: {
-                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,100}$/,
-                          message: "Le nom complet doit contenir entre 2 et 100 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                        },
-                      })}
-                    />
-                    {errors.shippingAddress?.fullName && (
-                      <p className="text-sm text-red-500">
-                        {errors.shippingAddress.fullName.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Adresse *</Label>
+                    <Label className="font-normal">Adresse</Label>
                     <Textarea
                       placeholder="123 Rue de la Livraison"
                       className={cn(errors.shippingAddress?.street && "border-red-500 focus:border-red-500")}
@@ -711,7 +723,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Ville *</Label>
+                      <Label className="font-normal">Ville</Label>
                       <Input
                         placeholder="Paris"
                         className={cn(errors.shippingAddress?.city && "border-red-500 focus:border-red-500")}
@@ -724,7 +736,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label>Code postal *</Label>
+                      <Label className="font-normal">Code postal</Label>
                       <Input
                         placeholder="75001"
                         className={cn(errors.shippingAddress?.postalCode && "border-red-500 focus:border-red-500")}
@@ -739,7 +751,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Pays *</Label>
+                    <Label className="font-normal">Pays</Label>
                     <Input
                       placeholder="France"
                       className={cn(errors.shippingAddress?.country && "border-red-500 focus:border-red-500")}
@@ -757,12 +769,12 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               {/* Informations entreprise (pour les entreprises) */}
               {clientType === "COMPANY" && (
                 <div className="space-y-3 border-t pt-4">
-                  <Label className="text-base font-medium">
+                  <Label className="text-base font-normal">
                     Informations entreprise
                   </Label>
 
                   <div className="space-y-2">
-                    <Label>SIRET</Label>
+                    <Label className="font-normal">SIRET</Label>
                     <Input
                       placeholder="12345678901234"
                       className={cn(errors.siret && "border-red-500 focus:border-red-500")}
@@ -776,7 +788,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Numéro de TVA</Label>
+                    <Label className="font-normal">Numéro de TVA</Label>
                     <Input
                       placeholder="FR12345678901"
                       className={cn(errors.vatNumber && "border-red-500 focus:border-red-500")}

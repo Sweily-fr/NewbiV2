@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm, Controller } from "react-hook-form";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -24,7 +24,6 @@ import {
 import { Textarea } from "@/src/components/ui/textarea";
 import { useCreateProduct, useUpdateProduct } from "@/src/hooks/useProducts";
 import { toast } from "@/src/components/ui/sonner";
-import { useState } from "react";
 import { PackagePlusIcon } from "lucide-react";
 
 // Options prédéfinies pour les champs select
@@ -79,6 +78,19 @@ const UNITS = [
 ];
 
 export default function ProductModal({ product, onSave, open, onOpenChange }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const { createProduct, loading: createLoading } = useCreateProduct();
   const { updateProduct, loading: updateLoading } = useUpdateProduct();
   const isEditing = !!product;
@@ -179,7 +191,13 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           Ajouter un produit / service
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent
+        className={`${
+          isMobile
+            ? "!fixed !inset-0 !w-screen !h-screen !max-w-none !max-h-none !m-0 !rounded-none !translate-x-0 !translate-y-0 overflow-y-auto !p-6"
+            : "max-w-2xl sm:max-w-lg"
+        }`}
+      >
         <div className="flex flex-col gap-2">
           <DialogHeader>
             <DialogTitle className="text-left">
@@ -193,11 +211,11 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           </DialogHeader>
         </div>
 
-        <div className="space-y-5 max-h-[70vh] p-1 overflow-y-auto">
+        <div className="space-y-5 max-h-[70vh] p-1 overflow-y-auto pb-20 sm:pb-1">
           <div className="space-y-4">
             {/* Nom du produit */}
             <div className="space-y-2">
-              <Label>Nom du produit *</Label>
+              <Label className="font-normal">Nom du produit *</Label>
               <Input
                 placeholder="Ex: Ordinateur portable Dell XPS 13"
                 {...register("name", { 
@@ -215,7 +233,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
 
             {/* Référence */}
             <div className="space-y-2">
-              <Label>Référence</Label>
+              <Label className="font-normal">Référence</Label>
               <Input
                 placeholder="Ex: DELL-XPS13-2024"
                 {...register("reference")}
@@ -227,9 +245,9 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
 
 
             {/* Prix unitaire, TVA et Unité */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Prix unitaire (HT) *</Label>
+                <Label className="font-normal">Prix unitaire (HT) *</Label>
                 <div className="relative">
                   <Input
                     type="number"
@@ -255,7 +273,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
               </div>
 
               <div className="space-y-2">
-                <Label>Taux de TVA (%) *</Label>
+                <Label className="font-normal">Taux de TVA (%) *</Label>
                 <Controller
                   name="vatRate"
                   control={control}
@@ -281,7 +299,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
               </div>
 
               <div className="space-y-2">
-                <Label>Unité *</Label>
+                <Label className="font-normal">Unité *</Label>
                 <Controller
                   name="unit"
                   control={control}
@@ -310,7 +328,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
 
             {/* Catégorie */}
             <div className="space-y-2">
-              <Label>Catégorie</Label>
+              <Label className="font-normal">Catégorie</Label>
               <Input
                 placeholder="Ex: Matériel informatique, Fournitures de bureau..."
                 {...register("category")}
@@ -322,7 +340,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label className="font-normal">Description</Label>
               <Textarea
                 placeholder="Description détaillée du produit..."
                 rows={4}

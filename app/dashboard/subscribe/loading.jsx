@@ -2,41 +2,41 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 
 export default function Loading() {
   return (
-    <div className="p-6">
+    <div className="px-4 md:px-6 py-4 md:py-6">
       {/* Header Skeleton */}
       <div className="mb-6">
-        <Skeleton className="h-7 w-64" />
+        <Skeleton className="h-6 md:h-7 w-48 md:w-64" />
       </div>
 
       <div className="space-y-6">
         {/* Section Forfait actif Skeleton */}
         <div className="border border-gray-200 dark:bg-[#252525] dark:border-[#313131]/90 rounded-lg p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+            <div className="flex-1 w-full">
               <div className="flex items-center gap-2 mb-2">
-                <Skeleton className="h-7 w-16" />
+                <Skeleton className="h-6 md:h-7 w-14 md:w-16" />
                 <Skeleton className="h-5 w-12 rounded-full" />
               </div>
               <Skeleton className="h-4 w-full mb-3" />
               <div className="space-y-1">
-                <Skeleton className="h-3 w-48" />
-                <Skeleton className="h-3 w-40" />
-                <Skeleton className="h-3 w-56" />
+                <Skeleton className="h-3 w-full md:w-48" />
+                <Skeleton className="h-3 w-3/4 md:w-40" />
+                <Skeleton className="h-3 w-full md:w-56" />
               </div>
             </div>
-            <div className="text-right flex-shrink-0">
+            <div className="text-left md:text-right flex-shrink-0 w-full md:w-auto">
               <Skeleton className="h-4 w-32 mb-3" />
-              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-8 w-full md:w-24" />
             </div>
           </div>
         </div>
 
         {/* Section Tous les forfaits Skeleton */}
         <div>
-          <Skeleton className="h-7 w-32 mb-4" />
+          <Skeleton className="h-6 md:h-7 w-28 md:w-32 mb-4" />
 
           {/* Section Comparaison des forfaits Skeleton */}
-          <div className="flex justify-between gap-4 mb-6">
+          <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
             {/* Plan Gratuit Skeleton */}
             <div className="flex-1 border border-gray-200 dark:border-[#313131]/90 dark:bg-[#252525] rounded-lg p-4 flex flex-col">
               <div className="mb-3">

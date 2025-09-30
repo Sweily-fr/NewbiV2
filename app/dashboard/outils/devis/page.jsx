@@ -79,7 +79,9 @@ export default function QuotesPage() {
 
 function QuoteTableSkeleton() {
   return (
-    <div className="space-y-4">
+    <>
+      {/* Desktop Skeleton */}
+      <div className="hidden md:block space-y-4">
       {/* Filters skeleton */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -166,6 +168,39 @@ function QuoteTableSkeleton() {
           <Skeleton className="h-9 w-9" />
         </div>
       </div>
-    </div>
+      </div>
+
+      {/* Mobile Skeleton */}
+      <div className="md:hidden">
+        {/* Header */}
+        <div className="px-4 py-6 space-y-2">
+          <Skeleton className="h-7 w-24" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+
+        {/* Toolbar */}
+        <div className="px-4 py-3">
+          <Skeleton className="h-10 w-full" />
+        </div>
+
+        {/* Table rows */}
+        <div className="overflow-x-auto">
+          <div className="min-w-max">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="border-b border-gray-50 px-4 py-3">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-4" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

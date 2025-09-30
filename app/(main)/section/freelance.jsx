@@ -32,14 +32,15 @@ const Freelance = () => {
                 <span aria-hidden="true" className="absolute -translate-x-full">
                   “
                 </span>
-                  Newbi me fait gagner des heures: envoi simple, paiement avant téléchargement, zéro relance client.
+                Newbi me fait gagner des heures: envoi simple, paiement avant
+                téléchargement, zéro relance client.
                 <span aria-hidden="true" className="absolute">
                   ”
                 </span>
               </p>
             </blockquote>
             <figcaption className="mt-4 border-t border-white/20 pt-4">
-              <p className="text-sm font-medium text-white">Sofian Mtimet</p>
+              <p className="text-sm font-medium text-white">Sofia durant</p>
               <p className="text-sm font-medium">
                 <span className="bg-linear-to-r from-[#fff1be] from-28% via-[#ee87cb] via-70% to-[#b060ff] bg-clip-text text-transparent">
                   Photographe
@@ -67,7 +68,8 @@ const Freelance = () => {
                 <span aria-hidden="true" className="absolute -translate-x-full">
                   “
                 </span>
-                  J’envoie mes plans, maquettes, devis et factures au même endroit : c’est rapide et tellement facile.
+                J’envoie mes plans, maquettes, devis et factures au même endroit
+                : c’est rapide et tellement facile.
                 <span aria-hidden="true" className="absolute">
                   ”
                 </span>
@@ -102,7 +104,8 @@ const Freelance = () => {
                 <span aria-hidden="true" className="absolute -translate-x-full">
                   “
                 </span>
-                  Un tableau Kanban simple pour piloter tous mes évènements, j’adore !
+                Un tableau Kanban simple pour piloter tous mes évènements,
+                j’adore !
                 <span aria-hidden="true" className="absolute">
                   ”
                 </span>
@@ -137,7 +140,8 @@ const Freelance = () => {
                 <span aria-hidden="true" className="absolute -translate-x-full">
                   “
                 </span>
-                  Une plateforme flexible, ultra simple, Newbi m’a vraiment aidé à lancer mon activité sans stress.
+                Une plateforme flexible, ultra simple, Newbi m’a vraiment aidé à
+                lancer mon activité sans stress.
                 <span aria-hidden="true" className="absolute">
                   ”
                 </span>
@@ -172,7 +176,7 @@ const Freelance = () => {
                 <span aria-hidden="true" className="absolute -translate-x-full">
                   “
                 </span>
-                  Un prix parfait pour démarrer mon activité sereinement.
+                Un prix parfait pour démarrer mon activité sereinement.
                 <span aria-hidden="true" className="absolute">
                   ”
                 </span>
@@ -187,7 +191,7 @@ const Freelance = () => {
               </p>
             </figcaption>
           </figure>
-        </div>    
+        </div>
         <div className="w-2xl shrink-0 sm:w-216"></div>
       </div>
       <div className="mt-16 px-6 lg:px-8">
