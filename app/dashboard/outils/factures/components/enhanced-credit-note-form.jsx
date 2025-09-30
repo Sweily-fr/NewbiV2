@@ -174,12 +174,12 @@ function ProductSearchCombobox({
           />
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="p-0" 
-        align="start" 
+      <PopoverContent
+        className="p-0"
+        align="start"
         sideOffset={4}
-        style={{ 
-          width: 'calc(var(--radix-popover-trigger-width) + 12rem)'
+        style={{
+          width: "calc(var(--radix-popover-trigger-width) + 12rem)",
         }}
       >
         <Command>
@@ -228,9 +228,17 @@ function ProductSearchCombobox({
   );
 }
 
-export default function EnhancedCreditNoteForm({ mode, originalInvoice, organization, onSave, onSubmit, loading, saving }) {
+export default function EnhancedCreditNoteForm({
+  mode,
+  originalInvoice,
+  organization,
+  onSave,
+  onSubmit,
+  loading,
+  saving,
+}) {
   const [currentStep, setCurrentStep] = useState(1);
-  
+
   const {
     register,
     watch,
@@ -309,20 +317,25 @@ export default function EnhancedCreditNoteForm({ mode, originalInvoice, organiza
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Facture d'origine</span>
+                        <span className="text-sm font-normal">
+                          Facture d'origine
+                        </span>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {originalInvoice.number} • {originalInvoice.client?.name}
+                        {originalInvoice.number} •{" "}
+                        {originalInvoice.client?.name}
                         {originalInvoice.finalTotalTTC && (
-                          <span> • {originalInvoice.finalTotalTTC.toFixed(2)} €</span>
+                          <span>
+                            {" "}
+                            • {originalInvoice.finalTotalTTC.toFixed(2)} €
+                          </span>
                         )}
                       </div>
                     </div>
                   )}
 
-
                   {/* Credit Type and Refund Method - 50/50 */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-4">
                     <div className="space-y-2">
                       <Label className="font-normal">Type d'avoir</Label>
                       <Select
@@ -334,38 +347,48 @@ export default function EnhancedCreditNoteForm({ mode, originalInvoice, organiza
                           <SelectValue placeholder="Sélectionner le type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(CREDIT_TYPE_LABELS).map(([key, label]) => (
-                            <SelectItem key={key} value={key}>
-                              {label}
-                            </SelectItem>
-                          ))}
+                          {Object.entries(CREDIT_TYPE_LABELS).map(
+                            ([key, label]) => (
+                              <SelectItem key={key} value={key}>
+                                {label}
+                              </SelectItem>
+                            )
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="font-normal">Méthode de remboursement</Label>
+                      <Label className="font-normal">
+                        Méthode de remboursement
+                      </Label>
                       <Select
                         value={formData.refundMethod}
-                        onValueChange={(value) => setValue("refundMethod", value)}
+                        onValueChange={(value) =>
+                          setValue("refundMethod", value)
+                        }
                         disabled={isReadOnly}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Sélectionner la méthode" />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(REFUND_METHOD_LABELS).map(([key, label]) => (
-                            <SelectItem key={key} value={key}>
-                              {label}
-                            </SelectItem>
-                          ))}
+                          {Object.entries(REFUND_METHOD_LABELS).map(
+                            ([key, label]) => (
+                              <SelectItem key={key} value={key}>
+                                {label}
+                              </SelectItem>
+                            )
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="reason" className="font-normal">Motif de l'avoir</Label>
+                    <Label htmlFor="reason" className="font-normal">
+                      Motif de l'avoir
+                    </Label>
                     <Textarea
                       id="reason"
                       {...register("reason")}
@@ -390,7 +413,11 @@ export default function EnhancedCreditNoteForm({ mode, originalInvoice, organiza
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {formData.issueDate
-                            ? format(parseDate(formData.issueDate), "dd MMMM yyyy", { locale: fr })
+                            ? format(
+                                parseDate(formData.issueDate),
+                                "dd MMMM yyyy",
+                                { locale: fr }
+                              )
                             : "Sélectionner une date"}
                         </Button>
                       </PopoverTrigger>
@@ -398,7 +425,9 @@ export default function EnhancedCreditNoteForm({ mode, originalInvoice, organiza
                         <CalendarComponent
                           mode="single"
                           selected={parseDate(formData.issueDate)}
-                          onSelect={(date) => handleDateChange("issueDate", date)}
+                          onSelect={(date) =>
+                            handleDateChange("issueDate", date)
+                          }
                           initialFocus
                         />
                       </PopoverContent>
@@ -413,14 +442,12 @@ export default function EnhancedCreditNoteForm({ mode, originalInvoice, organiza
           {currentStep === 2 && (
             <>
               {/* Items Section */}
-              <ItemsSection 
-                mode={mode} 
+              <ItemsSection
+                mode={mode}
                 canEdit={canEdit}
                 ProductSearchCombobox={ProductSearchCombobox}
                 isCreditNote={true}
               />
-
-              
             </>
           )}
         </div>

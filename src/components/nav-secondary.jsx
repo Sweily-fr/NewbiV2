@@ -16,6 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarGroupContent,
+  useSidebar,
 } from "@/src/components/ui/sidebar";
 
 import {
@@ -146,6 +147,14 @@ export function NavSecondary({ items, ...props }) {
   const [open, setOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const { isActive } = useSubscription();
+  const { isMobile, setOpenMobile } = useSidebar();
+  
+  // Fonction pour fermer la sidebar sur mobile lors du clic
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <SidebarGroup {...props}>
@@ -167,6 +176,7 @@ export function NavSecondary({ items, ...props }) {
                       // Déclencher l'événement personnalisé pour ouvrir la recherche
                       window.dispatchEvent(new Event("open-search-command"));
                     }
+                    handleLinkClick();
                   }}
                 >
                   <item.icon />
