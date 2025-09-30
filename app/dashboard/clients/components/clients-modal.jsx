@@ -27,6 +27,8 @@ import { useForm, Controller } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { useCreateClient, useUpdateClient } from "@/src/hooks/useClients";
 import { useState, useEffect } from "react";
+import { validateField, VALIDATION_PATTERNS } from "@/src/lib/validation";
+import { cn } from "@/src/lib/utils";
 
 // Import API Gouv utilities
 import { searchCompanies, convertCompanyToClient } from "@/src/utils/api-gouv";
@@ -43,8 +45,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
     control,
     watch,
     reset,
-    formState: { errors },
+    setValue,
+    trigger,
+    formState: { errors, isValid },
   } = useForm({
+    mode: "onChange", // Validation en temps réel
     defaultValues: {
       type: "INDIVIDUAL",
       name: "",
@@ -70,7 +75,33 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
   });
 
   const [hasDifferentShipping, setHasDifferentShipping] = useState(false);
+  const [customErrors, setCustomErrors] = useState({});
   const clientType = watch("type");
+
+  // Fonction pour valider un champ avec le système de validation
+  const validateClientField = (fieldName, value, isRequired = false) => {
+    const validation = validateField(value, fieldName, isRequired);
+    return validation.isValid ? undefined : validation.message;
+  };
+
+  // Fonction pour obtenir les règles de validation React Hook Form
+  const getValidationRules = (fieldName, isRequired = false) => {
+    const pattern = VALIDATION_PATTERNS[fieldName];
+    const rules = {};
+    
+    if (isRequired) {
+      rules.required = "Ce champ est requis";
+    }
+    
+    if (pattern) {
+      rules.pattern = {
+        value: pattern.pattern,
+        message: pattern.message
+      };
+    }
+    
+    return rules;
+  };
 
   // États pour la recherche d'entreprises via API Gouv
   const [companyQuery, setCompanyQuery] = useState("");
@@ -222,6 +253,15 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
   const onSubmit = async (formData) => {
     try {
+      // Validation finale avant soumission
+      const hasFormErrors = Object.keys(errors).length > 0;
+      const hasCustomErrors = Object.keys(customErrors).length > 0;
+      
+      if (hasFormErrors || hasCustomErrors) {
+        toast.error("Veuillez corriger les erreurs avant de soumettre le formulaire");
+        return;
+      }
+
       const clientData = {
         ...formData,
         hasDifferentShippingAddress: hasDifferentShipping,
@@ -241,6 +281,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
       // La notification est déjà gérée par le hook useUpdateClient/useCreateClient
       reset();
+      setCustomErrors({});
       onOpenChange(false);
     } catch (error) {
       // La notification d'erreur est déjà gérée par le hook useCreateClient/useUpdateClient
@@ -443,14 +484,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   <Label>Raison sociale *</Label>
                   <Input
                     placeholder="Nom de l'entreprise"
-                    {...register("name", {
-                      required: "Ce champ est requis",
-                      pattern: {
-                        value: /^[a-zA-ZÀ-ÿ0-9\s&'"\-.,()]{2,100}$/,
-                        message:
-                          "Le nom de l'entreprise doit contenir entre 2 et 100 caractères",
-                      },
-                    })}
+                    className={cn(errors.name && "border-red-500 focus:border-red-500")}
+                    {...register("name", getValidationRules("companyName", true))}
                   />
                   {errors.name && (
                     <p className="text-sm text-red-500">
@@ -468,12 +503,12 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     <Label>Prénom *</Label>
                     <Input
                       placeholder="Prénom"
+                      className={cn(errors.firstName && "border-red-500 focus:border-red-500")}
                       {...register("firstName", {
                         required: "Le prénom est requis",
                         pattern: {
                           value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                          message:
-                            "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                          message: "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
                         },
                       })}
                     />
@@ -489,12 +524,12 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     <Label>Nom *</Label>
                     <Input
                       placeholder="Nom"
+                      className={cn(errors.lastName && "border-red-500 focus:border-red-500")}
                       {...register("lastName", {
                         required: "Le nom est requis",
                         pattern: {
                           value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                          message:
-                            "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                          message: "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
                         },
                       })}
                     />
@@ -512,11 +547,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     <Label>Contact</Label>
                     <Input
                       placeholder="Nom du contact"
+                      className={cn(errors.firstName && "border-red-500 focus:border-red-500")}
                       {...register("firstName", {
                         pattern: {
                           value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                          message:
-                            "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                          message: "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
                         },
                       })}
                     />
@@ -532,13 +567,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     <Label>Email *</Label>
                     <InputEmail
                       placeholder="contact@entreprise.com"
-                      {...register("email", {
-                        required: "L'email est requis",
-                        pattern: {
-                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                          message: "Email invalide",
-                        },
-                      })}
+                      className={cn(errors.email && "border-red-500 focus:border-red-500")}
+                      {...register("email", getValidationRules("email", true))}
                     />
                     {errors.email && (
                       <p className="text-sm text-red-500">
@@ -555,13 +585,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   <Label>Email *</Label>
                   <InputEmail
                     placeholder="client@exemple.com"
-                    {...register("email", {
-                      required: "L'email est requis",
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: "Email invalide",
-                      },
-                    })}
+                    className={cn(errors.email && "border-red-500 focus:border-red-500")}
+                    {...register("email", getValidationRules("email", true))}
                   />
                   {errors.email && (
                     <p className="text-sm text-red-500">
@@ -575,26 +600,27 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               <div className="space-y-3 py-2">
 
                 <div className="space-y-2">
-                  <Label> Adresse de facturation</Label>
+                  <Label>Adresse de facturation *</Label>
                   <Textarea
                     placeholder="123 Rue de la Paix"
-                    {...register("address.street")}
+                    className={cn(errors.address?.street && "border-red-500 focus:border-red-500")}
+                    {...register("address.street", getValidationRules("street", true))}
                     rows={2}
                   />
+                  {errors.address?.street && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {errors.address.street.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Ville</Label>
+                    <Label>Ville *</Label>
                     <Input
                       placeholder="Paris"
-                      {...register("address.city", {
-                        pattern: {
-                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                          message:
-                            "La ville doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                        },
-                      })}
+                      className={cn(errors.address?.city && "border-red-500 focus:border-red-500")}
+                      {...register("address.city", getValidationRules("city", true))}
                     />
                     {errors.address?.city && (
                       <p className="text-sm text-red-500">
@@ -603,16 +629,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Code postal</Label>
+                    <Label>Code postal *</Label>
                     <Input
                       placeholder="75001"
-                      {...register("address.postalCode", {
-                        pattern: {
-                          value: /^[0-9]{5}$/,
-                          message:
-                            "Le code postal doit contenir exactement 5 chiffres",
-                        },
-                      })}
+                      className={cn(errors.address?.postalCode && "border-red-500 focus:border-red-500")}
+                      {...register("address.postalCode", getValidationRules("postalCode", true))}
                     />
                     {errors.address?.postalCode && (
                       <p className="text-sm text-red-500">
@@ -623,16 +644,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Pays</Label>
+                  <Label>Pays *</Label>
                   <Input
                     placeholder="France"
-                    {...register("address.country", {
-                      pattern: {
-                        value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                        message:
-                          "Le pays doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                      },
-                    })}
+                    className={cn(errors.address?.country && "border-red-500 focus:border-red-500")}
+                    {...register("address.country", getValidationRules("country", true))}
                   />
                   {errors.address?.country && (
                     <p className="text-sm text-red-500">
@@ -657,28 +673,49 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               {/* Adresse de livraison */}
               {hasDifferentShipping && (
                 <div className="space-y-3 border-l-2 border-gray-200 pl-4">
+                  <Label className="text-base font-medium">Adresse de livraison</Label>
 
                   <div className="space-y-2">
-                    <Label>Adresse</Label>
+                    <Label>Nom complet du destinataire</Label>
+                    <Input
+                      placeholder="Nom complet du destinataire"
+                      className={cn(errors.shippingAddress?.fullName && "border-red-500 focus:border-red-500")}
+                      {...register("shippingAddress.fullName", {
+                        pattern: {
+                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,100}$/,
+                          message: "Le nom complet doit contenir entre 2 et 100 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                        },
+                      })}
+                    />
+                    {errors.shippingAddress?.fullName && (
+                      <p className="text-sm text-red-500">
+                        {errors.shippingAddress.fullName.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Adresse *</Label>
                     <Textarea
                       placeholder="123 Rue de la Livraison"
-                      {...register("shippingAddress.street")}
+                      className={cn(errors.shippingAddress?.street && "border-red-500 focus:border-red-500")}
+                      {...register("shippingAddress.street", getValidationRules("street", hasDifferentShipping))}
                       rows={2}
                     />
+                    {errors.shippingAddress?.street && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {errors.shippingAddress.street.message}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Ville</Label>
+                      <Label>Ville *</Label>
                       <Input
                         placeholder="Paris"
-                        {...register("shippingAddress.city", {
-                          pattern: {
-                            value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                            message:
-                              "La ville doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                          },
-                        })}
+                        className={cn(errors.shippingAddress?.city && "border-red-500 focus:border-red-500")}
+                        {...register("shippingAddress.city", getValidationRules("city", hasDifferentShipping))}
                       />
                       {errors.shippingAddress?.city && (
                         <p className="text-sm text-red-500">
@@ -687,16 +724,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label>Code postal</Label>
+                      <Label>Code postal *</Label>
                       <Input
                         placeholder="75001"
-                        {...register("shippingAddress.postalCode", {
-                          pattern: {
-                            value: /^[0-9]{5}$/,
-                            message:
-                              "Le code postal doit contenir exactement 5 chiffres",
-                          },
-                        })}
+                        className={cn(errors.shippingAddress?.postalCode && "border-red-500 focus:border-red-500")}
+                        {...register("shippingAddress.postalCode", getValidationRules("postalCode", hasDifferentShipping))}
                       />
                       {errors.shippingAddress?.postalCode && (
                         <p className="text-sm text-red-500">
@@ -707,16 +739,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Pays</Label>
+                    <Label>Pays *</Label>
                     <Input
                       placeholder="France"
-                      {...register("shippingAddress.country", {
-                        pattern: {
-                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                          message:
-                            "Le pays doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                        },
-                      })}
+                      className={cn(errors.shippingAddress?.country && "border-red-500 focus:border-red-500")}
+                      {...register("shippingAddress.country", getValidationRules("country", hasDifferentShipping))}
                     />
                     {errors.shippingAddress?.country && (
                       <p className="text-sm text-red-500">
@@ -738,13 +765,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     <Label>SIRET</Label>
                     <Input
                       placeholder="12345678901234"
-                      {...register("siret", {
-                        pattern: {
-                          value: /^[0-9]{14}$/,
-                          message:
-                            "Le SIRET doit contenir exactement 14 chiffres",
-                        },
-                      })}
+                      className={cn(errors.siret && "border-red-500 focus:border-red-500")}
+                      {...register("siret", getValidationRules("siret"))}
                     />
                     {errors.siret && (
                       <p className="text-sm text-red-500">
@@ -757,12 +779,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     <Label>Numéro de TVA</Label>
                     <Input
                       placeholder="FR12345678901"
-                      {...register("vatNumber", {
-                        pattern: {
-                          value: /^[A-Z]{2}[0-9A-Z]{2,13}$/,
-                          message: "Format de TVA invalide (ex: FR12345678901)",
-                        },
-                      })}
+                      className={cn(errors.vatNumber && "border-red-500 focus:border-red-500")}
+                      {...register("vatNumber", getValidationRules("vatNumber"))}
                     />
                     {errors.vatNumber && (
                       <p className="text-sm text-red-500">
@@ -785,7 +803,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
             >
               Annuler
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
+            <Button 
+              type="submit" 
+              disabled={loading || Object.keys(errors).length > 0 || Object.keys(customErrors).length > 0} 
+              className="flex-1"
+            >
               {loading ? "Enregistrement..." : isEditing ? "Modifier" : "Créer"}
             </Button>
           </div>

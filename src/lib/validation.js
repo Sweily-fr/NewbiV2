@@ -64,22 +64,20 @@ export const getVisibleFields = (legalForm, isVatSubject = false, hasCommercialA
 
 // Patterns de validation regex
 export const VALIDATION_PATTERNS = {
-  // Informations générales
+  // Informations générales - Synchronisé avec le backend (validators.js)
   companyName: {
-    pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()]{2,100}$/,
-    message:
-      "Le nom doit contenir entre 2 et 100 caractères (lettres, chiffres, espaces et caractères spéciaux autorisés: -&'.,())",
+    pattern: /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&]{2,50}$/,
+    message: "Le nom doit contenir entre 2 et 50 caractères (lettres, chiffres, espaces et caractères spéciaux autorisés, < et > interdits)",
   },
 
   email: {
-    pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+    pattern: /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
     message: "Format d'email invalide",
   },
 
   phone: {
-    pattern: /^(\+33|0)[1-9](\d{8})$/,
-    message:
-      "Numéro de téléphone français invalide (ex: +33123456789 ou 0123456789)",
+    pattern: /^(?:(?:\+|00)33[ .-]?|0[ .-]?)([1-9])[ .-]?(\d{2})[ .-]?(\d{2})[ .-]?(\d{2})[ .-]?(\d{2})$/,
+    message: "Numéro de téléphone français invalide (ex: +33 6 12 34 56 78, 06.12.34.56.78, 0612345678)",
   },
 
   website: {
@@ -94,27 +92,25 @@ export const VALIDATION_PATTERNS = {
       "La description ne peut contenir que des lettres, chiffres, espaces et ponctuation basique (max 1000 caractères)",
   },
 
-  // Adresse
+  // Adresse - Synchronisé avec le backend (validators.js)
   street: {
-    pattern: /^[a-zA-ZÀ-ÿ0-9\s\-.,()]{2,200}$/,
-    message:
-      "L'adresse doit contenir entre 2 et 200 caractères (lettres, chiffres, espaces et -.,() autorisés)",
+    pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s,'\-\.]{3,100}$/,
+    message: "L'adresse doit contenir entre 3 et 100 caractères (lettres, chiffres, espaces, virgules, apostrophes, tirets et points autorisés)",
   },
 
   city: {
-    pattern: /^[a-zA-ZÀ-ÿ\s\-']{2,100}$/,
-    message:
-      "La ville doit contenir entre 2 et 100 caractères (lettres, espaces, tirets et apostrophes uniquement)",
+    pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-\.]{2,50}$/,
+    message: "La ville doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, tirets et points uniquement)",
   },
 
   postalCode: {
-    pattern: /^[0-9]{5}$/,
-    message: "Code postal français invalide (5 chiffres)",
+    pattern: /^(0[1-9]|[1-8]\d|9[0-8])\d{3}$/,
+    message: "Code postal français invalide (format: 01000 à 98999)",
   },
 
   country: {
-    pattern: /^[a-zA-ZÀ-ÿ\s\-]{2,50}$/,
-    message: "Nom de pays invalide",
+    pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-\.]{2,50}$/,
+    message: "Le pays doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, tirets et points uniquement)",
   },
 
   // Informations bancaires
@@ -133,25 +129,25 @@ export const VALIDATION_PATTERNS = {
     message: "Nom de banque invalide",
   },
 
-  // Informations légales
+  // Informations légales - Synchronisé avec le backend (validators.js)
   siret: {
-    pattern: /^[0-9]{14}$/,
+    pattern: /^\d{14}$/,
     message: "Le SIRET doit contenir exactement 14 chiffres",
   },
 
   vatNumber: {
-    pattern: /^[A-Z]{2}[0-9A-Z]{2,13}$/,
+    pattern: /^[A-Z]{2}[0-9A-Z]{2,12}$/,
     message: "Format de numéro de TVA invalide (ex: FR12345678901)",
   },
 
   rcs: {
-    pattern: /^RCS\s[a-zA-ZÀ-ÿ\s\-']{2,50}\s[0-9]{3}\s[0-9]{3}\s[0-9]{3}$/,
-    message: "Format RCS invalide (ex: RCS Paris 123 456 789)",
+    pattern: /^(\d{3}\s?\d{3}\s?\d{3}\s?R\.?C\.?S\.?\s[A-Za-zÀ-ÖØ-öø-ÿ\s]{2,30}|[A-Za-zÀ-ÖØ-öø-ÿ\s]{2,30}\s[A-Z]?\s?\d{3}\s?\d{3}\s?\d{3})$/,
+    message: "Format RCS invalide (ex: 981 576 549 R.C.S. Paris ou Paris B 123 456 789)",
   },
 
   capital: {
-    pattern: /^[0-9]{1,15}(\.[0-9]{1,2})?$/,
-    message: "Capital social invalide (chiffres uniquement, max 2 décimales)",
+    pattern: /^\d{1,20}(\.\d{1,2})?$/,
+    message: "Capital social invalide (chiffres uniquement, max 2 décimales, jusqu'à 20 chiffres)",
   },
 
   fiscalRegime: {
