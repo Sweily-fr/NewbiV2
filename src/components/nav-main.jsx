@@ -23,7 +23,10 @@ export function NavMain({ items }) {
   const { setOpenMobile, isMobile } = useSidebar();
 
   // Définir les onglets qui nécessitent un abonnement Pro
-  const proTabs = ["Tableau de bord", "Clients"]; // "Catalogues" retiré
+  const proTabs = ["Tableau de bord", "Clients"];
+  
+  // Définir les onglets qui nécessitent un abonnement Pro PAYANT (pas de trial)
+  const paidProTabs = ["Catalogues"];
   
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
@@ -56,7 +59,10 @@ export function NavMain({ items }) {
         <SidebarMenu>
           {items.map((item) => {
             const isProTab = proTabs.includes(item.title);
-            const hasAccess = !isProTab || isActive();
+            const isPaidProTab = paidProTabs.includes(item.title);
+            const hasAccess = (!isProTab && !isPaidProTab) || 
+                             (isProTab && isActive()) || 
+                             (isPaidProTab && isActive(true)); // true = requirePaidSubscription
 
             return (
               <SidebarMenuItem key={item.title}>
@@ -71,7 +77,7 @@ export function NavMain({ items }) {
                         "bg-[#F0F0F0] hover:bg-[#F0F0F0]/90 active:bg-[#F0F0F0] text-black min-w-8 duration-200 ease-linear"
                     )}
                     tooltip={
-                      isProTab && !isActive()
+                      (isProTab || isPaidProTab) && !hasAccess
                         ? `${item.title} - Fonctionnalité Pro`
                         : item.title
                     }
@@ -81,7 +87,7 @@ export function NavMain({ items }) {
                     <span className="font-polysans font-light">
                       {item.title}
                     </span>
-                    {isProTab && !isActive() && (
+                    {(isProTab || isPaidProTab) && !hasAccess && (
                       <Crown className="w-3 h-3 ml-auto text-[#5b4fff]" />
                     )}
                   </SidebarMenuButton>

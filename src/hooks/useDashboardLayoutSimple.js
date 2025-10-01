@@ -189,11 +189,17 @@ export function useDashboardLayoutSimple() {
     return subscription?.limits?.[feature] || 0;
   };
 
-  const isActive = () => {
+  const isActive = (requirePaidSubscription = false) => {
     const hasActiveSubscription = 
       subscription?.status === "active" || 
       subscription?.status === "trialing";
     
+    // Si on exige un abonnement payant, ignorer la période d'essai
+    if (requirePaidSubscription) {
+      return hasActiveSubscription;
+    }
+    
+    // Sinon, accepter aussi la période d'essai
     if (!hasActiveSubscription) {
       return trial.hasPremiumAccess;
     }

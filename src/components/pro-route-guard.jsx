@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
-export function ProRouteGuard({ children, pageName }) {
+export function ProRouteGuard({ children, pageName, requirePaidSubscription = false }) {
   const { isActive, isLoading, subscription, isInitialized } = useSubscription();
   const router = useRouter();
   const [hasChecked, setHasChecked] = useState(false);
@@ -16,7 +16,7 @@ export function ProRouteGuard({ children, pageName }) {
       setHasChecked(true);
 
       // Vérifier si l'utilisateur a un abonnement actif
-      const hasActiveSubscription = isActive();
+      const hasActiveSubscription = isActive(requirePaidSubscription);
 
       if (!hasActiveSubscription) {
         router.replace("/dashboard/outils");
@@ -56,7 +56,7 @@ export function ProRouteGuard({ children, pageName }) {
   }
 
   // Si l'utilisateur a un abonnement actif, afficher le contenu
-  if (isActive()) {
+  if (isActive(requirePaidSubscription)) {
     return children;
   }
 
