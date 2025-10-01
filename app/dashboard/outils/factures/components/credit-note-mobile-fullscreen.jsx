@@ -56,7 +56,7 @@ export default function CreditNoteMobileFullscreen({
   return (
     <>
       {/* Fullscreen overlay - Seulement sur mobile */}
-      <div className="fixed inset-0 z-50 bg-background md:hidden overflow-hidden">
+      <div className="fixed inset-0 z-[60] bg-background md:hidden overflow-hidden">
         {/* Header avec croix */}
         <div className="sticky top-0 z-10 bg-background border-b">
           <div className="flex items-center justify-between p-4">
@@ -117,9 +117,9 @@ export default function CreditNoteMobileFullscreen({
                 </div>
               </div>
 
-              {/* Aperçu PDF - Optimisé pour mobile */}
-              <div className="border rounded-lg overflow-hidden bg-white">
-                <div className="w-full" style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}>
+              {/* Aperçu PDF - Format A4 adapté à la largeur mobile */}
+              <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
+                <div className="w-full" style={{ aspectRatio: '1 / 1.414' }}>
                   <UniversalPreviewPDF
                     data={creditNote}
                     type="creditNote"
