@@ -336,7 +336,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
 
   return (
     <div
-      className="w-full bg-white shadow-lg relative min-h-screen flex flex-col"
+      className={`w-full bg-white shadow-lg relative flex flex-col ${isMobile ? '' : 'min-h-screen'}`}
       style={{ 
         color: data.appearance?.textColor || "#000000",
         fontSize: isMobile ? '6px' : '10px',

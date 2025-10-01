@@ -195,13 +195,11 @@ export default function QuoteMobileFullscreen({
               </div>
 
               {/* Aperçu PDF - Version mobile avec même design que desktop */}
-              <div className="w-full rounded-lg shadow-sm overflow-hidden" style={{ display: 'inline-block' }}>
                 <UniversalPreviewPDF
                   data={quote}
                   type="quote"
                   isMobile={true}
                 />
-              </div>
 
               {/* Factures liées */}
               {quote.linkedInvoices && quote.linkedInvoices.length > 0 && (
