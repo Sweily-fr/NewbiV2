@@ -1,10 +1,9 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import HeroAnimation from "./hero-animation";
-import { getAssetUrl } from "@/src/lib/image-utils";
+import { TrustedCompaniesSection } from "@/src/components/trusted-companies-section";
 
 export function HeroSection() {
   return (
@@ -41,93 +40,7 @@ export function HeroSection() {
             </div>
           </div>
         </section>
-        <section className="bg-background pb-10 pt-10 md:pb-32">
-          <div className="group relative m-auto max-w-5xl px-6">
-            <div className="absolute inset-0 z-10 flex scale-95 items-center justify-center opacity-0 duration-500 group-hover:scale-100 group-hover:opacity-100">
-              <div className="block text-sm duration-150 hover:opacity-75">
-                <span>Ils nous font confiance</span>
-
-                <ChevronRight className="ml-1 inline-block size-3" />
-              </div>
-            </div>
-            <div className="group-hover:blur-xs mx-auto mt-12 grid max-w-2xl grid-cols-4 gap-x-12 transition-all duration-500 group-hover:opacity-50 sm:gap-x-16 sm:gap-y-14">
-              <div className="flex">
-                <img
-                  className="mx-auto w-fit filter grayscale opacity-30 hover:opacity-90 transition-opacity"
-                  src={getAssetUrl("Logo company/new3dge.png")}
-                  alt="Entreprise 1"
-                  height="10"
-                  width="auto"
-                />
-              </div>
-
-              <div className="flex">
-                <img
-                  className="mx-auto w-fit filter grayscale opacity-30 hover:opacity-90 transition-opacity"
-                  src={getAssetUrl("Logo company/awayout.png")}
-                  alt="Entreprise 2"
-                  height="10"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto w-fit filter grayscale opacity-30 hover:opacity-90 transition-opacity"
-                  src={getAssetUrl("Logo company/cgs.png")}
-                  alt="Entreprise 3"
-                  height="10"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto w-fit filter grayscale opacity-30 hover:opacity-90 transition-opacity"
-                  src={getAssetUrl("Logo company/mardy.png")}
-                  alt="Entreprise 4"
-                  height="10"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto w-fit filter grayscale opacity-30 hover:opacity-90 transition-opacity"
-                  src={getAssetUrl("Logo company/heritage.png")}
-                  alt="Entreprise 5"
-                  height="10"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto w-fit filter grayscale opacity-30 hover:opacity-90 transition-opacity"
-                  src={getAssetUrl("Logo company/smefrance.png")}
-                  alt="Entreprise 6"
-                  height="10"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto w-fit filter grayscale opacity-30 hover:opacity-90 transition-opacity"
-                  src={getAssetUrl("Logo company/skyevent.png")}
-                  alt="Entreprise 7"
-                  height="10"
-                  width="auto"
-                />
-              </div>
-
-              <div className="flex">
-                <img
-                  className="mx-auto w-fit filter grayscale opacity-30 hover:opacity-90 transition-opacity"
-                  src={getAssetUrl("Logo company/new3dge.png")}
-                  alt="Entreprise 1"
-                  height="10"
-                  width="auto"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
+        <TrustedCompaniesSection />
       </main>
     </>
   );
