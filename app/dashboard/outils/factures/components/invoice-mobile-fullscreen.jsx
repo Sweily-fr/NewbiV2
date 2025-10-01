@@ -205,7 +205,7 @@ export default function InvoiceMobileFullscreen({
               {/* Avoirs liés - Cliquables pour télécharger */}
               {creditNotes && creditNotes.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Avoirs créés ({creditNotes.length})</p>
+                  <p className="text-sm font-normal">Avoirs créés ({creditNotes.length})</p>
                   <div className="space-y-2">
                     {creditNotes.map((cn) => (
                       <div
@@ -213,22 +213,19 @@ export default function InvoiceMobileFullscreen({
                         className="flex items-center justify-between p-3 border rounded-lg"
                       >
                         <div className="flex-1">
-                          <p className="font-medium">{cn.number}</p>
+                          <p className="font-normal">{cn.number}</p>
                           <p className="text-sm text-muted-foreground">
                             {formatDate(cn.issueDate)}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-red-600">
-                            {formatCurrency(cn.finalTotalTTC)}
-                          </p>
                           <UniversalPDFGenerator
                             data={cn}
                             type="creditNote"
                             variant="ghost"
                             size="sm"
                           >
-                            <Download className="h-4 w-4" />
+                            Télécharger
                           </UniversalPDFGenerator>
                         </div>
                       </div>
@@ -321,9 +318,8 @@ export default function InvoiceMobileFullscreen({
             data={invoice}
             type="invoice"
             variant="outline"
-            className="w-full"
+            className="w-full flex items-center justify-center"
           >
-            <Download className="mr-2 h-4 w-4" />
             Télécharger PDF
           </UniversalPDFGenerator>
         </div>

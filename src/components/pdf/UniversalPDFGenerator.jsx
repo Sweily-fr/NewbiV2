@@ -55,7 +55,7 @@ const UniversalPDFGenerator = ({
         disabled={isGenerating || disabled}
         variant={variant}
         size={size}
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 font-normal"
         {...props}
       >
         {isGenerating ? (
