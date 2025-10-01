@@ -193,7 +193,7 @@ export default function InvoiceMobileFullscreen({
               </div>
 
               {/* Aperçu PDF - Version mobile avec même design que desktop */}
-              <div className="w-full rounded-lg shadow-sm overflow-hidden">
+              <div className="w-full rounded-lg shadow-sm overflow-hidden" style={{ display: 'inline-block' }}>
                 <UniversalPreviewPDF
                   data={invoice}
                   type="invoice"
