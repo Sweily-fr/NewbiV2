@@ -3,7 +3,7 @@
 import { ApolloProvider } from "@apollo/client";
 import { apolloClient, getApolloClient } from "@/src/lib/apolloClient";
 import { useEffect, useState } from "react";
-import { LoaderCircle } from "lucide-react";
+// import { LoaderCircle } from "lucide-react";
 
 export function ApolloWrapper({ children }) {
   const [client, setClient] = useState(apolloClient);
@@ -26,16 +26,16 @@ export function ApolloWrapper({ children }) {
     initializeClient();
   }, []);
 
-  // Afficher un skeleton minimal pendant l'initialisation
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="flex items-center justify-center min-h-screen">
-          <LoaderCircle />
-        </div>
-      </div>
-    );
-  }
+  // // Afficher un skeleton minimal pendant l'initialisation
+  // if (!isInitialized) {
+  //   return (
+  //     <div className="min-h-screen bg-background">
+  //       <div className="flex items-center justify-center min-h-screen">
+  //         <LoaderCircle />
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return <ApolloProvider client={client}>{children}</ApolloProvider>;
 }

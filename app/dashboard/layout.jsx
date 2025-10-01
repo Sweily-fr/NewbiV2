@@ -22,7 +22,7 @@ import {
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
-import { LoaderCircle } from "lucide-react";
+// import { LoaderCircle } from "lucide-react";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -77,14 +77,14 @@ function DashboardContent({ children }) {
     // Pas de contexte disponible, c'est normal si on n'est pas sur la page de signature
   }
 
-  // Afficher un loader pendant l'hydratation
-  if (!isHydrated) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <LoaderCircle />
-      </div>
-    );
-  }
+  // // Afficher un loader pendant l'hydratation
+  // if (!isHydrated) {
+  //   return (
+  //     <div className="flex h-screen items-center justify-center">
+  //       <LoaderCircle />
+  //     </div>
+  //   );
+  // }
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
