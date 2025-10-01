@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -262,6 +262,7 @@ const columns = [
 ];
 
 export default function TableProduct({ handleAddProduct }) {
+  console.log('🔵 TableProduct render');
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -269,12 +270,14 @@ export default function TableProduct({ handleAddProduct }) {
     pageIndex: 0,
     pageSize: 10,
   });
+  console.log('📊 Current pagination:', pagination);
   const inputRef = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [editingProduct, setEditingProduct] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Utilisation du hook pour récupérer les produits (sans recherche côté serveur)
+  // On récupère TOUS les produits car la pagination est gérée côté client
   const {
     products: allProducts,
     totalItems,
@@ -283,7 +286,7 @@ export default function TableProduct({ handleAddProduct }) {
     loading,
     error,
     refetch,
-  } = useProducts(pagination.pageIndex + 1, pagination.pageSize, ""); // Pas de recherche côté serveur
+  } = useProducts(1, 1000, ""); // Récupère tous les produits (pagination côté client)
 
   const { deleteProduct: deleteProductMain } = useDeleteProduct();
 
@@ -298,11 +301,6 @@ export default function TableProduct({ handleAddProduct }) {
       return searchableContent.includes(searchTerm);
     });
   }, [allProducts, globalFilter]);
-
-  // Refetch quand la pagination change (mais pas pour les filtres)
-  useEffect(() => {
-    refetch();
-  }, [pagination.pageIndex, pagination.pageSize, refetch]);
 
   const [sorting, setSorting] = useState([
     {
@@ -356,12 +354,16 @@ export default function TableProduct({ handleAddProduct }) {
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     enableSortingRemoval: false,
-    manualPagination: false, // Désactiver la pagination manuelle pour le filtrage local
-    onPaginationChange: setPagination,
+    manualPagination: false,
+    pageCount: Math.ceil(filteredProducts.length / pagination.pageSize),
+    onPaginationChange: (updater) => {
+      console.log('🔄 Pagination change triggered', updater);
+      setPagination(updater);
+    },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(), // Ajouter la pagination côté client
+    getPaginationRowModel: getPaginationRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     state: {
       sorting,
@@ -373,31 +375,24 @@ export default function TableProduct({ handleAddProduct }) {
       handleEditProduct,
       handleDeleteProduct: async (id) => {
         await deleteProductMain(id);
-        await refetch(); // Force refetch après suppression
+        await refetch();
       },
     },
   });
 
   // Get unique category values
-  const uniqueCategoryValues = useMemo(() => {
-    const categoryColumn = table.getColumn("category");
-    if (!categoryColumn) return [];
-    const values = Array.from(categoryColumn.getFacetedUniqueValues().keys());
-    return values.sort();
-  }, [table.getColumn("category")?.getFacetedUniqueValues()]);
+  const categoryColumn = table.getColumn("category");
+  const uniqueCategoryValues = categoryColumn 
+    ? Array.from(categoryColumn.getFacetedUniqueValues().keys()).sort()
+    : [];
 
   // Get counts for each category
-  const categoryCounts = useMemo(() => {
-    const categoryColumn = table.getColumn("category");
-    if (!categoryColumn) return new Map();
-    return categoryColumn.getFacetedUniqueValues();
-  }, [table.getColumn("category")?.getFacetedUniqueValues()]);
+  const categoryCounts = categoryColumn 
+    ? categoryColumn.getFacetedUniqueValues()
+    : new Map();
 
   // Get selected categories
-  const selectedCategories = useMemo(() => {
-    const filterValue = table.getColumn("category")?.getFilterValue();
-    return filterValue ?? [];
-  }, [table.getColumn("category")?.getFilterValue()]);
+  const selectedCategories = categoryColumn?.getFilterValue() ?? [];
 
   // Affichage du skeleton pendant le chargement
   if (loading) {
