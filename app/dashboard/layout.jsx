@@ -21,7 +21,7 @@ import {
 } from "@/src/contexts/dashboard-layout-context";
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
-import { PricingModalTest } from "@/src/components/pricing-modal-test";
+import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
 import { LoaderCircle } from "lucide-react";
 
 // Composant interne qui utilise le contexte
@@ -39,6 +39,9 @@ function DashboardContent({ children }) {
     isLoading: onboardingLoading,
     isInitialized: layoutInitialized,
   } = useOnboarding();
+
+  // Hook pour gérer la déconnexion automatique après 15 minutes d'inactivité
+  useInactivityTimer(15, true);
 
   // Protection contre l'erreur d'hydratation
   useEffect(() => {
@@ -127,15 +130,6 @@ function DashboardContent({ children }) {
         onComplete={completeOnboarding}
       />
 
-      {/* Panel de debug du cache (développement uniquement) - DÉSACTIVÉ */}
-      {/* {process.env.NODE_ENV === 'development' && (
-        <CacheDebugPanel />
-      )} */}
-
-      {/* Bouton de test pour la PricingModal (développement uniquement) */}
-      {process.env.NODE_ENV === 'development' && (
-        <PricingModalTest />
-      )}
     </SidebarProvider>
   );
 }
