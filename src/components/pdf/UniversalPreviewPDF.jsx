@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -23,9 +23,44 @@ const calculateItemTotal = (quantity, unitPrice, discount, discountType) => {
 const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
   const { data: session } = useSession();
   const { organization } = useWorkspace();
+  const documentRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  const [containerHeight, setContainerHeight] = useState('auto');
 
   // Déterminer si c'est un avoir (credit note)
   const isCreditNote = type === "creditNote";
+
+  // Fonction pour calculer le scale dynamiquement
+  useEffect(() => {
+    if (!isMobile || !documentRef.current) return;
+
+    const calculateScale = () => {
+      const screenWidth = window.innerWidth;
+      const docWidth = 210 * 3.7795; // 210mm (format A4) en pixels (environ 794px)
+      const padding = 32; // Padding total (16px de chaque côté)
+      const calculatedScale = Math.min(1, (screenWidth - padding) / docWidth);
+      
+      setScale(calculatedScale);
+      
+      // Calculer la hauteur du conteneur après le scale
+      if (documentRef.current) {
+        const docHeight = documentRef.current.scrollHeight;
+        setContainerHeight(`${docHeight * calculatedScale}px`);
+      }
+    };
+
+    // Calculer au montage et au redimensionnement
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    
+    // Recalculer après un court délai pour s'assurer que le contenu est chargé
+    const timer = setTimeout(calculateScale, 100);
+
+    return () => {
+      window.removeEventListener('resize', calculateScale);
+      clearTimeout(timer);
+    };
+  }, [isMobile, data]);
 
   // Calcul des totaux basé sur les articles
   const calculateTotals = (items = []) => {
@@ -336,13 +371,21 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
 
   return (
     <div
-      className={`w-full bg-white shadow-lg relative flex flex-col ${isMobile ? 'min-h-0' : 'min-h-screen'}`}
-      style={{ 
-        color: data.appearance?.textColor || "#000000",
-        fontSize: isMobile ? '6px' : '10px',
-        zoom: isMobile ? '0.4' : '1',
-      }}
+      style={isMobile ? { height: containerHeight, overflow: 'hidden' } : {}}
     >
+      <div
+        ref={documentRef}
+        className={`w-full bg-white shadow-lg relative flex flex-col ${isMobile ? 'min-h-0' : 'min-h-screen'}`}
+        style={{ 
+          color: data.appearance?.textColor || "#000000",
+          fontSize: isMobile ? '6px' : '10px',
+          ...(isMobile && {
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            width: `${100 / scale}%`,
+          }),
+        }}
+      >
       {/* CONTENU PRINCIPAL */}
       <div className={isMobile ? "px-6 pt-4 pb-4 relative flex-grow" : "px-14 pt-10 pb-32 relative flex-grow"}>
         {/* HEADER */}
@@ -1130,6 +1173,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
             {data.companyInfo?.rcs && ` - ${data.companyInfo.rcs}`}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
