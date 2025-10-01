@@ -180,7 +180,33 @@ const LoginForm = () => {
         if (callbackUrl) {
           router.push(callbackUrl);
         } else {
-          router.push("/dashboard");
+          // Vérifier si l'utilisateur a un plan Pro
+          try {
+            const { data: session } = await authClient.getSession();
+            const organizationId = session?.session?.activeOrganizationId;
+            
+            if (organizationId) {
+              const { data: subscriptions } = await authClient.subscription.list({
+                query: {
+                  referenceId: organizationId,
+                },
+              });
+              
+              const hasActiveSubscription = subscriptions?.some(
+                (sub) => sub.status === "active" || sub.status === "trialing"
+              );
+              
+              // Rediriger vers /dashboard si Pro, sinon vers /dashboard/outils
+              router.push(hasActiveSubscription ? "/dashboard" : "/dashboard/outils");
+            } else {
+              // Pas d'organisation, rediriger vers /dashboard/outils par défaut
+              router.push("/dashboard/outils");
+            }
+          } catch (error) {
+            console.error("Erreur lors de la vérification de l'abonnement:", error);
+            // En cas d'erreur, rediriger vers /dashboard/outils par défaut
+            router.push("/dashboard/outils");
+          }
         }
       },
       onError: async (error) => {
@@ -319,7 +345,33 @@ const LoginForm = () => {
       if (callbackUrl) {
         router.push(callbackUrl);
       } else {
-        router.push("/dashboard");
+        // Vérifier si l'utilisateur a un plan Pro
+        try {
+          const { data: session } = await authClient.getSession();
+          const organizationId = session?.session?.activeOrganizationId;
+          
+          if (organizationId) {
+            const { data: subscriptions } = await authClient.subscription.list({
+              query: {
+                referenceId: organizationId,
+              },
+            });
+            
+            const hasActiveSubscription = subscriptions?.some(
+              (sub) => sub.status === "active" || sub.status === "trialing"
+            );
+            
+            // Rediriger vers /dashboard si Pro, sinon vers /dashboard/outils
+            router.push(hasActiveSubscription ? "/dashboard" : "/dashboard/outils");
+          } else {
+            // Pas d'organisation, rediriger vers /dashboard/outils par défaut
+            router.push("/dashboard/outils");
+          }
+        } catch (error) {
+          console.error("Erreur lors de la vérification de l'abonnement:", error);
+          // En cas d'erreur, rediriger vers /dashboard/outils par défaut
+          router.push("/dashboard/outils");
+        }
       }
 
       return true;
