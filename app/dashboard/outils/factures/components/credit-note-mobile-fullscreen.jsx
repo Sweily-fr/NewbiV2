@@ -21,6 +21,7 @@ export default function CreditNoteMobileFullscreen({
     loading: loadingFullCreditNote,
   } = useCreditNote(initialCreditNote?.id);
 
+  // Ne rien afficher si pas ouvert ou pas d'avoir
   if (!isOpen || !initialCreditNote) return null;
 
   // Utiliser les données complètes si disponibles, sinon les données initiales
@@ -61,8 +62,8 @@ export default function CreditNoteMobileFullscreen({
 
   return (
     <>
-      {/* Fullscreen overlay */}
-      <div className="fixed inset-0 z-50 bg-background md:hidden">
+      {/* Fullscreen overlay - Seulement sur mobile */}
+      <div className="fixed inset-0 z-50 bg-background md:hidden overflow-hidden">
         {/* Header avec croix */}
         <div className="sticky top-0 z-10 bg-background border-b">
           <div className="flex items-center justify-between p-4">

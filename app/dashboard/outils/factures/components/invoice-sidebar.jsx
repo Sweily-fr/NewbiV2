@@ -598,15 +598,17 @@ export default function InvoiceSidebar({
         </div>
       )}
 
-      {/* Credit Note Fullscreen - Mobile only */}
-      <CreditNoteMobileFullscreen
-        creditNote={selectedCreditNote}
-        isOpen={isCreditNoteMobileFullscreen}
-        onClose={() => {
-          setIsCreditNoteMobileFullscreen(false);
-          setSelectedCreditNote(null);
-        }}
-      />
+      {/* Credit Note Fullscreen - Mobile only - Ne monter que si ouvert */}
+      {isCreditNoteMobileFullscreen && selectedCreditNote && (
+        <CreditNoteMobileFullscreen
+          creditNote={selectedCreditNote}
+          isOpen={isCreditNoteMobileFullscreen}
+          onClose={() => {
+            setIsCreditNoteMobileFullscreen(false);
+            setSelectedCreditNote(null);
+          }}
+        />
+      )}
     </>
   );
 }

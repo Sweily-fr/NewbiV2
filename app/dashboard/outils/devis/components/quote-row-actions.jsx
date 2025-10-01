@@ -212,13 +212,15 @@ export default function QuoteRowActions({ row, onRefetch }) {
         isViewMode={true}
       />
 
-      {/* Fullscreen pour mobile */}
-      <QuoteMobileFullscreen
-        quote={quote}
-        isOpen={isMobileFullscreenOpen}
-        onClose={() => setIsMobileFullscreenOpen(false)}
-        onRefetch={onRefetch}
-      />
+      {/* Fullscreen pour mobile - Ne monter que si ouvert */}
+      {isMobileFullscreenOpen && (
+        <QuoteMobileFullscreen
+          quote={quote}
+          isOpen={isMobileFullscreenOpen}
+          onClose={() => setIsMobileFullscreenOpen(false)}
+          onRefetch={onRefetch}
+        />
+      )}
     </>
   );
 }

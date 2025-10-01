@@ -227,13 +227,15 @@ export default function InvoiceRowActions({ row, onRefetch }) {
         onRefetch={onRefetch}
       />
 
-      {/* Fullscreen pour mobile */}
-      <InvoiceMobileFullscreen
-        invoice={invoice}
-        isOpen={isMobileFullscreenOpen}
-        onClose={() => setIsMobileFullscreenOpen(false)}
-        onRefetch={onRefetch}
-      />
+      {/* Fullscreen pour mobile - Ne monter que si ouvert */}
+      {isMobileFullscreenOpen && (
+        <InvoiceMobileFullscreen
+          invoice={invoice}
+          isOpen={isMobileFullscreenOpen}
+          onClose={() => setIsMobileFullscreenOpen(false)}
+          onRefetch={onRefetch}
+        />
+      )}
     </>
   );
 }
