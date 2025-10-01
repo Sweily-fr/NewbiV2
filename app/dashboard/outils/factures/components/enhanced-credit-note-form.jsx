@@ -454,7 +454,7 @@ export default function EnhancedCreditNoteForm({
       </div>
 
       {/* Footer avec boutons d'action */}
-      <div className="pt-8 mt-6 z-50 border-t">
+      <div className="pt-6 mt-6 border-t bg-background sticky bottom-0">
         <div className="max-w-2xl mx-auto">
           <div className="flex justify-between items-center">
             <Button

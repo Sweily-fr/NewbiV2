@@ -42,6 +42,7 @@ import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
+import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 
 export default function InvoiceSidebar({
   isOpen,
@@ -52,7 +53,9 @@ export default function InvoiceSidebar({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedCreditNote, setSelectedCreditNote] = useState(null);
   const [isCreditNotePreviewOpen, setIsCreditNotePreviewOpen] = useState(false);
+  const [isCreditNoteMobileFullscreen, setIsCreditNoteMobileFullscreen] = useState(false);
   const [showMobileDetails, setShowMobileDetails] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const router = useRouter();
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
@@ -71,6 +74,16 @@ export default function InvoiceSidebar({
     loading: loadingFullInvoice,
     error: invoiceError,
   } = useInvoice(initialInvoice?.id);
+
+  // Détecter si on est sur mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Réinitialiser showMobileDetails quand la sidebar se ferme
   useEffect(() => {
@@ -163,7 +176,11 @@ export default function InvoiceSidebar({
 
   const handleViewCreditNote = (creditNote) => {
     setSelectedCreditNote(creditNote);
-    setIsCreditNotePreviewOpen(true);
+    if (isMobile) {
+      setIsCreditNoteMobileFullscreen(true);
+    } else {
+      setIsCreditNotePreviewOpen(true);
+    }
   };
 
   // Vérifier si la facture a atteint sa limite d'avoirs
@@ -549,8 +566,8 @@ export default function InvoiceSidebar({
         </DialogContent>
       </Dialog>
 
-      {/* Credit Note Preview Modal */}
-      {isCreditNotePreviewOpen && (
+      {/* Credit Note Preview Modal - Desktop only */}
+      {isCreditNotePreviewOpen && !isMobile && (
         <div className="fixed inset-0 z-[100]">
           {/* Fixed Backdrop */}
           <div
@@ -580,6 +597,16 @@ export default function InvoiceSidebar({
           </div>
         </div>
       )}
+
+      {/* Credit Note Fullscreen - Mobile only */}
+      <CreditNoteMobileFullscreen
+        creditNote={selectedCreditNote}
+        isOpen={isCreditNoteMobileFullscreen}
+        onClose={() => {
+          setIsCreditNoteMobileFullscreen(false);
+          setSelectedCreditNote(null);
+        }}
+      />
     </>
   );
 }

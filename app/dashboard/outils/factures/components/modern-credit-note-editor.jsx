@@ -146,7 +146,7 @@ export default function ModernCreditNoteEditor({
             </div>
 
             {/* Form Content */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 min-h-0">
               <FormProvider {...form}>
                 <EnhancedCreditNoteForm
                   mode={mode}
@@ -160,7 +160,7 @@ export default function ModernCreditNoteEditor({
         </div>
 
         {/* Right Panel - PDF Preview */}
-        <div className="hidden lg:flex bg-muted/30 border-l flex-col h-full">
+        <div className="hidden lg:flex bg-muted/30 border-l flex-col h-full overflow-hidden">
           <div className="flex-1 overflow-y-auto pl-4 pr-4 pt-6 pb-6 md:pl-18 md:pr-18 md:pt-22 md:pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a]">
             <UniversalPreviewPDF data={{...formData, originalInvoice}} type="creditNote" />
           </div>

@@ -316,6 +316,8 @@ export function useCreditNotesByInvoice(invoiceId) {
   const { data, loading: queryLoading, error, refetch } = useQuery(GET_CREDIT_NOTES_BY_INVOICE, {
     variables: { invoiceId, workspaceId },
     skip: !invoiceId || !workspaceId,
+    fetchPolicy: 'cache-and-network', // Toujours vérifier le réseau pour les mises à jour
+    notifyOnNetworkStatusChange: true,
   });
 
   return {
@@ -329,7 +331,13 @@ export function useCreditNotesByInvoice(invoiceId) {
 export function useCreateCreditNote() {
   const { workspaceId } = useWorkspace();
 
-  const [createCreditNoteMutation, { loading, error }] = useMutation(CREATE_CREDIT_NOTE);
+  const [createCreditNoteMutation, { loading, error }] = useMutation(CREATE_CREDIT_NOTE, {
+    refetchQueries: [
+      'GetCreditNotesByInvoice', // Rafraîchir la liste des avoirs de la facture
+      'GetCreditNoteStats', // Rafraîchir les statistiques
+    ],
+    awaitRefetchQueries: true,
+  });
 
   const createCreditNote = async (input) => {
     if (!workspaceId) {
@@ -356,7 +364,13 @@ export function useCreateCreditNote() {
 export function useUpdateCreditNote() {
   const { workspaceId } = useWorkspace();
 
-  const [updateCreditNoteMutation, { loading, error }] = useMutation(UPDATE_CREDIT_NOTE);
+  const [updateCreditNoteMutation, { loading, error }] = useMutation(UPDATE_CREDIT_NOTE, {
+    refetchQueries: [
+      'GetCreditNotesByInvoice', // Rafraîchir la liste des avoirs de la facture
+      'GetCreditNoteStats', // Rafraîchir les statistiques
+    ],
+    awaitRefetchQueries: true,
+  });
 
   const updateCreditNote = async (id, input) => {
     const { data } = await updateCreditNoteMutation({
@@ -379,7 +393,13 @@ export function useUpdateCreditNote() {
 export function useDeleteCreditNote() {
   const { workspaceId } = useWorkspace();
 
-  const [deleteCreditNoteMutation, { loading, error }] = useMutation(DELETE_CREDIT_NOTE);
+  const [deleteCreditNoteMutation, { loading, error }] = useMutation(DELETE_CREDIT_NOTE, {
+    refetchQueries: [
+      'GetCreditNotesByInvoice', // Rafraîchir la liste des avoirs de la facture
+      'GetCreditNoteStats', // Rafraîchir les statistiques
+    ],
+    awaitRefetchQueries: true,
+  });
 
   const deleteCreditNote = async (id) => {
     await deleteCreditNoteMutation({

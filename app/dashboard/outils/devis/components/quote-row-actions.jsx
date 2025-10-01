@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { useRouter } from "next/navigation";
 import {
@@ -28,17 +28,34 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { toast } from "@/src/components/ui/sonner";
 import QuoteSidebar from "./quote-sidebar";
+import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
 
 export default function QuoteRowActions({ row, onRefetch }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const quote = row.original;
+
+  // Détecter si on est sur mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
   const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
 
   const handleView = () => {
-    setIsSidebarOpen(true);
+    if (isMobile) {
+      setIsMobileFullscreenOpen(true);
+    } else {
+      setIsSidebarOpen(true);
+    }
   };
 
   const handleEdit = () => {
@@ -186,13 +203,21 @@ export default function QuoteRowActions({ row, onRefetch }) {
         </DropdownMenu>
       </div>
 
-      {/* Sidebar */}
+      {/* Sidebar pour desktop */}
       <QuoteSidebar
         quote={quote}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onRefetch={onRefetch}
         isViewMode={true}
+      />
+
+      {/* Fullscreen pour mobile */}
+      <QuoteMobileFullscreen
+        quote={quote}
+        isOpen={isMobileFullscreenOpen}
+        onClose={() => setIsMobileFullscreenOpen(false)}
+        onRefetch={onRefetch}
       />
     </>
   );

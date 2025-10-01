@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { useRouter } from "next/navigation";
 import {
@@ -31,11 +31,24 @@ import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
 import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import InvoiceSidebar from "./invoice-sidebar";
+import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 
 export default function InvoiceRowActions({ row, onRefetch }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const invoice = row.original;
+
+  // Détecter si on est sur mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Récupération de la facture complète avec tous ses détails
   const { invoice: fullInvoice, loading: loadingFullInvoice } = useInvoice(
@@ -50,7 +63,11 @@ export default function InvoiceRowActions({ row, onRefetch }) {
   const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
 
   const handleView = () => {
-    setIsSidebarOpen(true);
+    if (isMobile) {
+      setIsMobileFullscreenOpen(true);
+    } else {
+      setIsSidebarOpen(true);
+    }
   };
 
   const handleEdit = () => {
@@ -202,11 +219,19 @@ export default function InvoiceRowActions({ row, onRefetch }) {
         </DropdownMenu>
       </div>
 
-      {/* Sidebar */}
+      {/* Sidebar pour desktop */}
       <InvoiceSidebar
         invoice={invoice}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        onRefetch={onRefetch}
+      />
+
+      {/* Fullscreen pour mobile */}
+      <InvoiceMobileFullscreen
+        invoice={invoice}
+        isOpen={isMobileFullscreenOpen}
+        onClose={() => setIsMobileFullscreenOpen(false)}
         onRefetch={onRefetch}
       />
     </>
