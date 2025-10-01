@@ -56,7 +56,7 @@ export default function CreditNoteMobileFullscreen({
   return (
     <>
       {/* Fullscreen overlay - Seulement sur mobile */}
-      <div className="fixed inset-0 z-[60] bg-background md:hidden overflow-hidden">
+      <div className="fixed inset-0 z-[60] bg-background md:hidden overflow-hidden flex flex-col">
         {/* Header avec croix */}
         <div className="sticky top-0 z-10 bg-background border-b">
           <div className="flex items-center justify-between p-4">
@@ -76,13 +76,13 @@ export default function CreditNoteMobileFullscreen({
         </div>
 
         {/* Contenu scrollable */}
-        <div className="overflow-y-auto h-[calc(100vh-64px)] pb-4">
+        <div className="flex-1 overflow-y-auto pb-4">
           {loadingFullCreditNote ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="p-4 space-y-6">
+            <div className="p-4 space-y-3">
               {/* Informations principales */}
               <div className="space-y-4">
                 <div>
