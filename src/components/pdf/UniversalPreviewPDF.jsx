@@ -346,7 +346,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
       }}
     >
       {/* CONTENU PRINCIPAL */}
-      <div className={isMobile ? "px-6 pt-4 pb-16 relative flex-grow" : "px-14 pt-10 pb-32 relative flex-grow"}>
+      <div className={isMobile ? "px-6 pt-4 pb-4 relative flex-grow" : "px-14 pt-10 pb-32 relative flex-grow"}>
         {/* HEADER */}
         <div className="flex justify-between items-start mb-6">
           {/* Logo à gauche */}
