@@ -340,9 +340,9 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
       style={{ 
         color: data.appearance?.textColor || "#000000",
         fontSize: isMobile ? '6px' : '10px',
-        transform: isMobile ? 'scale(0.65)' : 'scale(1)',
+        transform: isMobile ? 'scale(0.55)' : 'scale(1)',
         transformOrigin: 'top left',
-        width: isMobile ? '153.8%' : '100%'
+        width: isMobile ? '190%' : '100%',
       }}
     >
       {/* CONTENU PRINCIPAL */}
