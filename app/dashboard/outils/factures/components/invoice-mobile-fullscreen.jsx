@@ -1,6 +1,4 @@
 "use client";
-
-import { useState } from "react";
 import {
   X,
   CheckCircle,
@@ -33,7 +31,6 @@ export default function InvoiceMobileFullscreen({
   invoice: initialInvoice,
   onRefetch,
 }) {
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const router = useRouter();
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
@@ -124,10 +121,6 @@ export default function InvoiceMobileFullscreen({
     onClose();
   };
 
-  const handleDownloadPDF = () => {
-    setIsPreviewOpen(true);
-  };
-
   // Vérifier si la facture a atteint sa limite d'avoirs
   const creditNoteLimitReached = hasReachedCreditNoteLimit(invoice, creditNotes);
 
@@ -199,15 +192,17 @@ export default function InvoiceMobileFullscreen({
                 )}
               </div>
 
-              {/* Aperçu PDF */}
-              <div className="border rounded-lg overflow-hidden">
-                <UniversalPreviewPDF
-                  data={invoice}
-                  type="invoice"
-                />
+              {/* Aperçu PDF - Optimisé pour mobile */}
+              <div className="border rounded-lg overflow-hidden bg-white">
+                <div className="w-full" style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}>
+                  <UniversalPreviewPDF
+                    data={invoice}
+                    type="invoice"
+                  />
+                </div>
               </div>
 
-              {/* Avoirs liés */}
+              {/* Avoirs liés - Cliquables pour télécharger */}
               {creditNotes && creditNotes.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Avoirs créés ({creditNotes.length})</p>
@@ -217,15 +212,25 @@ export default function InvoiceMobileFullscreen({
                         key={cn.id}
                         className="flex items-center justify-between p-3 border rounded-lg"
                       >
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium">{cn.number}</p>
                           <p className="text-sm text-muted-foreground">
                             {formatDate(cn.issueDate)}
                           </p>
                         </div>
-                        <p className="font-semibold text-red-600">
-                          {formatCurrency(cn.finalTotalTTC)}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-red-600">
+                            {formatCurrency(cn.finalTotalTTC)}
+                          </p>
+                          <UniversalPDFGenerator
+                            data={cn}
+                            type="creditNote"
+                            variant="ghost"
+                            size="sm"
+                          >
+                            <Download className="h-4 w-4" />
+                          </UniversalPDFGenerator>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -312,25 +317,18 @@ export default function InvoiceMobileFullscreen({
             </Button>
           )}
 
-          <Button
-            onClick={handleDownloadPDF}
+          <UniversalPDFGenerator
+            data={invoice}
+            type="invoice"
             variant="outline"
             className="w-full"
           >
             <Download className="mr-2 h-4 w-4" />
             Télécharger PDF
-          </Button>
+          </UniversalPDFGenerator>
         </div>
       </div>
 
-      {/* Dialog pour télécharger le PDF */}
-      {isPreviewOpen && (
-        <UniversalPDFGenerator
-          data={invoice}
-          type="invoice"
-          onClose={() => setIsPreviewOpen(false)}
-        />
-      )}
     </>
   );
 }

@@ -1,6 +1,4 @@
 "use client";
-
-import { useState } from "react";
 import { X, Download, Loader2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -13,7 +11,6 @@ export default function CreditNoteMobileFullscreen({
   onClose,
   creditNote: initialCreditNote,
 }) {
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Récupérer les données complètes de l'avoir
   const {
@@ -54,10 +51,6 @@ export default function CreditNoteMobileFullscreen({
 
     const options = { day: "2-digit", month: "2-digit", year: "numeric" };
     return date.toLocaleDateString("fr-FR", options);
-  };
-
-  const handleDownloadPDF = () => {
-    setIsPreviewOpen(true);
   };
 
   return (
@@ -124,36 +117,31 @@ export default function CreditNoteMobileFullscreen({
                 </div>
               </div>
 
-              {/* Aperçu PDF */}
-              <div className="border rounded-lg overflow-hidden">
-                <UniversalPreviewPDF
-                  data={creditNote}
-                  type="creditNote"
-                />
+              {/* Aperçu PDF - Optimisé pour mobile */}
+              <div className="border rounded-lg overflow-hidden bg-white">
+                <div className="w-full" style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}>
+                  <UniversalPreviewPDF
+                    data={creditNote}
+                    type="creditNote"
+                  />
+                </div>
               </div>
 
               {/* Bouton de téléchargement en bas du contenu */}
-              <Button
-                onClick={handleDownloadPDF}
+              <UniversalPDFGenerator
+                data={creditNote}
+                type="creditNote"
                 variant="outline"
                 className="w-full"
               >
                 <Download className="mr-2 h-4 w-4" />
                 Télécharger PDF
-              </Button>
+              </UniversalPDFGenerator>
             </div>
           )}
         </div>
       </div>
 
-      {/* Dialog pour télécharger le PDF */}
-      {isPreviewOpen && (
-        <UniversalPDFGenerator
-          data={creditNote}
-          type="creditNote"
-          onClose={() => setIsPreviewOpen(false)}
-        />
-      )}
     </>
   );
 }

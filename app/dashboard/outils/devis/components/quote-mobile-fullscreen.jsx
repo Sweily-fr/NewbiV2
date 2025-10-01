@@ -1,6 +1,4 @@
 "use client";
-
-import { useState } from "react";
 import {
   X,
   CheckCircle,
@@ -32,7 +30,6 @@ export default function QuoteMobileFullscreen({
   quote: initialQuote,
   onRefetch,
 }) {
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
@@ -124,10 +121,6 @@ export default function QuoteMobileFullscreen({
     }
   };
 
-  const handleDownloadPDF = () => {
-    setIsPreviewOpen(true);
-  };
-
   const isLoading = changingStatus || converting || loadingFullQuote;
 
   const statusColor = QUOTE_STATUS_COLORS[quote.status] || "gray";
@@ -201,12 +194,14 @@ export default function QuoteMobileFullscreen({
                 </div>
               </div>
 
-              {/* Aperçu PDF */}
-              <div className="border rounded-lg overflow-hidden">
-                <UniversalPreviewPDF
-                  data={quote}
-                  type="quote"
-                />
+              {/* Aperçu PDF - Optimisé pour mobile */}
+              <div className="border rounded-lg overflow-hidden bg-white">
+                <div className="w-full" style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}>
+                  <UniversalPreviewPDF
+                    data={quote}
+                    type="quote"
+                  />
+                </div>
               </div>
 
               {/* Factures liées */}
@@ -298,25 +293,18 @@ export default function QuoteMobileFullscreen({
               </Button>
             )}
 
-          <Button
-            onClick={handleDownloadPDF}
+          <UniversalPDFGenerator
+            data={quote}
+            type="quote"
             variant="outline"
             className="w-full"
           >
             <Download className="mr-2 h-4 w-4" />
             Télécharger PDF
-          </Button>
+          </UniversalPDFGenerator>
         </div>
       </div>
 
-      {/* Dialog pour télécharger le PDF */}
-      {isPreviewOpen && (
-        <UniversalPDFGenerator
-          data={quote}
-          type="quote"
-          onClose={() => setIsPreviewOpen(false)}
-        />
-      )}
     </>
   );
 }
