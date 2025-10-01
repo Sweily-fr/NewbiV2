@@ -72,9 +72,9 @@ export function SubscriptionStatus({ variant = 'badge', className = '' }) {
 
     if (isTrialExpired) {
       return (
-        <Badge variant="outline" className={`bg-red-50 text-red-700 border-red-200 ${className}`}>
-          <AlertTriangleIcon className="w-3 h-3 mr-1" />
-          Expiré
+        <Badge variant="outline" className={`bg-blue-50 text-blue-700 border-blue-200 ${className}`}>
+          <CrownIcon className="w-3 h-3 mr-1" />
+          Gratuit
         </Badge>
       );
     }
@@ -111,23 +111,23 @@ export function SubscriptionStatus({ variant = 'badge', className = '' }) {
               onClick={openPricingModal}
             >
               <CrownIcon className="w-4 h-4 mr-1" />
-              Passer Pro
+              Passer au premium
             </Button>
           </>
         )}
 
         {isTrialExpired && (
           <>
-            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-              <AlertTriangleIcon className="w-3 h-3 mr-1" />
-              Essai expiré
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <CrownIcon className="w-3 h-3 mr-1" />
+              Mode gratuit
             </Badge>
             <Button
               size="sm"
               onClick={openPricingModal}
             >
               <CrownIcon className="w-4 h-4 mr-1" />
-              Choisir un plan
+              Passer au premium
             </Button>
           </>
         )}

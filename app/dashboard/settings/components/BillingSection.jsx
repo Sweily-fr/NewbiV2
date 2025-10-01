@@ -288,8 +288,8 @@ export default function BillingSection() {
               {processingAction === "upgrade"
                 ? "Redirection..."
                 : isTrialExpired
-                  ? "Choisir un plan"
-                  : "Passer au plan payant"}
+                  ? "Passer au premium"
+                  : "Passer au premium"}
             </Button>
           )}
 

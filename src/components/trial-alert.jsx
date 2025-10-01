@@ -40,6 +40,12 @@ export function TrialAlert() {
   const { isInTrial, isTrialExpired, trialDaysRemaining } = getTrialInfo();
   const hasActiveSubscription = isActive();
   
+  // 🧪 MODE TEST : Décommentez pour forcer un état spécifique
+  // const isInTrial = true;
+  // const isTrialExpired = false;
+  // const trialDaysRemaining = 2; // Changez pour tester différents jours
+  // const hasActiveSubscription = false;
+  
   const openPricingModal = () => {
     setIsPricingModalOpen(true);
   };
@@ -53,16 +59,16 @@ export function TrialAlert() {
   if (isTrialExpired) {
     return (
       <>
-        <Alert className="border-red-200 bg-red-50 mb-6">
-          <AlertTriangleIcon className="h-4 w-4 text-red-600" />
+        <Alert className="border-blue-200 bg-blue-50 mb-6">
+          <CrownIcon className="h-4 w-4 text-[#5B4FFF]" />
           <AlertDescription className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div>
-                <span className="font-medium text-red-800">
-                  Votre période d'essai a expiré
+                <span className="font-medium text-blue-800">
+                  Débloquez toutes les fonctionnalités
                 </span>
-                <p className="text-sm text-red-700 mt-1">
-                  Choisissez un plan pour continuer à utiliser toutes les fonctionnalités de Newbi.
+                <p className="text-sm text-blue-700 mt-1">
+                  Votre période d'essai est terminée. Passez au premium pour continuer.
                 </p>
               </div>
             </div>
@@ -70,10 +76,10 @@ export function TrialAlert() {
               <Button
                 size="sm"
                 onClick={openPricingModal}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-[#5B4FFF] hover:bg-[#4a3fcc]"
               >
                 <CrownIcon className="w-4 h-4 mr-1" />
-                Choisir un plan
+                Passer au premium
               </Button>
             </div>
           </AlertDescription>
@@ -87,21 +93,21 @@ export function TrialAlert() {
   if (isInTrial && trialDaysRemaining <= 3) {
     return (
       <>
-        <Alert className="border-orange-200 bg-orange-50 mb-6">
-          <ClockIcon className="h-4 w-4 text-orange-600" />
+        <Alert className="border-blue-200 bg-blue-50 mb-6">
+          <CrownIcon className="h-4 w-4 text-[#5B4FFF]" />
           <AlertDescription className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-orange-800">
-                    Votre essai gratuit expire bientôt
+                  <span className="font-medium text-blue-800">
+                    Débloquez toutes les fonctionnalités
                   </span>
-                  <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
                     {trialDaysRemaining} jour(s) restant(s)
                   </Badge>
                 </div>
-                <p className="text-sm text-orange-700">
-                  Passez au plan payant pour continuer à profiter de toutes les fonctionnalités.
+                <p className="text-sm text-blue-700">
+                  Plus que {trialDaysRemaining} jour(s) d'essai. Passez au premium pour continuer.
                 </p>
               </div>
             </div>
@@ -110,17 +116,17 @@ export function TrialAlert() {
                 variant="outline"
                 size="sm"
                 onClick={() => setDismissed(true)}
-                className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                className="border-blue-300 text-blue-700 hover:bg-blue-100"
               >
                 <XIcon className="w-4 h-4" />
               </Button>
               <Button
                 size="sm"
                 onClick={openPricingModal}
-                className="bg-orange-600 hover:bg-orange-700"
+                className="bg-[#5B4FFF] hover:bg-[#4a3fcc]"
               >
                 <CrownIcon className="w-4 h-4 mr-1" />
-                Voir les plans
+                Passer au premium
               </Button>
             </div>
           </AlertDescription>
