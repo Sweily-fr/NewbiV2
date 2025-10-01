@@ -118,7 +118,7 @@ export default function CreditNoteMobileFullscreen({
               </div>
 
               {/* Aperçu PDF - Version mobile avec même design que desktop */}
-              <div className="w-full rounded-lg h-[calc(100vh-64px-100px)] overflow-hidden">
+              <div className="w-full rounded-lg h-[calc(100vh-64px-72px)] overflow-hidden">
                 <UniversalPreviewPDF
                   data={creditNote}
                   type="creditNote"

@@ -158,7 +158,7 @@ export default function InvoiceMobileFullscreen({
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="p-4 space-y-6">
+            <div className="p-4 space-y-6 flex flex-col">
               {/* Informations principales */}
               <div className="space-y-4">
                 <div>
@@ -193,13 +193,14 @@ export default function InvoiceMobileFullscreen({
               </div>
 
               {/* Aperçu PDF - Version mobile avec même design que desktop */}
-              <div className="w-full rounded-lg h-[calc(100vh-64px-100px)] overflow-hidden">
+              {/* <div className="w-full rounded-lg max-h-auto overflow-hidden"> */}
+              <div className="w-full rounded-lg overflow-hidden">
                 <UniversalPreviewPDF
                   data={invoice}
                   type="invoice"
                   isMobile={true}
                 />
-              </div>
+                  </div>
 
               {/* Avoirs liés - Cliquables pour télécharger */}
               {creditNotes && creditNotes.length > 0 && (

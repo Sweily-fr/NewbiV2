@@ -195,7 +195,7 @@ export default function QuoteMobileFullscreen({
               </div>
 
               {/* Aperçu PDF - Version mobile avec même design que desktop */}
-              <div className="w-full rounded-lg h-[calc(100vh-64px-100px)] overflow-hidden">
+              <div className="w-full rounded-lg h-[100%]overflow-hidden">
                 <UniversalPreviewPDF
                   data={quote}
                   type="quote"
