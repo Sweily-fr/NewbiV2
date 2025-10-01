@@ -336,7 +336,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
 
   return (
     <div
-      className={`w-full bg-white shadow-lg relative flex flex-col ${isMobile ? '' : 'min-h-screen'}`}
+      className="w-full bg-white shadow-lg relative min-h-screen flex flex-col"
       style={{ 
         color: data.appearance?.textColor || "#000000",
         fontSize: isMobile ? '6px' : '10px',
@@ -346,7 +346,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
       }}
     >
       {/* CONTENU PRINCIPAL */}
-      <div className={isMobile ? "px-6 pt-4 pb-4 relative flex-grow" : "px-14 pt-10 pb-32 relative flex-grow"}>
+      <div className={isMobile ? "px-6 pt-4 pb-16 relative flex-grow" : "px-14 pt-10 pb-32 relative flex-grow"}>
         {/* HEADER */}
         <div className="flex justify-between items-start mb-6">
           {/* Logo à gauche */}

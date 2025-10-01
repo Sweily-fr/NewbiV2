@@ -132,7 +132,7 @@ export default function InvoiceMobileFullscreen({
   return (
     <>
       {/* Fullscreen overlay - Seulement sur mobile */}
-      <div className="fixed inset-0 z-[60] bg-background md:hidden overflow-hidden flex flex-col">
+      <div className="fixed inset-0 z-[60] bg-background md:hidden overflow-hidden">
         {/* Header avec croix */}
         <div className="sticky top-0 z-10 bg-background border-b">
           <div className="flex items-center justify-between p-4">
@@ -152,13 +152,13 @@ export default function InvoiceMobileFullscreen({
         </div>
 
         {/* Contenu scrollable */}
-        <div className="flex-1 overflow-y-auto pb-4">
+        <div className="overflow-y-auto h-[calc(100vh-64px-72px)] pb-4">
           {loadingFullInvoice ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-6">
               {/* Informations principales */}
               <div className="space-y-4">
                 <div>
@@ -193,11 +193,13 @@ export default function InvoiceMobileFullscreen({
               </div>
 
               {/* Aperçu PDF - Version mobile avec même design que desktop */}
+              <div className="w-full rounded-lg h-[calc(100vh-64px-100px)] overflow-hidden">
                 <UniversalPreviewPDF
                   data={invoice}
                   type="invoice"
                   isMobile={true}
                 />
+              </div>
 
               {/* Avoirs liés - Cliquables pour télécharger */}
               {creditNotes && creditNotes.length > 0 && (
