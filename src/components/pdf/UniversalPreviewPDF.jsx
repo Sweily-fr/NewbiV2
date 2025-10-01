@@ -20,7 +20,7 @@ const calculateItemTotal = (quantity, unitPrice, discount, discountType) => {
   return subtotal;
 };
 
-const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
+const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
   const { data: session } = useSession();
   const { organization } = useWorkspace();
 
@@ -337,10 +337,16 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
   return (
     <div
       className="w-full bg-white shadow-lg relative min-h-screen flex flex-col"
-      style={{ color: data.appearance?.textColor || "#000000" }}
+      style={{ 
+        color: data.appearance?.textColor || "#000000",
+        fontSize: isMobile ? '8px' : '10px',
+        transform: isMobile ? 'scale(0.85)' : 'scale(1)',
+        transformOrigin: 'top left',
+        width: isMobile ? '117.6%' : '100%'
+      }}
     >
       {/* CONTENU PRINCIPAL */}
-      <div className="px-14 pt-10 pb-32 relative flex-grow">
+      <div className={isMobile ? "px-8 pt-6 pb-20 relative flex-grow" : "px-14 pt-10 pb-32 relative flex-grow"}>
         {/* HEADER */}
         <div className="flex justify-between items-start mb-6">
           {/* Logo à gauche */}

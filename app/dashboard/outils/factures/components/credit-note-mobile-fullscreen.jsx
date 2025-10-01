@@ -3,7 +3,7 @@ import { X, Download, Loader2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useCreditNote } from "@/src/graphql/creditNoteQueries";
-import UniversalPreviewPDFMobile from "@/src/components/pdf/UniversalPreviewPDFMobile";
+import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
 
 export default function CreditNoteMobileFullscreen({
@@ -117,11 +117,12 @@ export default function CreditNoteMobileFullscreen({
                 </div>
               </div>
 
-              {/* Aperçu PDF - Version mobile optimisée */}
+              {/* Aperçu PDF - Version mobile avec même design que desktop */}
               <div className="w-full rounded-lg shadow-sm overflow-hidden">
-                <UniversalPreviewPDFMobile
+                <UniversalPreviewPDF
                   data={creditNote}
                   type="creditNote"
+                  isMobile={true}
                 />
               </div>
 

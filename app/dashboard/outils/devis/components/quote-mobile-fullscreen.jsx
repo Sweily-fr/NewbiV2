@@ -21,7 +21,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
-import UniversalPreviewPDFMobile from "@/src/components/pdf/UniversalPreviewPDFMobile";
+import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
 
 export default function QuoteMobileFullscreen({
@@ -194,11 +194,12 @@ export default function QuoteMobileFullscreen({
                 </div>
               </div>
 
-              {/* Aperçu PDF - Version mobile optimisée */}
+              {/* Aperçu PDF - Version mobile avec même design que desktop */}
               <div className="w-full rounded-lg shadow-sm overflow-hidden">
-                <UniversalPreviewPDFMobile
+                <UniversalPreviewPDF
                   data={quote}
                   type="quote"
+                  isMobile={true}
                 />
               </div>
 
