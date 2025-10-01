@@ -156,7 +156,7 @@ export default function SignUpPage() {
           <img
             src="/ni2.png"
             alt="Newbi Logo"
-            className="absolute top-16 left-8"
+            className="mb-2"
             width={30}
           />
           <h3 className="text-xl font-medium text-foreground mb-2">
