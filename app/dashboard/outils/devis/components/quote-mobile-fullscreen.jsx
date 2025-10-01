@@ -204,9 +204,8 @@ export default function QuoteMobileFullscreen({
               {/* Aperçu PDF */}
               <div className="border rounded-lg overflow-hidden">
                 <UniversalPreviewPDF
-                  documentData={quote}
-                  documentType="quote"
-                  showToolbar={false}
+                  data={quote}
+                  type="quote"
                 />
               </div>
 
@@ -313,8 +312,8 @@ export default function QuoteMobileFullscreen({
       {/* Dialog pour télécharger le PDF */}
       {isPreviewOpen && (
         <UniversalPDFGenerator
-          documentData={quote}
-          documentType="quote"
+          data={quote}
+          type="quote"
           onClose={() => setIsPreviewOpen(false)}
         />
       )}

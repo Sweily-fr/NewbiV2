@@ -127,9 +127,8 @@ export default function CreditNoteMobileFullscreen({
               {/* Aperçu PDF */}
               <div className="border rounded-lg overflow-hidden">
                 <UniversalPreviewPDF
-                  documentData={creditNote}
-                  documentType="creditNote"
-                  showToolbar={false}
+                  data={creditNote}
+                  type="creditNote"
                 />
               </div>
 
@@ -150,8 +149,8 @@ export default function CreditNoteMobileFullscreen({
       {/* Dialog pour télécharger le PDF */}
       {isPreviewOpen && (
         <UniversalPDFGenerator
-          documentData={creditNote}
-          documentType="creditNote"
+          data={creditNote}
+          type="creditNote"
           onClose={() => setIsPreviewOpen(false)}
         />
       )}

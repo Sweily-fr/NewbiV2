@@ -202,9 +202,8 @@ export default function InvoiceMobileFullscreen({
               {/* Aperçu PDF */}
               <div className="border rounded-lg overflow-hidden">
                 <UniversalPreviewPDF
-                  documentData={invoice}
-                  documentType="invoice"
-                  showToolbar={false}
+                  data={invoice}
+                  type="invoice"
                 />
               </div>
 
@@ -327,8 +326,8 @@ export default function InvoiceMobileFullscreen({
       {/* Dialog pour télécharger le PDF */}
       {isPreviewOpen && (
         <UniversalPDFGenerator
-          documentData={invoice}
-          documentType="invoice"
+          data={invoice}
+          type="invoice"
           onClose={() => setIsPreviewOpen(false)}
         />
       )}
