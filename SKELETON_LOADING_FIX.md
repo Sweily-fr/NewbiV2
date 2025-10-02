@@ -5,9 +5,10 @@
 Les skeletons restaient affichés même quand les données étaient disponibles à cause d'une logique de loading incorrecte dans les hooks GraphQL.
 
 ### Cause Racine
+
 ```javascript
 // ❌ Logique problématique
-loading: workspaceLoading || queryLoading
+loading: workspaceLoading || queryLoading;
 ```
 
 Le problème : `workspaceLoading` peut rester `true` même quand `workspaceId` est disponible et que les données sont chargées.
@@ -15,29 +16,35 @@ Le problème : `workspaceLoading` peut rester `true` même quand `workspaceId` e
 ## ✅ Solution Appliquée
 
 ### Nouvelle Logique Optimisée
+
 ```javascript
 // ✅ Logique corrigée
-loading: (workspaceLoading && !workspaceId) || (queryLoading && !data)
+loading: (workspaceLoading && !workspaceId) || (queryLoading && !data);
 ```
 
-**Principe :** 
+**Principe :**
+
 - Afficher le skeleton seulement si on attend vraiment quelque chose
 - Masquer le skeleton dès que les données sont disponibles
 
 ## 📁 Fichiers Corrigés
 
 ### 1. `src/graphql/invoiceQueries.js`
+
 **Ligne 456** - Hook `useInvoices`
+
 ```javascript
 // Avant
 loading: workspaceLoading || queryLoading,
 
-// Après  
+// Après
 loading: (workspaceLoading && !workspaceId) || (queryLoading && !invoicesData),
 ```
 
 ### 2. `src/graphql/quoteQueries.js`
+
 **Ligne 361** - Hook `useQuotes`
+
 ```javascript
 // Avant
 loading: loading || workspaceLoading,
@@ -47,6 +54,7 @@ loading: (workspaceLoading && !workspaceId) || (loading && !quotes),
 ```
 
 **Ligne 386** - Hook `useQuote`
+
 ```javascript
 // Avant
 loading: loading || workspaceLoading,
@@ -56,6 +64,7 @@ loading: (workspaceLoading && !workspaceId) || (loading && !data?.quote),
 ```
 
 **Ligne 409** - Hook `useQuoteStats`
+
 ```javascript
 // Avant
 loading: loading || workspaceLoading,
@@ -65,7 +74,9 @@ loading: (workspaceLoading && !workspaceId) || (loading && !data?.quoteStats),
 ```
 
 ### 3. `src/hooks/useClients.js`
+
 **Ligne 22** - Hook `useClients`
+
 ```javascript
 // Avant
 loading,
@@ -75,6 +86,7 @@ loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.clients),
 ```
 
 **Ligne 38** - Hook `useClient`
+
 ```javascript
 // Avant
 loading,
@@ -84,7 +96,9 @@ loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.client),
 ```
 
 ### 4. `src/graphql/creditNoteQueries.js`
+
 **Ligne 285** - Hook `useCreditNote`
+
 ```javascript
 // Avant
 loading,
@@ -94,6 +108,7 @@ loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.creditNot
 ```
 
 **Ligne 306** - Hook `useCreditNotes`
+
 ```javascript
 // Avant
 loading,
@@ -103,6 +118,7 @@ loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.creditNot
 ```
 
 **Ligne 323** - Hook `useCreditNotesByInvoice`
+
 ```javascript
 // Avant
 loading,
@@ -112,7 +128,9 @@ loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.creditNot
 ```
 
 ### 5. `src/hooks/useEvents.js`
+
 **Ligne 45** - Hook `useEvents`
+
 ```javascript
 // Avant
 loading,
@@ -122,6 +140,7 @@ loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getE
 ```
 
 **Ligne 69** - Hook `useEvent`
+
 ```javascript
 // Avant
 loading,
@@ -131,7 +150,9 @@ loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getE
 ```
 
 ### 6. `src/hooks/useProducts.js`
+
 **Ligne 20** - Hook `useProducts`
+
 ```javascript
 // Avant
 loading,
@@ -141,6 +162,7 @@ loading: loading && !data?.products,
 ```
 
 **Ligne 34** - Hook `useProduct`
+
 ```javascript
 // Avant
 loading,
@@ -152,6 +174,7 @@ loading: loading && !data?.product,
 ## 🗓️ **Correction Spéciale : Calendrier**
 
 ### Problème Unique : Boucle Infinie
+
 Le calendrier avait un problème différent - une boucle infinie causée par un `useEffect` mal configuré.
 
 **Fichier :** `app/dashboard/calendar/page.jsx`
@@ -173,29 +196,34 @@ const localEvents = useMemo(() => {
 ```
 
 **Correction du hook useEvents :**
+
 ```javascript
 // ❌ AVANT - Trop restrictif
-loading: (workspaceLoading && !finalWorkspaceId) || (queryLoading && !data?.getEvents)
+loading: (workspaceLoading && !finalWorkspaceId) ||
+  (queryLoading && !data?.getEvents);
 
-// ✅ APRÈS - Logique corrigée  
-loading: workspaceLoading || (queryLoading && !data?.getEvents)
+// ✅ APRÈS - Logique corrigée
+loading: workspaceLoading || (queryLoading && !data?.getEvents);
 ```
 
 ## 🧪 Scénarios de Test
 
 ### Cas 1: Workspace en chargement
+
 ```javascript
 workspaceLoading: true, workspaceId: null
 → loading: true ✅ (skeleton affiché)
 ```
 
 ### Cas 2: Query en chargement
+
 ```javascript
 workspaceLoading: false, queryLoading: true, data: null
 → loading: true ✅ (skeleton affiché)
 ```
 
 ### Cas 3: Données disponibles (PROBLÈME RÉSOLU)
+
 ```javascript
 workspaceLoading: true, workspaceId: "123", data: {...}
 → Avant: loading: true ❌ (skeleton inutile)
@@ -203,6 +231,7 @@ workspaceLoading: true, workspaceId: "123", data: {...}
 ```
 
 ### Cas 4: Tout chargé
+
 ```javascript
 workspaceLoading: false, queryLoading: false, data: {...}
 → loading: false ✅ (données affichées)
@@ -211,11 +240,13 @@ workspaceLoading: false, queryLoading: false, data: {...}
 ## 🚀 Bénéfices
 
 ### Performance UX
+
 - **Réduction du temps d'affichage** des skeletons
 - **Affichage immédiat** des données quand disponibles
 - **Interface plus réactive** et fluide
 
 ### Comportement Attendu
+
 - ✅ Skeleton affiché uniquement pendant le vrai chargement
 - ✅ Données affichées dès qu'elles sont disponibles
 - ✅ Pas de flash inutile de skeleton
@@ -224,6 +255,7 @@ workspaceLoading: false, queryLoading: false, data: {...}
 ## 🔍 Comment Tester
 
 ### 1. Navigation Rapide
+
 ```bash
 npm run dev
 # Naviguez rapidement entre les pages
@@ -231,12 +263,14 @@ npm run dev
 ```
 
 ### 2. Rechargement de Page
+
 ```bash
 # Rechargez une page avec des données
 # Le skeleton doit disparaître dès que les données arrivent
 ```
 
 ### 3. Cache Apollo
+
 ```bash
 # Avec le nouveau système de cache, les données en cache
 # doivent s'afficher instantanément (pas de skeleton)
@@ -245,7 +279,9 @@ npm run dev
 ## 🛠️ Maintenance
 
 ### Nouveaux Hooks
+
 Pour tout nouveau hook GraphQL, utilisez cette logique :
+
 ```javascript
 const { data, loading: queryLoading } = useQuery(QUERY);
 const { workspaceId, loading: workspaceLoading } = useWorkspace();
@@ -258,6 +294,7 @@ return {
 ```
 
 ### Points d'Attention
+
 - Toujours vérifier la disponibilité des données (`!data`)
 - Séparer le loading workspace du loading query
 - Tester les différents états de chargement
@@ -266,11 +303,13 @@ return {
 ## 📊 Impact Mesuré
 
 ### Avant la Correction
+
 - Skeletons affichés 2-3 secondes même avec données disponibles
 - Impression de lenteur de l'application
 - UX dégradée sur navigation rapide
 
 ### Après la Correction
+
 - Skeletons affichés uniquement pendant le vrai chargement
 - Données affichées immédiatement si disponibles
 - Interface beaucoup plus réactive

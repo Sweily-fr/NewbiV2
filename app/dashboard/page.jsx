@@ -61,7 +61,7 @@ import {
 
 function DashboardContent() {
   const { session } = useUser();
-  
+
   // Utilisation du hook de cache intelligent pour les données du dashboard
   const {
     expenses,
@@ -80,29 +80,29 @@ function DashboardContent() {
 
   // Données pour les graphiques
   const incomeChartData = useMemo(
-    () => paidInvoices ? processInvoicesForCharts(paidInvoices) : [],
+    () => (paidInvoices ? processInvoicesForCharts(paidInvoices) : []),
     [paidInvoices]
   );
   const expenseChartData = useMemo(
-    () => paidExpenses ? processExpensesForCharts(paidExpenses) : [],
+    () => (paidExpenses ? processExpensesForCharts(paidExpenses) : []),
     [paidExpenses]
   );
 
   // Debug pour vérifier l'état du cache
-  console.log('🔍 Dashboard render:', { 
-    isLoading, 
-    isInitialized, 
+  console.log("🔍 Dashboard render:", {
+    isLoading,
+    isInitialized,
     hasCache: !!cacheInfo?.isFromCache,
-    lastUpdate: cacheInfo?.lastUpdate 
+    lastUpdate: cacheInfo?.lastUpdate,
   });
 
   // Si les données sont en cours de chargement, afficher le skeleton
   if (isLoading || !isInitialized) {
-    console.log('📊 Dashboard: Affichage du skeleton');
+    console.log("📊 Dashboard: Affichage du skeleton");
     return <DashboardSkeleton />;
   }
 
-  console.log('📊 Dashboard: Affichage du contenu réel');
+  console.log("📊 Dashboard: Affichage du contenu réel");
 
   // Note: Les transactions sont maintenant gérées par le composant BridgeTransactions
 
@@ -130,8 +130,10 @@ function DashboardContent() {
     <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
       <div className="flex items-center justify-between w-full mb-4 md:mb-6">
         <div className="flex flex-col">
-          <h1 className="text-2xl font-medium">Bonjour {session?.user?.name},</h1>
-          {process.env.NODE_ENV === 'development' && cacheInfo?.lastUpdate && (
+          <h1 className="text-2xl font-medium">
+            Bonjour {session?.user?.name},
+          </h1>
+          {process.env.NODE_ENV === "development" && cacheInfo?.lastUpdate && (
             <p className="text-xs text-gray-500 mt-1">
               Données mises à jour : {cacheInfo.lastUpdate.toLocaleTimeString()}
               {cacheInfo.isFromCache && " (cache)"}
@@ -227,16 +229,16 @@ function DashboardContent() {
         </div>
       </div>
       <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full mt-4">
-        <BankBalanceCard 
-          className="shadow-xs w-full md:w-1/2" 
+        <BankBalanceCard
+          className="shadow-xs w-full md:w-1/2"
           expenses={paidExpenses}
           invoices={paidInvoices}
           totalIncome={totalIncome}
           totalExpenses={totalExpenses}
           isLoading={isLoading}
         />
-        <UnifiedTransactions 
-          limit={5} 
+        <UnifiedTransactions
+          limit={5}
           className="shadow-xs w-full md:w-1/2"
           expenses={paidExpenses}
           invoices={paidInvoices}

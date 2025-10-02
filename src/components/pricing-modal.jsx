@@ -13,12 +13,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Switch } from "@/src/components/ui/switch";
-import {
-  Loader2,
-  Check,
-  Crown,
-  AlertTriangle,
-} from "lucide-react";
+import { Loader2, Check, Crown, AlertTriangle } from "lucide-react";
 import { useSubscription } from "@/src/contexts/subscription-context";
 import { authClient, useSession } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
@@ -37,10 +32,18 @@ export function PricingModal({ isOpen, onClose }) {
 
       if (!sessionData?.session?.activeOrganizationId) {
         toast.error("Aucune organisation active trouvée");
+        setIsLoading(false);
         return;
       }
 
       const activeOrgId = sessionData.session.activeOrganizationId;
+
+      // Vérifier si l'utilisateur essaie de s'abonner au même plan
+      if (subscription && subscription.planName === plan) {
+        toast.info("Vous êtes déjà abonné à ce plan");
+        setIsLoading(false);
+        return;
+      }
 
       const upgradeParams = {
         plan: plan,
@@ -51,17 +54,34 @@ export function PricingModal({ isOpen, onClose }) {
         disableRedirect: false,
       };
 
+      // Si l'utilisateur a déjà un abonnement, ajouter le subscriptionId
+      if (subscription?.stripeSubscriptionId) {
+        upgradeParams.subscriptionId = subscription.stripeSubscriptionId;
+        console.log(
+          `🔄 Mise à jour de l'abonnement existant: ${subscription.stripeSubscriptionId}`
+        );
+      } else {
+        console.log(`➕ Création d'un nouvel abonnement`);
+      }
+
+      console.log("📤 Envoi des paramètres d'abonnement:", upgradeParams);
+
       const { data, error } =
         await authClient.subscription.upgrade(upgradeParams);
 
+      console.log("📥 Réponse reçue:", { data, error });
+
       if (error) {
+        console.error("❌ Erreur détaillée:", error);
         toast.error(`Erreur: ${error.message || "Erreur inconnue"}`);
       } else {
+        console.log("✅ Succès, redirection vers:", data?.url);
         if (data?.url) {
           window.location.href = data.url;
         }
       }
     } catch (error) {
+      console.error("❌ Exception capturée:", error);
       toast.error(`Exception: ${error.message || "Erreur inconnue"}`);
     } finally {
       setIsLoading(false);
@@ -217,10 +237,12 @@ export function PricingModal({ isOpen, onClose }) {
                     <div className="space-y-1 text-xs text-gray-500">
                       <p>
                         {formatPrice(getSubscriptionPrice())} TTC / mois • EUR
-                        {subscription.status === "trialing" && " (Période d'essai)"}
+                        {subscription.status === "trialing" &&
+                          " (Période d'essai)"}
                       </p>
                       <p>
-                        Période en cours : {formatDate(subscription.periodStart)} →{" "}
+                        Période en cours :{" "}
+                        {formatDate(subscription.periodStart)} →{" "}
                         {formatDate(subscription.periodEnd)}
                       </p>
                       <p>
@@ -313,7 +335,9 @@ export function PricingModal({ isOpen, onClose }) {
                           </div>
                         </div>
                       ) : (
-                        <h4 className="text-lg font-semibold mb-1">{plan.name}</h4>
+                        <h4 className="text-lg font-semibold mb-1">
+                          {plan.name}
+                        </h4>
                       )}
 
                       {/* Prix dynamique selon le switch */}
@@ -348,14 +372,19 @@ export function PricingModal({ isOpen, onClose }) {
                     </div>
 
                     <div className="space-y-2 mb-4 flex-grow">
-                      {plan.features.slice(0, 4).map((feature, featureIndex) => (
-                        <div key={featureIndex} className="flex items-start gap-2">
-                          <Check className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
-                          <span className="text-xs dark:text-gray-300 leading-tight">
-                            {feature}
-                          </span>
-                        </div>
-                      ))}
+                      {plan.features
+                        .slice(0, 4)
+                        .map((feature, featureIndex) => (
+                          <div
+                            key={featureIndex}
+                            className="flex items-start gap-2"
+                          >
+                            <Check className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span className="text-xs dark:text-gray-300 leading-tight">
+                              {feature}
+                            </span>
+                          </div>
+                        ))}
                       {plan.features.length > 4 && (
                         <p className="text-xs text-gray-500 ml-5">
                           +{plan.features.length - 4} autres fonctionnalités

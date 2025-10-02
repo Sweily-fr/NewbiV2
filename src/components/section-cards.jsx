@@ -45,28 +45,34 @@ import { useState } from "react";
 const toolDescriptions = {
   "Créer une Facture": {
     title: "Outil de Facturation",
-    description: "Créez des factures professionnelles en quelques clics. Gérez vos clients, ajoutez vos produits/services, calculez automatiquement les taxes et suivez les paiements. Exportez vos factures en PDF et envoyez-les directement par email à vos clients."
+    description:
+      "Créez des factures professionnelles en quelques clics. Gérez vos clients, ajoutez vos produits/services, calculez automatiquement les taxes et suivez les paiements. Exportez vos factures en PDF et envoyez-les directement par email à vos clients.",
   },
   "Créer un Devis": {
     title: "Générateur de Devis",
-    description: "Élaborez des devis détaillés et attractifs pour vos prospects. Personnalisez vos offres, ajustez les prix, incluez des conditions spéciales et convertissez facilement vos devis acceptés en factures."
+    description:
+      "Élaborez des devis détaillés et attractifs pour vos prospects. Personnalisez vos offres, ajustez les prix, incluez des conditions spéciales et convertissez facilement vos devis acceptés en factures.",
   },
   "Créer une Dépense": {
     title: "Gestion des Dépenses",
-    description: "Enregistrez et catégorisez toutes vos dépenses professionnelles. Uploadez vos reçus, suivez vos frais déductibles et générez des rapports pour votre comptabilité et déclarations fiscales."
+    description:
+      "Enregistrez et catégorisez toutes vos dépenses professionnelles. Uploadez vos reçus, suivez vos frais déductibles et générez des rapports pour votre comptabilité et déclarations fiscales.",
   },
   "Mes Signatures de Mail": {
     title: "Signatures Email Professionnelles",
-    description: "Créez des signatures email élégantes et cohérentes pour votre entreprise. Ajoutez votre logo, vos coordonnées, liens vers vos réseaux sociaux et respectez votre charte graphique."
+    description:
+      "Créez des signatures email élégantes et cohérentes pour votre entreprise. Ajoutez votre logo, vos coordonnées, liens vers vos réseaux sociaux et respectez votre charte graphique.",
   },
   "Transferer des fichiers": {
     title: "Partage de Fichiers Sécurisé",
-    description: "Partagez vos fichiers volumineux en toute sécurité avec vos clients et partenaires. Générez des liens de téléchargement temporaires, protégez vos documents par mot de passe et suivez les téléchargements."
+    description:
+      "Partagez vos fichiers volumineux en toute sécurité avec vos clients et partenaires. Générez des liens de téléchargement temporaires, protégez vos documents par mot de passe et suivez les téléchargements.",
   },
   "Gestion De Projet": {
     title: "Tableau Kanban",
-    description: "Organisez vos projets et tâches avec des tableaux Kanban intuitifs. Créez des colonnes personnalisées, déplacez vos tâches, assignez des responsables et suivez l'avancement de vos projets en temps réel."
-  }
+    description:
+      "Organisez vos projets et tâches avec des tableaux Kanban intuitifs. Créez des colonnes personnalisées, déplacez vos tâches, assignez des responsables et suivez l'avancement de vos projets en temps réel.",
+  },
 };
 
 // Fonction pour déterminer la couleur de l'icône en fonction du type d'outil
@@ -152,7 +158,7 @@ const cards = [
     category: "marketing",
   },
   {
-    title: "Gestion De Projet",
+    title: "Gestion de Projet",
     subtitle: "Créez et gérez efficacement toutes vos tâches quotidiennes.",
     icon: <IconLayoutKanban size={15} />,
     href: "/dashboard/outils/kanban",
@@ -186,20 +192,22 @@ const cards = [
 ];
 
 export function SectionCards({ className, activeFilter = "outline" }) {
-  const { isActive, user, organization, isLoading, isInitialized } = useDashboardLayoutContext();
+  const { isActive, user, organization, isLoading, isInitialized } =
+    useDashboardLayoutContext();
   const router = useRouter();
-  const { isOpen, initialTab, openSettings, closeSettings } = useSettingsModal();
+  const { isOpen, initialTab, openSettings, closeSettings } =
+    useSettingsModal();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState(null);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
-  
+
   // Fonction pour vérifier si les informations d'entreprise sont complètes
   const checkCompanyInfo = () => {
     // Utiliser les données en cache du contexte optimisé
     if (organization) {
       return isCompanyInfoComplete(organization);
     }
-    
+
     return false;
   };
 
@@ -224,7 +232,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
 
     // Si les informations générales sont OK, vérifier les informations légales
     const hasLegalInfo = !!(organization.siret && organization.legalForm);
-    
+
     if (!hasLegalInfo) {
       return "informations-legales";
     }
@@ -232,20 +240,20 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     // Par défaut, ouvrir l'onglet général
     return "generale";
   };
-  
+
   // Fonction pour gérer le clic sur un outil premium
   const handlePremiumToolClick = (e) => {
     e.preventDefault();
     setIsPricingModalOpen(true);
   };
-  
+
   // Fonction pour gérer le clic sur un outil nécessitant les informations d'entreprise
   const handleCompanyInfoRequiredClick = (e, toolTitle) => {
     e.preventDefault();
-    
+
     // Déterminer quel onglet ouvrir selon les informations manquantes
     const requiredTab = getRequiredSettingsTab();
-    
+
     // Ouvrir le modal de paramètres sur l'onglet approprié
     openSettings(requiredTab);
   };
@@ -256,21 +264,23 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     setSelectedTool(toolTitle);
     setIsInfoDialogOpen(true);
   };
-  
+
   // Filtrer les cartes selon l'onglet actif
-  const filteredCards = cards.filter(card => {
+  const filteredCards = cards.filter((card) => {
     if (activeFilter === "outline") return true; // Afficher toutes les cartes
-    if (activeFilter === "past-performance") return card.category === "financier";
+    if (activeFilter === "past-performance")
+      return card.category === "financier";
     if (activeFilter === "key-personnel") return card.category === "marketing";
-    if (activeFilter === "focus-documents") return card.category === "automatisation";
+    if (activeFilter === "focus-documents")
+      return card.category === "automatisation";
     return true;
   });
-  
+
   // Afficher le skeleton pendant le chargement des données
   if (isLoading) {
     return <SectionCardsSkeleton className={className} />;
   }
-  
+
   return (
     <div
       className={cn(
@@ -281,31 +291,39 @@ export function SectionCards({ className, activeFilter = "outline" }) {
       {filteredCards.map((card, index) => {
         const isAvailable = card.status === "available" || !card.status;
         const hasSubscriptionAccess = !card.isPro || isActive();
-        
+
         // Vérifier si l'outil nécessite les informations d'entreprise
-        const requiresCompanyInfo = card.title === "Factures" || card.title === "Devis";
+        const requiresCompanyInfo =
+          card.title === "Factures" || card.title === "Devis";
         const hasCompanyInfoAccess = !requiresCompanyInfo || checkCompanyInfo();
-        
+
         // L'accès final nécessite à la fois l'abonnement ET les informations d'entreprise
         const hasFullAccess = hasSubscriptionAccess && hasCompanyInfoAccess;
-        
+
         // Déterminer le type de restriction
-        const restrictionType = !hasSubscriptionAccess ? "subscription" : 
-                               !hasCompanyInfoAccess ? "companyInfo" : null;
+        const restrictionType = !hasSubscriptionAccess
+          ? "subscription"
+          : !hasCompanyInfoAccess
+            ? "companyInfo"
+            : null;
 
         return (
-          <Card 
-            key={index} 
+          <Card
+            key={index}
             className={cn(
-              "hover:border-primary/50 transition-all duration-200 group relative overflow-hidden",
+              "hover:border-primary/20 transition-all duration-200 group relative overflow-hidden",
               !hasFullAccess && "cursor-pointer",
-              !hasCompanyInfoAccess && requiresCompanyInfo && "opacity-75 grayscale-[0.3]",
+              !hasCompanyInfoAccess &&
+                requiresCompanyInfo &&
+                "opacity-75 grayscale-[0.3]",
               !hasSubscriptionAccess && "opacity-75 grayscale-[0.3]"
             )}
             onClick={
-              !hasSubscriptionAccess ? handlePremiumToolClick :
-              !hasCompanyInfoAccess && requiresCompanyInfo ? (e) => handleCompanyInfoRequiredClick(e, card.title) :
-              undefined
+              !hasSubscriptionAccess
+                ? handlePremiumToolClick
+                : !hasCompanyInfoAccess && requiresCompanyInfo
+                  ? (e) => handleCompanyInfoRequiredClick(e, card.title)
+                  : undefined
             }
           >
             <GridBackground />
@@ -316,7 +334,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                   {/* Header avec titre et description */}
                   <div className="space-y-3">
                     <div className="space-y-2">
-                      <h3 className="font-medium text-xl">{card.title}</h3>
+                      <h3 className="font-normal text-xl">{card.title}</h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {card.subtitle}
                       </p>
@@ -328,17 +346,17 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                     {isAvailable && hasFullAccess && (
                       <>
                         <Link href={card.href || "#"}>
-                          <Button 
-                            size="sm" 
-                            className="px-4 py-2 text-sm font-medium cursor-pointer"
+                          <Button
+                            size="sm"
+                            className="px-4 py-2 text-sm font-normal cursor-pointer"
                           >
                             Accéder
                           </Button>
                         </Link>
-                        <Button 
+                        <Button
                           size="sm"
                           variant="outline"
-                          className="px-4 py-2 text-sm font-medium cursor-pointer"
+                          className="px-4 py-2 text-sm font-normal cursor-pointer"
                           onClick={(e) => handleToolInfoClick(e, card.title)}
                         >
                           En savoir plus
@@ -349,19 +367,21 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                       <div className="flex items-center gap-3">
                         {restrictionType === "subscription" && (
                           <>
-                            <Button 
+                            <Button
                               size="sm"
                               variant="outline"
-                              className="border-orange-500/50 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                              className="border-orange-500/50 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950 px-4 py-2 text-sm font-normal flex items-center gap-2 cursor-pointer"
                             >
                               <Crown className="w-4 h-4" />
                               Passer Pro
                             </Button>
-                            <Button 
+                            <Button
                               size="sm"
                               variant="outline"
-                              className="px-4 py-2 text-sm font-medium cursor-pointer"
-                              onClick={(e) => handleToolInfoClick(e, card.title)}
+                              className="px-4 py-2 text-sm font-normal cursor-pointer"
+                              onClick={(e) =>
+                                handleToolInfoClick(e, card.title)
+                              }
                             >
                               En savoir plus
                             </Button>
@@ -369,19 +389,21 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                         )}
                         {restrictionType === "companyInfo" && (
                           <>
-                            <Button 
+                            <Button
                               size="sm"
                               variant="outline"
-                              className="border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 px-4 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                              className="border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 px-4 py-2 text-sm font-normal flex items-center gap-2 cursor-pointer"
                             >
                               <Lock className="w-4 h-4" />
                               Configuration requise
                             </Button>
-                            <Button 
+                            <Button
                               size="sm"
                               variant="outline"
-                              className="px-4 py-2 text-sm font-medium cursor-pointer"
-                              onClick={(e) => handleToolInfoClick(e, card.title)}
+                              className="px-4 py-2 text-sm font-normal cursor-pointer"
+                              onClick={(e) =>
+                                handleToolInfoClick(e, card.title)
+                              }
                             >
                               En savoir plus
                             </Button>
@@ -397,14 +419,16 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                   <div
                     className="w-full h-full flex items-center justify-center bg-center bg-no-repeat relative z-10 transition-transform duration-300 group-hover:scale-110 overflow-visible"
                     style={{
-                      backgroundImage: card.Image ? `url(${card.Image})` : "none",
+                      backgroundImage: card.Image
+                        ? `url(${card.Image})`
+                        : "none",
                       backgroundSize: "80%",
                       backgroundPosition: "top center",
                       backgroundRepeat: "no-repeat",
                     }}
                   >
                     {!card.Image && (
-                      <div 
+                      <div
                         className="w-12 h-12 rounded-lg flex items-center justify-center"
                         style={{ backgroundColor: card.bgIconColor }}
                       >
@@ -418,19 +442,19 @@ export function SectionCards({ className, activeFilter = "outline" }) {
           </Card>
         );
       })}
-      
+
       {/* Modal de paramètres */}
       <SettingsModal
         open={isOpen}
         onOpenChange={closeSettings}
         initialTab={initialTab}
       />
-      
-      <PricingModal 
-        isOpen={isPricingModalOpen} 
-        onClose={() => setIsPricingModalOpen(false)} 
+
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
       />
-      
+
       {/* Modal d'information sur l'outil */}
       <AlertDialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
         <AlertDialogContent className="max-w-md">

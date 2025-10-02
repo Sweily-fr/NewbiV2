@@ -61,6 +61,13 @@ export default function SubscribePage() {
 
       const activeOrgId = sessionData.session.activeOrganizationId;
 
+      // Vérifier si l'utilisateur essaie de s'abonner au même plan
+      if (subscription && subscription.planName === plan) {
+        toast.info("Vous êtes déjà abonné à ce plan");
+        setIsLoading(false);
+        return;
+      }
+
       // Hardcoder temporairement les prix pour tester
       const monthlyPriceId = "price_1S3XtUGhXtlcZkhKIAiLVtjE";
       const yearlyPriceId = "price_1S3IT7GhXtlcZkhKnvOVR18y";
@@ -73,6 +80,16 @@ export default function SubscribePage() {
         cancelUrl: `${window.location.origin}/dashboard/subscribe`,
         disableRedirect: false,
       };
+
+      // Si l'utilisateur a déjà un abonnement, ajouter le subscriptionId
+      if (subscription?.stripeSubscriptionId) {
+        upgradeParams.subscriptionId = subscription.stripeSubscriptionId;
+        console.log(
+          `🔄 Mise à jour de l'abonnement existant: ${subscription.stripeSubscriptionId}`
+        );
+      } else {
+        console.log(`➕ Création d'un nouvel abonnement`);
+      }
 
       const { data, error } =
         await authClient.subscription.upgrade(upgradeParams);

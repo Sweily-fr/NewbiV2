@@ -1,5 +1,6 @@
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
+import { seatSyncService } from "@/src/services/seatSyncService";
 
 export async function GET(request, { params }) {
   try {
@@ -65,55 +66,76 @@ export async function POST(request, { params }) {
     const session = await auth.api.getSession({
       headers: await headers(),
     });
-
     if (!session) {
       return Response.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     if (action === "accept") {
-      // ÉTAPE 1: Créer l'organisation personnelle AVANT d'accepter l'invitation
-      try {
-        const user = session.user;
-        const personalOrgName = `${user.name || user.email.split("@")[0]} (Personnel)`;
-        const personalSlug = `${user.id}-personal`;
-
-        // Créer l'organisation personnelle avec keepCurrentActiveOrganization: true
-        const personalOrgResult = await auth.api.createOrganization({
-          headers: await headers(),
-          body: {
-            name: personalOrgName,
-            slug: personalSlug,
-            keepCurrentActiveOrganization: true, // CRUCIAL: ne pas changer l'orga active
-          },
-        });
-      } catch (personalOrgError) {
-        console.warn(
-          "⚠️ Erreur création organisation personnelle (non bloquante):",
-          personalOrgError
-        );
-        // Ne pas faire échouer l'acceptation si la création de l'org perso échoue
-      }
-
-      // ÉTAPE 2: Accepter l'invitation (rejoint l'organisation de l'owner)
+      // ÉTAPE 1: Accepter l'invitation (rejoint l'organisation de l'owner)
       const result = await auth.api.acceptInvitation({
         headers: await headers(),
         body: { invitationId: id },
       });
 
-      // ÉTAPE 3: S'assurer que l'organisation de l'owner reste active
-      if (result && result.organizationId) {
+      if (!result || !result.organizationId) {
+        return Response.json(
+          { error: "Échec de l'acceptation de l'invitation" },
+          { status: 500 }
+        );
+      }
+
+      console.log(`✅ Invitation acceptée, membre ajouté à l'organisation ${result.organizationId}`);
+
+      // ÉTAPE 3: Définir l'organisation comme active IMMÉDIATEMENT
+      try {
+        await auth.api.setActiveOrganization({
+          headers: await headers(),
+          body: { organizationId: result.organizationId },
+        });
+        console.log(`✅ Organisation ${result.organizationId} définie comme active`);
+      } catch (orgError) {
+        console.error("❌ Erreur lors de la définition de l'organisation active:", orgError);
+        // Ne pas bloquer si ça échoue, mais logger l'erreur
+      }
+
+      // ÉTAPE 4: Synchroniser la facturation des sièges
+      try {
+        console.log(`💳 Synchronisation facturation pour organisation ${result.organizationId}`);
+        
+        const { auth: authInstance } = await import("@/src/lib/auth");
+        const adapter = authInstance.options.database;
+
+        await seatSyncService.syncSeatsAfterInvitationAccepted(
+          result.organizationId,
+          adapter
+        );
+
+        console.log(`✅ Facturation synchronisée avec succès`);
+      } catch (billingError) {
+        console.error("❌ Erreur synchronisation facturation:", billingError);
+        
+        // ROLLBACK: Supprimer le membre si la facturation échoue
         try {
-          await auth.api.setActiveOrganization({
+          console.log(`🔄 Rollback: suppression du membre ${session.user.email}`);
+          
+          await auth.api.removeMember({
             headers: await headers(),
-            body: { organizationId: result.organizationId },
+            body: {
+              memberIdOrEmail: session.user.email,
+              organizationId: result.organizationId
+            }
           });
-        } catch (orgError) {
-          console.error(
-            "❌ Erreur lors de la définition de l'organisation active:",
-            orgError
-          );
-          // Ne pas faire échouer l'acceptation si la définition de l'org active échoue
+
+          console.log(`✅ Rollback effectué avec succès`);
+        } catch (rollbackError) {
+          console.error("❌ Échec du rollback:", rollbackError);
+          // Si le rollback échoue, l'admin devra supprimer manuellement
         }
+
+        return Response.json({
+          error: "Échec de la facturation. Veuillez contacter le support ou réessayer.",
+          details: billingError.message
+        }, { status: 500 });
       }
 
       return Response.json(result);

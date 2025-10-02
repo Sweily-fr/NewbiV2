@@ -142,13 +142,38 @@ const LoginForm = () => {
 
         // Vérifier s'il y a des paramètres d'invitation dans l'URL
         const urlParams = new URLSearchParams(window.location.search);
-        const invitationId = urlParams.get("invitation");
-        const invitationEmail = urlParams.get("email");
+        let invitationId = urlParams.get("invitation");
+        let invitationEmail = urlParams.get("email");
         const callbackUrl = urlParams.get("callbackUrl");
+
+        // Si pas dans l'URL, vérifier dans localStorage (pour les nouveaux utilisateurs)
+        if (!invitationId) {
+          const pendingInvitation = localStorage.getItem("pendingInvitation");
+          if (pendingInvitation) {
+            try {
+              const invitation = JSON.parse(pendingInvitation);
+              // Vérifier que l'invitation n'est pas trop ancienne (7 jours max)
+              const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+              if (Date.now() - invitation.timestamp < sevenDaysInMs) {
+                invitationId = invitation.invitationId;
+                invitationEmail = invitation.email;
+                console.log(`📋 Invitation récupérée depuis localStorage: ${invitationId}`);
+              } else {
+                console.log(`⚠️ Invitation expirée, suppression`);
+                localStorage.removeItem("pendingInvitation");
+              }
+            } catch (error) {
+              console.error("Erreur parsing invitation:", error);
+              localStorage.removeItem("pendingInvitation");
+            }
+          }
+        }
 
         // Si c'est une connexion via invitation, accepter automatiquement l'invitation
         if (invitationId && invitationEmail) {
           try {
+            console.log(`🔄 Acceptation automatique de l'invitation ${invitationId}`);
+            
             const response = await fetch(`/api/invitations/${invitationId}`, {
               method: "POST",
               headers: {
@@ -157,22 +182,35 @@ const LoginForm = () => {
               body: JSON.stringify({ action: "accept" }),
             });
 
+            const result = await response.json();
+
             if (response.ok) {
-              const result = await response.json();
+              console.log(`✅ Invitation acceptée avec succès:`, result);
+              
+              // Nettoyer localStorage
+              localStorage.removeItem("pendingInvitation");
+              console.log(`🧹 Invitation nettoyée de localStorage`);
+              
               toast.success(
                 "Invitation acceptée ! Bienvenue dans l'organisation."
               );
+              
+              // Rafraîchir la session pour obtenir la nouvelle organisation
+              await authClient.session.refresh();
+              
+              // Rediriger vers le dashboard de l'organisation
+              if (result.organizationId) {
+                router.push("/dashboard");
+                return;
+              }
             } else {
-              console.error(
-                "❌ Erreur lors de l'acceptation automatique de l'invitation"
-              );
-              toast.error("Erreur lors de l'acceptation de l'invitation");
+              console.error("❌ Erreur lors de l'acceptation automatique de l'invitation");
+              console.error("Status:", response.status);
+              console.error("Détails:", result);
+              toast.error(result.error || "Erreur lors de l'acceptation de l'invitation");
             }
           } catch (error) {
-            console.error(
-              "❌ Erreur lors de l'acceptation automatique:",
-              error
-            );
+            console.error("❌ Erreur lors de l'acceptation automatique:", error);
             toast.error("Erreur lors de l'acceptation de l'invitation");
           }
         }

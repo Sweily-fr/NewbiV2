@@ -11,18 +11,18 @@ export function DashboardSkeleton() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Génération des hauteurs aléatoires pour les graphiques
   const generateChartBars = (count) => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
-      height: Math.random() * 60 + 30
+      height: Math.random() * 60 + 30,
     }));
   };
 
@@ -44,14 +44,14 @@ export function DashboardSkeleton() {
       {/* Barre de recherche */}
       <div className="flex flex-col gap-3 w-full">
         <Skeleton className="h-11 w-full rounded-md" />
-        
+
         {/* Boutons d'actions rapides - responsive */}
         <div className="overflow-x-auto md:overflow-x-visible w-full scrollbar-hide">
           <div className="flex gap-2 md:gap-3 md:flex-wrap w-max md:w-full">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton 
-                key={i} 
-                className="h-8 w-28 md:w-32 rounded-md flex-shrink-0 md:flex-1" 
+              <Skeleton
+                key={i}
+                className="h-8 w-28 md:w-32 rounded-md flex-shrink-0 md:flex-1"
               />
             ))}
           </div>
@@ -111,12 +111,12 @@ export function DashboardSkeleton() {
             {/* Graphique skeleton - adaptatif */}
             <div className="h-[150px] md:h-[200px] flex items-end justify-between gap-1 md:gap-2">
               {chartBars1.map((bar) => (
-                <Skeleton 
-                  key={bar.id} 
+                <Skeleton
+                  key={bar.id}
                   className="rounded-t-sm flex-1 animate-pulse"
-                  style={{ 
+                  style={{
                     height: `${bar.height}%`,
-                    minHeight: '20px'
+                    minHeight: "20px",
                   }}
                 />
               ))}
@@ -136,12 +136,12 @@ export function DashboardSkeleton() {
             {/* Graphique skeleton - adaptatif */}
             <div className="h-[150px] md:h-[200px] flex items-end justify-between gap-1 md:gap-2">
               {chartBars2.map((bar) => (
-                <Skeleton 
-                  key={bar.id} 
+                <Skeleton
+                  key={bar.id}
                   className="rounded-t-sm flex-1 animate-pulse"
-                  style={{ 
+                  style={{
                     height: `${bar.height}%`,
-                    minHeight: '20px'
+                    minHeight: "20px",
                   }}
                 />
               ))}

@@ -82,7 +82,13 @@ export default function EspacesSection() {
     },
   });
 
-  const { getAllCollaborators, inviteMember, inviting, removeMember, cancelInvitation } = useOrganizationInvitations();
+  const {
+    getAllCollaborators,
+    inviteMember,
+    inviting,
+    removeMember,
+    cancelInvitation,
+  } = useOrganizationInvitations();
 
   // Fetch members data using the same logic as collaborateurs page
   useEffect(() => {
@@ -90,7 +96,7 @@ export default function EspacesSection() {
       try {
         setLoading(true);
         const result = await getAllCollaborators();
-        
+
         if (result.success) {
           // Format and deduplicate data exactly like collaborateurs page
           const emailMap = new Map();
@@ -133,7 +139,8 @@ export default function EspacesSection() {
                 !existing ||
                 formattedItem.priority < existing.priority ||
                 (formattedItem.priority === existing.priority &&
-                  new Date(formattedItem.createdAt) > new Date(existing.createdAt))
+                  new Date(formattedItem.createdAt) >
+                    new Date(existing.createdAt))
               ) {
                 emailMap.set(email, formattedItem);
               }
@@ -185,7 +192,7 @@ export default function EspacesSection() {
       } else {
         result = await cancelInvitation(member.id);
       }
-      
+
       if (result.success) {
         setRefreshTrigger((prev) => prev + 1);
       }
@@ -292,10 +299,10 @@ export default function EspacesSection() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">
+                        <div className="font-normal text-sm">
                           {member.name || "Sans nom"}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-xs text-muted-foreground">
                           {member.email}
                         </div>
                       </div>
