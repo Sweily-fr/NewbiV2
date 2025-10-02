@@ -20,7 +20,7 @@ const calculateItemTotal = (quantity, unitPrice, discount, discountType) => {
   return subtotal;
 };
 
-const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
+const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF = false }) => {
   const { data: session } = useSession();
   const { organization } = useWorkspace();
   const documentRef = useRef(null);
@@ -375,7 +375,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
     >
       <div
         ref={documentRef}
-        className={`w-full bg-white shadow-lg relative flex flex-col ${isMobile ? 'min-h-0' : 'min-h-screen'}`}
+        className={`w-full bg-white shadow-lg relative flex flex-col ${isMobile ? 'min-h-0' : (forPDF ? 'min-h-[1123px]' : 'min-h-screen')}`}
         style={{ 
           color: data.appearance?.textColor || "#000000",
           fontSize: isMobile ? '6px' : '10px',
@@ -384,10 +384,20 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
             transformOrigin: 'top left',
             width: `${100 / scale}%`,
           }),
+          ...(forPDF && {
+            minHeight: '1123px', // Hauteur A4 en pixels
+            display: 'flex',
+            flexDirection: 'column',
+          }),
         }}
+        data-pdf-document="true"
       >
       {/* CONTENU PRINCIPAL */}
-      <div className={isMobile ? "px-6 pt-4 pb-4 relative flex-grow" : "px-14 pt-10 pb-32 relative flex-grow"}>
+      <div 
+        className={isMobile ? "px-6 pt-4 pb-4 relative flex-grow" : "px-14 pt-10 pb-4 relative flex-grow"}
+        data-pdf-content="true"
+        style={forPDF ? { paddingBottom: '16px' } : {}}
+      >
         {/* HEADER */}
         <div className="flex justify-between items-start mb-6">
           {/* Logo à gauche */}
@@ -1107,7 +1117,13 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false }) => {
       </div>
 
       {/* FOOTER - DÉTAILS BANCAIRES */}
-      <div className={isMobile ? "bg-[#F3F3F3] pt-4 pb-4 px-6 w-full" : "bg-[#F3F3F3] pt-8 pb-8 px-14 w-full"}>
+      <div 
+        className={isMobile ? "bg-[#F3F3F3] pt-4 pb-4 px-6 w-full" : "bg-[#F3F3F3] pt-8 pb-8 px-14 w-full"}
+        style={forPDF ? {
+          marginTop: 'auto',
+        } : {}}
+        data-pdf-footer="true"
+      >
         {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un devis NI un avoir */}
         {data.showBankDetails === true &&
           type !== "quote" &&
