@@ -45,7 +45,7 @@ export default function TransferPage() {
     "daniela-kokina-hOhlYhAiizc.png",
     "lukasz-szmigiel-jFCViYFYcus.png",
     "mark-basarab-1OtUkD_8svc.png",
-    "mourad-saadi-GyDktTa0Nmw.png"
+    "mourad-saadi-GyDktTa0Nmw.png",
   ];
 
   // Fonction pour sélectionner une image aléatoire
@@ -378,7 +378,8 @@ export default function TransferPage() {
               Téléchargez les fichiers partagés avec vous
             </h1>
             <p className="text-sm text-gray-600">
-              Accédez aux fichiers qui ont été partagés avec vous de manière sécurisée
+              Accédez aux fichiers qui ont été partagés avec vous de manière
+              sécurisée
             </p>
           </div>
 
@@ -432,36 +433,36 @@ export default function TransferPage() {
             (transfer?.fileTransfer?.isPaymentRequired === true ||
               (transfer?.fileTransfer?.paymentAmount &&
                 transfer?.fileTransfer?.paymentAmount > 0)) &&
-            !transfer?.fileTransfer?.isPaid
+              !transfer?.fileTransfer?.isPaid
           ) && (
-              <>
-                <Separator />
-                <Card className="mb-6 border-none shadow-none">
-                  <CardContent className="p-0">
-                    <div className="flex item-center justify-between">
-                      <div className="flex flex-col">
-                        <h3 className="text-lg font-normal">Paiement requis</h3>
-                        <p className="mb-4 text-sm">
-                          Ce transfert nécessite un paiement de{" "}
-                          {transfer?.fileTransfer?.paymentAmount}{" "}
-                          {transfer?.fileTransfer?.paymentCurrency}
-                        </p>
-                      </div>
-                      <Button
-                        className="cursor-pointer bg-[#5b4fff]/80 hover:bg-[#5b4fff]/90"
-                        onClick={() =>
-                          initiatePayment(transfer?.fileTransfer?.id)
-                        }
-                        disabled={isProcessing}
-                      >
-                        {isProcessing ? "Redirection..." : "Procéder au paiement"}
-                      </Button>
+            <>
+              <Separator />
+              <Card className="mb-6 border-none shadow-none">
+                <CardContent className="p-0">
+                  <div className="flex item-center justify-between">
+                    <div className="flex flex-col">
+                      <h3 className="text-lg font-normal">Paiement requis</h3>
+                      <p className="mb-4 text-sm">
+                        Ce transfert nécessite un paiement de{" "}
+                        {transfer?.fileTransfer?.paymentAmount}{" "}
+                        {transfer?.fileTransfer?.paymentCurrency}
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-                <Separator />
-              </>
-            )}
+                    <Button
+                      className="cursor-pointer bg-[#5b4fff]/80 hover:bg-[#5b4fff]/90"
+                      onClick={() =>
+                        initiatePayment(transfer?.fileTransfer?.id)
+                      }
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? "Redirection..." : "Procéder au paiement"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              <Separator />
+            </>
+          )}
           {/* ici tu fais les mdifs */}
           <Card className="shadow-none border-none">
             <CardHeader className="p-0">

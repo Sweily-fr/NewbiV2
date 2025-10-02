@@ -34,44 +34,22 @@ const RegisterFormContent = () => {
       onSuccess: async (context) => {
         toast.success("Vous avez reçu un email de verification");
 
-        // Si c'est une inscription via invitation, accepter l'invitation automatiquement
-        if (invitationId) {
-          setTimeout(async () => {
-            try {
-              const response = await fetch(`/api/invitations/${invitationId}`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ action: "accept" }),
-              });
-
-              if (response.ok) {
-                toast.success(
-                  "Invitation acceptée ! Redirection vers le dashboard..."
-                );
-                router.push("/dashboard");
-                return;
-              } else {
-                console.error(
-                  "Erreur lors de l'acceptation automatique de l'invitation"
-                );
-              }
-            } catch (error) {
-              console.error(
-                "Erreur lors de l'acceptation de l'invitation:",
-                error
-              );
-            }
-
-            // Fallback: redirection normale
-            router.push("/auth/login");
-          }, 2000);
-        } else {
-          // Redirection vers la page de connexion après inscription
-          // L'organisation sera créée automatiquement lors de la première connexion
-          router.push("/auth/login");
+        // Si c'est une inscription via invitation, stocker l'invitationId pour l'accepter après la connexion
+        if (invitationId && invitationEmail) {
+          // Stocker dans localStorage pour l'utiliser après la connexion
+          localStorage.setItem("pendingInvitation", JSON.stringify({
+            invitationId,
+            email: invitationEmail,
+            timestamp: Date.now()
+          }));
+          
+          console.log(`📋 Invitation ${invitationId} stockée pour acceptation après connexion`);
+          
+          toast.info("Veuillez vérifier votre email puis vous connecter pour rejoindre l'organisation.");
         }
+
+        // Redirection vers la page de connexion après inscription
+        router.push("/auth/login");
       },
       onError: (error) => {
         toast.error("Erreur lors de l'inscription");

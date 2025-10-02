@@ -175,14 +175,39 @@ export const useOrganizationInvitations = () => {
   const removeMember = useCallback(
     async (memberIdOrEmail, organizationId = null) => {
       try {
+        const orgId = organizationId || getUserOrganization()?.id;
+
+        // 1. Supprimer le membre via Better Auth
         const { data, error } = await organization.removeMember({
           memberIdOrEmail,
-          organizationId: organizationId || getUserOrganization()?.id, // Utiliser l'organisation active si pas spécifiée
+          organizationId: orgId,
         });
 
         if (error) {
           toast.error("Erreur lors de la suppression du membre");
           return { success: false, error };
+        }
+
+        // 2. Synchroniser la facturation des sièges (non-bloquant)
+        try {
+          console.log(`💳 Synchronisation facturation après suppression de membre`);
+          
+          const response = await fetch("/api/billing/sync-seats", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ organizationId: orgId })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.warn("⚠️ Erreur sync facturation (non-bloquant):", errorData);
+          } else {
+            const result = await response.json();
+            console.log(`✅ Facturation synchronisée:`, result);
+          }
+        } catch (billingError) {
+          // Ne pas faire échouer la suppression si la facturation échoue
+          console.warn("⚠️ Erreur sync facturation (non-bloquant):", billingError);
         }
 
         toast.success("Membre supprimé avec succès");

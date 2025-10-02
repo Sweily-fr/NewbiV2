@@ -245,7 +245,7 @@ const HeroHeader = ({ className }) => {
 
         {/* Mobile menu overlay */}
         {menuState && (
-          <div className="lg:hidden fixed inset-0 top-16 bg-white z-10">
+          <div className="lg:hidden fixed inset-0 top-[52px] bg-white z-10">
             <div className="flex flex-col h-full">
               {/* Menu content */}
               <div className="flex-1 px-4 py-6 overflow-y-auto">
@@ -312,26 +312,45 @@ const HeroHeader = ({ className }) => {
                   ))}
                 </ul>
               </div>
-              
+
               {/* Buttons at bottom */}
               <div className="px-4 pb-6 pt-4 border-t border-gray-100 bg-white">
                 <div className="flex flex-col space-y-3">
                   {session.session ? (
-                    <Button asChild size="sm" variant="default" className="w-full">
-                      <Link href="/dashboard" className="flex items-center justify-center gap-2">
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="default"
+                      className="w-full"
+                    >
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center justify-center gap-2"
+                      >
                         <LayoutDashboard className="h-4 w-4" />
                         <span>Dashboard</span>
                       </Link>
                     </Button>
                   ) : (
                     <>
-                      <Button asChild variant="outline" size="sm" className="w-full">
-                        <Link href="/auth/login" className="flex items-center justify-center">
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        <Link
+                          href="/auth/login"
+                          className="flex items-center justify-center"
+                        >
                           <span>Connexion</span>
                         </Link>
                       </Button>
                       <Button asChild size="sm" className="w-full">
-                        <Link href="/auth/signup" className="flex items-center justify-center">
+                        <Link
+                          href="/auth/signup"
+                          className="flex items-center justify-center"
+                        >
                           <span>Inscription</span>
                         </Link>
                       </Button>
