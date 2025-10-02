@@ -200,7 +200,7 @@ export default function InvoiceMobileFullscreen({
                   type="invoice"
                   isMobile={true}
                 />
-                  </div>
+              </div>
 
               {/* Avoirs liés - Cliquables pour télécharger */}
               {creditNotes && creditNotes.length > 0 && (
