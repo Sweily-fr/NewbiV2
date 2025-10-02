@@ -165,7 +165,7 @@ export default function QuoteMobileFullscreen({
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="p-4 space-y-6 pb-32">
+            <div className="p-4 space-y-6 pb-56">
               {/* Informations principales */}
               <div className="space-y-4">
                 <div>
