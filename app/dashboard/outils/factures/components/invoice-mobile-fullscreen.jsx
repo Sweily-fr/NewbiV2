@@ -23,7 +23,7 @@ import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
+import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
 
 export default function InvoiceMobileFullscreen({
   isOpen,
@@ -137,7 +137,7 @@ export default function InvoiceMobileFullscreen({
         <div className="sticky top-0 z-10 bg-background border-b">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold">Facture {invoice.number}</h2>
+              <h2 className="text-lg font-medium">Facture {invoice.number}</h2>
               <Badge variant={statusColor}>{statusLabel}</Badge>
             </div>
             <Button
@@ -219,14 +219,14 @@ export default function InvoiceMobileFullscreen({
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <UniversalPDFGenerator
+                          <UniversalPDFDownloader
                             data={cn}
                             type="creditNote"
                             variant="ghost"
                             size="sm"
                           >
                             Télécharger
-                          </UniversalPDFGenerator>
+                          </UniversalPDFDownloader>
                         </div>
                       </div>
                     ))}
@@ -238,13 +238,13 @@ export default function InvoiceMobileFullscreen({
         </div>
 
         {/* Footer avec actions */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 space-y-2">
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex flex-col gap-2">
           {invoice.status === INVOICE_STATUS.DRAFT && (
             <>
               <Button
                 onClick={handleCreateInvoice}
                 disabled={isLoading}
-                className="w-full"
+                className="w-full font-normal"
               >
                 {changingStatus ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -261,7 +261,7 @@ export default function InvoiceMobileFullscreen({
               <Button
                 onClick={handleMarkAsPaid}
                 disabled={isLoading}
-                className="w-full"
+                className="w-full font-normal"
               >
                 {markingAsPaid ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -274,7 +274,7 @@ export default function InvoiceMobileFullscreen({
                 <Button
                   onClick={handleCreateCreditNote}
                   variant="outline"
-                  className="w-full"
+                  className="w-full font-normal"
                 >
                   <Receipt className="mr-2 h-4 w-4" />
                   Créer un avoir
@@ -283,7 +283,7 @@ export default function InvoiceMobileFullscreen({
               <Button
                 onClick={handleCancel}
                 variant="destructive"
-                className="w-full"
+                className="w-full font-normal"
                 disabled={isLoading}
               >
                 <XCircle className="mr-2 h-4 w-4" />
@@ -296,7 +296,7 @@ export default function InvoiceMobileFullscreen({
             <Button
               onClick={handleCreateCreditNote}
               variant="outline"
-              className="w-full"
+              className="w-full font-normal"
             >
               <Receipt className="mr-2 h-4 w-4" />
               Créer un avoir
@@ -307,21 +307,21 @@ export default function InvoiceMobileFullscreen({
             <Button
               onClick={handleCreateCreditNote}
               variant="outline"
-              className="w-full"
+              className="w-full font-normal"
             >
               <Receipt className="mr-2 h-4 w-4" />
               Créer un avoir
             </Button>
           )}
 
-          <UniversalPDFGenerator
+          <UniversalPDFDownloader
             data={invoice}
             type="invoice"
             variant="outline"
             className="w-full flex items-center justify-center"
           >
             Télécharger PDF
-          </UniversalPDFGenerator>
+          </UniversalPDFDownloader>
         </div>
       </div>
 

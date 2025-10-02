@@ -4,7 +4,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useCreditNote } from "@/src/graphql/creditNoteQueries";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
+import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
 
 export default function CreditNoteMobileFullscreen({
   isOpen,
@@ -61,7 +61,7 @@ export default function CreditNoteMobileFullscreen({
         <div className="sticky top-0 z-10 bg-background border-b">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold">Avoir {creditNote.number}</h2>
+              <h2 className="text-lg font-medium">Avoir {creditNote.number}</h2>
               <Badge variant="default">Créé</Badge>
             </div>
             <Button
@@ -127,15 +127,14 @@ export default function CreditNoteMobileFullscreen({
               </div>
 
               {/* Bouton de téléchargement en bas du contenu */}
-              <UniversalPDFGenerator
+              <UniversalPDFDownloader
                 data={creditNote}
                 type="creditNote"
                 variant="outline"
-                className="w-full"
+                className="w-full flex items-center justify-center"
               >
-                <Download className="mr-2 h-4 w-4" />
                 Télécharger PDF
-              </UniversalPDFGenerator>
+              </UniversalPDFDownloader>
             </div>
           )}
         </div>

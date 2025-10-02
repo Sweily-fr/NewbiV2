@@ -22,7 +22,7 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
+import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
 
 export default function QuoteMobileFullscreen({
   isOpen,
@@ -144,7 +144,7 @@ export default function QuoteMobileFullscreen({
         <div className="sticky top-0 z-10 bg-background border-b">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold">Devis {quote.number}</h2>
+              <h2 className="text-lg font-medium">Devis {quote.number}</h2>
               <Badge variant={statusColor}>{statusLabel}</Badge>
             </div>
             <Button
@@ -234,12 +234,12 @@ export default function QuoteMobileFullscreen({
         </div>
 
         {/* Footer avec actions */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 space-y-2">
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex flex-col gap-2">
           {quote.status === QUOTE_STATUS.DRAFT && (
             <Button
               onClick={handleSendQuote}
               disabled={isLoading}
-              className="w-full"
+              className="w-full font-normal"
             >
               {changingStatus ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -255,7 +255,7 @@ export default function QuoteMobileFullscreen({
               <Button
                 onClick={handleAccept}
                 disabled={isLoading}
-                className="w-full"
+                className="w-full font-normal"
               >
                 {changingStatus ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -267,7 +267,7 @@ export default function QuoteMobileFullscreen({
               <Button
                 onClick={handleReject}
                 variant="destructive"
-                className="w-full"
+                className="w-full font-normal"
                 disabled={isLoading}
               >
                 <XCircle className="mr-2 h-4 w-4" />
@@ -281,7 +281,7 @@ export default function QuoteMobileFullscreen({
               <Button
                 onClick={handleConvertToInvoice}
                 disabled={isLoading}
-                className="w-full"
+                className="w-full font-normal"
               >
                 {converting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -292,15 +292,14 @@ export default function QuoteMobileFullscreen({
               </Button>
             )}
 
-          <UniversalPDFGenerator
+          <UniversalPDFDownloader
             data={quote}
             type="quote"
             variant="outline"
-            className="w-full"
+            className="w-full flex items-center justify-center"
           >
-            <Download className="mr-2 h-4 w-4" />
             Télécharger PDF
-          </UniversalPDFGenerator>
+          </UniversalPDFDownloader>
         </div>
       </div>
 

@@ -42,7 +42,7 @@ const UniversalPDFGenerator = ({
   };
 
   return (
-    <div className={className}>
+    <>
       {/* Composant caché utilisé pour la génération du PDF */}
       <div style={{ display: 'none' }}>
         <div ref={componentRef}>
@@ -55,7 +55,7 @@ const UniversalPDFGenerator = ({
         disabled={isGenerating || disabled}
         variant={variant}
         size={size}
-        className="flex items-center gap-2 font-normal"
+        className={`flex items-center gap-2 font-normal ${className || ''}`}
         {...props}
       >
         {isGenerating ? (
@@ -70,7 +70,7 @@ const UniversalPDFGenerator = ({
           </>
         )}
       </Button>
-    </div>
+    </>
   );
 };
 
