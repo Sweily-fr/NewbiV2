@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { toast } from "@/src/components/ui/sonner";
+import { toast } from "@/src/utils/debouncedToast";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
-  GET_BOARD,
   CREATE_COLUMN,
   UPDATE_COLUMN,
   DELETE_COLUMN,
@@ -23,11 +22,11 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
   const [createColumn, { loading: createLoading }] = useMutation(
     CREATE_COLUMN,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
-        toast.success("Colonne créée avec succès");
+        // Plus de toast ici - la subscription temps réel s'en charge
         setIsAddColumnOpen(false);
         setColumnForm({ title: "", color: "#3b82f6" });
+        // Plus besoin de refetch() - la subscription s'en charge
       },
       onError: (error) => {
         console.error("Erreur lors de la création de la colonne:", error);
@@ -39,12 +38,12 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
   const [updateColumn, { loading: updateLoading }] = useMutation(
     UPDATE_COLUMN,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
-        toast.success("Colonne modifiée avec succès");
+        // Plus de toast ici - la subscription temps réel s'en charge
         setIsEditColumnOpen(false);
         setEditingColumn(null);
         setColumnForm({ title: "", color: "#3b82f6" });
+        // Plus besoin de refetch() - la subscription s'en charge
       },
       onError: (error) => {
         console.error("Erreur lors de la modification de la colonne:", error);
@@ -56,9 +55,9 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
   const [deleteColumn, { loading: deleteLoading }] = useMutation(
     DELETE_COLUMN,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
-        toast.success("Colonne supprimée avec succès");
+        // Plus de toast ici - la subscription temps réel s'en charge
+        // Plus besoin de refetch() - la subscription s'en charge
       },
       onError: (error) => {
         console.error("Erreur lors de la suppression de la colonne:", error);

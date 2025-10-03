@@ -7,7 +7,7 @@ import {
   DELETE_BOARD,
   BOARD_UPDATED_SUBSCRIPTION,
 } from "@/src/graphql/kanbanQueries";
-import { toast } from "@/src/components/ui/sonner";
+import { toast } from "@/src/utils/debouncedToast";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 export const useKanbanBoards = () => {

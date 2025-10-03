@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { toast } from "@/src/components/ui/sonner";
+import { toast } from "@/src/utils/debouncedToast";
 import { useMutation } from "@apollo/client";
 import {
-  GET_BOARD,
   CREATE_TASK,
   UPDATE_TASK,
   DELETE_TASK,
@@ -34,12 +33,12 @@ export const useKanbanTasks = (boardId, board) => {
   const [createTask, { loading: createTaskLoading }] = useMutation(
     CREATE_TASK,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
-        toast.success("Tâche créée avec succès");
+        // Plus de toast ici - la subscription temps réel s'en charge
         setTaskForm(initialTaskForm);
         setSelectedColumnId(null);
         setIsAddTaskOpen(false); // Close the add task modal after successful creation
+        // Plus besoin de refetch() - la subscription s'en charge
       },
       onError: () => {
         toast.error("Erreur lors de la création de la tâche");
@@ -50,12 +49,12 @@ export const useKanbanTasks = (boardId, board) => {
   const [updateTask, { loading: updateTaskLoading }] = useMutation(
     UPDATE_TASK,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
-        toast.success("Tâche modifiée avec succès");
+        // Plus de toast ici - la subscription temps réel s'en charge
         setTaskForm(initialTaskForm);
         setEditingTask(null);
         setIsEditTaskOpen(false); // Close the edit modal after successful update
+        // Plus besoin de refetch() - la subscription s'en charge
       },
       onError: () => {
         toast.error("Erreur lors de la modification de la tâche");
@@ -66,9 +65,9 @@ export const useKanbanTasks = (boardId, board) => {
   const [deleteTask, { loading: deleteTaskLoading }] = useMutation(
     DELETE_TASK,
     {
-      refetchQueries: [{ query: GET_BOARD, variables: { id: boardId, workspaceId } }],
       onCompleted: () => {
-        toast.success("Tâche supprimée avec succès");
+        // Plus de toast ici - la subscription temps réel s'en charge
+        // Plus besoin de refetch() - la subscription s'en charge
       },
       onError: () => {
         toast.error("Erreur lors de la suppression de la tâche");
@@ -78,7 +77,8 @@ export const useKanbanTasks = (boardId, board) => {
 
   const [moveTask] = useMutation(MOVE_TASK, {
     onCompleted: () => {
-      toast.success("Tâche déplacée avec succès");
+      // Plus de toast ici - la subscription temps réel s'en charge
+      // Plus besoin de refetch() - la subscription s'en charge
     },
     onError: () => {
       toast.error("Erreur lors du déplacement de la tâche");
@@ -209,7 +209,11 @@ export const useKanbanTasks = (boardId, board) => {
         ...prev,
         checklist: [
           ...prev.checklist,
-          { text: taskForm.newChecklistItem.trim(), completed: false },
+          { 
+            id: `temp-${Date.now()}-${Math.random()}`, // ID temporaire unique
+            text: taskForm.newChecklistItem.trim(), 
+            completed: false 
+          },
         ],
         newChecklistItem: "",
       }));
@@ -240,7 +244,7 @@ export const useKanbanTasks = (boardId, board) => {
   // Task CRUD operations
   // Helper to clean tag objects by removing __typename
   const cleanTags = (tags) => {
-    return tags.map(({ __typename, ...tag }) => ({
+    return tags.map((tag) => ({
       name: tag.name,
       className: tag.className || "",
       bg: tag.bg || "",
@@ -303,6 +307,7 @@ export const useKanbanTasks = (boardId, board) => {
             position: 0, // Will be updated by the backend
             tags: cleanTags(taskForm.tags),
             checklist: taskForm.checklist.map((item) => ({
+              id: item.id || undefined,
               text: item.text,
               completed: item.completed || false,
             })),
