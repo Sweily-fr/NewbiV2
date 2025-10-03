@@ -35,7 +35,8 @@ export default function Component({
 }) {
   const [open, setOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
-  const [settingsInitialTab, setSettingsInitialTab] = React.useState("preferences");
+  const [settingsInitialTab, setSettingsInitialTab] =
+    React.useState("preferences");
   const router = useRouter();
 
   const openSettings = React.useCallback((tab = "preferences") => {
@@ -47,7 +48,10 @@ export default function Component({
   // S'assurer que l'onglet initial est bien défini quand le modal s'ouvre
   React.useEffect(() => {
     if (settingsModalOpen) {
-      console.log("Settings modal opened with initial tab:", settingsInitialTab); // Debug
+      console.log(
+        "Settings modal opened with initial tab:",
+        settingsInitialTab
+      ); // Debug
     }
   }, [settingsModalOpen, settingsInitialTab]);
 
@@ -74,10 +78,13 @@ export default function Component({
 
     document.addEventListener("keydown", down);
     document.addEventListener("openSettingsModal", handleOpenSettingsModal);
-    
+
     return () => {
       document.removeEventListener("keydown", down);
-      document.removeEventListener("openSettingsModal", handleOpenSettingsModal);
+      document.removeEventListener(
+        "openSettingsModal",
+        handleOpenSettingsModal
+      );
     };
   }, [openSettings]);
 
@@ -98,10 +105,10 @@ export default function Component({
           </span>
         </span>
         <div className="hidden md:flex items-center gap-1">
-          <kbd className="bg-background flex justify-center items-center text-muted-foreground/70 inline-flex h-6 w-6 max-h-full items-center rounded border px-1 font-[inherit] text-[0.825rem] font-medium">
+          <kbd className="inline-flex items-center justify-center rounded border-y border-b-gray-200 border-t-white bg-gray-100 px-1.5 font-sans text-[11px] text-gray-800 ring-1 ring-gray-300 dark:border-b-gray-950 dark:border-t-transparent dark:bg-white/10 dark:text-white dark:ring-white/15 h-5 min-w-5">
             ⌘
           </kbd>
-          <kbd className="bg-background flex justify-center items-center text-muted-foreground/70 inline-flex h-6 w-6 max-h-full items-center rounded border px-1 font-[inherit] text-[0.825rem] font-medium">
+          <kbd className="inline-flex items-center justify-center rounded border-y border-b-gray-200 border-t-white bg-gray-100 px-1.5 font-sans text-[11px] text-gray-800 ring-1 ring-gray-300 dark:border-b-gray-950 dark:border-t-transparent dark:bg-white/10 dark:text-white dark:ring-white/15 h-5 min-w-5">
             K
           </kbd>
         </div>
@@ -111,68 +118,116 @@ export default function Component({
         <CommandList>
           <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
           <CommandGroup heading="Navigation">
-            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard"))}>
+            <CommandItem
+              onSelect={() => runCommand(() => router.push("/dashboard"))}
+            >
               <LayoutDashboard className="mr-2 h-4 w-4" />
               <span>Tableau de bord</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/clients"))}>
+            <CommandItem
+              onSelect={() =>
+                runCommand(() => router.push("/dashboard/clients"))
+              }
+            >
               <Users className="mr-2 h-4 w-4" />
               <span>Clients</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/account"))}>
+            <CommandItem
+              onSelect={() =>
+                runCommand(() => router.push("/dashboard/account"))
+              }
+            >
               <User className="mr-2 h-4 w-4" />
               <span>Mon compte</span>
             </CommandItem>
           </CommandGroup>
           <CommandSeparator />
           <CommandGroup heading="Outils">
-            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/factures"))}>
+            <CommandItem
+              onSelect={() =>
+                runCommand(() => router.push("/dashboard/outils/factures"))
+              }
+            >
               <Receipt className="mr-2 h-4 w-4" />
               <span>Factures</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/devis"))}>
+            <CommandItem
+              onSelect={() =>
+                runCommand(() => router.push("/dashboard/outils/devis"))
+              }
+            >
               <FileText className="mr-2 h-4 w-4" />
               <span>Devis</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/gestion-depenses"))}>
+            <CommandItem
+              onSelect={() =>
+                runCommand(() =>
+                  router.push("/dashboard/outils/gestion-depenses")
+                )
+              }
+            >
               <BarChart3 className="mr-2 h-4 w-4" />
               <span>Gestion des dépenses</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/kanban"))}>
+            <CommandItem
+              onSelect={() =>
+                runCommand(() => router.push("/dashboard/outils/kanban"))
+              }
+            >
               <Kanban className="mr-2 h-4 w-4" />
               <span>Kanban</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/signatures-mail"))}>
+            <CommandItem
+              onSelect={() =>
+                runCommand(() =>
+                  router.push("/dashboard/outils/signatures-mail")
+                )
+              }
+            >
               <Mail className="mr-2 h-4 w-4" />
               <span>Signatures de mail</span>
             </CommandItem>
           </CommandGroup>
           <CommandSeparator />
           <CommandGroup heading="Paramètres">
-            <CommandItem onSelect={() => runCommand(() => openSettings("preferences"))}>
+            <CommandItem
+              onSelect={() => runCommand(() => openSettings("preferences"))}
+            >
               <Settings className="mr-2 h-4 w-4" />
               <span>Paramètres généraux</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => openSettings("generale"))}>
+            <CommandItem
+              onSelect={() => runCommand(() => openSettings("generale"))}
+            >
               <User className="mr-2 h-4 w-4" />
               <span>Informations entreprise</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => openSettings("coordonnees-bancaires"))}>
+            <CommandItem
+              onSelect={() =>
+                runCommand(() => openSettings("coordonnees-bancaires"))
+              }
+            >
               <CreditCard className="mr-2 h-4 w-4" />
               <span>Coordonnées bancaires</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => openSettings("informations-legales"))}>
+            <CommandItem
+              onSelect={() =>
+                runCommand(() => openSettings("informations-legales"))
+              }
+            >
               <FileText className="mr-2 h-4 w-4" />
               <span>Informations légales</span>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => openSettings("subscription"))}>
+            <CommandItem
+              onSelect={() => runCommand(() => openSettings("subscription"))}
+            >
               <CreditCard className="mr-2 h-4 w-4" />
               <span>Gérer mon abonnement</span>
             </CommandItem>
           </CommandGroup>
         </CommandList>
       </CommandDialog>
-      
+
       {/* Modal de paramètres */}
       <SettingsModal
         open={settingsModalOpen}

@@ -250,20 +250,24 @@ export const stripePlugin = stripe({
           const updatedSub = event.data.object;
 
           try {
-            await adapter.update({
-              model: "subscription",
-              where: { stripeSubscriptionId: updatedSub.id },
-              data: {
-                status: updatedSub.status,
-                currentPeriodStart: new Date(
-                  updatedSub.current_period_start * 1000
-                ),
-                currentPeriodEnd: new Date(
-                  updatedSub.current_period_end * 1000
-                ),
-                updatedAt: new Date(),
-              },
-            });
+            // Import MongoDB directement
+            const { mongoDb } = await import("./mongodb.js");
+            
+            await mongoDb.collection("subscription").updateOne(
+              { stripeSubscriptionId: updatedSub.id },
+              {
+                $set: {
+                  status: updatedSub.status,
+                  currentPeriodStart: new Date(
+                    updatedSub.current_period_start * 1000
+                  ),
+                  currentPeriodEnd: new Date(
+                    updatedSub.current_period_end * 1000
+                  ),
+                  updatedAt: new Date(),
+                }
+              }
+            );
             console.log(
               `✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès`
             );

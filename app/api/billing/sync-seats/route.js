@@ -32,16 +32,20 @@ export async function POST(request) {
 
     // Vérifier que l'utilisateur a les permissions (owner uniquement)
     const { auth: authInstance } = await import("@/src/lib/auth");
-    const adapter = authInstance.options.database;
     
-    const member = await adapter.findFirst({
-      model: "member",
-      where: {
-        organizationId,
-        userId: session.user.id,
-      },
+    // Vérifier directement dans MongoDB
+    const { mongoDb } = await import("@/src/lib/mongodb.js");
+    const { ObjectId } = await import("mongodb");
+    
+    console.log(`🔍 Recherche membre pour userId: ${session.user.id}, organizationId: ${organizationId}`);
+    
+    const member = await mongoDb.collection("member").findOne({
+      userId: new ObjectId(session.user.id),
+      organizationId: new ObjectId(organizationId)
     });
 
+    console.log(`📊 Membre trouvé:`, member ? { role: member.role, userId: member.userId.toString() } : 'Aucun');
+    
     if (!member) {
       console.warn(`⚠️ Utilisateur ${session.user.email} n'est pas membre de l'organisation ${organizationId}`);
       return Response.json(
@@ -49,7 +53,7 @@ export async function POST(request) {
         { status: 403 }
       );
     }
-
+    
     if (member.role !== "owner") {
       console.warn(`⚠️ Utilisateur ${session.user.email} n'a pas les permissions (rôle: ${member.role})`);
       return Response.json(
@@ -59,6 +63,9 @@ export async function POST(request) {
     }
 
     console.log(`✅ Permissions vérifiées, début de la synchronisation`);
+
+    // Obtenir l'adapter pour le service
+    const adapter = authInstance.options.database;
 
     // Synchroniser les sièges
     const result = await seatSyncService.syncSeatsAfterMemberRemoved(
@@ -110,22 +117,23 @@ export async function GET(request) {
 
     // Vérifier que l'utilisateur est membre
     const { auth: authInstance } = await import("@/src/lib/auth");
-    const adapter = authInstance.options.database;
+    const { mongoDb } = await import("@/src/lib/mongodb.js");
+    const { ObjectId } = await import("mongodb");
     
-    const member = await adapter.findFirst({
-      model: "member",
-      where: {
-        organizationId,
-        userId: session.user.id,
-      },
+    const member = await mongoDb.collection("member").findOne({
+      userId: new ObjectId(session.user.id),
+      organizationId: new ObjectId(organizationId)
     });
-
+    
     if (!member) {
       return Response.json(
         { error: "Vous n'êtes pas membre de cette organisation" },
         { status: 403 }
       );
     }
+
+    // Obtenir l'adapter pour le service
+    const adapter = authInstance.options.database;
 
     // Récupérer les informations de facturation
     const billingInfo = await seatSyncService.getBillingInfo(

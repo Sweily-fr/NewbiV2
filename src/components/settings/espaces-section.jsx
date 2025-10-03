@@ -187,10 +187,24 @@ export default function EspacesSection() {
       member.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const onInviteSubmit = async (formData) => {
+  const onInviteSubmit = async (formData, event) => {
+    // Empêcher la propagation vers le formulaire parent
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    // Déterminer le rôle basé sur le type de membre
+    let role;
+    if (memberType === "accountant") {
+      role = "accountant";
+    } else {
+      role = formData.role || "member";
+    }
+
     const result = await inviteMember({
       email: formData.email,
-      role: formData.role,
+      role: role,
       message: formData.message,
     });
 
@@ -239,16 +253,20 @@ export default function EspacesSection() {
     }
   };
 
-  const getRoleBadgeVariant = (role) => {
+  const getRoleBadgeStyle = (role) => {
     switch (role) {
       case "admin":
-        return "default";
+        return "bg-blue-100 border-blue-300 text-blue-800 font-normal";
       case "member":
-        return "secondary";
+        return "bg-gray-100 border-gray-300 text-gray-800 font-normal";
       case "guest":
-        return "outline";
+        return "bg-orange-100 border-orange-300 text-orange-800 font-normal";
+      case "accountant":
+        return "bg-purple-100 border-purple-300 text-purple-800 font-normal";
+      case "owner":
+        return "bg-green-100 border-green-300 text-green-800 font-normal";
       default:
-        return "secondary";
+        return "bg-gray-100 border-gray-300 text-gray-800 font-normal";
     }
   };
 
@@ -260,6 +278,10 @@ export default function EspacesSection() {
         return "Membre";
       case "guest":
         return "Invité";
+      case "accountant":
+        return "Comptable";
+      case "owner":
+        return "Propriétaire";
       default:
         return role;
     }
@@ -276,6 +298,7 @@ export default function EspacesSection() {
           </p>
         </div>
         <Button
+          type="button"
           onClick={() => setInviteDialogOpen(true)}
           className="flex items-center gap-2 font-normal cursor-pointer bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white"
         >
@@ -323,9 +346,9 @@ export default function EspacesSection() {
               </TableRow>
             ) : (
               filteredMembers.map((member) => (
-                <TableRow key={member.id} className="pt-3 pb-3">
+                <TableRow key={member.id} className="pt-6 pb-6">
                   <TableCell>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 pt-3 pb-3">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={member.avatar} />
                         <AvatarFallback>
@@ -347,17 +370,23 @@ export default function EspacesSection() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getRoleBadgeVariant(member.role)}>
-                      {getRoleLabel(member.role)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getRoleBadgeStyle(member.role)}>
+                        {getRoleLabel(member.role)}
+                      </Badge>
+                      {member.role === "accountant" && (
+                        <Badge className="bg-green-100 border-green-300 text-green-800 font-normal">
+                          Gratuit
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant="secondary"
                       className={
                         member.status === "active"
-                          ? "bg-[#5b4fff]/10 text-[#5b4fff] hover:bg-[#5b4fff]/20"
-                          : ""
+                          ? "bg-green-100 border-green-300 text-green-800 font-normal"
+                          : "bg-orange-100 border-orange-300 text-orange-800 font-normal"
                       }
                     >
                       {member.status === "active" ? "Actif" : "En attente"}
@@ -398,6 +427,14 @@ export default function EspacesSection() {
             <p className="text-xs text-foreground">
               Saisissez ou collez les adresses e-mail ci-dessous
             </p>
+            {memberType === "accountant" && (
+              <div className="bg-[#5b4fff]/10 border border-[#5b4fff]/50 rounded-lg p-3">
+                <p className="text-xs text-[#5b4fff]/700">
+                  <strong>Comptable gratuit :</strong> Un seul comptable par
+                  organisation est autorisé et n'est pas facturé.
+                </p>
+              </div>
+            )}
           </DialogHeader>
 
           <div className="space-y-5">

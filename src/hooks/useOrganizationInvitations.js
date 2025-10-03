@@ -65,6 +65,26 @@ export const useOrganizationInvitations = () => {
           throw new Error("Aucune organisation trouvée pour cet utilisateur");
         }
 
+        // Validation spéciale pour les comptables
+        if (role === "accountant") {
+          // Vérifier qu'il n'y a pas déjà un comptable dans l'organisation
+          const collaboratorsResult = await getAllCollaborators(userOrg.id);
+          
+          if (collaboratorsResult.success) {
+            const existingAccountant = collaboratorsResult.data.find(
+              (member) => member.role === "accountant"
+            );
+
+            if (existingAccountant) {
+              toast.error("Un comptable est déjà assigné à cette organisation. Vous ne pouvez avoir qu'un seul comptable par organisation.");
+              return { success: false, error: "Comptable déjà existant" };
+            }
+          } else {
+            console.error("Erreur lors de la vérification des collaborateurs:", collaboratorsResult.error);
+            // Continuer quand même l'invitation si on ne peut pas vérifier
+          }
+        }
+
         const { data, error } = await organization.inviteMember({
           email,
           role,

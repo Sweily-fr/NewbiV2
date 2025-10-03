@@ -1,7 +1,8 @@
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const SEAT_PRICE_ID = process.env.STRIPE_SEAT_PRICE_ID; // 7.49€/mois par siège additionnel
+const SEAT_PRICE_ID = process.env.STRIPE_SEAT_PRICE_ID; // Prix par siège additionnel
+const BASE_PRICE_ID = process.env.STRIPE_PRICE_ID_MONTH; // Prix du plan Pro de base
 
 /**
  * Service de synchronisation de la facturation par siège
@@ -9,8 +10,38 @@ const SEAT_PRICE_ID = process.env.STRIPE_SEAT_PRICE_ID; // 7.49€/mois par siè
  */
 export class SeatSyncService {
   /**
+   * Récupère les prix depuis Stripe (avec cache)
+   * @returns {Promise<{baseCost: number, seatCost: number}>}
+   */
+  async getPricesFromStripe() {
+    try {
+      // Récupérer les prix depuis Stripe
+      const [basePrice, seatPrice] = await Promise.all([
+        stripe.prices.retrieve(BASE_PRICE_ID),
+        stripe.prices.retrieve(SEAT_PRICE_ID)
+      ]);
+
+      return {
+        baseCost: basePrice.unit_amount / 100, // Convertir centimes en euros
+        seatCost: seatPrice.unit_amount / 100,
+        baseCurrency: basePrice.currency.toUpperCase(),
+        seatCurrency: seatPrice.currency.toUpperCase()
+      };
+    } catch (error) {
+      console.error("❌ Erreur récupération prix Stripe:", error);
+      // Fallback sur les prix par défaut si Stripe échoue
+      return {
+        baseCost: 14.99,
+        seatCost: 7.49,
+        baseCurrency: "EUR",
+        seatCurrency: "EUR"
+      };
+    }
+  }
+
+  /**
    * Calcule le nombre de sièges additionnels (exclut le propriétaire)
-   * Le propriétaire est inclus dans le plan Pro à 14.99€/mois
+   * Le propriétaire est inclus dans le plan Pro
    *
    * @param {string} organizationId - ID de l'organisation
    * @param {Object} adapter - Adapter Better Auth pour accéder à la DB
@@ -18,13 +49,16 @@ export class SeatSyncService {
    */
   async getAdditionalSeatsCount(organizationId, adapter) {
     try {
-      const members = await adapter.findMany({
-        model: "member",
-        where: { organizationId },
-      });
+      // Import MongoDB directement
+      const { mongoDb } = await import("../lib/mongodb.js");
+      const { ObjectId } = await import("mongodb");
+      
+      const members = await mongoDb.collection("member").find({ 
+        organizationId: new ObjectId(organizationId)
+      }).toArray();
 
-      // Exclure le propriétaire (inclus dans le plan de base)
-      const additionalMembers = members.filter((m) => m.role !== "owner");
+      // Exclure le propriétaire (inclus dans le plan de base) et les comptables (gratuits)
+      const additionalMembers = members.filter((m) => m.role !== "owner" && m.role !== "accountant");
 
       console.log(`📊 Organisation ${organizationId}:`, {
         totalMembers: members.length,
@@ -92,9 +126,12 @@ export class SeatSyncService {
       // 5. Mettre à jour selon le nombre de sièges
       if (additionalSeats > 0) {
         if (!seatItem) {
+          // Récupérer le prix pour le log
+          const prices = await this.getPricesFromStripe();
+          
           // Créer un nouvel item pour les sièges additionnels
           console.log(
-            `➕ Création item sièges: ${additionalSeats} siège(s) à 7.49€/mois`
+            `➕ Création item sièges: ${additionalSeats} siège(s) à ${prices.seatCost}€/mois`
           );
 
           await stripe.subscriptionItems.create(
@@ -157,30 +194,35 @@ export class SeatSyncService {
 
       // 6. Mettre à jour la base de données locale (seulement si changement)
       if (subscription.seatQuantity !== additionalSeats) {
-        await adapter.update({
-          model: "subscription",
-          where: { id: subscription.id },
-          data: {
-            seatQuantity: additionalSeats,
-            updatedAt: new Date(),
-          },
-        });
+        await mongoDb.collection("subscription").updateOne(
+          { _id: subscription._id },
+          { 
+            $set: {
+              seatQuantity: additionalSeats,
+              updatedAt: new Date(),
+            }
+          }
+        );
         console.log(`📝 BDD mise à jour: seatQuantity = ${additionalSeats}`);
       } else {
         console.log(`📝 BDD déjà à jour (seatQuantity = ${additionalSeats})`);
       }
 
+      // Récupérer les prix pour les logs
+      const prices = await this.getPricesFromStripe();
+      const totalCost = prices.baseCost + (additionalSeats * prices.seatCost);
+
       console.log(
         `✅ Synchronisation terminée: ${additionalSeats} siège(s) additionnel(s)`
       );
       console.log(
-        `💰 Facturation mensuelle: 14.99€ (Pro) + ${additionalSeats} × 7.49€ = ${14.99 + additionalSeats * 7.49}€`
+        `💰 Facturation mensuelle: ${prices.baseCost}€ (Pro) + ${additionalSeats} × ${prices.seatCost}€ = ${totalCost}€`
       );
 
       return {
         success: true,
         seats: additionalSeats,
-        totalCost: 14.99 + additionalSeats * 7.49,
+        totalCost,
       };
     } catch (error) {
       console.error("❌ Erreur synchronisation sièges:", error);
@@ -212,9 +254,11 @@ export class SeatSyncService {
    */
   async getBillingInfo(organizationId, adapter) {
     try {
-      const subscription = await adapter.findFirst({
-        model: "subscription",
-        where: { referenceId: organizationId },
+      // Import MongoDB directement
+      const { mongoDb } = await import("../lib/mongodb.js");
+      
+      const subscription = await mongoDb.collection("subscription").findOne({
+        referenceId: organizationId
       });
 
       if (!subscription) {
@@ -232,17 +276,18 @@ export class SeatSyncService {
         adapter
       );
 
-      const baseCost = 29; // Plan Pro Base
-      const seatCost = additionalSeats * 7.49;
-      const totalCost = baseCost + seatCost;
+      // Récupérer les prix depuis Stripe
+      const prices = await this.getPricesFromStripe();
+      const seatCost = additionalSeats * prices.seatCost;
+      const totalCost = prices.baseCost + seatCost;
 
       return {
         hasSubscription: true,
-        baseCost,
+        baseCost: prices.baseCost,
         additionalSeats,
         seatCost,
         totalCost,
-        currency: "EUR",
+        currency: prices.baseCurrency,
       };
     } catch (error) {
       console.error("❌ Erreur récupération info facturation:", error);

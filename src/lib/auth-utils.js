@@ -10,7 +10,7 @@ export function generateReactivationToken(userId) {
 
 // Fonction pour envoyer un email de réactivation
 export async function sendReactivationEmail(user) {
-  const reactivationUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reactivate-account?email=${encodeURIComponent(user.email)}&token=${generateReactivationToken(user._id.toString())}`;
+  const reactivationUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000"}/reactivate-account?email=${encodeURIComponent(user.email)}&token=${generateReactivationToken(user._id.toString())}`;
 
   await resend.emails.send({
     to: user.email,
@@ -74,7 +74,12 @@ export async function sendVerificationEmail(user, url) {
 }
 
 // Fonction générique pour envoyer un email
-export async function sendEmail({ to, subject, html, from = "Newbi <noreply@newbi.sweily.fr>" }) {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  from = "Newbi <noreply@newbi.sweily.fr>",
+}) {
   try {
     await resend.emails.send({
       to,
@@ -90,9 +95,8 @@ export async function sendEmail({ to, subject, html, from = "Newbi <noreply@newb
 
 // Fonction pour envoyer un email d'invitation d'organisation
 export async function sendOrganizationInvitationEmail(data) {
-
   // Construire le lien d'invitation avec les informations de base
-  const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/accept-invitation/${data.id}?org=${encodeURIComponent(data.organization.name)}&email=${encodeURIComponent(data.email)}&role=${encodeURIComponent(data.role)}`;
+  const inviteLink = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000"}/accept-invitation/${data.id}?org=${encodeURIComponent(data.organization.name)}&email=${encodeURIComponent(data.email)}&role=${encodeURIComponent(data.role)}`;
 
   try {
     // Envoyer l'email d'invitation via Resend
@@ -101,7 +105,6 @@ export async function sendOrganizationInvitationEmail(data) {
       subject: `${data.inviter.user.name || data.inviter.user.email} vous a invité·e à travailler dans ${data.organization.name}`,
       html: emailTemplates.organizationInvitation(data, inviteLink),
     });
-
   } catch (error) {
     console.error("Erreur lors de l'envoi de l'email d'invitation:", error);
     throw error;
