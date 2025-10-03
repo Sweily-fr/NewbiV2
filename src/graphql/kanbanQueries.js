@@ -249,3 +249,48 @@ export const BOARD_FRAGMENT = gql`
     updatedAt
   }
 `;
+
+// Subscriptions GraphQL pour le temps réel
+export const BOARD_UPDATED_SUBSCRIPTION = gql`
+  subscription BoardUpdated($workspaceId: ID!) {
+    boardUpdated(workspaceId: $workspaceId) {
+      type
+      board {
+        ...BoardFields
+      }
+      boardId
+      workspaceId
+    }
+  }
+  ${BOARD_FRAGMENT}
+`;
+
+export const TASK_UPDATED_SUBSCRIPTION = gql`
+  subscription TaskUpdated($boardId: ID!, $workspaceId: ID!) {
+    taskUpdated(boardId: $boardId, workspaceId: $workspaceId) {
+      type
+      task {
+        ...TaskFields
+      }
+      taskId
+      boardId
+      workspaceId
+    }
+  }
+  ${TASK_FRAGMENT}
+`;
+
+export const COLUMN_UPDATED_SUBSCRIPTION = gql`
+  subscription ColumnUpdated($boardId: ID!, $workspaceId: ID!) {
+    columnUpdated(boardId: $boardId, workspaceId: $workspaceId) {
+      type
+      column {
+        ...ColumnFields
+      }
+      columnId
+      boardId
+      workspaceId
+    }
+  }
+  ${COLUMN_FRAGMENT}
+`;
