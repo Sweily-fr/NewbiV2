@@ -65,9 +65,21 @@ export default function Component({
       }
     };
 
+    // Écouter l'événement d'ouverture du modal settings depuis le dashboard
+    const handleOpenSettingsModal = (event) => {
+      const { section } = event.detail;
+      console.log("🔧 Événement openSettingsModal reçu, section:", section);
+      openSettings(section);
+    };
+
     document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, []);
+    document.addEventListener("openSettingsModal", handleOpenSettingsModal);
+    
+    return () => {
+      document.removeEventListener("keydown", down);
+      document.removeEventListener("openSettingsModal", handleOpenSettingsModal);
+    };
+  }, [openSettings]);
 
   return (
     <>

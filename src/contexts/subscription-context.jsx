@@ -18,17 +18,21 @@ export function SubscriptionProvider({ children }) {
     setIsHydrated(true);
   }, []);
   const trial = useTrial(); // Réactivé avec démarrage automatique
-  
+
   // Protection contre les boucles de rendu
   const [isProcessing, setIsProcessing] = useState(false);
 
   const fetchSubscription = async () => {
-    if (!session?.session?.activeOrganizationId || isProcessing || !isHydrated) {
+    if (
+      !session?.session?.activeOrganizationId ||
+      isProcessing ||
+      !isHydrated
+    ) {
       setSubscription(null);
       setLoading(false);
       return;
     }
-    
+
     setIsProcessing(true);
 
     try {
@@ -84,13 +88,14 @@ export function SubscriptionProvider({ children }) {
 
   const isActive = () => {
     // Vérifier d'abord si l'utilisateur a un abonnement payant actif
-    const hasActiveSubscription = subscription?.status === "active" || subscription?.status === "trialing";
-    
+    const hasActiveSubscription =
+      subscription?.status === "active" || subscription?.status === "trialing";
+
     // Si pas d'abonnement payant, vérifier la période d'essai
     if (!hasActiveSubscription) {
       return trial.hasPremiumAccess;
     }
-    
+
     return hasActiveSubscription;
   };
 

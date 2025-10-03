@@ -1,16 +1,17 @@
-import { useState, useCallback } from "react";
-import { useMutation, useQuery } from "@apollo/client";
+import { useState, useCallback, useEffect } from "react";
+import { useQuery, useMutation, useApolloClient } from "@apollo/client";
 import {
+  MY_STRIPE_CONNECT_ACCOUNT,
   CREATE_STRIPE_CONNECT_ACCOUNT,
   GENERATE_STRIPE_ONBOARDING_LINK,
   CHECK_STRIPE_CONNECT_ACCOUNT_STATUS,
-  MY_STRIPE_CONNECT_ACCOUNT,
   DISCONNECT_STRIPE_ACCOUNT,
 } from "@/src/graphql/mutations/stripe";
 
 export const useStripeConnect = (userId) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const apolloClient = useApolloClient();
 
   // Query pour récupérer le compte Stripe de l'utilisateur
   const {
@@ -20,6 +21,19 @@ export const useStripeConnect = (userId) => {
   } = useQuery(MY_STRIPE_CONNECT_ACCOUNT, {
     skip: !userId,
     errorPolicy: "all",
+    fetchPolicy: "cache-and-network", // Force la vérification réseau
+    notifyOnNetworkStatusChange: true,
+  });
+
+  // Note: Le cache est maintenant vidé globalement lors de la déconnexion dans nav-user.jsx
+
+  // Debug pour identifier les problèmes de cache
+  console.log('🔍 useStripeConnect Debug:', {
+    userId,
+    hasData: !!stripeStatusData,
+    accountId: stripeStatusData?.myStripeConnectAccount?.accountId,
+    loading: statusLoading,
+    timestamp: new Date().toISOString(),
   });
 
   // Mutations
@@ -35,10 +49,13 @@ export const useStripeConnect = (userId) => {
       setError(null);
 
       try {
+        console.log("🔄 Début connexion Stripe Connect...");
+
         // 1. Créer le compte Stripe Connect s'il n'existe pas
         let accountId = stripeStatusData?.myStripeConnectAccount?.accountId;
 
         if (!accountId) {
+          console.log("➕ Création du compte Stripe Connect via GraphQL...");
           const { data: accountData } = await createStripeAccount();
 
           if (!accountData.createStripeConnectAccount.success) {
@@ -49,16 +66,24 @@ export const useStripeConnect = (userId) => {
           }
 
           accountId = accountData.createStripeConnectAccount.accountId;
+          console.log("✅ Compte créé:", accountId);
+        } else {
+          console.log("ℹ️ Compte existant:", accountId);
         }
 
         // 2. Générer le lien d'onboarding
-        const returnUrl = `${window.location.origin}/dashboard/outils/transferts-fichiers/new?stripe_success=true`;
+        const returnUrl = `${window.location.origin}/dashboard?stripe_success=true&open_settings=securite`;
+        console.log("🔗 Génération du lien d'onboarding...");
+        console.log("📍 Return URL:", returnUrl);
+
         const { data: linkData } = await generateOnboardingLink({
           variables: {
             accountId,
             returnUrl,
           },
         });
+
+        console.log("📋 Réponse GraphQL:", linkData);
 
         // Vérifier le succès
         if (!linkData.generateStripeOnboardingLink.success) {
@@ -70,10 +95,14 @@ export const useStripeConnect = (userId) => {
 
         // 3. Rediriger vers Stripe
         if (linkData.generateStripeOnboardingLink.url) {
+          console.log(
+            "🚀 Redirection vers Stripe:",
+            linkData.generateStripeOnboardingLink.url
+          );
           window.location.href = linkData.generateStripeOnboardingLink.url;
         }
       } catch (err) {
-        console.error("Erreur lors de la connexion Stripe:", err);
+        console.error("❌ Erreur lors de la connexion Stripe:", err);
         setError(err.message || "Erreur lors de la connexion à Stripe");
       } finally {
         setIsLoading(false);
@@ -85,7 +114,7 @@ export const useStripeConnect = (userId) => {
   // Fonction pour déconnecter Stripe
   const disconnectStripe = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
+    console.log("🔄 Début déconnexion Stripe Connect...");
 
     try {
       // Vérifier que l'utilisateur a un compte Stripe avant de tenter la déconnexion
@@ -167,20 +196,31 @@ export const useStripeConnect = (userId) => {
 
     try {
       setIsLoading(true);
-      const { data } = await checkAccountStatus({
-        variables: { accountId },
+
+      // Appel à l'API REST au lieu de GraphQL
+      const response = await fetch("/api/stripe/connect/status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ accountId, userId }),
       });
 
-      if (data.checkStripeConnectAccountStatus.success) {
+      const data = await response.json();
+
+      if (data.success) {
+        console.log("✅ Statut Stripe Connect mis à jour:", data);
         // Rafraîchir les données après la vérification
         await refetchStatus();
+      } else {
+        console.error("❌ Erreur mise à jour statut:", data.message);
       }
     } catch (err) {
       console.error("Erreur lors de la vérification du statut:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [stripeStatusData, checkAccountStatus, refetchStatus]);
+  }, [stripeStatusData, userId, refetchStatus]);
 
   return {
     // États

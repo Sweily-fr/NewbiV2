@@ -5,6 +5,7 @@ import { useFileTransferR2 } from "../hooks/useFileTransferR2";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
 import { useUser } from "@/src/lib/auth/hooks";
+import { SettingsModal } from "@/src/components/settings-modal";
 import {
   AlertCircleIcon,
   FileArchiveIcon,
@@ -123,6 +124,7 @@ export default function FileUploadNew() {
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState([]);
   const [showStripeOnboarding, setShowStripeOnboarding] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   // Sauvegarder les fichiers sélectionnés avant la redirection Stripe
@@ -188,22 +190,42 @@ export default function FileUploadNew() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
 
-    // Vérifier si on vient de Stripe (même sans paramètre stripe_success)
-    // En vérifiant si on a des fichiers sauvegardés dans sessionStorage
-    const hasStripeRedirectFiles = sessionStorage.getItem(
-      "stripe_redirect_files"
-    );
-    const isFromStripe =
-      urlParams.get("stripe_success") === "true" || hasStripeRedirectFiles;
+    // Vérifier si on vient de Stripe
+    const isFromStripe = urlParams.get("stripe_success") === "true";
 
-    if (isFromStripe && user?.user?.id && stripeAccount?.accountId) {
+    if (isFromStripe && user?.user?.id) {
+      console.log("🔄 Retour de Stripe détecté, vérification du statut...");
+
       const timer = setTimeout(async () => {
         try {
-          // Vérifier et mettre à jour le statut du compte
-          await checkAndUpdateAccountStatus();
+          // Récupérer l'accountId depuis la base de données
+          const response = await fetch(
+            `/api/stripe/connect/account?userId=${user.user.id}`
+          );
+          const accountData = await response.json();
 
-          // Refetch les données pour s'assurer qu'elles sont à jour
-          await refetchStatus();
+          if (accountData.success && accountData.accountId) {
+            console.log("📋 Account ID trouvé:", accountData.accountId);
+
+            // Vérifier et mettre à jour le statut du compte
+            const statusResponse = await fetch("/api/stripe/connect/status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                accountId: accountData.accountId,
+                userId: user.user.id,
+              }),
+            });
+
+            const statusData = await statusResponse.json();
+            console.log("✅ Statut mis à jour:", statusData);
+
+            // Refetch les données pour s'assurer qu'elles sont à jour
+            await refetchStatus();
+
+            // Nettoyer l'URL
+            window.history.replaceState({}, "", window.location.pathname);
+          }
         } catch (error) {
           console.error(
             "❌ Erreur lors de la vérification automatique:",
@@ -274,17 +296,22 @@ export default function FileUploadNew() {
       // Convertir la durée d'expiration en jours
       const expiryDays = (() => {
         switch (transferOptions.expiration) {
-          case "24h": return 1;
-          case "48h": return 2;
-          case "7d": return 7;
-          case "30d": return 30;
-          default: return 7; // Par défaut 7 jours
+          case "24h":
+            return 1;
+          case "48h":
+            return 2;
+          case "7d":
+            return 7;
+          case "30d":
+            return 30;
+          default:
+            return 7; // Par défaut 7 jours
         }
       })();
 
       const transferOptionsWithDays = {
         ...transferOptions,
-        expiryDays
+        expiryDays,
       };
 
       const result = await createTransfer(transferOptionsWithDays);
@@ -492,7 +519,7 @@ export default function FileUploadNew() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowStripeOnboarding(true)}
+                      onClick={() => setSettingsModalOpen(true)}
                       className="text-xs h-6 px-2 border-[#5b4fff]/20 text-[#5b4fff] hover:bg-[#5b4fff]/5"
                     >
                       Connecter Stripe
@@ -660,6 +687,13 @@ export default function FileUploadNew() {
           setShowStripeOnboarding(false);
           // Optionnel: afficher une notification de succès
         }}
+      />
+
+      {/* Modal Settings pour configurer Stripe Connect */}
+      <SettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        initialTab="securite"
       />
     </div>
   );

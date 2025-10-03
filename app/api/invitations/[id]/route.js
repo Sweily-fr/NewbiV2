@@ -1,6 +1,8 @@
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import { seatSyncService } from "@/src/services/seatSyncService";
+import { emailTemplates } from "@/src/lib/email-templates";
+import { sendEmail } from "@/src/lib/auth-utils";
 
 export async function GET(request, { params }) {
   try {
@@ -59,86 +61,192 @@ export async function GET(request, { params }) {
 
 export async function POST(request, { params }) {
   try {
+    console.log('🔵 POST /api/invitations/[id] - Début');
+    
     const { id } = await params;
     const { action } = await request.json();
+    
+    console.log(`📋 Invitation ID: ${id}, Action: ${action}`);
 
     // Récupérer la session utilisateur
     const session = await auth.api.getSession({
       headers: await headers(),
     });
+    
+    console.log(`👤 Session utilisateur:`, session?.user?.email || 'Non connecté');
+    
     if (!session) {
+      console.log('❌ Non authentifié');
       return Response.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     if (action === "accept") {
+      console.log('✅ Action: Accepter l\'invitation');
+      
       // ÉTAPE 1: Accepter l'invitation (rejoint l'organisation de l'owner)
+      console.log('🔄 ÉTAPE 1: Appel Better Auth acceptInvitation...');
       const result = await auth.api.acceptInvitation({
         headers: await headers(),
         body: { invitationId: id },
       });
 
-      if (!result || !result.organizationId) {
+      console.log('📊 Résultat acceptInvitation:', result);
+
+      // Better Auth retourne { invitation: {...}, member: {...} }
+      const organizationId = result?.invitation?.organizationId || result?.organizationId;
+      
+      if (!result || !organizationId) {
+        console.log('❌ Échec acceptInvitation: pas d\'organizationId');
         return Response.json(
           { error: "Échec de l'acceptation de l'invitation" },
           { status: 500 }
         );
       }
 
-      console.log(`✅ Invitation acceptée, membre ajouté à l'organisation ${result.organizationId}`);
+      console.log(`✅ ÉTAPE 1 OK: Membre ajouté à l'organisation ${organizationId}`);
 
       // ÉTAPE 3: Définir l'organisation comme active IMMÉDIATEMENT
       try {
+        console.log('🔄 ÉTAPE 3: Appel Better Auth setActiveOrganization...');
         await auth.api.setActiveOrganization({
           headers: await headers(),
-          body: { organizationId: result.organizationId },
+          body: { organizationId },
         });
-        console.log(`✅ Organisation ${result.organizationId} définie comme active`);
+        console.log(
+          `✅ ÉTAPE 3 OK: Organisation ${organizationId} définie comme active`
+        );
       } catch (orgError) {
-        console.error("❌ Erreur lors de la définition de l'organisation active:", orgError);
+        console.error('⚠️ Erreur setActiveOrganization:', orgError);
         // Ne pas bloquer si ça échoue, mais logger l'erreur
       }
 
-      // ÉTAPE 4: Synchroniser la facturation des sièges
+      // ÉTAPE 4: Synchroniser la facturation des sièges (NON-BLOQUANT)
       try {
-        console.log(`💳 Synchronisation facturation pour organisation ${result.organizationId}`);
+        console.log(`🔄 ÉTAPE 4: Synchronisation facturation pour organisation ${organizationId}`);
+        console.log(`👤 Utilisateur invité: ${session.user.email}`);
         
-        const { auth: authInstance } = await import("@/src/lib/auth");
-        const adapter = authInstance.options.database;
+        const { mongoDb } = await import("@/src/lib/mongodb");
+        const { ObjectId } = await import("mongodb");
 
-        await seatSyncService.syncSeatsAfterInvitationAccepted(
-          result.organizationId,
-          adapter
-        );
+        // Vérifier que l'organisation a un abonnement avant de synchroniser
+        const subscription = await mongoDb.collection("subscription").findOne({
+          referenceId: organizationId
+        });
 
-        console.log(`✅ Facturation synchronisée avec succès`);
-      } catch (billingError) {
-        console.error("❌ Erreur synchronisation facturation:", billingError);
-        
-        // ROLLBACK: Supprimer le membre si la facturation échoue
-        try {
-          console.log(`🔄 Rollback: suppression du membre ${session.user.email}`);
+        if (!subscription || !subscription.stripeSubscriptionId) {
+          console.log(`ℹ️ Organisation ${organizationId} en plan Free, pas de facturation à synchroniser`);
+        } else {
+          console.log(`📋 Organisation ${organizationId} a un abonnement Pro, synchronisation...`);
           
-          await auth.api.removeMember({
-            headers: await headers(),
-            body: {
-              memberIdOrEmail: session.user.email,
-              organizationId: result.organizationId
-            }
-          });
+          const { auth: authInstance } = await import("@/src/lib/auth");
+          const adapter = authInstance.options.database;
+          
+          await seatSyncService.syncSeatsAfterInvitationAccepted(
+            organizationId,
+            adapter
+          );
 
-          console.log(`✅ Rollback effectué avec succès`);
-        } catch (rollbackError) {
-          console.error("❌ Échec du rollback:", rollbackError);
-          // Si le rollback échoue, l'admin devra supprimer manuellement
+          console.log(`✅ Facturation synchronisée avec succès`);
         }
-
-        return Response.json({
-          error: "Échec de la facturation. Veuillez contacter le support ou réessayer.",
-          details: billingError.message
-        }, { status: 500 });
+      } catch (billingError) {
+        // NE PAS bloquer l'acceptation si la facturation échoue
+        console.error("⚠️ Erreur synchronisation facturation (non-bloquant):", billingError);
+        console.warn("⚠️ Le membre a été ajouté mais la facturation n'a pas été synchronisée");
+        // Continuer sans erreur
       }
 
-      return Response.json(result);
+      // ÉTAPE 5: Envoyer les emails de notification (NON-BLOQUANT)
+      try {
+        console.log('🔄 ÉTAPE 5: Envoi des emails de notification...');
+        
+        const { mongoDb } = await import("@/src/lib/mongodb");
+        const { ObjectId } = await import("mongodb");
+        
+        console.log('📋 Récupération des informations...');
+        console.log('Organization ID:', organizationId);
+        console.log('Inviter ID:', result.invitation.inviterId);
+        console.log('Member User ID:', result.member.userId);
+        
+        // Récupérer les informations complètes (convertir les IDs en ObjectId)
+        const [organization, inviter, memberUser] = await Promise.all([
+          mongoDb.collection("organization").findOne({ _id: new ObjectId(organizationId) }),
+          mongoDb.collection("user").findOne({ _id: new ObjectId(result.invitation.inviterId) }),
+          mongoDb.collection("user").findOne({ _id: new ObjectId(result.member.userId) })
+        ]);
+
+        console.log('📊 Données récupérées:');
+        console.log('- Organization:', organization?.name);
+        console.log('- Inviter:', inviter?.email);
+        console.log('- Member:', memberUser?.email);
+
+        // Trouver l'owner de l'organisation
+        const ownerMember = await mongoDb.collection("member").findOne({
+          organizationId: new ObjectId(organizationId),
+          role: "owner"
+        });
+        
+        const owner = ownerMember ? await mongoDb.collection("user").findOne({
+          _id: new ObjectId(ownerMember.userId)
+        }) : null;
+
+        console.log('- Owner:', owner?.email);
+
+        const emailData = {
+          organization: { name: organization?.name || 'Organisation' },
+          member: {
+            user: {
+              name: memberUser?.name,
+              email: memberUser?.email
+            },
+            role: result.member.role
+          }
+        };
+
+        // Envoyer l'email à l'owner (si différent de l'inviter)
+        if (owner && owner.email !== inviter?.email) {
+          console.log(`📧 Envoi email à l'owner: ${owner.email}`);
+          await sendEmail({
+            to: owner.email,
+            subject: `${memberUser?.name || memberUser?.email} a rejoint ${organization?.name}`,
+            html: emailTemplates.memberJoinedNotificationOwner(emailData)
+          });
+          console.log(`✅ Email envoyé à l'owner: ${owner.email}`);
+        } else {
+          console.log(`ℹ️ Pas d'email à l'owner (owner = inviter ou owner non trouvé)`);
+        }
+
+        // Envoyer l'email à l'inviter
+        if (inviter?.email) {
+          console.log(`📧 Envoi email à l'inviter: ${inviter.email}`);
+          await sendEmail({
+            to: inviter.email,
+            subject: `${memberUser?.name || memberUser?.email} a accepté votre invitation`,
+            html: emailTemplates.memberJoinedNotificationInviter(emailData)
+          });
+          console.log(`✅ Email envoyé à l'inviter: ${inviter.email}`);
+        }
+
+        // Envoyer l'email de confirmation au nouveau membre
+        if (memberUser?.email) {
+          console.log(`📧 Envoi email de confirmation au membre: ${memberUser.email}`);
+          await sendEmail({
+            to: memberUser.email,
+            subject: `Bienvenue dans ${organization?.name}`,
+            html: emailTemplates.memberJoinedConfirmation(emailData)
+          });
+          console.log(`✅ Email de confirmation envoyé au nouveau membre: ${memberUser.email}`);
+        }
+
+        console.log('✅ ÉTAPE 5 OK: Emails de notification envoyés');
+      } catch (emailError) {
+        // NE PAS bloquer si l'envoi d'email échoue
+        console.error('⚠️ Erreur envoi emails (non-bloquant):', emailError);
+        console.error('Stack:', emailError.stack);
+        // Continuer sans erreur
+      }
+
+      console.log('✅ TOUTES LES ÉTAPES TERMINÉES AVEC SUCCÈS');
+      return Response.json({ success: true, organizationId, member: result.member });
     } else if (action === "reject") {
       const result = await auth.api.rejectInvitation({
         headers: await headers(),

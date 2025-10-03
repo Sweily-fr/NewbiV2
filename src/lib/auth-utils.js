@@ -73,6 +73,21 @@ export async function sendVerificationEmail(user, url) {
   });
 }
 
+// Fonction générique pour envoyer un email
+export async function sendEmail({ to, subject, html, from = "Newbi <noreply@newbi.sweily.fr>" }) {
+  try {
+    await resend.emails.send({
+      to,
+      subject,
+      html,
+      from,
+    });
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'email:", error);
+    throw error;
+  }
+}
+
 // Fonction pour envoyer un email d'invitation d'organisation
 export async function sendOrganizationInvitationEmail(data) {
 
@@ -81,11 +96,10 @@ export async function sendOrganizationInvitationEmail(data) {
 
   try {
     // Envoyer l'email d'invitation via Resend
-    await resend.emails.send({
+    await sendEmail({
       to: data.email,
       subject: `${data.inviter.user.name || data.inviter.user.email} vous a invité·e à travailler dans ${data.organization.name}`,
       html: emailTemplates.organizationInvitation(data, inviteLink),
-      from: "Newbi <noreply@newbi.sweily.fr>",
     });
 
   } catch (error) {

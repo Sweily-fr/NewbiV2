@@ -25,13 +25,13 @@ export function DashboardLayoutProvider({ children }) {
  */
 export function useDashboardLayoutContext() {
   const context = useContext(DashboardLayoutContext);
-  
+
   if (context === undefined) {
     throw new Error(
-      'useDashboardLayoutContext must be used within a DashboardLayoutProvider'
+      "useDashboardLayoutContext must be used within a DashboardLayoutProvider"
     );
   }
-  
+
   return context;
 }
 
@@ -39,8 +39,15 @@ export function useDashboardLayoutContext() {
  * Hook de compatibilité pour remplacer useSubscription
  */
 export function useSubscription() {
-  const { subscription, hasFeature, getLimit, isActive, isLoading, refreshLayoutData } = useDashboardLayoutContext();
-  
+  const {
+    subscription,
+    hasFeature,
+    getLimit,
+    isActive,
+    isLoading,
+    refreshLayoutData,
+  } = useDashboardLayoutContext();
+
   return {
     subscription,
     loading: isLoading,
@@ -64,7 +71,7 @@ export function useOnboarding() {
     onboardingLoading,
     shouldShowOnboarding,
   } = useDashboardLayoutContext();
-  
+
   return {
     isOnboardingOpen,
     setIsOnboardingOpen,
