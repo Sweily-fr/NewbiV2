@@ -129,7 +129,6 @@ function DashboardContent({ children }) {
         onClose={() => setIsOnboardingOpen(false)}
         onComplete={completeOnboarding}
       />
-
     </SidebarProvider>
   );
 }

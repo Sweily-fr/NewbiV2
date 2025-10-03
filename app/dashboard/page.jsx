@@ -58,9 +58,11 @@ import {
   getIncomeChartConfig,
   getExpenseChartConfig,
 } from "@/src/utils/chartDataProcessors";
+import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 
 function DashboardContent() {
   const { session } = useUser();
+  const { checkAndUpdateAccountStatus, refetchStatus } = useStripeConnect(session?.user?.id);
 
   // Utilisation du hook de cache intelligent pour les données du dashboard
   const {
@@ -77,6 +79,46 @@ function DashboardContent() {
     refreshData,
     cacheInfo,
   } = useDashboardData();
+
+  // Gérer le retour de Stripe Connect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFromStripe = urlParams.get("stripe_success") === "true";
+    const shouldOpenSettings = urlParams.get("open_settings") === "securite";
+
+    if (isFromStripe && session?.user?.id) {
+      console.log("🔄 Retour de Stripe détecté sur dashboard, vérification du statut...");
+
+      const timer = setTimeout(async () => {
+        try {
+          // Vérifier et mettre à jour le statut du compte Stripe Connect
+          await checkAndUpdateAccountStatus();
+          await refetchStatus();
+
+          console.log("✅ Statut Stripe Connect mis à jour");
+
+          // Ouvrir le modal settings sur la section sécurité
+          if (shouldOpenSettings) {
+            // Déclencher l'ouverture du modal settings
+            console.log("🔧 Ouverture du modal settings sur la section sécurité");
+            
+            // Dispatch d'un event pour ouvrir le modal settings
+            window.dispatchEvent(new CustomEvent('openSettingsModal', { 
+              detail: { section: 'securite' } 
+            }));
+          }
+
+          // Nettoyer l'URL
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, "", cleanUrl);
+        } catch (error) {
+          console.error("❌ Erreur lors de la vérification automatique:", error);
+        }
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [session?.user?.id, checkAndUpdateAccountStatus, refetchStatus]);
 
   // Données pour les graphiques
   const incomeChartData = useMemo(

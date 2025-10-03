@@ -7,6 +7,7 @@ import {
   IconNotification,
   IconUserCircle,
 } from "@tabler/icons-react";
+import { Moon, Sun, Monitor } from "lucide-react";
 
 import { CreditCard, Crown } from "lucide-react";
 
@@ -22,6 +23,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
@@ -38,47 +42,58 @@ import { signOut } from "../lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useApolloClient } from "@apollo/client";
 import { SettingsModal } from "./settings-modal";
+import { useTheme } from "@/src/components/theme-provider";
 
 export function NavUser({ user }) {
   const { isMobile } = useSidebar();
   const { isActive } = useSubscription();
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("user-info");
+  const apolloClient = useApolloClient();
+  const { theme, setTheme } = useTheme();
 
   const profileImage = user.avatar;
-  
+
   // Fonction pour générer les initiales du nom
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    
-    const names = name.split(' ');
-    let initials = names[0].charAt(0).toUpperCase();
-    
-    // Ajouter la première lettre du prénom et du nom si disponible
-    if (names.length > 1) {
-      initials += names[names.length - 1].charAt(0).toUpperCase();
-    }
-    
-    return initials;
+  const getUserInitials = (name) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
-  
-  const userInitials = getInitials(user?.name);
+
+  const userInitials = getUserInitials(user.name);
 
   const router = useRouter();
 
   const handleLogout = async () => {
-    await signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/");
-          toast.success("Deconnexion reussie");
+    try {
+      console.log("Déconnexion en cours - Clear du cache Apollo...");
+
+      // Clear complet du cache Apollo pour éviter les fuites de données entre utilisateurs
+      await apolloClient.clearStore();
+
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            console.log("Déconnexion réussie - Cache Apollo vidé");
+            router.push("/");
+            toast.success("Deconnexion reussie");
+          },
+          onError: () => {
+            toast.error("Erreur lors de la deconnexion");
+          },
         },
-        onError: () => {
-          toast.error("Erreur lors de la deconnexion");
-        },
-      },
-    });
+      });
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+      toast.error("Erreur lors de la deconnexion");
+    }
   };
 
   return (
@@ -176,17 +191,44 @@ export function NavUser({ user }) {
                 <CreditCard />
                 Gérer l'abonnement
               </DropdownMenuItem>
-              {/* <DropdownMenuItem className="cursor-pointer">
-                <IconCreditCard />
-                Facture
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <IconNotification />
-                Notifications
-              </DropdownMenuItem> */}
-              {/* <DropdownMenuItem>
-                <ModeToggle />
-              </DropdownMenuItem> */}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  {theme === "light" ? (
+                    <Sun className="h-4 w-4 mr-2" />
+                  ) : theme === "dark" ? (
+                    <Moon className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Monitor className="h-4 w-4 mr-2" />
+                  )}
+                  Thème
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    onClick={() => setTheme("light")}
+                    className="cursor-pointer"
+                  >
+                    <Sun className="h-4 w-4 mr-2" />
+                    Clair
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setTheme("dark")}
+                    className="cursor-pointer"
+                  >
+                    <Moon className="h-4 w-4 mr-2" />
+                    Sombre
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setTheme("system")}
+                    className="cursor-pointer"
+                  >
+                    <Monitor className="h-4 w-4 mr-2" />
+                    Système
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem

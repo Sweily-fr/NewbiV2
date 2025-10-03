@@ -177,16 +177,23 @@ export const useOrganizationInvitations = () => {
       try {
         const orgId = organizationId || getUserOrganization()?.id;
 
+        console.log('🗑️ Suppression du membre:', memberIdOrEmail, 'de l\'org:', orgId);
+
         // 1. Supprimer le membre via Better Auth
         const { data, error } = await organization.removeMember({
           memberIdOrEmail,
           organizationId: orgId,
         });
 
+        console.log('📊 Résultat Better Auth removeMember:', { data, error });
+
         if (error) {
+          console.error('❌ Erreur Better Auth:', error);
           toast.error("Erreur lors de la suppression du membre");
           return { success: false, error };
         }
+
+        console.log('✅ Membre supprimé avec succès de Better Auth');
 
         // 2. Synchroniser la facturation des sièges (non-bloquant)
         try {
@@ -297,6 +304,11 @@ export const useOrganizationInvitations = () => {
         );
         const invitations = fullOrg?.invitations || [];
 
+        console.log('📊 getAllCollaborators - Membres:', filteredMembers.length);
+        console.log('📊 getAllCollaborators - Invitations:', invitations.length);
+        console.log('📋 Détails membres:', filteredMembers.map(m => ({ email: m.email, role: m.role })));
+        console.log('📋 Détails invitations:', invitations.map(i => ({ email: i.email, status: i.status })));
+
         // Combiner membres et invitations avec un type pour les différencier
         const collaborators = [
           ...filteredMembers.map((member) => ({ ...member, type: "member" })),
@@ -305,6 +317,8 @@ export const useOrganizationInvitations = () => {
             type: "invitation",
           })),
         ];
+
+        console.log('✅ Total collaborateurs:', collaborators.length);
 
         return { success: true, data: collaborators };
       } catch (error) {

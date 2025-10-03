@@ -40,6 +40,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import {
   Avatar,
@@ -56,6 +66,9 @@ export default function EspacesSection() {
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState(null);
+  const [memberType, setMemberType] = useState("collaborator"); // "collaborator" ou "accountant"
 
   useEffect(() => {
     const checkMobile = () => {
@@ -116,7 +129,11 @@ export default function EspacesSection() {
                 createdAt: item.createdAt || new Date(),
               };
             } else {
-              // invitation
+              // invitation - ignorer les invitations annulées
+              if (item.status === "canceled") {
+                return; // Skip canceled invitations
+              }
+
               formattedItem = {
                 id: item.id,
                 name: item.email?.split("@")[0],
@@ -124,7 +141,7 @@ export default function EspacesSection() {
                 role: item.role,
                 status: item.status || "pending",
                 type: "invitation",
-                priority: item.status === "accepted" ? 2 : 3, // Accepté > Pending/Canceled
+                priority: item.status === "accepted" ? 2 : 3, // Accepté > Pending
                 createdAt: item.createdAt || new Date(),
               };
             }
@@ -184,17 +201,38 @@ export default function EspacesSection() {
     }
   };
 
-  const handleDeleteMember = async (member) => {
+  const handleDeleteMember = (member) => {
+    setMemberToDelete(member);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteMember = async () => {
+    if (!memberToDelete) return;
+
     try {
       let result;
-      if (member.type === "member") {
-        result = await removeMember(member.email);
+      if (memberToDelete.type === "member") {
+        // Supprimer le membre
+        result = await removeMember(memberToDelete.email);
+
+        // Trouver et annuler l'invitation associée si elle existe
+        if (result.success) {
+          const invitation = members.find(
+            (m) => m.type === "invitation" && m.email === memberToDelete.email
+          );
+          if (invitation) {
+            await cancelInvitation(invitation.id);
+          }
+        }
       } else {
-        result = await cancelInvitation(member.id);
+        // Annuler l'invitation
+        result = await cancelInvitation(memberToDelete.id);
       }
 
       if (result.success) {
         setRefreshTrigger((prev) => prev + 1);
+        setDeleteDialogOpen(false);
+        setMemberToDelete(null);
       }
     } catch (error) {
       console.error("Error deleting member:", error);
@@ -239,7 +277,7 @@ export default function EspacesSection() {
         </div>
         <Button
           onClick={() => setInviteDialogOpen(true)}
-          className="flex items-center gap-2 font-normal cursor-pointer"
+          className="flex items-center gap-2 font-normal cursor-pointer bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white"
         >
           <UserRoundPlusIcon size={16} />
           Inviter un membre
@@ -285,7 +323,7 @@ export default function EspacesSection() {
               </TableRow>
             ) : (
               filteredMembers.map((member) => (
-                <TableRow key={member.id}>
+                <TableRow key={member.id} className="pt-3 pb-3">
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -315,8 +353,11 @@ export default function EspacesSection() {
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={
-                        member.status === "active" ? "default" : "secondary"
+                      variant="secondary"
+                      className={
+                        member.status === "active"
+                          ? "bg-[#5b4fff]/10 text-[#5b4fff] hover:bg-[#5b4fff]/20"
+                          : ""
                       }
                     >
                       {member.status === "active" ? "Actif" : "En attente"}
@@ -332,9 +373,9 @@ export default function EspacesSection() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           onClick={() => handleDeleteMember(member)}
-                          className="text-red-600"
+                          className="text-red-600 hover:text-red-600"
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
+                          <Trash2 className="mr-2 h-4 w-4 text-red-600" />
                           Supprimer
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -349,42 +390,75 @@ export default function EspacesSection() {
 
       {/* Invite Member Dialog */}
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent
-          className={`overflow-y-auto overflow-x-hidden ${
-            isMobile
-              ? "!fixed !inset-0 !w-screen !h-screen !max-w-none !max-h-none !m-0 !rounded-none !translate-x-0 !translate-y-0 !p-6"
-              : "sm:max-w-lg"
-          }`}
-        >
-          <div className="flex flex-col items-center justify-center gap-2">
-            <div
-              className="flex size-11 shrink-0 items-center justify-center rounded-full border"
-              aria-hidden="true"
-            >
-              <UserRoundPlusIcon className="opacity-80" size={20} />
-            </div>
-            <DialogHeader>
-              <DialogTitle className="text-center font-medium">
-                Inviter des membres
-              </DialogTitle>
-              <DialogDescription className="text-center w-full max-w-sm mx-auto">
-                Inviter des membres pour qu'ils puissent utiliser vos outils.
-              </DialogDescription>
-            </DialogHeader>
-          </div>
+        <DialogContent className="sm:max-w-[440px] p-6 gap-5">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-base font-semibold">
+              Inviter un membre
+            </DialogTitle>
+            <p className="text-xs text-foreground">
+              Saisissez ou collez les adresses e-mail ci-dessous
+            </p>
+          </DialogHeader>
 
-          <form
-            onSubmit={handleSubmit(onInviteSubmit)}
-            className="space-y-5 pt-6"
-          >
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="font-normal">
-                  Email du collaborateur
+          <div className="space-y-5">
+            {/* Switch Collaborateur / Comptable - Style Notion */}
+            <div className="inline-flex items-center gap-1 p-0.5 bg-muted/50 rounded-md">
+              <button
+                type="button"
+                onClick={() => setMemberType("collaborator")}
+                className={`px-3 py-1.5 rounded text-xs font-medium cursor-pointer transition-colors ${
+                  memberType === "collaborator"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Collaborateur
+              </button>
+              <button
+                type="button"
+                onClick={() => setMemberType("accountant")}
+                className={`px-3 py-1.5 rounded text-xs font-medium cursor-pointer transition-colors ${
+                  memberType === "accountant"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Comptable
+              </button>
+            </div>
+
+            {/* Information de tarification - Minimaliste */}
+            <div className="text-xs text-muted-foreground">
+              {memberType === "collaborator" ? (
+                <span>
+                  <span className="text-[#5b4fff] font-medium">7,49€/mois</span>{" "}
+                  par collaborateur additionnel
+                </span>
+              ) : (
+                <span>
+                  <span className="text-[#5b4fff] font-medium">Gratuit</span> ·
+                  Un seul comptable par organisation
+                </span>
+              )}
+            </div>
+
+            {/* Formulaire */}
+            <form onSubmit={handleSubmit(onInviteSubmit)} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="email"
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  Email
                 </Label>
                 <InputEmail
                   id="email"
-                  placeholder="collaborateur@exemple.com"
+                  placeholder={
+                    memberType === "collaborator"
+                      ? "nom@exemple.com"
+                      : "comptable@exemple.com"
+                  }
+                  className="h-9 text-sm"
                   {...register("email", {
                     required: "L'email est requis",
                     pattern: {
@@ -394,73 +468,96 @@ export default function EspacesSection() {
                   })}
                 />
                 {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                  <p className="text-xs text-red-500">{errors.email.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="role" className="font-normal">
-                  Rôle
-                </Label>
-                <Controller
-                  name="role"
-                  control={control}
-                  rules={{ required: "Le rôle est requis" }}
-                  render={({ field }) => (
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
+              {/* Champ Rôle avec hauteur fixe */}
+              <div className="space-y-1.5 min-h-[68px]">
+                {memberType === "collaborator" && (
+                  <>
+                    <Label
+                      htmlFor="role"
+                      className="text-xs font-medium text-muted-foreground"
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez un rôle" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="member">Membre</SelectItem>
-                        <SelectItem value="admin">Administrateur</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.role && (
-                  <p className="text-sm text-red-500">{errors.role.message}</p>
+                      Rôle
+                    </Label>
+                    <Controller
+                      name="role"
+                      control={control}
+                      rules={{ required: "Le rôle est requis" }}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger className="h-9 text-sm">
+                            <SelectValue placeholder="Sélectionner" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="member">Membre</SelectItem>
+                            <SelectItem value="admin">
+                              Administrateur
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.role && (
+                      <p className="text-xs text-red-500">
+                        {errors.role.message}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="message" className="font-normal">
-                  Message (optionnel)
-                </Label>
-                <Textarea
-                  id="message"
-                  placeholder="Ajoutez un message personnalisé à votre invitation..."
-                  rows={3}
-                  {...register("message")}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Ce message sera inclus dans l'email d'invitation
-                </p>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setInviteDialogOpen(false)}
+                  className="flex-1 h-9 text-sm cursor-pointer"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={inviting}
+                  className="flex-1 h-9 text-sm bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer text-white"
+                >
+                  {inviting ? "Envoi..." : "Inviter"}
+                </Button>
               </div>
-            </div>
-            <div className="flex flex-col gap-2 pt-2">
-              <Button
-                type="submit"
-                className="w-full cursor-pointer"
-                disabled={inviting}
-              >
-                {inviting ? "Envoi en cours..." : "Envoyer l'invitation"}
-              </Button>
-              <Button
-                type="button"
-                className="w-full cursor-pointer"
-                variant="outline"
-                onClick={() => setInviteDialogOpen(false)}
-              >
-                Annuler
-              </Button>
-            </div>
-          </form>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer{" "}
+              <span className="font-semibold">
+                {memberToDelete?.name || memberToDelete?.email}
+              </span>{" "}
+              de l'organisation ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteMember}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

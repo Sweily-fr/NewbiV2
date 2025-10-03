@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useSession } from '@/src/lib/auth-client';
-import { useTrial } from '@/src/hooks/useTrial';
-import { authClient } from '@/src/lib/auth-client';
-import { updateOrganization } from '@/src/lib/organization-client';
+import { useState, useEffect } from "react";
+import { useSession } from "@/src/lib/auth-client";
+import { useTrial } from "@/src/hooks/useTrial";
+import { authClient } from "@/src/lib/auth-client";
+import { updateOrganization } from "@/src/lib/organization-client";
 /**
  * Version simplifiée du hook dashboard layout sans cache pour éviter les boucles infinies
  * Version temporaire pendant que nous résolvons les problèmes de cache
@@ -26,21 +26,21 @@ export function useDashboardLayoutSimple() {
   // Protection contre l'erreur d'hydratation + chargement cache utilisateur
   useEffect(() => {
     setIsHydrated(true);
-    
+
     // Charger les données utilisateur depuis le cache si disponibles
     try {
-      const userCache = localStorage.getItem('user-cache');
+      const userCache = localStorage.getItem("user-cache");
       if (userCache) {
         const { user, organization, timestamp } = JSON.parse(userCache);
         const isValid = Date.now() - timestamp < 5 * 60 * 1000; // 5 minutes
-        
+
         if (isValid) {
           setCachedUser(user);
           setCachedOrganization(organization);
         }
       }
     } catch (error) {
-      console.warn('Erreur lecture cache utilisateur:', error);
+      console.warn("Erreur lecture cache utilisateur:", error);
     }
   }, []);
 
@@ -48,15 +48,18 @@ export function useDashboardLayoutSimple() {
   useEffect(() => {
     if (session?.user && isHydrated) {
       try {
-        localStorage.setItem('user-cache', JSON.stringify({
-          user: session.user,
-          organization: session.user.organization,
-          timestamp: Date.now()
-        }));
+        localStorage.setItem(
+          "user-cache",
+          JSON.stringify({
+            user: session.user,
+            organization: session.user.organization,
+            timestamp: Date.now(),
+          })
+        );
         setCachedUser(session.user);
         setCachedOrganization(session.user.organization);
       } catch (error) {
-        console.warn('Erreur sauvegarde cache utilisateur:', error);
+        console.warn("Erreur sauvegarde cache utilisateur:", error);
       }
     }
   }, [session?.user, isHydrated]);
@@ -65,27 +68,43 @@ export function useDashboardLayoutSimple() {
   useEffect(() => {
     if (!isHydrated) return;
 
+    // Vérifier si on revient de Stripe (invalider le cache)
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasStripeSession = urlParams.get("session_id");
+
     // Essayer de charger depuis le cache local d'abord
-    const cacheKey = session?.session?.activeOrganizationId 
-      ? `subscription-${session.session.activeOrganizationId}` 
+    const cacheKey = session?.session?.activeOrganizationId
+      ? `subscription-${session.session.activeOrganizationId}`
       : null;
 
     if (cacheKey) {
+      // Si on revient de Stripe, vider le cache pour forcer le rechargement
+      if (hasStripeSession) {
+        console.log(
+          "🔄 Retour de Stripe détecté, invalidation du cache abonnement"
+        );
+        localStorage.removeItem(cacheKey);
+      }
+
+      // Cache intelligent : court (30 secondes) + invalidation après paiement
       try {
         const cached = localStorage.getItem(cacheKey);
-        if (cached) {
+        if (cached && !hasStripeSession) { // ← Ne pas utiliser le cache si on revient de Stripe
           const { data: cachedSubscription, timestamp } = JSON.parse(cached);
-          const isValid = Date.now() - timestamp < 2 * 60 * 1000; // 2 minutes
-          
+          const isValid = Date.now() - timestamp < 30 * 1000; // 30 secondes (bon compromis)
+
           if (isValid) {
+            console.log('📦 Utilisation du cache (valide pendant', Math.round((30 * 1000 - (Date.now() - timestamp)) / 1000), 'secondes)');
             setSubscription(cachedSubscription);
             setIsLoading(false);
             setIsInitialized(true);
             return;
+          } else {
+            console.log('⏰ Cache expiré, rechargement depuis l\'API');
           }
         }
       } catch (error) {
-        console.warn('Erreur lecture cache abonnement:', error);
+        console.warn("Erreur lecture cache abonnement:", error);
       }
     }
 
@@ -99,34 +118,38 @@ export function useDashboardLayoutSimple() {
     const fetchSubscription = async () => {
       try {
         setIsLoading(true);
-        
-        const { data: subscriptions, error } = await authClient.subscription.list({
-          query: {
-            referenceId: session.session.activeOrganizationId,
-          },
-        });
+
+        const { data: subscriptions, error } =
+          await authClient.subscription.list({
+            query: {
+              referenceId: session.session.activeOrganizationId,
+            },
+          });
 
         if (!error) {
           const activeSubscription = subscriptions?.find(
             (sub) => sub.status === "active" || sub.status === "trialing"
           );
-          
+
           setSubscription(activeSubscription || null);
-          
+
           // Sauvegarder en cache pour éviter les flashs futurs
           if (cacheKey) {
             try {
-              localStorage.setItem(cacheKey, JSON.stringify({
-                data: activeSubscription || null,
-                timestamp: Date.now()
-              }));
+              localStorage.setItem(
+                cacheKey,
+                JSON.stringify({
+                  data: activeSubscription || null,
+                  timestamp: Date.now(),
+                })
+              );
             } catch (error) {
-              console.warn('Erreur sauvegarde cache abonnement:', error);
+              console.warn("Erreur sauvegarde cache abonnement:", error);
             }
           }
         }
       } catch (error) {
-        console.warn('Erreur récupération abonnement:', error);
+        console.warn("Erreur récupération abonnement:", error);
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
@@ -136,20 +159,131 @@ export function useDashboardLayoutSimple() {
     fetchSubscription();
   }, [isHydrated, session?.session?.activeOrganizationId]);
 
+  // Polling automatique après retour de Stripe
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasStripeSession = urlParams.get("session_id");
+
+    if (!hasStripeSession) return;
+
+    console.log("🔍 Session Stripe détectée, attente de l'organisation...");
+
+    // Attendre que l'organisation soit disponible
+    if (!session?.session?.activeOrganizationId) {
+      console.log("⏳ Organisation pas encore chargée, attente...");
+      return;
+    }
+
+    console.log("🔄 Démarrage du polling pour vérifier l'abonnement...");
+    console.log("📋 Organization ID:", session.session.activeOrganizationId);
+
+    let attempts = 0;
+    const maxAttempts = 30; // 30 × 2s = 60 secondes max
+    let pollInterval;
+
+    // Fonction de polling
+    const checkSubscription = async () => {
+      attempts++;
+      console.log(
+        `🔄 Vérification abonnement (tentative ${attempts}/${maxAttempts})...`
+      );
+
+      try {
+        const { data: subscriptions, error } =
+          await authClient.subscription.list({
+            query: {
+              referenceId: session.session.activeOrganizationId,
+            },
+          });
+
+        if (error) {
+          console.error("❌ Erreur API:", error);
+          return;
+        }
+
+        console.log("📊 Abonnements trouvés:", subscriptions);
+
+        const activeSubscription = subscriptions?.find(
+          (sub) => sub.status === "active" || sub.status === "trialing"
+        );
+
+        if (activeSubscription) {
+          console.log("✅ Abonnement Pro détecté !", activeSubscription);
+          clearInterval(pollInterval);
+
+          // Mettre à jour l'état
+          setSubscription(activeSubscription);
+
+          // Mettre à jour le cache
+          const cacheKey = `subscription-${session.session.activeOrganizationId}`;
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              data: activeSubscription,
+              timestamp: Date.now(),
+            })
+          );
+
+          // Nettoyer l'URL
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname
+          );
+
+          console.log("🔄 Rechargement de la page dans 500ms...");
+
+          // Recharger la page pour s'assurer que tout est à jour
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        } else if (attempts >= maxAttempts) {
+          console.log("⏱️ Timeout du polling après 60 secondes");
+          console.log(
+            "⚠️ L'abonnement n'a pas été détecté. Vérifiez les webhooks Stripe."
+          );
+          clearInterval(pollInterval);
+        }
+      } catch (error) {
+        console.error("❌ Erreur lors du polling:", error);
+      }
+    };
+
+    // Première vérification immédiate
+    checkSubscription();
+
+    // Puis polling toutes les 2 secondes
+    pollInterval = setInterval(checkSubscription, 2000);
+
+    // Cleanup
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [isHydrated, session?.session?.activeOrganizationId]);
+
   // Logique d'onboarding simplifiée
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
 
   useEffect(() => {
     if (session?.user?.organization) {
-      const isOwner = session.user.role === 'owner';
-      const hasCompletedOnboarding = session.user.organization.hasCompletedOnboarding;
-      
+      const isOwner = session.user.role === "owner";
+      const hasCompletedOnboarding =
+        session.user.organization.hasCompletedOnboarding;
+
       if (isOwner && !hasCompletedOnboarding) {
         setIsOnboardingOpen(true);
       }
     }
-  }, [session?.user?.role, session?.user?.organization?.hasCompletedOnboarding, session?.user?.organization]);
+  }, [
+    session?.user?.role,
+    session?.user?.organization?.hasCompletedOnboarding,
+    session?.user?.organization,
+  ]);
 
   const completeOnboarding = async () => {
     if (!session?.user?.organization?.id) {
@@ -158,7 +292,7 @@ export function useDashboardLayoutSimple() {
     }
 
     setOnboardingLoading(true);
-    
+
     try {
       await updateOrganization(session.user.organization.id, {
         hasCompletedOnboarding: true,
@@ -167,12 +301,11 @@ export function useDashboardLayoutSimple() {
 
       setIsOnboardingOpen(false);
       toast.success("Bienvenue sur Newbi ! 🎉");
-      
+
       // Recharger la page pour mettre à jour les données
       window.location.reload();
-      
     } catch (error) {
-      console.error('Erreur lors de la finalisation de l\'onboarding:', error);
+      console.error("Erreur lors de la finalisation de l'onboarding:", error);
       toast.error("Erreur lors de la finalisation de l'onboarding");
     } finally {
       setOnboardingLoading(false);
@@ -190,20 +323,19 @@ export function useDashboardLayoutSimple() {
   };
 
   const isActive = (requirePaidSubscription = false) => {
-    const hasActiveSubscription = 
-      subscription?.status === "active" || 
-      subscription?.status === "trialing";
-    
+    const hasActiveSubscription =
+      subscription?.status === "active" || subscription?.status === "trialing";
+
     // Si on exige un abonnement payant, ignorer la période d'essai
     if (requirePaidSubscription) {
       return hasActiveSubscription;
     }
-    
+
     // Sinon, accepter aussi la période d'essai
     if (!hasActiveSubscription) {
       return trial.hasPremiumAccess;
     }
-    
+
     return hasActiveSubscription;
   };
 
@@ -212,21 +344,20 @@ export function useDashboardLayoutSimple() {
     // Vider tous les caches avant de recharger
     try {
       // Cache d'abonnement
-      const subscriptionCacheKey = session?.session?.activeOrganizationId 
-        ? `subscription-${session.session.activeOrganizationId}` 
+      const subscriptionCacheKey = session?.session?.activeOrganizationId
+        ? `subscription-${session.session.activeOrganizationId}`
         : null;
-      
+
       if (subscriptionCacheKey) {
         localStorage.removeItem(subscriptionCacheKey);
       }
-      
+
       // Cache utilisateur
-      localStorage.removeItem('user-cache');
-      
+      localStorage.removeItem("user-cache");
     } catch (error) {
-      console.warn('Erreur suppression caches:', error);
+      console.warn("Erreur suppression caches:", error);
     }
-    
+
     window.location.reload();
   };
 
@@ -234,34 +365,35 @@ export function useDashboardLayoutSimple() {
     // Données utilisateur (avec cache pour éviter les flashs)
     user: session?.user || cachedUser,
     organization: session?.user?.organization || cachedOrganization,
-    
+
     // Données d'abonnement
     subscription,
     hasFeature,
     getLimit,
     isActive,
-    
+
     // Données de trial
     trial,
-    
+
     // Onboarding
     isOnboardingOpen,
     setIsOnboardingOpen,
     completeOnboarding,
     skipOnboarding: completeOnboarding,
     onboardingLoading,
-    shouldShowOnboarding: session?.user?.role === 'owner' && 
-                         !session?.user?.organization?.hasCompletedOnboarding,
-    
+    shouldShowOnboarding:
+      session?.user?.role === "owner" &&
+      !session?.user?.organization?.hasCompletedOnboarding,
+
     // États de chargement
     isLoading: isLoading || sessionLoading || trial.loading,
     isInitialized: isInitialized && isHydrated,
     isHydrated,
-    
+
     // Fonctions de cache (simplifiées)
     refreshLayoutData,
     invalidateOrganizationCache: refreshLayoutData,
-    
+
     // Métadonnées de cache (désactivées)
     cacheInfo: {
       lastUpdate: null,

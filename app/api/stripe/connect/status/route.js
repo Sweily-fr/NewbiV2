@@ -1,41 +1,66 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { mongoDb } from '@/src/lib/mongodb';
+import { ObjectId } from 'mongodb';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
 });
 
-export async function GET(request) {
+export async function POST(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const { accountId, userId } = await request.json();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json(
-        { error: 'userId est requis' },
+        { success: false, message: 'accountId est requis' },
         { status: 400 }
       );
     }
 
-    // Ici vous devriez récupérer l'ID du compte Stripe depuis votre base de données
-    // Pour cet exemple, nous simulons la récupération
-    // const stripeAccountId = await getUserStripeAccountId(userId);
-    
-    // Si vous avez l'ID du compte, vérifiez son statut
-    // const account = await stripe.accounts.retrieve(stripeAccountId);
-    
-    // Pour l'instant, nous simulons le statut
-    const isConnected = false; // Changez selon votre logique
-    
+    console.log(`🔍 Vérification du statut du compte Stripe: ${accountId}`);
+
+    // Récupérer les informations du compte depuis Stripe
+    const account = await stripe.accounts.retrieve(accountId);
+
+    console.log(`📋 Compte Stripe récupéré:`, {
+      id: account.id,
+      charges_enabled: account.charges_enabled,
+      payouts_enabled: account.payouts_enabled,
+      details_submitted: account.details_submitted,
+    });
+
+    // Mettre à jour la base de données
+    const updateResult = await mongoDb.collection('stripeconnectaccounts').updateOne(
+      { accountId: accountId },
+      {
+        $set: {
+          isOnboarded: account.details_submitted,
+          chargesEnabled: account.charges_enabled,
+          payoutsEnabled: account.payouts_enabled,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    console.log(`✅ Base de données mise à jour:`, {
+      matched: updateResult.matchedCount,
+      modified: updateResult.modifiedCount,
+    });
+
     return NextResponse.json({
-      connected: isConnected,
-      // account: account, // Informations du compte si connecté
+      success: true,
+      message: 'Statut mis à jour avec succès',
+      isOnboarded: account.details_submitted,
+      chargesEnabled: account.charges_enabled,
+      payoutsEnabled: account.payouts_enabled,
+      accountStatus: account.charges_enabled ? 'active' : 'pending',
     });
 
   } catch (error) {
-    console.error('Erreur vérification statut Stripe:', error);
+    console.error('❌ Erreur vérification statut Stripe:', error);
     return NextResponse.json(
-      { error: 'Erreur lors de la vérification du statut Stripe' },
+      { success: false, message: error.message || 'Erreur lors de la vérification du statut Stripe' },
       { status: 500 }
     );
   }

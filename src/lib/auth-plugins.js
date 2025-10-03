@@ -120,34 +120,35 @@ export const stripePlugin = stripe({
           discounts: [
             {
               coupon: process.env.STRIPE_FIRST_YEAR_DISCOUNT_COUPON_ID, // ID du coupon de réduction
-            }
+            },
           ],
           // Collecter l'adresse de facturation
           billing_address_collection: "required",
           // Message personnalisé
           custom_text: {
             submit: {
-              message: "🎉 Réduction de 20% appliquée sur votre première année !"
-            }
+              message:
+                "🎉 Réduction de 20% appliquée sur votre première année !",
+            },
           },
           // Métadonnées pour le suivi
           metadata: {
             planType: plan.name,
             discountApplied: "first_year_20_percent",
-            userId: user.id
-          }
+            userId: user.id,
+          },
         },
         options: {
           // Clé d'idempotence pour éviter les doublons
-          idempotencyKey: `sub_${user.id}_${plan.name}_${Date.now()}`
-        }
+          idempotencyKey: `sub_${user.id}_${plan.name}_${Date.now()}`,
+        },
       };
     },
   },
   // Webhooks Stripe pour mettre à jour automatiquement le statut
   onEvent: async (event, adapter) => {
     console.log(`🔔 [STRIPE WEBHOOK] Événement reçu: ${event.type}`);
-    
+
     try {
       switch (event.type) {
         case "customer.subscription.created":
@@ -162,20 +163,28 @@ export const stripePlugin = stripe({
           } else {
             // Événement de checkout complété
             const session = event.data.object;
-            
+
             if (!session.subscription) {
-              console.log(`⚠️ [STRIPE WEBHOOK] Pas d'abonnement dans la session`);
+              console.log(
+                `⚠️ [STRIPE WEBHOOK] Pas d'abonnement dans la session`
+              );
               break;
             }
 
             // Récupérer les détails de l'abonnement depuis Stripe
             const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-            subscription = await stripe.subscriptions.retrieve(session.subscription);
-            referenceId = session.metadata?.referenceId || subscription.metadata?.referenceId;
+            subscription = await stripe.subscriptions.retrieve(
+              session.subscription
+            );
+            referenceId =
+              session.metadata?.referenceId ||
+              subscription.metadata?.referenceId;
           }
 
           if (!referenceId) {
-            console.error(`❌ [STRIPE WEBHOOK] referenceId manquant dans les métadonnées`);
+            console.error(
+              `❌ [STRIPE WEBHOOK] referenceId manquant dans les métadonnées`
+            );
             break;
           }
 
@@ -183,18 +192,24 @@ export const stripePlugin = stripe({
             // Vérifier si l'abonnement existe déjà
             const existingSub = await adapter.findFirst({
               model: "subscription",
-              where: { stripeSubscriptionId: subscription.id }
+              where: { stripeSubscriptionId: subscription.id },
             });
 
             if (existingSub) {
-              console.log(`✅ [STRIPE WEBHOOK] Abonnement existe déjà, mise à jour`);
+              console.log(
+                `✅ [STRIPE WEBHOOK] Abonnement existe déjà, mise à jour`
+              );
               await adapter.update({
                 model: "subscription",
                 where: { stripeSubscriptionId: subscription.id },
                 data: {
                   status: subscription.status,
-                  currentPeriodStart: new Date(subscription.current_period_start * 1000),
-                  currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                  currentPeriodStart: new Date(
+                    subscription.current_period_start * 1000
+                  ),
+                  currentPeriodEnd: new Date(
+                    subscription.current_period_end * 1000
+                  ),
                   updatedAt: new Date(),
                 },
               });
@@ -209,45 +224,61 @@ export const stripePlugin = stripe({
                   planName: "pro",
                   stripeSubscriptionId: subscription.id,
                   stripeCustomerId: subscription.customer,
-                  currentPeriodStart: new Date(subscription.current_period_start * 1000),
-                  currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                  currentPeriodStart: new Date(
+                    subscription.current_period_start * 1000
+                  ),
+                  currentPeriodEnd: new Date(
+                    subscription.current_period_end * 1000
+                  ),
                   createdAt: new Date(),
                   updatedAt: new Date(),
                 },
               });
             }
-            
+
             console.log(`✅ [STRIPE WEBHOOK] Abonnement traité avec succès`);
           } catch (error) {
-            console.error(`❌ [STRIPE WEBHOOK] Erreur création/mise à jour abonnement:`, error);
+            console.error(
+              `❌ [STRIPE WEBHOOK] Erreur création/mise à jour abonnement:`,
+              error
+            );
             console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
           }
           break;
 
         case "customer.subscription.updated":
           const updatedSub = event.data.object;
-          
+
           try {
             await adapter.update({
               model: "subscription",
               where: { stripeSubscriptionId: updatedSub.id },
               data: {
                 status: updatedSub.status,
-                currentPeriodStart: new Date(updatedSub.current_period_start * 1000),
-                currentPeriodEnd: new Date(updatedSub.current_period_end * 1000),
+                currentPeriodStart: new Date(
+                  updatedSub.current_period_start * 1000
+                ),
+                currentPeriodEnd: new Date(
+                  updatedSub.current_period_end * 1000
+                ),
                 updatedAt: new Date(),
               },
             });
-            console.log(`✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès`);
+            console.log(
+              `✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès`
+            );
           } catch (error) {
-            console.error(`❌ [STRIPE WEBHOOK] Erreur mise à jour abonnement:`, error);
+            console.error(
+              `❌ [STRIPE WEBHOOK] Erreur mise à jour abonnement:`,
+              error
+            );
             console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
           }
           break;
 
         case "customer.subscription.deleted":
           const deletedSub = event.data.object;
-          
+
           try {
             await adapter.update({
               model: "subscription",
@@ -259,7 +290,10 @@ export const stripePlugin = stripe({
             });
             console.log(`✅ [STRIPE WEBHOOK] Abonnement annulé avec succès`);
           } catch (error) {
-            console.error(`❌ [STRIPE WEBHOOK] Erreur annulation abonnement:`, error);
+            console.error(
+              `❌ [STRIPE WEBHOOK] Erreur annulation abonnement:`,
+              error
+            );
             console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
           }
           break;
@@ -270,13 +304,13 @@ export const stripePlugin = stripe({
           // Ces événements sont gérés automatiquement par Stripe
           // Pas besoin d'action supplémentaire
           break;
-          
+
         case "invoice.created":
         case "invoice.finalized":
           console.log(`📄 [STRIPE WEBHOOK] Facture créée/finalisée`);
           // Ces événements sont informatifs
           break;
-          
+
         case "customer.discount.created":
           console.log(`🎁 [STRIPE WEBHOOK] Réduction appliquée`);
           break;
@@ -284,7 +318,7 @@ export const stripePlugin = stripe({
         case "payment_intent.succeeded":
           console.log(`✅ [STRIPE WEBHOOK] Paiement réussi`);
           break;
-          
+
         default:
           console.log(`⚠️ [STRIPE WEBHOOK] Événement non géré: ${event.type}`);
       }

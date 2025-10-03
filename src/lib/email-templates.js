@@ -404,4 +404,354 @@ export const emailTemplates = {
     </body>
     </html>
   `,
+
+  // Template pour notifier l'owner qu'un membre a rejoint
+  memberJoinedNotificationOwner: (data) => `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Nouveau membre dans ${data.organization.name}</title>
+    </head>
+    <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+      <div style="max-width: 500px; margin: 0 auto;">
+        
+        <!-- Logo -->
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+        </div>
+        
+        <!-- Titre principal -->
+        <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: start;">
+          ${data.member.user.name || data.member.user.email} a rejoint ${data.organization.name}
+        </h1>
+        
+        <!-- Message principal -->
+        <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: start;">
+          Bonne nouvelle ! ${data.member.user.name || data.member.user.email} a accepté l'invitation et fait maintenant partie de votre équipe.
+        </p>
+        
+        <!-- Illustration de l'interface -->
+        <div style="margin: 32px 0; background-color: #fafafa; border-radius: 12px; border: 1px solid #F2F2F2; overflow: hidden;">
+          <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; height: 350px; border-collapse: collapse;">
+            <tr>
+              <!-- Zone principale avec l'image -->
+              <td style="height: 290px; vertical-align: top; position: relative; padding: 0;">
+                <div style="width: 100%; height: 290px; position: relative; overflow: hidden;">
+                  <img 
+                    src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/Capture%20d%E2%80%99e%CC%81cran%202025-08-27%20a%CC%80%2018.18.21.png" 
+                    alt="Illustration" 
+                    style="
+                      float: right;
+                      margin-top: 50px;
+                      margin-right: -10px;
+                      width: 430px;
+                      height: 240px;
+                      border-radius: 10px;
+                      border: solid 2px #F2F2F2;
+                      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+                    " 
+                  />
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <!-- Footer fixé en bas -->
+              <td style="height: 60px; vertical-align: bottom; padding: 0;">
+                <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="border-top: solid 1px #F2F2F2; padding: 16px; background-color: #ffffff;">
+                      <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="vertical-align: middle;">
+                            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                              <tr>
+                                <td style="vertical-align: middle; padding-right: 12px;">
+                                  <div style="
+                                    width: 28px;
+                                    height: 28px;
+                                    border-radius: 50%;
+                                    background-color: #5B4FFF;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    color: white;
+                                    font-weight: 600;
+                                    font-size: 14px;
+                                  ">
+                                    ${(data.member.user.name || data.member.user.email).charAt(0).toUpperCase()}
+                                  </div>
+                                </td>
+                                <td style="vertical-align: middle;">
+                                  <div style="font-size: 14px; font-weight: 500; color: #1f2937;">
+                                    ${data.member.user.name || data.member.user.email}
+                                  </div>
+                                  <div style="font-size: 12px; color: #6b7280;">
+                                    ${data.member.role === 'admin' ? 'Administrateur' : 'Membre'}
+                                  </div>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td style="text-align: right; vertical-align: middle;">
+                            <span style="
+                              display: inline-block;
+                              padding: 4px 12px;
+                              background-color: #dcfce7;
+                              color: #166534;
+                              border-radius: 6px;
+                              font-size: 12px;
+                              font-weight: 500;
+                            ">
+                              Nouveau membre
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
+        
+        <!-- Footer -->
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
+          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+            Vous pouvez gérer les membres de votre organisation depuis les paramètres.
+          </p>
+        </div>
+        
+      </div>
+    </body>
+    </html>
+  `,
+
+  // Template pour confirmer au nouveau membre qu'il a rejoint l'organisation
+  memberJoinedConfirmation: (data) => `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Bienvenue dans ${data.organization.name}</title>
+    </head>
+    <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+      <div style="max-width: 500px; margin: 0 auto;">
+        
+        <!-- Logo -->
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+        </div>
+        
+        <!-- Titre principal -->
+        <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: start;">
+          Bienvenue dans ${data.organization.name}
+        </h1>
+        
+        <!-- Message principal -->
+        <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: start;">
+          Vous avez rejoint avec succès l'organisation <strong>${data.organization.name}</strong>. Vous pouvez maintenant collaborer avec votre équipe et accéder à tous les outils.
+        </p>
+        
+        <!-- Illustration de l'interface -->
+        <div style="margin: 32px 0; background-color: #fafafa; border-radius: 12px; border: 1px solid #F2F2F2; overflow: hidden;">
+          <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; height: 350px; border-collapse: collapse;">
+            <tr>
+              <!-- Zone principale avec l'image -->
+              <td style="height: 290px; vertical-align: top; position: relative; padding: 0;">
+                <div style="width: 100%; height: 290px; position: relative; overflow: hidden;">
+                  <img 
+                    src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/Capture%20d%E2%80%99e%CC%81cran%202025-08-27%20a%CC%80%2018.18.21.png" 
+                    alt="Illustration" 
+                    style="
+                      float: right;
+                      margin-top: 50px;
+                      margin-right: -10px;
+                      width: 430px;
+                      height: 240px;
+                      border-radius: 10px;
+                      border: solid 2px #F2F2F2;
+                      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+                    " 
+                  />
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <!-- Footer fixé en bas -->
+              <td style="height: 60px; vertical-align: bottom; padding: 0;">
+                <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="border-top: solid 1px #F2F2F2; padding: 16px; background-color: #ffffff;">
+                      <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="vertical-align: middle;">
+                            <div style="font-size: 14px; font-weight: 500; color: #1f2937;">
+                              ${data.organization.name}
+                            </div>
+                            <div style="font-size: 12px; color: #6b7280;">
+                              Votre rôle : ${data.member.role === 'admin' ? 'Administrateur' : 'Membre'}
+                            </div>
+                          </td>
+                          <td style="text-align: right; vertical-align: middle;">
+                            <span style="
+                              display: inline-block;
+                              padding: 4px 12px;
+                              background-color: #ede9fe;
+                              color: #5B4FFF;
+                              border-radius: 6px;
+                              font-size: 12px;
+                              font-weight: 500;
+                            ">
+                              Membre actif
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
+        
+        <!-- Footer -->
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
+          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+            Vous pouvez maintenant créer des devis, factures et gérer vos projets avec votre équipe.
+          </p>
+        </div>
+        
+      </div>
+    </body>
+    </html>
+  `,
+
+  // Template pour notifier l'inviter qu'un membre a rejoint
+  memberJoinedNotificationInviter: (data) => `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${data.member.user.name || data.member.user.email} a accepté votre invitation</title>
+    </head>
+    <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+      <div style="max-width: 500px; margin: 0 auto;">
+        
+        <!-- Logo -->
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+        </div>
+        
+        <!-- Titre principal -->
+        <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: start;">
+          ${data.member.user.name || data.member.user.email} a accepté votre invitation
+        </h1>
+        
+        <!-- Message principal -->
+        <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: start;">
+          Super ! ${data.member.user.name || data.member.user.email} a rejoint ${data.organization.name} et peut maintenant collaborer avec vous.
+        </p>
+        
+        <!-- Illustration de l'interface -->
+        <div style="margin: 32px 0; background-color: #fafafa; border-radius: 12px; border: 1px solid #F2F2F2; overflow: hidden;">
+          <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; height: 350px; border-collapse: collapse;">
+            <tr>
+              <!-- Zone principale avec l'image -->
+              <td style="height: 290px; vertical-align: top; position: relative; padding: 0;">
+                <div style="width: 100%; height: 290px; position: relative; overflow: hidden;">
+                  <img 
+                    src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/Capture%20d%E2%80%99e%CC%81cran%202025-08-27%20a%CC%80%2018.18.21.png" 
+                    alt="Illustration" 
+                    style="
+                      float: right;
+                      margin-top: 50px;
+                      margin-right: -10px;
+                      width: 430px;
+                      height: 240px;
+                      border-radius: 10px;
+                      border: solid 2px #F2F2F2;
+                      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+                    " 
+                  />
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <!-- Footer fixé en bas -->
+              <td style="height: 60px; vertical-align: bottom; padding: 0;">
+                <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="border-top: solid 1px #F2F2F2; padding: 16px; background-color: #ffffff;">
+                      <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="vertical-align: middle;">
+                            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+                              <tr>
+                                <td style="vertical-align: middle; padding-right: 12px;">
+                                  <div style="
+                                    width: 28px;
+                                    height: 28px;
+                                    border-radius: 50%;
+                                    background-color: #5B4FFF;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    color: white;
+                                    font-weight: 600;
+                                    font-size: 14px;
+                                  ">
+                                    ${(data.member.user.name || data.member.user.email).charAt(0).toUpperCase()}
+                                  </div>
+                                </td>
+                                <td style="vertical-align: middle;">
+                                  <div style="font-size: 14px; font-weight: 500; color: #1f2937;">
+                                    ${data.member.user.name || data.member.user.email}
+                                  </div>
+                                  <div style="font-size: 12px; color: #6b7280;">
+                                    ${data.member.user.email}
+                                  </div>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td style="text-align: right; vertical-align: middle;">
+                            <span style="
+                              display: inline-block;
+                              padding: 4px 12px;
+                              background-color: #dcfce7;
+                              color: #166534;
+                              border-radius: 6px;
+                              font-size: 12px;
+                              font-weight: 500;
+                            ">
+                              Acceptée
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
+        
+        <!-- Footer -->
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
+          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+            Vous pouvez maintenant travailler ensemble sur vos projets.
+          </p>
+        </div>
+        
+      </div>
+    </body>
+    </html>
+  `,
 };
