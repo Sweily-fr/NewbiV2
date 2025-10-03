@@ -82,6 +82,13 @@ export default function KanbanPage() {
     updating,
     deleting,
 
+    // Real-time sync states
+    isPolling,
+    lastUpdate,
+    syncStatus,
+    currentInterval,
+    forcSync,
+
     // Handlers
     handleCreateBoard,
     handleUpdateBoard,
@@ -95,11 +102,13 @@ export default function KanbanPage() {
     <div className="w-full max-w-[100vw] mx-auto p-4 sm:p-6">
       {/* Header */}
       <div className="flex flex-col gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-medium mb-2">Tableaux Kanban</h1>
-          <p className="text-muted-foreground text-sm">
-            Gérez vos projets avec des tableaux Kanban
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-medium mb-2">Tableaux Kanban</h1>
+            <p className="text-muted-foreground text-sm">
+              Gérez vos projets avec des tableaux Kanban
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -113,6 +122,7 @@ export default function KanbanPage() {
               className="pl-10 w-full sm:w-64"
             />
           </div>
+
 
           <Dialog
             open={isCreateDialogOpen}
