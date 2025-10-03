@@ -1,6 +1,8 @@
-import { ApolloClient, InMemoryCache, from } from "@apollo/client";
+import { ApolloClient, InMemoryCache, from, split } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
+import { WebSocketLink } from '@apollo/client/link/ws';
+import { getMainDefinition } from '@apollo/client/utilities';
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
 import { persistCache, LocalStorageWrapper } from "apollo3-cache-persist";
 import { toast } from "@/src/components/ui/sonner";
@@ -29,6 +31,36 @@ const uploadLink = createUploadLink({
     "Apollo-Require-Preflight": "true",
   },
 });
+
+// Configuration WebSocket Link pour les subscriptions
+const wsLink = typeof window !== "undefined" ? new WebSocketLink({
+  uri: process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000/graphql",
+  options: {
+    reconnect: true,
+    connectionParams: async () => {
+      // Récupérer le JWT pour l'authentification WebSocket
+      let jwtToken = null;
+      try {
+        await authClient.getSession({
+          fetchOptions: {
+            onSuccess: (ctx) => {
+              const jwt = ctx.response.headers.get("set-auth-jwt");
+              if (jwt && !isTokenExpired(jwt)) {
+                jwtToken = jwt;
+              }
+            },
+          },
+        });
+      } catch (error) {
+        console.error("❌ [WebSocket] Erreur récupération JWT:", error.message);
+      }
+      
+      return {
+        authorization: jwtToken ? `Bearer ${jwtToken}` : "",
+      };
+    },
+  },
+}) : null;
 
 const authLink = setContext(async (_, { headers }) => {
   try {
@@ -236,8 +268,23 @@ const initializePersistentCache = async () => {
 
 // Fonction pour créer le client Apollo
 const createApolloClient = () => {
+  // Créer le link split pour diriger les subscriptions vers WebSocket
+  const splitLink = typeof window !== "undefined" && wsLink
+    ? split(
+        ({ query }) => {
+          const definition = getMainDefinition(query);
+          return (
+            definition.kind === 'OperationDefinition' &&
+            definition.operation === 'subscription'
+          );
+        },
+        wsLink, // WebSocket pour les subscriptions
+        from([authLink, errorLink, uploadLink]) // HTTP pour queries et mutations
+      )
+    : from([authLink, errorLink, uploadLink]); // Fallback pour SSR
+
   return new ApolloClient({
-    link: from([authLink, errorLink, uploadLink]),
+    link: splitLink,
     cache,
     defaultOptions: {
       watchQuery: {
