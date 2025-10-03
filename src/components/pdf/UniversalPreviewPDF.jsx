@@ -1099,7 +1099,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                   )
                   .map((item, index) => (
                     <div key={`vat-exemption-${index}`} className="mb-2">
-                      {item.vatExemptionText}
+                      TVA non applicable, {item.vatExemptionText}
                     </div>
                   ))}
               </div>
