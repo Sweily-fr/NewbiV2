@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import {
   GET_BOARDS,
@@ -8,6 +8,7 @@ import {
 } from "@/src/graphql/kanbanQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useRealTimePolling } from "@/src/hooks/useRealTimePolling";
 
 export const useKanbanBoards = () => {
   const { workspaceId } = useWorkspace();
@@ -24,6 +25,31 @@ export const useKanbanBoards = () => {
     variables: { workspaceId },
     skip: !workspaceId,
     errorPolicy: "all",
+  });
+
+  // Callback pour gérer les changements de données en temps réel
+  const handleDataChange = useCallback((newData) => {
+    if (newData?.boards) {
+      toast.info("Tableaux mis à jour par un collaborateur", {
+        duration: 3000,
+      });
+    }
+  }, []);
+
+  // Hook de polling en temps réel
+  const {
+    isPolling,
+    lastUpdate,
+    syncStatus,
+    currentInterval,
+    forcSync,
+  } = useRealTimePolling({
+    refetch,
+    enabled: !!workspaceId && !queryLoading,
+    baseInterval: 5000, // 5 secondes
+    maxInterval: 30000, // 30 secondes max
+    minInterval: 2000, // 2 secondes min
+    onDataChange: handleDataChange,
   });
 
   const [createBoard, { loading: creating }] = useMutation(CREATE_BOARD, {
@@ -211,6 +237,13 @@ export const useKanbanBoards = () => {
     creating,
     updating,
     deleting,
+
+    // Real-time sync states
+    isPolling,
+    lastUpdate,
+    syncStatus,
+    currentInterval,
+    forcSync,
 
     // Handlers
     handleCreateBoard,
