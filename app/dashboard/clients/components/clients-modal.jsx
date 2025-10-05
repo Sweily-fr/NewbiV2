@@ -350,7 +350,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   control={control}
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Sélectionnez le type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -364,12 +364,12 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
               {/* Recherche d'entreprises via API Gouv Data */}
               {clientType === "COMPANY" && !showCompanySearch && (
-                <div className="space-y-3 p-4 border rounded-lg bg-[#5a50ff]/5 border-[#5a50ff]/20">
+                <div className="space-y-3 p-4 border rounded-lg bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border-[#5a50ff]/20 dark:border-[#5a50ff]/30">
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10">
-                      <Building className="h-4 w-4 text-[#5a50ff]" />
+                    <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20">
+                      <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff]" />
                     </div>
-                    <span className="font-medium text-sm text-[#5a50ff]">
+                    <span className="font-medium text-sm text-[#5a50ff] dark:text-[#5a50ff]">
                       Rechercher une entreprise
                     </span>
                   </div>
@@ -380,7 +380,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   <Button
                     type="button"
                     onClick={() => setShowCompanySearch(true)}
-                    className="w-full h-9 text-sm bg-[#5a50ff] hover:bg-[#5a50ff]/90 text-white"
+                    className="w-full h-9 text-sm bg-[#5a50ff] hover:bg-[#5a50ff]/90 text-white dark:bg-[#5a50ff] dark:hover:bg-[#5a50ff]/90 dark:text-white"
                   >
                     <Search className="h-4 w-4 mr-2" />
                     Rechercher
@@ -390,13 +390,13 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
               {/* Interface de recherche d'entreprises */}
               {clientType === "COMPANY" && showCompanySearch && (
-                <div className="space-y-4 p-4 border rounded-lg bg-[#5a50ff]/5 border-[#5a50ff]/20">
+                <div className="space-y-4 p-4 border rounded-lg bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border-[#5a50ff]/20 dark:border-[#5a50ff]/30">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10">
-                        <Building className="h-4 w-4 text-[#5a50ff]" />
+                      <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20">
+                        <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff]" />
                       </div>
-                      <Label className="font-medium text-[#5a50ff]">
+                      <Label className="font-medium text-[#5a50ff] dark:text-[#5a50ff]">
                         Rechercher une entreprise
                       </Label>
                     </div>
@@ -409,7 +409,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                         setCompanyQuery("");
                         setCompanies([]);
                       }}
-                      className="h-8 w-8 p-0 hover:bg-[#5a50ff]/10 text-[#5a50ff]"
+                      className="h-8 w-8 p-0 hover:bg-[#5a50ff]/10 dark:hover:bg-[#5a50ff]/20 text-[#5a50ff] dark:text-[#5a50ff] text-lg font-medium"
                     >
                       ×
                     </Button>
@@ -444,20 +444,20 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                       {companies.map((company) => (
                         <div
                           key={company.id}
-                          className="p-3 border rounded-lg bg-white hover:border-[#5a50ff] hover:shadow-sm cursor-pointer transition-all"
+                          className="p-3 border rounded-lg bg-white dark:bg-gray-800 hover:border-[#5a50ff] dark:hover:border-[#5a50ff] hover:shadow-sm cursor-pointer transition-all border-gray-200 dark:border-gray-700"
                           onClick={() => handleCompanySelect(company)}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <Building className="h-4 w-4 text-[#5a50ff] flex-shrink-0" />
-                                <h4 className="font-medium text-sm truncate">
+                                <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff] flex-shrink-0" />
+                                <h4 className="font-medium text-sm truncate text-gray-900 dark:text-gray-100">
                                   {company.name}
                                 </h4>
                                 {company.status === "A" && (
                                   <Badge
                                     variant="outline"
-                                    className="text-xs bg-[#5a50ff]/10 text-[#5a50ff] border-[#5a50ff]/20"
+                                    className="text-xs bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20 text-[#5a50ff] dark:text-[#5a50ff] border-[#5a50ff]/20 dark:border-[#5a50ff]/30"
                                   >
                                     Active
                                   </Badge>
@@ -475,7 +475,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                                 )}
                               </div>
                             </div>
-                            <ExternalLink className="h-4 w-4 text-[#5a50ff]/50 flex-shrink-0 ml-2" />
+                            <ExternalLink className="h-4 w-4 text-[#5a50ff]/50 dark:text-[#5a50ff]/60 flex-shrink-0 ml-2" />
                           </div>
                         </div>
                       ))}
@@ -496,7 +496,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                       </div>
                     )}
 
-                  <div className="pt-2 border-t border-[#5a50ff]/10">
+                  <div className="pt-2 border-t border-[#5a50ff]/10 dark:border-[#5a50ff]/20">
                     <Button
                       type="button"
                       variant="outline"
@@ -505,7 +505,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                         setCompanyQuery("");
                         setCompanies([]);
                       }}
-                      className="w-full h-9 text-sm border-[#5a50ff]/20 text-[#5a50ff] hover:bg-[#5a50ff]/5"
+                      className="w-full h-9 text-sm border-[#5a50ff]/20 dark:border-[#5a50ff]/30 text-[#5a50ff] dark:text-[#5a50ff] hover:bg-[#5a50ff]/5 dark:hover:bg-[#5a50ff]/10"
                     >
                       Saisir manuellement
                     </Button>
