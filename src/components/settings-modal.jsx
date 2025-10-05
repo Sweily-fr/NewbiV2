@@ -348,7 +348,7 @@ export function SettingsModal({
       items: [
         {
           id: "personnes",
-          label: "Rôles utilisateurs",
+          label: "Accès",
           icon: Users,
           disabled: true,
         },
@@ -431,9 +431,17 @@ export function SettingsModal({
                         : "hover:bg-gray-100 dark:hover:bg-[#2c2c2c]"
                     }`}
                   >
-                    <div className="w-6 h-6 bg-[#5B4FFF]/300 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                      {session?.user?.name?.charAt(0) || "S"}
-                    </div>
+                    {session?.user?.avatar ? (
+                      <img
+                        src={session.user.avatar}
+                        alt={session?.user?.name || "Utilisateur"}
+                        className="w-6 h-6 rounded-md object-cover"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 bg-[#5B4FFF]/300 rounded-md flex items-center justify-center text-white text-xs font-medium">
+                        {session?.user?.name?.charAt(0) || "S"}
+                      </div>
+                    )}
                     <div>
                       <p className="text-sm font-medium">
                         {session?.user?.name || "Utilisateur"}
@@ -477,7 +485,7 @@ export function SettingsModal({
                                 <span className="flex font-normal items-center gap-2">
                                   {item.label}
                                   {item.disabled && (
-                                    <span className="px-1.5 py-0.5 text-[9px] font-medium bg-[#5b4eff] text-white rounded-full">
+                                    <span className="px-2 py-0.5 text-[10px] font-normal bg-[#5a50ff]/10 border border-[#5a50ff]/30 text-[#5a50ff] rounded-md">
                                       à venir
                                     </span>
                                   )}

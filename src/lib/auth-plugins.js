@@ -563,5 +563,5 @@ export const organizationPlugin = organization({
 
 // Configuration du plugin Multi Session
 export const multiSessionPlugin = multiSession({
-  maximumSessions: 10, // Limite configurable depuis l'UI
+  maximumSessions: 2, // Maximum 2 sessions simultanées
 });

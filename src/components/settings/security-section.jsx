@@ -58,6 +58,7 @@ import {
   twoFactor,
   signOut,
   authClient,
+  updateUser,
 } from "@/src/lib/auth-client";
 import { useEffect } from "react";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
@@ -86,14 +87,13 @@ export function SecuritySection() {
   } = useStripeConnect(user?.user?.id);
 
   const [organizationForm, setOrganizationForm] = useState({
-    organizationName: "",
   });
   const [securitySettings, setSecuritySettings] = useState({
     mfaRequired: false,
     sessionDuration: 30,
     inactivityTimeout: 12,
-    maxSessions: 5,
-    startupPage: "dashboard",
+    maxSessions: 1, // Limité à 1 session
+    startupPage: session?.user?.redirect_after_login || "dashboard",
   });
 
   // États pour le 2FA
@@ -106,21 +106,44 @@ export function SecuritySection() {
   const [devices, setDevices] = useState([]);
   const [devicesLoading, setDevicesLoading] = useState(true);
 
+  // Synchroniser startupPage avec redirect_after_login de l'utilisateur
+  useEffect(() => {
+    if (session?.user?.redirect_after_login) {
+      setSecuritySettings((prev) => ({
+        ...prev,
+        startupPage: session.user.redirect_after_login,
+      }));
+    }
+  }, [session?.user?.redirect_after_login]);
+
   // Récupérer les sessions actives depuis Better Auth
   const fetchDeviceSessions = async () => {
     try {
       setDevicesLoading(true);
 
       // Essayer d'abord avec l'API client
-      let { data, error } = await authClient.multiSession
-        .listDeviceSessions()
-        .catch((err) => {
-          return { data: null, error: { message: "API non disponible" } };
-        });
+      let data = null;
+      let error = null;
+      
+      try {
+        const result = await authClient.multiSession.listDeviceSessions();
+        // Better Auth retourne directement les données, pas un objet { data, error }
+        if (result && typeof result === 'object') {
+          if (result.data !== undefined) {
+            data = result.data;
+            error = result.error;
+          } else {
+            // Si c'est directement les données
+            data = result;
+          }
+        }
+      } catch (err) {
+        console.log("Erreur API client:", err);
+        error = err;
+      }
 
       // Si ça ne fonctionne pas, essayer avec l'API REST directement
       if (error || !data || (Array.isArray(data) && data.length === 0)) {
-
         try {
           const response = await fetch("/api/auth/list-device-sessions", {
             method: "GET",
@@ -216,10 +239,43 @@ export function SecuritySection() {
     }
   };
 
+  // Fonction pour sauvegarder la page de démarrage
+  const handleStartupPageChange = async (value) => {
+    try {
+      // Mettre à jour l'état local immédiatement
+      setSecuritySettings((prev) => ({
+        ...prev,
+        startupPage: value,
+      }));
+
+      // Sauvegarder dans la base de données
+      await updateUser(
+        { redirect_after_login: value },
+        {
+          onSuccess: () => {
+            toast.success("Page de démarrage mise à jour");
+            refetchSession();
+          },
+          onError: (error) => {
+            console.error("Erreur mise à jour page de démarrage:", error);
+            toast.error("Erreur lors de la mise à jour");
+            // Revenir à l'ancienne valeur en cas d'erreur
+            setSecuritySettings((prev) => ({
+              ...prev,
+              startupPage: session?.user?.redirect_after_login || "dashboard",
+            }));
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
   // Fonctions utilitaires pour transformer les données
   const getUserAgent = (userAgent) => {
     if (!userAgent) return "Navigateur inconnu";
-
 
     // Détection plus précise des navigateurs et OS
     let browser = "Navigateur inconnu";
@@ -257,7 +313,6 @@ export function SecuritySection() {
 
   const formatLastActivity = (updatedAt) => {
     if (!updatedAt) return "Activité inconnue";
-
 
     const now = new Date();
     const updated = new Date(updatedAt);
@@ -401,7 +456,6 @@ export function SecuritySection() {
       );
       setShow2FAModal(false);
       setPasswordFor2FA("");
-      
     } catch (error) {
       console.error("Erreur 2FA:", error);
       toast.error("Erreur lors de l'activation du 2FA");
@@ -714,22 +768,28 @@ export function SecuritySection() {
             </div>
             <Select
               value={securitySettings.startupPage}
-              onValueChange={(value) =>
-                setSecuritySettings((prev) => ({
-                  ...prev,
-                  startupPage: value,
-                }))
-              }
+              onValueChange={handleStartupPageChange}
             >
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="dashboard">Tableau de bord</SelectItem>
+                <SelectItem value="outils">Outils</SelectItem>
                 <SelectItem value="kanban">Kanban</SelectItem>
                 <SelectItem value="calendar">Calendrier</SelectItem>
-                <SelectItem value="tasks">Tâches</SelectItem>
-                <SelectItem value="notes">Notes</SelectItem>
+                <SelectItem value="factures">Factures</SelectItem>
+                <SelectItem value="devis">Devis</SelectItem>
+                <SelectItem value="clients">Clients</SelectItem>
+                <SelectItem value="depenses">Gestion des dépenses</SelectItem>
+                <SelectItem value="signatures">Signatures mail</SelectItem>
+                <SelectItem value="transferts">
+                  Transferts de fichiers
+                </SelectItem>
+                <SelectItem value="catalogues">Catalogues</SelectItem>
+                <SelectItem value="collaborateurs">Collaborateurs</SelectItem>
+                <SelectItem value="analytics">Analytics</SelectItem>
+                <SelectItem value="favoris">Favoris</SelectItem>
                 <SelectItem value="last-page">Dernière page visitée</SelectItem>
               </SelectContent>
             </Select>
@@ -814,9 +874,8 @@ export function SecuritySection() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="3">3 sessions</SelectItem>
-                <SelectItem value="5">5 sessions</SelectItem>
-                <SelectItem value="10">10 sessions</SelectItem>
+                <SelectItem value="1">1 session</SelectItem>
+                <SelectItem value="2">2 sessions</SelectItem>
               </SelectContent>
             </Select>
           </div>
