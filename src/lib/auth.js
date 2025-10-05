@@ -8,6 +8,7 @@ import {
   twoFactorPlugin,
   stripePlugin,
   organizationPlugin,
+  multiSessionPlugin,
 } from "./auth-plugins";
 import { beforeSignInHook, afterOAuthHook } from "./auth-hooks";
 import {
@@ -26,6 +27,7 @@ export const auth = betterAuth({
     twoFactorPlugin,
     stripePlugin,
     organizationPlugin,
+    multiSessionPlugin,
   ],
 
   emailAndPassword: {
@@ -40,7 +42,6 @@ export const auth = betterAuth({
     async beforeSignIn({ user }) {
       // Vérifier si le compte est actif
       if (user.isActive === false) {
-
         // Envoyer un email de réactivation
         await sendReactivationEmail(user);
 
@@ -103,6 +104,11 @@ export const auth = betterAuth({
         type: "boolean",
         required: false,
         defaultValue: true,
+      },
+      redirect_after_login: {
+        type: "string",
+        required: false,
+        defaultValue: "dashboard",
       },
       // Champs pour la période d'essai
       trialStartDate: {

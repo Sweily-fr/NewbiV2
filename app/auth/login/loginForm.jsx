@@ -218,10 +218,11 @@ const LoginForm = () => {
         if (callbackUrl) {
           router.push(callbackUrl);
         } else {
-          // Vérifier si l'utilisateur a un plan Pro
+          // Vérifier si l'utilisateur a un plan Pro et sa page de démarrage préférée
           try {
             const { data: session } = await authClient.getSession();
             const organizationId = session?.session?.activeOrganizationId;
+            const userRedirectPage = session?.user?.redirect_after_login;
             
             if (organizationId) {
               const { data: subscriptions } = await authClient.subscription.list({
@@ -234,8 +235,34 @@ const LoginForm = () => {
                 (sub) => sub.status === "active" || sub.status === "trialing"
               );
               
-              // Rediriger vers /dashboard si Pro, sinon vers /dashboard/outils
-              router.push(hasActiveSubscription ? "/dashboard" : "/dashboard/outils");
+              // Utiliser la page de démarrage préférée de l'utilisateur ou fallback
+              let redirectPath = "/dashboard/outils";
+              
+              if (userRedirectPage && userRedirectPage !== "last-page") {
+                // Mapper les pages vers leurs vraies routes
+                const routeMap = {
+                  dashboard: "/dashboard",
+                  outils: "/dashboard/outils",
+                  kanban: "/dashboard/outils/kanban",
+                  calendar: "/dashboard/calendar",
+                  factures: "/dashboard/outils/factures",
+                  devis: "/dashboard/outils/devis",
+                  clients: "/dashboard/clients",
+                  depenses: "/dashboard/outils/gestion-depenses",
+                  signatures: "/dashboard/outils/signatures-mail",
+                  transferts: "/dashboard/outils/transferts-fichiers",
+                  catalogues: "/dashboard/catalogues",
+                  collaborateurs: "/dashboard/collaborateurs",
+                  analytics: "/dashboard/analytics",
+                  favoris: "/dashboard/favoris",
+                };
+                
+                redirectPath = routeMap[userRedirectPage] || "/dashboard";
+              } else if (hasActiveSubscription) {
+                redirectPath = "/dashboard";
+              }
+              
+              router.push(redirectPath);
             } else {
               // Pas d'organisation, rediriger vers /dashboard/outils par défaut
               router.push("/dashboard/outils");
@@ -383,10 +410,11 @@ const LoginForm = () => {
       if (callbackUrl) {
         router.push(callbackUrl);
       } else {
-        // Vérifier si l'utilisateur a un plan Pro
+        // Vérifier si l'utilisateur a un plan Pro et sa page de démarrage préférée
         try {
           const { data: session } = await authClient.getSession();
           const organizationId = session?.session?.activeOrganizationId;
+          const userRedirectPage = session?.user?.redirect_after_login;
           
           if (organizationId) {
             const { data: subscriptions } = await authClient.subscription.list({
@@ -399,8 +427,34 @@ const LoginForm = () => {
               (sub) => sub.status === "active" || sub.status === "trialing"
             );
             
-            // Rediriger vers /dashboard si Pro, sinon vers /dashboard/outils
-            router.push(hasActiveSubscription ? "/dashboard" : "/dashboard/outils");
+            // Utiliser la page de démarrage préférée de l'utilisateur ou fallback
+            let redirectPath = "/dashboard/outils";
+            
+            if (userRedirectPage && userRedirectPage !== "last-page") {
+              // Mapper les pages vers leurs vraies routes
+              const routeMap = {
+                dashboard: "/dashboard",
+                outils: "/dashboard/outils",
+                kanban: "/dashboard/outils/kanban",
+                calendar: "/dashboard/calendar",
+                factures: "/dashboard/outils/factures",
+                devis: "/dashboard/outils/devis",
+                clients: "/dashboard/clients",
+                depenses: "/dashboard/outils/gestion-depenses",
+                signatures: "/dashboard/outils/signatures-mail",
+                transferts: "/dashboard/outils/transferts-fichiers",
+                catalogues: "/dashboard/catalogues",
+                collaborateurs: "/dashboard/collaborateurs",
+                analytics: "/dashboard/analytics",
+                favoris: "/dashboard/favoris",
+              };
+              
+              redirectPath = routeMap[userRedirectPage] || "/dashboard";
+            } else if (hasActiveSubscription) {
+              redirectPath = "/dashboard";
+            }
+            
+            router.push(redirectPath);
           } else {
             // Pas d'organisation, rediriger vers /dashboard/outils par défaut
             router.push("/dashboard/outils");

@@ -70,6 +70,15 @@ export default function EspacesSection() {
   const [memberToDelete, setMemberToDelete] = useState(null);
   const [memberType, setMemberType] = useState("collaborator"); // "collaborator" ou "accountant"
 
+  // Utiliser le hook pour les invitations
+  const {
+    getAllCollaborators,
+    inviteMember,
+    inviting,
+    removeMember,
+    cancelInvitation,
+  } = useOrganizationInvitations();
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
@@ -95,15 +104,7 @@ export default function EspacesSection() {
     },
   });
 
-  const {
-    getAllCollaborators,
-    inviteMember,
-    inviting,
-    removeMember,
-    cancelInvitation,
-  } = useOrganizationInvitations();
-
-  // Fetch members data using the same logic as collaborateurs page
+  // Récupérer les membres
   useEffect(() => {
     const fetchMembers = async () => {
       try {
@@ -118,10 +119,28 @@ export default function EspacesSection() {
             let formattedItem;
 
             if (item.type === "member") {
+              // Debug: afficher la structure complète
+              console.log("📦 Structure item:", JSON.stringify(item, null, 2));
+
+              // Essayer différentes structures pour l'avatar
+              const avatar =
+                item.user?.avatar || item.avatar || item.user?.image || null;
+
+              console.log(
+                "🖼️ Avatar pour",
+                item.user?.email || item.email,
+                ":",
+                avatar
+              );
+
               formattedItem = {
                 id: item.id,
-                name: item.user?.name || item.user?.email?.split("@")[0],
-                email: item.user?.email,
+                name:
+                  item.user?.name ||
+                  item.name ||
+                  item.user?.email?.split("@")[0],
+                email: item.user?.email || item.email,
+                avatar: avatar,
                 role: item.role,
                 status: "active",
                 type: "member",
@@ -350,8 +369,12 @@ export default function EspacesSection() {
                   <TableCell>
                     <div className="flex items-center gap-3 pt-3 pb-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={member.avatar} />
-                        <AvatarFallback>
+                        <AvatarImage
+                          src={member.avatar}
+                          alt={member.name || member.email}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="bg-[#D1D5DB] text-[#364153] text-xs">
                           {member.name
                             ?.split(" ")
                             .map((n) => n[0])

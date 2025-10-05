@@ -69,18 +69,23 @@ export const useOrganizationInvitations = () => {
         if (role === "accountant") {
           // Vérifier qu'il n'y a pas déjà un comptable dans l'organisation
           const collaboratorsResult = await getAllCollaborators(userOrg.id);
-          
+
           if (collaboratorsResult.success) {
             const existingAccountant = collaboratorsResult.data.find(
               (member) => member.role === "accountant"
             );
 
             if (existingAccountant) {
-              toast.error("Un comptable est déjà assigné à cette organisation. Vous ne pouvez avoir qu'un seul comptable par organisation.");
+              toast.error(
+                "Un comptable est déjà assigné à cette organisation. Vous ne pouvez avoir qu'un seul comptable par organisation."
+              );
               return { success: false, error: "Comptable déjà existant" };
             }
           } else {
-            console.error("Erreur lors de la vérification des collaborateurs:", collaboratorsResult.error);
+            console.error(
+              "Erreur lors de la vérification des collaborateurs:",
+              collaboratorsResult.error
+            );
             // Continuer quand même l'invitation si on ne peut pas vérifier
           }
         }
@@ -197,7 +202,12 @@ export const useOrganizationInvitations = () => {
       try {
         const orgId = organizationId || getUserOrganization()?.id;
 
-        console.log('🗑️ Suppression du membre:', memberIdOrEmail, 'de l\'org:', orgId);
+        console.log(
+          "🗑️ Suppression du membre:",
+          memberIdOrEmail,
+          "de l'org:",
+          orgId
+        );
 
         // 1. Supprimer le membre via Better Auth
         const { data, error } = await organization.removeMember({
@@ -205,36 +215,44 @@ export const useOrganizationInvitations = () => {
           organizationId: orgId,
         });
 
-        console.log('📊 Résultat Better Auth removeMember:', { data, error });
+        console.log("📊 Résultat Better Auth removeMember:", { data, error });
 
         if (error) {
-          console.error('❌ Erreur Better Auth:', error);
+          console.error("❌ Erreur Better Auth:", error);
           toast.error("Erreur lors de la suppression du membre");
           return { success: false, error };
         }
 
-        console.log('✅ Membre supprimé avec succès de Better Auth');
+        console.log("✅ Membre supprimé avec succès de Better Auth");
 
         // 2. Synchroniser la facturation des sièges (non-bloquant)
         try {
-          console.log(`💳 Synchronisation facturation après suppression de membre`);
-          
+          console.log(
+            `💳 Synchronisation facturation après suppression de membre`
+          );
+
           const response = await fetch("/api/billing/sync-seats", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ organizationId: orgId })
+            body: JSON.stringify({ organizationId: orgId }),
           });
 
           if (!response.ok) {
             const errorData = await response.json();
-            console.warn("⚠️ Erreur sync facturation (non-bloquant):", errorData);
+            console.warn(
+              "⚠️ Erreur sync facturation (non-bloquant):",
+              errorData
+            );
           } else {
             const result = await response.json();
             console.log(`✅ Facturation synchronisée:`, result);
           }
         } catch (billingError) {
           // Ne pas faire échouer la suppression si la facturation échoue
-          console.warn("⚠️ Erreur sync facturation (non-bloquant):", billingError);
+          console.warn(
+            "⚠️ Erreur sync facturation (non-bloquant):",
+            billingError
+          );
         }
 
         toast.success("Membre supprimé avec succès");
@@ -324,10 +342,27 @@ export const useOrganizationInvitations = () => {
         );
         const invitations = fullOrg?.invitations || [];
 
-        console.log('📊 getAllCollaborators - Membres:', filteredMembers.length);
-        console.log('📊 getAllCollaborators - Invitations:', invitations.length);
-        console.log('📋 Détails membres:', filteredMembers.map(m => ({ email: m.email, role: m.role })));
-        console.log('📋 Détails invitations:', invitations.map(i => ({ email: i.email, status: i.status })));
+        console.log(
+          "📊 getAllCollaborators - Membres:",
+          filteredMembers.length
+        );
+        console.log(
+          "📊 getAllCollaborators - Invitations:",
+          invitations.length
+        );
+        console.log(
+          "📋 Détails membres:",
+          filteredMembers.map((m) => ({
+            email: m.email || m.user?.email,
+            role: m.role,
+            avatar: m.avatar || m.user?.avatar,
+            user: m.user ? "présent" : "absent",
+          }))
+        );
+        console.log(
+          "📋 Détails invitations:",
+          invitations.map((i) => ({ email: i.email, status: i.status }))
+        );
 
         // Combiner membres et invitations avec un type pour les différencier
         const collaborators = [
@@ -338,7 +373,7 @@ export const useOrganizationInvitations = () => {
           })),
         ];
 
-        console.log('✅ Total collaborateurs:', collaborators.length);
+        console.log("✅ Total collaborateurs:", collaborators.length);
 
         return { success: true, data: collaborators };
       } catch (error) {
