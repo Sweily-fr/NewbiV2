@@ -181,7 +181,7 @@ export function SettingsModal({
 
         // Coordonnées bancaires
         bankName: sanitizeInput(formData.bankDetails?.bankName || ""),
-        bankIban: sanitizeInput(formData.bankDetails?.iban || ""),
+        bankIban: sanitizeInput(formData.bankDetails?.iban || "").replace(/\s/g, '').toUpperCase(),
         bankBic: sanitizeInput(formData.bankDetails?.bic || ""),
 
         // Informations légales

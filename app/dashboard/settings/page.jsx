@@ -53,6 +53,7 @@ export default function Settings() {
     reset,
     watch,
     setValue,
+    getValues,
   } = useForm({
     defaultValues: {
       // Informations entreprise
@@ -251,6 +252,7 @@ export default function Settings() {
       errors,
       watch,
       setValue,
+      getValues,
       session,
       organization,
     };

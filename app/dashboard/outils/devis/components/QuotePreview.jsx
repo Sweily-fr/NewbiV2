@@ -2,6 +2,17 @@
 
 import { QUOTE_STATUS } from "@/src/graphql/quoteQueries";
 
+// Fonction de formatage de l'IBAN avec espaces
+const formatIban = (iban) => {
+  if (!iban) return "";
+  
+  // Supprimer tous les espaces existants et convertir en majuscules
+  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+  
+  // Ajouter un espace tous les 4 caractères
+  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+};
+
 export default function QuotePreview({ data = {}, className = "", status }) {
   // Utilise les données du formulaire ou des valeurs par défaut pour la démo
   const items =
@@ -639,7 +650,7 @@ export default function QuotePreview({ data = {}, className = "", status }) {
                       <strong>IBAN:</strong>
                       <br />
                       <span style={{ fontFamily: "monospace" }}>
-                        {data.bankDetails.iban}
+                        {formatIban(data.bankDetails.iban)}
                       </span>
                     </div>
                   )}

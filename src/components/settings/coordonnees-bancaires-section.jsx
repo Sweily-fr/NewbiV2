@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
@@ -13,22 +13,85 @@ import {
   detectInjectionAttempt,
 } from "@/src/lib/validation";
 
+// Fonction de formatage de l'IBAN avec espaces (pour l'affichage)
+const formatIban = (iban) => {
+  if (!iban) return "";
+  
+  // Supprimer tous les espaces existants et convertir en majuscules
+  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+  
+  // Ajouter un espace tous les 4 caractères
+  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+};
+
+// Fonction pour nettoyer l'IBAN (pour l'enregistrement en BDD)
+const cleanIban = (iban) => {
+  if (!iban) return "";
+  
+  // Supprimer tous les espaces et convertir en majuscules
+  return iban.replace(/\s/g, '').toUpperCase();
+};
+
 export function CoordonneesBancairesSection({
   session,
   organization,
   updateOrganization,
   refetchOrganization,
 }) {
+  // État local pour l'affichage formaté de l'IBAN
+  const [displayIban, setDisplayIban] = useState("");
+
   // Utiliser le contexte du formulaire global
   const {
     register,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useFormContext();
 
   // Surveiller les valeurs du formulaire
   const watchedValues = watch();
+  const ibanValue = watch("bankDetails.iban") || "";
+  const bicValue = watch("bankDetails.bic") || "";
+  const bankNameValue = watch("bankDetails.bankName") || "";
+
+  const hasIban = ibanValue.trim() !== "";
+  const hasBic = bicValue.trim() !== "";
+  const hasBankName = bankNameValue.trim() !== "";
+  const hasAnyBankField = hasIban || hasBic || hasBankName;
+
+  // Synchroniser l'affichage avec la valeur du formulaire au chargement
+  useEffect(() => {
+    const currentIban = getValues("bankDetails.iban");
+    if (currentIban && currentIban.trim() !== "") {
+      setDisplayIban(formatIban(currentIban));
+    }
+  }, [getValues]);
+
+  // Synchroniser quand la valeur change depuis l'extérieur (reset du formulaire)
+  useEffect(() => {
+    // Seulement lors du reset du formulaire ou chargement initial
+    if (ibanValue && !displayIban) {
+      setDisplayIban(formatIban(ibanValue));
+    }
+  }, [ibanValue, displayIban]);
+
+  // Fonction utilitaire pour traiter l'IBAN (saisie ou collage)
+  const handleIbanInput = (inputValue) => {
+    const sanitized = sanitizeInput(inputValue, "alphanumeric");
+    const formattedForDisplay = formatIban(sanitized);
+    const cleanedForStorage = cleanIban(sanitized);
+    
+    // Mettre à jour l'affichage local
+    setDisplayIban(formattedForDisplay);
+    
+    // Enregistrer la version nettoyée dans le formulaire (pour la BDD)
+    setValue("bankDetails.iban", cleanedForStorage, { 
+      shouldDirty: true,
+      shouldValidate: true 
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -64,13 +127,32 @@ export function CoordonneesBancairesSection({
               className="flex items-center gap-2 text-sm font-normal"
             >
               <Hash className="h-4 w-4 text-gray-500" />
-              IBAN *
+              IBAN {hasAnyBankField && "*"}
             </Label>
             <Input
               id="iban"
               placeholder="FR76 1234 5678 9012 3456 7890 123"
               className="w-full"
+              value={displayIban}
+              onChange={(e) => {
+                handleIbanInput(e.target.value);
+              }}
+              onPaste={(e) => {
+                // Empêcher le comportement par défaut du paste
+                e.preventDefault();
+                
+                // Récupérer le texte collé et le traiter
+                const pastedText = e.clipboardData.getData('text');
+                handleIbanInput(pastedText);
+              }}
+            />
+            {/* Champ caché pour la validation React Hook Form */}
+            <input
+              type="hidden"
               {...register("bankDetails.iban", {
+                required: hasAnyBankField
+                  ? "L'IBAN est requis si vous renseignez des coordonnées bancaires"
+                  : false,
                 pattern: {
                   value: VALIDATION_PATTERNS.iban.pattern,
                   message: VALIDATION_PATTERNS.iban.message,
@@ -100,13 +182,16 @@ export function CoordonneesBancairesSection({
               className="flex items-center gap-2 text-sm font-normal"
             >
               <Building2 className="h-4 w-4 text-gray-500" />
-              BIC/SWIFT *
+              BIC/SWIFT {hasAnyBankField && "*"}
             </Label>
             <Input
               id="bic"
               placeholder="BNPAFRPP"
               className="w-full"
               {...register("bankDetails.bic", {
+                required: hasAnyBankField
+                  ? "Le BIC est requis si vous renseignez des coordonnées bancaires"
+                  : false,
                 pattern: {
                   value: VALIDATION_PATTERNS.bic.pattern,
                   message: VALIDATION_PATTERNS.bic.message,
@@ -118,6 +203,10 @@ export function CoordonneesBancairesSection({
                   return true;
                 },
               })}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value, "alphanumeric");
+                e.target.value = sanitized.toUpperCase();
+              }}
             />
             {errors.bankDetails?.bic && (
               <p className="text-sm text-red-500">
@@ -136,13 +225,16 @@ export function CoordonneesBancairesSection({
               className="flex items-center gap-2 text-sm font-normal"
             >
               <CreditCard className="h-4 w-4 text-gray-500" />
-              Nom de la banque *
+              Nom de la banque {hasAnyBankField && "*"}
             </Label>
             <Input
               id="bankName"
               placeholder="BNP Paribas"
               className="w-full"
               {...register("bankDetails.bankName", {
+                required: hasAnyBankField
+                  ? "Le nom de la banque est requis si vous renseignez des coordonnées bancaires"
+                  : false,
                 pattern: {
                   value: VALIDATION_PATTERNS.bankName.pattern,
                   message: VALIDATION_PATTERNS.bankName.message,
@@ -154,6 +246,10 @@ export function CoordonneesBancairesSection({
                   return true;
                 },
               })}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value);
+                e.target.value = sanitized;
+              }}
             />
             {errors.bankDetails?.bankName && (
               <p className="text-sm text-red-500">

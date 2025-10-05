@@ -1,6 +1,17 @@
 import React from 'react';
 import { Document, Page, Text, View, Image, StyleSheet, Font } from '@react-pdf/renderer';
 
+// Fonction de formatage de l'IBAN avec espaces
+const formatIban = (iban) => {
+  if (!iban) return "";
+  
+  // Supprimer tous les espaces existants et convertir en majuscules
+  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+  
+  // Ajouter un espace tous les 4 caractères
+  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+};
+
 // Styles pour le document PDF
 const styles = StyleSheet.create({
   page: {
@@ -361,7 +372,7 @@ const UniversalPDFDocument = ({ data, type = 'invoice' }) => {
               {data.bankDetails.iban && (
                 <View style={styles.footerRow}>
                   <Text style={styles.footerLabel}>IBAN</Text>
-                  <Text style={styles.footerValue}>{data.bankDetails.iban}</Text>
+                  <Text style={styles.footerValue}>{formatIban(data.bankDetails.iban)}</Text>
                 </View>
               )}
             </View>

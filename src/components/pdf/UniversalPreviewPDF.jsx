@@ -355,6 +355,17 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
     return String(address || "");
   };
 
+  // Formatage de l'IBAN avec espaces
+  const formatIban = (iban) => {
+    if (!iban) return "";
+    
+    // Supprimer tous les espaces existants et convertir en majuscules
+    const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+    
+    // Ajouter un espace tous les 4 caractères
+    return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+  };
+
   // Déterminer le titre du document comme dans le PDF
   const getDocumentTitle = () => {
     if (isCreditNote) {
@@ -1154,7 +1165,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                 <div className="flex">
                   <span className="font-medium w-32">IBAN</span>
                   <span className="font-normal">
-                    {data.bankDetails?.iban || data.userBankDetails?.iban || data.companyInfo?.bankDetails?.iban || ""}
+                    {formatIban(data.bankDetails?.iban || data.userBankDetails?.iban || data.companyInfo?.bankDetails?.iban || "")}
                   </span>
                 </div>
               </div>

@@ -37,6 +37,17 @@ const validateBIC = (value) => {
   );
 };
 
+// Fonction de formatage de l'IBAN avec espaces
+const formatIban = (iban) => {
+  if (!iban) return "";
+  
+  // Supprimer tous les espaces existants et convertir en majuscules
+  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+  
+  // Ajouter un espace tous les 4 caractères
+  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+};
+
 export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
   const {
     watch,
@@ -171,7 +182,7 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave }) {
                       <Label className="font-normal">IBAN</Label>
                       <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                         <p className="text-sm font-mono">
-                          {data.bankDetails?.iban || "Non spécifié"}
+                          {formatIban(data.bankDetails?.iban) || "Non spécifié"}
                         </p>
                       </div>
                     </div>
