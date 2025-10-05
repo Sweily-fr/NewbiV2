@@ -121,6 +121,7 @@ export function SubscriptionSection() {
 
   // Fonction pour formater les dates
   const formatDate = (dateString) => {
+    console.log(dateString);
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("fr-FR", {
       day: "2-digit",
