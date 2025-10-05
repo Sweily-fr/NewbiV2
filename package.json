@@ -55,6 +55,7 @@
     "cross-fetch": "^4.1.0",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",
+    "geist": "^1.5.1",
     "graphql-upload-minimal": "^1.6.1",
     "graphql-ws": "^6.0.6",
     "input-otp": "^1.4.2",

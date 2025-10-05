@@ -51,7 +51,7 @@ export function NavMain({ items }) {
                 //className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
               >
                 <LayoutPanelLeft />
-                <span className="font-polysans font-light">Outils</span>
+                <span className="">Outils</span>
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
@@ -84,7 +84,7 @@ export function NavMain({ items }) {
                     disabled={!hasAccess}
                   >
                     {item.icon && <item.icon />}
-                    <span className="font-polysans font-light">
+                    <span className="">
                       {item.title}
                     </span>
                     {(isProTab || isPaidProTab) && !hasAccess && (

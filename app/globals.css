@@ -31,16 +31,10 @@
   font-display: swap;
 }
 
-/* Police Poppins supprimée du global et déplacée dans le layout spécifique */
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Classe pour utiliser la police Poppins uniquement dans les composants qui en ont besoin */
-.font-poppins {
-  font-family: var(--font-poppins), system-ui, sans-serif;
-}
-
-/* Classe pour utiliser la police PolySans */
+/* Classe pour utiliser la police PolySans (conservée pour compatibilité) */
 .font-polysans {
   font-family: 'PolySans', system-ui, sans-serif;
 }
@@ -89,17 +83,27 @@
 }
 
 @layer base {
-  html {
-    font-family: "Poppins", system-ui, sans-serif;
+  * {
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
   
-  /* Override font for authentication pages */
+  html,
+  body {
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+  }
+  
+  /* Override font for authentication pages - utilise aussi Geist */
   .auth-layout {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
   
   .auth-layout * {
     font-family: inherit;
+  }
+  
+  /* Police monospace pour le code */
+  code, pre, kbd, samp {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
   }
 }
 

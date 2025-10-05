@@ -50,7 +50,7 @@ function SettingsDropdownMenu() {
         onClick={() => setOpen(true)}
       >
         <Settings />
-        <span className="font-polysans font-light">Paramètres</span>
+        <span className="">Paramètres</span>
       </SidebarMenuButton>
 
       <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -77,7 +77,7 @@ function SettingsDropdownMenu() {
             }}
           >
             <Settings2 />
-            <span className="font-polysans font-light">
+            <span className="">
               Paramètres entreprise
             </span>
           </DropdownMenuItem>
@@ -96,13 +96,13 @@ function SettingsDropdownMenu() {
             {isActive() ? (
               <>
                 <IconUsers />
-                <span className="font-polysans font-light">Collaborateurs</span>
+                <span className="">Collaborateurs</span>
               </>
             ) : (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                   <IconUsers />
-                  <span className="font-polysans font-light">
+                  <span className="">
                     Collaborateurs
                   </span>
                 </div>
@@ -114,7 +114,7 @@ function SettingsDropdownMenu() {
           {/* <DropdownMenuItem className="cursor-pointer" asChild>
             <Link href={"/dashboard/automatisation"}>
               <IconRobot />
-              <span className="font-polysans font-light">Intégrations</span>
+              <span className="">Intégrations</span>
             </Link>
           </DropdownMenuItem> */}
 
@@ -127,7 +127,7 @@ function SettingsDropdownMenu() {
           >
             <Link href={"/dashboard/account"}>
               <Trash />
-              <span className="font-polysans font-light">
+              <span className="">
                 Désactiver le compte
               </span>
             </Link>
@@ -180,7 +180,7 @@ export function NavSecondary({ items, ...props }) {
                   }}
                 >
                   <item.icon />
-                  <span className="font-polysans font-light">{item.title}</span>
+                  <span className="">{item.title}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>

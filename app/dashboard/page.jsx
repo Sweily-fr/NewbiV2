@@ -62,7 +62,9 @@ import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 
 function DashboardContent() {
   const { session } = useUser();
-  const { checkAndUpdateAccountStatus, refetchStatus } = useStripeConnect(session?.user?.id);
+  const { checkAndUpdateAccountStatus, refetchStatus } = useStripeConnect(
+    session?.user?.id
+  );
 
   // Utilisation du hook de cache intelligent pour les données du dashboard
   const {
@@ -87,7 +89,9 @@ function DashboardContent() {
     const shouldOpenSettings = urlParams.get("open_settings") === "securite";
 
     if (isFromStripe && session?.user?.id) {
-      console.log("🔄 Retour de Stripe détecté sur dashboard, vérification du statut...");
+      console.log(
+        "🔄 Retour de Stripe détecté sur dashboard, vérification du statut..."
+      );
 
       const timer = setTimeout(async () => {
         try {
@@ -100,19 +104,26 @@ function DashboardContent() {
           // Ouvrir le modal settings sur la section sécurité
           if (shouldOpenSettings) {
             // Déclencher l'ouverture du modal settings
-            console.log("🔧 Ouverture du modal settings sur la section sécurité");
-            
+            console.log(
+              "🔧 Ouverture du modal settings sur la section sécurité"
+            );
+
             // Dispatch d'un event pour ouvrir le modal settings
-            window.dispatchEvent(new CustomEvent('openSettingsModal', { 
-              detail: { section: 'securite' } 
-            }));
+            window.dispatchEvent(
+              new CustomEvent("openSettingsModal", {
+                detail: { section: "securite" },
+              })
+            );
           }
 
           // Nettoyer l'URL
           const cleanUrl = window.location.pathname;
           window.history.replaceState({}, "", cleanUrl);
         } catch (error) {
-          console.error("❌ Erreur lors de la vérification automatique:", error);
+          console.error(
+            "❌ Erreur lors de la vérification automatique:",
+            error
+          );
         }
       }, 2000);
 
@@ -172,7 +183,7 @@ function DashboardContent() {
     <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
       <div className="flex items-center justify-between w-full mb-4 md:mb-6">
         <div className="flex flex-col">
-          <h1 className="text-2xl font-medium">
+          <h1 className="text-2xl font-semibold">
             Bonjour {session?.user?.name},
           </h1>
           {process.env.NODE_ENV === "development" && cacheInfo?.lastUpdate && (
@@ -188,13 +199,12 @@ function DashboardContent() {
         <Comp333
           className="w-full h-11 flex items-center text-sm md:text-sm placeholder:text-sm md:placeholder:text-sm"
           placeholder="Rechercher des transactions ou lancer une action"
-          commandPlaceholder="Rechercher des transactions ou lancer une action"
         />
         {/* Conteneur avec scroll horizontal sur mobile, flex-wrap sur desktop */}
         <div className="overflow-x-auto md:overflow-x-visible w-full scrollbar-hide">
           <div className="flex gap-2 md:gap-3 md:flex-wrap w-max md:w-full">
             <Button
-              className="cursor-pointer font-polysans font-normal whitespace-nowrap md:flex-1 md:min-w-0"
+              className="cursor-pointer normal whitespace-nowrap md:flex-1 md:min-w-0"
               variant="outline"
               size="sm"
               asChild
@@ -210,7 +220,7 @@ function DashboardContent() {
               </a>
             </Button>
             <Button
-              className="cursor-pointer font-polysans font-normal whitespace-nowrap md:flex-1 md:min-w-0"
+              className="cursor-pointer normal whitespace-nowrap md:flex-1 md:min-w-0"
               variant="outline"
               size="sm"
               asChild
@@ -224,7 +234,7 @@ function DashboardContent() {
               </a>
             </Button>
             <Button
-              className="cursor-pointer font-polysans font-normal whitespace-nowrap md:flex-1 md:min-w-0"
+              className="cursor-pointer normal whitespace-nowrap md:flex-1 md:min-w-0"
               variant="outline"
               size="sm"
               asChild
@@ -238,7 +248,7 @@ function DashboardContent() {
               </a>
             </Button>
             <Button
-              className="cursor-pointer font-polysans font-normal whitespace-nowrap md:flex-1 md:min-w-0"
+              className="cursor-pointer normal whitespace-nowrap md:flex-1 md:min-w-0"
               variant="outline"
               size="sm"
               asChild
@@ -252,7 +262,7 @@ function DashboardContent() {
               </a>
             </Button>
             <Button
-              className="cursor-pointer font-polysans font-normal whitespace-nowrap md:flex-1 md:min-w-0"
+              className="cursor-pointer normal whitespace-nowrap md:flex-1 md:min-w-0"
               variant="outline"
               size="sm"
               asChild

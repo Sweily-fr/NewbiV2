@@ -173,7 +173,7 @@ export function NavDocuments({ items }) {
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel className="font-polysans font-normal">
+      <SidebarGroupLabel className="font-normal">
         Mes apps
       </SidebarGroupLabel>
       <SidebarMenu>
@@ -199,13 +199,13 @@ export function NavDocuments({ items }) {
               {hasAccess ? (
                 <Link href={item.url} onClick={handleLinkClick}>
                   <item.icon />
-                  <span className="font-polysans font-light">{item.name}</span>
+                  <span className="">{item.name}</span>
                 </Link>
               ) : (
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2">
                     <item.icon className="size-4" />
-                    <span className="font-polysans font-light">{item.name}</span>
+                    <span className="">{item.name}</span>
                   </div>
                   <Crown className="w-3 h-3 text-[#5b4fff]" />
                 </div>
@@ -251,7 +251,7 @@ export function NavDocuments({ items }) {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton className="text-sidebar-foreground/70">
                   <IconPlus className="text-sidebar-foreground/70" />
-                  <span className="font-polysans font-normal">
+                  <span className="font-normal">
                     Ajouter une app
                   </span>
                 </SidebarMenuButton>
@@ -274,7 +274,7 @@ export function NavDocuments({ items }) {
                       )}
                     >
                       <tool.icon className="size-4" />
-                      <span className="font-polysans font-light">
+                      <span className="">
                         {tool.name}
                       </span>
                       {!hasAccess && (
