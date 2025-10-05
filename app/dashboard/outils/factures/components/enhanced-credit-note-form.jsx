@@ -106,14 +106,25 @@ function ProductSearchCombobox({
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  // Debouncing pour éviter trop de requêtes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // Délai de 300ms
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Requête GraphQL pour récupérer les produits
   const { data, loading, error } = useQuery(GET_PRODUCTS, {
     variables: {
-      search: searchTerm || undefined,
+      search: debouncedSearchTerm && debouncedSearchTerm.trim() !== "" ? debouncedSearchTerm : undefined,
       limit: 20,
     },
     fetchPolicy: "cache-and-network",
+    skip: !open, // Ne pas exécuter la requête si le dropdown n'est pas ouvert
   });
 
   // Transformation des données pour le composant
@@ -136,12 +147,14 @@ function ProductSearchCombobox({
         description: selectedProduct.label,
         quantity: 1,
         unitPrice: selectedProduct.price,
-        taxRate: selectedProduct.vatRate || 20,
+        vatRate: selectedProduct.vatRate || 20,
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité",
       });
     }
     setValue("");
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
     setOpen(false);
   };
 
@@ -150,8 +163,17 @@ function ProductSearchCombobox({
     setSearchTerm(search);
   };
 
+  // Réinitialiser la recherche quand le dropdown se ferme
+  const handleOpenChange = (newOpen) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      setSearchTerm("");
+      setDebouncedSearchTerm("");
+    }
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           id={id}
@@ -182,15 +204,19 @@ function ProductSearchCombobox({
           width: "calc(var(--radix-popover-trigger-width) + 12rem)",
         }}
       >
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput
             placeholder="Rechercher un produit..."
+            value={searchTerm}
             onValueChange={handleSearchChange}
           />
           <CommandList>
             {loading && <CommandEmpty>Recherche en cours...</CommandEmpty>}
-            {!loading && products.length === 0 && (
-              <CommandEmpty>Aucun produit trouvé.</CommandEmpty>
+            {!loading && !debouncedSearchTerm && (
+              <CommandEmpty>Tapez pour rechercher un produit...</CommandEmpty>
+            )}
+            {!loading && debouncedSearchTerm && products.length === 0 && (
+              <CommandEmpty>Aucun produit trouvé pour "{debouncedSearchTerm}".</CommandEmpty>
             )}
             {!loading && products.length > 0 && (
               <CommandGroup>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
@@ -16,7 +16,29 @@ import {
 } from "@/src/lib/validation";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 
-export default function BankSection({ register, errors, watch }) {
+// Fonction de formatage de l'IBAN avec espaces (pour l'affichage)
+const formatIban = (iban) => {
+  if (!iban) return "";
+  
+  // Supprimer tous les espaces existants et convertir en majuscules
+  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+  
+  // Ajouter un espace tous les 4 caractères
+  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+};
+
+// Fonction pour nettoyer l'IBAN (pour l'enregistrement en BDD)
+const cleanIban = (iban) => {
+  if (!iban) return "";
+  
+  // Supprimer tous les espaces et convertir en majuscules
+  return iban.replace(/\s/g, '').toUpperCase();
+};
+
+export default function BankSection({ register, errors, watch, setValue, getValues }) {
+  // État local pour l'affichage formaté de l'IBAN
+  const [displayIban, setDisplayIban] = useState("");
+  
   // Surveiller individuellement chaque champ pour une détection plus fiable
   const ibanValue = watch("bankDetails.iban") || "";
   const bicValue = watch("bankDetails.bic") || "";
@@ -26,6 +48,46 @@ export default function BankSection({ register, errors, watch }) {
   const hasBic = bicValue.trim() !== "";
   const hasBankName = bankNameValue.trim() !== "";
   const hasAnyBankField = hasIban || hasBic || hasBankName;
+
+  // Debug log
+  console.log("🎯 BankSection - displayIban:", displayIban);
+  console.log("📊 BankSection - ibanValue:", ibanValue);
+
+  // Synchroniser l'affichage avec la valeur du formulaire au chargement
+  useEffect(() => {
+    const currentIban = getValues("bankDetails.iban");
+    if (currentIban && currentIban.trim() !== "") {
+      setDisplayIban(formatIban(currentIban));
+    }
+  }, [getValues]);
+
+  // Synchroniser quand la valeur change depuis l'extérieur (reset du formulaire)
+  useEffect(() => {
+    // Seulement lors du reset du formulaire ou chargement initial
+    if (ibanValue && !displayIban) {
+      setDisplayIban(formatIban(ibanValue));
+    }
+  }, [ibanValue]);
+
+  // Fonction utilitaire pour traiter l'IBAN (saisie ou collage)
+  const handleIbanInput = (inputValue) => {
+    console.log("🔍 handleIbanInput - Input:", inputValue);
+    const sanitized = sanitizeInput(inputValue, "alphanumeric");
+    console.log("🧹 handleIbanInput - Sanitized:", sanitized);
+    const formattedForDisplay = formatIban(sanitized);
+    console.log("✨ handleIbanInput - Formatted:", formattedForDisplay);
+    const cleanedForStorage = cleanIban(sanitized);
+    console.log("💾 handleIbanInput - Cleaned:", cleanedForStorage);
+    
+    // Mettre à jour l'affichage local
+    setDisplayIban(formattedForDisplay);
+    
+    // Enregistrer la version nettoyée dans le formulaire (pour la BDD)
+    setValue("bankDetails.iban", cleanedForStorage, { 
+      shouldDirty: true,
+      shouldValidate: true 
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -57,6 +119,22 @@ export default function BankSection({ register, errors, watch }) {
             <Input
               id="bankDetails.iban"
               placeholder="FR76 1234 5678 9012 3456 7890 123"
+              value={displayIban}
+              onChange={(e) => {
+                handleIbanInput(e.target.value);
+              }}
+              onPaste={(e) => {
+                // Empêcher le comportement par défaut du paste
+                e.preventDefault();
+                
+                // Récupérer le texte collé et le traiter
+                const pastedText = e.clipboardData.getData('text');
+                handleIbanInput(pastedText);
+              }}
+            />
+            {/* Champ caché pour la validation React Hook Form */}
+            <input
+              type="hidden"
               {...register("bankDetails.iban", {
                 required: hasAnyBankField
                   ? "L'IBAN est requis si vous renseignez des coordonnées bancaires"
@@ -72,10 +150,6 @@ export default function BankSection({ register, errors, watch }) {
                   return true;
                 },
               })}
-              onChange={(e) => {
-                const sanitized = sanitizeInput(e.target.value, "alphanumeric");
-                e.target.value = sanitized.toUpperCase();
-              }}
             />
             {errors.bankDetails?.iban && (
               <p className="text-sm text-red-500">

@@ -2,6 +2,17 @@
 
 import React from "react";
 
+// Fonction de formatage de l'IBAN avec espaces
+const formatIban = (iban) => {
+  if (!iban) return "";
+  
+  // Supprimer tous les espaces existants et convertir en majuscules
+  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+  
+  // Ajouter un espace tous les 4 caractères
+  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+};
+
 const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
   if (!data) return null;
 
@@ -379,7 +390,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice" }) => {
           <strong>Coordonnées bancaires :</strong>
           <br />
           {documentData.bankDetails.iban && (
-            <div>IBAN : {documentData.bankDetails.iban}</div>
+            <div>IBAN : {formatIban(documentData.bankDetails.iban)}</div>
           )}
           {documentData.bankDetails.bic && (
             <div>BIC : {documentData.bankDetails.bic}</div>

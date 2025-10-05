@@ -1,6 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
+// Fonction de formatage de l'IBAN avec espaces
+const formatIban = (iban) => {
+  if (!iban) return "";
+  
+  // Supprimer tous les espaces existants et convertir en majuscules
+  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+  
+  // Ajouter un espace tous les 4 caractères
+  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+};
 import { Building, Upload, Check, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -213,7 +224,7 @@ export default function CompanyImport({
                       <div>
                         <span className="text-muted-foreground">IBAN :</span>
                         <p className="font-medium font-mono text-xs">
-                          {companyData.bankDetails.iban}
+                          {formatIban(companyData.bankDetails.iban)}
                         </p>
                       </div>
                       <div>

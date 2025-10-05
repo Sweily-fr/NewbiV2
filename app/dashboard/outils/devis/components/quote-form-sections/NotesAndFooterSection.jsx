@@ -18,6 +18,17 @@ import { Separator } from "@/src/components/ui/separator";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import Link from "next/link";
 
+// Fonction de formatage de l'IBAN avec espaces
+const formatIban = (iban) => {
+  if (!iban) return "";
+  
+  // Supprimer tous les espaces existants et convertir en majuscules
+  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+  
+  // Ajouter un espace tous les 4 caractères
+  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+};
+
 export default function NotesAndFooterSection({ canEdit }) {
   const {
     watch,
@@ -251,7 +262,7 @@ export default function NotesAndFooterSection({ canEdit }) {
                     <Label className="text-sm font-normal">IBAN</Label>
                     <div className="p-3 bg-muted/50 rounded-md border">
                       <p className="font-mono text-sm">
-                        {data.bankDetails?.iban || "Non renseigné"}
+                        {formatIban(data.bankDetails?.iban) || "Non renseigné"}
                       </p>
                     </div>
                   </div>
