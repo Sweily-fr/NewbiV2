@@ -117,7 +117,7 @@ const SignatureSave = ({ existingSignatureId = null }) => {
 
   // Préparer les données pour l'API
   const prepareSignatureData = () => {
-    return {
+    const data = {
       signatureName,
       isDefault,
       workspaceId: organization?.id,
@@ -139,12 +139,14 @@ const SignatureSave = ({ existingSignatureId = null }) => {
         linkedin: signatureData.socialNetworks?.linkedin || "",
         x: signatureData.socialNetworks?.x || "",
       },
-      // Couleurs personnalisées pour chaque réseau social
+      // Couleurs personnalisées pour chaque réseau social (noms de couleurs, pas hex)
       socialColors: {
-        facebook: signatureData.socialColors?.facebook || "#1877F2",
-        instagram: signatureData.socialColors?.instagram || "#E4405F",
-        linkedin: signatureData.socialColors?.linkedin || "#0077B5",
-        x: signatureData.socialColors?.x || "#000000",
+        facebook: signatureData.socialColors?.facebook || null,
+        instagram: signatureData.socialColors?.instagram || null,
+        linkedin: signatureData.socialColors?.linkedin || null,
+        x: signatureData.socialColors?.x || null,
+        github: signatureData.socialColors?.github || null,
+        youtube: signatureData.socialColors?.youtube || null,
       },
       // URLs des icônes personnalisées sur Cloudflare
       customSocialIcons: {
@@ -153,6 +155,9 @@ const SignatureSave = ({ existingSignatureId = null }) => {
         linkedin: signatureData.customSocialIcons?.linkedin || "",
         x: signatureData.customSocialIcons?.x || "",
       },
+      // Couleur globale et taille des icônes sociales
+      socialGlobalColor: signatureData.socialGlobalColor || null,
+      socialSize: signatureData.socialSize || 24,
       // Options d'affichage des icônes
       showPhoneIcon: signatureData.showPhoneIcon ?? true,
       showMobileIcon: signatureData.showMobileIcon ?? true,
@@ -301,6 +306,11 @@ const SignatureSave = ({ existingSignatureId = null }) => {
       signatureName,
       isDefault,
     };
+
+    console.log("💾 [SAVE] Données à sauvegarder:", {
+      socialGlobalColor: finalData.socialGlobalColor,
+      socialSize: finalData.socialSize,
+    });
 
     try {
       if (signatureId) {

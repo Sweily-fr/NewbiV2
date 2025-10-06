@@ -137,6 +137,8 @@ const GET_EMAIL_SIGNATURE = gql`
         linkedin
         x
       }
+      socialGlobalColor
+      socialSize
 
       # Typographie
       fontFamily

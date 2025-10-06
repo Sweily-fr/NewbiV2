@@ -101,6 +101,8 @@ const GET_EMAIL_SIGNATURE = gql`
         github
         youtube
       }
+      socialGlobalColor
+      socialSize
       fontFamily
       fontSize {
         name
@@ -320,6 +322,9 @@ function SignatureProviderContent({ children }) {
         github: "",
         youtube: "",
       },
+      // Couleur globale et taille des icônes sociales
+      socialGlobalColor: null, // null = couleurs par défaut de chaque réseau
+      socialSize: 24, // Taille par défaut des icônes sociales
       // Séparateurs (activation)
       separatorVerticalEnabled: true,
       separatorHorizontalEnabled: true,
@@ -689,6 +694,14 @@ function SignatureProviderContent({ children }) {
 
   const updateSignatureData = (key, value) => {
     setSignatureData((prev) => {
+      // Si c'est un objet avec plusieurs clés, mettre à jour tout en une fois
+      if (typeof key === 'object' && key !== null) {
+        return {
+          ...prev,
+          ...key,
+        };
+      }
+      
       // Handle nested object updates for spacings, colors, etc.
       if (
         key === "spacings" ||
@@ -697,7 +710,8 @@ function SignatureProviderContent({ children }) {
         key === "fontSize" ||
         key === "verticalSeparator" ||
         key === "typography" ||
-        key === "separators"
+        key === "separators" ||
+        key === "socialColors"
       ) {
         return {
           ...prev,
