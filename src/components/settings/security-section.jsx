@@ -65,13 +65,25 @@ import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
 import { useUser } from "@/src/lib/auth/hooks";
 
-export function SecuritySection() {
+export function SecuritySection({ organization: orgProp, orgLoading: orgLoadingProp }) {
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
-  const {
-    organization,
-    loading: orgLoading,
-    updateOrganization,
-  } = useActiveOrganization();
+  
+  // Utiliser l'organisation passée en props si disponible, sinon utiliser le hook
+  const hookData = useActiveOrganization();
+  const organization = orgProp || hookData.organization;
+  const orgLoading = orgLoadingProp !== undefined ? orgLoadingProp : hookData.loading;
+  const updateOrganization = hookData.updateOrganization;
+  
+  // Debug: Vérifier quelle organisation est utilisée
+  useEffect(() => {
+    console.log("🔐 [SecuritySection] Organisation utilisée:", {
+      fromProps: !!orgProp,
+      orgId: organization?.id,
+      orgName: organization?.name,
+      companyName: organization?.companyName,
+    });
+  }, [organization, orgProp]);
+  
   const { data: session, refetch: refetchSession } = useSession();
   const { session: user } = useUser();
 

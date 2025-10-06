@@ -30,32 +30,29 @@ export const useWorkspace = () => {
   }, [loading, activeOrganization, organizations]);
 
   // Debug logs
-  // React.useEffect(() => {
-  //   console.log("🔍 useWorkspace state:", {
-  //     loading,
-  //     orgsLoading,
-  //     activeLoading,
-  //     organizationsCount: organizations?.length || 0,
-  //     activeOrganization: activeOrganization
-  //       ? {
-  //           id: activeOrganization.id,
-  //           name: activeOrganization.name,
-  //           companyName: activeOrganization.companyName,
-  //           companyEmail: activeOrganization.companyEmail,
-  //           addressStreet: activeOrganization.addressStreet,
-  //           addressCity: activeOrganization.addressCity,
-  //           siret: activeOrganization.siret,
-  //           vatNumber: activeOrganization.vatNumber,
-  //         }
-  //       : null,
-  //     workspaceId: activeOrganization?.id || null,
-  //     allOrganizations: organizations?.map(org => ({
-  //       id: org.id,
-  //       name: org.name,
-  //       companyName: org.companyName,
-  //     })),
-  //   });
-  // }, [loading, orgsLoading, activeLoading, organizations, activeOrganization]);
+  React.useEffect(() => {
+    console.log("🔍 useWorkspace state:", {
+      loading,
+      orgsLoading,
+      activeLoading,
+      organizationsCount: organizations?.length || 0,
+      activeOrganization: activeOrganization
+        ? {
+            id: activeOrganization.id,
+            name: activeOrganization.name,
+            companyName: activeOrganization.companyName,
+            role: activeOrganization.role,
+          }
+        : null,
+      workspaceId: activeOrganization?.id || null,
+      allOrganizations: organizations?.map(org => ({
+        id: org.id,
+        name: org.name,
+        companyName: org.companyName,
+        role: org.role,
+      })),
+    });
+  }, [loading, orgsLoading, activeLoading, organizations, activeOrganization]);
 
   return {
     workspaceId: activeOrganization?.id || null,

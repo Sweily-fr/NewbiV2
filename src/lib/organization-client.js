@@ -6,15 +6,17 @@ import { authClient } from "./auth-client";
  */
 export async function getActiveOrganization() {
   try {
-    const { data: organizations } = await authClient.organization.list();
+    // Utiliser l'API Better Auth pour récupérer l'organisation active de la session
+    const { data: activeOrg, error } = await authClient.organization.getFullOrganization();
 
-    // Pour l'instant, on prend la première organisation (ou celle marquée comme active)
-    const activeOrg = organizations?.[0];
-
-    if (!activeOrg) {
-      throw new Error("Aucune organisation trouvée");
+    if (error || !activeOrg) {
+      console.warn("⚠️ Aucune organisation active, utilisation de la première organisation");
+      // Fallback: Si aucune organisation active, prendre la première
+      const { data: organizations } = await authClient.organization.list();
+      return organizations?.[0] || null;
     }
 
+    console.log("✅ Organisation active récupérée:", activeOrg.name);
     return activeOrg;
   } catch (error) {
     console.error("Erreur lors de la récupération de l'organisation:", error);
@@ -29,32 +31,20 @@ export async function updateOrganization(organizationId, data, options = {}) {
   try {
     // Vérifier la session utilisateur
     const { data: session } = await authClient.getSession();
-    // console.log(
-    //   "👤 Utilisateur actuel:",
-    //   session?.user?.id,
-    //   session?.user?.email
-    // );
-
-    // console.log("🔄 Mise à jour de l'organisation:", organizationId);
-    // console.log("🔄 Données à envoyer:", data);
-    // console.log(
-    //   "🔄 Structure exacte de l'appel:",
-    //   JSON.stringify({ organizationId, data }, null, 2)
-    // );
+    console.log("👤 Utilisateur actuel:", session?.user?.email);
+    console.log("🔄 Mise à jour de l'organisation:", organizationId);
+    console.log("🔄 Données à envoyer:", data);
 
     const result = await authClient.organization.update({
       organizationId,
       data,
     });
 
-    // console.log("✅ Résultat de la mise à jour:", result);
-    // console.log(
-    //   "✅ Données dans result.data:",
-    //   JSON.stringify(result.data, null, 2)
-    // );
+    console.log("✅ Résultat de la mise à jour:", result);
+    console.log("✅ Données dans result.data:", result.data);
 
     if (options.onSuccess) {
-      options.onSuccess(result);
+      await options.onSuccess(result);
     }
 
     return result;
@@ -110,21 +100,31 @@ export async function inviteToOrganization(
 
 /**
  * Hook personnalisé pour gérer l'organisation active
+ * Utilise Better Auth en interne pour récupérer l'organisation active
  */
 export function useActiveOrganization() {
+  // Utiliser directement le hook Better Auth pour l'organisation active
+  const { data: betterAuthOrg, isPending: betterAuthLoading, refetch: betterAuthRefetch } = 
+    authClient.useActiveOrganization();
+  
   const [organization, setOrganization] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Synchroniser avec le hook Better Auth
+  useEffect(() => {
+    if (!betterAuthLoading) {
+      setOrganization(betterAuthOrg);
+      setLoading(false);
+    }
+  }, [betterAuthOrg, betterAuthLoading]);
 
   const fetchOrganization = async () => {
     try {
       setLoading(true);
       setError(null);
-      const org = await getActiveOrganization();
-      // console.log("🔍 Organisation récupérée:", org);
-      // console.log("🔍 Logo dans l'organisation:", org?.logo);
-      // console.log("🔍 Organisation complète:", JSON.stringify(org, null, 2));
-      setOrganization(org);
+      await betterAuthRefetch();
+      console.log("✅ Organisation refetch depuis Better Auth");
     } catch (err) {
       setError(err);
       console.error("Erreur lors du chargement de l'organisation:", err);
@@ -141,33 +141,15 @@ export function useActiveOrganization() {
     try {
       const result = await updateOrganization(organization.id, data, options);
 
-      // Si on supprime le logo (data.logo === null), forcer le nettoyage complet
-      if (data.logo === null || data.logo === undefined) {
-        // console.log("🧹 Suppression logo détectée - nettoyage forcé de l'état");
-        const cleanedOrg = { ...organization, ...data, logo: null };
-        setOrganization(cleanedOrg);
-
-        // Forcer un refetch après un délai pour s'assurer de la synchronisation
-        setTimeout(() => {
-          fetchOrganization();
-        }, 100);
-      } else {
-        // Mettre à jour l'état local avec les données envoyées (pas result.data qui contient les anciennes valeurs)
-        // console.log("🔄 Mise à jour de l'état local avec les données envoyées:", data);
-        const updatedOrg = { ...organization, ...data };
-        setOrganization(updatedOrg);
-        // console.log("✅ État organization mis à jour:", updatedOrg);
-      }
+      // Forcer un refetch depuis Better Auth après la mise à jour
+      await betterAuthRefetch();
+      console.log("✅ Organisation mise à jour et refetch depuis Better Auth");
 
       return result;
     } catch (error) {
       throw error;
     }
   };
-
-  useEffect(() => {
-    fetchOrganization();
-  }, []);
 
   return {
     organization,

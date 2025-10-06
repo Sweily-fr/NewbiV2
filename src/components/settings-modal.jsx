@@ -67,6 +67,20 @@ export function SettingsModal({
     updateOrganization,
   } = useActiveOrganization();
 
+  // Debug: Vérifier quelle organisation est récupérée
+  useEffect(() => {
+    if (organization) {
+      console.log("🏢 [SettingsModal] Organisation récupérée:", {
+        id: organization.id,
+        name: organization.name,
+        companyName: organization.companyName,
+        role: organization.role,
+      });
+    } else {
+      console.log("⚠️ [SettingsModal] Aucune organisation");
+    }
+  }, [organization]);
+
   const formMethods = useForm({
     mode: "onChange", // Validation en temps réel
     defaultValues: {
@@ -183,7 +197,9 @@ export function SettingsModal({
 
         // Coordonnées bancaires
         bankName: sanitizeInput(formData.bankDetails?.bankName || ""),
-        bankIban: sanitizeInput(formData.bankDetails?.iban || "").replace(/\s/g, '').toUpperCase(),
+        bankIban: sanitizeInput(formData.bankDetails?.iban || "")
+          .replace(/\s/g, "")
+          .toUpperCase(),
         bankBic: sanitizeInput(formData.bankDetails?.bic || ""),
 
         // Informations légales
@@ -198,12 +214,19 @@ export function SettingsModal({
         hasCommercialActivity: formData.legal?.hasCommercialActivity || false,
       };
 
+      console.log("💾 Données à sauvegarder:", transformedData);
+
       // Sauvegarder via Better Auth
       await updateOrganization(transformedData, {
-        onSuccess: () => {
+        onSuccess: async () => {
+          // Forcer un refetch pour s'assurer que les données sont bien en BDD
+          if (refetchOrg) {
+            await refetchOrg();
+          }
           toast.success("Modifications sauvegardées avec succès");
         },
         onError: (error) => {
+          console.error("❌ Erreur sauvegarde:", error);
           toast.error("Erreur lors de la sauvegarde");
         },
       });
@@ -300,7 +323,12 @@ export function SettingsModal({
       case "subscription":
         return <SubscriptionSection />;
       case "securite":
-        return <SecuritySection />;
+        return (
+          <SecuritySection 
+            organization={organization}
+            orgLoading={orgLoading}
+          />
+        );
       case "personnes":
         return <PersonnesSection />;
       case "user-info":
