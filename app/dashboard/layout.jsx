@@ -117,11 +117,11 @@ function DashboardContent({ children }) {
       )}
       <SearchCommand />
 
-      {/* Modal de pricing pour upgrade */}
-      <PricingModal
+      {/* Modal de pricing pour upgrade - DÉSACTIVÉ car géré dans chaque page */}
+      {/* <PricingModal
         isOpen={isPricingModalOpen}
         onClose={() => setIsPricingModalOpen(false)}
-      />
+      /> */}
 
       {/* Modal d'onboarding pour les nouveaux utilisateurs */}
       <OnboardingModal

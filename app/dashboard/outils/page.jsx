@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { InputLoader } from "@/src/components/ui/input";
 import PricingModal from "@/src/components/pricing-modal";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSubscription } from "@/src/contexts/subscription-context";
 import { useSession } from "@/src/lib/auth-client";
@@ -17,6 +17,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 
 export default function Outils() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("outline");
   const { isActive, loading } = useSubscription();
@@ -24,6 +25,9 @@ export default function Outils() {
 
   // Ouvrir le modal de pricing si le paramètre pricing=true ou access=restricted est présent
   useEffect(() => {
+    // Ne pas ouvrir le modal si on est en train de charger
+    if (loading) return;
+    
     const shouldOpenPricing = 
       (searchParams.get("pricing") === "true" && !isActive()) ||
       (searchParams.get("access") === "restricted" && !isActive());
@@ -31,7 +35,16 @@ export default function Outils() {
     if (shouldOpenPricing) {
       setIsPricingModalOpen(true);
     }
-  }, [searchParams, isActive]);
+  }, [searchParams, isActive, loading]);
+
+  // Fonction pour fermer le modal et nettoyer l'URL
+  const handleCloseModal = () => {
+    setIsPricingModalOpen(false);
+    // Nettoyer les paramètres de l'URL
+    if (searchParams.get("pricing") || searchParams.get("access")) {
+      router.replace("/dashboard/outils");
+    }
+  };
 
   // Afficher le skeleton pendant le chargement
   // if (loading || !session?.user) {
@@ -166,7 +179,7 @@ export default function Outils() {
       </div>
       <PricingModal
         isOpen={isPricingModalOpen}
-        onClose={() => setIsPricingModalOpen(false)}
+        onClose={handleCloseModal}
       />
     </div>
   );
