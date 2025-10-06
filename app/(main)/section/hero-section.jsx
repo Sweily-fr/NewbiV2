@@ -19,10 +19,10 @@ export function HeroSection() {
                 asChild
                 size="lg"
                 variant="default"
-                className="px-6 py-3 text-base font-normal cursor-pointer w-full sm:w-auto"
+                className="px-6 py-3 text-sm font-medium cursor-pointer w-full sm:w-auto"
               >
                 <a href="/auth/signup" className="text-nowrap">
-                  Commencez gratuitement
+                  Commencer — 14 j gratuits
                 </a>
               </Button>
             </div>
@@ -31,7 +31,7 @@ export function HeroSection() {
                 asChild
                 size="lg"
                 variant="outline"
-                className="px-6 py-3 text-base font-normal cursor-pointer w-full sm:w-auto"
+                className="px-6 py-3 text-sm font-medium  cursor-pointer w-full sm:w-auto"
               >
                 <a href="/#pricing" className="text-nowrap">
                   Tarifs

@@ -29,6 +29,7 @@ import { Button } from "@/src/components/ui/button";
 import { useSession } from "@/src/lib/auth-client";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { toast } from "@/src/components/ui/sonner";
+import { useSubscription } from "@/src/contexts/subscription-context";
 import {
   validateSettingsForm,
   VALIDATION_PATTERNS,
@@ -57,6 +58,7 @@ export function SettingsModal({
   const [showNoChangesWarning, setShowNoChangesWarning] = useState(false);
   const [pendingTab, setPendingTab] = useState(null);
   const { data: session } = useSession();
+  const { isActive } = useSubscription();
   const {
     organization,
     loading: orgLoading,
@@ -352,7 +354,12 @@ export function SettingsModal({
           icon: Users,
           disabled: true,
         },
-        { id: "espaces", label: "Espaces", icon: Building2 },
+        {
+          id: "espaces",
+          label: "Espaces",
+          icon: Building2,
+          disabled: !isActive(),
+        },
       ],
     },
     {
@@ -484,11 +491,14 @@ export function SettingsModal({
                                 <Icon className="h-4 w-4" />
                                 <span className="flex font-normal items-center gap-2">
                                   {item.label}
-                                  {item.disabled && (
-                                    <span className="px-2 py-0.5 text-[10px] font-normal bg-[#5a50ff]/10 border border-[#5a50ff]/30 text-[#5a50ff] rounded-md">
-                                      à venir
-                                    </span>
-                                  )}
+                                  {item.disabled &&
+                                    (item.id === "espaces" ? (
+                                      <Crown className="w-3 h-3 text-[#5b4fff]" />
+                                    ) : (
+                                      <span className="px-2 py-0.5 text-[10px] font-normal bg-[#5a50ff]/10 border border-[#5a50ff]/30 text-[#5a50ff] rounded-md">
+                                        à venir
+                                      </span>
+                                    ))}
                                 </span>
                               </button>
                             );
