@@ -22,6 +22,9 @@ import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
+import { QuickEditClientModal } from "@/src/components/invoice/quick-edit-client-modal";
+import { QuickEditCompanyModal } from "@/src/components/invoice/quick-edit-company-modal";
+import { ErrorAlert } from "@/src/components/invoice/error-alert";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -31,6 +34,8 @@ export default function ModernInvoiceEditor({
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
   const [organization, setOrganization] = useState(null);
+  const [showEditClient, setShowEditClient] = useState(false);
+  const [showEditCompany, setShowEditCompany] = useState(false);
 
   // Récupérer l'organisation au chargement
   useEffect(() => {
@@ -59,6 +64,8 @@ export default function ModernInvoiceEditor({
     handleAutoSave,
     isDirty,
     errors,
+    validationErrors,
+    clearValidationErrors,
     saveSettingsToOrganization,
   } = useInvoiceEditor({
     mode,
@@ -81,6 +88,37 @@ export default function ModernInvoiceEditor({
 
   const handleCloseSettings = () => {
     setShowSettings(false);
+  };
+
+  const handleClientUpdated = (updatedClient) => {
+    setFormData({ client: updatedClient });
+    toast.success("Client mis à jour");
+  };
+
+  const handleCompanyUpdated = async (updatedCompany) => {
+    // Mettre à jour les données du formulaire
+    setFormData({
+      companyInfo: {
+        ...formData.companyInfo,
+        name: updatedCompany.companyName,
+        email: updatedCompany.companyEmail,
+        phone: updatedCompany.companyPhone,
+        siret: updatedCompany.siret,
+        vatNumber: updatedCompany.vatNumber,
+        address: {
+          street: updatedCompany.addressStreet,
+          city: updatedCompany.addressCity,
+          postalCode: updatedCompany.addressZipCode,
+          country: updatedCompany.addressCountry,
+        },
+      },
+    });
+    
+    // Rafraîchir l'organisation
+    const org = await getActiveOrganization();
+    setOrganization(org);
+    
+    toast.success("Informations de l'entreprise mises à jour");
   };
 
   return (
@@ -170,6 +208,24 @@ export default function ModernInvoiceEditor({
 
             {/* Enhanced Form ou Settings View */}
             <div className="flex-1 min-h-0 mr-2">
+              {/* Alertes d'erreur intelligentes */}
+              {validationErrors?.client && (
+                <ErrorAlert
+                  title="Erreur client"
+                  message={validationErrors.client}
+                  onEdit={() => setShowEditClient(true)}
+                  editLabel="Modifier le client"
+                />
+              )}
+              {validationErrors?.companyInfo && (
+                <ErrorAlert
+                  title="Erreur informations entreprise"
+                  message={validationErrors.companyInfo}
+                  onEdit={() => setShowEditCompany(true)}
+                  editLabel="Modifier l'entreprise"
+                />
+              )}
+              
               <FormProvider {...form}>
                 {showSettings ? (
                   <InvoiceSettingsView
@@ -198,6 +254,7 @@ export default function ModernInvoiceEditor({
                     loading={loading}
                     canEdit={!isReadOnly}
                     mode={mode}
+                    validationErrors={validationErrors}
                   />
                 )}
               </FormProvider>
@@ -218,6 +275,22 @@ export default function ModernInvoiceEditor({
           </div>
         </div>
       </div>
+      
+      {/* Modals d'édition rapide */}
+      {formData.client && (
+        <QuickEditClientModal
+          open={showEditClient}
+          onOpenChange={setShowEditClient}
+          client={formData.client}
+          onClientUpdated={handleClientUpdated}
+        />
+      )}
+      
+      <QuickEditCompanyModal
+        open={showEditCompany}
+        onOpenChange={setShowEditCompany}
+        onCompanyUpdated={handleCompanyUpdated}
+      />
     </div>
   );
 }

@@ -31,11 +31,7 @@ function VerifyEmailContent() {
         return;
       }
 
-      try {
-        if (process.env.NODE_ENV === 'development') {
-          console.log("📤 Envoi de la requête de vérification...");
-        }
-        
+      try {        
         const response = await fetch('/api/auth/verify-email', {
           method: 'POST',
           headers: {
@@ -45,16 +41,8 @@ function VerifyEmailContent() {
         });
 
         const data = await response.json();
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log("📥 Réponse reçue:", response.status, response.statusText);
-          console.log("📄 Données de réponse:", data);
-        }
 
         if (response.ok) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log("✅ Vérification réussie");
-          }
           setVerificationStatus("success");
           setMessage("Votre email a été vérifié avec succès !");
           toast.success("Email vérifié avec succès !");
@@ -64,13 +52,6 @@ function VerifyEmailContent() {
             router.push("/auth/login");
           }, 3000);
         } else {
-          if (process.env.NODE_ENV === 'development') {
-            console.log("❌ Erreur de vérification:", data);
-            console.log("❌ Détails de l'erreur:", JSON.stringify(data, null, 2));
-            if (data.details) {
-              console.log("🔍 Détails techniques:", data.details);
-            }
-          }
           setVerificationStatus("error");
           setMessage(data.error || "Erreur lors de la vérification");
           toast.error("Erreur lors de la vérification");

@@ -33,6 +33,7 @@ export function useInvoiceEditor({
   
   // Error handler
   const { handleError } = useErrorHandler();
+  const [validationErrors, setValidationErrors] = useState({});
 
   // GraphQL hooks
   const { invoice: existingInvoice, loading: loadingInvoice } =
@@ -219,9 +220,20 @@ export function useInvoiceEditor({
         "❌ Validation échouée dans handleSave - Erreurs:",
         formState.errors
       );
-      toast.error("Veuillez corriger les erreurs avant de sauvegarder");
+      
+      // Extraire et stocker les erreurs de validation
+      const errors = {};
+      Object.keys(formState.errors).forEach(key => {
+        errors[key] = formState.errors[key]?.message || "Champ invalide";
+      });
+      setValidationErrors(errors);
+      
+      // Ne pas afficher de toast générique, les erreurs sont affichées dans le formulaire
       return false;
     }
+    
+    // Réinitialiser les erreurs si la validation passe
+    setValidationErrors({});
 
     try {
       setSaving(true);
@@ -247,7 +259,10 @@ export function useInvoiceEditor({
       }
     } catch (error) {
       console.error("Save failed:", error);
-      handleError(error, 'invoice');
+      handleError(error, 'invoice', { 
+        preventDuplicates: true,
+        hideServerErrors: true 
+      });
       return false;
     } finally {
       setSaving(false);
@@ -273,9 +288,20 @@ export function useInvoiceEditor({
     const isValid = await trigger();
     if (!isValid) {
       console.error("❌ Validation échouée - Erreurs:", formState.errors);
-      toast.error("Veuillez corriger les erreurs avant de valider");
+      
+      // Extraire et stocker les erreurs de validation
+      const errors = {};
+      Object.keys(formState.errors).forEach(key => {
+        errors[key] = formState.errors[key]?.message || "Champ invalide";
+      });
+      setValidationErrors(errors);
+      
+      // Ne pas afficher de toast générique, les erreurs sont affichées dans le formulaire
       return false;
     }
+    
+    // Réinitialiser les erreurs si la validation passe
+    setValidationErrors({});
 
     try {
       setSaving(true);
@@ -304,7 +330,10 @@ export function useInvoiceEditor({
       }
     } catch (error) {
       console.error("Submit failed:", error);
-      handleError(error, 'invoice');
+      handleError(error, 'invoice', { 
+        preventDuplicates: true,
+        hideServerErrors: true 
+      });
       return false;
     } finally {
       setSaving(false);
@@ -370,6 +399,8 @@ export function useInvoiceEditor({
     // handleAutoSave, // DISABLED
     isDirty,
     errors,
+    validationErrors,
+    clearValidationErrors: () => setValidationErrors({}),
     saveSettingsToOrganization,
   };
 }
