@@ -17,7 +17,7 @@ export function ErrorAlert({ title, message, onEdit, editLabel = "Modifier" }: E
       <AlertCircle className="h-4 w-4" />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription className="flex items-center justify-between">
-        <span>{message}</span>
+        <span className="flex-1">{message}</span>
         {onEdit && (
           <Button
             variant="outline"

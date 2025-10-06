@@ -38,13 +38,20 @@ const createAmountValidation = () => {
   };
 };
 
-export default function ShippingSection({ canEdit }) {
+export default function ShippingSection({ canEdit, validationErrors = {} }) {
   const {
     watch,
     setValue,
     register,
     formState: { errors },
   } = useFormContext();
+  
+  // Helper pour vérifier si un champ a une erreur de validation
+  const hasValidationError = (fieldName) => {
+    if (!validationErrors.shipping) return false;
+    const message = validationErrors.shipping.message || "";
+    return message.toLowerCase().includes(fieldName.toLowerCase());
+  };
 
   const data = watch();
   const shipping = data.shipping || {};
@@ -147,16 +154,17 @@ export default function ShippingSection({ canEdit }) {
 
             {/* Nom complet */}
             <div className="space-y-2">
-              <Label htmlFor="shippingFullName" className="font-normal">Nom complet</Label>
+              <Label htmlFor="shippingFullName" className="font-normal">Nom complet *</Label>
               <Input
                 id="shippingFullName"
                 placeholder="Nom complet du destinataire"
                 disabled={!canEdit}
                 {...register("shipping.shippingAddress.fullName")}
+                className={hasValidationError("nom complet") ? "border-destructive focus-visible:ring-destructive" : ""}
               />
-              {errors?.shipping?.shippingAddress?.fullName && (
-                <p className="text-sm text-destructive">
-                  {errors.shipping.shippingAddress.fullName.message}
+              {(errors?.shipping?.shippingAddress?.fullName || hasValidationError("nom complet")) && (
+                <p className="text-xs text-destructive">
+                  {errors?.shipping?.shippingAddress?.fullName?.message || "Le nom complet est requis"}
                 </p>
               )}
             </div>
@@ -175,10 +183,11 @@ export default function ShippingSection({ canEdit }) {
                     "L'adresse de livraison est requise"
                   ),
                 })}
+                className={hasValidationError("adresse") ? "border-destructive focus-visible:ring-destructive" : ""}
               />
-              {errors?.shipping?.shippingAddress?.street && (
-                <p className="text-sm text-destructive">
-                  {errors.shipping.shippingAddress.street.message}
+              {(errors?.shipping?.shippingAddress?.street || hasValidationError("adresse")) && (
+                <p className="text-xs text-destructive">
+                  {errors?.shipping?.shippingAddress?.street?.message || "L'adresse est requise"}
                 </p>
               )}
             </div>
@@ -197,10 +206,11 @@ export default function ShippingSection({ canEdit }) {
                       "La ville est requise"
                     ),
                   })}
+                  className={hasValidationError("ville") ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
-                {errors?.shipping?.shippingAddress?.city && (
-                  <p className="text-sm text-destructive">
-                    {errors.shipping.shippingAddress.city.message}
+                {(errors?.shipping?.shippingAddress?.city || hasValidationError("ville")) && (
+                  <p className="text-xs text-destructive">
+                    {errors?.shipping?.shippingAddress?.city?.message || "La ville est requise"}
                   </p>
                 )}
               </div>
@@ -217,10 +227,11 @@ export default function ShippingSection({ canEdit }) {
                       "Le code postal est requis"
                     ),
                   })}
+                  className={hasValidationError("code postal") ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
-                {errors?.shipping?.shippingAddress?.postalCode && (
-                  <p className="text-sm text-destructive">
-                    {errors.shipping.shippingAddress.postalCode.message}
+                {(errors?.shipping?.shippingAddress?.postalCode || hasValidationError("code postal")) && (
+                  <p className="text-xs text-destructive">
+                    {errors?.shipping?.shippingAddress?.postalCode?.message || "Le code postal est requis"}
                   </p>
                 )}
               </div>
@@ -239,10 +250,11 @@ export default function ShippingSection({ canEdit }) {
                     "Le pays est requis"
                   ),
                 })}
+                className={hasValidationError("pays") ? "border-destructive focus-visible:ring-destructive" : ""}
               />
-              {errors?.shipping?.shippingAddress?.country && (
-                <p className="text-sm text-destructive">
-                  {errors.shipping.shippingAddress.country.message}
+              {(errors?.shipping?.shippingAddress?.country || hasValidationError("pays")) && (
+                <p className="text-xs text-destructive">
+                  {errors?.shipping?.shippingAddress?.country?.message || "Le pays est requis"}
                 </p>
               )}
             </div>
@@ -262,7 +274,13 @@ export default function ShippingSection({ canEdit }) {
                     valueAsNumber: true,
                     validate: createAmountValidation(),
                   })}
+                  className={hasValidationError("coût") ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
+                {hasValidationError("coût") && (
+                  <p className="text-xs text-destructive">
+                    Le coût de livraison est requis
+                  </p>
+                )}
                 {errors?.shipping?.shippingAmountHT && (
                   <p className="text-sm text-destructive">
                     {errors.shipping.shippingAmountHT.message}

@@ -31,7 +31,8 @@ export function QuickEditClientModal({
   onClientUpdated,
 }: QuickEditClientModalProps) {
   const [saving, setSaving] = useState(false)
-  const { updateClient } = useUpdateClient()
+  const [hasNotified, setHasNotified] = useState(false)
+  const { updateClient } = useUpdateClient(undefined, { showToast: false })
 
   const {
     register,
@@ -57,9 +58,9 @@ export function QuickEditClientModal({
       setSaving(true)
 
       const input = {
+        type: client.type, // Garder le type du client
         name: data.name,
         email: data.email,
-        phone: data.phone,
         siret: data.siret,
         vatNumber: data.vatNumber,
         address: {
@@ -73,10 +74,17 @@ export function QuickEditClientModal({
       const result = await updateClient(client.id, input)
 
       if (result) {
-        toast.success("Client mis à jour avec succès")
+        // Notification unique avec flag
+        if (!hasNotified) {
+          setHasNotified(true)
+          toast.success("Client mis à jour avec succès")
+        }
+        // Fermer le modal et mettre à jour
         onClientUpdated?.(result)
         onOpenChange(false)
         reset()
+        // Reset du flag après fermeture
+        setTimeout(() => setHasNotified(false), 1000)
       }
     } catch (error: any) {
       console.error("Erreur lors de la mise à jour du client:", error)
