@@ -1,9 +1,13 @@
 "use client";
 
-import React from "react";
-import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
+import React, { useEffect } from "react";
+import Image from "next/image";
+import DynamicSocialLogo from "./DynamicSocialLogo";
 import { InlineEdit } from "@/src/components/ui/inline-edit";
+import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
+import { getTypographyStyles } from "../utils/typography-styles";
 import "@/src/styles/signature-text-selection.css";
+import "./signature-preview.css";
 
 // Fonction utilitaire pour convertir hex en HSL et calculer la rotation de teinte
 const hexToHsl = (hex) => {
@@ -85,9 +89,9 @@ const VerticalSignature = ({
     { key: "linkedin", label: "LinkedIn" },
     { key: "facebook", label: "Facebook" },
     { key: "instagram", label: "Instagram" },
-    { key: "twitter", label: "Twitter/X" },
-    { key: "github", label: "GitHub" },
+    { key: "x", label: "X (Twitter)" },
     { key: "youtube", label: "YouTube" },
+    { key: "github", label: "GitHub" },
   ];
 
   // Fonction pour obtenir l'URL de l'icône avec le nouveau CDN R2
@@ -120,6 +124,7 @@ const VerticalSignature = ({
       linkedin: 'blue',
       facebook: 'blue',
       instagram: 'pink',
+      x: 'black',
       twitter: 'black',
       github: 'black',
       youtube: 'red'
@@ -141,9 +146,17 @@ const VerticalSignature = ({
     }
     
     // Construction de l'URL avec couleur
-    const iconName = color ? `${platform}-${color}` : platform;
-    return `${baseUrl}/${platform}/${iconName}.png`;
+    // Utiliser "twitter" au lieu de "x" pour les URLs
+    const platformName = platform === 'x' ? 'twitter' : platform;
+    const iconName = color ? `${platformName}-${color}` : platformName;
+    return `${baseUrl}/${platformName}/${iconName}.png`;
   };
+  // Debug: Vérifier si la typographie est bien reçue
+  useEffect(() => {
+    console.log("🎨 [VerticalSignature] Typography data:", signatureData.typography);
+    console.log("🎨 [VerticalSignature] fullName typography:", signatureData.typography?.fullName);
+  }, [signatureData.typography]);
+
   // Calcul des largeurs de colonnes dynamiques pour la signature verticale
   const photoColumnWidth = signatureData.columnWidths?.photo || 25;
   const contentColumnWidth = signatureData.columnWidths?.content || 75;
@@ -156,11 +169,14 @@ const VerticalSignature = ({
       cellPadding="0"
       cellSpacing="0"
       border="0"
+      className="signature-preview"
       style={{
         borderCollapse: "collapse",
         maxWidth: "500px",
         fontFamily: "Arial, sans-serif",
-        width: "100%",
+        width: "auto",
+        margin: "0",
+        display: "table",
       }}
     >
       <tbody>
@@ -254,25 +270,13 @@ const VerticalSignature = ({
                   >
                     <div
                       style={{
-                        fontSize: `${signatureData.typography?.fullName?.fontSize || signatureData.fontSize?.name || 16}px`,
-                        fontWeight:
-                          signatureData.typography?.fullName?.fontWeight ||
-                          "bold",
-                        fontStyle:
-                          signatureData.typography?.fullName?.fontStyle ||
-                          "normal",
-                        textDecoration:
-                          signatureData.typography?.fullName?.textDecoration ||
-                          "none",
-                        color:
-                          signatureData.typography?.fullName?.color ||
-                          signatureData.primaryColor ||
-                          "#171717",
+                        ...getTypographyStyles(signatureData.typography?.fullName, {
+                          fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                          fontSize: signatureData.fontSize?.name || 16,
+                          fontWeight: "bold",
+                          color: signatureData.primaryColor || "#171717",
+                        }),
                         lineHeight: "1.2",
-                        fontFamily:
-                          signatureData.typography?.fullName?.fontFamily ||
-                          signatureData.fontFamily ||
-                          "Arial, sans-serif",
                       }}
                     >
                       <InlineEdit
@@ -322,23 +326,11 @@ const VerticalSignature = ({
                     >
                       <div
                         style={{
-                          fontSize: `${signatureData.typography?.position?.fontSize || signatureData.fontSize?.position || 14}px`,
-                          color:
-                            signatureData.typography?.position?.color ||
-                            "#666666",
-                          fontFamily:
-                            signatureData.typography?.position?.fontFamily ||
-                            signatureData.fontFamily ||
-                            "Arial, sans-serif",
-                          fontWeight:
-                            signatureData.typography?.position?.fontWeight ||
-                            "normal",
-                          fontStyle:
-                            signatureData.typography?.position?.fontStyle ||
-                            "normal",
-                          textDecoration:
-                            signatureData.typography?.position
-                              ?.textDecoration || "none",
+                          ...getTypographyStyles(signatureData.typography?.position, {
+                            fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                            fontSize: signatureData.fontSize?.position || 14,
+                            color: "#666666",
+                          }),
                         }}
                       >
                         <InlineEdit
@@ -385,18 +377,11 @@ const VerticalSignature = ({
                     >
                       <div
                         style={{
-                          fontSize: `${signatureData.typography?.company?.fontSize || 14}px`,
-                          fontWeight:
-                            signatureData.typography?.company?.fontWeight ||
-                            "normal",
-                          color:
-                            signatureData.typography?.company?.color ||
-                            signatureData.primaryColor ||
-                            "#2563eb",
-                          fontFamily:
-                            signatureData.typography?.company?.fontFamily ||
-                            signatureData.fontFamily ||
-                            "Arial, sans-serif",
+                          ...getTypographyStyles(signatureData.typography?.company, {
+                            fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                            fontSize: 14,
+                            color: signatureData.primaryColor || "#2563eb",
+                          }),
                         }}
                       >
                         <InlineEdit
@@ -479,14 +464,11 @@ const VerticalSignature = ({
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          fontSize: `${signatureData.typography?.phone?.fontSize || signatureData.fontSize?.contact || 12}px`,
-                          color:
-                            signatureData.typography?.phone?.color ||
-                            "rgb(102,102,102)",
-                          fontFamily:
-                            signatureData.typography?.phone?.fontFamily ||
-                            signatureData.fontFamily ||
-                            "Arial, sans-serif",
+                          ...getTypographyStyles(signatureData.typography?.phone, {
+                            fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                            fontSize: signatureData.fontSize?.contact || 12,
+                            color: "rgb(102,102,102)",
+                          }),
                         }}
                       >
                         <img
@@ -542,14 +524,11 @@ const VerticalSignature = ({
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          fontSize: `${signatureData.typography?.mobile?.fontSize || signatureData.fontSize?.contact || 12}px`,
-                          color:
-                            signatureData.typography?.mobile?.color ||
-                            "rgb(102,102,102)",
-                          fontFamily:
-                            signatureData.typography?.mobile?.fontFamily ||
-                            signatureData.fontFamily ||
-                            "Arial, sans-serif",
+                          ...getTypographyStyles(signatureData.typography?.mobile, {
+                            fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                            fontSize: signatureData.fontSize?.contact || 12,
+                            color: "rgb(102,102,102)",
+                          }),
                         }}
                       >
                         <img
@@ -605,14 +584,11 @@ const VerticalSignature = ({
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          fontSize: `${signatureData.typography?.email?.fontSize || signatureData.fontSize?.contact || 12}px`,
-                          color:
-                            signatureData.typography?.email?.color ||
-                            "rgb(102,102,102)",
-                          fontFamily:
-                            signatureData.typography?.email?.fontFamily ||
-                            signatureData.fontFamily ||
-                            "Arial, sans-serif",
+                          ...getTypographyStyles(signatureData.typography?.email, {
+                            fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                            fontSize: signatureData.fontSize?.contact || 12,
+                            color: "rgb(102,102,102)",
+                          }),
                         }}
                       >
                         <img
@@ -668,14 +644,11 @@ const VerticalSignature = ({
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          fontSize: `${signatureData.typography?.website?.fontSize || signatureData.fontSize?.contact || 12}px`,
-                          color:
-                            signatureData.typography?.website?.color ||
-                            "rgb(102,102,102)",
-                          fontFamily:
-                            signatureData.typography?.website?.fontFamily ||
-                            signatureData.fontFamily ||
-                            "Arial, sans-serif",
+                          ...getTypographyStyles(signatureData.typography?.website, {
+                            fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                            fontSize: signatureData.fontSize?.contact || 12,
+                            color: "rgb(102,102,102)",
+                          }),
                         }}
                       >
                         <img
@@ -729,14 +702,11 @@ const VerticalSignature = ({
                         style={{
                           display: "flex",
                           alignItems: "flex-start",
-                          fontSize: `${signatureData.typography?.address?.fontSize || signatureData.fontSize?.contact || 12}px`,
-                          color:
-                            signatureData.typography?.address?.color ||
-                            "rgb(102,102,102)",
-                          fontFamily:
-                            signatureData.typography?.address?.fontFamily ||
-                            signatureData.fontFamily ||
-                            "Arial, sans-serif",
+                          ...getTypographyStyles(signatureData.typography?.address, {
+                            fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                            fontSize: signatureData.fontSize?.contact || 12,
+                            color: "rgb(102,102,102)",
+                          }),
                         }}
                       >
                         <img
@@ -807,7 +777,7 @@ const VerticalSignature = ({
                     style={{
                       paddingTop: `${spacings.logoTop ?? 15}px`,
                       paddingBottom: `${spacings.logoBottom ?? 15}px`,
-                      textAlign: "center",
+                      textAlign: "left",
                     }}
                   >
                     {logoSrc ? (
@@ -835,7 +805,7 @@ const VerticalSignature = ({
                           color: "#9ca3af",
                           fontSize: "10px",
                           userSelect: "none",
-                          margin: "0 auto",
+                          margin: "0",
                         }}
                         aria-label="Logo entreprise (upload désactivé)"
                         title="Upload de logo désactivé"

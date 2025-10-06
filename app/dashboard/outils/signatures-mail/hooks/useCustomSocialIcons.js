@@ -1,17 +1,16 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useSession } from '@/src/lib/auth-client';
 
 /**
  * Hook pour gérer la génération et l'upload d'icônes sociales personnalisées
+ * Note: La génération automatique est désactivée, elle se fait maintenant sur demande explicite
  */
 export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
   const { data: session } = useSession();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState(null);
-  const lastGenerationRef = useRef(null);
-  const lastUpdateRef = useRef(null);
 
   /**
    * Génère les icônes personnalisées pour tous les réseaux sociaux actifs
@@ -123,39 +122,41 @@ export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
 
   /**
    * Génération automatique quand les couleurs changent
+   * DÉSACTIVÉ : La génération se fait maintenant uniquement sur demande explicite
    */
-  useEffect(() => {
-    if (!signatureData.socialColors || isGenerating) return;
+  // useEffect(() => {
+  //   if (!signatureData.socialColors || isGenerating) return;
 
-    // Éviter les appels multiples avec la même donnée
-    const colorsKey = JSON.stringify(signatureData.socialColors);
-    if (lastUpdateRef.current === colorsKey) return;
+  //   // Éviter les appels multiples avec la même donnée
+  //   const colorsKey = JSON.stringify(signatureData.socialColors);
+  //   if (lastUpdateRef.current === colorsKey) return;
     
-    const timer = setTimeout(() => {
-      lastUpdateRef.current = colorsKey;
-      generateCustomSocialIcons();
-    }, 2000); // Délai de 2 secondes après le changement de couleur
+  //   const timer = setTimeout(() => {
+  //     lastUpdateRef.current = colorsKey;
+  //     generateCustomSocialIcons();
+  //   }, 2000); // Délai de 2 secondes après le changement de couleur
 
-    return () => clearTimeout(timer);
-  }, [signatureData.socialColors]);
+  //   return () => clearTimeout(timer);
+  // }, [signatureData.socialColors]);
 
   /**
    * Génération automatique quand les réseaux sociaux changent
+   * DÉSACTIVÉ : La génération se fait maintenant uniquement sur demande explicite
    */
-  useEffect(() => {
-    if (!signatureData.socialNetworks || isGenerating) return;
+  // useEffect(() => {
+  //   if (!signatureData.socialNetworks || isGenerating) return;
 
-    // Éviter les appels multiples avec la même donnée
-    const networksKey = JSON.stringify(signatureData.socialNetworks);
-    if (lastGenerationRef.current === networksKey) return;
+  //   // Éviter les appels multiples avec la même donnée
+  //   const networksKey = JSON.stringify(signatureData.socialNetworks);
+  //   if (lastGenerationRef.current === networksKey) return;
 
-    const timer = setTimeout(() => {
-      lastGenerationRef.current = networksKey;
-      generateCustomSocialIcons();
-    }, 1000); // Délai de 1 seconde après le changement d'URL
+  //   const timer = setTimeout(() => {
+  //     lastGenerationRef.current = networksKey;
+  //     generateCustomSocialIcons();
+  //   }, 1000); // Délai de 1 seconde après le changement d'URL
 
-    return () => clearTimeout(timer);
-  }, [signatureData.socialNetworks]);
+  //   return () => clearTimeout(timer);
+  // }, [signatureData.socialNetworks]);
 
   /**
    * Retourne l'URL de l'icône personnalisée ou l'URL par défaut

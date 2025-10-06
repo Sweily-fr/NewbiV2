@@ -108,6 +108,7 @@ const GET_EMAIL_SIGNATURE = gql`
       nameSpacing
       nameAlignment
       layout
+      orientation
       columnWidths {
         photo
         content
@@ -358,6 +359,7 @@ const SignatureManager = () => {
             nameSpacing: signature.nameSpacing || 8,
             nameAlignment: signature.nameAlignment || "left",
             layout: signature.layout || "vertical",
+            orientation: signature.orientation || signature.layout || "vertical",
             columnWidths: signature.columnWidths || { photo: 30, content: 70 },
 
             // Images
@@ -607,6 +609,8 @@ const SignatureManager = () => {
               signature.orientation || signature.layout || "vertical",
           };
 
+          console.log("🔄 [SignatureManager] Mapped typography data:", mappedData.typography);
+          console.log("🔄 [SignatureManager] Full mapped data:", mappedData);
           updateSignatureData(mappedData);
         }
       },

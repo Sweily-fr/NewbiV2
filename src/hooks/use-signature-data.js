@@ -211,6 +211,10 @@ function SignatureProviderContent({ children }) {
             "🔍 [SIGNATURE_DATA] Données récupérées via GraphQL:",
             signatureData
           );
+          console.log(
+            "🎯 [SIGNATURE_DATA] Orientation récupérée:",
+            signatureData.orientation
+          );
 
           // Transformer firstName + lastName en fullName pour compatibilité
           const transformedData = {

@@ -220,6 +220,61 @@ export function TabSignature({ existingSignatureId = null }) {
 
   const isLoading = creating || updating;
 
+  // Fonction pour valider et normaliser une couleur hex
+  const validateColor = (color) => {
+    if (!color) return "#171717"; // Couleur par défaut
+    
+    // Si c'est déjà au bon format
+    if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color)) {
+      return color;
+    }
+    
+    // Si c'est rgb(r, g, b), convertir en hex
+    const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (rgbMatch) {
+      const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
+      const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
+      const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
+      return `#${r}${g}${b}`;
+    }
+    
+    // Si c'est hsl(h, s%, l%), convertir en hex
+    const hslMatch = color.match(/hsl\(([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\)/);
+    if (hslMatch) {
+      const h = parseFloat(hslMatch[1]) / 360;
+      const s = parseFloat(hslMatch[2]) / 100;
+      const l = parseFloat(hslMatch[3]) / 100;
+      
+      const hslToRgb = (h, s, l) => {
+        let r, g, b;
+        if (s === 0) {
+          r = g = b = l;
+        } else {
+          const hue2rgb = (p, q, t) => {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+          };
+          const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+          const p = 2 * l - q;
+          r = hue2rgb(p, q, h + 1/3);
+          g = hue2rgb(p, q, h);
+          b = hue2rgb(p, q, h - 1/3);
+        }
+        return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+      };
+      
+      const [r, g, b] = hslToRgb(h, s, l);
+      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
+    
+    // Sinon, retourner la couleur par défaut
+    return "#171717";
+  };
+
   // Préparer les données pour l'API
   const prepareSignatureData = () => {
     // Extraire firstName et lastName du fullName si ils ne sont pas définis
@@ -248,6 +303,8 @@ export function TabSignature({ existingSignatureId = null }) {
       signatureName,
       isDefault,
       workspaceId, // Ajouter le workspaceId dans les données
+      // Orientation de la signature
+      orientation: signatureData.orientation || "vertical",
       // Informations personnelles
       firstName,
       lastName,
@@ -350,7 +407,74 @@ export function TabSignature({ existingSignatureId = null }) {
       // Couleur globale et taille des icônes sociales
       socialGlobalColor: signatureData.socialGlobalColor || null,
       socialSize: signatureData.socialSize || 24,
-      // Typographie
+      // Typographie détaillée pour chaque champ
+      typography: {
+        fullName: {
+          fontFamily: signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif",
+          fontSize: signatureData.typography?.fullName?.fontSize || 16,
+          color: validateColor(signatureData.typography?.fullName?.color),
+          fontWeight: signatureData.typography?.fullName?.fontWeight || "normal",
+          fontStyle: signatureData.typography?.fullName?.fontStyle || "normal",
+          textDecoration: signatureData.typography?.fullName?.textDecoration || "none",
+        },
+        position: {
+          fontFamily: signatureData.typography?.position?.fontFamily || "Arial, sans-serif",
+          fontSize: signatureData.typography?.position?.fontSize || 14,
+          color: validateColor(signatureData.typography?.position?.color),
+          fontWeight: signatureData.typography?.position?.fontWeight || "normal",
+          fontStyle: signatureData.typography?.position?.fontStyle || "normal",
+          textDecoration: signatureData.typography?.position?.textDecoration || "none",
+        },
+        company: {
+          fontFamily: signatureData.typography?.company?.fontFamily || "Arial, sans-serif",
+          fontSize: signatureData.typography?.company?.fontSize || 14,
+          color: validateColor(signatureData.typography?.company?.color),
+          fontWeight: signatureData.typography?.company?.fontWeight || "normal",
+          fontStyle: signatureData.typography?.company?.fontStyle || "normal",
+          textDecoration: signatureData.typography?.company?.textDecoration || "none",
+        },
+        email: {
+          fontFamily: signatureData.typography?.email?.fontFamily || "Arial, sans-serif",
+          fontSize: signatureData.typography?.email?.fontSize || 12,
+          color: validateColor(signatureData.typography?.email?.color),
+          fontWeight: signatureData.typography?.email?.fontWeight || "normal",
+          fontStyle: signatureData.typography?.email?.fontStyle || "normal",
+          textDecoration: signatureData.typography?.email?.textDecoration || "none",
+        },
+        phone: {
+          fontFamily: signatureData.typography?.phone?.fontFamily || "Arial, sans-serif",
+          fontSize: signatureData.typography?.phone?.fontSize || 12,
+          color: validateColor(signatureData.typography?.phone?.color),
+          fontWeight: signatureData.typography?.phone?.fontWeight || "normal",
+          fontStyle: signatureData.typography?.phone?.fontStyle || "normal",
+          textDecoration: signatureData.typography?.phone?.textDecoration || "none",
+        },
+        mobile: {
+          fontFamily: signatureData.typography?.mobile?.fontFamily || "Arial, sans-serif",
+          fontSize: signatureData.typography?.mobile?.fontSize || 12,
+          color: validateColor(signatureData.typography?.mobile?.color),
+          fontWeight: signatureData.typography?.mobile?.fontWeight || "normal",
+          fontStyle: signatureData.typography?.mobile?.fontStyle || "normal",
+          textDecoration: signatureData.typography?.mobile?.textDecoration || "none",
+        },
+        website: {
+          fontFamily: signatureData.typography?.website?.fontFamily || "Arial, sans-serif",
+          fontSize: signatureData.typography?.website?.fontSize || 12,
+          color: validateColor(signatureData.typography?.website?.color),
+          fontWeight: signatureData.typography?.website?.fontWeight || "normal",
+          fontStyle: signatureData.typography?.website?.fontStyle || "normal",
+          textDecoration: signatureData.typography?.website?.textDecoration || "none",
+        },
+        address: {
+          fontFamily: signatureData.typography?.address?.fontFamily || "Arial, sans-serif",
+          fontSize: signatureData.typography?.address?.fontSize || 12,
+          color: validateColor(signatureData.typography?.address?.color),
+          fontWeight: signatureData.typography?.address?.fontWeight || "normal",
+          fontStyle: signatureData.typography?.address?.fontStyle || "normal",
+          textDecoration: signatureData.typography?.address?.textDecoration || "none",
+        },
+      },
+      // Typographie ancienne structure (pour compatibilité)
       fontFamily: signatureData.fontFamily || "Arial, sans-serif",
       fontSize: {
         name: signatureData.fontSize?.name || 16,

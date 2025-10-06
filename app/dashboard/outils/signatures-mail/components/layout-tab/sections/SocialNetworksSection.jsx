@@ -26,7 +26,7 @@ const ALLOWED_SOCIAL_NETWORKS = [
   "github",
   "instagram",
   "linkedin",
-  "twitter",
+  "x",
   "youtube",
 ];
 
@@ -65,8 +65,11 @@ export default function SocialNetworksSection({
       color = null; // Utiliser l'icône par défaut si couleur invalide
     }
 
+    // Mapper "x" vers "twitter" pour les URLs
+    const platformName = socialNetwork === 'x' ? 'twitter' : socialNetwork;
+
     // Construction de l'URL
-    const baseUrl = `${ICONS_SOCIAL_URL}/social/${socialNetwork}/${socialNetwork}`;
+    const baseUrl = `${ICONS_SOCIAL_URL}/social/${platformName}/${platformName}`;
     const finalUrl = color ? `${baseUrl}-${color}.png` : `${baseUrl}.png`;
 
     return finalUrl;
@@ -149,7 +152,7 @@ export default function SocialNetworksSection({
     github: "GitHub",
     instagram: "Instagram",
     linkedin: "LinkedIn",
-    twitter: "Twitter/X",
+    x: "X (Twitter)",
     youtube: "YouTube",
   };
 
