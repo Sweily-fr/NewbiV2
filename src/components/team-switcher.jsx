@@ -56,19 +56,41 @@ export function TeamSwitcher() {
     // Éviter les changements multiples simultanés
     if (isChangingOrg) return;
 
+    // Ne rien faire si on clique sur l'organisation déjà active
+    if (activeOrganization?.id === organizationId) {
+      return;
+    }
+
     try {
       setIsChangingOrg(true);
-      console.log("🔄 Changement d'organisation - Vidage du cache...");
+      console.log("🔄 START - Changement d'organisation:", {
+        from: activeOrganization?.id,
+        to: organizationId,
+      });
 
-      // 1. Vider le cache Apollo avant de changer d'organisation
+      // 1. Changer d'organisation côté serveur
+      console.log("📡 Appel API set-active...");
+      const response = await fetch("/api/auth/organization/set-active", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ organizationId }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors du changement d'organisation");
+      }
+      console.log("✅ API set-active OK");
+
+      // 2. Vider le cache Apollo
+      console.log("🗑️ Vidage cache Apollo...");
       await apolloClient.clearStore();
-      console.log("✅ Cache vidé");
-
-      // 2. Changer d'organisation
-      await authClient.organization.setActive({ organizationId });
-      console.log("✅ Organisation changée");
+      console.log("✅ Cache Apollo vidé");
 
       // 3. Rafraîchir les abonnements
+      console.log("🔄 Rafraîchissement abonnements...");
       if (refreshDashboardSubscription) {
         await refreshDashboardSubscription();
       }
@@ -77,33 +99,17 @@ export function TeamSwitcher() {
       }
       console.log("✅ Abonnements rafraîchis");
 
-      // 4. Notification utilisateur
-      toast.success("Organisation changée avec succès");
+      // 4. Forcer Next.js à refetch les données server-side (sans rechargement de page)
+      console.log("🔄 Router refresh...");
+      router.refresh();
+      console.log("✅ Router refreshed");
 
-      // 5. Rediriger intelligemment selon la page actuelle
-      // Détecter si on est sur une page de détail (avec ID dans l'URL)
-      const detailPagePatterns = [
-        /\/kanban\/[a-f0-9]{24}/, // Kanban board
-        /\/factures\/[a-f0-9]{24}/, // Facture
-        /\/devis\/[a-f0-9]{24}/, // Devis
-        /\/transferts-fichiers\/[a-f0-9]{24}/, // Transfert
-        /\/signatures-mail\/[a-f0-9]{24}/, // Signature
-        /\/new$/, // Pages de création
-        /\/editer$/, // Pages d'édition
-      ];
-      
-      const isDetailPage = detailPagePatterns.some(pattern => pattern.test(pathname));
-      
-      if (isDetailPage) {
-        console.log("🔀 Redirection vers /dashboard/outils (page de détail détectée)");
-        router.push("/dashboard/outils");
-      } else {
-        // Rafraîchir la page actuelle sans rechargement complet
-        console.log("🔄 Rafraîchissement de la page actuelle");
-        router.refresh();
-      }
+      // 5. Notification
+      toast.success("Organisation changée");
+
+      console.log("✅ END - Changement terminé");
     } catch (error) {
-      console.error("Erreur changement d'organisation:", error);
+      console.error("❌ Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");
     } finally {
       setIsChangingOrg(false);
