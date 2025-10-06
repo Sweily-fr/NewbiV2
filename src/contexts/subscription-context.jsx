@@ -72,9 +72,13 @@ export function SubscriptionProvider({ children }) {
     }
   }, [session?.session?.activeOrganizationId, isHydrated]);
 
-  const refreshSubscription = () => {
+  const refreshSubscription = async () => {
     setLoading(true);
-    fetchSubscription();
+    await fetchSubscription();
+    // Rafraîchir aussi le trial
+    if (trial.refreshTrialStatus) {
+      await trial.refreshTrialStatus();
+    }
   };
 
   const hasFeature = (feature) => {

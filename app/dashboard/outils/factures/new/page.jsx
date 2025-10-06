@@ -3,12 +3,21 @@
 import { Suspense } from "react";
 import ModernInvoiceEditor from "../components/modern-invoice-editor";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function NewInvoicePage() {
+function NewInvoiceContent() {
   return (
     <Suspense fallback={<InvoiceEditorSkeleton />}>
       <ModernInvoiceEditor mode="create" />
     </Suspense>
+  );
+}
+
+export default function NewInvoicePage() {
+  return (
+    <ProRouteGuard pageName="Nouvelle facture">
+      <NewInvoiceContent />
+    </ProRouteGuard>
   );
 }
 

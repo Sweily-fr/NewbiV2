@@ -371,6 +371,8 @@ export function useInvoiceEditor({
     isDirty,
     errors,
     saveSettingsToOrganization,
+    invoice: existingInvoice,
+    error: loadingInvoice ? null : (!existingInvoice && mode !== "create"),
   };
 }
 

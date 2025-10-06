@@ -325,6 +325,7 @@ function DashboardContent() {
 }
 
 export default function Dashboard() {
+  // Le dashboard principal est accessible en mode Pro (trial ou payant)
   return (
     <ProRouteGuard pageName="Tableau de bord">
       <DashboardContent />

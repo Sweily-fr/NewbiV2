@@ -3,12 +3,21 @@
 import { Suspense } from "react";
 import ModernQuoteEditor from "../components/modern-quote-editor";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function NewQuotePage() {
+function NewQuoteContent() {
   return (
     <Suspense fallback={<QuoteEditorSkeleton />}>
       <ModernQuoteEditor mode="create" />
     </Suspense>
+  );
+}
+
+export default function NewQuotePage() {
+  return (
+    <ProRouteGuard pageName="Nouveau devis">
+      <NewQuoteContent />
+    </ProRouteGuard>
   );
 }
 

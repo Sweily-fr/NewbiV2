@@ -480,6 +480,10 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
     // Organization settings
     saveSettingsToOrganization,
+    
+    // Resource existence
+    quote: existingQuote,
+    error: loadingQuote ? null : (!existingQuote && mode !== "create"),
   };
 }
 

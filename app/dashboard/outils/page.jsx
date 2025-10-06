@@ -22,9 +22,13 @@ export default function Outils() {
   const { isActive, loading } = useSubscription();
   const { data: session } = useSession();
 
-  // Ouvrir le modal de pricing si le paramètre pricing=true est présent ET que l'utilisateur n'a pas d'abonnement actif
+  // Ouvrir le modal de pricing si le paramètre pricing=true ou access=restricted est présent
   useEffect(() => {
-    if (searchParams.get("pricing") === "true" && !isActive()) {
+    const shouldOpenPricing = 
+      (searchParams.get("pricing") === "true" && !isActive()) ||
+      (searchParams.get("access") === "restricted" && !isActive());
+    
+    if (shouldOpenPricing) {
       setIsPricingModalOpen(true);
     }
   }, [searchParams, isActive]);

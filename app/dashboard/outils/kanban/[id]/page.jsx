@@ -50,6 +50,8 @@ import { useKanbanTasks } from "./hooks/useKanbanTasks";
 import { useKanbanDnD } from "./hooks/useKanbanDnD";
 import { useKanbanSearch } from "./hooks/useKanbanSearch";
 import { useColumnCollapse } from "./hooks/useColumnCollapse";
+import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
+import { ResourceNotFound } from "@/src/components/resource-not-found";
 
 // Components
 import { KanbanColumn } from "./components/KanbanColumn";
@@ -91,11 +93,8 @@ export default function KanbanBoardPage({ params }) {
   const { id } = use(params);
 
   // Hooks
-  const { board, loading, error, refetch, getTasksByColumn } =
+  const { board, loading, error, refetch, getTasksByColumn, workspaceId } =
     useKanbanBoard(id);
-  
-  // Import workspaceId from useKanbanBoard hook
-  const { workspaceId } = useKanbanBoard(id);
 
   const {
     isAddColumnOpen,
@@ -170,8 +169,25 @@ export default function KanbanBoardPage({ params }) {
     collapsedColumnsCount,
   } = useColumnCollapse(id);
 
-  // La gestion du chargement et des erreurs est gérée par les fichiers spéciaux Next.js
-  // loading.jsx et error.jsx dans ce même dossier
+  // Détecter les changements d'organisation et rediriger si nécessaire
+  useOrganizationChange({
+    resourceId: id,
+    resourceExists: !!board && !error,
+    listUrl: "/dashboard/outils/kanban",
+    enabled: !loading,
+  });
+
+  // Gérer le cas où le board n'existe pas (changement d'organisation)
+  if (!loading && !board && !error) {
+    return (
+      <ResourceNotFound
+        resourceType="tableau"
+        resourceName="Ce tableau Kanban"
+        listUrl="/dashboard/outils/kanban"
+        homeUrl="/dashboard/outils"
+      />
+    );
+  }
 
   // Vérifier que les données sont chargées
   if (!board) {

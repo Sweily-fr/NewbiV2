@@ -4,6 +4,7 @@ import * as React from "react";
 import { ChevronsUpDown, Plus, Crown, Settings, Users } from "lucide-react";
 import { IconBuilding } from "@tabler/icons-react";
 import { authClient } from "@/src/lib/auth-client";
+import { useSubscription as useSubscriptionContext } from "@/src/contexts/subscription-context";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -12,7 +13,7 @@ import InviteMembers from "../../app/dashboard/collaborateurs/components/invite-
 import { SettingsModal } from "./settings-modal";
 import { apolloClient } from "@/src/lib/apolloClient";
 import { toast } from "@/src/components/ui/sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 // app/dashboard/collaborateurs/components/invite-members
 import {
   DropdownMenu,
@@ -32,8 +33,12 @@ import {
 
 export function TeamSwitcher() {
   const { isMobile } = useSidebar();
-  const { isActive } = useSubscription();
+  const { isActive, refreshSubscription: refreshDashboardSubscription } =
+    useSubscription();
+  const { refreshSubscription: refreshGlobalSubscription } =
+    useSubscriptionContext();
   const router = useRouter();
+  const pathname = usePathname();
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
   const [settingsInitialTab, setSettingsInitialTab] =
@@ -50,26 +55,53 @@ export function TeamSwitcher() {
   const handleSetActiveOrganization = async (organizationId) => {
     // Éviter les changements multiples simultanés
     if (isChangingOrg) return;
-    
+
     try {
       setIsChangingOrg(true);
       console.log("🔄 Changement d'organisation - Vidage du cache...");
-      
+
       // 1. Vider le cache Apollo avant de changer d'organisation
       await apolloClient.clearStore();
       console.log("✅ Cache vidé");
-      
+
       // 2. Changer d'organisation
       await authClient.organization.setActive({ organizationId });
       console.log("✅ Organisation changée");
-      
-      // 3. Notification utilisateur
+
+      // 3. Rafraîchir les abonnements
+      if (refreshDashboardSubscription) {
+        await refreshDashboardSubscription();
+      }
+      if (refreshGlobalSubscription) {
+        await refreshGlobalSubscription();
+      }
+      console.log("✅ Abonnements rafraîchis");
+
+      // 4. Notification utilisateur
       toast.success("Organisation changée avec succès");
 
-      // 4. Rafraîchir la route actuelle sans recharger la page
-      // Next.js va refetch les données côté serveur avec la nouvelle organisation
-      router.refresh();
+      // 5. Rediriger intelligemment selon la page actuelle
+      // Détecter si on est sur une page de détail (avec ID dans l'URL)
+      const detailPagePatterns = [
+        /\/kanban\/[a-f0-9]{24}/, // Kanban board
+        /\/factures\/[a-f0-9]{24}/, // Facture
+        /\/devis\/[a-f0-9]{24}/, // Devis
+        /\/transferts-fichiers\/[a-f0-9]{24}/, // Transfert
+        /\/signatures-mail\/[a-f0-9]{24}/, // Signature
+        /\/new$/, // Pages de création
+        /\/editer$/, // Pages d'édition
+      ];
       
+      const isDetailPage = detailPagePatterns.some(pattern => pattern.test(pathname));
+      
+      if (isDetailPage) {
+        console.log("🔀 Redirection vers /dashboard/outils (page de détail détectée)");
+        router.push("/dashboard/outils");
+      } else {
+        // Rafraîchir la page actuelle sans rechargement complet
+        console.log("🔄 Rafraîchissement de la page actuelle");
+        router.refresh();
+      }
     } catch (error) {
       console.error("Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");

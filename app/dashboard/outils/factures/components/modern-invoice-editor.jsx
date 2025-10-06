@@ -22,6 +22,8 @@ import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
+import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
+import { ResourceNotFound } from "@/src/components/resource-not-found";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -60,12 +62,34 @@ export default function ModernInvoiceEditor({
     isDirty,
     errors,
     saveSettingsToOrganization,
+    invoice: loadedInvoice,
+    error: invoiceError,
   } = useInvoiceEditor({
     mode,
     invoiceId,
     initialData,
     organization,
   });
+
+  // Détecter les changements d'organisation pour les modes edit/view
+  useOrganizationChange({
+    resourceId: invoiceId,
+    resourceExists: mode === "create" ? true : (!!loadedInvoice && !invoiceError),
+    listUrl: "/dashboard/outils/factures",
+    enabled: mode !== "create" && !loading,
+  });
+
+  // Afficher un message si la facture n'existe pas (après changement d'organisation)
+  if (mode !== "create" && !loading && !loadedInvoice && invoiceError) {
+    return (
+      <ResourceNotFound
+        resourceType="facture"
+        resourceName="Cette facture"
+        listUrl="/dashboard/outils/factures"
+        homeUrl="/dashboard/outils"
+      />
+    );
+  }
 
   const isReadOnly = mode === "view";
   const isEditing = mode === "edit";

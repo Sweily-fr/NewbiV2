@@ -22,6 +22,8 @@ import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
+import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
+import { ResourceNotFound } from "@/src/components/resource-not-found";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -45,11 +47,33 @@ export default function ModernQuoteEditor({
     validateQuoteNumber,
     hasExistingQuotes,
     saveSettingsToOrganization,
+    quote: loadedQuote,
+    error: quoteError,
   } = useQuoteEditor({
     mode,
     quoteId,
     initialData,
   });
+
+  // Détecter les changements d'organisation pour les modes edit/view
+  useOrganizationChange({
+    resourceId: quoteId,
+    resourceExists: mode === "create" ? true : (!!loadedQuote && !quoteError),
+    listUrl: "/dashboard/outils/devis",
+    enabled: mode !== "create" && !loading,
+  });
+
+  // Afficher un message si le devis n'existe pas (après changement d'organisation)
+  if (mode !== "create" && !loading && !loadedQuote && quoteError) {
+    return (
+      <ResourceNotFound
+        resourceType="devis"
+        resourceName="Ce devis"
+        listUrl="/dashboard/outils/devis"
+        homeUrl="/dashboard/outils"
+      />
+    );
+  }
 
   const isReadOnly = mode === "view";
   const isEditing = mode === "edit";

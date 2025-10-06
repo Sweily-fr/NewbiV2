@@ -70,6 +70,7 @@ function InvoicesContent() {
 }
 
 export default function InvoicesPage() {
+  // Page liste des factures - accessible en Pro
   return (
     <ProRouteGuard pageName="Factures">
       <InvoicesContent />

@@ -70,6 +70,7 @@ function QuotesContent() {
 }
 
 export default function QuotesPage() {
+  // Page liste des devis - accessible en Pro
   return (
     <ProRouteGuard pageName="Devis">
       <QuotesContent />

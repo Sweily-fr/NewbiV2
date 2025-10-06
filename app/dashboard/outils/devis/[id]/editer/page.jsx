@@ -2,8 +2,9 @@
 
 import { useParams } from "next/navigation";
 import ModernQuoteEditor from "../../components/modern-quote-editor";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function EditQuotePage() {
+function EditQuoteContent() {
   const params = useParams();
   const quoteId = params.id;
 
@@ -12,5 +13,13 @@ export default function EditQuotePage() {
       mode="edit" 
       quoteId={quoteId}
     />
+  );
+}
+
+export default function EditQuotePage() {
+  return (
+    <ProRouteGuard pageName="Éditer devis">
+      <EditQuoteContent />
+    </ProRouteGuard>
   );
 }

@@ -10,6 +10,18 @@ const PROTECTED_ROUTES = [
   '/api/ocr',
 ];
 
+// Routes qui nécessitent spécifiquement un abonnement Pro (pas accessible en Free)
+const PRO_ONLY_ROUTES = [
+  '/dashboard/outils/factures',
+  '/dashboard/outils/devis',
+  '/dashboard/outils/clients',
+  '/dashboard/outils/produits',
+  '/dashboard/outils/gestion-depenses',
+  '/dashboard/outils/kanban',
+  '/dashboard/outils/transferts-fichiers',
+  '/dashboard/outils/signatures-mail',
+];
+
 // Routes exclues de la vérification d'abonnement
 const EXCLUDED_ROUTES = [
   '/auth',

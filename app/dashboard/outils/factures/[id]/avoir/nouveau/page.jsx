@@ -2,8 +2,9 @@
 
 import { useParams } from "next/navigation";
 import ModernCreditNoteEditor from "../../../components/modern-credit-note-editor";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function NewCreditNotePage() {
+function NewCreditNoteContent() {
   const params = useParams();
   const invoiceId = params.id;
 
@@ -12,5 +13,13 @@ export default function NewCreditNotePage() {
       mode="create"
       invoiceId={invoiceId}
     />
+  );
+}
+
+export default function NewCreditNotePage() {
+  return (
+    <ProRouteGuard pageName="Nouvel avoir">
+      <NewCreditNoteContent />
+    </ProRouteGuard>
   );
 }

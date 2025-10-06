@@ -1,8 +1,9 @@
 "use client";
 
 import FileUploadNew from "../components/file-upload-new";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function NewTransfertsFichiers() {
+function NewTransfertsContent() {
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
       <div className="w-full">
@@ -18,5 +19,13 @@ export default function NewTransfertsFichiers() {
         <FileUploadNew />
       </div>
     </div>
+  );
+}
+
+export default function NewTransfertsFichiers() {
+  return (
+    <ProRouteGuard pageName="Nouveau transfert">
+      <NewTransfertsContent />
+    </ProRouteGuard>
   );
 }

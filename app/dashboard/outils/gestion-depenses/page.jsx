@@ -156,6 +156,7 @@ function GestionDepensesContent() {
 }
 
 export default function GestionDepenses() {
+  // Page gestion des dépenses - accessible en Pro
   return (
     <ProRouteGuard pageName="Gestion des dépenses">
       <GestionDepensesContent />

@@ -4,8 +4,9 @@ import { Suspense } from "react";
 import { use } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import ModernInvoiceEditor from "../../components/modern-invoice-editor";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
-export default function EditInvoicePage({ params }) {
+function EditInvoiceContent({ params }) {
   const { id } = use(params);
 
   return (
@@ -14,6 +15,14 @@ export default function EditInvoicePage({ params }) {
         <ModernInvoiceEditor mode="edit" invoiceId={id} />
       </Suspense>
     </div>
+  );
+}
+
+export default function EditInvoicePage({ params }) {
+  return (
+    <ProRouteGuard pageName="Éditer facture">
+      <EditInvoiceContent params={params} />
+    </ProRouteGuard>
   );
 }
 

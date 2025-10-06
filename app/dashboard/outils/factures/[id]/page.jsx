@@ -14,8 +14,11 @@ import {
 import ModernInvoiceEditor from "../components/modern-invoice-editor";
 import { useRouter, useParams } from "next/navigation";
 import { useInvoice } from "@/src/graphql/invoiceQueries";
+import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
+import { ResourceNotFound } from "@/src/components/resource-not-found";
 
-export default function InvoiceDetailsPage() {
+function InvoiceDetailsContent() {
   const router = useRouter();
   const params = useParams();
   const invoiceId = params.id;
@@ -26,21 +29,26 @@ export default function InvoiceDetailsPage() {
     router.push("/dashboard/outils/factures");
   };
 
+  // Détecter les changements d'organisation et rediriger si nécessaire
+  useOrganizationChange({
+    resourceId: invoiceId,
+    resourceExists: !!invoice && !error,
+    listUrl: "/dashboard/outils/factures",
+    enabled: !loading,
+  });
+
   if (loading) {
     return <InvoiceDetailsSkeleton />;
   }
 
   if (error || !invoice) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold">Facture introuvable</h2>
-          <p className="text-muted-foreground mb-4">
-            Cette facture n'existe pas ou a été supprimée.
-          </p>
-          <Button onClick={handleBack}>Retour aux factures</Button>
-        </div>
-      </div>
+      <ResourceNotFound
+        resourceType="facture"
+        resourceName="Cette facture"
+        listUrl="/dashboard/outils/factures"
+        homeUrl="/dashboard/outils"
+      />
     );
   }
 
@@ -116,6 +124,14 @@ export default function InvoiceDetailsPage() {
         />
       </Suspense>
     </div>
+  );
+}
+
+export default function InvoiceDetailsPage() {
+  return (
+    <ProRouteGuard pageName="Détails facture">
+      <InvoiceDetailsContent />
+    </ProRouteGuard>
   );
 }
 
