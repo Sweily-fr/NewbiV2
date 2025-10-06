@@ -20,6 +20,16 @@ import {
 export const auth = betterAuth({
   database: mongodbAdapter(mongoDb),
   appName: "Newbi",
+  
+  // Cookie Cache pour optimiser les performances
+  // Évite les requêtes DB à chaque useSession() ou useActiveOrganization()
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // Cache de 5 minutes
+    },
+  },
+  
   plugins: [
     jwt(),
     adminPlugin,

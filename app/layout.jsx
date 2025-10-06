@@ -68,7 +68,36 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('vite-ui-theme') || 'dark';
+                  const isDashboard = window.location.pathname.startsWith('/dashboard');
+                  
+                  if (!isDashboard) {
+                    document.documentElement.classList.add('light');
+                    return;
+                  }
+                  
+                  if (theme === 'system') {
+                    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    document.documentElement.classList.add(systemTheme);
+                  } else {
+                    document.documentElement.classList.add(theme);
+                  }
+                } catch (e) {
+                  // Fallback en cas d'erreur
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased">
         <ApolloWrapper>
           <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">

@@ -44,12 +44,19 @@ export function TeamSwitcher() {
   const [settingsInitialTab, setSettingsInitialTab] =
     React.useState("preferences");
   const [isChangingOrg, setIsChangingOrg] = React.useState(false);
+  const [forceUpdate, setForceUpdate] = React.useState(0);
 
   // Utiliser les hooks Better Auth pour récupérer les organisations
-  const { data: organizations, isPending: organizationsLoading } =
-    authClient.useListOrganizations();
-  const { data: activeOrganization, isPending: activeLoading } =
-    authClient.useActiveOrganization();
+  const {
+    data: organizations,
+    isPending: organizationsLoading,
+    refetch: refetchOrgs,
+  } = authClient.useListOrganizations();
+  const {
+    data: activeOrganization,
+    isPending: activeLoading,
+    refetch: refetchActiveOrg,
+  } = authClient.useActiveOrganization();
 
   // Fonction pour changer d'organisation active
   const handleSetActiveOrganization = async (organizationId) => {
@@ -63,34 +70,64 @@ export function TeamSwitcher() {
 
     try {
       setIsChangingOrg(true);
-      console.log("🔄 START - Changement d'organisation:", {
-        from: activeOrganization?.id,
+      const oldWorkspaceId = activeOrganization?.id;
+      console.log("🔄 Changement d'organisation:", {
+        from: oldWorkspaceId,
         to: organizationId,
       });
 
-      // 1. Changer d'organisation côté serveur
-      console.log("📡 Appel API set-active...");
-      const response = await fetch("/api/auth/organization/set-active", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      // 1. Changer d'organisation côté serveur avec Better Auth client
+      // Utiliser le client Better Auth au lieu de fetch pour éviter le rechargement
+      await authClient.organization.setActive({
+        organizationId,
+        fetchOptions: {
+          // Désactiver le rechargement automatique
+          onSuccess: () => {
+            console.log("✅ Organisation changée côté serveur");
+          },
+          onError: (error) => {
+            console.error("❌ Erreur:", error);
+            throw error;
+          },
         },
-        body: JSON.stringify({ organizationId }),
-        credentials: "include",
       });
 
-      if (!response.ok) {
-        throw new Error("Erreur lors du changement d'organisation");
+      // 2. Nettoyer le LocalStorage de l'ancienne organisation
+      if (oldWorkspaceId) {
+        const oldCacheKey = `dashboard-data-${oldWorkspaceId}`;
+        localStorage.removeItem(oldCacheKey);
+        console.log(`🗑️ Cache LocalStorage supprimé: ${oldCacheKey}`);
       }
-      console.log("✅ API set-active OK");
 
-      // 2. Vider le cache Apollo
-      console.log("🗑️ Vidage cache Apollo...");
-      await apolloClient.clearStore();
-      console.log("✅ Cache Apollo vidé");
+      // 3. Vider sélectivement le cache Apollo (pas clearStore qui vide TOUT)
+      console.log("🗑️ Vidage sélectif du cache Apollo...");
+      if (oldWorkspaceId) {
+        // Évict uniquement les queries de l'ancienne organisation
+        apolloClient.cache.evict({
+          id: "ROOT_QUERY",
+          fieldName: "getInvoices",
+          args: { workspaceId: oldWorkspaceId },
+        });
+        apolloClient.cache.evict({
+          id: "ROOT_QUERY",
+          fieldName: "getQuotes",
+          args: { workspaceId: oldWorkspaceId },
+        });
+        apolloClient.cache.evict({
+          id: "ROOT_QUERY",
+          fieldName: "getClients",
+          args: { workspaceId: oldWorkspaceId },
+        });
+        apolloClient.cache.evict({
+          id: "ROOT_QUERY",
+          fieldName: "getExpenses",
+          args: { workspaceId: oldWorkspaceId },
+        });
+        apolloClient.cache.gc(); // Garbage collection
+        console.log("✅ Cache Apollo nettoyé (sélectif)");
+      }
 
-      // 3. Rafraîchir les abonnements
-      console.log("🔄 Rafraîchissement abonnements...");
+      // 4. Rafraîchir les abonnements
       if (refreshDashboardSubscription) {
         await refreshDashboardSubscription();
       }
@@ -99,15 +136,23 @@ export function TeamSwitcher() {
       }
       console.log("✅ Abonnements rafraîchis");
 
-      // 4. Forcer Next.js à refetch les données server-side (sans rechargement de page)
-      console.log("🔄 Router refresh...");
-      router.refresh();
-      console.log("✅ Router refreshed");
+      // 5. Forcer le refetch des hooks Better Auth
+      console.log("🔄 Refetch des hooks Better Auth...");
+      if (refetchActiveOrg) {
+        await refetchActiveOrg();
+      }
+      if (refetchOrgs) {
+        await refetchOrgs();
+      }
 
-      // 5. Notification
+      // Forcer un re-render du composant
+      setForceUpdate((prev) => prev + 1);
+      console.log("✅ Hooks Better Auth rafraîchis");
+
+      // 6. Notification
       toast.success("Organisation changée");
 
-      console.log("✅ END - Changement terminé");
+      console.log("✅ Changement terminé sans rechargement");
     } catch (error) {
       console.error("❌ Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");
