@@ -5,7 +5,9 @@ import Image from "next/image";
 import DynamicSocialLogo from "./DynamicSocialLogo";
 import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
+import { getTypographyStyles } from "../utils/typography-styles";
 import "@/src/styles/signature-text-selection.css";
+import "./signature-preview.css";
 
 // Fonction utilitaire pour convertir hex en HSL et calculer la rotation de teinte
 const hexToHsl = (hex) => {
@@ -70,7 +72,7 @@ const hexToRgb = (hex) => {
     : null;
 };
 
-const HorizontalSignature = React.memo(({
+const HorizontalSignature = ({
   signatureData,
   handleFieldChange,
   handleImageChange,
@@ -83,8 +85,17 @@ const HorizontalSignature = React.memo(({
   const spacings = signatureData.spacings ?? {};
 
   // Liste des réseaux sociaux disponibles
-  // Fonction pour obtenir l'URL de l'icône avec le nouveau CDN R2 (mémoïsée)
-  const getSocialIconUrl = React.useMemo(() => (platform) => {
+  const availableSocialNetworks = [
+    { key: "linkedin", label: "LinkedIn" },
+    { key: "facebook", label: "Facebook" },
+    { key: "instagram", label: "Instagram" },
+    { key: "x", label: "X (Twitter)" },
+    { key: "youtube", label: "YouTube" },
+    { key: "github", label: "GitHub" },
+  ];
+
+  // Fonction pour obtenir l'URL de l'icône avec le nouveau CDN R2
+  const getSocialIconUrl = (platform) => {
     // Utiliser l'icône personnalisée si disponible
     if (signatureData.customSocialIcons?.[platform]) {
       return signatureData.customSocialIcons[platform];
@@ -114,6 +125,7 @@ const HorizontalSignature = React.memo(({
       linkedin: 'blue',
       facebook: 'blue',
       instagram: 'pink',
+      x: 'black',
       twitter: 'black',
       github: 'black',
       youtube: 'red'
@@ -135,22 +147,25 @@ const HorizontalSignature = React.memo(({
     }
     
     // Construction de l'URL avec couleur
-    const iconName = color ? `${platform}-${color}` : platform;
-    return `${baseUrl}/${platform}/${iconName}.png`;
-  }, [signatureData.socialGlobalColor, signatureData.socialColors, signatureData.customSocialIcons]);
+    // Utiliser "twitter" au lieu de "x" pour les URLs
+    const platformName = platform === 'x' ? 'twitter' : platform;
+    const iconName = color ? `${platformName}-${color}` : platformName;
+    return `${baseUrl}/${platformName}/${iconName}.png`;
+  };
 
   return (
     <table
-      cellPadding="0"
       cellSpacing="0"
       border="0"
       style={{
         borderCollapse: "collapse",
         maxWidth: "500px",
         fontFamily: "Arial, sans-serif",
+        margin: "0",
       }}
+      className="signature-preview"
     >
-      <tbody>
+    <tbody>
         <tr>
           {/* Photo de profil à gauche */}
           <td
@@ -281,25 +296,13 @@ const HorizontalSignature = React.memo(({
                   >
                     <div
                       style={{
-                        fontSize: `${signatureData.typography?.fullName?.fontSize || signatureData.fontSize?.name || 16}px`,
-                        fontWeight:
-                          signatureData.typography?.fullName?.fontWeight ||
-                          "bold",
-                        fontStyle:
-                          signatureData.typography?.fullName?.fontStyle ||
-                          "normal",
-                        textDecoration:
-                          signatureData.typography?.fullName?.textDecoration ||
-                          "none",
-                        color:
-                          signatureData.typography?.fullName?.color ||
-                          signatureData.primaryColor ||
-                          "#171717",
+                        ...getTypographyStyles(signatureData.typography?.fullName, {
+                          fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                          fontSize: signatureData.fontSize?.name || 16,
+                          fontWeight: "bold",
+                          color: signatureData.primaryColor || "#171717",
+                        }),
                         lineHeight: "1.2",
-                        fontFamily:
-                          signatureData.typography?.fullName?.fontFamily ||
-                          signatureData.fontFamily ||
-                          "Arial, sans-serif",
                       }}
                     >
                       <InlineEdit
@@ -339,24 +342,11 @@ const HorizontalSignature = React.memo(({
                     <td
                       colSpan="2"
                       style={{
-                        fontSize: `${signatureData.typography?.position?.fontSize || signatureData.fontSize?.position || 14}px`,
-                        color:
-                          signatureData.typography?.position?.color ||
-                          signatureData.colors?.position ||
-                          "#666666",
-                        fontFamily:
-                          signatureData.typography?.position?.fontFamily ||
-                          signatureData.fontFamily ||
-                          "Arial, sans-serif",
-                        fontWeight:
-                          signatureData.typography?.position?.fontWeight ||
-                          "normal",
-                        fontStyle:
-                          signatureData.typography?.position?.fontStyle ||
-                          "normal",
-                        textDecoration:
-                          signatureData.typography?.position?.textDecoration ||
-                          "none",
+                        ...getTypographyStyles(signatureData.typography?.position, {
+                          fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                          fontSize: signatureData.fontSize?.position || 14,
+                          color: signatureData.colors?.position || "#666666",
+                        }),
                         paddingTop: "2px",
                         paddingBottom: `${signatureData.spacings?.positionBottom ?? 4}px`,
                       }}
@@ -400,24 +390,11 @@ const HorizontalSignature = React.memo(({
                     <td
                       colSpan="2"
                       style={{
-                        fontSize: `${signatureData.typography?.company?.fontSize || signatureData.fontSize?.company || 14}px`,
-                        color:
-                          signatureData.typography?.company?.color ||
-                          signatureData.colors?.company ||
-                          "#2563eb",
-                        fontFamily:
-                          signatureData.typography?.company?.fontFamily ||
-                          signatureData.fontFamily ||
-                          "Arial, sans-serif",
-                        fontWeight:
-                          signatureData.typography?.company?.fontWeight ||
-                          "normal",
-                        fontStyle:
-                          signatureData.typography?.company?.fontStyle ||
-                          "normal",
-                        textDecoration:
-                          signatureData.typography?.company?.textDecoration ||
-                          "none",
+                        ...getTypographyStyles(signatureData.typography?.company, {
+                          fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                          fontSize: signatureData.fontSize?.company || 14,
+                          color: signatureData.colors?.company || "#2563eb",
+                        }),
                         paddingTop: "2px",
                         paddingBottom: `${signatureData.spacings?.companyBottom ?? 8}px`,
                       }}
@@ -495,24 +472,11 @@ const HorizontalSignature = React.memo(({
                             </td>
                             <td
                               style={{
-                                fontSize: `${signatureData.typography?.phone?.fontSize || signatureData.fontSize?.contact || 12}px`,
-                                color:
-                                  signatureData.typography?.phone?.color ||
-                                  signatureData.colors?.contact ||
-                                  "rgb(102,102,102)",
-                                fontFamily:
-                                  signatureData.typography?.phone?.fontFamily ||
-                                  signatureData.fontFamily ||
-                                  "Arial, sans-serif",
-                                fontWeight:
-                                  signatureData.typography?.phone?.fontWeight ||
-                                  "normal",
-                                fontStyle:
-                                  signatureData.typography?.phone?.fontStyle ||
-                                  "normal",
-                                textDecoration:
-                                  signatureData.typography?.phone
-                                    ?.textDecoration || "none",
+                                ...getTypographyStyles(signatureData.typography?.phone, {
+                                  fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                                  fontSize: signatureData.fontSize?.contact || 12,
+                                  color: signatureData.colors?.contact || "rgb(102,102,102)",
+                                }),
                                 verticalAlign: "middle",
                               }}
                             >
@@ -594,25 +558,11 @@ const HorizontalSignature = React.memo(({
                             </td>
                             <td
                               style={{
-                                fontSize: `${signatureData.typography?.mobile?.fontSize || signatureData.fontSize?.contact || 12}px`,
-                                color:
-                                  signatureData.typography?.mobile?.color ||
-                                  signatureData.colors?.contact ||
-                                  "rgb(102,102,102)",
-                                fontFamily:
-                                  signatureData.typography?.mobile
-                                    ?.fontFamily ||
-                                  signatureData.fontFamily ||
-                                  "Arial, sans-serif",
-                                fontWeight:
-                                  signatureData.typography?.mobile
-                                    ?.fontWeight || "normal",
-                                fontStyle:
-                                  signatureData.typography?.mobile?.fontStyle ||
-                                  "normal",
-                                textDecoration:
-                                  signatureData.typography?.mobile
-                                    ?.textDecoration || "none",
+                                ...getTypographyStyles(signatureData.typography?.mobile, {
+                                  fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                                  fontSize: signatureData.fontSize?.contact || 12,
+                                  color: signatureData.colors?.contact || "rgb(102,102,102)",
+                                }),
                                 verticalAlign: "middle",
                               }}
                             >
@@ -694,24 +644,11 @@ const HorizontalSignature = React.memo(({
                             </td>
                             <td
                               style={{
-                                fontSize: `${signatureData.typography?.email?.fontSize || signatureData.fontSize?.contact || 12}px`,
-                                color:
-                                  signatureData.typography?.email?.color ||
-                                  signatureData.colors?.contact ||
-                                  "rgb(102,102,102)",
-                                fontFamily:
-                                  signatureData.typography?.email?.fontFamily ||
-                                  signatureData.fontFamily ||
-                                  "Arial, sans-serif",
-                                fontWeight:
-                                  signatureData.typography?.email?.fontWeight ||
-                                  "normal",
-                                fontStyle:
-                                  signatureData.typography?.email?.fontStyle ||
-                                  "normal",
-                                textDecoration:
-                                  signatureData.typography?.email
-                                    ?.textDecoration || "none",
+                                ...getTypographyStyles(signatureData.typography?.email, {
+                                  fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                                  fontSize: signatureData.fontSize?.contact || 12,
+                                  color: signatureData.colors?.contact || "rgb(102,102,102)",
+                                }),
                                 verticalAlign: "middle",
                               }}
                             >
@@ -793,25 +730,11 @@ const HorizontalSignature = React.memo(({
                             </td>
                             <td
                               style={{
-                                fontSize: `${signatureData.typography?.website?.fontSize || signatureData.fontSize?.contact || 12}px`,
-                                color:
-                                  signatureData.typography?.website?.color ||
-                                  signatureData.colors?.contact ||
-                                  "rgb(102,102,102)",
-                                fontFamily:
-                                  signatureData.typography?.website
-                                    ?.fontFamily ||
-                                  signatureData.fontFamily ||
-                                  "Arial, sans-serif",
-                                fontWeight:
-                                  signatureData.typography?.website
-                                    ?.fontWeight || "normal",
-                                fontStyle:
-                                  signatureData.typography?.website
-                                    ?.fontStyle || "normal",
-                                textDecoration:
-                                  signatureData.typography?.website
-                                    ?.textDecoration || "none",
+                                ...getTypographyStyles(signatureData.typography?.website, {
+                                  fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                                  fontSize: signatureData.fontSize?.contact || 12,
+                                  color: signatureData.colors?.contact || "rgb(102,102,102)",
+                                }),
                                 verticalAlign: "middle",
                               }}
                             >
@@ -894,25 +817,11 @@ const HorizontalSignature = React.memo(({
                             </td>
                             <td
                               style={{
-                                fontSize: `${signatureData.typography?.address?.fontSize || signatureData.fontSize?.contact || 12}px`,
-                                color:
-                                  signatureData.typography?.address?.color ||
-                                  signatureData.colors?.contact ||
-                                  "rgb(102,102,102)",
-                                fontFamily:
-                                  signatureData.typography?.address
-                                    ?.fontFamily ||
-                                  signatureData.fontFamily ||
-                                  "Arial, sans-serif",
-                                fontWeight:
-                                  signatureData.typography?.address
-                                    ?.fontWeight || "normal",
-                                fontStyle:
-                                  signatureData.typography?.address
-                                    ?.fontStyle || "normal",
-                                textDecoration:
-                                  signatureData.typography?.address
-                                    ?.textDecoration || "none",
+                                ...getTypographyStyles(signatureData.typography?.address, {
+                                  fontFamily: signatureData.fontFamily || "Arial, sans-serif",
+                                  fontSize: signatureData.fontSize?.contact || 12,
+                                  color: signatureData.colors?.contact || "rgb(102,102,102)",
+                                }),
                                 verticalAlign: "top",
                               }}
                             >
@@ -994,6 +903,7 @@ const HorizontalSignature = React.memo(({
                   color: "#9ca3af",
                   fontSize: "10px",
                   userSelect: "none",
+                  margin: "0",
                 }}
                 aria-label="Logo entreprise (upload désactivé)"
                 title="Upload de logo désactivé"
@@ -1084,8 +994,6 @@ const HorizontalSignature = React.memo(({
       </tbody>
     </table>
   );
-});
-
-HorizontalSignature.displayName = 'HorizontalSignature';
+};
 
 export default HorizontalSignature;
