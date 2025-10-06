@@ -160,13 +160,19 @@ export function TabSignature({ existingSignatureId = null }) {
     }
   }, [signatureData.signatureName, signatureData.isDefault]);
 
-  const [createSignature, { loading: creating }] = useMutation(
+  const [createSignature, { loading: creating, client }] = useMutation(
     CREATE_EMAIL_SIGNATURE,
     {
       refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES }],
+      awaitRefetchQueries: true,
       onCompleted: (data) => {
         setSaveStatus("success");
         toast.success("Signature créée avec succès !");
+        
+        // Invalider tout le cache des signatures pour forcer le rechargement
+        client.cache.evict({ fieldName: "getMyEmailSignatures" });
+        client.cache.evict({ fieldName: "getEmailSignature" });
+        client.cache.gc();
 
         // Redirection après un court délai pour laisser voir la notification
         setTimeout(() => {
@@ -185,12 +191,18 @@ export function TabSignature({ existingSignatureId = null }) {
     }
   );
 
-  const [updateSignature, { loading: updating }] = useMutation(
+  const [updateSignature, { loading: updating, client: updateClient }] = useMutation(
     UPDATE_EMAIL_SIGNATURE,
     {
       refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES }],
+      awaitRefetchQueries: true,
       onCompleted: (data) => {
         toast.success("Signature mise à jour avec succès !");
+        
+        // Invalider tout le cache des signatures pour forcer le rechargement
+        updateClient.cache.evict({ fieldName: "getMyEmailSignatures" });
+        updateClient.cache.evict({ fieldName: "getEmailSignature" });
+        updateClient.cache.gc();
 
         // Redirection après un court délai pour laisser voir la notification
         setTimeout(() => {
@@ -326,6 +338,18 @@ export function TabSignature({ existingSignatureId = null }) {
 
         return networks;
       })(),
+      // Couleurs personnalisées pour chaque réseau social (noms de couleurs)
+      socialColors: {
+        facebook: signatureData.socialColors?.facebook || null,
+        instagram: signatureData.socialColors?.instagram || null,
+        linkedin: signatureData.socialColors?.linkedin || null,
+        x: signatureData.socialColors?.x || null,
+        github: signatureData.socialColors?.github || null,
+        youtube: signatureData.socialColors?.youtube || null,
+      },
+      // Couleur globale et taille des icônes sociales
+      socialGlobalColor: signatureData.socialGlobalColor || null,
+      socialSize: signatureData.socialSize || 24,
       // Typographie
       fontFamily: signatureData.fontFamily || "Arial, sans-serif",
       fontSize: {
@@ -350,11 +374,7 @@ export function TabSignature({ existingSignatureId = null }) {
     // Nettoyer les données pour supprimer tous les champs __typename
     const finalData = cleanGraphQLData(rawData);
 
-    console.log("🔍 [SAVE] Données nettoyées avant envoi:", finalData);
-    console.log("🎨 [SAVE] Couleurs des séparateurs:", {
-      vertical: finalData.colors?.separatorVertical,
-      horizontal: finalData.colors?.separatorHorizontal,
-    });
+    // Données prêtes pour l'envoi
 
     try {
       if (existingSignatureId) {

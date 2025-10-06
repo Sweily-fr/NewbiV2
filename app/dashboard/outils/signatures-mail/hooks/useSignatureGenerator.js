@@ -115,17 +115,23 @@ export function useSignatureGenerator() {
       const iconsHTML = activeNetworks
         .map((social, index) => {
           return `
-          <a href="${signatureData.socialNetworks[social.key]}" style="text-decoration: none; margin-right: ${index < activeNetworks.length - 1 ? "8px" : "0"}; display: inline-block;">
-            <img src="${getSocialIconUrl(social.key)}" alt="${social.label}" style="width: ${signatureData.socialSize || 24}px; height: ${signatureData.socialSize || 24}px; display: block;" />
-          </a>
-        `;
+            <td style="padding-right: ${index < activeNetworks.length - 1 ? "8px" : "0"};">
+              <a href="${signatureData.socialNetworks[social.key]}" style="text-decoration: none; display: block;">
+                <img src="${getSocialIconUrl(social.key)}" alt="${social.label}" style="width: ${signatureData.socialSize || 24}px; height: ${signatureData.socialSize || 24}px; display: block;" />
+              </a>
+            </td>
+          `;
         })
         .join("");
 
       return `
-        <div style="margin-top: ${getSpacing(signatureData.spacings?.logoToSocial, 12)}px;">
-          ${iconsHTML}
-        </div>
+        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+          <tbody>
+            <tr>
+              ${iconsHTML}
+            </tr>
+          </tbody>
+        </table>
       `;
     };
 

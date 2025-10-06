@@ -166,6 +166,8 @@ const GET_EMAIL_SIGNATURE = gql`
         linkedin
         x
       }
+      socialGlobalColor
+      socialSize
 
       # Typographie
       fontFamily
@@ -584,10 +586,12 @@ const SignatureManager = () => {
               x: "",
             },
             socialColors: signature.socialColors || {
-              facebook: "#1877F2",
-              instagram: "#E4405F",
-              linkedin: "#0077B5",
-              x: "#000000",
+              facebook: null,
+              instagram: null,
+              linkedin: null,
+              x: null,
+              github: null,
+              youtube: null,
             },
             customSocialIcons: signature.customSocialIcons || {
               facebook: "",
@@ -595,6 +599,8 @@ const SignatureManager = () => {
               linkedin: "",
               x: "",
             },
+            socialGlobalColor: signature.socialGlobalColor || null,
+            socialSize: signature.socialSize || 24,
 
             // Orientation (remplace layout dans certains cas)
             orientation:

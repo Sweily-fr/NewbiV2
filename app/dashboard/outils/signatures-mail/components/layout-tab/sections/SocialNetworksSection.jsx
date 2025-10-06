@@ -47,6 +47,7 @@ export default function SocialNetworksSection({
   signatureData,
   updateSignatureData,
 }) {
+  
   // Construction de l'URL d'icône selon la nouvelle logique
   const buildSocialIconUrl = useCallback((socialNetwork, color = null) => {
     // Vérifier que les variables d'environnement sont définies
@@ -120,20 +121,18 @@ export default function SocialNetworksSection({
   // Gestion de la couleur globale des icônes
   const handleGlobalColorChange = (color) => {
     const globalColor = color === "default" ? null : color;
-    updateSignatureData("socialGlobalColor", globalColor);
 
-    // Mettre à jour toutes les URLs d'icônes avec la nouvelle couleur
-    const updatedIcons = {};
+    // Mettre à jour socialColors avec le nom de la couleur pour chaque réseau
+    const updatedColors = {};
     ALLOWED_SOCIAL_NETWORKS.forEach((platform) => {
-      if (signatureData.socialNetworks?.[platform]) {
-        const iconUrl = buildSocialIconUrl(platform, globalColor);
-        if (iconUrl) {
-          updatedIcons[platform] = iconUrl;
-        }
-      }
+      updatedColors[platform] = globalColor || null;
     });
-
-    updateSignatureData("socialIcons", updatedIcons);
+    
+    // Mettre à jour les deux champs en une seule fois (objet)
+    updateSignatureData({
+      socialGlobalColor: globalColor,
+      socialColors: updatedColors
+    });
   };
 
   // Gestion du background social

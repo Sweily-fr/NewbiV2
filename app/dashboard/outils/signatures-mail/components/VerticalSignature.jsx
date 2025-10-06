@@ -92,10 +92,55 @@ const VerticalSignature = ({
 
   // Fonction pour obtenir l'URL de l'icône avec le nouveau CDN R2
   const getSocialIconUrl = (platform) => {
+    // Utiliser l'icône personnalisée si disponible
+    if (signatureData.customSocialIcons?.[platform]) {
+      return signatureData.customSocialIcons[platform];
+    }
+
     const baseUrl = "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social";
-    const color = signatureData.socialGlobalColor;
     
-    // Construction de l'URL avec ou sans couleur
+    // Mapping des couleurs hex/RGB vers noms de couleurs
+    const colorMapping = {
+      '#1877F2': 'blue',
+      '#E4405F': 'pink',
+      '#0077B5': 'blue',
+      '#000000': 'black',
+      '#333333': 'black',
+      '#FF0000': 'red',
+      'rgb(24, 119, 242)': 'blue',
+      'rgb(228, 64, 95)': 'pink',
+      'rgb(0, 119, 181)': 'blue',
+      'rgb(0, 0, 0)': 'black',
+      'rgb(51, 51, 51)': 'black',
+      'rgb(255, 0, 0)': 'red',
+    };
+    
+    // Couleurs par défaut pour chaque réseau social
+    const defaultColors = {
+      linkedin: 'blue',
+      facebook: 'blue',
+      instagram: 'pink',
+      twitter: 'black',
+      github: 'black',
+      youtube: 'red'
+    };
+    
+    // PRIORITÉ : socialGlobalColor > socialColors > couleur par défaut
+    // Si une couleur globale est définie, elle a la priorité absolue
+    let color = signatureData.socialGlobalColor || 
+                signatureData.socialColors?.[platform];
+    
+    // Convertir les couleurs hex/RGB en noms de couleurs
+    if (color && colorMapping[color]) {
+      color = colorMapping[color];
+    }
+    
+    // Si pas de couleur, utiliser la couleur par défaut
+    if (!color) {
+      color = defaultColors[platform];
+    }
+    
+    // Construction de l'URL avec couleur
     const iconName = color ? `${platform}-${color}` : platform;
     return `${baseUrl}/${platform}/${iconName}.png`;
   };
