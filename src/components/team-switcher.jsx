@@ -10,6 +10,9 @@ import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import InviteMembers from "../../app/dashboard/collaborateurs/components/invite-members";
 import { SettingsModal } from "./settings-modal";
+import { apolloClient } from "@/src/lib/apolloClient";
+import { toast } from "@/src/components/ui/sonner";
+import { useRouter } from "next/navigation";
 // app/dashboard/collaborateurs/components/invite-members
 import {
   DropdownMenu,
@@ -30,10 +33,12 @@ import {
 export function TeamSwitcher() {
   const { isMobile } = useSidebar();
   const { isActive } = useSubscription();
+  const router = useRouter();
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
   const [settingsInitialTab, setSettingsInitialTab] =
     React.useState("preferences");
+  const [isChangingOrg, setIsChangingOrg] = React.useState(false);
 
   // Utiliser les hooks Better Auth pour récupérer les organisations
   const { data: organizations, isPending: organizationsLoading } =
@@ -43,14 +48,33 @@ export function TeamSwitcher() {
 
   // Fonction pour changer d'organisation active
   const handleSetActiveOrganization = async (organizationId) => {
+    // Éviter les changements multiples simultanés
+    if (isChangingOrg) return;
+    
     try {
+      setIsChangingOrg(true);
+      console.log("🔄 Changement d'organisation - Vidage du cache...");
+      
+      // 1. Vider le cache Apollo avant de changer d'organisation
+      await apolloClient.clearStore();
+      console.log("✅ Cache vidé");
+      
+      // 2. Changer d'organisation
       await authClient.organization.setActive({ organizationId });
+      console.log("✅ Organisation changée");
+      
+      // 3. Notification utilisateur
+      toast.success("Organisation changée avec succès");
 
-      // Forcer la mise à jour des hooks Better Auth
-      // Utiliser window.location.reload() pour s'assurer que tout se met à jour
-      window.location.reload();
+      // 4. Rafraîchir la route actuelle sans recharger la page
+      // Next.js va refetch les données côté serveur avec la nouvelle organisation
+      router.refresh();
+      
     } catch (error) {
-      console.error("Erreur lors du changement d'organisation:", error);
+      console.error("Erreur changement d'organisation:", error);
+      toast.error("Erreur lors du changement d'organisation");
+    } finally {
+      setIsChangingOrg(false);
     }
   };
 
@@ -139,6 +163,7 @@ export function TeamSwitcher() {
                   key={org.id}
                   onClick={() => handleSetActiveOrganization(org.id)}
                   className="gap-2 p-2 cursor-pointer"
+                  disabled={isChangingOrg}
                 >
                   <div className="flex size-6 items-center justify-center rounded-sm border">
                     <IconBuilding className="size-3.5 shrink-0" />
@@ -176,10 +201,14 @@ export function TeamSwitcher() {
                   variant="outline"
                   size="sm"
                   onClick={() => setInviteDialogOpen(true)}
-                  className="flex-1 h-8 text-xs font-normal cursor-pointer"
+                  disabled={!isActive()}
+                  className="flex-1 h-8 text-xs font-normal cursor-pointer relative"
                 >
                   <Users className="size-3 mr-1" />
                   Inviter des membres
+                  {!isActive() && (
+                    <Crown className="size-3 ml-1 text-[#5b4fff]" />
+                  )}
                 </Button>
               </div>
             </DropdownMenuContent>

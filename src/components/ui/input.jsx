@@ -114,12 +114,7 @@ function InputPhone({
   );
 }
 
-function InputEndAddOn({
-  className,
-  label,
-  placeholder,
-  ...props
-}) {
+function InputEndAddOn({ className, label, placeholder, ...props }) {
   const id = useId();
   return (
     <div className="*:not-first:mt-2">
