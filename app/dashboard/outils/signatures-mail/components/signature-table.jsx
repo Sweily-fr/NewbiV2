@@ -379,22 +379,6 @@ function useSignatureTable({ data, onRefetch, actions }) {
         },
       },
       {
-        accessorKey: "isDefault",
-        header: "Statut",
-        cell: ({ row }) => {
-          const isDefault = row.getValue("isDefault");
-          const status = isDefault ? "DEFAULT" : "ACTIVE";
-          const label = SIGNATURE_STATUS_LABELS[status];
-          const colorClass = SIGNATURE_STATUS_COLORS[status];
-
-          return (
-            <Badge variant="outline" className={cn(colorClass)}>
-              {label}
-            </Badge>
-          );
-        },
-      },
-      {
         accessorKey: "position",
         header: "Poste",
         cell: ({ row }) => (
@@ -405,13 +389,6 @@ function useSignatureTable({ data, onRefetch, actions }) {
         accessorKey: "email",
         header: "Email",
         cell: ({ row }) => <div>{row.getValue("email") || "Non défini"}</div>,
-      },
-      {
-        accessorKey: "companyName",
-        header: "Entreprise",
-        cell: ({ row }) => (
-          <div>{row.getValue("companyName") || "Non définie"}</div>
-        ),
       },
       {
         id: "actions",
@@ -528,9 +505,6 @@ function SignatureTableSkeleton() {
               <TableHead className="h-11 w-[100px]">
                 <Skeleton className="h-4 w-12" />
               </TableHead>
-              <TableHead className="h-11 w-[80px]">
-                <Skeleton className="h-4 w-14" />
-              </TableHead>
               <TableHead className="h-11 w-[120px]">
                 <Skeleton className="h-4 w-16" />
               </TableHead>
@@ -548,9 +522,6 @@ function SignatureTableSkeleton() {
                 </TableCell>
                 <TableCell>
                   <Skeleton className="h-4 w-40" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-20 rounded-full" />
                 </TableCell>
                 <TableCell>
                   <Skeleton className="h-4 w-16" />

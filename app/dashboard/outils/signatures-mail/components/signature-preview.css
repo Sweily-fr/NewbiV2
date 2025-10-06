@@ -1,0 +1,15 @@
+/* Reset pour éviter que GeistSans écrase les polices personnalisées */
+.signature-preview {
+  font-family: Arial, sans-serif;
+}
+
+/* Force les styles inline à avoir la priorité maximale */
+.signature-preview div,
+.signature-preview span,
+.signature-preview td,
+.signature-preview p {
+  /* Reset des styles globaux pour permettre aux styles inline de s'appliquer */
+  all: revert;
+}
+
+/* Les styles inline auront maintenant la priorité */
