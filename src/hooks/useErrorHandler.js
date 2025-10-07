@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { toast } from '@/src/components/ui/sonner';
 import { getErrorMessage, isCriticalError, requiresUserAction } from '@/src/utils/errorMessages';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation';
  */
 export function useErrorHandler() {
   const router = useRouter();
+  const lastErrorRef = useRef(null);
+  const errorTimeoutRef = useRef(null);
 
   /**
    * Gère une erreur en affichant le message approprié et en prenant les actions nécessaires
@@ -23,7 +25,9 @@ export function useErrorHandler() {
       redirectOnCritical = true,
       customMessage = null,
       duration = 5000,
-      onError = null
+      onError = null,
+      preventDuplicates = true,
+      hideServerErrors = true
     } = options;
 
     // Logger l'erreur pour le debug (seulement en développement)
@@ -33,6 +37,36 @@ export function useErrorHandler() {
 
     // Obtenir le message utilisateur approprié
     const userMessage = customMessage || getErrorMessage(error, context);
+
+    // Filtrer les erreurs serveur si demandé
+    const errorMessage = typeof error === 'string' ? error : error.message || '';
+    const isServerError = errorMessage.includes('500') || 
+                          errorMessage.includes('Internal Server Error') ||
+                          errorMessage.includes('Server Error');
+    
+    if (hideServerErrors && isServerError) {
+      // Ne pas afficher les erreurs serveur brutes, utiliser un message générique
+      if (showToast) {
+        toast.error("Une erreur s'est produite. Veuillez réessayer.", { duration });
+      }
+      return userMessage;
+    }
+
+    // Prévenir les doublons de notifications
+    if (preventDuplicates) {
+      const errorKey = `${context}-${userMessage}`;
+      const now = Date.now();
+      
+      if (lastErrorRef.current === errorKey && 
+          errorTimeoutRef.current && 
+          now - errorTimeoutRef.current < 3000) {
+        // Même erreur dans les 3 dernières secondes, ne pas afficher
+        return userMessage;
+      }
+      
+      lastErrorRef.current = errorKey;
+      errorTimeoutRef.current = now;
+    }
 
     // Afficher le toast si demandé
     if (showToast) {

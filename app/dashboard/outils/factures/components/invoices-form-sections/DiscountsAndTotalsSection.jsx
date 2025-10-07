@@ -29,7 +29,7 @@ const validateDiscount = (value, { discountType }) => {
   return true;
 };
 
-export default function DiscountsAndTotalsSection({ canEdit }) {
+export default function DiscountsAndTotalsSection({ canEdit, validationErrors = {} }) {
   const {
     watch,
     setValue,
@@ -37,6 +37,9 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
     formState: { errors },
   } = useFormContext();
   const data = watch();
+  
+  // Helper pour vérifier si la remise a une erreur
+  const hasDiscountError = validationErrors?.discount;
   return (
     <Card className="border-0 shadow-none bg-transparent mb-0 p-0">
       <CardContent className="space-y-6 p-0">
@@ -119,19 +122,16 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
                     }),
                 })}
                 defaultValue={data.discount || 0}
-                min="0"
                 step="0.01"
                 disabled={!canEdit || !data.discountType}
                 placeholder={
                   data.discountType === "PERCENTAGE" ? "Ex: 10" : "Ex: 100"
                 }
-                className={`text-sm ${
-                  errors?.discount ? "border-red-500" : ""
-                }`}
+                className={hasDiscountError ? "border-destructive focus-visible:ring-destructive" : ""}
               />
-              {errors?.discount && (
-                <p className="text-xs text-red-500">
-                  {errors.discount.message}
+              {(errors?.discount || hasDiscountError) && (
+                <p className="text-xs text-destructive">
+                  {errors?.discount?.message || hasDiscountError?.message || "La remise ne peut pas dépasser 100%"}
                 </p>
               )}
             </div>

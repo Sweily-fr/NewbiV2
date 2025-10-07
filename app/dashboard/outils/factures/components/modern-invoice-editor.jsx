@@ -9,6 +9,9 @@ import {
   CreditCard,
   Settings,
   X,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -22,6 +25,9 @@ import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
+import { QuickEditClientModal } from "@/src/components/invoice/quick-edit-client-modal";
+import { QuickEditCompanyModal } from "@/src/components/invoice/quick-edit-company-modal";
+import { ErrorAlert } from "@/src/components/invoice/error-alert";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 
@@ -33,6 +39,9 @@ export default function ModernInvoiceEditor({
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
   const [organization, setOrganization] = useState(null);
+  const [showEditClient, setShowEditClient] = useState(false);
+  const [showEditCompany, setShowEditCompany] = useState(false);
+  const [errorsExpanded, setErrorsExpanded] = useState(true);
 
   // Récupérer l'organisation au chargement
   useEffect(() => {
@@ -61,6 +70,8 @@ export default function ModernInvoiceEditor({
     handleAutoSave,
     isDirty,
     errors,
+    validationErrors,
+    clearValidationErrors,
     saveSettingsToOrganization,
     invoice: loadedInvoice,
     error: invoiceError,
@@ -105,6 +116,37 @@ export default function ModernInvoiceEditor({
 
   const handleCloseSettings = () => {
     setShowSettings(false);
+  };
+
+  const handleClientUpdated = (updatedClient) => {
+    setFormData({ client: updatedClient });
+    // Notification déjà affichée par le modal
+  };
+
+  const handleCompanyUpdated = async (updatedCompany) => {
+    // Mettre à jour les données du formulaire
+    setFormData({
+      companyInfo: {
+        ...formData.companyInfo,
+        name: updatedCompany.companyName,
+        email: updatedCompany.companyEmail,
+        phone: updatedCompany.companyPhone,
+        siret: updatedCompany.siret,
+        vatNumber: updatedCompany.vatNumber,
+        address: {
+          street: updatedCompany.addressStreet,
+          city: updatedCompany.addressCity,
+          postalCode: updatedCompany.addressZipCode,
+          country: updatedCompany.addressCountry,
+        },
+      },
+    });
+    
+    // Rafraîchir l'organisation
+    const org = await getActiveOrganization();
+    setOrganization(org);
+    
+    toast.success("Informations de l'entreprise mises à jour");
   };
 
   return (
@@ -193,38 +235,114 @@ export default function ModernInvoiceEditor({
             </div>
 
             {/* Enhanced Form ou Settings View */}
-            <div className="flex-1 min-h-0 mr-2">
-              <FormProvider {...form}>
-                {showSettings ? (
-                  <InvoiceSettingsView
-                    canEdit={!isReadOnly}
-                    onCancel={handleCloseSettings}
-                    onSave={async () => {
-                      try {
-                        // Sauvegarder les paramètres dans l'organisation
-                        await saveSettingsToOrganization();
-                        handleCloseSettings();
-                        toast.success(
-                          "Paramètres sauvegardés dans l'organisation"
-                        );
-                      } catch (error) {
-                        console.error("Erreur lors de la sauvegarde:", error);
-                        toast.error(
-                          "Erreur lors de la sauvegarde des paramètres"
-                        );
-                      }
-                    }}
-                  />
-                ) : (
-                  <EnhancedInvoiceForm
-                    onSave={handleSave}
-                    onSubmit={handleSubmit}
-                    loading={loading}
-                    canEdit={!isReadOnly}
-                    mode={mode}
-                  />
-                )}
-              </FormProvider>
+            <div className="flex-1 min-h-0 mr-2 flex flex-col">
+              {/* Alertes d'erreur intelligentes - Panneau rétractable */}
+              {(validationErrors?.client || validationErrors?.companyInfo || validationErrors?.items || validationErrors?.shipping || validationErrors?.discount) && (
+                <div className="flex-shrink-0 mb-4 border border-destructive/20 rounded-md overflow-hidden">
+                  {/* Header rétractable avec compteur */}
+                  <button
+                    onClick={() => setErrorsExpanded(!errorsExpanded)}
+                    className="w-full flex items-center justify-between p-3 bg-destructive/10 hover:bg-destructive/15 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-destructive" />
+                      <span className="text-sm font-medium text-destructive">
+                        Erreurs de validation
+                      </span>
+                      <Badge variant="destructive" className="ml-2">
+                        {Object.keys(validationErrors || {}).length}
+                      </Badge>
+                    </div>
+                    {errorsExpanded ? (
+                      <ChevronUp className="h-4 w-4 text-destructive" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-destructive" />
+                    )}
+                  </button>
+                  
+                  {/* Contenu des erreurs */}
+                  {errorsExpanded && (
+                    <div className="space-y-2 p-3 bg-background border-t border-destructive/20">
+                      {/* Afficher toutes les erreurs client */}
+                      {validationErrors?.client && (
+                        <ErrorAlert
+                          title="Erreur client"
+                          message={validationErrors.client.message || validationErrors.client}
+                          onEdit={validationErrors.client.canEdit ? () => setShowEditClient(true) : undefined}
+                          editLabel={validationErrors.client.canEdit ? "Modifier le client" : ""}
+                        />
+                      )}
+                      {validationErrors?.companyInfo && (
+                        <ErrorAlert
+                          title="Erreur informations entreprise"
+                          message={validationErrors.companyInfo.message || validationErrors.companyInfo}
+                          onEdit={validationErrors.companyInfo.canEdit ? () => setShowEditCompany(true) : undefined}
+                          editLabel="Modifier l'entreprise"
+                        />
+                      )}
+                      {validationErrors?.items && (
+                        <ErrorAlert
+                          title="Erreur articles"
+                          message={validationErrors.items.message || validationErrors.items}
+                          onEdit={undefined}
+                          editLabel=""
+                        />
+                      )}
+                      {validationErrors?.shipping && (
+                        <ErrorAlert
+                          title="Erreur livraison"
+                          message={validationErrors.shipping.message || validationErrors.shipping}
+                          onEdit={undefined}
+                          editLabel=""
+                        />
+                      )}
+                      {validationErrors?.discount && (
+                        <ErrorAlert
+                          title="Erreur remise"
+                          message={validationErrors.discount.message || validationErrors.discount}
+                          onEdit={undefined}
+                          editLabel=""
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div className="flex-1 min-h-0">
+                <FormProvider {...form}>
+                  {showSettings ? (
+                    <InvoiceSettingsView
+                      canEdit={!isReadOnly}
+                      onCancel={handleCloseSettings}
+                      onSave={async () => {
+                        try {
+                          // Sauvegarder les paramètres dans l'organisation
+                          await saveSettingsToOrganization();
+                          handleCloseSettings();
+                          toast.success(
+                            "Paramètres sauvegardés dans l'organisation"
+                          );
+                        } catch (error) {
+                          console.error("Erreur lors de la sauvegarde:", error);
+                          toast.error(
+                            "Erreur lors de la sauvegarde des paramètres"
+                          );
+                        }
+                      }}
+                    />
+                  ) : (
+                    <EnhancedInvoiceForm
+                      onSave={handleSave}
+                      onSubmit={handleSubmit}
+                      loading={loading}
+                      canEdit={!isReadOnly}
+                      mode={mode}
+                      validationErrors={validationErrors}
+                    />
+                  )}
+                </FormProvider>
+              </div>
             </div>
           </div>
         </div>
@@ -242,6 +360,22 @@ export default function ModernInvoiceEditor({
           </div>
         </div>
       </div>
+      
+      {/* Modals d'édition rapide */}
+      {formData.client && (
+        <QuickEditClientModal
+          open={showEditClient}
+          onOpenChange={setShowEditClient}
+          client={formData.client}
+          onClientUpdated={handleClientUpdated}
+        />
+      )}
+      
+      <QuickEditCompanyModal
+        open={showEditCompany}
+        onOpenChange={setShowEditCompany}
+        onCompanyUpdated={handleCompanyUpdated}
+      />
     </div>
   );
 }
