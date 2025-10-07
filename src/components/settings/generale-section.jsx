@@ -34,7 +34,6 @@ export function GeneraleSection({
   updateOrganization,
   refetchOrganization,
 }) {
-  
   let formContext;
   try {
     formContext = useFormContext();
@@ -52,7 +51,6 @@ export function GeneraleSection({
 
   // Surveiller les valeurs du formulaire pour détecter les changements
   const watchedValues = watch();
-
 
   const logoUrl = watchedValues.logo || organization?.logo || null;
   const selectedCountry =
@@ -91,7 +89,6 @@ export function GeneraleSection({
 
   return (
     <div className="space-y-8">
-
       {/* Titre */}
       <div>
         <h2 className="text-lg font-medium mb-1">Générale</h2>
