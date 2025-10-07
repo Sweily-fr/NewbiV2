@@ -6,6 +6,8 @@ import { toast } from '@/src/utils/debouncedToast';
 export const useKanbanBoard = (id) => {
   const { workspaceId } = useWorkspace();
   
+  console.log('🔍 [useKanbanBoard] workspaceId:', workspaceId, 'boardId:', id);
+  
   const { data, loading, error, refetch } = useQuery(GET_BOARD, {
     variables: { 
       id,
@@ -49,7 +51,12 @@ export const useKanbanBoard = (id) => {
       }
     },
     onError: (error) => {
-      console.error("❌ [Kanban] Erreur subscription tâches:", error);
+      // Ne pas afficher d'erreur si c'est un problème d'authentification (token expiré)
+      if (error.message?.includes('connecté')) {
+        console.warn("⚠️ [Kanban] Subscription tâches: session expirée, reconnexion automatique...");
+      } else {
+        console.error("❌ [Kanban] Erreur subscription tâches:", error);
+      }
     }
   });
 
@@ -87,7 +94,12 @@ export const useKanbanBoard = (id) => {
       }
     },
     onError: (error) => {
-      console.error("❌ [Kanban] Erreur subscription colonnes:", error);
+      // Ne pas afficher d'erreur si c'est un problème d'authentification (token expiré)
+      if (error.message?.includes('connecté')) {
+        console.warn("⚠️ [Kanban] Subscription colonnes: session expirée, reconnexion automatique...");
+      } else {
+        console.error("❌ [Kanban] Erreur subscription colonnes:", error);
+      }
     }
   });
 

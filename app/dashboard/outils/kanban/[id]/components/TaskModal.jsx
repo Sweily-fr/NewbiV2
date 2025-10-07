@@ -11,6 +11,7 @@ import { Calendar } from '@/src/components/ui/calendar';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Checklist } from '@/src/components/Checklist';
+import { MemberSelector } from './MemberSelector';
 import { cn } from '@/src/lib/utils';
 
 /**
@@ -25,6 +26,7 @@ export function TaskModal({
   taskForm,
   setTaskForm,
   board,
+  workspaceId,
   addTag,
   removeTag,
   addChecklistItem,
@@ -291,6 +293,13 @@ export function TaskModal({
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* Membres assignés */}
+            <MemberSelector
+              workspaceId={workspaceId}
+              selectedMembers={taskForm.assignedMembers || []}
+              onMembersChange={(members) => setTaskForm({ ...taskForm, assignedMembers: members })}
+            />
 
             {/* Tags */}
             <div className="space-y-2">

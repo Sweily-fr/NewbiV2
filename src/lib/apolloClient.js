@@ -37,11 +37,12 @@ const wsLink = typeof window !== "undefined" ? new WebSocketLink({
   uri: process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000/graphql",
   options: {
     reconnect: true,
+    lazy: true, // Connexion lazy pour permettre la reconnexion avec nouveau token
     connectionParams: async () => {
       // Récupérer le JWT pour l'authentification WebSocket
       let jwtToken = null;
       try {
-        await authClient.getSession({
+        const session = await authClient.getSession({
           fetchOptions: {
             onSuccess: (ctx) => {
               const jwt = ctx.response.headers.get("set-auth-jwt");
@@ -49,15 +50,27 @@ const wsLink = typeof window !== "undefined" ? new WebSocketLink({
                 jwtToken = jwt;
               }
             },
+            onError: (ctx) => {
+              console.warn("⚠️ [WebSocket] Session non disponible:", ctx.error?.message);
+            },
           },
         });
+        
+        // Si pas de JWT mais session valide, la connexion utilisera les cookies
+        if (!jwtToken && session?.session) {
+          console.log("ℹ️ [WebSocket] Session disponible sans JWT, utilisation des cookies");
+        }
       } catch (error) {
-        console.error("❌ [WebSocket] Erreur récupération JWT:", error.message);
+        console.warn("⚠️ [WebSocket] Erreur récupération JWT:", error.message);
       }
       
       return {
         authorization: jwtToken ? `Bearer ${jwtToken}` : "",
       };
+    },
+    // Reconnexion automatique avec nouveau token quand le token expire
+    onError: (error) => {
+      console.error("❌ [WebSocket] Erreur:", error);
     },
   },
 }) : null;
@@ -67,7 +80,7 @@ const authLink = setContext(async (_, { headers }) => {
     // Récupérer le JWT via authClient.getSession avec le header set-auth-jwt
     let jwtToken = null;
 
-    await authClient.getSession({
+    const session = await authClient.getSession({
       fetchOptions: {
         onSuccess: (ctx) => {
           const jwt = ctx.response.headers.get("set-auth-jwt");
@@ -75,8 +88,18 @@ const authLink = setContext(async (_, { headers }) => {
             jwtToken = jwt;
           }
         },
+        onError: (ctx) => {
+          // Log l'erreur mais ne bloque pas
+          console.warn("⚠️ [Apollo] Session non disponible:", ctx.error?.message);
+        },
       },
     });
+
+    // Si on a une session mais pas de JWT, essayer de le récupérer depuis la session
+    if (session?.session && !jwtToken) {
+      // Certaines requêtes peuvent fonctionner avec les cookies seulement
+      console.log("ℹ️ [Apollo] Session disponible sans JWT, utilisation des cookies");
+    }
 
     if (jwtToken) {
       return {
@@ -88,7 +111,7 @@ const authLink = setContext(async (_, { headers }) => {
     }
   } catch (error) {
     // Erreur silencieuse - ne pas exposer les détails d'authentification
-    console.error("❌ [Apollo] Erreur récupération JWT:", error.message);
+    console.warn("⚠️ [Apollo] Erreur récupération JWT:", error.message);
   }
 
   return {
@@ -99,7 +122,7 @@ const authLink = setContext(async (_, { headers }) => {
 });
 
 // Intercepteur d'erreurs pour gérer les erreurs d'authentification
-const errorLink = onError(({ graphQLErrors, networkError }) => {
+const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   if (graphQLErrors) {
     graphQLErrors.forEach((error) => {
       const { message, extensions } = error;
@@ -110,15 +133,23 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
       // Si l'erreur est critique (authentification), gérer la redirection
       if (isCriticalError(errorWithCode)) {
-        toast.error(userMessage, {
-          duration: 5000,
-          description: "Vous allez être redirigé vers la page de connexion",
-        });
+        // Ne pas afficher de toast si c'est une erreur au chargement initial
+        const isInitialLoad = operation.getContext().isInitialLoad;
+        
+        if (!isInitialLoad) {
+          toast.error(userMessage, {
+            duration: 5000,
+            description: "Vous allez être redirigé vers la page de connexion",
+          });
 
-        // Rediriger vers la page de connexion après un délai
-        setTimeout(() => {
-          window.location.href = "/auth/login";
-        }, 2000);
+          // Rediriger vers la page de connexion après un délai
+          setTimeout(() => {
+            window.location.href = "/auth/login";
+          }, 2000);
+        } else {
+          // Log silencieux pour le chargement initial
+          console.warn("⚠️ [Apollo] Erreur auth au chargement initial:", message);
+        }
       } else {
         // Afficher les autres erreurs GraphQL avec message utilisateur
         toast.error(userMessage, {

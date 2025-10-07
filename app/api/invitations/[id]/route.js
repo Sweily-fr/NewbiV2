@@ -83,6 +83,36 @@ export async function POST(request, { params }) {
     if (action === "accept") {
       console.log('✅ Action: Accepter l\'invitation');
       
+      // Vérifier que l'utilisateur est bien le destinataire de l'invitation
+      const { mongoDb } = await import("@/src/lib/mongodb");
+      const { ObjectId } = await import("mongodb");
+      
+      const invitation = await mongoDb
+        .collection("invitation")
+        .findOne({ _id: new ObjectId(id) });
+      
+      if (!invitation) {
+        console.log('❌ Invitation non trouvée');
+        return Response.json(
+          { error: "Invitation non trouvée" },
+          { status: 404 }
+        );
+      }
+      
+      console.log(`📧 Email invitation: ${invitation.email}`);
+      console.log(`📧 Email utilisateur: ${session.user.email}`);
+      
+      if (invitation.email.toLowerCase() !== session.user.email.toLowerCase()) {
+        console.log('❌ L\'utilisateur n\'est pas le destinataire de cette invitation');
+        return Response.json(
+          { 
+            error: "Vous n'êtes pas le destinataire de cette invitation",
+            details: `Cette invitation a été envoyée à ${invitation.email}, mais vous êtes connecté avec ${session.user.email}`
+          },
+          { status: 403 }
+        );
+      }
+      
       // ÉTAPE 1: Accepter l'invitation (rejoint l'organisation de l'owner)
       console.log('🔄 ÉTAPE 1: Appel Better Auth acceptInvitation...');
       const result = await auth.api.acceptInvitation({
@@ -158,9 +188,6 @@ export async function POST(request, { params }) {
       // ÉTAPE 5: Envoyer les emails de notification (NON-BLOQUANT)
       try {
         console.log('🔄 ÉTAPE 5: Envoi des emails de notification...');
-        
-        const { mongoDb } = await import("@/src/lib/mongodb");
-        const { ObjectId } = await import("mongodb");
         
         console.log('📋 Récupération des informations...');
         console.log('Organization ID:', organizationId);

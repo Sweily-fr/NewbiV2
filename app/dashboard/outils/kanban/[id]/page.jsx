@@ -452,6 +452,7 @@ export default function KanbanBoardPage({ params }) {
         taskForm={taskForm}
         setTaskForm={setTaskForm}
         board={board}
+        workspaceId={workspaceId}
         addTag={addTag}
         removeTag={removeTag}
         addChecklistItem={addChecklistItem}
@@ -468,6 +469,7 @@ export default function KanbanBoardPage({ params }) {
         taskForm={taskForm}
         setTaskForm={setTaskForm}
         board={board}
+        workspaceId={workspaceId}
         addTag={addTag}
         removeTag={removeTag}
         addChecklistItem={addChecklistItem}

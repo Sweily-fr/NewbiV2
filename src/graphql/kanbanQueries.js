@@ -46,7 +46,25 @@ export const GET_BOARD = gql`
           text
           completed
         }
+        assignedMembers {
+          userId
+          name
+          email
+          image
+        }
       }
+    }
+  }
+`;
+
+export const GET_ORGANIZATION_MEMBERS = gql`
+  query GetOrganizationMembers($workspaceId: ID!) {
+    organizationMembers(workspaceId: $workspaceId) {
+      id
+      name
+      email
+      image
+      role
     }
   }
 `;

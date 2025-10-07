@@ -19,6 +19,7 @@ export const useKanbanTasks = (boardId, board) => {
     dueDate: "",
     tags: [],
     checklist: [],
+    assignedMembers: [],
     newTag: "",
     newChecklistItem: "",
   };
