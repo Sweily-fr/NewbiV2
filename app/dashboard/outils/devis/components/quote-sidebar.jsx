@@ -37,7 +37,7 @@ import {
 import { useCreateLinkedInvoice } from "@/src/graphql/invoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
+import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
 
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 import LinkedInvoicesList from "./linked-invoices-list";
@@ -246,7 +246,7 @@ export default function QuoteSidebar({
             <div className="flex items-center gap-2">
               {/* Bouton PDF - masqué pour les brouillons */}
               {quote.status !== QUOTE_STATUS.DRAFT && (
-                <UniversalPDFGenerator data={quote} type="quote" />
+                <UniversalPDFDownloader data={quote} type="quote" />
               )}
               <Button
                 variant="ghost"

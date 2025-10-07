@@ -41,7 +41,7 @@ import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
 import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFGenerator from "@/src/components/pdf/UniversalPDFGenerator";
+import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 
 export default function InvoiceSidebar({
@@ -235,7 +235,7 @@ export default function InvoiceSidebar({
           <div className="flex items-center gap-2">
             {/* Bouton PDF - masqué pour les brouillons */}
             {invoice.status !== INVOICE_STATUS.DRAFT && (
-              <UniversalPDFGenerator
+              <UniversalPDFDownloader
                 data={invoice}
                 type="invoice"
                 variant="default"
@@ -243,7 +243,7 @@ export default function InvoiceSidebar({
                 className="flex items-center gap-2"
               >
                 Télécharger en PDF
-              </UniversalPDFGenerator>
+              </UniversalPDFDownloader>
             )}
             <Button
               variant="ghost"
@@ -431,7 +431,7 @@ export default function InvoiceSidebar({
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <UniversalPDFGenerator
+                        <UniversalPDFDownloader
                           data={creditNote}
                           type="creditNote"
                           filename={`avoir-${creditNote.number}`}

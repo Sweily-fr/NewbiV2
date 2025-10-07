@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
-import { useReactToPrint } from 'react-to-print';
 import { domToJpeg } from 'modern-screenshot';
 import jsPDF from 'jspdf';
 import UniversalPreviewPDF from './UniversalPreviewPDF';
@@ -21,42 +20,13 @@ const UniversalPDFDownloader = ({
   ...props
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const componentRef = useRef(null);
 
-  // Détecter si on est sur mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const handlePrint = useReactToPrint({
-    contentRef: componentRef,
-    documentTitle: filename || `${type}_${data?.number || 'document'}`,
-    onBeforeGetContent: () => {
-      setIsGenerating(true);
-      return new Promise((resolve) => setTimeout(resolve, 500));
-    },
-    onAfterPrint: () => {
-      setIsGenerating(false);
-      toast.success('PDF téléchargé avec succès');
-    },
-    onPrintError: (error) => {
-      console.error('Erreur lors de l\'impression :', error);
-      toast.error('Une erreur est survenue lors de la génération du PDF');
-      setIsGenerating(false);
-    }
-  });
-
-  // Génération PDF pour mobile avec modern-screenshot
-  const handleMobileDownload = async () => {
+  // Génération PDF avec modern-screenshot + jsPDF
+  const handlePDFDownload = async () => {
     setIsGenerating(true);
     try {
-      console.log('Début génération PDF mobile');
+      console.log('Début génération PDF');
       
       if (!componentRef.current) {
         throw new Error('Référence du composant non trouvée');
@@ -126,8 +96,9 @@ const UniversalPDFDownloader = ({
         pdf.addImage(dataUrl, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
         heightLeft -= pdfHeight;
         
-        // Ajouter des pages supplémentaires
-        while (heightLeft > 0) {
+        // Ajouter des pages supplémentaires seulement si nécessaire
+        // On ajoute une marge de tolérance de 5mm pour éviter les pages vides
+        while (heightLeft > 5) {
           position = heightLeft - imgHeight;
           pdf.addPage();
           pdf.addImage(dataUrl, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
@@ -152,7 +123,7 @@ const UniversalPDFDownloader = ({
       console.log('PDF téléchargé avec succès');
       toast.success('PDF téléchargé avec succès');
     } catch (error) {
-      console.error('Erreur génération PDF mobile:', error);
+      console.error('Erreur génération PDF:', error);
       toast.error(`Erreur: ${error.message}`);
     } finally {
       console.log('Fin génération PDF');
@@ -162,11 +133,7 @@ const UniversalPDFDownloader = ({
 
   const handleDownload = (e) => {
     e?.preventDefault();
-    if (isMobile) {
-      handleMobileDownload();
-    } else {
-      handlePrint();
-    }
+    handlePDFDownload();
   };
 
   return (
