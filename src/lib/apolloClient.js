@@ -32,6 +32,9 @@ const uploadLink = createUploadLink({
   },
 });
 
+// Variable globale pour stocker le client WebSocket
+let wsClient = null;
+
 // Configuration WebSocket Link pour les subscriptions
 const wsLink = typeof window !== "undefined" ? new WebSocketLink({
   uri: process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000/graphql",
@@ -48,6 +51,7 @@ const wsLink = typeof window !== "undefined" ? new WebSocketLink({
               const jwt = ctx.response.headers.get("set-auth-jwt");
               if (jwt && !isTokenExpired(jwt)) {
                 jwtToken = jwt;
+                console.log("✅ [WebSocket] JWT récupéré pour connexion");
               }
             },
             onError: (ctx) => {
@@ -74,6 +78,32 @@ const wsLink = typeof window !== "undefined" ? new WebSocketLink({
     },
   },
 }) : null;
+
+// Stocker le client WebSocket pour pouvoir le fermer/rouvrir
+if (wsLink && typeof window !== "undefined") {
+  wsClient = wsLink.subscriptionClient;
+  
+  // Écouter les changements de session pour reconnecter le WebSocket
+  if (typeof window !== "undefined") {
+    // Vérifier périodiquement si le token a expiré (toutes les 5 minutes)
+    setInterval(async () => {
+      try {
+        const session = await authClient.getSession();
+        if (session?.session && wsClient) {
+          // Forcer la reconnexion pour rafraîchir le token
+          console.log("🔄 [WebSocket] Rafraîchissement périodique de la connexion");
+          wsClient.close(false, false); // Fermer sans reconnexion automatique
+          setTimeout(() => {
+            // Le lazy: true va reconnecter automatiquement avec le nouveau token
+            console.log("✅ [WebSocket] Reconnexion avec nouveau token");
+          }, 100);
+        }
+      } catch (error) {
+        console.warn("⚠️ [WebSocket] Erreur vérification session:", error);
+      }
+    }, 5 * 60 * 1000); // Toutes les 5 minutes
+  }
+}
 
 const authLink = setContext(async (_, { headers }) => {
   try {
