@@ -643,7 +643,7 @@ export default function ClientSelector({
                     <PopoverContent
                       className="border-input p-0"
                       align="start"
-                      side={typeof window !== 'undefined' && window.innerWidth < 640 ? "top" : "bottom"}
+                      side="top"
                       sideOffset={4}
                       avoidCollisions={false}
                       sticky="always"
