@@ -76,7 +76,7 @@ const Freelance = () => {
               </p>
             </blockquote>
             <figcaption className="mt-4 border-t border-white/20 pt-4">
-              <p className="text-sm font-medium text-white">Conor Neville</p>
+              <p className="text-sm font-medium text-white">Maxime Dupont</p>
               <p className="text-sm font-medium">
                 <span className="bg-linear-to-r from-[#fff1be] from-28% via-[#ee87cb] via-70% to-[#b060ff] bg-clip-text text-transparent">
                   Architecte
@@ -112,7 +112,7 @@ const Freelance = () => {
               </p>
             </blockquote>
             <figcaption className="mt-4 border-t border-white/20 pt-4">
-              <p className="text-sm font-medium text-white">Amy Chase</p>
+              <p className="text-sm font-medium text-white">Julie Martin</p>
               <p className="text-sm font-medium">
                 <span className="bg-linear-to-r from-[#fff1be] from-28% via-[#ee87cb] via-70% to-[#b060ff] bg-clip-text text-transparent">
                   Organisateur événementiel
@@ -148,7 +148,7 @@ const Freelance = () => {
               </p>
             </blockquote>
             <figcaption className="mt-4 border-t border-white/20 pt-4">
-              <p className="text-sm font-medium text-white">Veronica Winton</p>
+              <p className="text-sm font-medium text-white">Veronica Lacroix</p>
               <p className="text-sm font-medium">
                 <span className="bg-linear-to-r from-[#fff1be] from-28% via-[#ee87cb] via-70% to-[#b060ff] bg-clip-text text-transparent">
                   Graphiste
@@ -183,7 +183,7 @@ const Freelance = () => {
               </p>
             </blockquote>
             <figcaption className="mt-4 border-t border-white/20 pt-4">
-              <p className="text-sm font-medium text-white">Dillon Lenora</p>
+              <p className="text-sm font-medium text-white">Dylan Prevost</p>
               <p className="text-sm font-medium">
                 <span className="bg-linear-to-r from-[#fff1be] from-28% via-[#ee87cb] via-70% to-[#b060ff] bg-clip-text text-transparent">
                   Artiste 3D
