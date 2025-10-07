@@ -262,6 +262,7 @@ export function useInvoiceEditor({
         siret: organization?.siret || "",
         vatNumber: organization?.vatNumber || "",
         website: organization?.website || "",
+        logo: organization?.logo || "",
         bankDetails: {
           iban: organization?.bankIban || "",
           bic: organization?.bankBic || "",
@@ -936,6 +937,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     siret: organization?.siret || "",
     vatNumber: organization?.vatNumber || "",
     website: organization?.website || "",
+    logo: organization?.logo || "",
     bankDetails: {
       iban: organization?.bankIban || "",
       bic: organization?.bankBic || "",
@@ -1098,6 +1100,7 @@ function transformInvoiceToFormData(invoice) {
           siret: invoice.companyInfo.siret || "",
           vatNumber: invoice.companyInfo.vatNumber || "",
           website: invoice.companyInfo.website || "",
+          logo: invoice.companyInfo.logo || "",
           // Nettoyer les métadonnées GraphQL des coordonnées bancaires
           bankDetails: invoice.companyInfo.bankDetails
             ? {
@@ -1218,6 +1221,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
         website: formData.companyInfo.website,
         siret: formData.companyInfo.siret,
         vatNumber: formData.companyInfo.vatNumber,
+        logo: formData.companyInfo.logo,
         // Convertir l'adresse string en objet si nécessaire
         address:
           typeof formData.companyInfo.address === "string"
