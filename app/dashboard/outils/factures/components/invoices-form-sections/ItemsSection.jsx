@@ -59,6 +59,9 @@ export default function ItemsSection({
   canEdit,
   ProductSearchCombobox,
   isCreditNote = false,
+  validationErrors = [],
+  markFieldAsEditing,
+  unmarkFieldAsEditing,
 }) {
   // Déterminer si c'est un avoir
   const isCreditNoteContext =
@@ -80,6 +83,13 @@ export default function ItemsSection({
 
   // Observer les changements en temps réel pour tous les items
   const watchedItems = watch("items") || [];
+  
+  // Helper pour vérifier si un champ a une erreur
+  const hasFieldError = (itemIndex, fieldName) => {
+    return validationErrors.some(
+      (error) => error.index === itemIndex && error.fields.includes(fieldName)
+    );
+  };
 
   const addItem = (productData = {}) => {
     const quantity = productData.quantity || 1;
@@ -274,9 +284,11 @@ export default function ItemsSection({
                               })}
                               placeholder="Décrivez votre produit ou service"
                               disabled={!canEdit}
+                              onFocus={() => markFieldAsEditing?.(index, "description")}
+                              onBlur={() => unmarkFieldAsEditing?.(index, "description")}
                               className={`h-10 rounded-lg text-sm w-full ${
-                                errors?.items?.[index]?.description
-                                  ? "border-red-500"
+                                errors?.items?.[index]?.description || hasFieldError(index, "description")
+                                  ? "border-destructive focus-visible:ring-destructive"
                                   : ""
                               }`}
                             />
@@ -356,15 +368,18 @@ export default function ItemsSection({
                                 step="0.01"
                                 disabled={!canEdit}
                                 className={`h-10 rounded-lg text-sm w-full ${
-                                  errors?.items?.[index]?.quantity
-                                    ? "border-red-500"
+                                  errors?.items?.[index]?.quantity || hasFieldError(index, "quantity")
+                                    ? "border-destructive focus-visible:ring-destructive"
                                     : ""
                                 }`}
                               />
                               {errors?.items?.[index]?.quantity && (
-                                <p className="text-xs text-red-500">
+                                <p className="text-xs text-destructive">
                                   {errors.items[index].quantity.message}
                                 </p>
+                              )}
+                              {!errors?.items?.[index]?.quantity && hasFieldError(index, "quantity") && (
+                                <p className="text-xs text-destructive">La quantité doit être supérieure à 0</p>
                               )}
                             </div>
                           </div>
@@ -450,15 +465,18 @@ export default function ItemsSection({
                                 step="0.01"
                                 disabled={!canEdit}
                                 className={`h-10 rounded-lg text-sm w-full ${
-                                  errors?.items?.[index]?.unitPrice
-                                    ? "border-red-500"
+                                  errors?.items?.[index]?.unitPrice || hasFieldError(index, "unitPrice")
+                                    ? "border-destructive focus-visible:ring-destructive"
                                     : ""
                                 }`}
                               />
                               {errors?.items?.[index]?.unitPrice && (
-                                <p className="text-xs text-red-500">
+                                <p className="text-xs text-destructive">
                                   {errors.items[index].unitPrice.message}
                                 </p>
+                              )}
+                              {!errors?.items?.[index]?.unitPrice && hasFieldError(index, "unitPrice") && (
+                                <p className="text-xs text-destructive">Le prix unitaire doit être supérieur à 0€</p>
                               )}
                             </div>
                           </div>

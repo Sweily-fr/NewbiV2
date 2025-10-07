@@ -103,7 +103,7 @@ export const UPDATE_CLIENT = gql`
   mutation UpdateClient(
     $workspaceId: String!
     $id: ID!
-    $input: UpdateClientInput!
+    $input: ClientInput!
   ) {
     updateClient(workspaceId: $workspaceId, id: $id, input: $input) {
       ...ClientFragment
@@ -359,10 +359,11 @@ export const useSearchCompanyBySiret = () => {
 };
 
 // Hook pour mettre à jour un client
-export const useUpdateClient = (providedWorkspaceId) => {
+export const useUpdateClient = (providedWorkspaceId, options = {}) => {
   const { workspaceId: contextWorkspaceId } = useWorkspace();
   const workspaceId = providedWorkspaceId || contextWorkspaceId;
   const client = useApolloClient();
+  const { showToast = true } = options;
 
   const [updateClientMutation, { loading }] = useMutation(UPDATE_CLIENT, {
     update: (cache, { data: { updateClient: updatedClient } }) => {
@@ -401,11 +402,15 @@ export const useUpdateClient = (providedWorkspaceId) => {
       }
     },
     onCompleted: () => {
-      toast.success("Client mis à jour avec succès");
+      if (showToast) {
+        toast.success("Client mis à jour avec succès");
+      }
     },
     onError: (error) => {
       console.error("Erreur lors de la mise à jour du client:", error);
-      toast.error(error.message || "Erreur lors de la mise à jour du client");
+      if (showToast) {
+        toast.error(error.message || "Erreur lors de la mise à jour du client");
+      }
     },
   });
 

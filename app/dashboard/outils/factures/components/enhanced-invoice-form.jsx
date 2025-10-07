@@ -249,6 +249,7 @@ export default function EnhancedInvoiceForm({
   saving,
   readOnly,
   errors,
+  validationErrors = {},
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeField, setActiveField] = useState(null);
@@ -470,6 +471,11 @@ export default function EnhancedInvoiceForm({
                   onSelect={(client) => updateField("client", client)}
                   disabled={!canEdit}
                   className="p-0"
+                  error={
+                    validationErrors?.client && !validationErrors.client.canEdit
+                      ? (validationErrors.client.message || validationErrors.client)
+                      : null
+                  }
                 />
               </Card>
             </>
@@ -483,13 +489,14 @@ export default function EnhancedInvoiceForm({
                 formatCurrency={formatCurrency}
                 canEdit={canEdit}
                 ProductSearchCombobox={ProductSearchCombobox}
+                validationErrors={validationErrors?.items?.details || []}
               />
 
               {/* Section 2: Facturation de livraison */}
-              <ShippingSection canEdit={canEdit} />
+              <ShippingSection canEdit={canEdit} validationErrors={validationErrors} />
 
               {/* Section 3: Remises et totaux */}
-              <DiscountsAndTotalsSection canEdit={canEdit} />
+              <DiscountsAndTotalsSection canEdit={canEdit} validationErrors={validationErrors} />
             </>
           )}
         </div>

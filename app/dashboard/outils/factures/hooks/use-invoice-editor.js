@@ -33,6 +33,7 @@ export function useInvoiceEditor({
   
   // Error handler
   const { handleError } = useErrorHandler();
+  const [validationErrors, setValidationErrors] = useState({});
 
   // GraphQL hooks
   const { invoice: existingInvoice, loading: loadingInvoice } =
@@ -53,15 +54,178 @@ export function useInvoiceEditor({
   const form = useForm({
     defaultValues: getInitialFormData(mode, initialData, session, organization),
     mode: "onChange",
+    resolver: async (values) => {
+      const errors = {};
+      
+      // Validation du client
+      if (!values.client || !values.client.id) {
+        errors.client = {
+          type: "required",
+          message: "Veuillez sélectionner un client"
+        };
+      }
+      
+      // Validation des informations entreprise
+      if (!values.companyInfo?.name) {
+        errors.companyInfo = {
+          type: "required",
+          message: "Le nom de l'entreprise est requis"
+        };
+      }
+      
+      if (!values.companyInfo?.email) {
+        errors.companyInfo = {
+          type: "required",
+          message: "L'email de l'entreprise est requis"
+        };
+      }
+      
+      // Validation des articles (seulement pour la validation finale)
+      if (values.status === "PENDING" && (!values.items || values.items.length === 0)) {
+        errors.items = {
+          type: "required",
+          message: "Veuillez ajouter au moins un article"
+        };
+      }
+      
+      return {
+        values: Object.keys(errors).length === 0 ? values : {},
+        errors
+      };
+    }
   });
 
   const { watch, setValue, getValues, formState, reset, trigger } = form;
   const { isDirty, errors } = formState;
 
   const [saving, setSaving] = useState(false);
+  const [editingFields, setEditingFields] = useState(new Set());
 
   // Watch all form data for auto-save
   const formData = watch();
+  
+  // Fonction pour marquer un champ comme en cours d'édition
+  const markFieldAsEditing = (itemIndex, fieldName) => {
+    setEditingFields((prev) => {
+      const newSet = new Set(prev);
+      newSet.add(`${itemIndex}-${fieldName}`);
+      return newSet;
+    });
+  };
+  
+  // Fonction pour retirer un champ de la liste d'édition
+  const unmarkFieldAsEditing = (itemIndex, fieldName) => {
+    setEditingFields((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(`${itemIndex}-${fieldName}`);
+      return newSet;
+    });
+  };
+  
+  // Re-valider quand le client change
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.client && formData.client?.id) {
+        // Vérifier si le client est maintenant valide
+        const client = formData.client;
+        const clientErrors = [];
+        
+        if (!client.name || client.name.trim() === "") clientErrors.push("nom manquant");
+        if (!client.email || client.email.trim() === "") clientErrors.push("email manquant");
+        if (!client.address?.street || client.address.street.trim() === "") clientErrors.push("adresse (rue) manquante");
+        if (!client.address?.city || client.address.city.trim() === "") clientErrors.push("ville manquante");
+        if (!client.address?.postalCode || client.address.postalCode.trim() === "") clientErrors.push("code postal manquant");
+        if (!client.address?.country || client.address.country.trim() === "") clientErrors.push("pays manquant");
+        if (client.type === "COMPANY" && (!client.vatNumber || client.vatNumber.trim() === "")) {
+          clientErrors.push("numéro de TVA manquant (obligatoire pour les entreprises)");
+        }
+        
+        // Si le client est maintenant valide, supprimer l'erreur
+        if (clientErrors.length === 0) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.client;
+          return newErrors;
+        } else {
+          // Mettre à jour le message d'erreur
+          return {
+            ...prevErrors,
+            client: {
+              message: `Le client "${client.name || 'Sans nom'}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
+              canEdit: true
+            }
+          };
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.client]);
+
+  // Re-valider quand les articles changent
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      // Toujours re-valider les articles s'il y a une erreur existante
+      if (prevErrors.items && formData.items && formData.items.length > 0) {
+        const invalidItems = [];
+        const itemsWithErrors = [];
+        
+        formData.items.forEach((item, index) => {
+          const itemErrors = [];
+          const fields = [];
+          
+          // Ne pas afficher l'erreur si le champ est en cours d'édition
+          const isDescriptionEditing = editingFields.has(`${index}-description`);
+          const isQuantityEditing = editingFields.has(`${index}-quantity`);
+          const isPriceEditing = editingFields.has(`${index}-unitPrice`);
+          
+          if (!isDescriptionEditing && (!item.description || item.description.trim() === "")) {
+            itemErrors.push("description manquante");
+            fields.push("description");
+          }
+          if (!isQuantityEditing && (!item.quantity || parseFloat(item.quantity) <= 0)) {
+            itemErrors.push("quantité invalide");
+            fields.push("quantity");
+          }
+          // Vérifier si le prix est vide, 0 ou invalide
+          if (!isPriceEditing) {
+            const priceValue = item.unitPrice;
+            const isInvalid = priceValue === undefined || 
+                             priceValue === null || 
+                             priceValue === "" || 
+                             isNaN(parseFloat(priceValue)) ||
+                             parseFloat(priceValue) <= 0;
+            
+            if (isInvalid) {
+              itemErrors.push("prix unitaire doit être > 0€");
+              fields.push("unitPrice");
+            }
+          }
+          
+          if (itemErrors.length > 0) {
+            invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
+            itemsWithErrors.push({ index, fields });
+          }
+        });
+        
+        // Si tous les articles sont valides, supprimer l'erreur
+        if (invalidItems.length === 0) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.items;
+          return newErrors;
+        } else {
+          // Mettre à jour le message d'erreur
+          return {
+            ...prevErrors,
+            items: {
+              message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+              canEdit: false,
+              details: itemsWithErrors
+            }
+          };
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.items, editingFields]);
 
   // Initialize form data when invoice loads
   useEffect(() => {
@@ -213,15 +377,228 @@ export function useInvoiceEditor({
   const handleSave = useCallback(async () => {
     const currentFormData = getValues();
 
-    const isValid = await trigger();
-    if (!isValid) {
-      console.error(
-        "❌ Validation échouée dans handleSave - Erreurs:",
-        formState.errors
-      );
-      toast.error("Veuillez corriger les erreurs avant de sauvegarder");
+    console.log("🔍 Début validation brouillon", {
+      hasClient: !!currentFormData.client,
+      clientId: currentFormData.client?.id,
+      clientData: currentFormData.client,
+      companyName: currentFormData.companyInfo?.name,
+      companyEmail: currentFormData.companyInfo?.email,
+      companyInfoComplete: currentFormData.companyInfo,
+      itemsCount: currentFormData.items?.length || 0
+    });
+
+    // Validation manuelle pour le brouillon (moins stricte)
+    const errors = {};
+    
+    console.log("🔍 Vérification client:", {
+      hasClient: !!currentFormData.client,
+      hasClientId: !!currentFormData.client?.id,
+      clientData: currentFormData.client
+    });
+    
+    if (!currentFormData.client || !currentFormData.client.id) {
+      console.log("➕ Ajout erreur client - Aucun client sélectionné");
+      errors.client = {
+        message: "Veuillez sélectionner un client",
+        canEdit: false // Pas de client à modifier
+      };
+    } else {
+      // Vérifier les champs obligatoires du client sélectionné
+      const client = currentFormData.client;
+      const clientErrors = [];
+      
+      if (!client.name || client.name.trim() === "") {
+        clientErrors.push("nom manquant");
+      }
+      if (!client.email || client.email.trim() === "") {
+        clientErrors.push("email manquant");
+      }
+      if (!client.address?.street || client.address.street.trim() === "") {
+        clientErrors.push("adresse (rue) manquante");
+      }
+      if (!client.address?.city || client.address.city.trim() === "") {
+        clientErrors.push("ville manquante");
+      }
+      if (!client.address?.postalCode || client.address.postalCode.trim() === "") {
+        clientErrors.push("code postal manquant");
+      }
+      if (!client.address?.country || client.address.country.trim() === "") {
+        clientErrors.push("pays manquant");
+      }
+      
+      // Vérifier le numéro de TVA pour les entreprises
+      if (client.type === "COMPANY" && (!client.vatNumber || client.vatNumber.trim() === "")) {
+        clientErrors.push("numéro de TVA manquant (obligatoire pour les entreprises)");
+      }
+      
+      if (clientErrors.length > 0) {
+        console.log("➕ Ajout erreur client - Champs manquants:", clientErrors);
+        errors.client = {
+          message: `Le client "${client.name || 'Sans nom'}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
+          canEdit: true // On peut modifier le client
+        };
+      }
+    }
+    
+    console.log("🔍 Vérification entreprise:", {
+      hasName: !!currentFormData.companyInfo?.name,
+      hasEmail: !!currentFormData.companyInfo?.email,
+      willAddError: !currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email
+    });
+    
+    if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
+      console.log("➕ Ajout erreur entreprise");
+      errors.companyInfo = {
+        message: "Les informations de l'entreprise sont incomplètes",
+        canEdit: true // On peut toujours modifier l'entreprise
+      };
+    }
+    
+    // Validation de la remise globale
+    console.log("🔍 Vérification remise:", {
+      discount: currentFormData.discount,
+      discountType: currentFormData.discountType,
+      discountValue: currentFormData.discount
+    });
+    
+    if (currentFormData.discountType === "PERCENTAGE" && currentFormData.discount > 100) {
+      console.log("➕ Ajout erreur remise");
+      errors.discount = {
+        message: "La remise ne peut pas dépasser 100%",
+        canEdit: false
+      };
+    }
+    
+    // Validation de la livraison si activée
+    if (currentFormData.shipping?.billShipping) {
+      const shippingErrors = [];
+      const shippingAddr = currentFormData.shipping?.shippingAddress || {};
+      
+      // Validation du nom complet
+      if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
+        shippingErrors.push("nom complet manquant");
+      } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+        shippingErrors.push("nom complet invalide");
+      }
+      
+      // Validation de l'adresse
+      if (!shippingAddr.street || shippingAddr.street.trim() === "") {
+        shippingErrors.push("adresse manquante");
+      } else if (shippingAddr.street.trim().length < 5) {
+        shippingErrors.push("adresse trop courte");
+      }
+      
+      // Validation du code postal
+      if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+        shippingErrors.push("code postal manquant");
+      } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+        shippingErrors.push("code postal invalide (5 chiffres requis)");
+      }
+      
+      // Validation de la ville
+      if (!shippingAddr.city || shippingAddr.city.trim() === "") {
+        shippingErrors.push("ville manquante");
+      } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+        shippingErrors.push("ville invalide");
+      }
+      
+      // Validation du pays
+      if (!shippingAddr.country || shippingAddr.country.trim() === "") {
+        shippingErrors.push("pays manquant");
+      }
+      
+      // Validation du coût de livraison
+      const shippingCost = currentFormData.shipping?.shippingAmountHT;
+      if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+        shippingErrors.push("coût de livraison invalide (doit être >= 0€)");
+      }
+      
+      if (shippingErrors.length > 0) {
+        console.log("➕ Ajout erreur livraison:", shippingErrors);
+        errors.shipping = {
+          message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
+          canEdit: false
+        };
+      }
+    }
+    
+    // Validation des articles - vérifier qu'il y en a au moins un
+    console.log("🔍 Vérification articles:", {
+      hasItems: !!currentFormData.items,
+      itemsCount: currentFormData.items?.length || 0,
+      willAddError: !currentFormData.items || currentFormData.items.length === 0
+    });
+    
+    if (!currentFormData.items || currentFormData.items.length === 0) {
+      console.log("➕ Ajout erreur articles");
+      errors.items = {
+        message: "Veuillez ajouter au moins un article à la facture",
+        canEdit: false
+      };
+    } else {
+      // Vérifier que chaque article a les champs requis
+      const invalidItems = [];
+      const itemsWithErrors = [];
+      
+      currentFormData.items.forEach((item, index) => {
+        const itemErrors = [];
+        const fields = [];
+        
+        if (!item.description || item.description.trim() === "") {
+          itemErrors.push("description");
+          fields.push("description");
+        }
+        if (!item.quantity || parseFloat(item.quantity) <= 0) {
+          itemErrors.push("quantité invalide");
+          fields.push("quantity");
+        }
+        const priceValue = item.unitPrice;
+        const isInvalid = priceValue === undefined || 
+                         priceValue === null || 
+                         priceValue === "" || 
+                         isNaN(parseFloat(priceValue)) ||
+                         parseFloat(priceValue) <= 0;
+        
+        if (isInvalid) {
+          itemErrors.push("prix unitaire doit être > 0€");
+          fields.push("unitPrice");
+        }
+        
+        if (itemErrors.length > 0) {
+          invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
+          itemsWithErrors.push({ index, fields });
+        }
+      });
+      
+      if (invalidItems.length > 0) {
+        console.log("➕ Ajout erreur articles invalides:", invalidItems);
+        errors.items = {
+          message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+          canEdit: false,
+          details: itemsWithErrors // Pour afficher les champs en rouge
+        };
+      }
+    }
+    
+    const errorCount = Object.keys(errors).length;
+    const hasErrors = errorCount > 0;
+    
+    console.log("🔍 Erreurs détectées:", JSON.stringify(errors, null, 2));
+    console.log("🔍 Nombre d'erreurs:", errorCount);
+    console.log("🔍 Type de errors:", typeof errors, Array.isArray(errors) ? "Array" : "Object");
+    console.log("🔍 Keys:", Object.keys(errors));
+    console.log("🔍 Condition hasErrors:", hasErrors);
+    
+    if (hasErrors) {
+      console.error("❌ Validation échouée dans handleSave");
+      console.error("❌ Erreurs détaillées:", JSON.stringify(errors, null, 2));
+      setValidationErrors(errors);
       return false;
     }
+    
+    // Réinitialiser les erreurs si la validation passe
+    console.log("✅ Validation réussie, création de la facture...");
+    setValidationErrors({});
 
     try {
       setSaving(true);
@@ -246,8 +623,16 @@ export function useInvoiceEditor({
         return true;
       }
     } catch (error) {
-      console.error("Save failed:", error);
-      handleError(error, 'invoice');
+      console.error("❌ Save failed:", error);
+      console.error("❌ Error details:", {
+        message: error.message,
+        graphQLErrors: error.graphQLErrors,
+        networkError: error.networkError
+      });
+      handleError(error, 'invoice', { 
+        preventDuplicates: true,
+        hideServerErrors: true 
+      });
       return false;
     } finally {
       setSaving(false);
@@ -258,10 +643,7 @@ export function useInvoiceEditor({
     createInvoice,
     updateInvoice,
     getValues,
-    trigger,
     router,
-    setSaving,
-    formState.errors,
     reset,
     handleError,
   ]);
@@ -270,12 +652,169 @@ export function useInvoiceEditor({
   const handleSubmit = useCallback(async () => {
     const currentFormData = getValues();
 
-    const isValid = await trigger();
-    if (!isValid) {
-      console.error("❌ Validation échouée - Erreurs:", formState.errors);
-      toast.error("Veuillez corriger les erreurs avant de valider");
+    // Validation complète pour la soumission
+    const errors = {};
+    
+    if (!currentFormData.client || !currentFormData.client.id) {
+      errors.client = {
+        message: "Veuillez sélectionner un client",
+        canEdit: false // Pas de client à modifier
+      };
+    } else {
+      // Vérifier les champs obligatoires du client sélectionné
+      const client = currentFormData.client;
+      const clientErrors = [];
+      
+      if (!client.name || client.name.trim() === "") {
+        clientErrors.push("nom manquant");
+      }
+      if (!client.email || client.email.trim() === "") {
+        clientErrors.push("email manquant");
+      }
+      if (!client.address?.street || client.address.street.trim() === "") {
+        clientErrors.push("adresse (rue) manquante");
+      }
+      if (!client.address?.city || client.address.city.trim() === "") {
+        clientErrors.push("ville manquante");
+      }
+      if (!client.address?.postalCode || client.address.postalCode.trim() === "") {
+        clientErrors.push("code postal manquant");
+      }
+      if (!client.address?.country || client.address.country.trim() === "") {
+        clientErrors.push("pays manquant");
+      }
+      
+      // Vérifier le numéro de TVA pour les entreprises
+      if (client.type === "COMPANY" && (!client.vatNumber || client.vatNumber.trim() === "")) {
+        clientErrors.push("numéro de TVA manquant (obligatoire pour les entreprises)");
+      }
+      
+      if (clientErrors.length > 0) {
+        errors.client = {
+          message: `Le client "${client.name || 'Sans nom'}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
+          canEdit: true // On peut modifier le client
+        };
+      }
+    }
+    
+    if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
+      errors.companyInfo = {
+        message: "Les informations de l'entreprise sont incomplètes",
+        canEdit: true // On peut toujours modifier l'entreprise
+      };
+    }
+    
+    // Validation de la remise globale
+    if (currentFormData.discountType === "PERCENTAGE" && currentFormData.discount > 100) {
+      errors.discount = {
+        message: "La remise ne peut pas dépasser 100%",
+        canEdit: false
+      };
+    }
+    
+    // Validation de la livraison si activée
+    if (currentFormData.shipping?.billShipping) {
+      const shippingErrors = [];
+      const shipping = currentFormData.shipping?.shippingAddress || {};
+      
+      if (!shipping.fullName || shipping.fullName.trim() === "") {
+        shippingErrors.push("nom complet manquant");
+      } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shipping.fullName.trim())) {
+        shippingErrors.push("nom complet invalide");
+      }
+      
+      if (!shipping.address || shipping.address.trim() === "") {
+        shippingErrors.push("adresse manquante");
+      } else if (shipping.address.trim().length < 5) {
+        shippingErrors.push("adresse trop courte");
+      }
+      
+      if (!shipping.postalCode || shipping.postalCode.trim() === "") {
+        shippingErrors.push("code postal manquant");
+      } else if (!/^\d{5}$/.test(shipping.postalCode.trim())) {
+        shippingErrors.push("code postal invalide");
+      }
+      
+      if (!shipping.city || shipping.city.trim() === "") {
+        shippingErrors.push("ville manquante");
+      } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shipping.city.trim())) {
+        shippingErrors.push("ville invalide");
+      }
+      
+      if (!shipping.country || shipping.country.trim() === "") {
+        shippingErrors.push("pays manquant");
+      }
+      
+      if (shipping.cost === undefined || shipping.cost === null || shipping.cost === "" || isNaN(parseFloat(shipping.cost)) || parseFloat(shipping.cost) < 0) {
+        shippingErrors.push("coût de livraison invalide");
+      }
+      
+      if (shippingErrors.length > 0) {
+        errors.shipping = {
+          message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
+          canEdit: false
+        };
+      }
+    }
+    
+    if (!currentFormData.items || currentFormData.items.length === 0) {
+      errors.items = {
+        message: "Veuillez ajouter au moins un article à la facture",
+        canEdit: false // Pas de bouton modifier pour les articles
+      };
+    } else {
+      // Vérifier que chaque article a les champs requis
+      const invalidItems = [];
+      const itemsWithErrors = [];
+      
+      currentFormData.items.forEach((item, index) => {
+        const itemErrors = [];
+        const fields = [];
+        
+        if (!item.description || item.description.trim() === "") {
+          itemErrors.push("description");
+          fields.push("description");
+        }
+        if (!item.quantity || parseFloat(item.quantity) <= 0) {
+          itemErrors.push("quantité invalide");
+          fields.push("quantity");
+        }
+        const priceValue = item.unitPrice;
+        const isInvalid = priceValue === undefined || 
+                         priceValue === null || 
+                         priceValue === "" || 
+                         isNaN(parseFloat(priceValue)) ||
+                         parseFloat(priceValue) <= 0;
+        
+        if (isInvalid) {
+          itemErrors.push("prix unitaire doit être > 0€");
+          fields.push("unitPrice");
+        }
+        
+        if (itemErrors.length > 0) {
+          invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
+          itemsWithErrors.push({ index, fields });
+        }
+      });
+      
+      if (invalidItems.length > 0) {
+        errors.items = {
+          message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+          canEdit: false,
+          details: itemsWithErrors // Pour afficher les champs en rouge
+        };
+      }
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      console.error("❌ Validation échouée - Erreurs:", errors);
+      setValidationErrors(errors);
+      toast.error("Veuillez corriger les erreurs avant de valider la facture");
       return false;
     }
+    
+    // Réinitialiser les erreurs si la validation passe
+    setValidationErrors({});
 
     try {
       setSaving(true);
@@ -304,7 +843,10 @@ export function useInvoiceEditor({
       }
     } catch (error) {
       console.error("Submit failed:", error);
-      handleError(error, 'invoice');
+      handleError(error, 'invoice', { 
+        preventDuplicates: true,
+        hideServerErrors: true 
+      });
       return false;
     } finally {
       setSaving(false);
@@ -312,13 +854,11 @@ export function useInvoiceEditor({
   }, [
     mode,
     getValues,
-    trigger,
     createInvoice,
     updateInvoice,
     invoiceId,
     router,
     existingInvoice?.status,
-    formState.errors,
     handleError,
   ]);
 
@@ -367,9 +907,13 @@ export function useInvoiceEditor({
     saving: saving || creating || updating,
     handleSave,
     handleSubmit,
+    markFieldAsEditing,
+    unmarkFieldAsEditing,
     // handleAutoSave, // DISABLED
     isDirty,
     errors,
+    validationErrors,
+    clearValidationErrors: () => setValidationErrors({}),
     saveSettingsToOrganization,
     invoice: existingInvoice,
     error: loadingInvoice ? null : (!existingInvoice && mode !== "create"),

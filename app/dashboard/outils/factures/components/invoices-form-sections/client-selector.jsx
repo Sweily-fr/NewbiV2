@@ -66,6 +66,7 @@ export default function ClientSelector({
   placeholder = "Rechercher un client...",
   className,
   disabled = false,
+  error = null,
 }) {
   const id = useId();
   const [activeTab, setActiveTab] = useState("existing");
@@ -364,41 +365,50 @@ export default function ClientSelector({
     return Object.keys(errors).length === 0;
   };
 
+  // Validation et soumission du nouveau client
   const handleNewClientSubmit = async (e) => {
     e.preventDefault();
-    let hasErrors = false;
 
-    // Valider le formulaire de base
-    if (!validateForm()) {
+    // Valider le formulaire
+    const isValid = validateForm();
+    if (!isValid) {
       toast.error("Veuillez corriger les erreurs dans le formulaire");
       return;
     }
 
-    // Vérification des champs obligatoires
-    const requiredFields = [
-      { field: "name", message: "Le nom est obligatoire" },
-      { field: "email", message: "L'email est obligatoire" },
-      { field: "address.street", message: "La rue est obligatoire" },
-      {
-        field: "address.postalCode",
-        message: "Le code postal est obligatoire",
-      },
-      { field: "address.city", message: "La ville est obligatoire" },
-    ];
-
-    requiredFields.forEach(({ field, message }) => {
-      const value = field
-        .split(".")
-        .reduce((obj, key) => obj?.[key], newClientForm);
-      if (!value || (typeof value === "string" && value.trim() === "")) {
-        toast.error(message);
-        hasErrors = true;
-      }
+    // Vérifier si l'email existe déjà dans la liste des clients
+    console.log("🔍 Vérification email:", {
+      email: newClientForm.email,
+      hasClients: !!clients,
+      clientsStructure: clients,
+      hasItems: !!clients?.items,
+      itemsCount: clients?.items?.length || 0,
+      isArray: Array.isArray(clients)
     });
-
-    // Si des erreurs sont détectées, arrêter la soumission
-    if (hasErrors) {
-      console.error("❌ Erreurs de validation détectées");
+    
+    // Déterminer la structure correcte des clients
+    const clientsList = Array.isArray(clients) ? clients : (clients?.items || []);
+    console.log("📋 Liste des clients:", clientsList.length, "clients");
+    
+    const emailExists = clientsList.some(
+      (client) => {
+        const matches = client.email.toLowerCase() === newClientForm.email.toLowerCase();
+        if (matches) {
+          console.log("❌ Email existe déjà:", client.email);
+        }
+        return matches;
+      }
+    );
+    
+    console.log("📧 Email existe?", emailExists);
+    
+    if (emailExists) {
+      console.log("🚫 Blocage de la soumission - Email existant");
+      setFormErrors((prev) => ({
+        ...prev,
+        email: "Cet email est déjà utilisé par un autre client"
+      }));
+      toast.error("Un client avec cet email existe déjà");
       return;
     }
 
@@ -471,10 +481,17 @@ export default function ClientSelector({
           "Erreur de validation. Vérifiez que tous les champs sont correctement remplis.";
       } else if (
         error.message.includes("409") ||
+        error.message.toLowerCase().includes("existe déjà") ||
+        error.message.toLowerCase().includes("email existe") ||
         error.extensions?.exception?.code === "ALREADY_EXISTS"
       ) {
         errorMessage =
           "Un client avec cet email existe déjà. Veuillez utiliser un email différent ou sélectionner ce client dans la liste.";
+        // Afficher l'erreur sur le champ email
+        setFormErrors((prev) => ({
+          ...prev,
+          email: "Cet email est déjà utilisé par un autre client"
+        }));
       } else if (
         error.message.includes("401") ||
         error.message.includes("403")
@@ -607,7 +624,10 @@ export default function ClientSelector({
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="w-full justify-between font-normal"
+                        className={cn(
+                          "w-full justify-between font-normal",
+                          error && "border-destructive focus-visible:ring-destructive"
+                        )}
                         disabled={disabled}
                       >
                         <span className={cn("truncate")}>
@@ -713,6 +733,13 @@ export default function ClientSelector({
                       </Command>
                     </PopoverContent>
                   </Popover>
+                  
+                  {/* Message d'erreur */}
+                  {error && (
+                    <p className="text-sm text-destructive font-normal">
+                      {error}
+                    </p>
+                  )}
 
                   {selectedClient && (
                     <div className="p-4 border rounded-lg bg-muted/50">
