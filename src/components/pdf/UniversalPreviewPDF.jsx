@@ -419,7 +419,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                 alt="Logo entreprise"
                 className="h-20 w-auto object-contain"
                 style={{ maxWidth: "150px" }}
-                {...(forPDF && { crossOrigin: "anonymous" })}
+                crossOrigin="anonymous"
               />
             )}
           </div>
