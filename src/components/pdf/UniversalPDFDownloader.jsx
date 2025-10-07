@@ -34,7 +34,65 @@ const UniversalPDFDownloader = ({
 
       console.log('Capture de l\'élément...');
       
-      // Attendre un peu pour s'assurer que le composant est bien rendu
+      // Convertir toutes les images en base64 pour éviter les problèmes CORS
+      const images = componentRef.current.querySelectorAll('img');
+      console.log(`Traitement de ${images.length} image(s)...`);
+      
+      for (const img of images) {
+        // Ignorer si déjà en base64
+        if (!img.src || img.src.startsWith('data:')) continue;
+        
+        try {
+          const originalSrc = img.src;
+          
+          // S'assurer que crossOrigin est défini pour les images externes
+          if (!img.crossOrigin && !img.src.startsWith(window.location.origin)) {
+            img.crossOrigin = 'anonymous';
+            // Recharger l'image avec le nouvel attribut crossOrigin
+            img.src = '';
+            img.src = originalSrc;
+          }
+          
+          // Attendre que l'image soit chargée
+          if (!img.complete) {
+            await new Promise((resolve) => {
+              const timeout = setTimeout(resolve, 3000);
+              img.onload = () => {
+                clearTimeout(timeout);
+                resolve();
+              };
+              img.onerror = () => {
+                clearTimeout(timeout);
+                resolve();
+              };
+            });
+          }
+          
+          // Créer un canvas pour convertir l'image en base64
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Définir les dimensions du canvas
+          canvas.width = img.naturalWidth || img.width || 200;
+          canvas.height = img.naturalHeight || img.height || 200;
+          
+          // Dessiner l'image sur le canvas avec gestion d'erreur
+          try {
+            ctx.drawImage(img, 0, 0);
+            // Convertir en base64 (PNG pour préserver la transparence)
+            const dataUrl = canvas.toDataURL('image/png');
+            img.src = dataUrl;
+            console.log('✓ Image convertie en base64:', img.alt || originalSrc.substring(0, 50));
+          } catch (drawError) {
+            console.warn('✗ Erreur CORS lors du dessin de l\'image:', img.alt || originalSrc.substring(0, 50));
+            console.warn('  L\'image sera peut-être manquante dans le PDF');
+          }
+        } catch (error) {
+          console.warn('✗ Erreur conversion image:', error);
+        }
+      }
+      
+      // Attendre un peu pour s'assurer que toutes les images sont bien mises à jour
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Capturer avec modern-screenshot en JPEG (supporte oklch et compatible jsPDF)
