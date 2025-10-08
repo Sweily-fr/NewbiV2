@@ -385,17 +385,37 @@ export default function QuoteSidebar({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total HT</span>
                   <span>
-                    {formatCurrency(quote.finalTotalHT || quote.totalHT || 0)}
+                    {formatCurrency(
+                      quote.finalTotalHT !== undefined && quote.finalTotalHT !== null
+                        ? quote.finalTotalHT
+                        : quote.totalHT !== undefined && quote.totalHT !== null
+                          ? quote.totalHT
+                          : 0
+                    )}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">TVA</span>
-                  <span>{formatCurrency(quote.totalVAT || 0)}</span>
+                  <span>
+                    {formatCurrency(
+                      quote.finalTotalVAT !== undefined && quote.finalTotalVAT !== null
+                        ? quote.finalTotalVAT
+                        : quote.totalVAT !== undefined && quote.totalVAT !== null
+                          ? quote.totalVAT
+                          : 0
+                    )}
+                  </span>
                 </div>
                 <div className="flex justify-between font-medium">
                   <span>Total TTC</span>
                   <span>
-                    {formatCurrency(quote.finalTotalTTC || quote.totalTTC || 0)}
+                    {formatCurrency(
+                      quote.finalTotalTTC !== undefined && quote.finalTotalTTC !== null
+                        ? quote.finalTotalTTC
+                        : quote.totalTTC !== undefined && quote.totalTTC !== null
+                          ? quote.totalTTC
+                          : 0
+                    )}
                   </span>
                 </div>
               </div>

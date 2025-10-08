@@ -402,7 +402,8 @@ export function useInvoiceTable({ data = [], onRefetch }) {
         },
         cell: ({ row }) => {
           const amount = row.getValue("finalTotalTTC");
-          if (!amount || isNaN(amount)) return "-";
+          // Afficher 0€ si le montant est 0, et "-" seulement si undefined/null
+          if (amount === undefined || amount === null || isNaN(amount)) return "-";
           return (
             <div className="font-normal">
               {new Intl.NumberFormat("fr-FR", {
@@ -492,7 +493,8 @@ export function useInvoiceTable({ data = [], onRefetch }) {
     for (let i = 0; i < draftInvoices.length; i += BATCH_SIZE) {
       const batch = draftInvoices.slice(i, i + BATCH_SIZE);
       try {
-        await Promise.all(batch.map((invoice) => deleteInvoice(invoice.id)));
+        // Utiliser le mode silent pour éviter les notifications multiples
+        await Promise.all(batch.map((invoice) => deleteInvoice(invoice.id, { silent: true })));
       } catch (_) {
         toast.error(
           `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`
@@ -500,6 +502,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       }
     }
 
+    // Une seule notification à la fin
     toast.success(`${draftInvoices.length} facture(s) supprimée(s)`);
     table.resetRowSelection();
 

@@ -24,6 +24,7 @@ export const INVOICE_FRAGMENT = gql`
     totalTTC
     totalVAT
     finalTotalHT
+    finalTotalVAT
     finalTotalTTC
     discountAmount
     stripeInvoiceId
@@ -659,19 +660,14 @@ export const useDeleteInvoice = () => {
   const { handleMutationError } = useErrorHandler();
 
   const [deleteInvoiceMutation, { loading }] = useMutation(DELETE_INVOICE, {
-    onCompleted: () => {
-      toast.success("Facture supprimée avec succès");
-      // Invalider le cache des factures
-      client.refetchQueries({
-        include: [GET_INVOICES, GET_INVOICE_STATS],
-      });
-    },
     onError: (error) => {
       handleMutationError(error, 'delete', 'invoice');
     },
   });
 
-  const deleteInvoice = async (id) => {
+  const deleteInvoice = async (id, options = {}) => {
+    const { silent = false } = options;
+    
     if (!workspaceId) {
       throw new Error("Aucun workspace sélectionné");
     }
@@ -680,6 +676,17 @@ export const useDeleteInvoice = () => {
       await deleteInvoiceMutation({
         variables: { id, workspaceId },
       });
+      
+      // Invalider le cache des factures
+      client.refetchQueries({
+        include: [GET_INVOICES, GET_INVOICE_STATS],
+      });
+      
+      // Afficher le toast seulement si pas en mode silent
+      if (!silent) {
+        toast.success("Facture supprimée avec succès");
+      }
+      
       return true;
     } catch (error) {
       throw error;

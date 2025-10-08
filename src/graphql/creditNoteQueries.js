@@ -27,6 +27,7 @@ export const CREDIT_NOTE_FRAGMENT = gql`
     totalTTC
     totalVAT
     finalTotalHT
+    finalTotalVAT
     finalTotalTTC
     showBankDetails
     createdAt

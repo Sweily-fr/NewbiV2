@@ -416,7 +416,8 @@ export function useQuoteTable({ data = [], onRefetch }) {
         },
         cell: ({ row }) => {
           const amount = row.getValue("finalTotalTTC");
-          if (!amount || isNaN(amount)) return "-";
+          // Afficher 0€ si le montant est 0, et "-" seulement si undefined/null
+          if (amount === undefined || amount === null || isNaN(amount)) return "-";
           return (
             <div className="font-normal">
               {new Intl.NumberFormat("fr-FR", {
@@ -541,7 +542,8 @@ export function useQuoteTable({ data = [], onRefetch }) {
     for (let i = 0; i < draftQuotes.length; i += BATCH_SIZE) {
       const batch = draftQuotes.slice(i, i + BATCH_SIZE);
       try {
-        await Promise.all(batch.map((quote) => deleteQuote(quote.id)));
+        // Utiliser le mode silent pour éviter les notifications multiples
+        await Promise.all(batch.map((quote) => deleteQuote(quote.id, { silent: true })));
       } catch (error) {
         console.error("Error deleting batch:", error);
         toast.error(
@@ -550,6 +552,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
       }
     }
 
+    // Une seule notification à la fin
     toast.success(`${draftQuotes.length} devis supprimé(s)`);
     table.resetRowSelection();
 

@@ -359,18 +359,36 @@ export default function InvoiceSidebar({
               <div className="flex justify-between">
                 <span className="font-normal">Total HT</span>
                 <span>
-                  {formatCurrency(invoice.finalTotalHT || invoice.totalHT || 0)}
+                  {formatCurrency(
+                    invoice.finalTotalHT !== undefined && invoice.finalTotalHT !== null
+                      ? invoice.finalTotalHT
+                      : invoice.totalHT !== undefined && invoice.totalHT !== null
+                        ? invoice.totalHT
+                        : 0
+                  )}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="font-normal">TVA</span>
-                <span>{formatCurrency(invoice.totalVAT || 0)}</span>
+                <span>
+                  {formatCurrency(
+                    invoice.finalTotalVAT !== undefined && invoice.finalTotalVAT !== null
+                      ? invoice.finalTotalVAT
+                      : invoice.totalVAT !== undefined && invoice.totalVAT !== null
+                        ? invoice.totalVAT
+                        : 0
+                  )}
+                </span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="font-normal">Total TTC</span>
                 <span>
                   {formatCurrency(
-                    invoice.finalTotalTTC || invoice.totalTTC || 0
+                    invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
+                      ? invoice.finalTotalTTC
+                      : invoice.totalTTC !== undefined && invoice.totalTTC !== null
+                        ? invoice.totalTTC
+                        : 0
                   )}
                 </span>
               </div>

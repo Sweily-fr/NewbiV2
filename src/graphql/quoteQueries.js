@@ -21,6 +21,7 @@ export const QUOTE_FRAGMENT = gql`
     totalTTC
     totalVAT
     finalTotalHT
+    finalTotalVAT
     finalTotalTTC
     discountAmount
     createdAt
@@ -509,24 +510,30 @@ export const useDeleteQuote = () => {
   const client = useApolloClient();
 
   const [deleteQuoteMutation, { loading }] = useMutation(DELETE_QUOTE, {
-    onCompleted: () => {
-      toast.success("Devis supprimé avec succès");
-      // Invalider le cache
-      client.refetchQueries({
-        include: [GET_QUOTES, GET_QUOTE_STATS],
-      });
-    },
     onError: (error) => {
       console.error("Erreur lors de la suppression du devis:", error);
       toast.error(error.message || "Erreur lors de la suppression du devis");
     },
   });
 
-  const deleteQuote = async (id) => {
+  const deleteQuote = async (id, options = {}) => {
+    const { silent = false } = options;
+    
     try {
       await deleteQuoteMutation({
         variables: { id },
       });
+      
+      // Invalider le cache
+      client.refetchQueries({
+        include: [GET_QUOTES, GET_QUOTE_STATS],
+      });
+      
+      // Afficher le toast seulement si pas en mode silent
+      if (!silent) {
+        toast.success("Devis supprimé avec succès");
+      }
+      
       return true;
     } catch (error) {
       throw error;

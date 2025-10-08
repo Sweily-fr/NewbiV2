@@ -307,7 +307,8 @@ export default function EnhancedInvoiceForm({
       );
     }, 0) || 0;
 
-  const adjustedTotalTVA = totalTVA * (totalHT / subtotalHT);
+  // Si totalHT <= 0 (remise >= 100%), la TVA doit être 0
+  const adjustedTotalTVA = totalHT > 0 && subtotalHT > 0 ? totalTVA * (totalHT / subtotalHT) : 0;
   const totalTTC = totalHT + adjustedTotalTVA;
 
   const updateField = (field, value) => {
