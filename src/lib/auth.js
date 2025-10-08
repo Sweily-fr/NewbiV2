@@ -25,6 +25,9 @@ export const auth = betterAuth({
   // Utiliser BETTER_AUTH_URL côté serveur (pas NEXT_PUBLIC_*)
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
 
+  // ⚠️ CRITICAL: Secret requis pour signer les tokens en production
+  secret: process.env.BETTER_AUTH_SECRET,
+
   // ⚠️ IMPORTANT: trustedOrigins pour autoriser www et non-www
   trustedOrigins: [
     "https://newbi.fr",
