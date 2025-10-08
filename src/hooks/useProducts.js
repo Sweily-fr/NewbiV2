@@ -1,4 +1,4 @@
-import { useMutation, useQuery, gql } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
 import { CREATE_PRODUCT, UPDATE_PRODUCT, DELETE_PRODUCT } from '../graphql/mutations/products';
 import { GET_PRODUCTS, GET_PRODUCT } from '../graphql/queries/products';
 import { toast } from '@/src/components/ui/sonner';
@@ -38,28 +38,7 @@ export const useProduct = (id) => {
 
 export const useCreateProduct = () => {
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT, {
-    update(cache, { data: { createProduct: newProduct } }) {
-      // Mise à jour optimiste du cache Apollo
-      const existingProducts = cache.readQuery({
-        query: GET_PRODUCTS,
-        variables: { page: 1, limit: 10, search: '', category: '' }
-      });
-
-      if (existingProducts) {
-        cache.writeQuery({
-          query: GET_PRODUCTS,
-          variables: { page: 1, limit: 10, search: '', category: '' },
-          data: {
-            products: {
-              ...existingProducts.products,
-              products: [newProduct, ...existingProducts.products.products],
-              totalCount: existingProducts.products.totalCount + 1
-            }
-          }
-        });
-      }
-    },
-    refetchQueries: [{ query: GET_PRODUCTS }],
+    refetchQueries: ['GetProducts'],
     awaitRefetchQueries: true,
     onCompleted: () => {
       toast.success('Produit créé avec succès');
@@ -79,41 +58,7 @@ export const useCreateProduct = () => {
 
 export const useUpdateProduct = () => {
   const [updateProduct, { loading, error }] = useMutation(UPDATE_PRODUCT, {
-    update(cache, { data: { updateProduct: updatedProduct } }) {
-      // Mise à jour du cache Apollo
-      cache.modify({
-        fields: {
-          products(existingProductsRef, { readField }) {
-            const existingProducts = readField('products', existingProductsRef);
-            if (!existingProducts) return existingProductsRef;
-            
-            const updatedProducts = existingProducts.map(productRef => {
-              if (readField('id', productRef) === updatedProduct.id) {
-                return cache.writeFragment({
-                  data: updatedProduct,
-                  fragment: gql`
-                    fragment UpdatedProduct on Product {
-                      id
-                      name
-                      reference
-                      unitPrice
-                      vatRate
-                      unit
-                      category
-                      description
-                    }
-                  `
-                });
-              }
-              return productRef;
-            });
-            
-            return { ...existingProductsRef, products: updatedProducts };
-          }
-        }
-      });
-    },
-    refetchQueries: [{ query: GET_PRODUCTS }],
+    refetchQueries: ['GetProducts'],
     awaitRefetchQueries: true,
     onCompleted: () => {
       toast.success('Produit modifié avec succès');
@@ -133,6 +78,8 @@ export const useUpdateProduct = () => {
 
 export const useDeleteProduct = () => {
   const [deleteProduct, { loading, error }] = useMutation(DELETE_PRODUCT, {
+    refetchQueries: ['GetProducts'],
+    awaitRefetchQueries: true,
     onCompleted: () => {
       toast.success('Produit supprimé avec succès');
     },
@@ -146,8 +93,6 @@ export const useDeleteProduct = () => {
     deleteProduct: async (id) => {
       const result = await deleteProduct({ 
         variables: { id },
-        refetchQueries: [{ query: GET_PRODUCTS }],
-        awaitRefetchQueries: true,
       });
       return result;
     },
