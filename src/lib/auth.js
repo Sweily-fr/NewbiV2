@@ -22,10 +22,8 @@ export const auth = betterAuth({
   appName: "Newbi",
 
   // ⚠️ IMPORTANT: baseURL requis pour OAuth en production
-  baseURL:
-    process.env.BETTER_AUTH_URL ||
-    process.env.NEXT_PUBLIC_BETTER_AUTH_URL ||
-    "http://localhost:3000",
+  // Utiliser BETTER_AUTH_URL côté serveur (pas NEXT_PUBLIC_*)
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
 
   // ⚠️ IMPORTANT: trustedOrigins pour autoriser www et non-www
   trustedOrigins: [
