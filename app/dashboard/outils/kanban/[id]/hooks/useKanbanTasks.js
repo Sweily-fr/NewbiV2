@@ -295,6 +295,18 @@ export const useKanbanTasks = (boardId, board) => {
     }
 
     try {
+      // S'assurer que assignedMembers est toujours un tableau valide avec la bonne structure
+      const assignedMembers = Array.isArray(taskForm.assignedMembers) 
+        ? taskForm.assignedMembers.map(member => ({
+            userId: member.userId,
+            name: member.name,
+            email: member.email,
+            image: member.image || null,
+          }))
+        : [];
+      
+      console.log('📝 [CreateTask] Membres assignés:', JSON.stringify(assignedMembers, null, 2));
+      
       await createTask({
         variables: {
           input: {
@@ -312,6 +324,7 @@ export const useKanbanTasks = (boardId, board) => {
               text: item.text,
               completed: item.completed || false,
             })),
+            assignedMembers: assignedMembers,
           },
           workspaceId,
         },
@@ -329,28 +342,57 @@ export const useKanbanTasks = (boardId, board) => {
     }
 
     try {
+      // S'assurer que assignedMembers est toujours un tableau valide avec la bonne structure
+      const assignedMembers = Array.isArray(taskForm.assignedMembers) 
+        ? taskForm.assignedMembers.map(member => ({
+            userId: member.userId,
+            name: member.name,
+            email: member.email,
+            image: member.image || null,
+          }))
+        : [];
+      
+      console.log('✏️ [UpdateTask] Membres assignés:', JSON.stringify(assignedMembers, null, 2));
+      console.log('✏️ [UpdateTask] TaskForm complet:', JSON.stringify(taskForm, null, 2));
+      
+      const input = {
+        id: editingTask.id,
+        title: taskForm.title,
+        description: taskForm.description,
+        status: taskForm.status,
+        priority: taskForm.priority.toLowerCase(),
+        dueDate: taskForm.dueDate || null,
+        columnId: taskForm.columnId,
+        tags: cleanTags(taskForm.tags),
+        checklist: taskForm.checklist.map((item) => ({
+          id: item.id || undefined,
+          text: item.text,
+          completed: item.completed || false,
+        })),
+        assignedMembers: assignedMembers,
+      };
+      
+      console.log('✏️ [UpdateTask] Input envoyé:', JSON.stringify(input, null, 2));
+      
       await updateTask({
         variables: {
-          input: {
-            id: editingTask.id,
-            title: taskForm.title,
-            description: taskForm.description,
-            status: taskForm.status,
-            priority: taskForm.priority.toLowerCase(),
-            dueDate: taskForm.dueDate || null,
-            columnId: taskForm.columnId,
-            tags: cleanTags(taskForm.tags),
-            checklist: taskForm.checklist.map((item) => ({
-              id: item.id || undefined,
-              text: item.text,
-              completed: item.completed || false,
-            })),
-          },
+          input,
           workspaceId,
         },
       });
     } catch (error) {
-      console.error("Error updating task:", error);
+      console.error("❌ [UpdateTask] Erreur complète:", error);
+      console.error("❌ [UpdateTask] Message:", error.message);
+      console.error("❌ [UpdateTask] GraphQL errors:", error.graphQLErrors);
+      console.error("❌ [UpdateTask] Network error:", error.networkError);
+      
+      if (error.graphQLErrors) {
+        error.graphQLErrors.forEach(({ message, locations, path }) => {
+          console.error(`❌ [GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`);
+        });
+      }
+      
+      toast.error(`Erreur lors de la mise à jour: ${error.message}`);
     }
   };
 
@@ -407,6 +449,7 @@ export const useKanbanTasks = (boardId, board) => {
             completed: Boolean(item?.completed),
           }))
         : [],
+      assignedMembers: Array.isArray(task?.assignedMembers) ? task.assignedMembers : [],
     });
   };
 
