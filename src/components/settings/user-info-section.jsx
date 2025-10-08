@@ -13,7 +13,7 @@ import { ChangeEmailModal } from "../../../app/dashboard/account/components/Chan
 import { ChangePasswordModal } from "../../../app/dashboard/account/components/ChangePasswordModal";
 import { ChangePhoneModal } from "../../../app/dashboard/account/components/ChangePhoneModal";
 import { DeactivateAccountModal } from "../../../app/dashboard/account/components/DeactivateAccountModal";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
 

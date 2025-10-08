@@ -36,16 +36,30 @@ export const useAutoOrganization = () => {
           user.name || `Espace ${user.email.split("@")[0]}'s`;
         const organizationSlug = `org-${user.id.slice(-8)}`;
 
-        // Créer l'organisation via le client Better Auth
+        // Calculer les dates de trial (14 jours)
+        const now = new Date();
+        const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+        console.log(
+          `🔄 Création organisation pour ${user.email} avec trial...`
+        );
+
+        // Créer l'organisation via le client Better Auth avec champs trial
         const result = await organization.create({
           name: organizationName,
           slug: organizationSlug,
+          trialStartDate: now.toISOString(),
+          trialEndDate: trialEnd.toISOString(),
+          isTrialActive: true,
+          hasUsedTrial: true,
           metadata: {
             autoCreated: true,
             createdAt: new Date().toISOString(),
           },
           keepCurrentActiveOrganization: false,
         });
+
+        console.log(`✅ Organisation créée avec trial:`, result);
 
         if (result.error) {
           return { success: false, error: result.error };

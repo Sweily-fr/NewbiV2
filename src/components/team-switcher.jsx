@@ -4,7 +4,6 @@ import * as React from "react";
 import { ChevronsUpDown, Plus, Crown, Settings, Users } from "lucide-react";
 import { IconBuilding } from "@tabler/icons-react";
 import { authClient } from "@/src/lib/auth-client";
-import { useSubscription as useSubscriptionContext } from "@/src/contexts/subscription-context";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -35,8 +34,6 @@ export function TeamSwitcher() {
   const { isMobile } = useSidebar();
   const { isActive, refreshSubscription: refreshDashboardSubscription } =
     useSubscription();
-  const { refreshSubscription: refreshGlobalSubscription } =
-    useSubscriptionContext();
   const router = useRouter();
   const pathname = usePathname();
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
@@ -130,9 +127,6 @@ export function TeamSwitcher() {
       // 4. Rafraîchir les abonnements
       if (refreshDashboardSubscription) {
         await refreshDashboardSubscription();
-      }
-      if (refreshGlobalSubscription) {
-        await refreshGlobalSubscription();
       }
       console.log("✅ Abonnements rafraîchis");
 

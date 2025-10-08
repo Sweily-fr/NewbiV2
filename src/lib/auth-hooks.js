@@ -45,6 +45,37 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
     const user = newSession.user;
     const userId = newSession.session.userId;
 
+    // ⚠️ IMPORTANT: Vérifier si l'utilisateur a déjà une organisation
+    try {
+      const existingMemberships = await ctx.context.adapter.findMany({
+        model: "member",
+        where: [
+          {
+            field: "userId",
+            value: userId,
+          },
+        ],
+      });
+
+      // Si l'utilisateur a déjà au moins une organisation, ne rien faire
+      if (existingMemberships && existingMemberships.length > 0) {
+        console.log(
+          `✅ [OAuth] Utilisateur ${userId} a déjà ${existingMemberships.length} organisation(s)`
+        );
+        return;
+      }
+
+      console.log(
+        `🆕 [OAuth] Création d'une organisation pour l'utilisateur ${userId}`
+      );
+    } catch (checkError) {
+      console.error(
+        "❌ [OAuth] Erreur vérification organisations:",
+        checkError
+      );
+      // En cas d'erreur de vérification, on continue pour ne pas bloquer l'utilisateur
+    }
+
     // Créer une organisation automatiquement comme pour l'inscription normale
     try {
       // Générer le nom et le slug comme dans useAutoOrganization
@@ -52,7 +83,13 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
         user.name || `Workspace ${user.email.split("@")[0]}'s`;
       const organizationSlug = `org-${user.id.slice(-8)}`;
 
-      // Utiliser l'API interne Better Auth pour créer l'organisation
+      // Calculer les dates de trial (14 jours)
+      const now = new Date();
+      const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+      console.log(`🔄 [OAuth] Création organisation pour ${user.email}...`);
+
+      // Créer l'organisation via l'API interne Better Auth
       const organizationData = {
         name: organizationName,
         slug: organizationSlug,
@@ -61,6 +98,11 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
           createdAt: new Date().toISOString(),
           createdVia: "oauth",
         },
+        // ⚠️ IMPORTANT: Ajouter les champs trial directement
+        trialStartDate: now,
+        trialEndDate: trialEnd,
+        isTrialActive: true,
+        hasUsedTrial: true,
       };
 
       const organization = await ctx.context.internalAdapter.createOrganization(
@@ -68,6 +110,11 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
           ...organizationData,
           creatorId: userId,
         }
+      );
+
+      console.log(
+        `✅ [OAuth] Organisation créée avec trial pour ${user.email}:`,
+        organization
       );
     } catch (error) {
       // Fallback: essayer avec l'adapter normal

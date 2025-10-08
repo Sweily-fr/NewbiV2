@@ -11,7 +11,7 @@ import { InputLoader } from "@/src/components/ui/input";
 import PricingModal from "@/src/components/pricing-modal";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useSession } from "@/src/lib/auth-client";
 import { Skeleton } from "@/src/components/ui/skeleton";
 

@@ -29,7 +29,7 @@ import { Button } from "@/src/components/ui/button";
 import { useSession } from "@/src/lib/auth-client";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { toast } from "@/src/components/ui/sonner";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import {
   validateSettingsForm,
   VALIDATION_PATTERNS,

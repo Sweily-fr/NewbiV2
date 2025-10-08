@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useSession } from "@/src/lib/auth-client";
 import { isCompanyInfoComplete } from "./useCompanyInfoGuard";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useSession } from "@/src/lib/auth-client";
+import { useSession, authClient } from "@/src/lib/auth-client";
 import { gql, useQuery, useMutation } from "@apollo/client";
 
 // Requête GraphQL pour obtenir le statut de la période d'essai
@@ -43,6 +43,7 @@ const START_TRIAL = gql`
  */
 export function useTrial() {
   const { data: session } = useSession();
+  const { data: activeOrg } = authClient.useActiveOrganization();
   const [trialStatus, setTrialStatus] = useState(null);
   const isMountedRef = useRef(false);
 
@@ -89,51 +90,71 @@ export function useTrial() {
     }
   }, [mutationData]);
 
-  // Calculer le statut de la période d'essai à partir des données d'organisation de session
+  // Calculer le statut de la période d'essai à partir de l'organisation active Better Auth
   const getTrialStatusFromSession = useCallback(() => {
-    if (!session?.user?.organization) return null;
+    // Utiliser activeOrg au lieu de session.user.organization
+    if (!activeOrg) {
+      console.log('🔍 useTrial - Pas d\'organisation active');
+      return null;
+    }
 
-    const organization = session.user.organization;
     const now = new Date();
     
+    // Log pour diagnostiquer
+    console.log('🔍 useTrial - Organisation active récupérée:', {
+      activeOrg,
+      isTrialActive: activeOrg.isTrialActive,
+      trialEndDate: activeOrg.trialEndDate,
+      hasUsedTrial: activeOrg.hasUsedTrial
+    });
+    
     // Vérifier si l'organisation a une période d'essai active
-    if (organization.isTrialActive && organization.trialEndDate) {
-      const trialEndDate = new Date(organization.trialEndDate);
+    if (activeOrg.isTrialActive && activeOrg.trialEndDate) {
+      const trialEndDate = new Date(activeOrg.trialEndDate);
       const isExpired = now > trialEndDate;
       
       if (isExpired) {
+        console.log('⏰ useTrial - Période d\'essai expirée');
         return {
           isTrialActive: false,
-          trialEndDate: organization.trialEndDate,
+          trialEndDate: activeOrg.trialEndDate,
           daysRemaining: 0,
           hasPremiumAccess: false,
-          hasUsedTrial: organization.hasUsedTrial || false,
+          hasUsedTrial: activeOrg.hasUsedTrial || false,
         };
       }
 
       const diffTime = trialEndDate - now;
       const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
+      console.log('✅ useTrial - Période d\'essai active:', {
+        daysRemaining,
+        trialEndDate
+      });
+
       return {
         isTrialActive: true,
-        trialEndDate: organization.trialEndDate,
+        trialEndDate: activeOrg.trialEndDate,
         daysRemaining: Math.max(0, daysRemaining),
         hasPremiumAccess: true,
-        hasUsedTrial: organization.hasUsedTrial || false,
+        hasUsedTrial: activeOrg.hasUsedTrial || false,
       };
     }
 
+    console.log('❌ useTrial - Pas de période d\'essai active');
     return {
       isTrialActive: false,
       trialEndDate: null,
       daysRemaining: 0,
       hasPremiumAccess: false,
-      hasUsedTrial: organization.hasUsedTrial || false,
+      hasUsedTrial: activeOrg.hasUsedTrial || false,
     };
-  }, [session]);
+  }, [activeOrg]);
 
-  // Utiliser les données GraphQL si disponibles, sinon les données de session
-  const currentTrialStatus = trialStatus || getTrialStatusFromSession();
+  // Utiliser les données de session en priorité (plus fiable que GraphQL)
+  const currentTrialStatus = getTrialStatusFromSession() || trialStatus;
+
+  console.log('📊 useTrial - Status calculé:', currentTrialStatus);
 
   // Activation automatique du trial à la première connexion (désactivée car trials déjà en base)
   // Cette fonction n'est plus nécessaire car les trials sont gérés par les scripts de migration
@@ -173,39 +194,6 @@ export function useTrial() {
     }
   }, [startTrialMutation, refetch]);
 
-  // Vérifier si l'utilisateur peut démarrer une période d'essai
-  const canStartTrial = useCallback(() => {
-    return currentTrialStatus && !currentTrialStatus.hasUsedTrial;
-  }, [currentTrialStatus]);
-
-  // Vérifier si l'utilisateur a accès aux fonctionnalités premium
-  const hasPremiumAccess = useCallback(() => {
-    if (!currentTrialStatus) return false;
-    return currentTrialStatus.hasPremiumAccess;
-  }, [currentTrialStatus]);
-
-  // Obtenir le message d'état de la période d'essai
-  const getTrialMessage = useCallback(() => {
-    if (!currentTrialStatus) return null;
-
-    if (currentTrialStatus.isTrialActive) {
-      const days = currentTrialStatus.daysRemaining;
-      if (days === 0) {
-        return "Votre période d'essai expire aujourd'hui";
-      } else if (days === 1) {
-        return "Il vous reste 1 jour d'essai gratuit";
-      } else {
-        return `Il vous reste ${days} jours d'essai gratuit`;
-      }
-    }
-
-    if (currentTrialStatus.hasUsedTrial) {
-      return "Votre période d'essai gratuite est terminée";
-    }
-
-    return "Démarrez votre essai gratuit de 14 jours";
-  }, [currentTrialStatus]);
-
   // Rafraîchir le statut de la période d'essai
   const refreshTrialStatus = useCallback(async () => {
     try {
@@ -215,24 +203,33 @@ export function useTrial() {
     }
   }, [refetch]);
 
-  return {
+  // Retourner directement les valeurs calculées au lieu de fonctions
+  const finalStatus = {
     // État
     trialStatus: currentTrialStatus,
-    loading: loading || startingTrial,
+    loading: loading || startingTrial || !activeOrg,
     error,
 
     // Actions
     startTrial,
     refreshTrialStatus,
 
-    // Helpers
-    canStartTrial: canStartTrial(),
-    hasPremiumAccess: hasPremiumAccess(),
-    trialMessage: getTrialMessage(),
+    // Helpers - Retourner les valeurs directement
+    canStartTrial: currentTrialStatus && !currentTrialStatus.hasUsedTrial,
+    hasPremiumAccess: currentTrialStatus?.hasPremiumAccess || false,
+    trialMessage: currentTrialStatus?.isTrialActive 
+      ? `Il vous reste ${currentTrialStatus.daysRemaining} jours d'essai gratuit`
+      : currentTrialStatus?.hasUsedTrial 
+        ? "Votre période d'essai gratuite est terminée"
+        : "Démarrez votre essai gratuit de 14 jours",
     
     // Données spécifiques
     isTrialActive: currentTrialStatus?.isTrialActive || false,
     daysRemaining: currentTrialStatus?.daysRemaining || 0,
     hasUsedTrial: currentTrialStatus?.hasUsedTrial || false,
   };
+
+  console.log('📤 useTrial - Retour final:', finalStatus);
+
+  return finalStatus;
 }

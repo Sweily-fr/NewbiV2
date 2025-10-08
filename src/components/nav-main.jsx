@@ -22,11 +22,11 @@ export function NavMain({ items }) {
   const { isActive } = useSubscription();
   const { setOpenMobile, isMobile } = useSidebar();
 
-  // Définir les onglets qui nécessitent un abonnement Pro
-  const proTabs = ["Tableau de bord", "Clients"];
+  // Définir les onglets qui nécessitent un abonnement Pro (inclut la période d'essai)
+  const proTabs = ["Tableau de bord", "Clients", "Catalogues"];
   
   // Définir les onglets qui nécessitent un abonnement Pro PAYANT (pas de trial)
-  const paidProTabs = ["Catalogues"];
+  const paidProTabs = [];
   
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {

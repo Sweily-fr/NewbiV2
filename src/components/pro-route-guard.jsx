@@ -1,6 +1,6 @@
 "use client";
 
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
