@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { useSensors, useSensor, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
 
-export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId) => {
+export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, columns, reorderColumns, setLocalColumns) => {
   const [activeTask, setActiveTask] = useState(null);
+  const [activeColumn, setActiveColumn] = useState(null);
 
   // Configuration des capteurs pour le drag & drop
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 3,
-        delay: 100,
-        tolerance: 5,
+        distance: 8, // Distance minimale pour activer le drag
       },
     }),
     useSensor(KeyboardSensor, {
@@ -22,31 +21,91 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId) =
   // Gestion du début du drag
   const handleDragStart = (event) => {
     const { active } = event;
-    setActiveTask(active.data.current?.task || null);
+    const activeData = active.data.current;
+    
+    if (activeData?.type === 'task') {
+      setActiveTask(activeData.task);
+      setActiveColumn(null);
+    } else if (activeData?.type === 'column') {
+      setActiveColumn(activeData.column);
+      setActiveTask(null);
+    }
+  };
+
+  // Gestion du drag en cours (réorganisation en temps réel)
+  const handleDragOver = (event) => {
+    const { active, over } = event;
+    
+    if (!over) return;
+    
+    const activeData = active.data.current;
+    const overData = over.data.current;
+    
+    // Seulement pour les colonnes
+    if (activeData?.type === 'column' && overData?.type === 'column') {
+      if (active.id !== over.id) {
+        const oldIndex = columns.findIndex((col) => col.id === active.id);
+        const newIndex = columns.findIndex((col) => col.id === over.id);
+        
+        if (oldIndex !== -1 && newIndex !== -1) {
+          // Réorganiser localement en temps réel
+          const newColumns = arrayMove(columns, oldIndex, newIndex);
+          setLocalColumns(newColumns);
+        }
+      }
+    }
   };
 
   // Gestion de la fin du drag
   const handleDragEnd = async (event) => {
     const { active, over } = event;
+    
+    // Réinitialiser les états
     setActiveTask(null);
+    setActiveColumn(null);
 
     if (!over) return;
 
-    const activeTask = active.data.current?.task;
+    const activeData = active.data.current;
+    const overData = over.data.current;
+
+    // Cas 1: Drag d'une colonne - sauvegarder en base de données
+    if (activeData?.type === 'column') {
+      // Les colonnes sont déjà réorganisées localement via handleDragOver
+      // On sauvegarde juste l'ordre final en base de données
+      const columnIds = columns.map((col) => col.id);
+
+      try {
+        await reorderColumns({
+          variables: {
+            columns: columnIds,
+            workspaceId: workspaceId,
+          },
+        });
+        console.log('✅ Colonnes sauvegardées:', columnIds);
+      } catch (error) {
+        console.error('❌ Error reordering columns:', error);
+        // En cas d'erreur, on pourrait restaurer l'ordre précédent
+      }
+      return;
+    }
+
+    // Cas 2: Drag d'une tâche
+    const activeTask = activeData?.task;
     if (!activeTask) return;
 
     let newColumnId = activeTask.columnId;
     let newPosition = activeTask.position || 0;
 
     // Déterminer où on a déposé la tâche
-    if (over.data?.current?.type === 'column') {
+    if (overData?.type === 'column') {
       // Déposé sur une colonne
       newColumnId = over.id;
       const targetColumnTasks = getTasksByColumn(over.id);
       newPosition = targetColumnTasks.length;
-    } else if (over.data?.current?.type === 'task') {
+    } else if (overData?.type === 'task') {
       // Déposé sur une autre tâche
-      const targetTask = over.data.current.task;
+      const targetTask = overData.task;
       newColumnId = targetTask.columnId;
       const targetColumnTasks = getTasksByColumn(targetTask.columnId);
       const targetIndex = targetColumnTasks.findIndex(
@@ -68,7 +127,7 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId) =
             id: activeTask.id,
             columnId: newColumnId,
             position: newPosition,
-            workspaceId: workspaceId, // Ajouter workspaceId manquant
+            workspaceId: workspaceId,
           },
           optimisticResponse: {
             moveTask: {
@@ -87,8 +146,10 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId) =
 
   return {
     activeTask,
+    activeColumn,
     sensors,
     handleDragStart,
+    handleDragOver,
     handleDragEnd,
   };
 };

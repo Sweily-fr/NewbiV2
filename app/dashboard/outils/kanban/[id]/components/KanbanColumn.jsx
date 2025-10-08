@@ -18,7 +18,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { DroppableColumn } from "./DroppableColumn";
+import { useDroppable } from "@dnd-kit/core";
 import { TaskCard } from "./TaskCard";
 
 /**
@@ -34,15 +34,37 @@ export function KanbanColumn({
   onDeleteColumn,
   isCollapsed,
   onToggleCollapse,
+  dragHandleProps, // Props pour rendre le header draggable
+  isDragging, // État de drag pour le feedback visuel
 }) {
+  // Zone droppable pour les tâches
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+    data: {
+      type: "column",
+      column,
+    },
+  });
+
   return (
-    <DroppableColumn column={column}>
-      <div className="flex items-center justify-between py-2">
+    <div
+      ref={setNodeRef}
+      className={`bg-muted/30 rounded-xl p-3 min-w-[280px] max-w-[280px] sm:min-w-[300px] sm:max-w-[300px] border border-border transition-colors duration-150 flex-shrink-0 ${
+        isOver ? "bg-accent/50 border-primary/50" : ""
+      } ${isDragging ? "border-primary shadow-lg" : ""}`}
+    >
+      <div
+        {...dragHandleProps}
+        className={`flex items-center justify-between py-2 ${
+          isDragging ? "cursor-grabbing" : "cursor-grab hover:bg-accent/30 rounded-lg px-2 -mx-2 transition-colors duration-150"
+        }`}
+      >
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggleCollapse}
+            onPointerDown={(e) => e.stopPropagation()}
             className="h-4 w-4 p-0 mr-1"
           >
             {isCollapsed ? (
@@ -60,7 +82,7 @@ export function KanbanColumn({
             {tasks.length}
           </Badge>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" onPointerDown={(e) => e.stopPropagation()}>
           <Button
             variant="ghost"
             size="sm"
@@ -127,6 +149,6 @@ export function KanbanColumn({
           </Button>
         </>
       )}
-    </DroppableColumn>
+    </div>
   );
 }

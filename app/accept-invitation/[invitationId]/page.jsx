@@ -115,14 +115,16 @@ export default function AcceptInvitationPage() {
         body: JSON.stringify({ action: "accept" }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
-      }
-
       const result = await response.json();
 
+      if (!response.ok) {
+        // Afficher un message d'erreur plus détaillé
+        const errorMessage = result.details || result.error || `Erreur ${response.status}: ${response.statusText}`;
+        throw new Error(errorMessage);
+      }
+
       if (result.error) {
-        throw new Error(result.error);
+        throw new Error(result.details || result.error);
       }
 
       // Rediriger vers le dashboard après acceptation réussie
@@ -342,9 +344,22 @@ export default function AcceptInvitationPage() {
                     {session.user.email}
                   </span>
                 </div>
-                {session.user.email !== invitation.email && (
-                  <div className="p-2 bg-yellow-50 rounded text-xs text-yellow-800 border border-yellow-200">
-                    Cette invitation est destinée à {invitation.email}
+                {session.user.email.toLowerCase() !== invitation.email.toLowerCase() && (
+                  <div className="p-3 bg-yellow-50 rounded-md text-xs text-yellow-800 border border-yellow-200 space-y-2">
+                    <p className="font-medium">⚠️ Attention</p>
+                    <p>Cette invitation est destinée à <strong>{invitation.email}</strong></p>
+                    <p>Vous êtes actuellement connecté avec <strong>{session.user.email}</strong></p>
+                    <Button
+                      onClick={async () => {
+                        await authClient.signOut();
+                        window.location.reload();
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-2 bg-white"
+                    >
+                      Se déconnecter et utiliser le bon compte
+                    </Button>
                   </div>
                 )}
               </div>
@@ -363,8 +378,11 @@ export default function AcceptInvitationPage() {
               <div className="space-y-2">
                 <Button
                   onClick={handleAcceptInvitation}
-                  disabled={isAccepting}
-                  className="w-full bg-[#5b4fff] text-white hover:bg-[#5b4fff]/90 cursor-pointer"
+                  disabled={
+                    isAccepting || 
+                    (session?.user && session.user.email.toLowerCase() !== invitation.email.toLowerCase())
+                  }
+                  className="w-full bg-[#5b4fff] text-white hover:bg-[#5b4fff]/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   size="sm"
                 >
                   {isAccepting ? (
@@ -378,6 +396,8 @@ export default function AcceptInvitationPage() {
                     ) : (
                       "Créer mon compte"
                     )
+                  ) : session.user.email.toLowerCase() !== invitation.email.toLowerCase() ? (
+                    "Mauvais compte connecté"
                   ) : (
                     "Accepter l'invitation"
                   )}

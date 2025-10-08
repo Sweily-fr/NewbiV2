@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useRef } from "react";
+import { use, useState, useEffect } from "react";
+import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Loader2, Search, Trash2 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
@@ -55,6 +56,7 @@ import { ResourceNotFound } from "@/src/components/resource-not-found";
 
 // Components
 import { KanbanColumn } from "./components/KanbanColumn";
+import { SortableColumn } from "./components/SortableColumn";
 import { TaskModal } from "./components/TaskModal";
 import { ColumnModal } from "./components/ColumnModal";
 import { DeleteConfirmation } from "./components/DeleteConfirmation";
@@ -64,6 +66,7 @@ import {
   CREATE_COLUMN,
   UPDATE_COLUMN,
   DELETE_COLUMN,
+  REORDER_COLUMNS,
   CREATE_TASK,
   UPDATE_TASK,
   DELETE_TASK,
@@ -73,20 +76,14 @@ import {
   DndContext,
   DragOverlay,
   closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  useDroppable,
+  pointerWithin,
+  rectIntersection,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useMutation } from "@apollo/client";
 
 export default function KanbanBoardPage({ params }) {
   const router = useRouter();
@@ -153,12 +150,41 @@ export default function KanbanBoardPage({ params }) {
     moveTask,
   } = useKanbanTasks(id, board);
 
-  const { activeTask, sensors, handleDragStart, handleDragEnd } = useKanbanDnD(
-    moveTask,
-    getTasksByColumn,
-    id,
-    workspaceId
-  );
+  // Mutation pour réorganiser les colonnes
+  const [reorderColumnsMutation] = useMutation(REORDER_COLUMNS, {
+    // Pas de refetch automatique pour éviter le flash
+    // Les colonnes sont déjà à jour localement
+  });
+
+  // État local pour les colonnes (pour la réorganisation en temps réel)
+  const [localColumns, setLocalColumns] = React.useState(board?.columns || []);
+
+  const { activeTask, activeColumn, sensors, handleDragStart, handleDragOver, handleDragEnd } =
+    useKanbanDnD(
+      moveTask,
+      getTasksByColumn,
+      id,
+      workspaceId,
+      localColumns,
+      reorderColumnsMutation,
+      setLocalColumns
+    );
+
+  // Mettre à jour les colonnes locales quand board.columns change
+  // Uniquement au chargement initial ou si de nouvelles colonnes sont ajoutées/supprimées
+  React.useEffect(() => {
+    if (board?.columns && board.columns.length > 0) {
+      const currentIds = localColumns.map(c => c.id).sort().join(',');
+      const newIds = board.columns.map(c => c.id).sort().join(',');
+      
+      // Ne mettre à jour que si le nombre de colonnes a changé (ajout/suppression)
+      if (currentIds !== newIds) {
+        console.log('🔄 Mise à jour des colonnes (ajout/suppression détecté)');
+        setLocalColumns(board.columns);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board?.columns?.length, board?.columns?.map(c => c.id).join(',')]);
 
   const { searchQuery, setSearchQuery, filterTasks } = useKanbanSearch();
 
@@ -250,61 +276,74 @@ export default function KanbanBoardPage({ params }) {
       <div className="w-full overflow-x-auto px-4 sm:px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={(args) => {
+            // Pour les colonnes, utiliser pointerWithin pour une meilleure détection
+            if (args.active.data.current?.type === 'column') {
+              return pointerWithin(args);
+            }
+            // Pour les tâches, utiliser closestCenter
+            return closestCenter(args);
+          }}
           onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
-          modifiers={[]}
         >
           <div className="min-h-[600px] w-max min-w-full">
-            {board.columns && board.columns.length > 0 ? (
+            {localColumns && localColumns.length > 0 ? (
               <>
                 {/* Espace réservé pour maintenir la hauteur */}
                 <div className="h-5 mb-4"></div>
 
                 <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                  <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
-                    {board.columns.map((column) => {
-                      const columnTasks = filterTasks(
-                        getTasksByColumn(column.id)
-                      );
-                      const isCollapsed = isColumnCollapsed(column.id);
+                  <SortableContext
+                    items={localColumns.map((col) => col.id)}
+                    strategy={horizontalListSortingStrategy}
+                  >
+                    <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
+                      {localColumns.map((column) => {
+                        const columnTasks = filterTasks(
+                          getTasksByColumn(column.id)
+                        );
+                        const isCollapsed = isColumnCollapsed(column.id);
 
-                      return (
-                        <KanbanColumn
-                          key={column.id}
-                          column={column}
-                          tasks={columnTasks}
-                          onAddTask={openAddTaskModal}
-                          onEditTask={openEditTaskModal}
-                          onDeleteTask={handleDeleteTask}
-                          onEditColumn={openEditModal}
-                          onDeleteColumn={(column) =>
-                            handleDeleteColumn(column)
-                          }
-                          isCollapsed={isCollapsed}
-                          onToggleCollapse={() =>
-                            toggleColumnCollapse(column.id)
-                          }
-                        />
-                      );
-                    })}
+                        return (
+                          <SortableColumn key={column.id} column={column}>
+                            <KanbanColumn
+                              column={column}
+                              tasks={columnTasks}
+                              onAddTask={openAddTaskModal}
+                              onEditTask={openEditTaskModal}
+                              onDeleteTask={handleDeleteTask}
+                              onEditColumn={openEditModal}
+                              onDeleteColumn={(column) =>
+                                handleDeleteColumn(column)
+                              }
+                              isCollapsed={isCollapsed}
+                              onToggleCollapse={() =>
+                                toggleColumnCollapse(column.id)
+                              }
+                            />
+                          </SortableColumn>
+                        );
+                      })}
 
-                    {/* Add Column Button */}
-                    <Card className="w-72 sm:w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors shadow-none cursor-pointer flex-shrink-0">
-                      <CardContent className="p-3">
-                        <Button
-                          variant="ghost"
-                          className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:bg-transparent cursor-pointer"
-                          onClick={openAddModal}
-                        >
-                          <Plus className="h-5 w-5" />
-                          <span className="text-sm font-medium">
-                            Ajouter une colonne
-                          </span>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
+                      {/* Add Column Button */}
+                      <Card className="w-72 sm:w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors shadow-none cursor-pointer flex-shrink-0">
+                        <CardContent className="p-3">
+                          <Button
+                            variant="ghost"
+                            className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:bg-transparent cursor-pointer"
+                            onClick={openAddModal}
+                          >
+                            <Plus className="h-5 w-5" />
+                            <span className="text-sm font-medium">
+                              Ajouter une colonne
+                            </span>
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </SortableContext>
                 </div>
               </>
             ) : (
@@ -323,8 +362,8 @@ export default function KanbanBoardPage({ params }) {
           <DragOverlay
             adjustScale={false}
             dropAnimation={{
-              duration: 300,
-              easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+              duration: 250,
+              easing: "cubic-bezier(0.25, 1, 0.5, 1)",
             }}
           >
             {activeTask ? (
@@ -334,6 +373,48 @@ export default function KanbanBoardPage({ params }) {
                   onEdit={() => {}}
                   onDelete={() => {}}
                 />
+              </div>
+            ) : null}
+            {activeColumn ? (
+              <div className="rotate-6 scale-105">
+                {/* Fond noir semi-transparent comme Trello */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-black/40 rounded-xl" />
+                  <div className="relative bg-muted/95 rounded-xl p-3 min-w-[280px] max-w-[280px] sm:min-w-[300px] sm:max-w-[300px] border-2 border-primary shadow-2xl">
+                    {/* Header de la colonne */}
+                    <div className="flex items-center gap-2 py-2 mb-3">
+                      <div
+                        className="w-[2px] h-4"
+                        style={{ backgroundColor: activeColumn.color }}
+                      />
+                      <h3 className="font-medium text-foreground">
+                        {activeColumn.title}
+                      </h3>
+                      <span className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-medium text-xs border-transparent bg-secondary text-secondary-foreground">
+                        {getTasksByColumn(activeColumn.id).length}
+                      </span>
+                    </div>
+                    
+                    {/* Aperçu des tâches */}
+                    <div className="space-y-2 max-h-[400px] overflow-hidden">
+                      {getTasksByColumn(activeColumn.id).slice(0, 3).map((task) => (
+                        <div
+                          key={task.id}
+                          className="bg-card rounded-lg p-2 border border-border shadow-sm"
+                        >
+                          <p className="text-sm text-foreground line-clamp-2">
+                            {task.title}
+                          </p>
+                        </div>
+                      ))}
+                      {getTasksByColumn(activeColumn.id).length > 3 && (
+                        <div className="text-xs text-muted-foreground text-center py-1">
+                          +{getTasksByColumn(activeColumn.id).length - 3} autres tâches
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : null}
           </DragOverlay>
@@ -371,6 +452,7 @@ export default function KanbanBoardPage({ params }) {
         taskForm={taskForm}
         setTaskForm={setTaskForm}
         board={board}
+        workspaceId={workspaceId}
         addTag={addTag}
         removeTag={removeTag}
         addChecklistItem={addChecklistItem}
@@ -387,6 +469,7 @@ export default function KanbanBoardPage({ params }) {
         taskForm={taskForm}
         setTaskForm={setTaskForm}
         board={board}
+        workspaceId={workspaceId}
         addTag={addTag}
         removeTag={removeTag}
         addChecklistItem={addChecklistItem}

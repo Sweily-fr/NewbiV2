@@ -27,15 +27,38 @@ export default function Outils() {
   useEffect(() => {
     // Ne pas ouvrir le modal si on est en train de charger
     if (loading) return;
-    
-    const shouldOpenPricing = 
-      (searchParams.get("pricing") === "true" && !isActive()) ||
-      (searchParams.get("access") === "restricted" && !isActive());
-    
+
+    // Vérifier si l'utilisateur a un abonnement actif
+    const hasActiveSubscription = isActive();
+
+    console.log("[Outils Page] Vérification modal pricing:", {
+      loading,
+      hasActiveSubscription,
+      pricingParam: searchParams.get("pricing"),
+      accessParam: searchParams.get("access"),
+    });
+
+    // Ne pas ouvrir le modal si l'utilisateur a déjà un abonnement actif
+    if (hasActiveSubscription) {
+      console.log(
+        "[Outils Page] Abonnement actif détecté - Nettoyage des paramètres URL"
+      );
+      // Nettoyer l'URL si elle contient des paramètres de pricing
+      if (searchParams.get("pricing") || searchParams.get("access")) {
+        router.replace("/dashboard/outils");
+      }
+      return;
+    }
+
+    const shouldOpenPricing =
+      searchParams.get("pricing") === "true" ||
+      searchParams.get("access") === "restricted";
+
     if (shouldOpenPricing) {
+      console.log("[Outils Page] Ouverture du modal pricing");
       setIsPricingModalOpen(true);
     }
-  }, [searchParams, isActive, loading]);
+  }, [searchParams, isActive, loading, router]);
 
   // Fonction pour fermer le modal et nettoyer l'URL
   const handleCloseModal = () => {
@@ -177,10 +200,7 @@ export default function Outils() {
         </div>
         <SectionCards activeFilter={activeTab} />
       </div>
-      <PricingModal
-        isOpen={isPricingModalOpen}
-        onClose={handleCloseModal}
-      />
+      <PricingModal isOpen={isPricingModalOpen} onClose={handleCloseModal} />
     </div>
   );
 }

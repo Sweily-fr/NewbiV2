@@ -105,19 +105,27 @@ const GET_EMAIL_SIGNATURE = gql`
         instagram
         linkedin
         x
+        github
+        youtube
       }
       socialColors {
         facebook
         instagram
         linkedin
         x
+        github
+        youtube
       }
       customSocialIcons {
         facebook
         instagram
         linkedin
         x
+        github
+        youtube
       }
+      socialGlobalColor
+      socialSize
 
       # Typographie
       fontFamily
@@ -276,8 +284,10 @@ function transformSignatureData(signature) {
 
     // Réseaux sociaux
     socialNetworks: signature.socialNetworks || {},
-    socialGlobalColor: signature.socialGlobalColor || "blue",
-    socialSize: signature.socialSize || 20,
+    socialGlobalColor: signature.socialGlobalColor || null, // null = couleurs par défaut de chaque réseau
+    socialSize: signature.socialSize || 24,
+    socialColors: signature.socialColors || {},
+    customSocialIcons: signature.customSocialIcons || {},
 
     // Typography détaillée
     typography: signature.typography || {},

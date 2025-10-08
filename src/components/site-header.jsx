@@ -82,15 +82,20 @@ function SiteHeaderContent() {
         formattedSegment = kanbanData.board.title;
       }
 
-      // Si c'est le dernier segment "new" sur la page signatures-mail et qu'on a le paramètre edit=true
-      const isSignatureEditMode =
+      // Si c'est le dernier segment "new" sur la page signatures-mail
+      const isSignatureNewPage =
         isLastSegment &&
         segment === "new" &&
-        pathname?.includes("/signatures-mail/") &&
-        searchParams?.get("edit") === "true";
+        pathname?.includes("/signatures-mail/");
 
-      if (isSignatureEditMode) {
-        formattedSegment = "Éditer";
+      if (isSignatureNewPage) {
+        // Mode édition si paramètre edit=true
+        if (searchParams?.get("edit") === "true") {
+          formattedSegment = "Modifier une signature de mail";
+        } else {
+          // Mode création
+          formattedSegment = "Créer une signature de mail";
+        }
       }
 
       // Pour le dernier segment, on retourne juste un BreadcrumbItem avec BreadcrumbPage

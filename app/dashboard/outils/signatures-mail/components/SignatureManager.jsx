@@ -108,6 +108,7 @@ const GET_EMAIL_SIGNATURE = gql`
       nameSpacing
       nameAlignment
       layout
+      orientation
       columnWidths {
         photo
         content
@@ -166,6 +167,8 @@ const GET_EMAIL_SIGNATURE = gql`
         linkedin
         x
       }
+      socialGlobalColor
+      socialSize
 
       # Typographie
       fontFamily
@@ -356,6 +359,7 @@ const SignatureManager = () => {
             nameSpacing: signature.nameSpacing || 8,
             nameAlignment: signature.nameAlignment || "left",
             layout: signature.layout || "vertical",
+            orientation: signature.orientation || signature.layout || "vertical",
             columnWidths: signature.columnWidths || { photo: 30, content: 70 },
 
             // Images
@@ -584,10 +588,12 @@ const SignatureManager = () => {
               x: "",
             },
             socialColors: signature.socialColors || {
-              facebook: "#1877F2",
-              instagram: "#E4405F",
-              linkedin: "#0077B5",
-              x: "#000000",
+              facebook: null,
+              instagram: null,
+              linkedin: null,
+              x: null,
+              github: null,
+              youtube: null,
             },
             customSocialIcons: signature.customSocialIcons || {
               facebook: "",
@@ -595,12 +601,16 @@ const SignatureManager = () => {
               linkedin: "",
               x: "",
             },
+            socialGlobalColor: signature.socialGlobalColor || null,
+            socialSize: signature.socialSize || 24,
 
             // Orientation (remplace layout dans certains cas)
             orientation:
               signature.orientation || signature.layout || "vertical",
           };
 
+          console.log("🔄 [SignatureManager] Mapped typography data:", mappedData.typography);
+          console.log("🔄 [SignatureManager] Full mapped data:", mappedData);
           updateSignatureData(mappedData);
         }
       },

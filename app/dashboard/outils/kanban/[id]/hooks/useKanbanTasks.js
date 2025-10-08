@@ -19,6 +19,7 @@ export const useKanbanTasks = (boardId, board) => {
     dueDate: "",
     tags: [],
     checklist: [],
+    assignedMembers: [],
     newTag: "",
     newChecklistItem: "",
   };
@@ -294,6 +295,16 @@ export const useKanbanTasks = (boardId, board) => {
     }
 
     try {
+      // S'assurer que assignedMembers est toujours un tableau valide avec la bonne structure
+      const assignedMembers = Array.isArray(taskForm.assignedMembers) 
+        ? taskForm.assignedMembers.map(member => ({
+            userId: member.userId,
+            name: member.name,
+            email: member.email,
+            image: member.image || null,
+          }))
+        : [];
+      
       await createTask({
         variables: {
           input: {
@@ -311,12 +322,12 @@ export const useKanbanTasks = (boardId, board) => {
               text: item.text,
               completed: item.completed || false,
             })),
+            assignedMembers: assignedMembers,
           },
           workspaceId,
         },
       });
     } catch (error) {
-      console.error("Error creating task:", error);
       toast.error("Une erreur est survenue lors de la création de la tâche");
     }
   };
@@ -328,28 +339,41 @@ export const useKanbanTasks = (boardId, board) => {
     }
 
     try {
+      // S'assurer que assignedMembers est toujours un tableau valide avec la bonne structure
+      const assignedMembers = Array.isArray(taskForm.assignedMembers) 
+        ? taskForm.assignedMembers.map(member => ({
+            userId: member.userId,
+            name: member.name,
+            email: member.email,
+            image: member.image || null,
+          }))
+        : [];
+      
+      const input = {
+        id: editingTask.id,
+        title: taskForm.title,
+        description: taskForm.description,
+        status: taskForm.status,
+        priority: taskForm.priority.toLowerCase(),
+        dueDate: taskForm.dueDate || null,
+        columnId: taskForm.columnId,
+        tags: cleanTags(taskForm.tags),
+        checklist: taskForm.checklist.map((item) => ({
+          id: item.id || undefined,
+          text: item.text,
+          completed: item.completed || false,
+        })),
+        assignedMembers: assignedMembers,
+      };
+      
       await updateTask({
         variables: {
-          input: {
-            id: editingTask.id,
-            title: taskForm.title,
-            description: taskForm.description,
-            status: taskForm.status,
-            priority: taskForm.priority.toLowerCase(),
-            dueDate: taskForm.dueDate || null,
-            columnId: taskForm.columnId,
-            tags: cleanTags(taskForm.tags),
-            checklist: taskForm.checklist.map((item) => ({
-              id: item.id || undefined,
-              text: item.text,
-              completed: item.completed || false,
-            })),
-          },
+          input,
           workspaceId,
         },
       });
     } catch (error) {
-      console.error("Error updating task:", error);
+      toast.error(`Erreur lors de la mise à jour: ${error.message}`);
     }
   };
 
@@ -357,7 +381,7 @@ export const useKanbanTasks = (boardId, board) => {
     try {
       await deleteTask({ variables: { id: taskId, workspaceId } });
     } catch (error) {
-      console.error("Error deleting task:", error);
+      // Erreur silencieuse
     }
   };
 
@@ -406,6 +430,7 @@ export const useKanbanTasks = (boardId, board) => {
             completed: Boolean(item?.completed),
           }))
         : [],
+      assignedMembers: Array.isArray(task?.assignedMembers) ? task.assignedMembers : [],
     });
   };
 

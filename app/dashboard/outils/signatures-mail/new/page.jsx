@@ -1322,7 +1322,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
           </span>
         </div>
 
-        <div className="border-t pt-4 mt-4">
+        <div className="border-t pt-4 mt-4 flex justify-start">
           {/* Signature avec rendu conditionnel selon le template */}
           {(() => {
             const templateProps = {

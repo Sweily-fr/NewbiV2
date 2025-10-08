@@ -26,7 +26,7 @@ const ALLOWED_SOCIAL_NETWORKS = [
   "github",
   "instagram",
   "linkedin",
-  "twitter",
+  "x",
   "youtube",
 ];
 
@@ -47,6 +47,7 @@ export default function SocialNetworksSection({
   signatureData,
   updateSignatureData,
 }) {
+  
   // Construction de l'URL d'icône selon la nouvelle logique
   const buildSocialIconUrl = useCallback((socialNetwork, color = null) => {
     // Vérifier que les variables d'environnement sont définies
@@ -64,8 +65,11 @@ export default function SocialNetworksSection({
       color = null; // Utiliser l'icône par défaut si couleur invalide
     }
 
+    // Mapper "x" vers "twitter" pour les URLs
+    const platformName = socialNetwork === 'x' ? 'twitter' : socialNetwork;
+
     // Construction de l'URL
-    const baseUrl = `${ICONS_SOCIAL_URL}/social/${socialNetwork}/${socialNetwork}`;
+    const baseUrl = `${ICONS_SOCIAL_URL}/social/${platformName}/${platformName}`;
     const finalUrl = color ? `${baseUrl}-${color}.png` : `${baseUrl}.png`;
 
     return finalUrl;
@@ -120,20 +124,18 @@ export default function SocialNetworksSection({
   // Gestion de la couleur globale des icônes
   const handleGlobalColorChange = (color) => {
     const globalColor = color === "default" ? null : color;
-    updateSignatureData("socialGlobalColor", globalColor);
 
-    // Mettre à jour toutes les URLs d'icônes avec la nouvelle couleur
-    const updatedIcons = {};
+    // Mettre à jour socialColors avec le nom de la couleur pour chaque réseau
+    const updatedColors = {};
     ALLOWED_SOCIAL_NETWORKS.forEach((platform) => {
-      if (signatureData.socialNetworks?.[platform]) {
-        const iconUrl = buildSocialIconUrl(platform, globalColor);
-        if (iconUrl) {
-          updatedIcons[platform] = iconUrl;
-        }
-      }
+      updatedColors[platform] = globalColor || null;
     });
-
-    updateSignatureData("socialIcons", updatedIcons);
+    
+    // Mettre à jour les deux champs en une seule fois (objet)
+    updateSignatureData({
+      socialGlobalColor: globalColor,
+      socialColors: updatedColors
+    });
   };
 
   // Gestion du background social
@@ -150,7 +152,7 @@ export default function SocialNetworksSection({
     github: "GitHub",
     instagram: "Instagram",
     linkedin: "LinkedIn",
-    twitter: "Twitter/X",
+    x: "X (Twitter)",
     youtube: "YouTube",
   };
 
