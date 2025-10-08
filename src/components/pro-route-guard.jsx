@@ -17,6 +17,7 @@ export function ProRouteGuard({
   const [hasAccess, setHasAccess] = useState(false);
   const checkTimeoutRef = useRef(null);
   const hasRedirectedRef = useRef(false);
+  const initialCheckDoneRef = useRef(false);
 
   useEffect(() => {
     // Nettoyer le timeout précédent
@@ -51,10 +52,22 @@ export function ProRouteGuard({
           subscriptionStatus: subscription?.status,
           subscriptionObject: subscription,
           isSubscriptionDataLoaded,
+          initialCheckDone: initialCheckDoneRef.current,
           trialActive: trial?.isTrialActive,
           trialDaysRemaining: trial?.daysRemaining,
           hasUsedTrial: trial?.hasUsedTrial,
         });
+
+        // Ne pas rediriger au premier chargement si les données ne sont pas encore chargées
+        if (!isSubscriptionDataLoaded && !initialCheckDoneRef.current) {
+          console.log(`[ProRouteGuard] ${pageName} - Premier chargement, attente des données...`);
+          return;
+        }
+
+        // Marquer que le premier check est fait
+        if (isSubscriptionDataLoaded && !initialCheckDoneRef.current) {
+          initialCheckDoneRef.current = true;
+        }
 
         // Ne rediriger que si les données sont chargées ET l'accès est refusé
         if (!accessGranted && !hasRedirectedRef.current && isSubscriptionDataLoaded) {
