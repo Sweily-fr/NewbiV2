@@ -34,6 +34,7 @@ import {
   getPriorityIcon,
   formatDateRelative,
 } from "../../../../../../src/utils/kanbanHelpers";
+import { AvatarGroup } from "@/src/components/ui/user-avatar";
 
 /**
  * Composant pour une tâche draggable dans le tableau Kanban
@@ -241,10 +242,10 @@ export function TaskCard({ task, onEdit, onDelete }) {
 
         {/* Pied de carte */}
         <div className="flex items-center justify-between text-xs text-muted-foreground mt-3">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             {task.dueDate && (
-              <>
-                <Calendar className="h-3.5 w-3.5 mr-1" />
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
                 <span>
                   {new Date(task.dueDate).toLocaleDateString("fr-FR", {
                     day: "numeric",
@@ -252,11 +253,9 @@ export function TaskCard({ task, onEdit, onDelete }) {
                     year: "numeric",
                   })}
                 </span>
-              </>
+              </div>
             )}
-          </div>
-
-          <div className="flex items-center gap-3">
+            
             {checklistProgress.total > 0 && (
               <div className="flex items-center gap-1">
                 <CheckSquare className="h-3.5 w-3.5" />
@@ -265,7 +264,17 @@ export function TaskCard({ task, onEdit, onDelete }) {
                 </span>
               </div>
             )}
+          </div>
 
+          <div className="flex items-center gap-2">
+            {task.assignedMembers && task.assignedMembers.length > 0 && (
+              <AvatarGroup 
+                users={task.assignedMembers} 
+                max={3} 
+                size="xs"
+              />
+            )}
+            
             {task.updatedAt && (
               <span className="text-gray-400">
                 {formatDateRelative(new Date(task.updatedAt))}
