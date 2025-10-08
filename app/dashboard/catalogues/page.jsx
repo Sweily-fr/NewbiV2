@@ -63,7 +63,7 @@ function CataloguesContent() {
 
 export default function Catalogues() {
   return (
-    <ProRouteGuard pageName="Catalogues" requirePaidSubscription={true}>
+    <ProRouteGuard pageName="Catalogues" requirePaidSubscription={false}>
       <CataloguesContent />
     </ProRouteGuard>
   );
