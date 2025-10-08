@@ -252,7 +252,7 @@ export const stripePlugin = stripe({
           try {
             // Import MongoDB directement
             const { mongoDb } = await import("./mongodb.js");
-            
+
             await mongoDb.collection("subscription").updateOne(
               { stripeSubscriptionId: updatedSub.id },
               {
@@ -265,7 +265,7 @@ export const stripePlugin = stripe({
                     updatedSub.current_period_end * 1000
                   ),
                   updatedAt: new Date(),
-                }
+                },
               }
             );
             console.log(
@@ -521,14 +521,14 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
-        // Trial system fields
+        // Trial system fields (ISO date strings)
         trialStartDate: {
-          type: "date",
+          type: "string",
           input: true,
           required: false,
         },
         trialEndDate: {
-          type: "date",
+          type: "string",
           input: true,
           required: false,
         },

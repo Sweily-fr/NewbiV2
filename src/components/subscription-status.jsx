@@ -1,6 +1,6 @@
 'use client';
 
-import { useSubscription } from '@/src/contexts/subscription-context';
+import { useSubscription } from '@/src/contexts/dashboard-layout-context';
 import { useSession } from '@/src/lib/auth-client';
 import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';

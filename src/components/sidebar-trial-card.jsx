@@ -7,56 +7,117 @@ import { Button } from "@/src/components/ui/button";
 import { ClockIcon, CrownIcon, XIcon, ArrowRightIcon } from "lucide-react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useSession } from "@/src/lib/auth-client";
+import { authClient } from "@/src/lib/auth-client";
 import { useRouter } from "next/navigation";
 import PricingModal from "@/src/components/pricing-modal";
 
 export function SidebarTrialCard() {
   const { subscription, loading, isActive } = useSubscription();
   const { data: session } = useSession();
+  const { data: activeOrg } = authClient.useActiveOrganization();
 
   const [dismissed, setDismissed] = useState(false);
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const router = useRouter();
 
+  // Log pour voir les données de l'organisation active
+  useEffect(() => {
+    if (activeOrg) {
+      console.log("📊 Organisation active récupérée:", activeOrg);
+    }
+  }, [activeOrg]);
+
   const openPricingModal = () => {
     setIsPricingModalOpen(true);
   };
 
-  // Calculer les informations d'essai
+  // Calculer les informations d'essai depuis l'organisation Better Auth
   const getTrialInfo = () => {
-    if (!session?.user)
-      return { isInTrial: false, isTrialExpired: false, trialDaysRemaining: 0, isFreeMode: false };
+    if (!session?.user || !activeOrg)
+      return {
+        isInTrial: false,
+        isTrialExpired: false,
+        trialDaysRemaining: 0,
+        isFreeMode: false,
+      };
 
-    const createdAt = new Date(session.user.createdAt);
+    // Récupérer les données d'essai depuis l'organisation
+    const isTrialActive = activeOrg.isTrialActive || false;
+    const trialEndDate = activeOrg.trialEndDate
+      ? new Date(activeOrg.trialEndDate)
+      : null;
     const now = new Date();
-    const daysSinceCreation = (now - createdAt) / (1000 * 60 * 60 * 24);
-    const trialDaysRemaining = Math.max(0, Math.ceil(14 - daysSinceCreation));
 
-    const isInTrial = daysSinceCreation <= 14 && !isActive();
-    const isTrialExpired = daysSinceCreation > 14 && !isActive();
+    // Calculer les jours restants
+    let trialDaysRemaining = 0;
+    if (trialEndDate) {
+      const daysRemaining = (trialEndDate - now) / (1000 * 60 * 60 * 24);
+      trialDaysRemaining = Math.max(0, Math.ceil(daysRemaining));
+    }
+
+    const isInTrial = isTrialActive && trialDaysRemaining > 0 && !isActive();
+    const isTrialExpired = !isTrialActive && !isActive();
     // Mode gratuit : utilisateur sans abonnement actif (peu importe la période d'essai)
     const isFreeMode = !isActive();
+
+    // Log de débogage
+    console.log("🔍 SidebarTrialCard - Données d'essai:", {
+      activeOrg,
+      isTrialActive,
+      trialEndDate,
+      trialDaysRemaining,
+      isInTrial,
+      isTrialExpired,
+      isFreeMode,
+      hasActiveSubscription: isActive(),
+    });
 
     return { isInTrial, isTrialExpired, trialDaysRemaining, isFreeMode };
   };
 
-  const { isInTrial, isTrialExpired, trialDaysRemaining, isFreeMode } = getTrialInfo();
+  const { isInTrial, isTrialExpired, trialDaysRemaining, isFreeMode } =
+    getTrialInfo();
 
   // Reset dismissed state when trial status changes
   useEffect(() => {
     setDismissed(false);
   }, [isInTrial, isTrialExpired, isActive()]);
 
-  // Ne pas afficher si loading, dismissed, ou si l'utilisateur a un abonnement actif
-  // Attendre que les données soient complètement chargées avant d'afficher
-  if (loading || dismissed || (isActive() && !subscription)) {
+  // Log pour diagnostiquer l'affichage
+  console.log("🎯 SidebarTrialCard - Conditions d'affichage:", {
+    loading,
+    dismissed,
+    isActive: isActive(),
+    subscription,
+    isInTrial,
+    isTrialExpired,
+    trialDaysRemaining,
+    isFreeMode,
+  });
+
+  // Ne pas afficher si loading ou dismissed
+  if (loading || dismissed) {
+    console.log("❌ SidebarTrialCard - Masqué (loading ou dismissed)");
     return null;
   }
-  
-  // Si l'utilisateur a un abonnement actif avec les données chargées, ne pas afficher
-  if (isActive() && subscription) {
+
+  // Ne pas afficher si l'utilisateur a un abonnement actif
+  if (isActive()) {
+    console.log("❌ SidebarTrialCard - Masqué (abonnement actif)");
     return null;
   }
+
+  // Si pas d'essai actif et pas d'essai expiré, ne rien afficher
+  if (!isInTrial && !isTrialExpired && !isFreeMode) {
+    console.log("❌ SidebarTrialCard - Masqué (aucune condition d'affichage)");
+    return null;
+  }
+
+  console.log("✅ SidebarTrialCard - AFFICHAGE !", {
+    isInTrial,
+    isTrialExpired,
+    trialDaysRemaining,
+  });
 
   // Rendu du modal de pricing
   const renderPricingModal = () => {
@@ -89,16 +150,15 @@ export function SidebarTrialCard() {
                 </div>
 
                 <p className="text-[12px] text-gray-600 dark:text-white/80 mb-2">
-                  Votre période d'essai est terminée. Passez au premium pour continuer.
+                  Votre période d'essai est terminée. Passez au premium pour
+                  continuer.
                 </p>
 
                 <div
                   className="w-full text-xs font-semibold flex items-center justify-between p-0 h-auto cursor-pointer"
                   onClick={openPricingModal}
                 >
-                  <span>
-                    Passer au premium
-                  </span>
+                  <span>Passer au premium</span>
                   <ArrowRightIcon className="w-4 h-4 self-center stroke-[2]" />
                 </div>
               </div>
@@ -134,16 +194,15 @@ export function SidebarTrialCard() {
                 </div>
 
                 <p className="text-[12px] text-gray-600 dark:text-white/80 mb-2">
-                  Plus que {trialDaysRemaining} jour(s) d'essai. Passez au premium pour continuer.
+                  Plus que {trialDaysRemaining} jour(s) d'essai. Passez au
+                  premium pour continuer.
                 </p>
 
                 <div
                   className="w-full text-xs font-semibold flex items-center justify-between p-0 h-auto cursor-pointer"
                   onClick={openPricingModal}
                 >
-                  <span>
-                    Passer au premium
-                  </span>
+                  <span>Passer au premium</span>
                   <ArrowRightIcon className="w-4 h-4 self-center stroke-[2]" />
                 </div>
               </div>
@@ -162,7 +221,7 @@ export function SidebarTrialCard() {
   if (isFreeMode) {
     // Déterminer si c'est un utilisateur qui n'a jamais eu d'essai ou dont l'essai a expiré
     const showFreeContent = !isInTrial || isTrialExpired;
-    
+
     return (
       <>
         <Card className="mb-2 bg-transparent shadow-xs py-3 rounded-md">
@@ -182,16 +241,15 @@ export function SidebarTrialCard() {
                 </div>
 
                 <p className="text-[12px] text-gray-600 dark:text-white/80 mb-2">
-                  Vous êtes actuellement en mode gratuit avec des fonctionnalités limitées
+                  Vous êtes actuellement en mode gratuit avec des
+                  fonctionnalités limitées
                 </p>
 
                 <div
                   className="w-full text-xs font-semibold flex items-center justify-between p-0 h-auto cursor-pointer"
                   onClick={openPricingModal}
                 >
-                  <span>
-                    Passer au premium
-                  </span>
+                  <span>Passer au premium</span>
                   <ArrowRightIcon className="w-4 h-4 self-center stroke-[2]" />
                 </div>
               </div>

@@ -4,7 +4,6 @@ import "./globals.css";
 import { ThemeProvider } from "@/src/components/theme-provider";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
-import { SubscriptionProvider } from "@/src/contexts/subscription-context";
 import CookieManager from "@/src/components/cookies/CookieManager";
 
 export const metadata = {
@@ -101,10 +100,8 @@ export default function RootLayout({ children }) {
       <body className="font-sans antialiased">
         <ApolloWrapper>
           <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-            <SubscriptionProvider>
-              {children}
-              <CookieManager />
-            </SubscriptionProvider>
+            {children}
+            <CookieManager />
           </ThemeProvider>
         </ApolloWrapper>
         <Toaster />

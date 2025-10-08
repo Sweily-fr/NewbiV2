@@ -326,16 +326,28 @@ export function useDashboardLayoutSimple() {
     const hasActiveSubscription =
       subscription?.status === "active" || subscription?.status === "trialing";
 
+    console.log('🎯 isActive() appelé:', {
+      requirePaidSubscription,
+      hasActiveSubscription,
+      subscriptionStatus: subscription?.status,
+      trialHasPremiumAccess: trial.hasPremiumAccess,
+      trialIsTrialActive: trial.isTrialActive,
+      trialDaysRemaining: trial.daysRemaining
+    });
+
     // Si on exige un abonnement payant, ignorer la période d'essai
     if (requirePaidSubscription) {
+      console.log('❌ isActive() - Abonnement payant requis, retourne:', hasActiveSubscription);
       return hasActiveSubscription;
     }
 
     // Sinon, accepter aussi la période d'essai
     if (!hasActiveSubscription) {
+      console.log('✅ isActive() - Pas d\'abonnement, vérifie trial:', trial.hasPremiumAccess);
       return trial.hasPremiumAccess;
     }
 
+    console.log('✅ isActive() - Abonnement actif:', hasActiveSubscription);
     return hasActiveSubscription;
   };
 

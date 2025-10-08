@@ -172,22 +172,22 @@ const HeroAnimation = () => {
 
       {/* Version Desktop */}
       <div className="hidden md:block relative w-full">
-        <div className="absolute inset-0 flex flex-col items-center justify-center mt-6 z-10">
-          <h1 className="max-w-8xl text-center mx-auto text-balance font-medium text-6xl md:text-7xl xl:text-[3.2rem] font-['Poppins'] leading-tight">
+        <div className="absolute inset-0 flex flex-col items-center justify-center mt-6 z-10 px-4">
+          <h1 className="max-w-8xl text-center mx-auto text-balance font-medium text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-['Poppins'] leading-tight">
             <span className="text-[#2E2E2E] block">Les meilleurs outils</span>
             <span className="text-[#2E2E2E] block">pour être</span>
-            <span className="bg-gradient-to-r from-[#171717] to-[#171717]/90 px-4 text-white rounded-lg inline-block my-4">
+            <span className="bg-gradient-to-r from-[#171717] to-[#171717]/90 px-3 md:px-4 py-1 text-white rounded-lg inline-block my-2 md:my-3 lg:my-4">
               indépendant,
             </span>
             <span className="text-[#2E2E2E] block">sans le prix fort</span>
           </h1>
 
-          <span className="text-[#2E2E2E] block mt-6">
+          <span className="text-[#2E2E2E] block mt-4 md:mt-5 lg:mt-6 text-sm md:text-base lg:text-lg">
             Créez votre business parfait en quelques clics.
           </span>
         </div>
         <div className="w-full flex justify-center">
-          <div ref={svgRef} className="w-full p-20">
+          <div ref={svgRef} className="w-full p-8 md:p-12 lg:p-16 xl:p-20">
             <MySVG />
           </div>
         </div>

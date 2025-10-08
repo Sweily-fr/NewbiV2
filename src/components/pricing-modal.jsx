@@ -14,7 +14,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Switch } from "@/src/components/ui/switch";
 import { Loader2, Check, Crown, AlertTriangle } from "lucide-react";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { authClient, useSession } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 

@@ -69,10 +69,20 @@ const ensureActiveOrganization = async () => {
           user.name || `Espace ${user.email.split("@")[0]}'s`;
         const organizationSlug = `org-${user.id.slice(-8)}`;
 
-        // Créer l'organisation directement avec authClient
+        // Calculer les dates de trial (14 jours)
+        const now = new Date();
+        const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+        console.log(`🔄 Création organisation pour ${user.email} avec trial...`);
+
+        // Créer l'organisation directement avec authClient + champs trial
         const result = await authClient.organization.create({
           name: organizationName,
           slug: organizationSlug,
+          trialStartDate: now.toISOString(),
+          trialEndDate: trialEnd.toISOString(),
+          isTrialActive: true,
+          hasUsedTrial: true,
           metadata: {
             autoCreated: true,
             createdAt: new Date().toISOString(),
@@ -86,7 +96,8 @@ const ensureActiveOrganization = async () => {
             result.error
           );
         } else {
-          toast.success("Bienvenue ! Votre espace de travail a été créé.");
+          console.log(`✅ Organisation créée avec trial:`, result.data);
+          toast.success("Bienvenue ! Votre période d'essai de 14 jours a démarré.");
         }
       } catch (error) {
         console.error("❌ Erreur lors de la création automatique:", error);
@@ -116,8 +127,7 @@ const LoginForm = () => {
   const [userEmailForVerification, setUserEmailForVerification] =
     React.useState("");
 
-  React.useEffect(() => {
-  }, [showEmailVerification, userEmailForVerification]);
+  React.useEffect(() => {}, [showEmailVerification, userEmailForVerification]);
 
   const onSubmit = async (formData) => {
     await authClient.signIn.email(formData, {
@@ -157,14 +167,15 @@ const LoginForm = () => {
               if (Date.now() - invitation.timestamp < sevenDaysInMs) {
                 invitationId = invitation.invitationId;
                 invitationEmail = invitation.email;
-                console.log(`📋 Invitation récupérée depuis localStorage: ${invitationId}`);
+                console.log(
+                  `📋 Invitation récupérée depuis localStorage: ${invitationId}`
+                );
               } else {
                 console.log(`⚠️ Invitation expirée, suppression`);
                 localStorage.removeItem("pendingInvitation");
               }
             } catch (error) {
               console.error("Erreur parsing invitation:", error);
-              localStorage.removeItem("pendingInvitation");
             }
           }
         }
@@ -172,8 +183,6 @@ const LoginForm = () => {
         // Si c'est une connexion via invitation, accepter automatiquement l'invitation
         if (invitationId && invitationEmail) {
           try {
-            console.log(`🔄 Acceptation automatique de l'invitation ${invitationId}`);
-            
             const response = await fetch(`/api/invitations/${invitationId}`, {
               method: "POST",
               headers: {
@@ -182,35 +191,55 @@ const LoginForm = () => {
               body: JSON.stringify({ action: "accept" }),
             });
 
-            const result = await response.json();
-
             if (response.ok) {
-              console.log(`✅ Invitation acceptée avec succès:`, result);
-              
-              // Nettoyer localStorage
-              localStorage.removeItem("pendingInvitation");
-              console.log(`🧹 Invitation nettoyée de localStorage`);
-              
-              toast.success(
-                "Invitation acceptée ! Bienvenue dans l'organisation."
-              );
-              
-              // Rafraîchir la session pour obtenir la nouvelle organisation
-              await authClient.session.refresh();
-              
-              // Rediriger vers le dashboard de l'organisation
-              if (result.organizationId) {
-                router.push("/dashboard");
-                return;
+              const result = await response.json();
+
+              if (result.data) {
+                try {
+                  console.log(`🔄 Ajout des champs trial...`);
+                  
+                  const now = new Date();
+                  const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+                  
+                  const updateResult = await authClient.organization.update({
+                    organizationId: result.data.id,
+                    data: {
+                      trialStartDate: now.toISOString(),
+                      trialEndDate: trialEnd.toISOString(),
+                      isTrialActive: true,
+                      hasUsedTrial: true,
+                    },
+                  });
+                  
+                  if (updateResult.error) {
+                    console.error(`❌ Erreur mise à jour trial:`, updateResult.error);
+                    toast.success("Bienvenue ! Votre espace de travail a été créé.");
+                  } else {
+                    console.log(`✅ Champs trial ajoutés:`, updateResult.data);
+                    toast.success("Bienvenue ! Votre période d'essai de 14 jours a démarré.");
+                  }
+                } catch (updateError) {
+                  console.error(`❌ Erreur mise à jour trial:`, updateError);
+                  toast.success("Bienvenue ! Votre espace de travail a été créé.");
+                }
+              } else {
+                toast.success("Bienvenue ! Votre espace de travail a été créé.");
               }
             } else {
-              console.error("❌ Erreur lors de l'acceptation automatique de l'invitation");
+              console.error(
+                "❌ Erreur lors de l'acceptation automatique de l'invitation"
+              );
               console.error("Status:", response.status);
               console.error("Détails:", result);
-              toast.error(result.error || "Erreur lors de l'acceptation de l'invitation");
+              toast.error(
+                result.error || "Erreur lors de l'acceptation de l'invitation"
+              );
             }
           } catch (error) {
-            console.error("❌ Erreur lors de l'acceptation automatique:", error);
+            console.error(
+              "❌ Erreur lors de l'acceptation automatique:",
+              error
+            );
             toast.error("Erreur lors de l'acceptation de l'invitation");
           }
         }
@@ -223,21 +252,22 @@ const LoginForm = () => {
             const { data: session } = await authClient.getSession();
             const organizationId = session?.session?.activeOrganizationId;
             const userRedirectPage = session?.user?.redirect_after_login;
-            
+
             if (organizationId) {
-              const { data: subscriptions } = await authClient.subscription.list({
-                query: {
-                  referenceId: organizationId,
-                },
-              });
-              
+              const { data: subscriptions } =
+                await authClient.subscription.list({
+                  query: {
+                    referenceId: organizationId,
+                  },
+                });
+
               const hasActiveSubscription = subscriptions?.some(
                 (sub) => sub.status === "active" || sub.status === "trialing"
               );
-              
+
               // Utiliser la page de démarrage préférée de l'utilisateur ou fallback
               let redirectPath = "/dashboard/outils";
-              
+
               if (userRedirectPage && userRedirectPage !== "last-page") {
                 // Mapper les pages vers leurs vraies routes
                 const routeMap = {
@@ -256,26 +286,28 @@ const LoginForm = () => {
                   analytics: "/dashboard/analytics",
                   favoris: "/dashboard/favoris",
                 };
-                
+
                 redirectPath = routeMap[userRedirectPage] || "/dashboard";
               } else if (hasActiveSubscription) {
                 redirectPath = "/dashboard";
               }
-              
+
               router.push(redirectPath);
             } else {
               // Pas d'organisation, rediriger vers /dashboard/outils par défaut
               router.push("/dashboard/outils");
             }
           } catch (error) {
-            console.error("Erreur lors de la vérification de l'abonnement:", error);
+            console.error(
+              "Erreur lors de la vérification de l'abonnement:",
+              error
+            );
             // En cas d'erreur, rediriger vers /dashboard/outils par défaut
             router.push("/dashboard/outils");
           }
         }
       },
       onError: async (error) => {
-
         // Essayer différents formats d'erreur
         let errorMessage = null;
 
@@ -415,21 +447,21 @@ const LoginForm = () => {
           const { data: session } = await authClient.getSession();
           const organizationId = session?.session?.activeOrganizationId;
           const userRedirectPage = session?.user?.redirect_after_login;
-          
+
           if (organizationId) {
             const { data: subscriptions } = await authClient.subscription.list({
               query: {
                 referenceId: organizationId,
               },
             });
-            
+
             const hasActiveSubscription = subscriptions?.some(
               (sub) => sub.status === "active" || sub.status === "trialing"
             );
-            
+
             // Utiliser la page de démarrage préférée de l'utilisateur ou fallback
             let redirectPath = "/dashboard/outils";
-            
+
             if (userRedirectPage && userRedirectPage !== "last-page") {
               // Mapper les pages vers leurs vraies routes
               const routeMap = {
@@ -448,19 +480,22 @@ const LoginForm = () => {
                 analytics: "/dashboard/analytics",
                 favoris: "/dashboard/favoris",
               };
-              
+
               redirectPath = routeMap[userRedirectPage] || "/dashboard";
             } else if (hasActiveSubscription) {
               redirectPath = "/dashboard";
             }
-            
+
             router.push(redirectPath);
           } else {
             // Pas d'organisation, rediriger vers /dashboard/outils par défaut
             router.push("/dashboard/outils");
           }
         } catch (error) {
-          console.error("Erreur lors de la vérification de l'abonnement:", error);
+          console.error(
+            "Erreur lors de la vérification de l'abonnement:",
+            error
+          );
           // En cas d'erreur, rediriger vers /dashboard/outils par défaut
           router.push("/dashboard/outils");
         }

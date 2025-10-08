@@ -4,7 +4,7 @@ import { Separator } from "@/src/components/ui/separator";
 import { Button } from "@/src/components/ui/button";
 import { useUser } from "../../../src/lib/auth/hooks";
 import { DeactivateAccountModal } from "./components/DeactivateAccountModal";
-import { useSubscription } from "@/src/contexts/subscription-context";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useState } from "react";
 import Link from "next/link";
 import { TriangleAlert } from "lucide-react";

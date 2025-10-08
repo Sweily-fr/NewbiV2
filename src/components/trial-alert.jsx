@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSubscription } from '@/src/contexts/subscription-context';
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useSession } from '@/src/lib/auth-client';
 import { Alert, AlertDescription } from '@/src/components/ui/alert';
 import { Button } from '@/src/components/ui/button';
