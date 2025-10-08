@@ -24,6 +24,13 @@ export const auth = betterAuth({
   // ⚠️ IMPORTANT: baseURL requis pour OAuth en production
   baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   
+  // ⚠️ IMPORTANT: trustedOrigins pour autoriser www et non-www
+  trustedOrigins: [
+    "https://newbi.fr",
+    "https://www.newbi.fr",
+    "http://localhost:3000",
+  ],
+  
   // Cookie Cache pour optimiser les performances
   // Évite les requêtes DB à chaque useSession() ou useActiveOrganization()
   session: {
