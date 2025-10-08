@@ -10,7 +10,8 @@ export function ProRouteGuard({
   pageName,
   requirePaidSubscription = false,
 }) {
-  const { isActive, loading, subscription, hasInitialized, trial } = useSubscription();
+  const { isActive, loading, subscription, hasInitialized, trial } =
+    useSubscription();
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
@@ -29,11 +30,18 @@ export function ProRouteGuard({
       checkTimeoutRef.current = setTimeout(() => {
         const hasActiveSubscription = isActive();
         const isPaidSubscription = subscription?.status === "active";
-        
+
         // Vérifier si l'accès est autorisé
-        const accessGranted = requirePaidSubscription 
-          ? isPaidSubscription 
+        const accessGranted = requirePaidSubscription
+          ? isPaidSubscription
           : hasActiveSubscription;
+
+        // ⚠️ IMPORTANT: Vérifier si l'abonnement est vraiment chargé
+        // Si subscription est undefined/null ET qu'on n'a pas de trial, c'est en cours de chargement
+        const isSubscriptionDataLoaded = 
+          subscription !== undefined || 
+          trial?.isTrialActive === true || 
+          trial?.hasUsedTrial === true;
 
         console.log(`[ProRouteGuard] ${pageName}`, {
           hasActiveSubscription,
@@ -41,19 +49,30 @@ export function ProRouteGuard({
           requirePaidSubscription,
           accessGranted,
           subscriptionStatus: subscription?.status,
+          subscriptionObject: subscription,
+          isSubscriptionDataLoaded,
           trialActive: trial?.isTrialActive,
           trialDaysRemaining: trial?.daysRemaining,
+          hasUsedTrial: trial?.hasUsedTrial,
         });
 
-        if (!accessGranted && !hasRedirectedRef.current) {
-          console.log(`[ProRouteGuard] ${pageName} - Accès refusé - Redirection vers /dashboard/outils`);
+        // Ne rediriger que si les données sont chargées ET l'accès est refusé
+        if (!accessGranted && !hasRedirectedRef.current && isSubscriptionDataLoaded) {
+          console.log(
+            `[ProRouteGuard] ${pageName} - Accès refusé - Redirection vers /dashboard/outils`
+          );
           hasRedirectedRef.current = true;
           router.replace("/dashboard/outils?access=restricted");
         } else if (accessGranted) {
           console.log(`[ProRouteGuard] ${pageName} - Accès autorisé`);
           setHasAccess(true);
+          hasRedirectedRef.current = false; // Reset pour permettre les futures redirections
+        } else if (!isSubscriptionDataLoaded) {
+          console.log(`[ProRouteGuard] ${pageName} - En attente du chargement des données d'abonnement...`);
+          // Rester en mode checking, ne pas rediriger
+          return;
         }
-        
+
         setIsChecking(false);
       }, 300); // Délai de 300ms pour la synchronisation
     }
