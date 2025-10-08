@@ -305,8 +305,6 @@ export const useKanbanTasks = (boardId, board) => {
           }))
         : [];
       
-      console.log('📝 [CreateTask] Membres assignés:', JSON.stringify(assignedMembers, null, 2));
-      
       await createTask({
         variables: {
           input: {
@@ -330,7 +328,6 @@ export const useKanbanTasks = (boardId, board) => {
         },
       });
     } catch (error) {
-      console.error("Error creating task:", error);
       toast.error("Une erreur est survenue lors de la création de la tâche");
     }
   };
@@ -352,9 +349,6 @@ export const useKanbanTasks = (boardId, board) => {
           }))
         : [];
       
-      console.log('✏️ [UpdateTask] Membres assignés:', JSON.stringify(assignedMembers, null, 2));
-      console.log('✏️ [UpdateTask] TaskForm complet:', JSON.stringify(taskForm, null, 2));
-      
       const input = {
         id: editingTask.id,
         title: taskForm.title,
@@ -372,8 +366,6 @@ export const useKanbanTasks = (boardId, board) => {
         assignedMembers: assignedMembers,
       };
       
-      console.log('✏️ [UpdateTask] Input envoyé:', JSON.stringify(input, null, 2));
-      
       await updateTask({
         variables: {
           input,
@@ -381,17 +373,6 @@ export const useKanbanTasks = (boardId, board) => {
         },
       });
     } catch (error) {
-      console.error("❌ [UpdateTask] Erreur complète:", error);
-      console.error("❌ [UpdateTask] Message:", error.message);
-      console.error("❌ [UpdateTask] GraphQL errors:", error.graphQLErrors);
-      console.error("❌ [UpdateTask] Network error:", error.networkError);
-      
-      if (error.graphQLErrors) {
-        error.graphQLErrors.forEach(({ message, locations, path }) => {
-          console.error(`❌ [GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`);
-        });
-      }
-      
       toast.error(`Erreur lors de la mise à jour: ${error.message}`);
     }
   };
@@ -400,7 +381,7 @@ export const useKanbanTasks = (boardId, board) => {
     try {
       await deleteTask({ variables: { id: taskId, workspaceId } });
     } catch (error) {
-      console.error("Error deleting task:", error);
+      // Erreur silencieuse
     }
   };
 

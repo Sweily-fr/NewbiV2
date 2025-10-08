@@ -22,12 +22,7 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
   
   const currentUser = session?.user;
 
-  console.log('🔍 [MemberSelector] workspaceId:', workspaceId);
-  console.log('👤 [MemberSelector] Current user:', {
-    id: currentUser?.id,
-    email: currentUser?.email,
-    name: currentUser?.name
-  });
+  // Logs supprimés pour optimiser les performances
 
   // Récupérer les membres de l'organisation via Better Auth (comme espaces-section)
   useEffect(() => {
@@ -37,63 +32,37 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
         const result = await getAllCollaborators(workspaceId);
 
         if (result.success) {
-          console.log('✅ [MemberSelector] Membres récupérés:', result.data.length);
-          
           // Formatter les membres (seulement les membres actifs, pas les invitations)
           const formattedMembers = result.data
             .filter(item => item.type === 'member') // Seulement les membres actifs
-            .map(item => {
-              const member = {
-                id: item.user?.id || item.id,
-                name: item.user?.name || item.name || item.user?.email?.split('@')[0] || 'Utilisateur',
-                email: item.user?.email || item.email,
-                image: item.user?.image || item.user?.avatar || item.avatar || null,
-                role: item.role,
-              };
-              
-              console.log('👤 [MemberSelector] Membre formaté:', {
-                name: member.name,
-                hasImage: !!member.image,
-                imageUrl: member.image,
-                rawData: item
-              });
-              
-              return member;
-            });
-          
-          console.log('👥 [MemberSelector] Membres formatés:', formattedMembers);
+            .map(item => ({
+              id: item.user?.id || item.id,
+              name: item.user?.name || item.name || item.user?.email?.split('@')[0] || 'Utilisateur',
+              email: item.user?.email || item.email,
+              image: item.user?.image || item.user?.avatar || item.avatar || null,
+              role: item.role,
+            }));
           
           // Ajouter l'utilisateur connecté s'il n'est pas dans la liste
           const currentUserInList = formattedMembers.some(m => 
             m.id === currentUser?.id || m.email === currentUser?.email
           );
           
-          console.log('🔍 [MemberSelector] Utilisateur dans la liste?', {
-            currentUserInList,
-            currentUserId: currentUser?.id,
-            currentUserEmail: currentUser?.email,
-            membersIds: formattedMembers.map(m => m.id),
-            membersEmails: formattedMembers.map(m => m.email)
-          });
-          
           if (currentUser && !currentUserInList) {
-            console.log('➕ [MemberSelector] Ajout de l\'utilisateur connecté à la liste');
             formattedMembers.unshift({
               id: currentUser.id,
               name: currentUser.name || currentUser.email?.split('@')[0] || 'Moi',
               email: currentUser.email,
               image: currentUser.image || currentUser.avatar || null,
-              role: 'owner', // L'utilisateur connecté est au moins membre
+              role: 'owner',
             });
           }
           
           setMembers(formattedMembers);
         } else {
-          console.error('❌ [MemberSelector] Erreur:', result.error);
           setMembers([]);
         }
       } catch (error) {
-        console.error('❌ [MemberSelector] Exception:', error);
         setMembers([]);
       } finally {
         setLoading(false);
@@ -105,8 +74,6 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId]); // Retirer getAllCollaborators des dépendances pour éviter la boucle
-  
-  console.log('📋 [MemberSelector] Membres:', members.length, 'Loading:', loading);
 
   // Vérifier si un membre est sélectionné
   const isMemberSelected = (memberId) => {
@@ -117,30 +84,19 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
   const toggleMember = (member) => {
     const isSelected = isMemberSelected(member.id);
     
-    console.log('🔄 [MemberSelector] Toggle member:', {
-      member,
-      isSelected,
-      hasImage: !!member.image,
-      imageUrl: member.image
-    });
-    
     if (isSelected) {
       // Retirer le membre
       onMembersChange(selectedMembers.filter(m => m.userId !== member.id));
     } else {
       // Ajouter le membre avec l'image
-      const newMember = {
-        userId: member.id,
-        name: member.name,
-        email: member.email,
-        image: member.image || null,
-      };
-      
-      console.log('➕ [MemberSelector] Ajout membre:', newMember);
-      
       onMembersChange([
         ...selectedMembers,
-        newMember,
+        {
+          userId: member.id,
+          name: member.name,
+          email: member.email,
+          image: member.image || null,
+        },
       ]);
     }
   };
@@ -224,18 +180,6 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
                 {members.map((member) => {
                   const isSelected = isMemberSelected(member.id);
                   const isCurrentUserMember = currentUser && member.id === currentUser.id;
-                  
-                  // Debug: Comparer les IDs
-                  if (member.email === currentUser?.email) {
-                    console.log('🔍 [MemberSelector] Comparaison IDs pour:', member.name, {
-                      memberId: member.id,
-                      memberIdType: typeof member.id,
-                      currentUserId: currentUser?.id,
-                      currentUserIdType: typeof currentUser?.id,
-                      isEqual: member.id === currentUser?.id,
-                      emailMatch: member.email === currentUser?.email
-                    });
-                  }
                   
                   return (
                     <button
