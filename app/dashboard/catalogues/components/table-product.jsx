@@ -139,7 +139,7 @@ const columns = [
       const product = row.original;
       return (
         <div
-          className="font-normal max-w-[180px] truncate"
+          className="font-normal max-w-[120px] md:max-w-[180px] truncate"
           title={product.name}
         >
           {product.name}

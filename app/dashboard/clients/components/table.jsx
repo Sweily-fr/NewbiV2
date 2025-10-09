@@ -146,7 +146,14 @@ const columns = [
         client.type === "INDIVIDUAL" && (client.firstName || client.lastName)
           ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
           : client.name;
-      return <div className="font-normal">{displayName}</div>;
+      return (
+        <div 
+          className="font-normal max-w-[150px] md:max-w-none truncate" 
+          title={displayName}
+        >
+          {displayName}
+        </div>
+      );
     },
     size: 200,
     filterFn: multiColumnFilterFn,
