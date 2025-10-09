@@ -51,6 +51,8 @@ import { useKanbanTasks } from "./hooks/useKanbanTasks";
 import { useKanbanDnD } from "./hooks/useKanbanDnD";
 import { useKanbanSearch } from "./hooks/useKanbanSearch";
 import { useColumnCollapse } from "./hooks/useColumnCollapse";
+import { useDragToScroll } from "./hooks/useDragToScroll";
+import { useKanbanRealtimeSync } from "./hooks/useKanbanRealtimeSync";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 
@@ -152,12 +154,20 @@ export default function KanbanBoardPage({ params }) {
 
   // Mutation pour réorganiser les colonnes
   const [reorderColumnsMutation] = useMutation(REORDER_COLUMNS, {
-    // Pas de refetch automatique pour éviter le flash
-    // Les colonnes sont déjà à jour localement
+    refetchQueries: ["GetBoard"],
+    awaitRefetchQueries: false, // Ne pas attendre le refetch pour ne pas bloquer l'UI
   });
 
   // État local pour les colonnes (pour la réorganisation en temps réel)
   const [localColumns, setLocalColumns] = React.useState(board?.columns || []);
+
+  // Hook pour la synchronisation temps réel via Redis
+  const { isConnected: realtimeConnected, markAsUpdating } = useKanbanRealtimeSync(
+    id,
+    workspaceId,
+    localColumns,
+    setLocalColumns
+  );
 
   const { activeTask, activeColumn, sensors, handleDragStart, handleDragOver, handleDragEnd } =
     useKanbanDnD(
@@ -167,7 +177,8 @@ export default function KanbanBoardPage({ params }) {
       workspaceId,
       localColumns,
       reorderColumnsMutation,
-      setLocalColumns
+      setLocalColumns,
+      markAsUpdating
     );
 
   // Mettre à jour les colonnes locales quand board.columns change
@@ -195,6 +206,9 @@ export default function KanbanBoardPage({ params }) {
     collapsedColumnsCount,
   } = useColumnCollapse(id);
 
+  // Hook pour le scroll horizontal par glissement
+  const scrollRef = useDragToScroll({ enabled: true, scrollSpeed: 1.5 });
+
   // Détecter les changements d'organisation et rediriger si nécessaire
   useOrganizationChange({
     resourceId: id,
@@ -221,59 +235,59 @@ export default function KanbanBoardPage({ params }) {
   }
 
   return (
-    <div className="w-full max-w-[100vw] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div 
+      ref={scrollRef}
+      className="w-full max-w-[100vw] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+    >
       {/* Header */}
-      <div className="mx-auto p-4 sm:pt-6 sm:px-6">
-        <div className="space-y-4">
-          {/* Title and description */}
-          <div>
-            <h1 className="text-xl font-medium mb-2">{board.title}</h1>
-            <p className="text-muted-foreground text-sm">
+      <div className="p-4 sm:pt-6 sm:px-6 sticky left-0 bg-background z-10">
+        <div className="flex items-center justify-between gap-4">
+          {/* Title and description - Left */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <h1 className="text-xl font-medium">{board.title}</h1>
+            <span className="text-muted-foreground text-sm">
               {board.description}
-            </p>
+            </span>
           </div>
           
-          {/* Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Controls - Right */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             {/* Search bar */}
-            <div className="relative flex-1 sm:flex-initial">
+            <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Rechercher des tâches (titre, description, tags, dates...)"
-                className="pl-10 w-full sm:w-64"
+                placeholder="Rechercher des tâches..."
+                className="pl-10 w-64"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             
             {/* Action buttons */}
-            <div className="flex gap-2 sm:gap-4">
-              {collapsedColumnsCount > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={expandAll}
-                  className="text-xs whitespace-nowrap hidden sm:flex"
-                >
-                  Déplier toutes ({collapsedColumnsCount})
-                </Button>
-              )}
+            {collapsedColumnsCount > 0 && (
               <Button
-                variant="default"
-                className="font-normal w-full sm:w-auto"
-                onClick={openAddModal}
+                variant="outline"
+                size="sm"
+                onClick={expandAll}
+                className="text-xs whitespace-nowrap hidden sm:flex"
               >
-                <span className="sm:hidden">Ajouter</span>
-                <span className="hidden sm:inline">Ajouter une colonne</span>
+                Déplier toutes ({collapsedColumnsCount})
               </Button>
-            </div>
+            )}
+            <Button
+              variant="default"
+              className="font-normal whitespace-nowrap"
+              onClick={openAddModal}
+            >
+              Ajouter une colonne
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Board Content */}
-      <div className="w-full overflow-x-auto px-4 sm:px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="w-full px-4 sm:px-6">
         <DndContext
           sensors={sensors}
           collisionDetection={(args) => {
