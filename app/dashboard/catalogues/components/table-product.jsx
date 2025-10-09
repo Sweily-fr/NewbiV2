@@ -608,7 +608,7 @@ export default function TableProduct({ handleAddProduct }) {
               onClick={handleAddProduct}
             >
               <PlusIcon
-                className="-ms-1 opacity-60"
+                className="-ms-1 text-white"
                 size={16}
                 aria-hidden="true"
               />
@@ -945,17 +945,18 @@ export default function TableProduct({ handleAddProduct }) {
 
         {/* Mobile Table */}
         <div className="overflow-x-auto">
-          <Table className="w-max">
+          <Table className="w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
                   key={headerGroup.id}
                   className="border-b border-gray-100 dark:border-gray-400"
                 >
-                  {headerGroup.headers.map((header) => (
+                  {headerGroup.headers
+                    .filter((header) => header.column.id === "name" || header.column.id === "actions")
+                    .map((header) => (
                     <TableHead
                       key={header.id}
-                      style={{ width: `${header.getSize()}px` }}
                       className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
                     >
                       {header.isPlaceholder
@@ -977,10 +978,12 @@ export default function TableProduct({ handleAddProduct }) {
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
-                    {row.getVisibleCells().map((cell) => (
+                    {row.getVisibleCells()
+                      .filter((cell) => cell.column.id === "name" || cell.column.id === "actions")
+                      .map((cell) => (
                       <TableCell
                         key={cell.id}
-                        className="py-3 px-4 whitespace-nowrap"
+                        className="py-3 px-4"
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -993,7 +996,7 @@ export default function TableProduct({ handleAddProduct }) {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length}
+                    colSpan={2}
                     className="h-24 text-center"
                   >
                     Aucun produit trouvé.

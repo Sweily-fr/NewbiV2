@@ -544,6 +544,11 @@ export default function TableClients({ handleAddUser }) {
             variant="default"
             onClick={handleAddUser}
           >
+            <PlusIcon
+              className="-ms-1 text-white"
+              size={16}
+              aria-hidden="true"
+            />
             Ajouter un client
           </Button>
         </div>
@@ -881,17 +886,18 @@ export default function TableClients({ handleAddUser }) {
 
         {/* Table - Mobile style (Notion-like) */}
         <div className="overflow-x-auto">
-          <Table className="w-max">
+          <Table className="w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
                   key={headerGroup.id}
                   className="border-b border-gray-100 dark:border-gray-400"
                 >
-                  {headerGroup.headers.map((header) => (
+                  {headerGroup.headers
+                    .filter((header) => header.column.id === "name" || header.column.id === "actions")
+                    .map((header) => (
                     <TableHead
                       key={header.id}
-                      style={{ width: `${header.getSize()}px` }}
                       className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
@@ -940,25 +946,7 @@ export default function TableClients({ handleAddUser }) {
                 Array.from({ length: pagination.pageSize }).map((_, index) => (
                   <TableRow key={`skeleton-${index}`}>
                     <TableCell>
-                      <Skeleton className="h-4 w-4 rounded" />
-                    </TableCell>
-                    <TableCell>
                       <Skeleton className="h-4 w-32" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-40" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-20 rounded-full" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <Skeleton className="h-3 w-24" />
-                        <Skeleton className="h-3 w-16" />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-28" />
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end">
@@ -974,10 +962,12 @@ export default function TableClients({ handleAddUser }) {
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
-                    {row.getVisibleCells().map((cell) => (
+                    {row.getVisibleCells()
+                      .filter((cell) => cell.column.id === "name" || cell.column.id === "actions")
+                      .map((cell) => (
                       <TableCell 
                         key={cell.id} 
-                        className="py-3 px-4 whitespace-nowrap"
+                        className="py-3 px-4"
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -990,7 +980,7 @@ export default function TableClients({ handleAddUser }) {
               ) : error ? (
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length}
+                    colSpan={2}
                     className="h-24 text-center text-red-500"
                   >
                     <div className="flex flex-col items-center gap-2">
@@ -1007,7 +997,7 @@ export default function TableClients({ handleAddUser }) {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length}
+                    colSpan={2}
                     className="h-24 text-center"
                   >
                     Aucun client trouvé.
