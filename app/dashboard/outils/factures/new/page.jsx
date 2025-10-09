@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import ModernInvoiceEditor from "../components/modern-invoice-editor";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 
 function NewInvoiceContent() {
   return (
@@ -16,7 +17,9 @@ function NewInvoiceContent() {
 export default function NewInvoicePage() {
   return (
     <ProRouteGuard pageName="Nouvelle facture">
-      <NewInvoiceContent />
+      <CompanyInfoGuard>
+        <NewInvoiceContent />
+      </CompanyInfoGuard>
     </ProRouteGuard>
   );
 }

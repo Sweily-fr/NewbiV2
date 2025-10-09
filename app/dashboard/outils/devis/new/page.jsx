@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import ModernQuoteEditor from "../components/modern-quote-editor";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 
 function NewQuoteContent() {
   return (
@@ -16,7 +17,9 @@ function NewQuoteContent() {
 export default function NewQuotePage() {
   return (
     <ProRouteGuard pageName="Nouveau devis">
-      <NewQuoteContent />
+      <CompanyInfoGuard>
+        <NewQuoteContent />
+      </CompanyInfoGuard>
     </ProRouteGuard>
   );
 }

@@ -16,6 +16,8 @@ export function useDashboardLayoutSimple() {
 
   // Données de session
   const { data: session, isPending: sessionLoading } = useSession();
+  // Données d'organisation active (Better Auth)
+  const { data: activeOrganization, isPending: orgLoading } = authClient.useActiveOrganization();
   // Données de trial
   const trial = useTrial();
 
@@ -373,10 +375,13 @@ export function useDashboardLayoutSimple() {
     window.location.reload();
   };
 
+  // Utiliser activeOrganization de Better Auth en priorité, sinon fallback vers cache
+  const finalOrganization = activeOrganization || session?.user?.organization || cachedOrganization;
+
   return {
     // Données utilisateur (avec cache pour éviter les flashs)
     user: session?.user || cachedUser,
-    organization: session?.user?.organization || cachedOrganization,
+    organization: finalOrganization,
 
     // Données d'abonnement
     subscription,
@@ -395,11 +400,11 @@ export function useDashboardLayoutSimple() {
     onboardingLoading,
     shouldShowOnboarding:
       session?.user?.role === "owner" &&
-      !session?.user?.organization?.hasCompletedOnboarding,
+      !finalOrganization?.hasCompletedOnboarding,
 
     // États de chargement
-    isLoading: isLoading || sessionLoading || trial.loading,
-    isInitialized: isInitialized && isHydrated,
+    isLoading: isLoading || sessionLoading || trial.loading || orgLoading,
+    isInitialized: isInitialized && isHydrated && !orgLoading,
     isHydrated,
 
     // Fonctions de cache (simplifiées)

@@ -7,6 +7,7 @@ import { useSession } from "@/src/lib/auth-client";
 /**
  * Hook pour vérifier si les informations d'entreprise de l'utilisateur sont complètes
  * et rediriger vers la page de configuration si nécessaire
+ * Vérifie TOUTES les informations: générales ET légales
  */
 export function useCompanyInfoGuard(redirectPath = "/dashboard/profile/company") {
   const { data: session, status } = useSession();
@@ -24,18 +25,22 @@ export function useCompanyInfoGuard(redirectPath = "/dashboard/profile/company")
       return;
     }
 
-    const company = session.user.company;
+    const org = session.user.organization;
     
-    // Vérifier si les informations essentielles de l'entreprise sont présentes
+    // Vérifier si TOUTES les informations d'entreprise sont présentes
+    // Informations générales + Informations légales
     const isComplete = !!(
-      company?.name &&
-      company?.email &&
-      company?.address?.street &&
-      company?.address?.city &&
-      company?.address?.postalCode &&
-      company?.address?.country
+      // Informations générales
+      org?.companyName &&
+      org?.companyEmail &&
+      org?.addressStreet &&
+      org?.addressCity &&
+      org?.addressZipCode &&
+      org?.addressCountry &&
+      // Informations légales
+      org?.siret &&
+      org?.legalForm
     );
-
 
     setIsCompanyInfoComplete(isComplete);
     setIsLoading(false);
@@ -48,20 +53,25 @@ export function useCompanyInfoGuard(redirectPath = "/dashboard/profile/company")
   return {
     isCompanyInfoComplete,
     isLoading,
-    company: session?.user?.company
+    organization: session?.user?.organization
   };
 }
 
 /**
  * Fonction utilitaire pour vérifier si les informations d'entreprise sont complètes
+ * Vérifie TOUTES les informations: générales ET légales
  */
-export function isCompanyInfoComplete(company) {
+export function isCompanyInfoComplete(organization) {
   return !!(
-    company?.name &&
-    company?.email &&
-    company?.address?.street &&
-    company?.address?.city &&
-    company?.address?.postalCode &&
-    company?.address?.country
+    // Informations générales
+    organization?.companyName &&
+    organization?.companyEmail &&
+    organization?.addressStreet &&
+    organization?.addressCity &&
+    organization?.addressZipCode &&
+    organization?.addressCountry &&
+    // Informations légales
+    organization?.siret &&
+    organization?.legalForm
   );
 }

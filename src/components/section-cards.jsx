@@ -40,6 +40,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useState } from "react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 // Textes explicatifs pour chaque outil
 const toolDescriptions = {
@@ -200,6 +201,8 @@ export function SectionCards({ className, activeFilter = "outline" }) {
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState(null);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+  const [isMissingFieldsDialogOpen, setIsMissingFieldsDialogOpen] = useState(false);
+  const [missingFieldsInfo, setMissingFieldsInfo] = useState({ fields: [], tab: "generale" });
 
   // Fonction pour vérifier si les informations d'entreprise sont complètes
   const checkCompanyInfo = () => {
@@ -207,7 +210,6 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     if (organization) {
       return isCompanyInfoComplete(organization);
     }
-
     return false;
   };
 
@@ -247,15 +249,53 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     setIsPricingModalOpen(true);
   };
 
+  // Fonction pour analyser les champs manquants
+  const getMissingFields = () => {
+    if (!organization) return { general: [], legal: [] };
+
+    const general = [];
+    const legal = [];
+
+    // Vérifier les informations générales
+    if (!organization.companyName) general.push("Nom de l'entreprise");
+    if (!organization.companyEmail) general.push("Email de contact");
+    if (!organization.addressStreet) general.push("Rue");
+    if (!organization.addressCity) general.push("Ville");
+    if (!organization.addressZipCode) general.push("Code postal");
+    if (!organization.addressCountry) general.push("Pays");
+
+    // Vérifier les informations légales
+    if (!organization.siret) legal.push("SIRET");
+    if (!organization.legalForm) legal.push("Forme juridique");
+
+    return { general, legal };
+  };
+
   // Fonction pour gérer le clic sur un outil nécessitant les informations d'entreprise
   const handleCompanyInfoRequiredClick = (e, toolTitle) => {
     e.preventDefault();
 
-    // Déterminer quel onglet ouvrir selon les informations manquantes
-    const requiredTab = getRequiredSettingsTab();
+    // Analyser les champs manquants
+    const missing = getMissingFields();
+    const allMissingFields = [...missing.general, ...missing.legal];
+    
+    // Déterminer quel onglet ouvrir
+    const requiredTab = missing.general.length > 0 ? "generale" : "informations-legales";
 
-    // Ouvrir le modal de paramètres sur l'onglet approprié
-    openSettings(requiredTab);
+    // Afficher le dialog avec les informations manquantes
+    setMissingFieldsInfo({
+      fields: allMissingFields,
+      generalFields: missing.general,
+      legalFields: missing.legal,
+      tab: requiredTab
+    });
+    setIsMissingFieldsDialogOpen(true);
+  };
+
+  // Fonction pour ouvrir les paramètres après confirmation
+  const handleOpenSettings = () => {
+    setIsMissingFieldsDialogOpen(false);
+    openSettings(missingFieldsInfo.tab);
   };
 
   // Fonction pour ouvrir la modal d'information d'un outil
@@ -294,7 +334,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
 
         // Vérifier si l'outil nécessite les informations d'entreprise
         const requiresCompanyInfo =
-          card.title === "Factures" || card.title === "Devis";
+          card.title === "Créer une Facture" || card.title === "Créer un Devis";
         const hasCompanyInfoAccess = !requiresCompanyInfo || checkCompanyInfo();
 
         // L'accès final nécessite à la fois l'abonnement ET les informations d'entreprise
@@ -366,48 +406,24 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                     {!hasFullAccess && (
                       <div className="flex items-center gap-3">
                         {restrictionType === "subscription" && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-orange-500/50 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950 px-4 py-2 text-sm font-normal flex items-center gap-2 cursor-pointer"
-                            >
-                              <Crown className="w-4 h-4" />
-                              Passer Pro
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="px-4 py-2 text-sm font-normal cursor-pointer"
-                              onClick={(e) =>
-                                handleToolInfoClick(e, card.title)
-                              }
-                            >
-                              En savoir plus
-                            </Button>
-                          </>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-orange-500/50 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950 px-4 py-2 text-sm font-normal flex items-center gap-2 cursor-pointer"
+                          >
+                            <Crown className="w-4 h-4" />
+                            Passer Pro
+                          </Button>
                         )}
                         {restrictionType === "companyInfo" && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 px-4 py-2 text-sm font-normal flex items-center gap-2 cursor-pointer"
-                            >
-                              <Lock className="w-4 h-4" />
-                              Configuration requise
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="px-4 py-2 text-sm font-normal cursor-pointer"
-                              onClick={(e) =>
-                                handleToolInfoClick(e, card.title)
-                              }
-                            >
-                              En savoir plus
-                            </Button>
-                          </>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 px-4 py-2 text-sm font-normal flex items-center gap-2 cursor-pointer"
+                          >
+                            <Lock className="w-4 h-4" />
+                            Configuration requise
+                          </Button>
                         )}
                       </div>
                     )}
@@ -470,6 +486,89 @@ export function SectionCards({ className, activeFilter = "outline" }) {
             <AlertDialogAction onClick={() => setIsInfoDialogOpen(false)}>
               Compris
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal des champs manquants */}
+      <AlertDialog open={isMissingFieldsDialogOpen} onOpenChange={setIsMissingFieldsDialogOpen}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-lg">
+                  Configuration requise
+                </AlertDialogTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Informations d'entreprise incomplètes
+                </p>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-sm leading-relaxed space-y-4">
+              <p>
+                Pour utiliser les outils de <strong>Facturation</strong> et <strong>Devis</strong>, 
+                vous devez compléter les informations suivantes :
+              </p>
+
+              {missingFieldsInfo.generalFields?.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    Informations générales
+                  </h4>
+                  <ul className="space-y-1.5 ml-4">
+                    {missingFieldsInfo.generalFields.map((field, index) => (
+                      <li key={index} className="flex items-center gap-2 text-sm">
+                        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                        <span>{field}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {missingFieldsInfo.legalFields?.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    Informations légales
+                  </h4>
+                  <ul className="space-y-1.5 ml-4">
+                    {missingFieldsInfo.legalFields.map((field, index) => (
+                      <li key={index} className="flex items-center gap-2 text-sm">
+                        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                        <span>{field}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-4">
+                <p className="text-sm text-blue-900 dark:text-blue-100">
+                  💡 <strong>Astuce :</strong> Ces informations seront automatiquement utilisées 
+                  pour générer vos factures et devis professionnels.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsMissingFieldsDialogOpen(false)}
+              className="cursor-pointer"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleOpenSettings}
+              className="bg-[#5b4eff] hover:bg-[#4a3dd9] cursor-pointer"
+            >
+              Compléter les informations
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
