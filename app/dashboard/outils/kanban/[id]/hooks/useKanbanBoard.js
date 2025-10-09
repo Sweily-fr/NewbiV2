@@ -1,12 +1,24 @@
 import { useQuery, useSubscription } from '@apollo/client';
+import { useSession } from '@/src/lib/auth-client';
 import { GET_BOARD, TASK_UPDATED_SUBSCRIPTION, COLUMN_UPDATED_SUBSCRIPTION } from '@/src/graphql/kanbanQueries';
 import { useWorkspace } from '@/src/hooks/useWorkspace';
 import { toast } from '@/src/utils/debouncedToast';
+import { useState, useEffect } from 'react';
 
 export const useKanbanBoard = (id) => {
   const { workspaceId } = useWorkspace();
+  const { data: session, isPending: sessionLoading } = useSession();
+  const [isReady, setIsReady] = useState(false);
   
   console.log('🔍 [useKanbanBoard] workspaceId:', workspaceId, 'boardId:', id);
+  
+  // Attendre que la session soit chargée avant d'activer les subscriptions
+  useEffect(() => {
+    if (!sessionLoading && session?.user) {
+      console.log('✅ [useKanbanBoard] Session chargée, activation subscriptions');
+      setIsReady(true);
+    }
+  }, [sessionLoading, session]);
   
   const { data, loading, error, refetch } = useQuery(GET_BOARD, {
     variables: { 
@@ -20,7 +32,7 @@ export const useKanbanBoard = (id) => {
   // Subscription pour les mises à jour temps réel des tâches
   useSubscription(TASK_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id,
+    skip: !workspaceId || !id || !isReady || sessionLoading,
     onData: ({ data: subscriptionData }) => {
       if (subscriptionData?.data?.taskUpdated) {
         const { type, task, taskId } = subscriptionData.data.taskUpdated;
@@ -63,7 +75,7 @@ export const useKanbanBoard = (id) => {
   // Subscription pour les mises à jour temps réel des colonnes
   useSubscription(COLUMN_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id,
+    skip: !workspaceId || !id || !isReady || sessionLoading,
     onData: ({ data: subscriptionData }) => {
       if (subscriptionData?.data?.columnUpdated) {
         const { type, column, columnId } = subscriptionData.data.columnUpdated;
