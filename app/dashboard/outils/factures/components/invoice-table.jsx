@@ -418,7 +418,7 @@ export default function InvoiceTable() {
                 className="border-b border-gray-100 dark:border-gray-400"
               >
                 {headerGroup.headers
-                  .filter((header) => header.column.id === "select" || header.column.id === "client.name" || header.column.id === "status" || header.column.id === "actions")
+                  .filter((header) => header.column.id === "client.name" || header.column.id === "finalTotalTTC" || header.column.id === "actions")
                   .map((header) => (
                   <TableHead
                     key={header.id}
@@ -445,7 +445,7 @@ export default function InvoiceTable() {
                   className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900"
                 >
                   {row.getVisibleCells()
-                    .filter((cell) => cell.column.id === "select" || cell.column.id === "client.name" || cell.column.id === "status" || cell.column.id === "actions")
+                    .filter((cell) => cell.column.id === "client.name" || cell.column.id === "finalTotalTTC" || cell.column.id === "actions")
                     .map((cell) => (
                     <TableCell
                       key={cell.id}
@@ -462,7 +462,7 @@ export default function InvoiceTable() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={3}
                   className="h-24 text-center text-gray-500 dark:text-gray-400"
                 >
                   {loading ? "Chargement..." : "Aucune facture trouvée."}
