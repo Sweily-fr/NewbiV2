@@ -254,7 +254,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
           return (
             <div>
               <div 
-                className="font-normal max-w-[150px] md:max-w-none truncate" 
+                className="font-normal max-w-[100px] md:max-w-none truncate" 
                 title={clientName}
               >
                 {client?.name || (
@@ -263,9 +263,11 @@ export function useQuoteTable({ data = [], onRefetch }) {
                   </span>
                 )}
               </div>
-              {quote.number || (
-                <span className="text-muted-foreground italic">Brouillon</span>
-              )}
+              <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
+                {quote.number || (
+                  <span className="italic">Brouillon</span>
+                )}
+              </div>
             </div>
           );
         },

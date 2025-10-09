@@ -214,7 +214,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
           return (
             <div>
               <div 
-                className="font-normal max-w-[150px] md:max-w-none truncate" 
+                className="font-normal max-w-[100px] md:max-w-none truncate" 
                 title={clientName}
               >
                 {client?.name || (
@@ -223,9 +223,11 @@ export function useInvoiceTable({ data = [], onRefetch }) {
                   </span>
                 )}
               </div>
-              {invoice.number || (
-                <span className="text-muted-foreground italic">Brouillon</span>
-              )}
+              <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
+                {invoice.number || (
+                  <span className="italic">Brouillon</span>
+                )}
+              </div>
               {/* {client?.email && (
                 <div className="text-sm text-muted-foreground">
                   {client.email}
