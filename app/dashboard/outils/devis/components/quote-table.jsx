@@ -247,7 +247,11 @@ export default function QuoteTable() {
           {selectedRows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={isDeleting}>
+                <Button 
+                  variant="destructive" 
+                  disabled={isDeleting}
+                  data-mobile-delete-trigger-quote
+                >
                   <TrashIcon className="mr-2 h-4 w-4" />
                   Supprimer ({selectedRows.length})
                 </Button>
@@ -341,6 +345,23 @@ export default function QuoteTable() {
               </div>
             </PopoverContent>
           </Popover>
+
+          {/* Delete button for mobile - shown when rows are selected */}
+          {selectedRows.length > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-9 px-3"
+              onClick={() => {
+                // Trigger the delete dialog
+                const deleteButton = document.querySelector('[data-mobile-delete-trigger-quote]');
+                if (deleteButton) deleteButton.click();
+              }}
+            >
+              <TrashIcon className="h-4 w-4 mr-1" />
+              ({selectedRows.length})
+            </Button>
+          )}
         </div>
       </div>
 
@@ -400,14 +421,16 @@ export default function QuoteTable() {
 
       {/* Table - Mobile style (Notion-like) */}
       <div className="md:hidden overflow-x-auto">
-        <Table className="w-max">
+        <Table className="w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
                 className="border-b border-gray-100 dark:border-gray-400"
               >
-                {headerGroup.headers.map((header) => (
+                {headerGroup.headers
+                  .filter((header) => header.column.id === "select" || header.column.id === "client.name" || header.column.id === "status" || header.column.id === "actions")
+                  .map((header) => (
                   <TableHead
                     key={header.id}
                     style={{ width: header.getSize() }}
@@ -432,7 +455,9 @@ export default function QuoteTable() {
                   data-state={row.getIsSelected() && "selected"}
                   className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900"
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells()
+                    .filter((cell) => cell.column.id === "select" || cell.column.id === "client.name" || cell.column.id === "status" || cell.column.id === "actions")
+                    .map((cell) => (
                     <TableCell
                       key={cell.id}
                       className="py-3 px-4 text-sm"
@@ -448,7 +473,7 @@ export default function QuoteTable() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={table.getAllColumns().length}
+                  colSpan={4}
                   className="h-24 text-center text-gray-500 dark:text-gray-400"
                 >
                   {loading ? "Chargement..." : "Aucun devis trouvé."}

@@ -248,9 +248,13 @@ export function useQuoteTable({ data = [], onRefetch }) {
         cell: ({ row }) => {
           const client = row.original.client;
           const quote = row.original;
+          const clientName = client?.name || "Non défini";
           return (
             <div>
-              <div className="font-normal">
+              <div 
+                className="font-normal max-w-[150px] md:max-w-none truncate" 
+                title={clientName}
+              >
                 {client?.name || (
                   <span className="text-muted-foreground italic">
                     Non défini
