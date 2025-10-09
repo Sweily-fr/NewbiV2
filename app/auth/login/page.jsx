@@ -65,6 +65,26 @@ const Logo = ({ className }) => {
 };
 
 const signInWithProvider = async (provider) => {
+  // Vider tous les caches avant la connexion OAuth
+  try {
+    console.log("🧹 Nettoyage des caches avant connexion OAuth...");
+    
+    // Vider le cache utilisateur
+    localStorage.removeItem("user-cache");
+    
+    // Vider tous les caches d'abonnement (on ne connaît pas l'ID à l'avance)
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith("subscription-")) {
+        localStorage.removeItem(key);
+        console.log(`🗑️ Cache supprimé: ${key}`);
+      }
+    });
+    
+    console.log("✅ Caches nettoyés avec succès");
+  } catch (error) {
+    console.warn("⚠️ Erreur lors du nettoyage des caches:", error);
+  }
+
   await signIn.social(
     { provider, callbackURL: "/dashboard" },
     {

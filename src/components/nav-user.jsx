@@ -78,10 +78,30 @@ export function NavUser({ user }) {
       // Clear complet du cache Apollo pour éviter les fuites de données entre utilisateurs
       await apolloClient.clearStore();
 
+      // Vider tous les caches localStorage
+      try {
+        console.log("🧹 Nettoyage des caches localStorage...");
+        
+        // Vider le cache utilisateur
+        localStorage.removeItem("user-cache");
+        
+        // Vider tous les caches d'abonnement
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith("subscription-")) {
+            localStorage.removeItem(key);
+            console.log(`🗑️ Cache supprimé: ${key}`);
+          }
+        });
+        
+        console.log("✅ Caches localStorage nettoyés");
+      } catch (cacheError) {
+        console.warn("⚠️ Erreur lors du nettoyage des caches:", cacheError);
+      }
+
       await signOut({
         fetchOptions: {
           onSuccess: () => {
-            console.log("Déconnexion réussie - Cache Apollo vidé");
+            console.log("Déconnexion réussie - Tous les caches vidés");
             router.push("/");
             toast.success("Deconnexion reussie");
           },
