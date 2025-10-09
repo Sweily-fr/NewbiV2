@@ -271,7 +271,7 @@ const CREATE_EMAIL_SIGNATURE = gql`
 // Hook pour récupérer les signatures
 export const useSignatures = () => {
   const { data, loading, error, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
-    fetchPolicy: "cache-first",
+    fetchPolicy: "network-only",
     notifyOnNetworkStatusChange: true,
     onCompleted: (data) => {
       console.log("✅ [QUERY] Signatures récupérées:");

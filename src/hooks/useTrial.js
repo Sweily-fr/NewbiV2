@@ -55,12 +55,12 @@ export function useTrial() {
     };
   }, []);
 
-  // Requête pour obtenir le statut de la période d'essai avec protections
+  // Requête pour obtenir le statut de la période d'essai
   const { loading, error, refetch, data: queryData } = useQuery(GET_TRIAL_STATUS, {
     skip: !session?.user,
-    fetchPolicy: 'cache-first', // Utiliser le cache en priorité pour éviter les requêtes excessives
+    fetchPolicy: 'network-only',
     errorPolicy: 'all',
-    notifyOnNetworkStatusChange: false, // Éviter les re-renders inutiles
+    notifyOnNetworkStatusChange: false,
     pollInterval: 0, // Pas de polling automatique
   });
 

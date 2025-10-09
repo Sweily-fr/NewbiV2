@@ -4,7 +4,6 @@ import { setContext } from "@apollo/client/link/context";
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
-import { persistCache, LocalStorageWrapper } from "apollo3-cache-persist";
 import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "@/src/lib/auth-client";
 import { getErrorMessage, isCriticalError } from "@/src/utils/errorMessages";
@@ -249,122 +248,14 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   }
 });
 
-// Configuration avancée du cache avec persistance
+// Configuration du cache sans persistance
 const cache = new InMemoryCache({
-  typePolicies: {
-    Query: {
-      fields: {
-        // Stratégies de cache optimisées pour différents types de données
-        getInvoices: {
-          keyArgs: ["workspaceId", "status", "sortBy", "sortOrder"],
-          merge(_, incoming) {
-            return incoming;
-          },
-        },
-        getQuotes: {
-          keyArgs: ["workspaceId", "status", "sortBy", "sortOrder"],
-          merge(_, incoming) {
-            return incoming;
-          },
-        },
-        getClients: {
-          keyArgs: ["workspaceId"],
-          merge(_, incoming) {
-            return incoming;
-          },
-        },
-        getProducts: {
-          keyArgs: ["workspaceId"],
-          merge(_, incoming) {
-            return incoming;
-          },
-        },
-        getExpenses: {
-          keyArgs: ["workspaceId", "status", "sortBy", "sortOrder"],
-          merge(_, incoming) {
-            return incoming;
-          },
-        },
-        getMyEmailSignatures: {
-          keyArgs: ["workspaceId"],
-          merge(_, incoming) {
-            return incoming;
-          },
-        },
-        // Cache plus long pour les données statiques
-        getActiveOrganization: {
-          keyArgs: false,
-          merge(_, incoming) {
-            return incoming;
-          },
-        },
-      },
-    },
-    // Optimisations pour les types d'entités
-    Invoice: {
-      keyFields: ["id"],
-      fields: {
-        items: {
-          merge(_, incoming) {
-            return incoming;
-          },
-        },
-      },
-    },
-    Quote: {
-      keyFields: ["id"],
-      fields: {
-        items: {
-          merge(_, incoming) {
-            return incoming;
-          },
-        },
-      },
-    },
-    Client: {
-      keyFields: ["id"],
-    },
-    Product: {
-      keyFields: ["id"],
-    },
-    Expense: {
-      keyFields: ["id"],
-    },
-    EmailSignature: {
-      keyFields: ["id"],
-    },
-    Organization: {
-      keyFields: ["id"],
-    },
-  },
-  // Optimisation de la normalisation
-  possibleTypes: {},
-  // Configuration pour éviter les warnings
+  // Configuration minimale pour éviter les warnings
   addTypename: true,
 });
 
 // Variable pour stocker l'instance Apollo Client
 let apolloClientInstance = null;
-
-// Fonction pour initialiser le cache persistant
-const initializePersistentCache = async () => {
-  try {
-    await persistCache({
-      cache,
-      storage: new LocalStorageWrapper(window.localStorage),
-      key: "newbi-apollo-cache",
-      // Durée de vie du cache : 7 jours
-      maxSize: 1048576 * 5, // 5MB
-      serialize: true,
-      // Invalider le cache après 7 jours
-      trigger: "write",
-    });
-    console.log("✅ Cache Apollo persistant initialisé");
-  } catch (error) {
-    console.warn("⚠️ Impossible d'initialiser le cache persistant:", error);
-    // Continuer sans cache persistant
-  }
-};
 
 // Fonction pour créer le client Apollo
 const createApolloClient = () => {
@@ -388,23 +279,19 @@ const createApolloClient = () => {
     cache,
     defaultOptions: {
       watchQuery: {
-        // Stratégie optimisée : utiliser le cache d'abord, puis réseau en arrière-plan
-        fetchPolicy: "cache-first",
+        // Désactivation du cache : toujours aller chercher les données fraîches
+        fetchPolicy: "network-only",
         errorPolicy: "all",
-        // Réduire les notifications pour améliorer les performances
-        notifyOnNetworkStatusChange: false,
+        notifyOnNetworkStatusChange: true,
       },
       query: {
-        // Pour les requêtes ponctuelles, privilégier le cache
-        fetchPolicy: "cache-first",
+        // Désactivation du cache : toujours requête réseau
+        fetchPolicy: "network-only",
         errorPolicy: "all",
       },
       mutate: {
         errorPolicy: "all",
-        // Optimiser les refetch après mutations
-        awaitRefetchQueries: false,
-        // Mise à jour optimiste du cache
-        optimisticResponse: false,
+        awaitRefetchQueries: true,
       },
     },
     // Améliorer les performances avec le mode de développement
@@ -415,10 +302,6 @@ const createApolloClient = () => {
 // Fonction pour obtenir l'instance Apollo Client
 export const getApolloClient = async () => {
   if (!apolloClientInstance) {
-    // Initialiser le cache persistant seulement côté client
-    if (typeof window !== "undefined") {
-      await initializePersistentCache();
-    }
     apolloClientInstance = createApolloClient();
   }
   return apolloClientInstance;

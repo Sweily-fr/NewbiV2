@@ -73,8 +73,7 @@ export const useOptimizedSettingsQuery = (query, options = {}) => {
 export const useOptimizedOrganizationQuery = (query, options = {}) => {
   return useOptimizedQuery(query, {
     ...options,
-    // Cache très agressif pour les données d'organisation
-    fetchPolicy: 'cache-first',
-    nextFetchPolicy: 'cache-only',
+    // Pas de cache - toujours récupérer les données fraîches
+    fetchPolicy: 'network-only',
   }, 'organization', 'default');
 };

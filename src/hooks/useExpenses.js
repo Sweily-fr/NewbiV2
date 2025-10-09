@@ -18,7 +18,7 @@ export const useExpenses = (filters = {}) => {
       limit: 20,
       ...filters,
     },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
   });
 
   return {
@@ -37,7 +37,7 @@ export const useExpenses = (filters = {}) => {
 export const useExpenseStats = (dateRange = {}) => {
   const { data, loading, error } = useQuery(GET_EXPENSE_STATS, {
     variables: dateRange,
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
   });
 
   return {

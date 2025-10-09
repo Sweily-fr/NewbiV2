@@ -21,7 +21,7 @@ export const useStripeConnect = (userId) => {
   } = useQuery(MY_STRIPE_CONNECT_ACCOUNT, {
     skip: !userId,
     errorPolicy: "all",
-    fetchPolicy: "cache-and-network", // Force la vérification réseau
+    fetchPolicy: "network-only",
     notifyOnNetworkStatusChange: true,
   });
 
