@@ -135,7 +135,7 @@ function ProductSearchCombobox({
         description: selectedProduct.label,
         quantity: 1,
         unitPrice: selectedProduct.price,
-        vatRate: selectedProduct.vatRate || 20,
+        vatRate: selectedProduct.vatRate !== undefined ? selectedProduct.vatRate : 20,
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité",
       });

@@ -79,7 +79,7 @@ export default function ItemsSection({
       quantity: quantity,
       unitPrice: unitPrice,
       unit: productData.unit || "unités",
-      vatRate: productData.vatRate || 20,
+      vatRate: productData.vatRate !== undefined ? productData.vatRate : 20,
       discount: discount,
       discountType: discountType,
       vatExemptionText: productData.vatExemptionText || "",
