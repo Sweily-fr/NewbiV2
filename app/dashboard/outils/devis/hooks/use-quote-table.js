@@ -232,6 +232,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
       //   enableHiding: false,
       // },
       {
+        id: "client",
         accessorKey: "client.name",
         header: ({ column }) => (
           <div
@@ -245,6 +246,7 @@ export function useQuoteTable({ data = [], onRefetch }) {
         meta: {
           label: "Client",
         },
+        enableHiding: false,
         cell: ({ row }) => {
           const client = row.original.client;
           const quote = row.original;

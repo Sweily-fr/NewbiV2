@@ -192,6 +192,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       //   enableHiding: false,
       // },
       {
+        id: "client",
         accessorKey: "client.name",
         header: ({ column }) => (
           <div
@@ -205,6 +206,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
         meta: {
           label: "Client",
         },
+        enableHiding: false,
         cell: ({ row }) => {
           const client = row.original.client;
           const invoice = row.original;
