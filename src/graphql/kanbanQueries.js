@@ -305,6 +305,7 @@ export const COLUMN_UPDATED_SUBSCRIPTION = gql`
       column {
         ...ColumnFields
       }
+      columns
       columnId
       boardId
       workspaceId

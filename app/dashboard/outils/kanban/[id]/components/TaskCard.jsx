@@ -27,6 +27,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/src/components/ui/tooltip";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -140,16 +145,23 @@ export function TaskCard({ task, onEdit, onDelete }) {
       >
         {/* En-tête de la carte */}
         <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2 flex-1">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <div
-              className="text-muted-foreground/70 hover:text-foreground p-1 -ml-1 rounded hover:bg-accent cursor-grab"
+              className="text-muted-foreground/70 hover:text-foreground p-1 -ml-1 rounded hover:bg-accent cursor-grab flex-shrink-0"
               title="Faire glisser pour déplacer"
             >
               <GripVertical className="h-3.5 w-3.5" />
             </div>
-            <h4 className="font-medium text-sm text-foreground">
-              {task.title}
-            </h4>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h4 className="font-medium text-sm text-foreground truncate">
+                  {task.title}
+                </h4>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                {task.title}
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="flex items-center gap-1">
             {task.priority && task.priority !== "none" && (

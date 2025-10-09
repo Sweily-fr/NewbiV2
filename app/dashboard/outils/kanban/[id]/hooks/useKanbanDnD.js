@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSensors, useSensor, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
 
-export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, columns, reorderColumns, setLocalColumns) => {
+export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, columns, reorderColumns, setLocalColumns, markAsUpdating) => {
   const [activeTask, setActiveTask] = useState(null);
   const [activeColumn, setActiveColumn] = useState(null);
 
@@ -75,6 +75,18 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
       // On sauvegarde juste l'ordre final en base de données
       const columnIds = columns.map((col) => col.id);
 
+      console.log('🔄 [DnD] Début réorganisation colonnes:', {
+        columnIds,
+        workspaceId,
+        hasMarkAsUpdating: !!markAsUpdating
+      });
+
+      // Marquer qu'on fait une mise à jour pour éviter les boucles avec le realtime
+      if (markAsUpdating) {
+        markAsUpdating();
+        console.log('✅ [DnD] markAsUpdating() appelé');
+      }
+
       try {
         await reorderColumns({
           variables: {
@@ -82,9 +94,9 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
             workspaceId: workspaceId,
           },
         });
-        console.log('✅ Colonnes sauvegardées:', columnIds);
+        console.log('✅ [DnD] Colonnes sauvegardées avec succès:', columnIds);
       } catch (error) {
-        console.error('❌ Error reordering columns:', error);
+        console.error('❌ [DnD] Erreur réorganisation colonnes:', error);
         // En cas d'erreur, on pourrait restaurer l'ordre précédent
       }
       return;
