@@ -569,16 +569,9 @@ export default function TableProduct({ handleAddProduct }) {
             {table.getSelectedRowModel().rows.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button className="ml-auto font-normal" variant="destructive">
-                    <TrashIcon
-                      className="-ms-1 opacity-60"
-                      size={16}
-                      aria-hidden="true"
-                    />
-                    Supprimer
-                    <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
-                      {table.getSelectedRowModel().rows.length}
-                    </span>
+                  <Button className="ml-auto" variant="destructive">
+                    <TrashIcon className="mr-2 h-4 w-4" />
+                    Supprimer ({table.getSelectedRowModel().rows.length})
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -602,7 +595,7 @@ export default function TableProduct({ handleAddProduct }) {
                   </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteRows}>
+                    <AlertDialogAction onClick={handleDeleteRows} className="text-white">
                       Supprimer
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -877,13 +870,6 @@ export default function TableProduct({ handleAddProduct }) {
           </div>
         </div>
 
-        {/* Modal d'édition */}
-        <ProductModal
-          product={editingProduct}
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          onSave={handleSaveProduct}
-        />
       </div>
       {/* Mobile Layout - Style Notion */}
       <div className="md:hidden">
@@ -1017,15 +1003,15 @@ export default function TableProduct({ handleAddProduct }) {
             </TableBody>
           </Table>
         </div>
-
-        {/* Modal mobile */}
-        <ProductModal
-          product={editingProduct}
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          onSave={handleSaveProduct}
-        />
       </div>
+
+      {/* Modal d'édition unique pour desktop et mobile */}
+      <ProductModal
+        product={editingProduct}
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onSave={handleSaveProduct}
+      />
     </>
   );
 }
@@ -1106,7 +1092,7 @@ function RowActions({ row, onEdit, onDelete }) {
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               Supprimer
             </AlertDialogAction>
