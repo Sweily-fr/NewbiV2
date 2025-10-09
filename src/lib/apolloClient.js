@@ -44,28 +44,49 @@ const wsLink = typeof window !== "undefined" ? new WebSocketLink({
     connectionParams: async () => {
       // Récupérer le JWT pour l'authentification WebSocket
       let jwtToken = null;
-      try {
-        const session = await authClient.getSession({
-          fetchOptions: {
-            onSuccess: (ctx) => {
-              const jwt = ctx.response.headers.get("set-auth-jwt");
-              if (jwt && !isTokenExpired(jwt)) {
-                jwtToken = jwt;
-                console.log("✅ [WebSocket] JWT récupéré pour connexion");
-              }
+      let retries = 0;
+      const maxRetries = 3;
+      
+      // Retry logic pour attendre que la session soit disponible
+      while (retries < maxRetries) {
+        try {
+          const session = await authClient.getSession({
+            fetchOptions: {
+              onSuccess: (ctx) => {
+                const jwt = ctx.response.headers.get("set-auth-jwt");
+                if (jwt && !isTokenExpired(jwt)) {
+                  jwtToken = jwt;
+                }
+              },
             },
-            onError: (ctx) => {
-              console.warn("⚠️ [WebSocket] Session non disponible:", ctx.error?.message);
-            },
-          },
-        });
-        
-        // Si pas de JWT mais session valide, la connexion utilisera les cookies
-        if (!jwtToken && session?.session) {
-          console.log("ℹ️ [WebSocket] Session disponible sans JWT, utilisation des cookies");
+          });
+          
+          // Si on a une session, on peut continuer
+          if (session?.session) {
+            if (jwtToken) {
+              console.log("✅ [WebSocket] JWT récupéré pour connexion");
+            } else {
+              console.log("ℹ️ [WebSocket] Session disponible sans JWT, utilisation des cookies");
+            }
+            break;
+          }
+          
+          // Si pas de session, attendre un peu avant de réessayer
+          if (retries < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            retries++;
+          } else {
+            break;
+          }
+        } catch {
+          console.warn("⚠️ [WebSocket] Erreur récupération session, retry:", retries + 1);
+          if (retries < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            retries++;
+          } else {
+            break;
+          }
         }
-      } catch (error) {
-        console.warn("⚠️ [WebSocket] Erreur récupération JWT:", error.message);
       }
       
       return {
@@ -83,25 +104,43 @@ const wsLink = typeof window !== "undefined" ? new WebSocketLink({
 if (wsLink && typeof window !== "undefined") {
   wsClient = wsLink.subscriptionClient;
   
+  // Fonction pour reconnecter le WebSocket avec un nouveau token
+  const reconnectWebSocket = () => {
+    if (wsClient) {
+      console.log("🔄 [WebSocket] Reconnexion avec nouveau token");
+      wsClient.close(false, false);
+      // Le lazy: true va reconnecter automatiquement
+    }
+  };
+  
   // Écouter les changements de session pour reconnecter le WebSocket
   if (typeof window !== "undefined") {
+    // Reconnecter immédiatement si une session existe
+    authClient.getSession().then((session) => {
+      if (session?.session) {
+        reconnectWebSocket();
+      }
+    });
+    
     // Vérifier périodiquement si le token a expiré (toutes les 5 minutes)
     setInterval(async () => {
       try {
         const session = await authClient.getSession();
-        if (session?.session && wsClient) {
-          // Forcer la reconnexion pour rafraîchir le token
-          console.log("🔄 [WebSocket] Rafraîchissement périodique de la connexion");
-          wsClient.close(false, false); // Fermer sans reconnexion automatique
-          setTimeout(() => {
-            // Le lazy: true va reconnecter automatiquement avec le nouveau token
-            console.log("✅ [WebSocket] Reconnexion avec nouveau token");
-          }, 100);
+        if (session?.session) {
+          reconnectWebSocket();
         }
       } catch (error) {
         console.warn("⚠️ [WebSocket] Erreur vérification session:", error);
       }
     }, 5 * 60 * 1000); // Toutes les 5 minutes
+    
+    // Écouter les événements de changement de session (connexion/déconnexion)
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'better-auth.session_token') {
+        console.log("🔄 [WebSocket] Session changée, reconnexion...");
+        reconnectWebSocket();
+      }
+    });
   }
 }
 

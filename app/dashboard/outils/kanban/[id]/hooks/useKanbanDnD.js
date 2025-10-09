@@ -75,16 +75,9 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
       // On sauvegarde juste l'ordre final en base de données
       const columnIds = columns.map((col) => col.id);
 
-      console.log('🔄 [DnD] Début réorganisation colonnes:', {
-        columnIds,
-        workspaceId,
-        hasMarkAsUpdating: !!markAsUpdating
-      });
-
       // Marquer qu'on fait une mise à jour pour éviter les boucles avec le realtime
       if (markAsUpdating) {
         markAsUpdating();
-        console.log('✅ [DnD] markAsUpdating() appelé');
       }
 
       try {
@@ -94,9 +87,9 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
             workspaceId: workspaceId,
           },
         });
-        console.log('✅ [DnD] Colonnes sauvegardées avec succès:', columnIds);
+        // Colonnes sauvegardées
       } catch (error) {
-        console.error('❌ [DnD] Erreur réorganisation colonnes:', error);
+        console.error('Erreur réorganisation colonnes:', error);
         // En cas d'erreur, on pourrait restaurer l'ordre précédent
       }
       return;

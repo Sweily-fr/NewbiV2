@@ -54,6 +54,7 @@ import { useColumnCollapse } from "./hooks/useColumnCollapse";
 import { useDragToScroll } from "./hooks/useDragToScroll";
 import { useKanbanRealtimeSync } from "./hooks/useKanbanRealtimeSync";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 
 // Components
@@ -94,6 +95,7 @@ export default function KanbanBoardPage({ params }) {
   // Hooks
   const { board, loading, error, refetch, getTasksByColumn, workspaceId } =
     useKanbanBoard(id);
+  const { loading: workspaceLoading } = useWorkspace();
 
   const {
     isAddColumnOpen,
@@ -214,11 +216,17 @@ export default function KanbanBoardPage({ params }) {
     resourceId: id,
     resourceExists: !!board && !error,
     listUrl: "/dashboard/outils/kanban",
-    enabled: !loading,
+    enabled: !loading && !workspaceLoading,
   });
 
+  // Attendre que le workspace soit chargé avant de vérifier l'existence du board
+  if (workspaceLoading) {
+    return null; // Afficher le loading pendant que le workspace se charge
+  }
+
   // Gérer le cas où le board n'existe pas (changement d'organisation)
-  if (!loading && !board && !error) {
+  // Ne vérifier que si on a un workspaceId et que le chargement est terminé
+  if (!loading && !board && !error && workspaceId) {
     return (
       <ResourceNotFound
         resourceType="tableau"

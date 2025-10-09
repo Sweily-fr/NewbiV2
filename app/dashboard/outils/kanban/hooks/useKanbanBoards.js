@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useSubscription } from "@apollo/client";
+import { useSession } from "@/src/lib/auth-client";
 import {
   GET_BOARDS,
   CREATE_BOARD,
@@ -12,6 +13,8 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 export const useKanbanBoards = () => {
   const { workspaceId } = useWorkspace();
+  const { data: session, isPending: sessionLoading } = useSession();
+  const [isReady, setIsReady] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [boardToDelete, setBoardToDelete] = useState(null);
   const [boardToEdit, setBoardToEdit] = useState(null);
@@ -19,6 +22,14 @@ export const useKanbanBoards = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ title: "", description: "" });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // Attendre que la session soit chargée avant d'activer la subscription
+  useEffect(() => {
+    if (!sessionLoading && session?.user) {
+      console.log('✅ [useKanbanBoards] Session chargée, activation subscription');
+      setIsReady(true);
+    }
+  }, [sessionLoading, session]);
 
   // GraphQL queries and mutations
   const { data, loading: queryLoading, refetch } = useQuery(GET_BOARDS, {
@@ -30,7 +41,7 @@ export const useKanbanBoards = () => {
   // Subscription pour les mises à jour temps réel
   useSubscription(BOARD_UPDATED_SUBSCRIPTION, {
     variables: { workspaceId },
-    skip: !workspaceId,
+    skip: !workspaceId || !isReady || sessionLoading,
     onData: ({ data: subscriptionData }) => {
       if (subscriptionData?.data?.boardUpdated) {
         const { type, board, boardId } = subscriptionData.data.boardUpdated;
