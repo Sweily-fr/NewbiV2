@@ -569,7 +569,11 @@ export default function TableProduct({ handleAddProduct }) {
             {table.getSelectedRowModel().rows.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button className="ml-auto" variant="destructive">
+                  <Button 
+                    className="ml-auto" 
+                    variant="destructive"
+                    data-mobile-delete-trigger-product
+                  >
                     <TrashIcon className="mr-2 h-4 w-4" />
                     Supprimer ({table.getSelectedRowModel().rows.length})
                   </Button>
@@ -931,6 +935,23 @@ export default function TableProduct({ handleAddProduct }) {
               </PopoverContent>
             </Popover>
 
+            {/* Delete button for mobile - shown when rows are selected */}
+            {table.getSelectedRowModel().rows.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-9 px-3"
+                onClick={() => {
+                  // Trigger the delete dialog
+                  const deleteButton = document.querySelector('[data-mobile-delete-trigger-product]');
+                  if (deleteButton) deleteButton.click();
+                }}
+              >
+                <TrashIcon className="h-4 w-4 mr-1" />
+                ({table.getSelectedRowModel().rows.length})
+              </Button>
+            )}
+
             {/* Add Product Button */}
             {/* <Button
               variant="default"
@@ -953,7 +974,7 @@ export default function TableProduct({ handleAddProduct }) {
                   className="border-b border-gray-100 dark:border-gray-400"
                 >
                   {headerGroup.headers
-                    .filter((header) => header.column.id === "select" || header.column.id === "name" || header.column.id === "actions")
+                    .filter((header) => header.column.id === "select" || header.column.id === "name" || header.column.id === "category" || header.column.id === "actions")
                     .map((header) => (
                     <TableHead
                       key={header.id}
@@ -979,7 +1000,7 @@ export default function TableProduct({ handleAddProduct }) {
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
                     {row.getVisibleCells()
-                      .filter((cell) => cell.column.id === "select" || cell.column.id === "name" || cell.column.id === "actions")
+                      .filter((cell) => cell.column.id === "select" || cell.column.id === "name" || cell.column.id === "category" || cell.column.id === "actions")
                       .map((cell) => (
                       <TableCell
                         key={cell.id}
@@ -996,7 +1017,7 @@ export default function TableProduct({ handleAddProduct }) {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={3}
+                    colSpan={4}
                     className="h-24 text-center"
                   >
                     Aucun produit trouvé.

@@ -499,7 +499,11 @@ export default function TableClients({ handleAddUser }) {
           {table.getSelectedRowModel().rows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="ml-auto" variant="destructive">
+                <Button 
+                  className="ml-auto" 
+                  variant="destructive"
+                  data-mobile-delete-trigger
+                >
                   <TrashIcon className="mr-2 h-4 w-4" />
                   Supprimer ({table.getSelectedRowModel().rows.length})
                 </Button>
@@ -863,14 +867,22 @@ export default function TableClients({ handleAddUser }) {
               </PopoverContent>
             </Popover>
 
-            {/* Sort Button - Icon only */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <Columns3Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-            </Button>
+            {/* Delete button for mobile - shown when rows are selected */}
+            {table.getSelectedRowModel().rows.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-9 px-3"
+                onClick={() => {
+                  // Trigger the delete dialog
+                  const deleteButton = document.querySelector('[data-mobile-delete-trigger]');
+                  if (deleteButton) deleteButton.click();
+                }}
+              >
+                <TrashIcon className="h-4 w-4 mr-1" />
+                ({table.getSelectedRowModel().rows.length})
+              </Button>
+            )}
 
             {/* Add Client Button - Icon only */}
             {/* <Button
@@ -894,7 +906,7 @@ export default function TableClients({ handleAddUser }) {
                   className="border-b border-gray-100 dark:border-gray-400"
                 >
                   {headerGroup.headers
-                    .filter((header) => header.column.id === "select" || header.column.id === "name" || header.column.id === "actions")
+                    .filter((header) => header.column.id === "select" || header.column.id === "name" || header.column.id === "type" || header.column.id === "actions")
                     .map((header) => (
                     <TableHead
                       key={header.id}
@@ -952,6 +964,9 @@ export default function TableClients({ handleAddUser }) {
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
                     <TableCell>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
                       <div className="flex justify-end">
                         <Skeleton className="h-8 w-8 rounded" />
                       </div>
@@ -966,7 +981,7 @@ export default function TableClients({ handleAddUser }) {
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
                     {row.getVisibleCells()
-                      .filter((cell) => cell.column.id === "select" || cell.column.id === "name" || cell.column.id === "actions")
+                      .filter((cell) => cell.column.id === "select" || cell.column.id === "name" || cell.column.id === "type" || cell.column.id === "actions")
                       .map((cell) => (
                       <TableCell 
                         key={cell.id} 
@@ -983,7 +998,7 @@ export default function TableClients({ handleAddUser }) {
               ) : error ? (
                 <TableRow>
                   <TableCell
-                    colSpan={3}
+                    colSpan={4}
                     className="h-24 text-center text-red-500"
                   >
                     <div className="flex flex-col items-center gap-2">
@@ -1000,7 +1015,7 @@ export default function TableClients({ handleAddUser }) {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={3}
+                    colSpan={4}
                     className="h-24 text-center"
                   >
                     Aucun client trouvé.
