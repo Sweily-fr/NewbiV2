@@ -569,16 +569,9 @@ export default function TableProduct({ handleAddProduct }) {
             {table.getSelectedRowModel().rows.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button className="ml-auto font-normal" variant="destructive">
-                    <TrashIcon
-                      className="-ms-1 opacity-60"
-                      size={16}
-                      aria-hidden="true"
-                    />
-                    Supprimer
-                    <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
-                      {table.getSelectedRowModel().rows.length}
-                    </span>
+                  <Button className="ml-auto" variant="destructive">
+                    <TrashIcon className="mr-2 h-4 w-4" />
+                    Supprimer ({table.getSelectedRowModel().rows.length})
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -602,7 +595,7 @@ export default function TableProduct({ handleAddProduct }) {
                   </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteRows}>
+                    <AlertDialogAction onClick={handleDeleteRows} className="text-white">
                       Supprimer
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -615,7 +608,7 @@ export default function TableProduct({ handleAddProduct }) {
               onClick={handleAddProduct}
             >
               <PlusIcon
-                className="-ms-1 opacity-60"
+                className="-ms-1 text-white"
                 size={16}
                 aria-hidden="true"
               />
@@ -877,13 +870,6 @@ export default function TableProduct({ handleAddProduct }) {
           </div>
         </div>
 
-        {/* Modal d'édition */}
-        <ProductModal
-          product={editingProduct}
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          onSave={handleSaveProduct}
-        />
       </div>
       {/* Mobile Layout - Style Notion */}
       <div className="md:hidden">
@@ -959,17 +945,18 @@ export default function TableProduct({ handleAddProduct }) {
 
         {/* Mobile Table */}
         <div className="overflow-x-auto">
-          <Table className="w-max">
+          <Table className="w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
                   key={headerGroup.id}
                   className="border-b border-gray-100 dark:border-gray-400"
                 >
-                  {headerGroup.headers.map((header) => (
+                  {headerGroup.headers
+                    .filter((header) => header.column.id === "name" || header.column.id === "actions")
+                    .map((header) => (
                     <TableHead
                       key={header.id}
-                      style={{ width: `${header.getSize()}px` }}
                       className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
                     >
                       {header.isPlaceholder
@@ -991,10 +978,12 @@ export default function TableProduct({ handleAddProduct }) {
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
-                    {row.getVisibleCells().map((cell) => (
+                    {row.getVisibleCells()
+                      .filter((cell) => cell.column.id === "name" || cell.column.id === "actions")
+                      .map((cell) => (
                       <TableCell
                         key={cell.id}
-                        className="py-3 px-4 whitespace-nowrap"
+                        className="py-3 px-4"
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -1007,7 +996,7 @@ export default function TableProduct({ handleAddProduct }) {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length}
+                    colSpan={2}
                     className="h-24 text-center"
                   >
                     Aucun produit trouvé.
@@ -1017,15 +1006,15 @@ export default function TableProduct({ handleAddProduct }) {
             </TableBody>
           </Table>
         </div>
-
-        {/* Modal mobile */}
-        <ProductModal
-          product={editingProduct}
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          onSave={handleSaveProduct}
-        />
       </div>
+
+      {/* Modal d'édition unique pour desktop et mobile */}
+      <ProductModal
+        product={editingProduct}
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onSave={handleSaveProduct}
+      />
     </>
   );
 }
@@ -1106,7 +1095,7 @@ function RowActions({ row, onEdit, onDelete }) {
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               Supprimer
             </AlertDialogAction>
