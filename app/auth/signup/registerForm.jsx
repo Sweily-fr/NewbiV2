@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import { Suspense } from "react";
-import { useForm, FieldError } from "react-hook-form";
+import { useForm, FieldError, Controller } from "react-hook-form";
 import { SubmitButton } from "@/src/components/ui/submit-button";
 import { Input, InputPassword, InputEmail } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
+import { PasswordStrengthInput } from "@/src/components/ui/password-strength-input";
 import { registerUser, verifyEmail } from "../../../src/lib/auth/api";
 import { signUp } from "../../../src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
@@ -17,6 +18,7 @@ const RegisterFormContent = () => {
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors, isSubmitting },
     setError: setFormError,
   } = useForm();
@@ -91,29 +93,32 @@ const RegisterFormContent = () => {
         )}
       </div>
       <div>
-        <Label
-          htmlFor="password"
-          className="text-sm font-medium text-foreground dark:text-foreground"
-        >
-          Mot de passe
-        </Label>
-        <InputPassword
-          id="password"
+        <Controller
           name="password"
-          autoComplete="password"
-          placeholder="Saisissez votre mot de passe"
-          className="mt-2"
-          {...register("password", {
+          control={control}
+          rules={{
             required: "Mot de passe est requis",
             minLength: {
               value: 8,
               message: "Le mot de passe doit contenir au moins 8 caractères",
             },
-          })}
+            validate: {
+              hasNumber: (value) =>
+                /[0-9]/.test(value) || "Doit contenir au moins 1 chiffre",
+              hasLowercase: (value) =>
+                /[a-z]/.test(value) || "Doit contenir au moins 1 minuscule",
+              hasUppercase: (value) =>
+                /[A-Z]/.test(value) || "Doit contenir au moins 1 majuscule",
+            },
+          }}
+          render={({ field }) => (
+            <PasswordStrengthInput
+              {...field}
+              label="Mot de passe"
+              error={errors.password?.message}
+            />
+          )}
         />
-        {errors.password && (
-          <p className="mt-2 text-sm text-red-500">{errors.password.message}</p>
-        )}
       </div>
       <SubmitButton
         type="submit"

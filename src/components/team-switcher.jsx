@@ -8,7 +8,7 @@ import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
-import InviteMembers from "../../app/dashboard/collaborateurs/components/invite-members";
+import { InviteMemberModal } from "./invite-member-modal";
 import { SettingsModal } from "./settings-modal";
 import { apolloClient } from "@/src/lib/apolloClient";
 import { toast } from "@/src/components/ui/sonner";
@@ -292,9 +292,15 @@ export function TeamSwitcher() {
           </DropdownMenu>
         </SidebarMenuItem>
       </SidebarMenu>
-      <InviteMembers
+      <InviteMemberModal
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
+        onSuccess={() => {
+          // Rafraîchir les données si nécessaire
+          if (refetchOrgs) {
+            refetchOrgs();
+          }
+        }}
       />
       <SettingsModal
         open={settingsModalOpen}
