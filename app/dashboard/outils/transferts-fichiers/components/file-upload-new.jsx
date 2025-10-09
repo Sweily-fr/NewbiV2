@@ -17,6 +17,7 @@ import {
   ImageIcon,
   VideoIcon,
   XIcon,
+  Loader2,
 } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
@@ -84,7 +85,7 @@ const getFileIcon = (file) => {
   return <FileIcon className="size-4 opacity-60" />;
 };
 
-export default function FileUploadNew() {
+export default function FileUploadNew({ onTransferCreated }) {
   const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
   const maxFiles = 10;
 
@@ -316,10 +317,17 @@ export default function FileUploadNew() {
 
       const result = await createTransfer(transferOptionsWithDays);
 
-      // Rediriger vers la page des transferts avec les paramètres du lien après création réussie
+      // Rediriger vers l'onglet "Mes transferts" après création réussie
       if (result && result.success) {
         const { shareLink, accessKey } = result;
-        window.location.href = `/dashboard/outils/transferts-fichiers?shareLink=${shareLink}&accessKey=${accessKey}`;
+        
+        // Appeler le callback pour changer d'onglet
+        if (onTransferCreated) {
+          onTransferCreated(shareLink, accessKey);
+        } else {
+          // Fallback si pas de callback
+          window.location.href = `/dashboard/outils/transferts-fichiers?shareLink=${shareLink}&accessKey=${accessKey}`;
+        }
       }
     } catch (error) {
       console.error("Error creating transfer:", error);
@@ -376,7 +384,7 @@ export default function FileUploadNew() {
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           data-dragging={isDragging || undefined}
-          className="border-input hover:bg-accent/50 data-[dragging=true]:bg-accent/50 has-[input:focus]:border-ring has-[input:focus]:ring-ring/50 flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 transition-colors has-disabled:pointer-events-none has-disabled:opacity-50 has-[input:focus]:ring-[3px]"
+          className="border-input hover:bg-accent/50 data-[dragging=true]:border-[#5a50ff]/60 data-[dragging=true]:bg-[#5a50ff]/[0.02] has-[input:focus]:border-ring has-[input:focus]:ring-ring/50 flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 transition-all duration-300 ease-in-out has-disabled:pointer-events-none has-disabled:opacity-50 has-[input:focus]:ring-[3px] cursor-pointer"
         >
           <input
             ref={fileInputRef}
@@ -387,20 +395,32 @@ export default function FileUploadNew() {
             aria-label="Upload files"
           />
 
-          <div className="flex flex-col items-center justify-center text-center">
+          <div
+            className={`flex flex-col items-center justify-center text-center transition-all duration-300 ease-in-out ${isDragging ? "scale-[1.02]" : "scale-100"}`}
+          >
             <div
-              className="bg-background mb-2 flex size-16 shrink-0 items-center justify-center rounded-full border"
+              className={`bg-background mb-2 flex size-16 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ease-in-out ${isDragging ? "border-[#5a50ff]/40 bg-[#5a50ff]/5" : ""}`}
               aria-hidden="true"
             >
-              <FileUpIcon className="size-4 opacity-60" />
+              <FileUpIcon
+                className={`size-4 transition-all duration-300 ease-in-out ${isDragging ? "text-[#5a50ff] opacity-100" : "opacity-60"}`}
+              />
             </div>
-            <p className="mb-1.5 text-sm font-medium">
-              Glissez-déposez vos fichiers ou cliquez pour sélectionner
+            <p
+              className={`mb-1.5 text-sm font-medium transition-all duration-300 ease-in-out ${isDragging ? "text-[#5a50ff]/90" : ""}`}
+            >
+              {isDragging
+                ? "Déposez vos fichiers ici"
+                : "Glissez-déposez vos fichiers ou cliquez pour sélectionner"}
             </p>
-            <p className="text-muted-foreground mb-2 text-xs">
+            <p
+              className={`text-muted-foreground mb-2 text-xs transition-opacity duration-300 ${isDragging ? "opacity-50" : "opacity-100"}`}
+            >
               Taille maximale : 5GB par fichier • Tous formats acceptés
             </p>
-            <div className="text-muted-foreground/70 flex flex-wrap justify-center gap-1 text-xs">
+            <div
+              className={`text-muted-foreground/70 flex flex-wrap justify-center gap-1 text-xs transition-opacity duration-300 ${isDragging ? "opacity-30" : "opacity-100"}`}
+            >
               <span>Tous les fichiers</span>
               <span>∙</span>
               <span>Max {maxFiles} fichiers</span>
@@ -547,7 +567,36 @@ export default function FileUploadNew() {
 
             {transferOptions.requirePayment && (
               <div className="space-y-4 pt-4 border-t">
-                <div className="space-y-2">
+                <div className="*:not-first:mt-2">
+                  <Label className="text-sm font-normal">Montant</Label>
+                  <div className="relative">
+                    <Input
+                      className="peer ps-6 pe-12 pr-8"
+                      placeholder="1.00"
+                      type="text"
+                      value={transferOptions.paymentAmount === 0 ? "" : transferOptions.paymentAmount}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Permettre seulement les chiffres, points et virgules
+                        if (value === "" || /^[0-9]*[.,]?[0-9]*$/.test(value)) {
+                          // Remplacer la virgule par un point pour le parsing
+                          const normalizedValue = value.replace(",", ".");
+                          handleOptionChange(
+                            "paymentAmount",
+                            normalizedValue === "" ? 0 : normalizedValue
+                          );
+                        }
+                      }}
+                    />
+                    <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm peer-disabled:opacity-50">
+                      €
+                    </span>
+                    <span className="text-muted-foreground pointer-events-none absolute inset-y-0 end-0 flex items-center justify-center pe-3 text-sm peer-disabled:opacity-50">
+                      EUR
+                    </span>
+                  </div>
+                </div>
+                {/* <div className="space-y-2">
                   <Label className="text-sm font-normal">Montant</Label>
                   <div className="relative">
                     <Input
@@ -568,7 +617,7 @@ export default function FileUploadNew() {
                       <span className="text-muted-foreground text-sm">€</span>
                     </div>
                   </div>
-                </div>
+                </div> */}
                 {stripeConnected && !canReceivePayments && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-xs text-amber-700 font-medium">
@@ -670,8 +719,17 @@ export default function FileUploadNew() {
               disabled={isUploading}
               className="flex items-center gap-2 font-normal"
             >
-              <IconSend className="size-4" />
-              {isUploading ? "Création..." : "Créer le transfert"}
+              {isUploading ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Création en cours...
+                </>
+              ) : (
+                <>
+                  <IconSend className="size-4" />
+                  Créer le transfert
+                </>
+              )}
             </Button>
           </div>
         </div>

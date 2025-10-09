@@ -1,9 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/src/components/ui/button";
-import { IconPlus, IconCopy, IconExternalLink } from "@tabler/icons-react";
+import {
+  IconCopy,
+  IconExternalLink,
+  IconUpload,
+  IconList,
+} from "@tabler/icons-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,25 +19,28 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { toast } from "@/src/components/ui/sonner";
 import TransferTable from "./components/transfer-table";
+import FileUploadNew from "./components/file-upload-new";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useFileTransfer } from "./hooks/useFileTransfer";
+import { cn } from "@/src/lib/utils";
 
 function TransfertsContent() {
   const { transfers, transfersLoading, refetchTransfers } = useFileTransfer();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [transferLink, setTransferLink] = useState("");
+  const [activeTab, setActiveTab] = useState("upload"); // "upload" ou "list"
 
   // Vérifier si on revient d'une création de transfert
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const shareLink = urlParams.get('shareLink');
-    const accessKey = urlParams.get('accessKey');
-    
+    const shareLink = urlParams.get("shareLink");
+    const accessKey = urlParams.get("accessKey");
+
     if (shareLink && accessKey) {
       const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
       setTransferLink(fullLink);
       setShowSuccessDialog(true);
-      
+
       // Nettoyer l'URL
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
@@ -46,7 +53,20 @@ function TransfertsContent() {
   };
 
   const openInNewTab = () => {
-    window.open(transferLink, '_blank');
+    window.open(transferLink, "_blank");
+  };
+
+  // Callback après création d'un transfert
+  const handleTransferCreated = (shareLink, accessKey) => {
+    const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
+    setTransferLink(fullLink);
+    setShowSuccessDialog(true);
+    
+    // Changer d'onglet vers "Mes transferts"
+    setActiveTab("list");
+    
+    // Rafraîchir la liste des transferts
+    refetchTransfers();
   };
 
   return (
@@ -57,58 +77,137 @@ function TransfertsContent() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-medium mb-2">
-              Gestion des Transferts Fichiers
+              Transferts de fichiers
             </h1>
             <p className="text-muted-foreground text-sm">
-              Gérez vos transferts de fichiers et suivez les téléchargements
+              Partagez des fichiers volumineux jusqu'à 5GB avec vos clients ou
+              collaborateurs
             </p>
           </div>
-          <Link href="/dashboard/outils/transferts-fichiers/new">
-            <Button className="font-normal cursor-pointer w-full sm:w-auto">
-              <IconPlus className="mr-2 h-4 w-4" />
-              Transfert un fichier
-            </Button>
-          </Link>
         </div>
-        
-        {/* Table */}
-        <TransferTable
-          transfers={transfers}
-          onRefresh={refetchTransfers}
-          loading={transfersLoading}
-        />
+
+        {/* Navigation par onglets */}
+        <div className="border-b border-border">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab("upload")}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors relative cursor-pointer",
+                activeTab === "upload"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <IconUpload className="w-4 h-4" />
+                Nouveau transfert
+              </div>
+              {activeTab === "upload" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5a50ff]" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("list")}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors relative cursor-pointer",
+                activeTab === "list"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <IconList className="w-4 h-4" />
+                Mes transferts
+              </div>
+              {activeTab === "list" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5a50ff]" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Contenu */}
+        <div>
+          {activeTab === "upload" ? (
+            <FileUploadNew onTransferCreated={handleTransferCreated} />
+          ) : (
+            <TransferTable
+              transfers={transfers}
+              onRefresh={refetchTransfers}
+              loading={transfersLoading}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Mobile Layout - Style Notion */}
+      {/* Mobile Layout */}
       <div className="md:hidden">
-        {/* Header - Style Notion sur mobile */}
+        {/* Header */}
         <div className="px-4 py-6">
           <div>
             <h1 className="text-2xl font-medium mb-2">
-              Transferts Fichiers
+              Transferts de fichiers
             </h1>
             <p className="text-muted-foreground text-sm">
-              Gérez vos transferts de fichiers et suivez les téléchargements
+              Partagez des fichiers volumineux jusqu'à 5GB
             </p>
           </div>
         </div>
 
-        {/* Table */}
-        <TransferTable
-          transfers={transfers}
-          onRefresh={refetchTransfers}
-          loading={transfersLoading}
-        />
+        {/* Navigation par onglets mobile */}
+        <div className="border-b border-border px-4">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab("upload")}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors relative",
+                activeTab === "upload"
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <IconUpload className="w-4 h-4" />
+                Nouveau
+              </div>
+              {activeTab === "upload" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5a50ff]" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("list")}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors relative",
+                activeTab === "list"
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <IconList className="w-4 h-4" />
+                Liste
+              </div>
+              {activeTab === "list" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5a50ff]" />
+              )}
+            </button>
+          </div>
+        </div>
 
-        {/* Bouton flottant mobile */}
-        <Link href="/dashboard/outils/transferts-fichiers/new">
-          <Button
-            className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-            size="icon"
-          >
-            <IconPlus className="h-6 w-6" />
-          </Button>
-        </Link>
+        {/* Contenu mobile */}
+        <div className="mt-4">
+          {activeTab === "upload" ? (
+            <div className="px-4">
+              <FileUploadNew onTransferCreated={handleTransferCreated} />
+            </div>
+          ) : (
+            <TransferTable
+              transfers={transfers}
+              onRefresh={refetchTransfers}
+              loading={transfersLoading}
+            />
+          )}
+        </div>
       </div>
 
       {/* Dialog de succès après création */}
@@ -120,10 +219,15 @@ function TransfertsContent() {
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4">
-                <div>Votre transfert de fichiers a été créé. Vous pouvez maintenant partager le lien avec vos destinataires.</div>
-                
+                <div>
+                  Votre transfert de fichiers a été créé. Vous pouvez maintenant
+                  partager le lien avec vos destinataires.
+                </div>
+
                 <div className="bg-gray-50 p-3 rounded-lg border">
-                  <div className="text-xs text-gray-600 mb-2">Lien de partage :</div>
+                  <div className="text-xs text-gray-600 mb-2">
+                    Lien de partage :
+                  </div>
                   <div className="text-sm font-mono break-all bg-white p-2 rounded border">
                     {transferLink}
                   </div>

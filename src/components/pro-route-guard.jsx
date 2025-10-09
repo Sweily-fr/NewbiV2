@@ -115,22 +115,9 @@ export function ProRouteGuard({
     trial?.isTrialActive,
   ]);
 
-  // Afficher un skeleton pendant la vérification initiale
+  // Afficher le contenu pendant la vérification (les pages gèrent leurs propres skeletons)
   if (isChecking || loading || !hasInitialized) {
-    return (
-      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
-        <Skeleton className="h-[40px] w-[200px] rounded-xl" />
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-[40px] w-[300px] rounded-xl" />
-          <Skeleton className="h-[40px] w-[150px] rounded-xl" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-[200px] w-full rounded-xl" />
-          ))}
-        </div>
-      </div>
-    );
+    return <>{children}</>;
   }
 
   // Afficher le contenu seulement si l'accès est autorisé

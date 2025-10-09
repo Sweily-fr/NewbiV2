@@ -364,7 +364,7 @@ export default function TransferPage() {
 
   return (
     <div className="flex flex-col lg:flex-row h-screen relative">
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-2 relative pt-16 lg:pt-2">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center p-4 lg:p-2 relative pt-16 lg:pt-2 overflow-hidden">
         {/* Confetti Canvas - limité à la partie gauche */}
         {paymentStatus === "success" && (
           <Confetti
@@ -372,7 +372,7 @@ export default function TransferPage() {
             className="absolute right-0 top-0 z-50 w-full h-full pointer-events-none"
           />
         )}
-        <div className="mx-auto w-full max-w-xl lg:max-w-xl">
+        <div className="mx-auto w-full max-w-xl lg:max-w-xl flex flex-col max-h-[90vh] lg:max-h-[85vh]">
           <div className="mb-8">
             <h1 className="text-xl font-medium mb-2">
               Téléchargez les fichiers partagés avec vous
@@ -464,8 +464,8 @@ export default function TransferPage() {
             </>
           )}
           {/* ici tu fais les mdifs */}
-          <Card className="shadow-none border-none">
-            <CardHeader className="p-0">
+          <Card className="shadow-none border-none flex-1 flex flex-col overflow-hidden">
+            <CardHeader className="p-0 flex-shrink-0">
               <CardTitle className="flex flex-col lg:flex-row lg:items-center font-normal lg:justify-between gap-4">
                 <span className="flex items-center space-x-2">
                   <span>
@@ -491,9 +491,9 @@ export default function TransferPage() {
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 flex-1 overflow-y-auto">
               {transfer?.fileTransfer?.files?.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-3 pr-2">
                   {transfer?.fileTransfer?.files.map((file, index) => {
                     // Vérifier si paiement requis ET si l'utilisateur n'a pas encore payé
                     const isPaymentRequired =
