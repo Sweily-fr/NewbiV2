@@ -231,23 +231,32 @@ export default function InvoiceSidebar({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-medium">Détails de la facture</h2>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-lg">
+                Facture {invoice.number || "Brouillon"}
+              </h2>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge
+                  variant={INVOICE_STATUS_COLORS[invoice.status] || "secondary"}
+                  className="text-xs"
+                >
+                  {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
+                </Badge>
+              </div>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             {/* Bouton PDF - masqué pour les brouillons */}
             {invoice.status !== INVOICE_STATUS.DRAFT && (
-              <UniversalPDFDownloader
-                data={invoice}
-                type="invoice"
-                variant="default"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                Télécharger en PDF
-              </UniversalPDFDownloader>
+              <UniversalPDFDownloader data={invoice} type="invoice" />
             )}
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={() => {
                 // Sur mobile, fermer d'abord les détails, puis la sidebar
                 if (window.innerWidth < 768 && showMobileDetails) {
@@ -257,7 +266,7 @@ export default function InvoiceSidebar({
                   onClose();
                 }
               }}
-              className="h-8 w-8"
+              className="h-8 w-8 p-0"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -266,42 +275,77 @@ export default function InvoiceSidebar({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Status and Number */}
+          {/* Client Info */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-normal">Numéro</span>
-              <span className="font-mono text-sm">
-                {invoice.number || "Brouillon"}
-              </span>
+            <div className="flex items-center gap-2">
+              <Building className="h-4 w-4 text-muted-foreground" />
+              <h3 className="font-medium">Client</h3>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-normal">Statut</span>
-              <Badge
-                variant="secondary"
-                className={`${INVOICE_STATUS_COLORS[invoice.status]}`}
-              >
-                {INVOICE_STATUS_LABELS[invoice.status]}
-              </Badge>
-            </div>
+            {invoice.client ? (
+              <div className="space-y-2">
+                <div>
+                  <p className="font-medium">
+                    {invoice.client.type === "COMPANY"
+                      ? String(invoice.client?.name || "")
+                      : `${String(invoice.client?.firstName || "")} ${String(invoice.client?.lastName || "")}`.trim() ||
+                        String(invoice.client?.name || "")}
+                  </p>
+                  {invoice.client.email && (
+                    <p className="text-sm text-muted-foreground">
+                      {String(invoice.client.email)}
+                    </p>
+                  )}
+                </div>
+                {invoice.client.address && (
+                  <div className="text-sm text-muted-foreground">
+                    {invoice.client.address.street && (
+                      <p>{String(invoice.client.address.street)}</p>
+                    )}
+                    {(invoice.client.address.postalCode ||
+                      invoice.client.address.city) && (
+                      <p>
+                        {invoice.client.address.postalCode &&
+                          String(invoice.client.address.postalCode)}
+                        {invoice.client.address.postalCode &&
+                          invoice.client.address.city &&
+                          " "}
+                        {invoice.client.address.city &&
+                          String(invoice.client.address.city)}
+                      </p>
+                    )}
+                    {invoice.client.address.country && (
+                      <p>{String(invoice.client.address.country)}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                Aucun client sélectionné
+              </p>
+            )}
           </div>
 
           <Separator />
 
           {/* Dates */}
           <div className="space-y-3">
-            <h3 className="font-normal">Dates importantes</h3>
-            <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <h3 className="font-medium">Dates</h3>
+            </div>
+            <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="font-normal">Émission</span>
+                <span className="text-muted-foreground">Date d'émission</span>
                 <span>{formatDate(invoice.issueDate)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-normal">Échéance</span>
+                <span className="text-muted-foreground">Date d'échéance</span>
                 <span>{formatDate(invoice.dueDate)}</span>
               </div>
               {invoice.paymentDate && (
                 <div className="flex justify-between">
-                  <span className="font-normal">Paiement</span>
+                  <span className="text-muted-foreground">Date de paiement</span>
                   <span>{formatDate(invoice.paymentDate)}</span>
                 </div>
               )}
@@ -310,54 +354,52 @@ export default function InvoiceSidebar({
 
           <Separator />
 
-          {/* Client Info */}
+          {/* Articles */}
           <div className="space-y-3">
-            <h3 className="font-normal">Client</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="font-normal">Nom</span>
-                <span>
-                  {invoice.client?.type === "COMPANY"
-                    ? String(invoice.client?.name || "")
-                    : `${String(invoice.client?.firstName || "")} ${String(invoice.client?.lastName || "")}`.trim() ||
-                      String(invoice.client?.name || "")}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-normal">Email</span>
-                <span>{String(invoice.client?.email || "")}</span>
-              </div>
-              {invoice.client?.address && (
-                <div className="flex justify-between">
-                  <span className="font-normal">Adresse</span>
-                  <div className="text-right">
-                    {invoice.client.address.street && (
-                      <div>{String(invoice.client.address.street)}</div>
-                    )}
-                    {(invoice.client.address.postalCode ||
-                      invoice.client.address.city) && (
-                      <div>
-                        {String(invoice.client.address.postalCode || "")}{" "}
-                        {String(invoice.client.address.city || "")}
-                      </div>
-                    )}
-                    {invoice.client.address.country && (
-                      <div>{String(invoice.client.address.country)}</div>
-                    )}
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-muted-foreground" />
+              <h3 className="font-medium">Articles</h3>
+            </div>
+            <div className="space-y-2">
+              {invoice.items && invoice.items.length > 0 ? (
+                invoice.items.map((item, index) => (
+                  <div key={index} className="text-sm">
+                    <div className="font-medium">
+                      {item.description || "Article sans description"}
+                    </div>
+                    <div className="text-muted-foreground">
+                      {item.quantity || 0} ×{" "}
+                      {formatCurrency(item.unitPrice || 0)}
+                    </div>
                   </div>
-                </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground">Aucun article</p>
               )}
             </div>
           </div>
 
           <Separator />
 
-          {/* Financial Info */}
+          {/* Totals */}
           <div className="space-y-3">
-            <h3 className="font-normal">Montants</h3>
-            <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <Percent className="h-4 w-4 text-muted-foreground" />
+              <h3 className="font-medium">Totaux</h3>
+            </div>
+            <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="font-normal">Total HT</span>
+                <span className="text-muted-foreground">Sous-total HT</span>
+                <span>{formatCurrency(invoice.totalHT || 0)}</span>
+              </div>
+              {invoice.discountAmount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Remise</span>
+                  <span>-{formatCurrency(invoice.discountAmount || 0)}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total HT</span>
                 <span>
                   {formatCurrency(
                     invoice.finalTotalHT !== undefined && invoice.finalTotalHT !== null
@@ -369,7 +411,7 @@ export default function InvoiceSidebar({
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="font-normal">TVA</span>
+                <span className="text-muted-foreground">TVA</span>
                 <span>
                   {formatCurrency(
                     invoice.finalTotalVAT !== undefined && invoice.finalTotalVAT !== null
@@ -381,7 +423,7 @@ export default function InvoiceSidebar({
                 </span>
               </div>
               <div className="flex justify-between font-medium">
-                <span className="font-normal">Total TTC</span>
+                <span>Total TTC</span>
                 <span>
                   {formatCurrency(
                     invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
@@ -400,7 +442,10 @@ export default function InvoiceSidebar({
           {/* Credit Notes Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-normal">Avoirs</h3>
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-medium">Avoirs</h3>
+              </div>
               {(invoice.status === INVOICE_STATUS.PENDING ||
                 invoice.status === INVOICE_STATUS.COMPLETED ||
                 invoice.status === INVOICE_STATUS.CANCELED) &&
@@ -412,7 +457,7 @@ export default function InvoiceSidebar({
                     className="h-7 px-2 text-xs"
                   >
                     <Plus className="h-3 w-3 mr-1" />
-                    Créer un avoir
+                    Créer
                   </Button>
                 )}
             </div>
@@ -516,7 +561,7 @@ export default function InvoiceSidebar({
         </div>
 
         {/* Action Buttons */}
-        <div className="border-t pl-6 pr-6 pt-4 pb-4 space-y-3">
+        <div className="border-t p-6 space-y-3">
           {/* Primary Actions */}
           <div className="flex gap-2">
             {invoice.status === INVOICE_STATUS.DRAFT && (
@@ -524,7 +569,7 @@ export default function InvoiceSidebar({
                 variant="outline"
                 size="sm"
                 onClick={handleEdit}
-                className="flex-1 font-normal"
+                className="flex-1"
               >
                 <Pencil className="h-4 w-4 mr-2" />
                 Éditer
@@ -537,7 +582,7 @@ export default function InvoiceSidebar({
             <Button
               onClick={handleCreateInvoice}
               disabled={isLoading}
-              className="w-full font-normal"
+              className="w-full"
             >
               <FileText className="h-4 w-4 mr-2" />
               Créer la facture
@@ -545,20 +590,20 @@ export default function InvoiceSidebar({
           )}
 
           {invoice.status === INVOICE_STATUS.PENDING && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col space-y-2">
               <Button
                 onClick={handleMarkAsPaid}
                 disabled={isLoading}
-                className="w-full font-normal"
+                className="w-full"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Marquer comme payée
               </Button>
               <Button
-                variant="destructive"
+                variant="outline"
                 onClick={handleCancel}
                 disabled={isLoading}
-                className="w-full font-normal"
+                className="w-full"
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Annuler la facture
