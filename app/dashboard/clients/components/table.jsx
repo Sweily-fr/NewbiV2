@@ -894,7 +894,7 @@ export default function TableClients({ handleAddUser }) {
                   className="border-b border-gray-100 dark:border-gray-400"
                 >
                   {headerGroup.headers
-                    .filter((header) => header.column.id === "name" || header.column.id === "actions")
+                    .filter((header) => header.column.id === "select" || header.column.id === "name" || header.column.id === "actions")
                     .map((header) => (
                     <TableHead
                       key={header.id}
@@ -946,6 +946,9 @@ export default function TableClients({ handleAddUser }) {
                 Array.from({ length: pagination.pageSize }).map((_, index) => (
                   <TableRow key={`skeleton-${index}`}>
                     <TableCell>
+                      <Skeleton className="h-4 w-4 rounded" />
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
                     <TableCell>
@@ -963,7 +966,7 @@ export default function TableClients({ handleAddUser }) {
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
                     {row.getVisibleCells()
-                      .filter((cell) => cell.column.id === "name" || cell.column.id === "actions")
+                      .filter((cell) => cell.column.id === "select" || cell.column.id === "name" || cell.column.id === "actions")
                       .map((cell) => (
                       <TableCell 
                         key={cell.id} 
@@ -980,7 +983,7 @@ export default function TableClients({ handleAddUser }) {
               ) : error ? (
                 <TableRow>
                   <TableCell
-                    colSpan={2}
+                    colSpan={3}
                     className="h-24 text-center text-red-500"
                   >
                     <div className="flex flex-col items-center gap-2">
@@ -997,7 +1000,7 @@ export default function TableClients({ handleAddUser }) {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={2}
+                    colSpan={3}
                     className="h-24 text-center"
                   >
                     Aucun client trouvé.
