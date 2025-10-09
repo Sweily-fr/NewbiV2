@@ -609,16 +609,14 @@ export function useInvoiceEditor({
 
       if (mode === "create") {
         await createInvoice(input);
-
+        toast.success("Facture créée avec succès");
         router.push("/dashboard/outils/factures");
         return true;
       } else {
         await updateInvoice(invoiceId, input);
-
+        toast.success("Facture sauvegardée");
         // Reset form with current data to mark as clean
         reset(currentFormData);
-        toast.success("Facture sauvegardée");
-
         // Rediriger vers la liste des factures après sauvegarde réussie en mode édition
         router.push("/dashboard/outils/factures");
         return true;
@@ -832,12 +830,11 @@ export function useInvoiceEditor({
 
       if (mode === "create") {
         await createInvoice(input);
-
+        toast.success("Facture créée avec succès");
         router.push("/dashboard/outils/factures");
         return true;
       } else {
         await updateInvoice(invoiceId, input);
-
         toast.success("Facture validée");
         router.push(`/dashboard/outils/factures/${invoiceId}`);
         return true;

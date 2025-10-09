@@ -438,7 +438,7 @@ export const useCreateQuote = () => {
 
   const [createQuoteMutation, { loading }] = useMutation(CREATE_QUOTE, {
     onCompleted: () => {
-      // toast.success("Devis créé avec succès");
+      // Toast désactivé ici - géré dans use-quote-editor.js
       // Invalider le cache des listes
       client.refetchQueries({
         include: [GET_QUOTES, GET_QUOTE_STATS],
@@ -473,7 +473,7 @@ export const useUpdateQuote = () => {
 
   const [updateQuoteMutation, { loading }] = useMutation(UPDATE_QUOTE, {
     onCompleted: (data) => {
-      toast.success("Devis mis à jour avec succès");
+      // Toast désactivé ici - géré dans use-quote-editor.js
       // Mettre à jour le cache
       client.writeQuery({
         query: GET_QUOTE,
@@ -516,9 +516,7 @@ export const useDeleteQuote = () => {
     },
   });
 
-  const deleteQuote = async (id, options = {}) => {
-    const { silent = false } = options;
-    
+  const deleteQuote = async (id) => {
     try {
       await deleteQuoteMutation({
         variables: { id },
@@ -529,10 +527,8 @@ export const useDeleteQuote = () => {
         include: [GET_QUOTES, GET_QUOTE_STATS],
       });
       
-      // Afficher le toast seulement si pas en mode silent
-      if (!silent) {
-        toast.success("Devis supprimé avec succès");
-      }
+      // Toast désactivé ici - géré dans les composants (quote-row-actions, etc.)
+      // Le paramètre silent est conservé pour compatibilité mais n'est plus utilisé
       
       return true;
     } catch (error) {
@@ -575,7 +571,7 @@ export const useChangeQuoteStatus = () => {
 
   const [changeStatusMutation, { loading }] = useMutation(CHANGE_QUOTE_STATUS, {
     onCompleted: (data) => {
-      toast.success("Statut du devis mis à jour");
+      // Toast désactivé ici - géré dans les composants (quote-row-actions, quote-sidebar, etc.)
       // Mettre à jour le cache
       client.writeQuery({
         query: GET_QUOTE,
@@ -612,10 +608,8 @@ export const useConvertQuoteToInvoice = () => {
   const client = useApolloClient();
 
   const [convertMutation, { loading }] = useMutation(CONVERT_QUOTE_TO_INVOICE, {
-    onCompleted: (data) => {
-      toast.success(
-        `Devis converti en facture ${data.convertQuoteToInvoice.number}`
-      );
+    onCompleted: () => {
+      // Toast désactivé ici - géré dans les composants (quote-row-actions, quote-sidebar)
       // Invalider les caches
       client.refetchQueries({
         include: [

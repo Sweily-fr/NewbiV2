@@ -109,6 +109,7 @@ export default function QuoteMobileFullscreen({
   const handleConvertToInvoice = async () => {
     try {
       const result = await convertToInvoice(quote.id);
+      toast.success("Devis converti en facture avec succès");
       if (onRefetch) onRefetch();
       onClose();
       if (result?.data?.convertQuoteToInvoice?.id) {

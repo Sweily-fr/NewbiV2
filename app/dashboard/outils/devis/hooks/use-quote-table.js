@@ -550,8 +550,8 @@ export function useQuoteTable({ data = [], onRefetch }) {
     for (let i = 0; i < draftQuotes.length; i += BATCH_SIZE) {
       const batch = draftQuotes.slice(i, i + BATCH_SIZE);
       try {
-        // Utiliser le mode silent pour éviter les notifications multiples
-        await Promise.all(batch.map((quote) => deleteQuote(quote.id, { silent: true })));
+        // Les notifications individuelles sont désactivées dans le hook GraphQL
+        await Promise.all(batch.map((quote) => deleteQuote(quote.id)));
       } catch (error) {
         console.error("Error deleting batch:", error);
         toast.error(

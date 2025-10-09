@@ -585,7 +585,7 @@ export const useCreateInvoice = () => {
 
   const [createInvoiceMutation, { loading }] = useMutation(CREATE_INVOICE, {
     onCompleted: () => {
-      toast.success("Facture créée avec succès");
+      // Toast désactivé ici - géré dans use-invoice-editor.js
       // Invalider le cache des factures pour forcer un refetch
       client.refetchQueries({
         include: [GET_INVOICES, GET_INVOICE_STATS],
@@ -622,7 +622,7 @@ export const useUpdateInvoice = () => {
 
   const [updateInvoiceMutation, { loading }] = useMutation(UPDATE_INVOICE, {
     onCompleted: (data) => {
-      toast.success("Facture mise à jour avec succès");
+      // Toast désactivé ici - géré dans use-invoice-editor.js
       // Mettre à jour le cache
       client.writeQuery({
         query: GET_INVOICE,
@@ -665,9 +665,7 @@ export const useDeleteInvoice = () => {
     },
   });
 
-  const deleteInvoice = async (id, options = {}) => {
-    const { silent = false } = options;
-    
+  const deleteInvoice = async (id) => {
     if (!workspaceId) {
       throw new Error("Aucun workspace sélectionné");
     }
@@ -682,10 +680,7 @@ export const useDeleteInvoice = () => {
         include: [GET_INVOICES, GET_INVOICE_STATS],
       });
       
-      // Afficher le toast seulement si pas en mode silent
-      if (!silent) {
-        toast.success("Facture supprimée avec succès");
-      }
+      // Toast désactivé ici - géré dans les composants (invoice-row-actions, etc.)
       
       return true;
     } catch (error) {
@@ -730,7 +725,7 @@ export const useMarkInvoiceAsPaid = () => {
 
   const [markAsPaidMutation, { loading }] = useMutation(MARK_INVOICE_AS_PAID, {
     onCompleted: (data) => {
-      toast.success("Facture marquée comme payée");
+      // Toast désactivé ici - géré dans les composants (invoice-row-actions, invoice-sidebar, etc.)
       // Mettre à jour le cache
       client.writeQuery({
         query: GET_INVOICE,
@@ -775,7 +770,7 @@ export const useChangeInvoiceStatus = () => {
     CHANGE_INVOICE_STATUS,
     {
       onCompleted: (data) => {
-        toast.success("Statut de la facture mis à jour");
+        // Toast désactivé ici - géré dans les composants (invoice-row-actions, invoice-sidebar, etc.)
         // Mettre à jour le cache
         client.writeQuery({
           query: GET_INVOICE,

@@ -501,8 +501,8 @@ export function useInvoiceTable({ data = [], onRefetch }) {
     for (let i = 0; i < draftInvoices.length; i += BATCH_SIZE) {
       const batch = draftInvoices.slice(i, i + BATCH_SIZE);
       try {
-        // Utiliser le mode silent pour éviter les notifications multiples
-        await Promise.all(batch.map((invoice) => deleteInvoice(invoice.id, { silent: true })));
+        // Les notifications individuelles sont désactivées dans le hook GraphQL
+        await Promise.all(batch.map((invoice) => deleteInvoice(invoice.id)));
       } catch (_) {
         toast.error(
           `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`
