@@ -10,6 +10,12 @@ import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-conte
 export function TrialCounter() {
   const { user, trial } = useDashboardLayoutContext();
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [mounted, setMounted] = useState(false);
+
+  // Éviter l'erreur d'hydratation en attendant le montage côté client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Calculer le temps restant en temps réel
   useEffect(() => {
@@ -68,6 +74,11 @@ export function TrialCounter() {
 
   // Ne pas afficher si pas connecté ou pas de trial actif
   if (!user || !trial?.isTrialActive || !trial?.trialStatus?.trialEndDate) {
+    return null;
+  }
+
+  // Ne pas afficher pendant le SSR pour éviter l'erreur d'hydratation
+  if (!mounted) {
     return null;
   }
 
