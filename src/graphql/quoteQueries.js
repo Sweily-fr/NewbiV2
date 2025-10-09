@@ -321,7 +321,7 @@ export const useQuotes = (filters = {}) => {
       limit,
     },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
     errorPolicy: "all",
   });
 
@@ -378,7 +378,7 @@ export const useQuote = (id) => {
   const { data, loading, error, refetch } = useQuery(GET_QUOTE, {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
     errorPolicy: "all",
   });
 
@@ -401,7 +401,7 @@ export const useQuoteStats = () => {
   const { data, loading, error, refetch } = useQuery(GET_QUOTE_STATS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
     errorPolicy: "all",
   });
 

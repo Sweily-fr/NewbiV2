@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/src/components/theme-provider";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
 import CookieManager from "@/src/components/cookies/CookieManager";
+import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 
 export const metadata = {
   title: {

@@ -46,7 +46,7 @@ export const useFileTransfer = () => {
     refetch: refetchTransfers,
   } = useQuery(GET_MY_TRANSFERS, {
     variables: { page: 1, limit: 10 },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
     notifyOnNetworkStatusChange: true,
   });
 

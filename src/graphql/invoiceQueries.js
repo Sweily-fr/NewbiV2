@@ -358,7 +358,7 @@ export const useInvoices = () => {
   const [sorting, setSorting] = useState([{ id: "issueDate", desc: true }]);
   const [filters, setFilters] = useState([]);
 
-  // Options de requête optimisées
+  // Options de requête sans cache
   const {
     data: invoicesData,
     loading: queryLoading,
@@ -380,7 +380,7 @@ export const useInvoices = () => {
         {}
       ),
     },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
     errorPolicy: "all",
     notifyOnNetworkStatusChange: true,
     skip: !workspaceId, // Ne pas exécuter la query sans workspaceId
@@ -502,7 +502,7 @@ export const useInvoice = (id) => {
     variables: { id, workspaceId },
     skip: !id || !workspaceId,
     errorPolicy: "all",
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
   });
 
   return useMemo(
@@ -540,7 +540,7 @@ export const useInvoiceStats = () => {
     variables: { workspaceId },
     skip: !workspaceId,
     errorPolicy: "all",
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
   });
 
   return useMemo(

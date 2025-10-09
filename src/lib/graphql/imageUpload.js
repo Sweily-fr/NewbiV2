@@ -165,7 +165,7 @@ export class CloudflareImageService {
       const { data } = await apolloClient.query({
         query: GET_IMAGE_URL,
         variables: { key },
-        fetchPolicy: "cache-first", // Utiliser le cache si disponible
+        fetchPolicy: "network-only",
       });
 
       if (!data.getImageUrl.success) {

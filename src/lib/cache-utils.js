@@ -4,18 +4,18 @@
 
 // Stratégies de cache optimisées par type de données
 export const CACHE_POLICIES = {
-  // Données fréquemment consultées - privilégier le cache
+  // Toutes les politiques utilisent maintenant network-only
   STATIC: {
-    fetchPolicy: "cache-first",
-    nextFetchPolicy: "cache-first",
-    notifyOnNetworkStatusChange: false,
+    fetchPolicy: "network-only",
+    nextFetchPolicy: "network-only",
+    notifyOnNetworkStatusChange: true,
   },
   
-  // Données critiques - cache + réseau en arrière-plan
+  // Toutes les politiques utilisent maintenant network-only
   CRITICAL: {
-    fetchPolicy: "cache-and-network",
-    nextFetchPolicy: "cache-first",
-    notifyOnNetworkStatusChange: false,
+    fetchPolicy: "network-only",
+    nextFetchPolicy: "network-only",
+    notifyOnNetworkStatusChange: true,
   },
   
   // Données en temps réel - toujours du réseau
@@ -25,11 +25,11 @@ export const CACHE_POLICIES = {
     notifyOnNetworkStatusChange: true,
   },
   
-  // Données rarement modifiées - cache uniquement
+  // Toutes les politiques utilisent maintenant network-only
   READONLY: {
-    fetchPolicy: "cache-only",
-    nextFetchPolicy: "cache-only",
-    notifyOnNetworkStatusChange: false,
+    fetchPolicy: "network-only",
+    nextFetchPolicy: "network-only",
+    notifyOnNetworkStatusChange: true,
   },
 };
 
@@ -87,7 +87,7 @@ export const preloadCriticalData = async (apolloClient, queries = []) => {
       await apolloClient.query({
         query,
         variables,
-        fetchPolicy: policy || "cache-first",
+        fetchPolicy: policy || "network-only",
         errorPolicy: "ignore", // Ignorer les erreurs de préchargement
       });
     } catch (error) {

@@ -110,7 +110,7 @@ function ProductSearchCombobox({
       search: debouncedSearchTerm && debouncedSearchTerm.trim() !== "" ? debouncedSearchTerm : undefined,
       limit: 20,
     },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
     skip: !open, // Ne pas exécuter la requête si le dropdown n'est pas ouvert
   });
 

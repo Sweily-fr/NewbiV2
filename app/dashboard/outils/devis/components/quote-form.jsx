@@ -95,7 +95,7 @@ function ProductSearchCombobox({
       search: searchTerm || undefined,
       limit: 20,
     },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
   });
 
   const products =

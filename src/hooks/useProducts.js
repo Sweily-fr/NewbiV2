@@ -6,7 +6,7 @@ import { toast } from '@/src/components/ui/sonner';
 export const useProducts = (page = 1, limit = 10, search = '', category = '') => {
   const { data, loading, error, refetch } = useQuery(GET_PRODUCTS, {
     variables: { page, limit, search, category },
-    fetchPolicy: 'cache-and-network',
+    fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
     errorPolicy: 'all',
   });
