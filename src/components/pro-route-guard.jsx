@@ -39,9 +39,9 @@ export function ProRouteGuard({
 
         // ⚠️ IMPORTANT: Vérifier si l'abonnement est vraiment chargé
         // Si subscription est undefined/null ET qu'on n'a pas de trial, c'est en cours de chargement
-        const isSubscriptionDataLoaded = 
-          subscription !== undefined || 
-          trial?.isTrialActive === true || 
+        const isSubscriptionDataLoaded =
+          subscription !== undefined ||
+          trial?.isTrialActive === true ||
           trial?.hasUsedTrial === true;
 
         console.log(`[ProRouteGuard] ${pageName}`, {
@@ -60,7 +60,9 @@ export function ProRouteGuard({
 
         // Ne pas rediriger au premier chargement si les données ne sont pas encore chargées
         if (!isSubscriptionDataLoaded && !initialCheckDoneRef.current) {
-          console.log(`[ProRouteGuard] ${pageName} - Premier chargement, attente des données...`);
+          console.log(
+            `[ProRouteGuard] ${pageName} - Premier chargement, attente des données...`
+          );
           return;
         }
 
@@ -70,7 +72,11 @@ export function ProRouteGuard({
         }
 
         // Ne rediriger que si les données sont chargées ET l'accès est refusé
-        if (!accessGranted && !hasRedirectedRef.current && isSubscriptionDataLoaded) {
+        if (
+          !accessGranted &&
+          !hasRedirectedRef.current &&
+          isSubscriptionDataLoaded
+        ) {
           console.log(
             `[ProRouteGuard] ${pageName} - Accès refusé - Redirection vers /dashboard/outils`
           );
@@ -81,7 +87,9 @@ export function ProRouteGuard({
           setHasAccess(true);
           hasRedirectedRef.current = false; // Reset pour permettre les futures redirections
         } else if (!isSubscriptionDataLoaded) {
-          console.log(`[ProRouteGuard] ${pageName} - En attente du chargement des données d'abonnement...`);
+          console.log(
+            `[ProRouteGuard] ${pageName} - En attente du chargement des données d'abonnement...`
+          );
           // Rester en mode checking, ne pas rediriger
           return;
         }
