@@ -75,8 +75,10 @@ export function useDashboardLayoutSimple() {
     const hasStripeSession = urlParams.get("session_id");
 
     // Essayer de charger depuis le cache local d'abord
-    const cacheKey = session?.session?.activeOrganizationId
-      ? `subscription-${session.session.activeOrganizationId}`
+    // Utiliser activeOrganization.id en priorité, sinon session.activeOrganizationId
+    const organizationId = activeOrganization?.id || session?.session?.activeOrganizationId;
+    const cacheKey = organizationId
+      ? `subscription-${organizationId}`
       : null;
 
     if (cacheKey) {
@@ -111,9 +113,17 @@ export function useDashboardLayoutSimple() {
     }
 
     // Si pas de cache valide, charger depuis l'API
-    if (!session?.session?.activeOrganizationId) {
-      setIsLoading(false);
-      setIsInitialized(true);
+    if (!organizationId) {
+      // ⚠️ IMPORTANT: Ne pas marquer comme "initialized" si on attend l'organisation
+      // Cela permet d'attendre que l'organisation soit chargée après OAuth
+      if (session?.user && !sessionLoading && !orgLoading) {
+        console.log("⏳ En attente de l'organisation après connexion OAuth...");
+        setIsLoading(true); // Garder le loading actif
+        // Ne pas marquer comme initialized pour continuer à attendre
+      } else {
+        setIsLoading(false);
+        setIsInitialized(true);
+      }
       return;
     }
 
@@ -124,7 +134,7 @@ export function useDashboardLayoutSimple() {
         const { data: subscriptions, error } =
           await authClient.subscription.list({
             query: {
-              referenceId: session.session.activeOrganizationId,
+              referenceId: organizationId,
             },
           });
 
@@ -159,7 +169,7 @@ export function useDashboardLayoutSimple() {
     };
 
     fetchSubscription();
-  }, [isHydrated, session?.session?.activeOrganizationId]);
+  }, [isHydrated, session?.session?.activeOrganizationId, activeOrganization?.id, orgLoading]);
 
   // Polling automatique après retour de Stripe
   useEffect(() => {
