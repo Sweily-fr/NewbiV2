@@ -48,6 +48,7 @@ export default function ItemsSection({
   formatCurrency,
   canEdit,
   ProductSearchCombobox,
+  validationErrors = {},
 }) {
   const {
     watch,
@@ -59,6 +60,13 @@ export default function ItemsSection({
 
   // Observer les changements en temps réel pour tous les items
   const watchedItems = watch("items") || [];
+  
+  // Helper pour vérifier si un article a une erreur
+  const getItemError = (index, fieldName) => {
+    if (!validationErrors?.items?.details) return false;
+    const itemError = validationErrors.items.details.find(detail => detail.index === index);
+    return itemError?.fields?.includes(fieldName);
+  };
 
   const addItem = (productData = {}) => {
     const quantity = productData.quantity || 1;
@@ -260,14 +268,14 @@ export default function ItemsSection({
                             placeholder="Décrivez votre produit ou service"
                             disabled={!canEdit}
                             className={`h-10 rounded-lg text-sm w-full ${
-                              errors?.items?.[index]?.description
-                                ? "border-red-500"
+                              errors?.items?.[index]?.description || getItemError(index, "description")
+                                ? "border-destructive focus-visible:ring-destructive"
                                 : ""
                             }`}
                           />
-                          {errors?.items?.[index]?.description && (
-                            <p className="text-xs text-red-500">
-                              {errors.items[index].description.message}
+                          {(errors?.items?.[index]?.description || getItemError(index, "description")) && (
+                            <p className="text-xs text-destructive">
+                              {errors?.items?.[index]?.description?.message || "La description est requise"}
                             </p>
                           )}
                         </div>
@@ -338,14 +346,14 @@ export default function ItemsSection({
                               step="0.01"
                               disabled={!canEdit}
                               className={`h-10 rounded-lg text-sm w-full ${
-                                errors?.items?.[index]?.quantity
-                                  ? "border-red-500"
+                                errors?.items?.[index]?.quantity || getItemError(index, "quantity")
+                                  ? "border-destructive focus-visible:ring-destructive"
                                   : ""
                               }`}
                             />
-                            {errors?.items?.[index]?.quantity && (
-                              <p className="text-xs text-red-500">
-                                {errors.items[index].quantity.message}
+                            {(errors?.items?.[index]?.quantity || getItemError(index, "quantity")) && (
+                              <p className="text-xs text-destructive">
+                                {errors?.items?.[index]?.quantity?.message || "La quantité est requise"}
                               </p>
                             )}
                           </div>
@@ -433,14 +441,14 @@ export default function ItemsSection({
                               step="0.01"
                               disabled={!canEdit}
                               className={`h-10 rounded-lg text-sm w-full ${
-                                errors?.items?.[index]?.unitPrice
-                                  ? "border-red-500"
+                                errors?.items?.[index]?.unitPrice || getItemError(index, "unitPrice")
+                                  ? "border-destructive focus-visible:ring-destructive"
                                   : ""
                               }`}
                             />
-                            {errors?.items?.[index]?.unitPrice && (
-                              <p className="text-xs text-red-500">
-                                {errors.items[index].unitPrice.message}
+                            {(errors?.items?.[index]?.unitPrice || getItemError(index, "unitPrice")) && (
+                              <p className="text-xs text-destructive">
+                                {errors?.items?.[index]?.unitPrice?.message || "Le prix unitaire doit être > 0€"}
                               </p>
                             )}
                           </div>

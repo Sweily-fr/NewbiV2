@@ -15,7 +15,7 @@ import {
 } from "@/src/components/ui/select";
 import { Separator } from "@/src/components/ui/separator";
 
-export default function DiscountsAndTotalsSection({ canEdit }) {
+export default function DiscountsAndTotalsSection({ canEdit, validationErrors = {} }) {
   const {
     watch,
     setValue,
@@ -23,6 +23,15 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
     formState: { errors },
   } = useFormContext();
   const data = watch();
+  
+  // Helper pour vérifier si la remise a une erreur
+  const hasDiscountError = validationErrors?.discount;
+  
+  // Helper pour vérifier si un champ personnalisé a une erreur
+  const getCustomFieldError = (index) => {
+    if (!validationErrors?.customFields?.details) return null;
+    return validationErrors.customFields.details.find(detail => detail.index === index);
+  };
 
   return (
     <Card className="shadow-none p-2 border-none bg-transparent mb-0">
@@ -103,10 +112,11 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
                 placeholder={
                   data.discountType === "PERCENTAGE" ? "Ex: 10" : "Ex: 50.00"
                 }
+                className={hasDiscountError ? "border-destructive focus-visible:ring-destructive" : ""}
               />
-              {errors?.discount && (
-                <p className="text-xs text-red-500">
-                  {errors.discount.message}
+              {(errors?.discount || hasDiscountError) && (
+                <p className="text-xs text-destructive">
+                  {errors?.discount?.message || hasDiscountError?.message || "La remise ne peut pas dépasser 100%"}
                 </p>
               )}
             </div>
@@ -123,65 +133,81 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
 
           {data.customFields && data.customFields.length > 0 ? (
             <div className="space-y-4">
-              {data.customFields.map((field, index) => (
+              {data.customFields.map((field, index) => {
+                const fieldError = getCustomFieldError(index);
+                const hasNameError = fieldError?.errors?.includes("nom du champ manquant");
+                const hasValueError = fieldError?.errors?.includes("valeur manquante");
+                
+                return (
                 <div
                   key={index}
                   className="flex flex-col md:flex-row gap-4 w-full items-center"
                 >
                   <div className="w-full md:w-1/2">
-                    <Input
-                      value={field.name || ""}
-                      onChange={(e) => {
-                        const newFields = [...(data.customFields || [])];
-                        newFields[index] = {
-                          ...newFields[index],
-                          name: e.target.value,
-                        };
-                        setValue("customFields", newFields, {
-                          shouldDirty: true,
-                        });
-                      }}
-                      placeholder="Ex: Référence projet"
-                      disabled={!canEdit}
-                      className="h-10 rounded-lg text-sm w-full"
-                    />
-                  </div>
-                  <div className="w-full md:w-1/2 flex items-end gap-2">
-                    <div className="flex-1">
+                    <div className="space-y-1">
                       <Input
-                        {...register(`customFields.${index}.value`, {
-                          required: "La valeur du champ est requise",
-                          maxLength: {
-                            value: 100,
-                            message:
-                              "La valeur ne doit pas dépasser 100 caractères",
-                          },
-                        })}
-                        defaultValue={field.value || ""}
+                        value={field.name || ""}
                         onChange={(e) => {
                           const newFields = [...(data.customFields || [])];
                           newFields[index] = {
                             ...newFields[index],
-                            value: e.target.value,
+                            name: e.target.value,
                           };
                           setValue("customFields", newFields, {
                             shouldDirty: true,
-                            shouldValidate: true,
                           });
                         }}
-                        placeholder="Ex: PROJ-2024-001"
+                        placeholder="Ex: Référence projet"
                         disabled={!canEdit}
                         className={`h-10 rounded-lg text-sm w-full ${
-                          errors?.customFields?.[index]?.value
-                            ? "border-red-500"
-                            : ""
+                          hasNameError ? "border-destructive focus-visible:ring-destructive" : ""
                         }`}
                       />
-                      {errors?.customFields?.[index]?.value && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {errors.customFields[index].value.message}
+                      {hasNameError && (
+                        <p className="text-xs text-destructive">
+                          Le nom du champ est requis
                         </p>
                       )}
+                    </div>
+                  </div>
+                  <div className="w-full md:w-1/2 flex items-end gap-2">
+                    <div className="flex-1">
+                      <div className="space-y-1">
+                        <Input
+                          {...register(`customFields.${index}.value`, {
+                            required: "La valeur du champ est requise",
+                            maxLength: {
+                              value: 100,
+                              message:
+                                "La valeur ne doit pas dépasser 100 caractères",
+                            },
+                          })}
+                          defaultValue={field.value || ""}
+                          onChange={(e) => {
+                            const newFields = [...(data.customFields || [])];
+                            newFields[index] = {
+                              ...newFields[index],
+                              value: e.target.value,
+                            };
+                            setValue("customFields", newFields, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }}
+                          placeholder="Ex: PROJ-2024-001"
+                          disabled={!canEdit}
+                          className={`h-10 rounded-lg text-sm w-full ${
+                            errors?.customFields?.[index]?.value || hasValueError
+                              ? "border-destructive focus-visible:ring-destructive"
+                              : ""
+                          }`}
+                        />
+                        {(errors?.customFields?.[index]?.value || hasValueError) && (
+                          <p className="text-xs text-destructive">
+                            {errors?.customFields?.[index]?.value?.message || "La valeur du champ est requise"}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <Button
                       variant="outline"
@@ -201,7 +227,8 @@ export default function DiscountsAndTotalsSection({ canEdit }) {
                     </Button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">

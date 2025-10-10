@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -104,6 +104,11 @@ export function useInvoiceEditor({
   // Watch all form data for auto-save
   const formData = watch();
   
+  // Créer des valeurs stables pour éviter les boucles infinies
+  const shippingData = useMemo(() => JSON.stringify(formData.shipping || {}), [formData.shipping]);
+  const discount = formData.discount;
+  const discountType = formData.discountType;
+  
   // Fonction pour marquer un champ comme en cours d'édition
   const markFieldAsEditing = (itemIndex, fieldName) => {
     setEditingFields((prev) => {
@@ -159,6 +164,50 @@ export function useInvoiceEditor({
       return prevErrors;
     });
   }, [formData.client]);
+
+  // Re-valider quand les champs personnalisés changent
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.customFields && formData.customFields && formData.customFields.length > 0) {
+        const invalidCustomFields = [];
+        const customFieldsWithErrors = [];
+        
+        formData.customFields.forEach((field, index) => {
+          const fieldErrors = [];
+          
+          if (!field.name || field.name.trim() === "") {
+            fieldErrors.push("nom du champ manquant");
+          }
+          if (!field.value || field.value.trim() === "") {
+            fieldErrors.push("valeur manquante");
+          }
+          
+          if (fieldErrors.length > 0) {
+            invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+            customFieldsWithErrors.push({ index, errors: fieldErrors });
+          }
+        });
+        
+        // Si tous les champs personnalisés sont valides, supprimer l'erreur
+        if (invalidCustomFields.length === 0) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.customFields;
+          return newErrors;
+        } else {
+          // Mettre à jour le message d'erreur
+          return {
+            ...prevErrors,
+            customFields: {
+              message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
+              canEdit: false,
+              details: customFieldsWithErrors
+            }
+          };
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.customFields]);
 
   // Re-valider quand les articles changent
   useEffect(() => {
@@ -226,6 +275,78 @@ export function useInvoiceEditor({
       return prevErrors;
     });
   }, [formData.items, editingFields]);
+
+  // Re-valider quand la remise change
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.discount) {
+        if (formData.discountType !== "PERCENTAGE" || formData.discount <= 100) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.discount;
+          return newErrors;
+        }
+      }
+      return prevErrors;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [discount, discountType]);
+
+  // Re-valider quand la livraison change
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.shipping) {
+        if (!formData.shipping?.billShipping) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.shipping;
+          return newErrors;
+        } else {
+          const shippingErrors = [];
+          const shippingAddr = formData.shipping?.shippingAddress || {};
+          
+          if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
+            shippingErrors.push("nom complet manquant");
+          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+            shippingErrors.push("nom complet invalide");
+          }
+          
+          if (!shippingAddr.street || shippingAddr.street.trim() === "") {
+            shippingErrors.push("adresse manquante");
+          } else if (shippingAddr.street.trim().length < 5) {
+            shippingErrors.push("adresse trop courte");
+          }
+          
+          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+            shippingErrors.push("code postal manquant");
+          } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+            shippingErrors.push("code postal invalide");
+          }
+          
+          if (!shippingAddr.city || shippingAddr.city.trim() === "") {
+            shippingErrors.push("ville manquante");
+          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+            shippingErrors.push("ville invalide");
+          }
+          
+          if (!shippingAddr.country || shippingAddr.country.trim() === "") {
+            shippingErrors.push("pays manquant");
+          }
+          
+          const shippingCost = formData.shipping?.shippingAmountHT;
+          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+            shippingErrors.push("coût de livraison invalide");
+          }
+          
+          if (shippingErrors.length === 0) {
+            const newErrors = { ...prevErrors };
+            delete newErrors.shipping;
+            return newErrors;
+          }
+        }
+      }
+      return prevErrors;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shippingData]);
 
   // Initialize form data when invoice loads
   useEffect(() => {
@@ -523,6 +644,42 @@ export function useInvoiceEditor({
       }
     }
     
+    // Validation des champs personnalisés
+    console.log("🔍 Vérification champs personnalisés:", {
+      hasCustomFields: !!currentFormData.customFields,
+      customFieldsCount: currentFormData.customFields?.length || 0
+    });
+    
+    if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+      const invalidCustomFields = [];
+      const customFieldsWithErrors = [];
+      
+      currentFormData.customFields.forEach((field, index) => {
+        const fieldErrors = [];
+        
+        if (!field.name || field.name.trim() === "") {
+          fieldErrors.push("nom du champ manquant");
+        }
+        if (!field.value || field.value.trim() === "") {
+          fieldErrors.push("valeur manquante");
+        }
+        
+        if (fieldErrors.length > 0) {
+          invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+          customFieldsWithErrors.push({ index, errors: fieldErrors });
+        }
+      });
+      
+      if (invalidCustomFields.length > 0) {
+        console.log("➕ Ajout erreur champs personnalisés:", invalidCustomFields);
+        errors.customFields = {
+          message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
+          canEdit: false,
+          details: customFieldsWithErrors
+        };
+      }
+    }
+    
     // Validation des articles - vérifier qu'il y en a au moins un
     console.log("🔍 Vérification articles:", {
       hasItems: !!currentFormData.items,
@@ -752,6 +909,36 @@ export function useInvoiceEditor({
         errors.shipping = {
           message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
           canEdit: false
+        };
+      }
+    }
+    
+    // Validation des champs personnalisés
+    if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+      const invalidCustomFields = [];
+      const customFieldsWithErrors = [];
+      
+      currentFormData.customFields.forEach((field, index) => {
+        const fieldErrors = [];
+        
+        if (!field.name || field.name.trim() === "") {
+          fieldErrors.push("nom du champ manquant");
+        }
+        if (!field.value || field.value.trim() === "") {
+          fieldErrors.push("valeur manquante");
+        }
+        
+        if (fieldErrors.length > 0) {
+          invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+          customFieldsWithErrors.push({ index, errors: fieldErrors });
+        }
+      });
+      
+      if (invalidCustomFields.length > 0) {
+        errors.customFields = {
+          message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
+          canEdit: false,
+          details: customFieldsWithErrors
         };
       }
     }

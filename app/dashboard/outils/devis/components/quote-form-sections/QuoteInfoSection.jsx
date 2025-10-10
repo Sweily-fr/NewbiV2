@@ -63,6 +63,7 @@ export default function QuoteInfoSection({
   nextQuoteNumber = null,
   validateQuoteNumber: validateQuoteNumberProp = null,
   hasExistingQuotes = false,
+  validationErrors = {},
 }) {
   const {
     setValue,
@@ -70,6 +71,9 @@ export default function QuoteInfoSection({
     formState: { errors },
     getValues,
   } = useFormContext();
+  
+  // Helper pour vérifier si les dates ont une erreur
+  const hasQuoteInfoError = validationErrors?.quoteInfo;
 
   // Use getValues instead of watch to prevent re-renders
   const [, forceUpdate] = useState({});
@@ -354,7 +358,8 @@ export default function QuoteInfoSection({
                   disabled={!canEdit}
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !data.issueDate && "text-muted-foreground"
+                    !data.issueDate && "text-muted-foreground",
+                    hasQuoteInfoError && "border-destructive focus-visible:ring-destructive"
                   )}
                   type="button"
                 >
@@ -397,8 +402,10 @@ export default function QuoteInfoSection({
                 />
               </PopoverContent>
             </Popover>
-            {errors?.issueDate && (
-              <p className="text-xs text-red-500">{errors.issueDate.message}</p>
+            {(errors?.issueDate || hasQuoteInfoError) && (
+              <p className="text-xs text-destructive">
+                {errors?.issueDate?.message || (hasQuoteInfoError && "Veuillez vérifier la date d'émission")}
+              </p>
             )}
           </div>
 
@@ -424,7 +431,8 @@ export default function QuoteInfoSection({
                     disabled={!canEdit}
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !data.validUntil && "text-muted-foreground"
+                      !data.validUntil && "text-muted-foreground",
+                      hasQuoteInfoError && "border-destructive focus-visible:ring-destructive"
                     )}
                     type="button"
                   >
@@ -601,9 +609,9 @@ export default function QuoteInfoSection({
                 </SelectContent>
               </Select>
             </div>
-            {errors?.validUntil && (
-              <p className="text-xs text-red-500">
-                {errors.validUntil.message}
+            {(errors?.validUntil || hasQuoteInfoError) && (
+              <p className="text-xs text-destructive">
+                {errors?.validUntil?.message || (hasQuoteInfoError && "Veuillez vérifier la date de validité")}
               </p>
             )}
             <p className="text-xs text-muted-foreground mt-1">
