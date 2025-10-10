@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import {
@@ -290,6 +290,18 @@ export function ChartAreaInteractive({
                   month: "short",
                   year: "numeric",
                 });
+              }}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(value) => {
+                // Formater les valeurs en milliers (k) si > 1000
+                if (value >= 1000) {
+                  return `${(value / 1000).toFixed(0)}k`;
+                }
+                return value.toString();
               }}
             />
             {showTooltip && (
