@@ -66,7 +66,10 @@ export default function ClientSelector({
   placeholder = "Rechercher un client...",
   className,
   disabled = false,
+  validationErrors = {},
 }) {
+  // Helper pour vérifier si le client a une erreur
+  const hasClientError = validationErrors?.client;
   const id = useId();
   const [activeTab, setActiveTab] = useState("existing");
   const [query, setQuery] = useState("");
@@ -452,31 +455,32 @@ export default function ClientSelector({
               </TabsTrigger>
             </TabsList>
           </CardHeader>
-
           <CardContent className="space-y-6 p-0">
             <TabsContent value="existing" className="m-0">
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id={id}
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        className="w-full justify-between px-3 font-normal h-10 rounded-lg text-sm"
-                        disabled={disabled}
-                      >
-                        <span className={cn("truncate")}>
+                  <div className="space-y-2">
+                    <Popover open={open} onOpenChange={setOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={open}
+                          className={cn(
+                            "w-full justify-between font-normal",
+                            !selectedValue && "text-muted-foreground",
+                            hasClientError && "border-destructive focus-visible:ring-destructive"
+                          )}
+                          disabled={disabled}
+                        >
                           {selectedValue || placeholder}
-                        </span>
-                        <ChevronDown
-                          size={16}
-                          className="shrink-0"
-                          aria-hidden="true"
-                        />
-                      </Button>
-                    </PopoverTrigger>
+                          <ChevronDown
+                            size={16}
+                            className="shrink-0"
+                            aria-hidden="true"
+                          />
+                        </Button>
+                      </PopoverTrigger>
                     <PopoverContent
                       className="border-input p-0"
                       align="start"
@@ -570,6 +574,12 @@ export default function ClientSelector({
                       </Command>
                     </PopoverContent>
                   </Popover>
+                  {hasClientError && (
+                    <p className="text-xs text-destructive">
+                      {validationErrors.client.message || "Veuillez sélectionner un client"}
+                    </p>
+                  )}
+                  </div>
 
                   {selectedClient && (
                     <div className="p-4 border rounded-lg bg-muted/50">

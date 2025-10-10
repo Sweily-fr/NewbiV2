@@ -28,6 +28,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   
   // Error handler
   const { handleError } = useErrorHandler();
+  const [validationErrors, setValidationErrors] = useState({});
 
   // GraphQL hooks
   const { quote: existingQuote, loading: loadingQuote } = useQuote(quoteId);
@@ -92,6 +93,226 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   // Watch all form data for auto-save
   const formData = watch();
+  
+  // Re-valider quand le client change
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.client) {
+        if (formData.client && formData.client.id) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.client;
+          return newErrors;
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.client]);
+
+  // Re-valider quand les informations entreprise changent
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.companyInfo) {
+        if (formData.companyInfo?.name && formData.companyInfo?.email) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.companyInfo;
+          return newErrors;
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.companyInfo]);
+
+  // Re-valider quand les dates changent
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.quoteInfo) {
+        const quoteInfoErrors = [];
+        
+        if (!formData.issueDate) {
+          quoteInfoErrors.push("date d'émission manquante");
+        } else {
+          const issueDate = new Date(formData.issueDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          if (issueDate < today) {
+            quoteInfoErrors.push("la date d'émission ne peut pas être antérieure à aujourd'hui");
+          }
+          
+          if (formData.validUntil) {
+            const validUntilDate = new Date(formData.validUntil);
+            if (validUntilDate < issueDate) {
+              quoteInfoErrors.push("la date de validité ne peut pas être antérieure à la date d'émission");
+            }
+          }
+        }
+        
+        if (quoteInfoErrors.length === 0) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.quoteInfo;
+          return newErrors;
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.issueDate, formData.validUntil]);
+
+  // Re-valider quand les articles changent
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.items && formData.items && formData.items.length > 0) {
+        const invalidItems = [];
+        const itemsWithErrors = [];
+        
+        formData.items.forEach((item, index) => {
+          const itemErrors = [];
+          
+          if (!item.description || item.description.trim() === "") {
+            itemErrors.push("description");
+          }
+          if (!item.quantity || item.quantity <= 0) {
+            itemErrors.push("quantity");
+          }
+          if (item.unitPrice === undefined || item.unitPrice === null || item.unitPrice <= 0) {
+            itemErrors.push("unitPrice");
+          }
+          
+          if (itemErrors.length > 0) {
+            invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
+            itemsWithErrors.push({ index, fields: itemErrors });
+          }
+        });
+        
+        if (invalidItems.length === 0) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.items;
+          return newErrors;
+        } else {
+          return {
+            ...prevErrors,
+            items: {
+              message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+              canEdit: false,
+              details: itemsWithErrors
+            }
+          };
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.items]);
+
+  // Re-valider quand la remise change
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.discount) {
+        if (formData.discountType !== "PERCENTAGE" || formData.discount <= 100) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.discount;
+          return newErrors;
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.discount, formData.discountType]);
+
+  // Re-valider quand la livraison change
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.shipping) {
+        if (!formData.shipping?.billShipping) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.shipping;
+          return newErrors;
+        } else {
+          const shippingErrors = [];
+          const shippingAddr = formData.shipping?.shippingAddress || {};
+          
+          if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
+            shippingErrors.push("nom complet manquant");
+          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+            shippingErrors.push("nom complet invalide");
+          }
+          
+          if (!shippingAddr.street || shippingAddr.street.trim() === "") {
+            shippingErrors.push("adresse manquante");
+          } else if (shippingAddr.street.trim().length < 5) {
+            shippingErrors.push("adresse trop courte");
+          }
+          
+          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+            shippingErrors.push("code postal manquant");
+          } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+            shippingErrors.push("code postal invalide");
+          }
+          
+          if (!shippingAddr.city || shippingAddr.city.trim() === "") {
+            shippingErrors.push("ville manquante");
+          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+            shippingErrors.push("ville invalide");
+          }
+          
+          if (!shippingAddr.country || shippingAddr.country.trim() === "") {
+            shippingErrors.push("pays manquant");
+          }
+          
+          const shippingCost = formData.shipping?.shippingAmountHT;
+          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+            shippingErrors.push("coût de livraison invalide");
+          }
+          
+          if (shippingErrors.length === 0) {
+            const newErrors = { ...prevErrors };
+            delete newErrors.shipping;
+            return newErrors;
+          }
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.shipping]);
+
+  // Re-valider quand les champs personnalisés changent
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.customFields && formData.customFields && formData.customFields.length > 0) {
+        const invalidCustomFields = [];
+        const customFieldsWithErrors = [];
+        
+        formData.customFields.forEach((field, index) => {
+          const fieldErrors = [];
+          
+          if (!field.name || field.name.trim() === "") {
+            fieldErrors.push("nom du champ manquant");
+          }
+          if (!field.value || field.value.trim() === "") {
+            fieldErrors.push("valeur manquante");
+          }
+          
+          if (fieldErrors.length > 0) {
+            invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+            customFieldsWithErrors.push({ index, errors: fieldErrors });
+          }
+        });
+        
+        if (invalidCustomFields.length === 0) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.customFields;
+          return newErrors;
+        } else {
+          return {
+            ...prevErrors,
+            customFields: {
+              message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
+              canEdit: false,
+              details: customFieldsWithErrors
+            }
+          };
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.customFields]);
 
   // Initialize form data when quote loads
   useEffect(() => {
@@ -273,14 +494,205 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         setSaving(true);
         const currentFormData = getValues();
 
-        // Vérifier la validité du formulaire
-        if (!isAutoSave) {
-          if (!validateStep1()) {
-            toast.error("Veuillez corriger les erreurs avant d'enregistrer");
-            setSaving(false);
-            return false;
+        // Validation complète pour le brouillon
+        const errors = {};
+        
+        // Validation du client
+        if (!currentFormData.client || !currentFormData.client.id) {
+          errors.client = {
+            message: "Veuillez sélectionner un client",
+            canEdit: false
+          };
+        }
+        
+        // Validation des informations entreprise
+        if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
+          errors.companyInfo = {
+            message: "Les informations de l'entreprise sont incomplètes",
+            canEdit: false
+          };
+        }
+        
+        // Validation des informations du devis (dates)
+        const quoteInfoErrors = [];
+        
+        // Vérifier la date d'émission
+        if (!currentFormData.issueDate) {
+          quoteInfoErrors.push("date d'émission manquante");
+        } else {
+          const issueDate = new Date(currentFormData.issueDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          if (issueDate < today) {
+            quoteInfoErrors.push("la date d'émission ne peut pas être antérieure à aujourd'hui");
+          }
+          
+          // Vérifier la date de validité
+          if (currentFormData.validUntil) {
+            const validUntilDate = new Date(currentFormData.validUntil);
+            
+            if (validUntilDate < issueDate) {
+              quoteInfoErrors.push("la date de validité ne peut pas être antérieure à la date d'émission");
+            }
           }
         }
+        
+        if (quoteInfoErrors.length > 0) {
+          errors.quoteInfo = {
+            message: `Informations du devis invalides:\n${quoteInfoErrors.join(", ")}`,
+            canEdit: false
+          };
+        }
+        
+        // Validation des articles
+        if (!currentFormData.items || currentFormData.items.length === 0) {
+          errors.items = {
+            message: "Veuillez ajouter au moins un article au devis",
+            canEdit: false
+          };
+        } else {
+          // Vérifier que chaque article a les champs requis
+          const invalidItems = [];
+          const itemsWithErrors = [];
+          
+          currentFormData.items.forEach((item, index) => {
+            const itemErrors = [];
+            const fields = [];
+            
+            if (!item.description || item.description.trim() === "") {
+              itemErrors.push("description");
+              fields.push("description");
+            }
+            if (!item.quantity || parseFloat(item.quantity) <= 0) {
+              itemErrors.push("quantité invalide");
+              fields.push("quantity");
+            }
+            const priceValue = item.unitPrice;
+            const isInvalid = priceValue === undefined || 
+                             priceValue === null || 
+                             priceValue === "" || 
+                             isNaN(parseFloat(priceValue)) ||
+                             parseFloat(priceValue) <= 0;
+            
+            if (isInvalid) {
+              itemErrors.push("prix unitaire doit être > 0€");
+              fields.push("unitPrice");
+            }
+            
+            if (itemErrors.length > 0) {
+              invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
+              itemsWithErrors.push({ index, fields });
+            }
+          });
+          
+          if (invalidItems.length > 0) {
+            errors.items = {
+              message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+              canEdit: false,
+              details: itemsWithErrors
+            };
+          }
+        }
+        
+        // Validation de la remise globale
+        if (currentFormData.discountType === "PERCENTAGE" && currentFormData.discount > 100) {
+          errors.discount = {
+            message: "La remise ne peut pas dépasser 100%",
+            canEdit: false
+          };
+        }
+        
+        // Validation de la livraison si activée
+        if (currentFormData.shipping?.billShipping) {
+          const shippingErrors = [];
+          const shippingAddr = currentFormData.shipping?.shippingAddress || {};
+          
+          // Validation du nom complet
+          if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
+            shippingErrors.push("nom complet manquant");
+          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+            shippingErrors.push("nom complet invalide");
+          }
+          
+          // Validation de l'adresse
+          if (!shippingAddr.street || shippingAddr.street.trim() === "") {
+            shippingErrors.push("adresse manquante");
+          } else if (shippingAddr.street.trim().length < 5) {
+            shippingErrors.push("adresse trop courte");
+          }
+          
+          // Validation du code postal
+          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+            shippingErrors.push("code postal manquant");
+          } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+            shippingErrors.push("code postal invalide (5 chiffres requis)");
+          }
+          
+          // Validation de la ville
+          if (!shippingAddr.city || shippingAddr.city.trim() === "") {
+            shippingErrors.push("ville manquante");
+          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+            shippingErrors.push("ville invalide");
+          }
+          
+          // Validation du pays
+          if (!shippingAddr.country || shippingAddr.country.trim() === "") {
+            shippingErrors.push("pays manquant");
+          }
+          
+          // Validation du coût de livraison
+          const shippingCost = currentFormData.shipping?.shippingAmountHT;
+          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+            shippingErrors.push("coût de livraison invalide (doit être >= 0€)");
+          }
+          
+          if (shippingErrors.length > 0) {
+            errors.shipping = {
+              message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
+              canEdit: false
+            };
+          }
+        }
+        
+        // Validation des champs personnalisés
+        if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+          const invalidCustomFields = [];
+          const customFieldsWithErrors = [];
+          
+          currentFormData.customFields.forEach((field, index) => {
+            const fieldErrors = [];
+            
+            if (!field.name || field.name.trim() === "") {
+              fieldErrors.push("nom du champ manquant");
+            }
+            if (!field.value || field.value.trim() === "") {
+              fieldErrors.push("valeur manquante");
+            }
+            
+            if (fieldErrors.length > 0) {
+              invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+              customFieldsWithErrors.push({ index, errors: fieldErrors });
+            }
+          });
+          
+          if (invalidCustomFields.length > 0) {
+            errors.customFields = {
+              message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
+              canEdit: false,
+              details: customFieldsWithErrors
+            };
+          }
+        }
+        
+        if (Object.keys(errors).length > 0) {
+          setValidationErrors(errors);
+          setSaving(false);
+          return false;
+        }
+        
+        // Réinitialiser les erreurs si la validation passe
+        setValidationErrors({});
 
         const input = transformFormDataToInput(
           currentFormData,
@@ -335,7 +747,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       updateQuote,
       router,
       session,
-      validateStep1,
       handleError,
     ]
   );
@@ -347,10 +758,206 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         setSaving(true);
         const currentFormData = formDataOverride || getValues();
 
-        if (!validateStep1() || !validateStep2()) {
+        // Validation complète pour la soumission
+        const errors = {};
+        
+        // Validation du client
+        if (!currentFormData.client || !currentFormData.client.id) {
+          errors.client = {
+            message: "Veuillez sélectionner un client",
+            canEdit: false
+          };
+        }
+        
+        // Validation des informations entreprise
+        if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
+          errors.companyInfo = {
+            message: "Les informations de l'entreprise sont incomplètes",
+            canEdit: false
+          };
+        }
+        
+        // Validation des informations du devis (dates)
+        const quoteInfoErrors = [];
+        
+        // Vérifier la date d'émission
+        if (!currentFormData.issueDate) {
+          quoteInfoErrors.push("date d'émission manquante");
+        } else {
+          const issueDate = new Date(currentFormData.issueDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          if (issueDate < today) {
+            quoteInfoErrors.push("la date d'émission ne peut pas être antérieure à aujourd'hui");
+          }
+          
+          // Vérifier la date de validité
+          if (currentFormData.validUntil) {
+            const validUntilDate = new Date(currentFormData.validUntil);
+            
+            if (validUntilDate < issueDate) {
+              quoteInfoErrors.push("la date de validité ne peut pas être antérieure à la date d'émission");
+            }
+          }
+        }
+        
+        if (quoteInfoErrors.length > 0) {
+          errors.quoteInfo = {
+            message: `Informations du devis invalides:\n${quoteInfoErrors.join(", ")}`,
+            canEdit: false
+          };
+        }
+        
+        // Validation des articles
+        if (!currentFormData.items || currentFormData.items.length === 0) {
+          errors.items = {
+            message: "Veuillez ajouter au moins un article au devis",
+            canEdit: false
+          };
+        } else {
+          // Vérifier que chaque article a les champs requis
+          const invalidItems = [];
+          const itemsWithErrors = [];
+          
+          currentFormData.items.forEach((item, index) => {
+            const itemErrors = [];
+            const fields = [];
+            
+            if (!item.description || item.description.trim() === "") {
+              itemErrors.push("description");
+              fields.push("description");
+            }
+            if (!item.quantity || parseFloat(item.quantity) <= 0) {
+              itemErrors.push("quantité invalide");
+              fields.push("quantity");
+            }
+            const priceValue = item.unitPrice;
+            const isInvalid = priceValue === undefined || 
+                             priceValue === null || 
+                             priceValue === "" || 
+                             isNaN(parseFloat(priceValue)) ||
+                             parseFloat(priceValue) <= 0;
+            
+            if (isInvalid) {
+              itemErrors.push("prix unitaire doit être > 0€");
+              fields.push("unitPrice");
+            }
+            
+            if (itemErrors.length > 0) {
+              invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
+              itemsWithErrors.push({ index, fields });
+            }
+          });
+          
+          if (invalidItems.length > 0) {
+            errors.items = {
+              message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+              canEdit: false,
+              details: itemsWithErrors
+            };
+          }
+        }
+        
+        // Validation de la remise globale
+        if (currentFormData.discountType === "PERCENTAGE" && currentFormData.discount > 100) {
+          errors.discount = {
+            message: "La remise ne peut pas dépasser 100%",
+            canEdit: false
+          };
+        }
+        
+        // Validation de la livraison si activée
+        if (currentFormData.shipping?.billShipping) {
+          const shippingErrors = [];
+          const shippingAddr = currentFormData.shipping?.shippingAddress || {};
+          
+          // Validation du nom complet
+          if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
+            shippingErrors.push("nom complet manquant");
+          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+            shippingErrors.push("nom complet invalide");
+          }
+          
+          // Validation de l'adresse
+          if (!shippingAddr.street || shippingAddr.street.trim() === "") {
+            shippingErrors.push("adresse manquante");
+          } else if (shippingAddr.street.trim().length < 5) {
+            shippingErrors.push("adresse trop courte");
+          }
+          
+          // Validation du code postal
+          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+            shippingErrors.push("code postal manquant");
+          } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+            shippingErrors.push("code postal invalide (5 chiffres requis)");
+          }
+          
+          // Validation de la ville
+          if (!shippingAddr.city || shippingAddr.city.trim() === "") {
+            shippingErrors.push("ville manquante");
+          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+            shippingErrors.push("ville invalide");
+          }
+          
+          // Validation du pays
+          if (!shippingAddr.country || shippingAddr.country.trim() === "") {
+            shippingErrors.push("pays manquant");
+          }
+          
+          // Validation du coût de livraison
+          const shippingCost = currentFormData.shipping?.shippingAmountHT;
+          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+            shippingErrors.push("coût de livraison invalide (doit être >= 0€)");
+          }
+          
+          if (shippingErrors.length > 0) {
+            errors.shipping = {
+              message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
+              canEdit: false
+            };
+          }
+        }
+        
+        // Validation des champs personnalisés
+        if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+          const invalidCustomFields = [];
+          const customFieldsWithErrors = [];
+          
+          currentFormData.customFields.forEach((field, index) => {
+            const fieldErrors = [];
+            
+            if (!field.name || field.name.trim() === "") {
+              fieldErrors.push("nom du champ manquant");
+            }
+            if (!field.value || field.value.trim() === "") {
+              fieldErrors.push("valeur manquante");
+            }
+            
+            if (fieldErrors.length > 0) {
+              invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+              customFieldsWithErrors.push({ index, errors: fieldErrors });
+            }
+          });
+          
+          if (invalidCustomFields.length > 0) {
+            errors.customFields = {
+              message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
+              canEdit: false,
+              details: customFieldsWithErrors
+            };
+          }
+        }
+        
+        if (Object.keys(errors).length > 0) {
+          setValidationErrors(errors);
           toast.error("Veuillez corriger les erreurs avant de créer le devis");
+          setSaving(false);
           return;
         }
+        
+        // Réinitialiser les erreurs si la validation passe
+        setValidationErrors({});
 
         const input = transformFormDataToInput(
           currentFormData,
@@ -391,8 +998,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       existingQuote,
       getValues,
       setValue,
-      validateStep1,
-      validateStep2,
       createQuote,
       updateQuote,
       router,
@@ -457,6 +1062,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     // Validation
     validateStep1,
     validateStep2,
+    validationErrors,
 
     // Actions
     onSave: (formData) => {

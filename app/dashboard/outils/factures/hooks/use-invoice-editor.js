@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -104,6 +104,11 @@ export function useInvoiceEditor({
   // Watch all form data for auto-save
   const formData = watch();
   
+  // Créer des valeurs stables pour éviter les boucles infinies
+  const shippingData = useMemo(() => JSON.stringify(formData.shipping || {}), [formData.shipping]);
+  const discount = formData.discount;
+  const discountType = formData.discountType;
+  
   // Fonction pour marquer un champ comme en cours d'édition
   const markFieldAsEditing = (itemIndex, fieldName) => {
     setEditingFields((prev) => {
@@ -159,61 +164,6 @@ export function useInvoiceEditor({
       return prevErrors;
     });
   }, [formData.client]);
-
-  // Re-valider quand les informations de facture changent
-  useEffect(() => {
-    setValidationErrors((prevErrors) => {
-      if (prevErrors.invoiceInfo) {
-        const invoiceInfoErrors = [];
-        
-        if (!formData.prefix || formData.prefix.trim() === "") {
-          invoiceInfoErrors.push("préfixe de facture manquant");
-        }
-        
-        if (!formData.number || formData.number.trim() === "") {
-          invoiceInfoErrors.push("numéro de facture manquant");
-        } else if (!/^\d+$/.test(formData.number)) {
-          invoiceInfoErrors.push("numéro de facture invalide (doit contenir uniquement des chiffres)");
-        }
-        
-        if (!formData.dueDate || formData.dueDate.trim() === "") {
-          invoiceInfoErrors.push("date d'échéance manquante");
-        } else {
-          const dueDate = new Date(formData.dueDate);
-          const issueDate = new Date(formData.issueDate);
-          if (dueDate < issueDate) {
-            invoiceInfoErrors.push("date d'échéance doit être postérieure à la date d'émission");
-          }
-        }
-        
-        if (formData.executionDate && formData.executionDate.trim() !== "") {
-          const executionDate = new Date(formData.executionDate);
-          const issueDate = new Date(formData.issueDate);
-          if (executionDate < issueDate) {
-            invoiceInfoErrors.push("date d'exécution doit être postérieure ou égale à la date d'émission");
-          }
-        }
-        
-        // Si toutes les informations sont valides, supprimer l'erreur
-        if (invoiceInfoErrors.length === 0) {
-          const newErrors = { ...prevErrors };
-          delete newErrors.invoiceInfo;
-          return newErrors;
-        } else {
-          // Mettre à jour le message d'erreur
-          return {
-            ...prevErrors,
-            invoiceInfo: {
-              message: `Les informations de facture sont incomplètes ou invalides:\n${invoiceInfoErrors.join(", ")}`,
-              canEdit: false,
-              details: invoiceInfoErrors
-            }
-          };
-        }
-      }
-      return prevErrors;
-    });
-  }, [formData.prefix, formData.number, formData.dueDate, formData.executionDate, formData.issueDate]);
 
   // Re-valider quand les champs personnalisés changent
   useEffect(() => {
@@ -325,6 +275,78 @@ export function useInvoiceEditor({
       return prevErrors;
     });
   }, [formData.items, editingFields]);
+
+  // Re-valider quand la remise change
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.discount) {
+        if (formData.discountType !== "PERCENTAGE" || formData.discount <= 100) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.discount;
+          return newErrors;
+        }
+      }
+      return prevErrors;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [discount, discountType]);
+
+  // Re-valider quand la livraison change
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.shipping) {
+        if (!formData.shipping?.billShipping) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.shipping;
+          return newErrors;
+        } else {
+          const shippingErrors = [];
+          const shippingAddr = formData.shipping?.shippingAddress || {};
+          
+          if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
+            shippingErrors.push("nom complet manquant");
+          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+            shippingErrors.push("nom complet invalide");
+          }
+          
+          if (!shippingAddr.street || shippingAddr.street.trim() === "") {
+            shippingErrors.push("adresse manquante");
+          } else if (shippingAddr.street.trim().length < 5) {
+            shippingErrors.push("adresse trop courte");
+          }
+          
+          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+            shippingErrors.push("code postal manquant");
+          } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+            shippingErrors.push("code postal invalide");
+          }
+          
+          if (!shippingAddr.city || shippingAddr.city.trim() === "") {
+            shippingErrors.push("ville manquante");
+          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+            shippingErrors.push("ville invalide");
+          }
+          
+          if (!shippingAddr.country || shippingAddr.country.trim() === "") {
+            shippingErrors.push("pays manquant");
+          }
+          
+          const shippingCost = formData.shipping?.shippingAmountHT;
+          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+            shippingErrors.push("coût de livraison invalide");
+          }
+          
+          if (shippingErrors.length === 0) {
+            const newErrors = { ...prevErrors };
+            delete newErrors.shipping;
+            return newErrors;
+          }
+        }
+      }
+      return prevErrors;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shippingData]);
 
   // Initialize form data when invoice loads
   useEffect(() => {
@@ -622,54 +644,6 @@ export function useInvoiceEditor({
       }
     }
     
-    // Validation des informations de facture
-    console.log("🔍 Vérification informations de facture:", {
-      hasPrefix: !!currentFormData.prefix,
-      hasNumber: !!currentFormData.number,
-      hasDueDate: !!currentFormData.dueDate
-    });
-    
-    const invoiceInfoErrors = [];
-    
-    if (!currentFormData.prefix || currentFormData.prefix.trim() === "") {
-      invoiceInfoErrors.push("préfixe de facture manquant");
-    }
-    
-    if (!currentFormData.number || currentFormData.number.trim() === "") {
-      invoiceInfoErrors.push("numéro de facture manquant");
-    } else if (!/^\d+$/.test(currentFormData.number)) {
-      invoiceInfoErrors.push("numéro de facture invalide (doit contenir uniquement des chiffres)");
-    }
-    
-    if (!currentFormData.dueDate || currentFormData.dueDate.trim() === "") {
-      invoiceInfoErrors.push("date d'échéance manquante");
-    } else {
-      // Vérifier que la date d'échéance est postérieure à la date d'émission
-      const dueDate = new Date(currentFormData.dueDate);
-      const issueDate = new Date(currentFormData.issueDate);
-      if (dueDate < issueDate) {
-        invoiceInfoErrors.push("date d'échéance doit être postérieure à la date d'émission");
-      }
-    }
-    
-    // Vérifier la date d'exécution si elle est renseignée
-    if (currentFormData.executionDate && currentFormData.executionDate.trim() !== "") {
-      const executionDate = new Date(currentFormData.executionDate);
-      const issueDate = new Date(currentFormData.issueDate);
-      if (executionDate < issueDate) {
-        invoiceInfoErrors.push("date d'exécution doit être postérieure ou égale à la date d'émission");
-      }
-    }
-    
-    if (invoiceInfoErrors.length > 0) {
-      console.log("➕ Ajout erreur informations de facture:", invoiceInfoErrors);
-      errors.invoiceInfo = {
-        message: `Les informations de facture sont incomplètes ou invalides:\n${invoiceInfoErrors.join(", ")}`,
-        canEdit: false,
-        details: invoiceInfoErrors
-      };
-    }
-    
     // Validation des champs personnalisés
     console.log("🔍 Vérification champs personnalisés:", {
       hasCustomFields: !!currentFormData.customFields,
@@ -937,47 +911,6 @@ export function useInvoiceEditor({
           canEdit: false
         };
       }
-    }
-    
-    // Validation des informations de facture
-    const invoiceInfoErrors = [];
-    
-    if (!currentFormData.prefix || currentFormData.prefix.trim() === "") {
-      invoiceInfoErrors.push("préfixe de facture manquant");
-    }
-    
-    if (!currentFormData.number || currentFormData.number.trim() === "") {
-      invoiceInfoErrors.push("numéro de facture manquant");
-    } else if (!/^\d+$/.test(currentFormData.number)) {
-      invoiceInfoErrors.push("numéro de facture invalide (doit contenir uniquement des chiffres)");
-    }
-    
-    if (!currentFormData.dueDate || currentFormData.dueDate.trim() === "") {
-      invoiceInfoErrors.push("date d'échéance manquante");
-    } else {
-      // Vérifier que la date d'échéance est postérieure à la date d'émission
-      const dueDate = new Date(currentFormData.dueDate);
-      const issueDate = new Date(currentFormData.issueDate);
-      if (dueDate < issueDate) {
-        invoiceInfoErrors.push("date d'échéance doit être postérieure à la date d'émission");
-      }
-    }
-    
-    // Vérifier la date d'exécution si elle est renseignée
-    if (currentFormData.executionDate && currentFormData.executionDate.trim() !== "") {
-      const executionDate = new Date(currentFormData.executionDate);
-      const issueDate = new Date(currentFormData.issueDate);
-      if (executionDate < issueDate) {
-        invoiceInfoErrors.push("date d'exécution doit être postérieure ou égale à la date d'émission");
-      }
-    }
-    
-    if (invoiceInfoErrors.length > 0) {
-      errors.invoiceInfo = {
-        message: `Les informations de facture sont incomplètes ou invalides:\n${invoiceInfoErrors.join(", ")}`,
-        canEdit: false,
-        details: invoiceInfoErrors
-      };
     }
     
     // Validation des champs personnalisés

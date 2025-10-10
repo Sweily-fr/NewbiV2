@@ -248,6 +248,7 @@ export default function EnhancedQuoteForm({
   nextQuoteNumber,
   validateQuoteNumber,
   hasExistingQuotes,
+  validationErrors = {},
 }) {
   const { watch, setValue, getValues, control } = useFormContext();
   const data = watch();
@@ -363,6 +364,7 @@ export default function EnhancedQuoteForm({
                 nextQuoteNumber={nextQuoteNumber}
                 validateQuoteNumber={validateQuoteNumber}
                 hasExistingQuotes={hasExistingQuotes}
+                validationErrors={validationErrors}
               />
               <Separator />
 
@@ -378,6 +380,7 @@ export default function EnhancedQuoteForm({
                     selectedClient={data.client}
                     onSelect={(client) => updateField("client", client)}
                     disabled={!canEdit}
+                    validationErrors={validationErrors}
                   />
                 </CardContent>
               </Card>
@@ -392,13 +395,14 @@ export default function EnhancedQuoteForm({
                 formatCurrency={formatCurrency}
                 canEdit={canEdit}
                 ProductSearchCombobox={ProductSearchCombobox}
+                validationErrors={validationErrors}
               />
 
               {/* Section 2: Facturation de livraison */}
-              <ShippingSection canEdit={canEdit} />
+              <ShippingSection canEdit={canEdit} validationErrors={validationErrors} />
 
               {/* Section 3: Remises et totaux */}
-              <DiscountAndTotalsSection canEdit={canEdit} />
+              <DiscountAndTotalsSection canEdit={canEdit} validationErrors={validationErrors} />
             </>
           )}
         </div>

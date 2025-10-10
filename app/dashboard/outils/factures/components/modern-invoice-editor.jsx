@@ -237,7 +237,7 @@ export default function ModernInvoiceEditor({
             {/* Enhanced Form ou Settings View */}
             <div className="flex-1 min-h-0 mr-2 flex flex-col">
               {/* Alertes d'erreur intelligentes - Panneau rétractable */}
-              {(validationErrors?.client || validationErrors?.companyInfo || validationErrors?.items || validationErrors?.shipping || validationErrors?.discount || validationErrors?.customFields || validationErrors?.invoiceInfo) && (
+              {(validationErrors?.client || validationErrors?.companyInfo || validationErrors?.items || validationErrors?.shipping || validationErrors?.discount || validationErrors?.customFields) && (
                 <div className="flex-shrink-0 mb-4 border border-destructive/20 rounded-md overflow-hidden">
                   {/* Header rétractable avec compteur */}
                   <button
@@ -308,14 +308,6 @@ export default function ModernInvoiceEditor({
                         <ErrorAlert
                           title="Erreur champs personnalisés"
                           message={validationErrors.customFields.message || validationErrors.customFields}
-                          onEdit={undefined}
-                          editLabel=""
-                        />
-                      )}
-                      {validationErrors?.invoiceInfo && (
-                        <ErrorAlert
-                          title="Erreur informations de facture"
-                          message={validationErrors.invoiceInfo.message || validationErrors.invoiceInfo}
                           onEdit={undefined}
                           editLabel=""
                         />
