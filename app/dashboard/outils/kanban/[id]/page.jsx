@@ -43,6 +43,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { LayoutGrid, List } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 
 // Hooks
 import { useKanbanBoard } from "./hooks/useKanbanBoard";
@@ -52,7 +54,8 @@ import { useKanbanDnD } from "./hooks/useKanbanDnD";
 import { useKanbanSearch } from "./hooks/useKanbanSearch";
 import { useColumnCollapse } from "./hooks/useColumnCollapse";
 import { useDragToScroll } from "./hooks/useDragToScroll";
-import { useKanbanRealtimeSync } from "./hooks/useKanbanRealtimeSync";
+import { useViewMode } from "./hooks/useViewMode";
+// import { useKanbanRealtimeSync } from "./hooks/useKanbanRealtimeSync"; // SUPPRIMÉ : doublon de useKanbanBoard
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
@@ -64,6 +67,7 @@ import { TaskModal } from "./components/TaskModal";
 import { ColumnModal } from "./components/ColumnModal";
 import { DeleteConfirmation } from "./components/DeleteConfirmation";
 import { TaskCard } from "./components/TaskCard";
+import { KanbanListView } from "./components/KanbanListView";
 import {
   GET_BOARD,
   CREATE_COLUMN,
@@ -163,13 +167,8 @@ export default function KanbanBoardPage({ params }) {
   // État local pour les colonnes (pour la réorganisation en temps réel)
   const [localColumns, setLocalColumns] = React.useState(board?.columns || []);
 
-  // Hook pour la synchronisation temps réel via Redis
-  const { isConnected: realtimeConnected, markAsUpdating } = useKanbanRealtimeSync(
-    id,
-    workspaceId,
-    localColumns,
-    setLocalColumns
-  );
+  // SUPPRIMÉ : useKanbanRealtimeSync (doublon de useKanbanBoard qui gère déjà les subscriptions)
+  // Les subscriptions sont gérées dans useKanbanBoard avec TASK_UPDATED_SUBSCRIPTION et COLUMN_UPDATED_SUBSCRIPTION
 
   const { activeTask, activeColumn, sensors, handleDragStart, handleDragOver, handleDragEnd } =
     useKanbanDnD(
@@ -180,7 +179,7 @@ export default function KanbanBoardPage({ params }) {
       localColumns,
       reorderColumnsMutation,
       setLocalColumns,
-      markAsUpdating
+      null // markAsUpdating n'est plus nécessaire
     );
 
   // Mettre à jour les colonnes locales quand board.columns change
@@ -208,8 +207,14 @@ export default function KanbanBoardPage({ params }) {
     collapsedColumnsCount,
   } = useColumnCollapse(id);
 
-  // Hook pour le scroll horizontal par glissement
-  const scrollRef = useDragToScroll({ enabled: true, scrollSpeed: 1.5 });
+  // Hook pour le mode d'affichage (Board/List)
+  const { viewMode, setViewMode, isBoard, isList } = useViewMode(id);
+
+  // Hook pour le scroll horizontal par glissement (uniquement en mode Board et quand board est chargé)
+  const scrollRef = useDragToScroll({ 
+    enabled: isBoard && !!board, 
+    scrollSpeed: 1.5 
+  });
 
   // Détecter les changements d'organisation et rediriger si nécessaire
   useOrganizationChange({
@@ -245,57 +250,120 @@ export default function KanbanBoardPage({ params }) {
   return (
     <div 
       ref={scrollRef}
+      key={`kanban-board-${id}-${isBoard ? 'board' : 'list'}`}
       className="w-full max-w-[100vw] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
     >
       {/* Header */}
-      <div className="p-4 sm:pt-6 sm:px-6 sticky left-0 bg-background z-10">
-        <div className="flex items-center justify-between gap-4">
-          {/* Title and description - Left */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <h1 className="text-xl font-medium">{board.title}</h1>
-            <span className="text-muted-foreground text-sm">
+      <div className="px-4 sm:px-6 py-2 sticky left-0 bg-background z-10 border-b">
+        {/* Ligne 1 : Titre et description */}
+        <div className="flex items-center gap-2 mb-2">
+          <h1 className="text-base font-semibold">{board.title}</h1>
+          {board.description && (
+            <span className="text-muted-foreground text-xs">
               {board.description}
             </span>
+          )}
+        </div>
+        
+        {/* Ligne 2 : View toggle + Search + Actions */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Left: View Mode Toggle avec labels */}
+          <div className="flex items-center gap-2">
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={(value) => value && setViewMode(value)}
+              className="bg-muted/50 rounded-md p-0.5"
+            >
+              <ToggleGroupItem
+                value="board"
+                aria-label="Vue tableau"
+                className="data-[state=on]:bg-background data-[state=on]:shadow-sm gap-1.5 px-2.5 py-1 h-7 rounded-sm"
+              >
+                <LayoutGrid className="h-3 w-3" />
+                <span className="text-xs font-medium">Board</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="list"
+                aria-label="Vue liste"
+                className="data-[state=on]:bg-background data-[state=on]:shadow-sm gap-1.5 px-2.5 py-1 h-7 rounded-sm"
+              >
+                <List className="h-3 w-3" />
+                <span className="text-xs font-medium">List</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
           
-          {/* Controls - Right */}
-          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          {/* Right: Search + Actions */}
+          <div className="flex items-center gap-2">
             {/* Search bar */}
             <div className="relative hidden sm:block">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Rechercher des tâches..."
-                className="pl-10 w-64"
+                className="pl-8 h-7 w-56 text-xs border-muted-foreground/20"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             
             {/* Action buttons */}
-            {collapsedColumnsCount > 0 && (
+            {collapsedColumnsCount > 0 && isBoard && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={expandAll}
-                className="text-xs whitespace-nowrap hidden sm:flex"
+                className="text-xs whitespace-nowrap hidden sm:flex h-7 px-2.5"
               >
                 Déplier toutes ({collapsedColumnsCount})
               </Button>
             )}
-            <Button
-              variant="default"
-              className="font-normal whitespace-nowrap"
-              onClick={openAddModal}
-            >
-              Ajouter une colonne
-            </Button>
+            {isBoard && (
+              <Button
+                variant="default"
+                size="sm"
+                className="font-medium whitespace-nowrap h-7 px-3 text-xs"
+                onClick={openAddModal}
+              >
+                Ajouter une colonne
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Board Content */}
       <div className="w-full px-4 sm:px-6">
+        {/* Vue Liste avec DnD */}
+        {isList && (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            <KanbanListView
+              columns={localColumns}
+              getTasksByColumn={getTasksByColumn}
+              onEditTask={openEditTaskModal}
+              onDeleteTask={handleDeleteTask}
+              onAddTask={openAddTaskModal}
+              members={board?.members || []}
+            />
+            <DragOverlay>
+              {activeTask ? (
+                <div className="bg-background border shadow-lg rounded-lg p-3 opacity-90">
+                  <div className="text-sm font-medium">{activeTask.title}</div>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
+
+        {/* Vue Board */}
+        {isBoard && (
         <DndContext
           sensors={sensors}
           collisionDetection={(args) => {
@@ -441,6 +509,7 @@ export default function KanbanBoardPage({ params }) {
             ) : null}
           </DragOverlay>
         </DndContext>
+        )}
       </div>
 
       {/* Column Modals */}
