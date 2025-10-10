@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSensors, useSensor, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
 
-export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, columns, reorderColumns, setLocalColumns, markAsUpdating) => {
+export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, columns, reorderColumns, setLocalColumns) => {
   const [activeTask, setActiveTask] = useState(null);
   const [activeColumn, setActiveColumn] = useState(null);
 
@@ -75,10 +75,8 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
       // On sauvegarde juste l'ordre final en base de données
       const columnIds = columns.map((col) => col.id);
 
-      // Marquer qu'on fait une mise à jour pour éviter les boucles avec le realtime
-      if (markAsUpdating) {
-        markAsUpdating();
-      }
+      // SUPPRIMÉ : markAsUpdating n'est plus nécessaire
+      // Les subscriptions dans useKanbanBoard gèrent automatiquement les mises à jour
 
       try {
         await reorderColumns({
@@ -102,12 +100,28 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
     let newColumnId = activeTask.columnId;
     let newPosition = activeTask.position || 0;
 
+    console.log('🎯 [DnD] Drag end:', {
+      taskId: activeTask.id,
+      taskTitle: activeTask.title,
+      fromColumn: activeTask.columnId,
+      overType: overData?.type,
+      overId: over.id,
+      overColumnId: overData?.columnId,
+    });
+
     // Déterminer où on a déposé la tâche
     if (overData?.type === 'column') {
-      // Déposé sur une colonne
-      newColumnId = over.id;
-      const targetColumnTasks = getTasksByColumn(over.id);
+      // Déposé sur une colonne (ou zone de drop vide/fermée)
+      // Extraire le vrai columnId (peut être "empty-xxx" ou "collapsed-xxx")
+      newColumnId = overData.columnId || over.id;
+      const targetColumnTasks = getTasksByColumn(newColumnId);
       newPosition = targetColumnTasks.length;
+      
+      console.log('📦 [DnD] Drop sur colonne:', {
+        newColumnId,
+        newPosition,
+        tasksInColumn: targetColumnTasks.length,
+      });
     } else if (overData?.type === 'task') {
       // Déposé sur une autre tâche
       const targetTask = overData.task;
@@ -126,6 +140,13 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
       newColumnId !== activeTask.columnId ||
       newPosition !== (activeTask.position || 0)
     ) {
+      console.log('💾 [DnD] Sauvegarde du déplacement:', {
+        taskId: activeTask.id,
+        from: activeTask.columnId,
+        to: newColumnId,
+        position: newPosition,
+      });
+      
       try {
         await moveTask({
           variables: {

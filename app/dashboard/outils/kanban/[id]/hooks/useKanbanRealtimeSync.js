@@ -17,6 +17,10 @@ export function useKanbanRealtimeSync(boardId, workspaceId, localColumns, setLoc
   const { data: session, isPending: sessionLoading } = useSession();
   const [isReady, setIsReady] = useState(false);
 
+  // ⚠️ ATTENTION : Ce hook est OBSOLÈTE et ne devrait plus être utilisé
+  // Les subscriptions sont gérées dans useKanbanBoard.js
+  // Ce fichier est conservé uniquement pour éviter les erreurs d'import
+  
   // Attendre que la session soit chargée avant d'activer la subscription
   useEffect(() => {
     if (!sessionLoading && session?.user) {
@@ -26,14 +30,13 @@ export function useKanbanRealtimeSync(boardId, workspaceId, localColumns, setLoc
   }, [sessionLoading, session]);
 
   // Subscription pour les mises à jour de colonnes
+  const shouldSkip = !boardId || !workspaceId || !isReady || sessionLoading;
+  
   const { data: columnData, loading: columnLoading, error: columnError } = useSubscription(
     COLUMN_UPDATED_SUBSCRIPTION,
     {
       variables: { boardId, workspaceId },
-      skip: !boardId || !workspaceId || !isReady || sessionLoading,
-      onSubscriptionData: () => {
-        // Événement reçu
-      },
+      skip: shouldSkip,
     }
   );
 

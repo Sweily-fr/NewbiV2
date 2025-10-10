@@ -104,37 +104,24 @@ const wsLink = typeof window !== "undefined" ? new WebSocketLink({
 if (wsLink && typeof window !== "undefined") {
   wsClient = wsLink.subscriptionClient;
   
-  // Fonction pour reconnecter le WebSocket avec un nouveau token
+  // Fonction pour reconnecter le WebSocket avec un nouveau token (avec debouncing)
+  let reconnectTimeout = null;
   const reconnectWebSocket = () => {
-    if (wsClient) {
-      console.log("🔄 [WebSocket] Reconnexion avec nouveau token");
-      wsClient.close(false, false);
-      // Le lazy: true va reconnecter automatiquement
+    if (wsClient && reconnectTimeout === null) {
+      console.log("🔄 [WebSocket] Reconnexion programmée...");
+      
+      // Debouncing : attendre 500ms avant de reconnecter
+      reconnectTimeout = setTimeout(() => {
+        console.log("🔄 [WebSocket] Reconnexion avec nouveau token");
+        wsClient.close(false, false);
+        reconnectTimeout = null;
+        // Le lazy: true va reconnecter automatiquement
+      }, 500);
     }
   };
   
-  // Écouter les changements de session pour reconnecter le WebSocket
+  // Écouter UNIQUEMENT les changements de session (connexion/déconnexion)
   if (typeof window !== "undefined") {
-    // Reconnecter immédiatement si une session existe
-    authClient.getSession().then((session) => {
-      if (session?.session) {
-        reconnectWebSocket();
-      }
-    });
-    
-    // Vérifier périodiquement si le token a expiré (toutes les 5 minutes)
-    setInterval(async () => {
-      try {
-        const session = await authClient.getSession();
-        if (session?.session) {
-          reconnectWebSocket();
-        }
-      } catch (error) {
-        console.warn("⚠️ [WebSocket] Erreur vérification session:", error);
-      }
-    }, 5 * 60 * 1000); // Toutes les 5 minutes
-    
-    // Écouter les événements de changement de session (connexion/déconnexion)
     window.addEventListener('storage', (e) => {
       if (e.key === 'better-auth.session_token') {
         console.log("🔄 [WebSocket] Session changée, reconnexion...");

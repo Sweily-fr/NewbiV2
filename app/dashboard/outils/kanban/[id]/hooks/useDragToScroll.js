@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 
 /**
  * Hook pour gérer le scroll horizontal par glissement (drag-to-scroll)
@@ -8,14 +8,24 @@ import { useRef, useEffect } from 'react';
  * @returns {Object} - Ref à attacher au conteneur scrollable
  */
 export function useDragToScroll({ enabled = true, scrollSpeed = 1 } = {}) {
-  const scrollRef = useRef(null);
+  const elementRef = useRef(null);
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
+  const cleanupRef = useRef(null);
 
-  useEffect(() => {
-    const element = scrollRef.current;
-    if (!element || !enabled) return;
+  const setupDragScroll = useCallback((element) => {
+    if (!element || !enabled) {
+      console.log('🖱️ [DragToScroll] Setup annulé', { hasElement: !!element, enabled });
+      return;
+    }
+
+    console.log('✅ [DragToScroll] Configuration du scroll horizontal');
+
+    // Cleanup précédent si existant
+    if (cleanupRef.current) {
+      cleanupRef.current();
+    }
 
     const handleMouseDown = (e) => {
       // Ignorer si on clique sur un élément interactif
@@ -73,6 +83,8 @@ export function useDragToScroll({ enabled = true, scrollSpeed = 1 } = {}) {
 
     // Définir le curseur initial
     element.style.cursor = 'grab';
+    
+    console.log('🎯 [DragToScroll] Event listeners attachés, curseur grab appliqué');
 
     // Ajouter les écouteurs d'événements
     element.addEventListener('mousedown', handleMouseDown);
@@ -80,16 +92,45 @@ export function useDragToScroll({ enabled = true, scrollSpeed = 1 } = {}) {
     element.addEventListener('mouseup', handleMouseUp);
     element.addEventListener('mouseleave', handleMouseLeave);
 
-    // Cleanup
-    return () => {
+    // Stocker la fonction de cleanup
+    cleanupRef.current = () => {
+      console.log('🧹 [DragToScroll] Nettoyage');
       element.removeEventListener('mousedown', handleMouseDown);
       element.removeEventListener('mousemove', handleMouseMove);
       element.removeEventListener('mouseup', handleMouseUp);
       element.removeEventListener('mouseleave', handleMouseLeave);
       element.style.cursor = '';
       element.style.userSelect = '';
+      isDraggingRef.current = false;
     };
   }, [enabled, scrollSpeed]);
+
+  // Callback ref qui se déclenche quand l'élément est monté/démonté
+  const scrollRef = useCallback((node) => {
+    console.log('📍 [DragToScroll] Callback ref appelé', { hasNode: !!node, enabled });
+    
+    elementRef.current = node;
+    
+    if (node) {
+      // L'élément est monté, configurer le drag scroll
+      setupDragScroll(node);
+    } else {
+      // L'élément est démonté, nettoyer
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+    }
+  }, [setupDragScroll, enabled]);
+
+  // Cleanup au démontage du composant
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+      }
+    };
+  }, []);
 
   return scrollRef;
 }
