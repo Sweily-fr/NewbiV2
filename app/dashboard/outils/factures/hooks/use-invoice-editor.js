@@ -160,6 +160,105 @@ export function useInvoiceEditor({
     });
   }, [formData.client]);
 
+  // Re-valider quand les informations de facture changent
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.invoiceInfo) {
+        const invoiceInfoErrors = [];
+        
+        if (!formData.prefix || formData.prefix.trim() === "") {
+          invoiceInfoErrors.push("préfixe de facture manquant");
+        }
+        
+        if (!formData.number || formData.number.trim() === "") {
+          invoiceInfoErrors.push("numéro de facture manquant");
+        } else if (!/^\d+$/.test(formData.number)) {
+          invoiceInfoErrors.push("numéro de facture invalide (doit contenir uniquement des chiffres)");
+        }
+        
+        if (!formData.dueDate || formData.dueDate.trim() === "") {
+          invoiceInfoErrors.push("date d'échéance manquante");
+        } else {
+          const dueDate = new Date(formData.dueDate);
+          const issueDate = new Date(formData.issueDate);
+          if (dueDate < issueDate) {
+            invoiceInfoErrors.push("date d'échéance doit être postérieure à la date d'émission");
+          }
+        }
+        
+        if (formData.executionDate && formData.executionDate.trim() !== "") {
+          const executionDate = new Date(formData.executionDate);
+          const issueDate = new Date(formData.issueDate);
+          if (executionDate < issueDate) {
+            invoiceInfoErrors.push("date d'exécution doit être postérieure ou égale à la date d'émission");
+          }
+        }
+        
+        // Si toutes les informations sont valides, supprimer l'erreur
+        if (invoiceInfoErrors.length === 0) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.invoiceInfo;
+          return newErrors;
+        } else {
+          // Mettre à jour le message d'erreur
+          return {
+            ...prevErrors,
+            invoiceInfo: {
+              message: `Les informations de facture sont incomplètes ou invalides:\n${invoiceInfoErrors.join(", ")}`,
+              canEdit: false,
+              details: invoiceInfoErrors
+            }
+          };
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.prefix, formData.number, formData.dueDate, formData.executionDate, formData.issueDate]);
+
+  // Re-valider quand les champs personnalisés changent
+  useEffect(() => {
+    setValidationErrors((prevErrors) => {
+      if (prevErrors.customFields && formData.customFields && formData.customFields.length > 0) {
+        const invalidCustomFields = [];
+        const customFieldsWithErrors = [];
+        
+        formData.customFields.forEach((field, index) => {
+          const fieldErrors = [];
+          
+          if (!field.name || field.name.trim() === "") {
+            fieldErrors.push("nom du champ manquant");
+          }
+          if (!field.value || field.value.trim() === "") {
+            fieldErrors.push("valeur manquante");
+          }
+          
+          if (fieldErrors.length > 0) {
+            invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+            customFieldsWithErrors.push({ index, errors: fieldErrors });
+          }
+        });
+        
+        // Si tous les champs personnalisés sont valides, supprimer l'erreur
+        if (invalidCustomFields.length === 0) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.customFields;
+          return newErrors;
+        } else {
+          // Mettre à jour le message d'erreur
+          return {
+            ...prevErrors,
+            customFields: {
+              message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
+              canEdit: false,
+              details: customFieldsWithErrors
+            }
+          };
+        }
+      }
+      return prevErrors;
+    });
+  }, [formData.customFields]);
+
   // Re-valider quand les articles changent
   useEffect(() => {
     setValidationErrors((prevErrors) => {
@@ -523,6 +622,90 @@ export function useInvoiceEditor({
       }
     }
     
+    // Validation des informations de facture
+    console.log("🔍 Vérification informations de facture:", {
+      hasPrefix: !!currentFormData.prefix,
+      hasNumber: !!currentFormData.number,
+      hasDueDate: !!currentFormData.dueDate
+    });
+    
+    const invoiceInfoErrors = [];
+    
+    if (!currentFormData.prefix || currentFormData.prefix.trim() === "") {
+      invoiceInfoErrors.push("préfixe de facture manquant");
+    }
+    
+    if (!currentFormData.number || currentFormData.number.trim() === "") {
+      invoiceInfoErrors.push("numéro de facture manquant");
+    } else if (!/^\d+$/.test(currentFormData.number)) {
+      invoiceInfoErrors.push("numéro de facture invalide (doit contenir uniquement des chiffres)");
+    }
+    
+    if (!currentFormData.dueDate || currentFormData.dueDate.trim() === "") {
+      invoiceInfoErrors.push("date d'échéance manquante");
+    } else {
+      // Vérifier que la date d'échéance est postérieure à la date d'émission
+      const dueDate = new Date(currentFormData.dueDate);
+      const issueDate = new Date(currentFormData.issueDate);
+      if (dueDate < issueDate) {
+        invoiceInfoErrors.push("date d'échéance doit être postérieure à la date d'émission");
+      }
+    }
+    
+    // Vérifier la date d'exécution si elle est renseignée
+    if (currentFormData.executionDate && currentFormData.executionDate.trim() !== "") {
+      const executionDate = new Date(currentFormData.executionDate);
+      const issueDate = new Date(currentFormData.issueDate);
+      if (executionDate < issueDate) {
+        invoiceInfoErrors.push("date d'exécution doit être postérieure ou égale à la date d'émission");
+      }
+    }
+    
+    if (invoiceInfoErrors.length > 0) {
+      console.log("➕ Ajout erreur informations de facture:", invoiceInfoErrors);
+      errors.invoiceInfo = {
+        message: `Les informations de facture sont incomplètes ou invalides:\n${invoiceInfoErrors.join(", ")}`,
+        canEdit: false,
+        details: invoiceInfoErrors
+      };
+    }
+    
+    // Validation des champs personnalisés
+    console.log("🔍 Vérification champs personnalisés:", {
+      hasCustomFields: !!currentFormData.customFields,
+      customFieldsCount: currentFormData.customFields?.length || 0
+    });
+    
+    if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+      const invalidCustomFields = [];
+      const customFieldsWithErrors = [];
+      
+      currentFormData.customFields.forEach((field, index) => {
+        const fieldErrors = [];
+        
+        if (!field.name || field.name.trim() === "") {
+          fieldErrors.push("nom du champ manquant");
+        }
+        if (!field.value || field.value.trim() === "") {
+          fieldErrors.push("valeur manquante");
+        }
+        
+        if (fieldErrors.length > 0) {
+          invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+          customFieldsWithErrors.push({ index, errors: fieldErrors });
+        }
+      });
+      
+      if (invalidCustomFields.length > 0) {
+        console.log("➕ Ajout erreur champs personnalisés:", invalidCustomFields);
+        errors.customFields = {
+          message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
+          canEdit: false,
+          details: customFieldsWithErrors
+        };
+      }
+    }
+    
     // Validation des articles - vérifier qu'il y en a au moins un
     console.log("🔍 Vérification articles:", {
       hasItems: !!currentFormData.items,
@@ -752,6 +935,77 @@ export function useInvoiceEditor({
         errors.shipping = {
           message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
           canEdit: false
+        };
+      }
+    }
+    
+    // Validation des informations de facture
+    const invoiceInfoErrors = [];
+    
+    if (!currentFormData.prefix || currentFormData.prefix.trim() === "") {
+      invoiceInfoErrors.push("préfixe de facture manquant");
+    }
+    
+    if (!currentFormData.number || currentFormData.number.trim() === "") {
+      invoiceInfoErrors.push("numéro de facture manquant");
+    } else if (!/^\d+$/.test(currentFormData.number)) {
+      invoiceInfoErrors.push("numéro de facture invalide (doit contenir uniquement des chiffres)");
+    }
+    
+    if (!currentFormData.dueDate || currentFormData.dueDate.trim() === "") {
+      invoiceInfoErrors.push("date d'échéance manquante");
+    } else {
+      // Vérifier que la date d'échéance est postérieure à la date d'émission
+      const dueDate = new Date(currentFormData.dueDate);
+      const issueDate = new Date(currentFormData.issueDate);
+      if (dueDate < issueDate) {
+        invoiceInfoErrors.push("date d'échéance doit être postérieure à la date d'émission");
+      }
+    }
+    
+    // Vérifier la date d'exécution si elle est renseignée
+    if (currentFormData.executionDate && currentFormData.executionDate.trim() !== "") {
+      const executionDate = new Date(currentFormData.executionDate);
+      const issueDate = new Date(currentFormData.issueDate);
+      if (executionDate < issueDate) {
+        invoiceInfoErrors.push("date d'exécution doit être postérieure ou égale à la date d'émission");
+      }
+    }
+    
+    if (invoiceInfoErrors.length > 0) {
+      errors.invoiceInfo = {
+        message: `Les informations de facture sont incomplètes ou invalides:\n${invoiceInfoErrors.join(", ")}`,
+        canEdit: false,
+        details: invoiceInfoErrors
+      };
+    }
+    
+    // Validation des champs personnalisés
+    if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+      const invalidCustomFields = [];
+      const customFieldsWithErrors = [];
+      
+      currentFormData.customFields.forEach((field, index) => {
+        const fieldErrors = [];
+        
+        if (!field.name || field.name.trim() === "") {
+          fieldErrors.push("nom du champ manquant");
+        }
+        if (!field.value || field.value.trim() === "") {
+          fieldErrors.push("valeur manquante");
+        }
+        
+        if (fieldErrors.length > 0) {
+          invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+          customFieldsWithErrors.push({ index, errors: fieldErrors });
+        }
+      });
+      
+      if (invalidCustomFields.length > 0) {
+        errors.customFields = {
+          message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
+          canEdit: false,
+          details: customFieldsWithErrors
         };
       }
     }

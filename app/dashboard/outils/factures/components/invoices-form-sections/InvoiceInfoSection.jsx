@@ -51,7 +51,7 @@ const PAYMENT_TERMS_SUGGESTIONS = [
   { value: 60, label: "60 jours" },
 ];
 
-export default function InvoiceInfoSection({ canEdit }) {
+export default function InvoiceInfoSection({ canEdit, validationErrors = {} }) {
   const {
     watch,
     setValue,
@@ -60,6 +60,12 @@ export default function InvoiceInfoSection({ canEdit }) {
     trigger,
   } = useFormContext();
   const data = watch();
+  
+  // Helper pour vérifier si un champ a une erreur de validation
+  const hasInvoiceInfoError = (fieldName) => {
+    if (!validationErrors?.invoiceInfo?.details) return false;
+    return validationErrors.invoiceInfo.details.some(error => error.includes(fieldName));
+  };
 
   // Get the next invoice number and validation function
   const {
@@ -240,10 +246,13 @@ export default function InvoiceInfoSection({ canEdit }) {
                   onChange={handlePrefixChange}
                   placeholder="F-MMYYYY"
                   disabled={!canEdit}
+                  className={hasInvoiceInfoError("préfixe") ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
               </div>
-              {errors?.prefix && (
-                <p className="text-xs text-red-500">{errors.prefix.message}</p>
+              {(errors?.prefix || hasInvoiceInfoError("préfixe")) && (
+                <p className="text-xs text-destructive">
+                  {errors?.prefix?.message || "Le préfixe de facture est requis"}
+                </p>
               )}
             </div>
           </div>
@@ -320,10 +329,12 @@ export default function InvoiceInfoSection({ canEdit }) {
                     setValue("number", num, { shouldValidate: true });
                   }
                 }}
-                className={`${errors?.number ? "border-red-500" : ""}`}
+                className={`${errors?.number || hasInvoiceInfoError("numéro") ? "border-destructive focus-visible:ring-destructive" : ""}`}
               />
-              {errors?.number ? (
-                <p className="text-xs text-red-500">{errors.number.message}</p>
+              {(errors?.number || hasInvoiceInfoError("numéro")) ? (
+                <p className="text-xs text-destructive">
+                  {errors?.number?.message || "Le numéro de facture est requis"}
+                </p>
               ) : (
                 <></>
                 // <p className="text-xs text-muted-foreground">
@@ -443,7 +454,7 @@ export default function InvoiceInfoSection({ canEdit }) {
                     className={cn(
                       "w-full font-normal justify-start",
                       !data.executionDate && "text-muted-foreground",
-                      errors?.executionDate && "border-red-500"
+                      (errors?.executionDate || hasInvoiceInfoError("exécution")) && "border-destructive focus-visible:ring-destructive"
                     )}
                     type="button"
                   >
@@ -488,9 +499,9 @@ export default function InvoiceInfoSection({ canEdit }) {
                   />
                 </PopoverContent>
               </Popover>
-              {errors?.executionDate && (
-                <p className="text-xs text-red-500">
-                  {errors.executionDate.message}
+              {(errors?.executionDate || hasInvoiceInfoError("exécution")) && (
+                <p className="text-xs text-destructive">
+                  {errors?.executionDate?.message || "La date d'exécution est invalide"}
                 </p>
               )}
             </div>
@@ -525,7 +536,7 @@ export default function InvoiceInfoSection({ canEdit }) {
                     className={cn(
                       "w-full justify-start font-normal text-left",
                       !data.dueDate && "text-muted-foreground",
-                      errors?.dueDate && "border-red-500"
+                      (errors?.dueDate || hasInvoiceInfoError("échéance")) && "border-destructive focus-visible:ring-destructive"
                     )}
                     type="button"
                   >
@@ -593,8 +604,10 @@ export default function InvoiceInfoSection({ canEdit }) {
                 </SelectContent>
               </Select>
             </div>
-            {errors?.dueDate && (
-              <p className="text-xs text-red-500">{errors.dueDate.message}</p>
+            {(errors?.dueDate || hasInvoiceInfoError("échéance")) && (
+              <p className="text-xs text-destructive">
+                {errors?.dueDate?.message || "La date d'échéance est requise"}
+              </p>
             )}
             <p className="text-xs">
               Utilisez le sélecteur "+" pour ajouter des jours automatiquement

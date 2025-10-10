@@ -457,7 +457,7 @@ export default function EnhancedInvoiceForm({
           {currentStep === 1 && (
             <>
               {/* Section 1: Informations de la facture */}
-              <InvoiceInfoSection canEdit={canEdit} />
+              <InvoiceInfoSection canEdit={canEdit} validationErrors={validationErrors} />
               <Separator />
 
               {/* Section 2: Sélection d'un client */}
