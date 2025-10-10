@@ -262,7 +262,6 @@ const columns = [
 ];
 
 export default function TableProduct({ handleAddProduct }) {
-  console.log('🔵 TableProduct render');
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -270,7 +269,6 @@ export default function TableProduct({ handleAddProduct }) {
     pageIndex: 0,
     pageSize: 10,
   });
-  console.log('📊 Current pagination:', pagination);
   const inputRef = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [editingProduct, setEditingProduct] = useState(null);
@@ -357,7 +355,6 @@ export default function TableProduct({ handleAddProduct }) {
     manualPagination: false,
     pageCount: Math.ceil(filteredProducts.length / pagination.pageSize),
     onPaginationChange: (updater) => {
-      console.log('🔄 Pagination change triggered', updater);
       setPagination(updater);
     },
     onColumnFiltersChange: setColumnFilters,

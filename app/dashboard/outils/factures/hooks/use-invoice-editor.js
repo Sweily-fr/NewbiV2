@@ -499,27 +499,10 @@ export function useInvoiceEditor({
   const handleSave = useCallback(async () => {
     const currentFormData = getValues();
 
-    console.log("🔍 Début validation brouillon", {
-      hasClient: !!currentFormData.client,
-      clientId: currentFormData.client?.id,
-      clientData: currentFormData.client,
-      companyName: currentFormData.companyInfo?.name,
-      companyEmail: currentFormData.companyInfo?.email,
-      companyInfoComplete: currentFormData.companyInfo,
-      itemsCount: currentFormData.items?.length || 0
-    });
-
     // Validation manuelle pour le brouillon (moins stricte)
     const errors = {};
     
-    console.log("🔍 Vérification client:", {
-      hasClient: !!currentFormData.client,
-      hasClientId: !!currentFormData.client?.id,
-      clientData: currentFormData.client
-    });
-    
     if (!currentFormData.client || !currentFormData.client.id) {
-      console.log("➕ Ajout erreur client - Aucun client sélectionné");
       errors.client = {
         message: "Veuillez sélectionner un client",
         canEdit: false // Pas de client à modifier
@@ -554,7 +537,6 @@ export function useInvoiceEditor({
       }
       
       if (clientErrors.length > 0) {
-        console.log("➕ Ajout erreur client - Champs manquants:", clientErrors);
         errors.client = {
           message: `Le client "${client.name || 'Sans nom'}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
           canEdit: true // On peut modifier le client
@@ -562,14 +544,7 @@ export function useInvoiceEditor({
       }
     }
     
-    console.log("🔍 Vérification entreprise:", {
-      hasName: !!currentFormData.companyInfo?.name,
-      hasEmail: !!currentFormData.companyInfo?.email,
-      willAddError: !currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email
-    });
-    
     if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
-      console.log("➕ Ajout erreur entreprise");
       errors.companyInfo = {
         message: "Les informations de l'entreprise sont incomplètes",
         canEdit: true // On peut toujours modifier l'entreprise
@@ -577,14 +552,7 @@ export function useInvoiceEditor({
     }
     
     // Validation de la remise globale
-    console.log("🔍 Vérification remise:", {
-      discount: currentFormData.discount,
-      discountType: currentFormData.discountType,
-      discountValue: currentFormData.discount
-    });
-    
     if (currentFormData.discountType === "PERCENTAGE" && currentFormData.discount > 100) {
-      console.log("➕ Ajout erreur remise");
       errors.discount = {
         message: "La remise ne peut pas dépasser 100%",
         canEdit: false
@@ -636,7 +604,6 @@ export function useInvoiceEditor({
       }
       
       if (shippingErrors.length > 0) {
-        console.log("➕ Ajout erreur livraison:", shippingErrors);
         errors.shipping = {
           message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
           canEdit: false
@@ -645,11 +612,6 @@ export function useInvoiceEditor({
     }
     
     // Validation des champs personnalisés
-    console.log("🔍 Vérification champs personnalisés:", {
-      hasCustomFields: !!currentFormData.customFields,
-      customFieldsCount: currentFormData.customFields?.length || 0
-    });
-    
     if (currentFormData.customFields && currentFormData.customFields.length > 0) {
       const invalidCustomFields = [];
       const customFieldsWithErrors = [];
@@ -671,7 +633,6 @@ export function useInvoiceEditor({
       });
       
       if (invalidCustomFields.length > 0) {
-        console.log("➕ Ajout erreur champs personnalisés:", invalidCustomFields);
         errors.customFields = {
           message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
           canEdit: false,
@@ -681,14 +642,7 @@ export function useInvoiceEditor({
     }
     
     // Validation des articles - vérifier qu'il y en a au moins un
-    console.log("🔍 Vérification articles:", {
-      hasItems: !!currentFormData.items,
-      itemsCount: currentFormData.items?.length || 0,
-      willAddError: !currentFormData.items || currentFormData.items.length === 0
-    });
-    
     if (!currentFormData.items || currentFormData.items.length === 0) {
-      console.log("➕ Ajout erreur articles");
       errors.items = {
         message: "Veuillez ajouter au moins un article à la facture",
         canEdit: false
@@ -729,7 +683,6 @@ export function useInvoiceEditor({
       });
       
       if (invalidItems.length > 0) {
-        console.log("➕ Ajout erreur articles invalides:", invalidItems);
         errors.items = {
           message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
           canEdit: false,
@@ -741,21 +694,12 @@ export function useInvoiceEditor({
     const errorCount = Object.keys(errors).length;
     const hasErrors = errorCount > 0;
     
-    console.log("🔍 Erreurs détectées:", JSON.stringify(errors, null, 2));
-    console.log("🔍 Nombre d'erreurs:", errorCount);
-    console.log("🔍 Type de errors:", typeof errors, Array.isArray(errors) ? "Array" : "Object");
-    console.log("🔍 Keys:", Object.keys(errors));
-    console.log("🔍 Condition hasErrors:", hasErrors);
-    
     if (hasErrors) {
-      console.error("❌ Validation échouée dans handleSave");
-      console.error("❌ Erreurs détaillées:", JSON.stringify(errors, null, 2));
       setValidationErrors(errors);
       return false;
     }
     
     // Réinitialiser les erreurs si la validation passe
-    console.log("✅ Validation réussie, création de la facture...");
     setValidationErrors({});
 
     try {
@@ -779,12 +723,6 @@ export function useInvoiceEditor({
         return true;
       }
     } catch (error) {
-      console.error("❌ Save failed:", error);
-      console.error("❌ Error details:", {
-        message: error.message,
-        graphQLErrors: error.graphQLErrors,
-        networkError: error.networkError
-      });
       handleError(error, 'invoice', { 
         preventDuplicates: true,
         hideServerErrors: true 

@@ -67,20 +67,6 @@ export function SettingsModal({
     updateOrganization,
   } = useActiveOrganization();
 
-  // Debug: Vérifier quelle organisation est récupérée
-  useEffect(() => {
-    if (organization) {
-      console.log("🏢 [SettingsModal] Organisation récupérée:", {
-        id: organization.id,
-        name: organization.name,
-        companyName: organization.companyName,
-        role: organization.role,
-      });
-    } else {
-      console.log("⚠️ [SettingsModal] Aucune organisation");
-    }
-  }, [organization]);
-
   const formMethods = useForm({
     mode: "onChange", // Validation en temps réel
     defaultValues: {
@@ -128,7 +114,6 @@ export function SettingsModal({
   // Synchroniser activeTab avec initialTab quand le modal s'ouvre
   useEffect(() => {
     if (open && initialTab) {
-      console.log("Synchronizing activeTab with initialTab:", initialTab); // Debug
       setActiveTab(initialTab);
     }
   }, [open, initialTab]);
@@ -213,8 +198,6 @@ export function SettingsModal({
         isVatSubject: formData.legal?.isVatSubject || false,
         hasCommercialActivity: formData.legal?.hasCommercialActivity || false,
       };
-
-      console.log("💾 Données à sauvegarder:", transformedData);
 
       // Sauvegarder via Better Auth
       await updateOrganization(transformedData, {

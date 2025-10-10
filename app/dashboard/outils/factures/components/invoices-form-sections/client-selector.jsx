@@ -377,33 +377,13 @@ export default function ClientSelector({
     }
 
     // Vérifier si l'email existe déjà dans la liste des clients
-    console.log("🔍 Vérification email:", {
-      email: newClientForm.email,
-      hasClients: !!clients,
-      clientsStructure: clients,
-      hasItems: !!clients?.items,
-      itemsCount: clients?.items?.length || 0,
-      isArray: Array.isArray(clients)
-    });
-    
-    // Déterminer la structure correcte des clients
     const clientsList = Array.isArray(clients) ? clients : (clients?.items || []);
-    console.log("📋 Liste des clients:", clientsList.length, "clients");
     
     const emailExists = clientsList.some(
-      (client) => {
-        const matches = client.email.toLowerCase() === newClientForm.email.toLowerCase();
-        if (matches) {
-          console.log("❌ Email existe déjà:", client.email);
-        }
-        return matches;
-      }
+      (client) => client.email.toLowerCase() === newClientForm.email.toLowerCase()
     );
     
-    console.log("📧 Email existe?", emailExists);
-    
     if (emailExists) {
-      console.log("🚫 Blocage de la soumission - Email existant");
       setFormErrors((prev) => ({
         ...prev,
         email: "Cet email est déjà utilisé par un autre client"

@@ -94,19 +94,10 @@ export function useTrial() {
   const getTrialStatusFromSession = useCallback(() => {
     // Utiliser activeOrg au lieu de session.user.organization
     if (!activeOrg) {
-      console.log('🔍 useTrial - Pas d\'organisation active');
       return null;
     }
 
     const now = new Date();
-    
-    // Log pour diagnostiquer
-    console.log('🔍 useTrial - Organisation active récupérée:', {
-      activeOrg,
-      isTrialActive: activeOrg.isTrialActive,
-      trialEndDate: activeOrg.trialEndDate,
-      hasUsedTrial: activeOrg.hasUsedTrial
-    });
     
     // Vérifier si l'organisation a une période d'essai active
     if (activeOrg.isTrialActive && activeOrg.trialEndDate) {
@@ -114,7 +105,6 @@ export function useTrial() {
       const isExpired = now > trialEndDate;
       
       if (isExpired) {
-        console.log('⏰ useTrial - Période d\'essai expirée');
         return {
           isTrialActive: false,
           trialEndDate: activeOrg.trialEndDate,
@@ -127,11 +117,6 @@ export function useTrial() {
       const diffTime = trialEndDate - now;
       const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      console.log('✅ useTrial - Période d\'essai active:', {
-        daysRemaining,
-        trialEndDate
-      });
-
       return {
         isTrialActive: true,
         trialEndDate: activeOrg.trialEndDate,
@@ -141,7 +126,6 @@ export function useTrial() {
       };
     }
 
-    console.log('❌ useTrial - Pas de période d\'essai active');
     return {
       isTrialActive: false,
       trialEndDate: null,
@@ -153,8 +137,6 @@ export function useTrial() {
 
   // Utiliser les données de session en priorité (plus fiable que GraphQL)
   const currentTrialStatus = getTrialStatusFromSession() || trialStatus;
-
-  console.log('📊 useTrial - Status calculé:', currentTrialStatus);
 
   // Activation automatique du trial à la première connexion (désactivée car trials déjà en base)
   // Cette fonction n'est plus nécessaire car les trials sont gérés par les scripts de migration
@@ -170,7 +152,6 @@ export function useTrial() {
           !sessionTrialStatus.hasUsedTrial && 
           !sessionTrialStatus.isTrialActive) {
         try {
-          console.log("Démarrage automatique de la période d'essai pour l'utilisateur:", session.user.email);
           await startTrialMutation();
         } catch (error) {
           console.error("Erreur lors du démarrage automatique de la période d'essai:", error);
@@ -228,8 +209,6 @@ export function useTrial() {
     daysRemaining: currentTrialStatus?.daysRemaining || 0,
     hasUsedTrial: currentTrialStatus?.hasUsedTrial || false,
   };
-
-  console.log('📤 useTrial - Retour final:', finalStatus);
 
   return finalStatus;
 }

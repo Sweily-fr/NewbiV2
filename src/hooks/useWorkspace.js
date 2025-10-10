@@ -28,31 +28,7 @@ export const useWorkspace = () => {
       });
     }
   }, [loading, activeOrganization, organizations]);
-
-  // Debug logs
-  React.useEffect(() => {
-    console.log("🔍 useWorkspace state:", {
-      loading,
-      orgsLoading,
-      activeLoading,
-      organizationsCount: organizations?.length || 0,
-      activeOrganization: activeOrganization
-        ? {
-            id: activeOrganization.id,
-            name: activeOrganization.name,
-            companyName: activeOrganization.companyName,
-            role: activeOrganization.role,
-          }
-        : null,
-      workspaceId: activeOrganization?.id || null,
-      allOrganizations: organizations?.map(org => ({
-        id: org.id,
-        name: org.name,
-        companyName: org.companyName,
-        role: org.role,
-      })),
-    });
-  }, [loading, orgsLoading, activeLoading, organizations, activeOrganization]);
+  
 
   return {
     workspaceId: activeOrganization?.id || null,
@@ -70,17 +46,6 @@ export const useRequiredWorkspace = () => {
   const { workspaceId, organization, loading } = useWorkspace();
 
   const error = !loading && !workspaceId ? "Aucun workspace sélectionné" : null;
-
-  // Debug logs
-  // React.useEffect(() => {
-  //   console.log("🔍 useRequiredWorkspace:", {
-  //     workspaceId,
-  //     hasOrganization: !!organization,
-  //     loading,
-  //     error,
-  //     organizationId: organization?.id,
-  //   });
-  // }, [workspaceId, organization, loading, error]);
 
   return {
     workspaceId,
