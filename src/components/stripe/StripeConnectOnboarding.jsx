@@ -8,12 +8,12 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import {
-  CreditCard,
-  CheckCircle,
+  CheckCircle2,
   DollarSign,
   Shield,
   ExternalLink,
-  XCircle,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 
@@ -36,6 +36,16 @@ const StripeConnectOnboarding = ({
     clearError,
   } = useStripeConnect(userId);
 
+  // Vérifier automatiquement le statut à l'ouverture du dialog si connecté
+  React.useEffect(() => {
+    if (isOpen && isConnected && !canReceivePayments) {
+      console.log(
+        "🔄 Vérification automatique du statut à l'ouverture du dialog..."
+      );
+      checkAndUpdateAccountStatus();
+    }
+  }, [isOpen, isConnected, canReceivePayments, checkAndUpdateAccountStatus]);
+
   const handleConnect = async () => {
     if (userEmail) {
       await connectStripe(userEmail);
@@ -52,41 +62,58 @@ const StripeConnectOnboarding = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg pointer-events-auto">
-        <DialogHeader className="text-center pb-6">
-          {/* <div className="mx-auto w-16 h-16 bg-gradient-to-br from-[#635BFF] to-[#5A54E5] rounded-2xl flex items-center justify-center mb-4">
-            <CreditCard className="h-8 w-8 text-white" />
-          </div> */}
-          <DialogTitle className="text-xl font-semibold">
-            {isConnected ? "Stripe Connect" : "Activer les paiements"}
+      <DialogContent className="sm:max-w-[480px] pointer-events-auto p-0 gap-0 border-0">
+        {/* Header épuré */}
+        <DialogHeader className="px-6 pt-6 pb-4 space-y-2">
+          <DialogTitle className="text-lg font-medium tracking-tight">
+            {isConnected ? "Compte Stripe" : "Activer les paiements"}
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground text-sm leading-relaxed">
+          <DialogDescription className="text-sm text-muted-foreground font-normal">
             {isConnected
               ? "Gérez votre compte et vos paiements"
-              : "Connectez Stripe pour recevoir des paiements sécurisés"}
+              : "Recevez des paiements sécurisés via Stripe"}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Statut du compte connecté */}
+        {/* Contenu */}
+        <div className="px-6 pb-6 space-y-4">
+          {/* Statut connecté - Style Notion */}
           {isConnected && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/50 rounded-2xl p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-2 bg-green-100 rounded-xl">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-green-900 mb-1">
-                    Compte connecté
-                  </h3>
-                  <p className="text-sm text-green-700 mb-2">
+            <div
+              className={`rounded-lg border p-3 ${
+                canReceivePayments
+                  ? "bg-green-50/50 dark:bg-green-950/20 border-green-200/50 dark:border-green-800/50"
+                  : "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200/50 dark:border-amber-800/50"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                {canReceivePayments ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <Loader2 className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0 animate-spin" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p
+                    className={`text-sm font-medium ${
+                      canReceivePayments
+                        ? "text-green-900 dark:text-green-100"
+                        : "text-amber-900 dark:text-amber-100"
+                    }`}
+                  >
                     {canReceivePayments
-                      ? "✓ Prêt à recevoir des paiements"
-                      : "⚠️ Configuration requise"}
+                      ? "Prêt à recevoir des paiements"
+                      : isLoading
+                        ? "Vérification en cours..."
+                        : "Configuration incomplète"}
                   </p>
-                  {!canReceivePayments && (
-                    <p className="text-xs text-amber-700 bg-amber-50 px-3 py-1 rounded-full inline-block">
-                      Complétez votre profil Stripe
+                  {!canReceivePayments && !isLoading && (
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      Complétez votre profil Stripe pour activer les paiements
+                    </p>
+                  )}
+                  {!canReceivePayments && isLoading && (
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      Synchronisation avec Stripe...
                     </p>
                   )}
                 </div>
@@ -94,57 +121,51 @@ const StripeConnectOnboarding = ({
             </div>
           )}
 
-          {/* Erreur */}
+          {/* Erreur - Style Notion */}
           {error && (
-            <div className="bg-red-50 border border-red-200/50 rounded-2xl p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-1 bg-red-100 rounded-lg">
-                  <XCircle className="h-4 w-4 text-red-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-red-900 text-sm">Erreur</p>
-                  <p className="text-red-700 text-sm">{error}</p>
+            <div className="rounded-lg border bg-red-50/50 dark:bg-red-950/20 border-red-200/50 dark:border-red-800/50 p-3">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-red-900 dark:text-red-100">
+                    Une erreur est survenue
+                  </p>
+                  <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                    {error}
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Avantages pour les nouveaux utilisateurs */}
+          {/* Avantages - Style Notion minimaliste */}
           {!isConnected && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-[#FAFAFA] dark:bg-gray-800/50 rounded-xl">
-                <div className="p-2 bg-blue-100 dark:bg-blue-800/50 rounded-lg">
-                  <Shield className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm">Paiements sécurisés</h4>
-                  <p className="text-xs text-muted-foreground">
+            <div className="space-y-2">
+              <div className="flex items-start gap-3 py-2">
+                <Shield className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Paiements sécurisés</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Conformité PCI DSS et protection anti-fraude
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-[#FAFAFA] dark:bg-gray-800/50 rounded-xl">
-                <div className="p-2 bg-green-100 dark:bg-green-800/50 rounded-lg">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm">
-                    Virements automatiques
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
+              <div className="flex items-start gap-3 py-2">
+                <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Virements automatiques</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Recevez vos paiements directement sur votre compte
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-[#FAFAFA] dark:bg-gray-800/50 rounded-xl">
-                <div className="p-2 bg-purple-100 dark:bg-purple-800/50 rounded-lg">
-                  <CheckCircle className="h-4 w-4 text-purple-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm">Configuration rapide</h4>
-                  <p className="text-xs text-muted-foreground">
+              <div className="flex items-start gap-3 py-2">
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Configuration rapide</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Processus guidé en quelques minutes
                   </p>
                 </div>
@@ -152,40 +173,42 @@ const StripeConnectOnboarding = ({
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          {/* Actions - Style Notion */}
+          <div className="flex items-center gap-2 pt-2">
             {isConnected ? (
               <>
                 <Button
-                  onClick={checkAndUpdateAccountStatus}
-                  variant="outline"
-                  disabled={isLoading}
-                  className="border-blue-200 hover:bg-blue-50 text-blue-600 transition-colors"
+                  onClick={openStripeDashboard}
+                  size="sm"
+                  className="flex-1 h-9 bg-primary hover:bg-primary/90 text-primary-foreground font-normal"
                 >
-                  {isLoading ? (
+                  {canReceivePayments ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2"></div>
-                      Vérification...
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      Tableau de bord
                     </>
                   ) : (
-                    "Vérifier le statut"
+                    <>
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      Finaliser la configuration
+                    </>
                   )}
                 </Button>
                 <Button
-                  onClick={openStripeDashboard}
-                  className="flex-1 bg-gradient-to-r from-[#635BFF] to-[#5A54E5] hover:from-[#5A54E5] hover:to-[#4F46E5] text-white shadow-lg shadow-[#635BFF]/25 transition-all duration-200"
+                  onClick={checkAndUpdateAccountStatus}
+                  variant="ghost"
+                  size="sm"
+                  disabled={isLoading}
+                  className="h-9 font-normal"
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  {canReceivePayments
-                    ? "Tableau de bord"
-                    : "Finaliser la config"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleClose}
-                  className="border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  Fermer
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      Vérification
+                    </>
+                  ) : (
+                    "Vérifier"
+                  )}
                 </Button>
               </>
             ) : (
@@ -193,21 +216,23 @@ const StripeConnectOnboarding = ({
                 <Button
                   onClick={handleConnect}
                   disabled={isLoading || !userEmail}
-                  className="flex-1 cursor-pointer bg-gradient-to-r from-[#635BFF] to-[#5A54E5] hover:from-[#5A54E5] hover:to-[#4F46E5] text-white shadow-lg shadow-[#635BFF]/25 disabled:opacity-50 disabled:shadow-none transition-all duration-200"
+                  size="sm"
+                  className="flex-1 cursor-pointer h-9 bg-primary hover:bg-primary/90 text-primary-foreground font-normal"
                 >
                   {isLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                      Connexion...
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      Connexion
                     </>
                   ) : (
                     "Connecter Stripe"
                   )}
                 </Button>
                 <Button
-                  variant="outline"
-                  className="cursor-pointer"
+                  variant="ghost"
+                  size="sm"
                   onClick={handleClose}
+                  className="h-9 font-normal"
                 >
                   Annuler
                 </Button>
@@ -215,15 +240,15 @@ const StripeConnectOnboarding = ({
             )}
           </div>
 
-          {/* Note légale */}
+          {/* Note légale - Style Notion */}
           {!isConnected && (
-            <p className="text-xs text-gray-500 text-center leading-relaxed">
+            <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
               En continuant, vous acceptez les{" "}
               <a
                 href="https://stripe.com/connect-account/legal"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#635BFF] hover:underline font-medium"
+                className="text-foreground/60 hover:text-foreground underline underline-offset-2 transition-colors"
               >
                 conditions de Stripe Connect
               </a>

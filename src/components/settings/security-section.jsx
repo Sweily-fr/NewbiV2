@@ -65,15 +65,19 @@ import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
 import { useUser } from "@/src/lib/auth/hooks";
 
-export function SecuritySection({ organization: orgProp, orgLoading: orgLoadingProp }) {
+export function SecuritySection({
+  organization: orgProp,
+  orgLoading: orgLoadingProp,
+}) {
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
-  
+
   // Utiliser l'organisation passée en props si disponible, sinon utiliser le hook
   const hookData = useActiveOrganization();
   const organization = orgProp || hookData.organization;
-  const orgLoading = orgLoadingProp !== undefined ? orgLoadingProp : hookData.loading;
+  const orgLoading =
+    orgLoadingProp !== undefined ? orgLoadingProp : hookData.loading;
   const updateOrganization = hookData.updateOrganization;
-  
+
   // Debug: Vérifier quelle organisation est utilisée
   useEffect(() => {
     console.log("🔐 [SecuritySection] Organisation utilisée:", {
@@ -83,7 +87,7 @@ export function SecuritySection({ organization: orgProp, orgLoading: orgLoadingP
       companyName: organization?.companyName,
     });
   }, [organization, orgProp]);
-  
+
   const { data: session, refetch: refetchSession } = useSession();
   const { session: user } = useUser();
 
@@ -98,14 +102,12 @@ export function SecuritySection({ organization: orgProp, orgLoading: orgLoadingP
     refetchStatus,
   } = useStripeConnect(user?.user?.id);
 
-  const [organizationForm, setOrganizationForm] = useState({
-  });
+  const [organizationForm, setOrganizationForm] = useState({});
   const [securitySettings, setSecuritySettings] = useState({
     mfaRequired: false,
     sessionDuration: 30,
     inactivityTimeout: 12,
     maxSessions: 1, // Limité à 1 session
-    startupPage: session?.user?.redirect_after_login || "dashboard",
   });
 
   // États pour le 2FA
@@ -118,16 +120,6 @@ export function SecuritySection({ organization: orgProp, orgLoading: orgLoadingP
   const [devices, setDevices] = useState([]);
   const [devicesLoading, setDevicesLoading] = useState(true);
 
-  // Synchroniser startupPage avec redirect_after_login de l'utilisateur
-  useEffect(() => {
-    if (session?.user?.redirect_after_login) {
-      setSecuritySettings((prev) => ({
-        ...prev,
-        startupPage: session.user.redirect_after_login,
-      }));
-    }
-  }, [session?.user?.redirect_after_login]);
-
   // Récupérer les sessions actives depuis Better Auth
   const fetchDeviceSessions = async () => {
     try {
@@ -136,11 +128,11 @@ export function SecuritySection({ organization: orgProp, orgLoading: orgLoadingP
       // Essayer d'abord avec l'API client
       let data = null;
       let error = null;
-      
+
       try {
         const result = await authClient.multiSession.listDeviceSessions();
         // Better Auth retourne directement les données, pas un objet { data, error }
-        if (result && typeof result === 'object') {
+        if (result && typeof result === "object") {
           if (result.data !== undefined) {
             data = result.data;
             error = result.error;
@@ -251,40 +243,6 @@ export function SecuritySection({ organization: orgProp, orgLoading: orgLoadingP
     }
   };
 
-  // Fonction pour sauvegarder la page de démarrage
-  const handleStartupPageChange = async (value) => {
-    try {
-      // Mettre à jour l'état local immédiatement
-      setSecuritySettings((prev) => ({
-        ...prev,
-        startupPage: value,
-      }));
-
-      // Sauvegarder dans la base de données
-      await updateUser(
-        { redirect_after_login: value },
-        {
-          onSuccess: () => {
-            toast.success("Page de démarrage mise à jour");
-            refetchSession();
-          },
-          onError: (error) => {
-            console.error("Erreur mise à jour page de démarrage:", error);
-            toast.error("Erreur lors de la mise à jour");
-            // Revenir à l'ancienne valeur en cas d'erreur
-            setSecuritySettings((prev) => ({
-              ...prev,
-              startupPage: session?.user?.redirect_after_login || "dashboard",
-            }));
-          },
-        }
-      );
-    } catch (error) {
-      console.error("Erreur:", error);
-      toast.error("Erreur lors de la mise à jour");
-    }
-  };
-
   // Fonctions utilitaires pour transformer les données
   const getUserAgent = (userAgent) => {
     if (!userAgent) return "Navigateur inconnu";
@@ -353,6 +311,38 @@ export function SecuritySection({ organization: orgProp, orgLoading: orgLoadingP
     // Pour l'instant, retourner une valeur par défaut
     return "Localisation inconnue";
   };
+
+  // Vérifier automatiquement le statut Stripe après redirection
+  useEffect(() => {
+    const checkStripeStatus = async () => {
+      // Vérifier si on revient de Stripe
+      const urlParams = new URLSearchParams(window.location.search);
+      const stripeSuccess = urlParams.get("stripe_success");
+      const openSettings = urlParams.get("open_settings");
+
+      if (stripeSuccess === "true" && stripeConnected) {
+        console.log(
+          "🔄 Vérification automatique du statut Stripe après redirection..."
+        );
+
+        // Attendre un peu pour que Stripe ait le temps de mettre à jour
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        // Vérifier le statut
+        await checkAndUpdateAccountStatus();
+
+        // Ouvrir le modal de sécurité si demandé
+        if (openSettings === "securite") {
+          // Le modal sera ouvert par le composant parent
+        }
+
+        // Nettoyer l'URL
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    };
+
+    checkStripeStatus();
+  }, [stripeConnected, checkAndUpdateAccountStatus]);
 
   // Charger les sessions au montage du composant
   useEffect(() => {
@@ -722,7 +712,7 @@ export function SecuritySection({ organization: orgProp, orgLoading: orgLoadingP
                   size="sm"
                   onClick={() => setShowStripeOnboarding(true)}
                   disabled={stripeLoading}
-                  className="text-xs h-7 border-[#5b4fff]/20 text-[#5b4fff] hover:bg-[#5b4fff]/5"
+                  className="text-xs cursor-pointer h-7 bg-[#5b4fff] border-[#5b4fff]/20 text-[#fff] hover:text-[#fff] hover:bg-[#5b4fff]/90"
                 >
                   <CreditCard className="h-3 w-3 mr-1" />
                   {stripeLoading ? "Chargement..." : "Connecter Stripe"}
@@ -760,55 +750,6 @@ export function SecuritySection({ organization: orgProp, orgLoading: orgLoadingP
             />
           </div>
         </div>
-
-        {/* <Separator className="mt-8" /> */}
-
-        {/* Section Ouverture au démarrage */}
-        <div className="space-y-6 mt-8">
-          {/* Titre section Ouverture au démarrage */}
-          <div>
-            <h3 className="text-sm font-medium mb-2">Ouverture au démarrage</h3>
-            <Separator />
-          </div>
-
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h4 className="text-sm font-normal mb-1">Page de démarrage</h4>
-              <p className="text-xs text-gray-400">
-                Choisissez ce qui doit être affiché lorsque Newbi démarre
-              </p>
-            </div>
-            <Select
-              value={securitySettings.startupPage}
-              onValueChange={handleStartupPageChange}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="dashboard">Tableau de bord</SelectItem>
-                <SelectItem value="outils">Outils</SelectItem>
-                <SelectItem value="kanban">Kanban</SelectItem>
-                <SelectItem value="calendar">Calendrier</SelectItem>
-                <SelectItem value="factures">Factures</SelectItem>
-                <SelectItem value="devis">Devis</SelectItem>
-                <SelectItem value="clients">Clients</SelectItem>
-                <SelectItem value="depenses">Gestion des dépenses</SelectItem>
-                <SelectItem value="signatures">Signatures mail</SelectItem>
-                <SelectItem value="transferts">
-                  Transferts de fichiers
-                </SelectItem>
-                <SelectItem value="catalogues">Catalogues</SelectItem>
-                <SelectItem value="collaborateurs">Collaborateurs</SelectItem>
-                <SelectItem value="analytics">Analytics</SelectItem>
-                <SelectItem value="favoris">Favoris</SelectItem>
-                <SelectItem value="last-page">Dernière page visitée</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* <Separator className="mt-8" /> */}
 
         {/* Section Paramètres de session */}
         <div className="space-y-6 mt-8">
