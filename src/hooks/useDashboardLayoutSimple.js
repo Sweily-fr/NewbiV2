@@ -82,9 +82,6 @@ export function useDashboardLayoutSimple() {
     if (cacheKey) {
       // Si on revient de Stripe, vider le cache pour forcer le rechargement
       if (hasStripeSession) {
-        console.log(
-          "🔄 Retour de Stripe détecté, invalidation du cache abonnement"
-        );
         localStorage.removeItem(cacheKey);
       }
 
@@ -96,13 +93,10 @@ export function useDashboardLayoutSimple() {
           const isValid = Date.now() - timestamp < 30 * 1000; // 30 secondes (bon compromis)
 
           if (isValid) {
-            console.log('📦 Utilisation du cache (valide pendant', Math.round((30 * 1000 - (Date.now() - timestamp)) / 1000), 'secondes)');
             setSubscription(cachedSubscription);
             setIsLoading(false);
             setIsInitialized(true);
             return;
-          } else {
-            console.log('⏰ Cache expiré, rechargement depuis l\'API');
           }
         }
       } catch (error) {
@@ -170,16 +164,12 @@ export function useDashboardLayoutSimple() {
 
     if (!hasStripeSession) return;
 
-    console.log("🔍 Session Stripe détectée, attente de l'organisation...");
 
     // Attendre que l'organisation soit disponible
     if (!session?.session?.activeOrganizationId) {
-      console.log("⏳ Organisation pas encore chargée, attente...");
       return;
     }
 
-    console.log("🔄 Démarrage du polling pour vérifier l'abonnement...");
-    console.log("📋 Organization ID:", session.session.activeOrganizationId);
 
     let attempts = 0;
     const maxAttempts = 30; // 30 × 2s = 60 secondes max
@@ -188,9 +178,6 @@ export function useDashboardLayoutSimple() {
     // Fonction de polling
     const checkSubscription = async () => {
       attempts++;
-      console.log(
-        `🔄 Vérification abonnement (tentative ${attempts}/${maxAttempts})...`
-      );
 
       try {
         const { data: subscriptions, error } =
@@ -205,14 +192,11 @@ export function useDashboardLayoutSimple() {
           return;
         }
 
-        console.log("📊 Abonnements trouvés:", subscriptions);
-
         const activeSubscription = subscriptions?.find(
           (sub) => sub.status === "active" || sub.status === "trialing"
         );
 
         if (activeSubscription) {
-          console.log("✅ Abonnement Pro détecté !", activeSubscription);
           clearInterval(pollInterval);
 
           // Mettre à jour l'état
@@ -235,17 +219,13 @@ export function useDashboardLayoutSimple() {
             window.location.pathname
           );
 
-          console.log("🔄 Rechargement de la page dans 500ms...");
 
           // Recharger la page pour s'assurer que tout est à jour
           setTimeout(() => {
             window.location.reload();
           }, 500);
         } else if (attempts >= maxAttempts) {
-          console.log("⏱️ Timeout du polling après 60 secondes");
-          console.log(
-            "⚠️ L'abonnement n'a pas été détecté. Vérifiez les webhooks Stripe."
-          );
+
           clearInterval(pollInterval);
         }
       } catch (error) {
@@ -328,28 +308,16 @@ export function useDashboardLayoutSimple() {
     const hasActiveSubscription =
       subscription?.status === "active" || subscription?.status === "trialing";
 
-    console.log('🎯 isActive() appelé:', {
-      requirePaidSubscription,
-      hasActiveSubscription,
-      subscriptionStatus: subscription?.status,
-      trialHasPremiumAccess: trial.hasPremiumAccess,
-      trialIsTrialActive: trial.isTrialActive,
-      trialDaysRemaining: trial.daysRemaining
-    });
-
     // Si on exige un abonnement payant, ignorer la période d'essai
     if (requirePaidSubscription) {
-      console.log('❌ isActive() - Abonnement payant requis, retourne:', hasActiveSubscription);
       return hasActiveSubscription;
     }
 
     // Sinon, accepter aussi la période d'essai
     if (!hasActiveSubscription) {
-      console.log('✅ isActive() - Pas d\'abonnement, vérifie trial:', trial.hasPremiumAccess);
       return trial.hasPremiumAccess;
     }
 
-    console.log('✅ isActive() - Abonnement actif:', hasActiveSubscription);
     return hasActiveSubscription;
   };
 

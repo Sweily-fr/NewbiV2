@@ -44,25 +44,8 @@ export function ProRouteGuard({
           trial?.isTrialActive === true ||
           trial?.hasUsedTrial === true;
 
-        console.log(`[ProRouteGuard] ${pageName}`, {
-          hasActiveSubscription,
-          isPaidSubscription,
-          requirePaidSubscription,
-          accessGranted,
-          subscriptionStatus: subscription?.status,
-          subscriptionObject: subscription,
-          isSubscriptionDataLoaded,
-          initialCheckDone: initialCheckDoneRef.current,
-          trialActive: trial?.isTrialActive,
-          trialDaysRemaining: trial?.daysRemaining,
-          hasUsedTrial: trial?.hasUsedTrial,
-        });
-
         // Ne pas rediriger au premier chargement si les données ne sont pas encore chargées
         if (!isSubscriptionDataLoaded && !initialCheckDoneRef.current) {
-          console.log(
-            `[ProRouteGuard] ${pageName} - Premier chargement, attente des données...`
-          );
           return;
         }
 
@@ -77,20 +60,12 @@ export function ProRouteGuard({
           !hasRedirectedRef.current &&
           isSubscriptionDataLoaded
         ) {
-          console.log(
-            `[ProRouteGuard] ${pageName} - Accès refusé - Redirection vers /dashboard/outils`
-          );
           hasRedirectedRef.current = true;
           router.replace("/dashboard/outils?access=restricted");
         } else if (accessGranted) {
-          console.log(`[ProRouteGuard] ${pageName} - Accès autorisé`);
           setHasAccess(true);
           hasRedirectedRef.current = false; // Reset pour permettre les futures redirections
         } else if (!isSubscriptionDataLoaded) {
-          console.log(
-            `[ProRouteGuard] ${pageName} - En attente du chargement des données d'abonnement...`
-          );
-          // Rester en mode checking, ne pas rediriger
           return;
         }
 

@@ -265,8 +265,8 @@ export const useCreateClient = (providedWorkspaceId) => {
               },
             });
           }
-        } catch (e) {
-          console.log("GET_CLIENTS not in cache, skipping update");
+        } catch {
+          // GET_CLIENTS not in cache, skipping update
         }
       },
       errorPolicy: "all",
@@ -397,8 +397,8 @@ export const useUpdateClient = (providedWorkspaceId, options = {}) => {
             },
           });
         }
-      } catch (e) {
-        console.log("GET_CLIENTS not in cache, skipping update");
+      } catch {
+        // GET_CLIENTS not in cache, skipping update
       }
     },
     onCompleted: () => {
@@ -465,8 +465,8 @@ export const useDeleteClient = (providedWorkspaceId) => {
             },
           });
         }
-      } catch (e) {
-        console.log("GET_CLIENTS not in cache, skipping update");
+      } catch {
+        // GET_CLIENTS not in cache, skipping update
       }
 
       // Nettoyer le cache

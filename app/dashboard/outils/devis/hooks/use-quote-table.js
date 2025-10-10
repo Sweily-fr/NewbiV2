@@ -470,15 +470,8 @@ export function useQuoteTable({ data = [], onRefetch }) {
               date = new Date(quote.validUntil);
             }
 
-            const isValid = !isNaN(date.getTime());
-
-          } catch (error) {
-            console.log(
-              "Erreur lors de la conversion de date:",
-              error.message,
-              "Valeur:",
-              quote.validUntil
-            );
+          } catch {
+            // Date conversion error - silently handled
           }
         }
       });

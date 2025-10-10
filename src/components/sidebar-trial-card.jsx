@@ -20,13 +20,6 @@ export function SidebarTrialCard() {
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const router = useRouter();
 
-  // Log pour voir les données de l'organisation active
-  useEffect(() => {
-    if (activeOrg) {
-      console.log("📊 Organisation active récupérée:", activeOrg);
-    }
-  }, [activeOrg]);
-
   const openPricingModal = () => {
     setIsPricingModalOpen(true);
   };
@@ -52,25 +45,12 @@ export function SidebarTrialCard() {
     let trialDaysRemaining = 0;
     if (trialEndDate) {
       const daysRemaining = (trialEndDate - now) / (1000 * 60 * 60 * 24);
-      trialDaysRemaining = Math.max(0, Math.ceil(daysRemaining));
     }
 
     const isInTrial = isTrialActive && trialDaysRemaining > 0 && !isActive();
     const isTrialExpired = !isTrialActive && !isActive();
     // Mode gratuit : utilisateur sans abonnement actif (peu importe la période d'essai)
     const isFreeMode = !isActive();
-
-    // Log de débogage
-    console.log("🔍 SidebarTrialCard - Données d'essai:", {
-      activeOrg,
-      isTrialActive,
-      trialEndDate,
-      trialDaysRemaining,
-      isInTrial,
-      isTrialExpired,
-      isFreeMode,
-      hasActiveSubscription: isActive(),
-    });
 
     return { isInTrial, isTrialExpired, trialDaysRemaining, isFreeMode };
   };
@@ -83,41 +63,20 @@ export function SidebarTrialCard() {
     setDismissed(false);
   }, [isInTrial, isTrialExpired, isActive()]);
 
-  // Log pour diagnostiquer l'affichage
-  console.log("🎯 SidebarTrialCard - Conditions d'affichage:", {
-    loading,
-    dismissed,
-    isActive: isActive(),
-    subscription,
-    isInTrial,
-    isTrialExpired,
-    trialDaysRemaining,
-    isFreeMode,
-  });
-
   // Ne pas afficher si loading ou dismissed
   if (loading || dismissed) {
-    console.log("❌ SidebarTrialCard - Masqué (loading ou dismissed)");
     return null;
   }
 
   // Ne pas afficher si l'utilisateur a un abonnement actif
   if (isActive()) {
-    console.log("❌ SidebarTrialCard - Masqué (abonnement actif)");
     return null;
   }
 
   // Si pas d'essai actif et pas d'essai expiré, ne rien afficher
   if (!isInTrial && !isTrialExpired && !isFreeMode) {
-    console.log("❌ SidebarTrialCard - Masqué (aucune condition d'affichage)");
     return null;
   }
-
-  console.log("✅ SidebarTrialCard - AFFICHAGE !", {
-    isInTrial,
-    isTrialExpired,
-    trialDaysRemaining,
-  });
 
   // Rendu du modal de pricing
   const renderPricingModal = () => {
