@@ -196,16 +196,17 @@ export function KanbanListView({
   };
 
   return (
-    <div className="w-full space-y-0 bg-background">
-      {/* En-tête du tableau global */}
-      <div className="grid grid-cols-12 gap-3 px-3 py-2 text-xs font-medium text-muted-foreground bg-muted/20 border-b sticky top-0 z-10">
-        <div className="col-span-4 flex items-center">Nom</div>
-        <div className="col-span-2 flex items-center">Assigné</div>
-        <div className="col-span-2 flex items-center">Date d'échéance</div>
-        <div className="col-span-1 flex items-center">Priorité</div>
-        <div className="col-span-2 flex items-center">Statut</div>
-        <div className="col-span-1 flex items-center justify-center">Commentaires</div>
-      </div>
+    <div className="w-full overflow-x-auto">
+      <div className="min-w-[900px] space-y-0 bg-background">
+        {/* En-tête du tableau global */}
+        <div className="grid grid-cols-12 gap-3 px-3 py-2 text-xs font-medium text-muted-foreground bg-muted/20 border-b sticky top-0 z-10">
+          <div className="col-span-4 flex items-center">Nom</div>
+          <div className="col-span-2 flex items-center">Assigné</div>
+          <div className="col-span-2 flex items-center">Date d'échéance</div>
+          <div className="col-span-1 flex items-center">Priorité</div>
+          <div className="col-span-2 flex items-center">Statut</div>
+          <div className="col-span-1 flex items-center justify-center">Commentaires</div>
+        </div>
 
       {columns.map((column, columnIndex) => {
         const tasks = getTasksByColumn(column.id);
@@ -410,6 +411,7 @@ export function KanbanListView({
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
