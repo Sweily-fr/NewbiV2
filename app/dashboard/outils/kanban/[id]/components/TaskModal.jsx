@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Loader2, Trash2, X, CalendarIcon, Clock } from 'lucide-react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { Loader2, Trash2, X, CalendarIcon, Clock, User } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/src/components/ui/dialog';
 import { Input } from '@/src/components/ui/input';
@@ -12,6 +12,7 @@ import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Checklist } from '@/src/components/Checklist';
 import { MemberSelector } from './MemberSelector';
+import { TaskActivity } from './TaskActivity';
 import { cn } from '@/src/lib/utils';
 
 /**
@@ -33,6 +34,81 @@ export function TaskModal({
   toggleChecklistItem,
   removeChecklistItem
 }) {
+  // Optimisation: handlers mémorisés pour éviter les re-renders
+  const handleTitleChange = useCallback((e) => {
+    setTaskForm(prev => ({ ...prev, title: e.target.value }));
+  }, [setTaskForm]);
+
+  const handleDescriptionChange = useCallback((e) => {
+    setTaskForm(prev => ({ ...prev, description: e.target.value }));
+  }, [setTaskForm]);
+
+  const handleNewTagChange = useCallback((e) => {
+    setTaskForm(prev => ({ ...prev, newTag: e.target.value }));
+  }, [setTaskForm]);
+
+  const handleChecklistChange = useCallback((updatedItems) => {
+    setTaskForm(prev => ({ ...prev, checklist: updatedItems }));
+  }, [setTaskForm]);
+
+  const handleTimeChange = useCallback((e) => {
+    const time = e.target.value;
+    if (!time) return;
+    
+    setTaskForm(prev => {
+      if (!prev.dueDate) return prev;
+      
+      const [hours, minutes] = time.split(':').map(Number);
+      const newDate = new Date(prev.dueDate);
+      newDate.setHours(hours, minutes, 0, 0);
+      
+      console.log('⏰ [Time Change] inputTime:', time);
+      console.log('⏰ [Time Change] hours:', hours, 'minutes:', minutes);
+      console.log('⏰ [Time Change] oldDate:', prev.dueDate);
+      console.log('⏰ [Time Change] newDate ISO:', newDate.toISOString());
+      console.log('⏰ [Time Change] newDate formatted:', newDate.toString());
+      
+      return { ...prev, dueDate: newDate.toISOString() };
+    });
+  }, [setTaskForm]);
+
+  const handleDateChange = useCallback((date) => {
+    if (!date) {
+      setTaskForm(prev => ({ ...prev, dueDate: '' }));
+      return;
+    }
+    
+    setTaskForm(prev => {
+      console.log('📅 [Date Change] prev.dueDate:', prev.dueDate);
+      console.log('📅 [Date Change] prev.dueDate type:', typeof prev.dueDate);
+      
+      // Si une date est déjà définie, on conserve l'heure existante
+      if (prev.dueDate) {
+        const existingDate = new Date(prev.dueDate);
+        console.log('📅 [Date Change] existingDate:', existingDate.toString());
+        console.log('📅 [Date Change] existingDate hours:', existingDate.getHours(), 'minutes:', existingDate.getMinutes());
+        date.setHours(existingDate.getHours(), existingDate.getMinutes(), 0, 0);
+      } else {
+        // Par défaut, on met 18h00 comme heure
+        console.log('📅 [Date Change] Pas de date existante, mise à 18h00');
+        date.setHours(18, 0, 0, 0);
+      }
+      
+      const isoDate = date.toISOString();
+      console.log('📅 [Date Change] nouvelle date ISO:', isoDate);
+      
+      return { ...prev, dueDate: isoDate };
+    });
+  }, [setTaskForm]);
+
+  // Mémoriser les props pour TaskActivity (ne change que si comments/activity changent)
+  const taskActivityData = useMemo(() => ({
+    id: taskForm.id || taskForm._id,
+    comments: taskForm.comments || [],
+    activity: taskForm.activity || [],
+    userId: taskForm.userId
+  }), [taskForm.id, taskForm._id, taskForm.comments, taskForm.activity, taskForm.userId]);
+
   // Convert priority to uppercase for the Select component
   const getDisplayPriority = (priority) => {
     if (!priority) return 'MEDIUM';
@@ -56,42 +132,15 @@ export function TaskModal({
       priority: getSubmitPriority(taskForm.priority)
     };
     
+    console.log('📤 [Submit Task] dueDate:', formData.dueDate);
+    console.log('📤 [Submit Task] dueDate formatted:', formData.dueDate ? new Date(formData.dueDate).toString() : 'none');
+    
     // Call the parent's onSubmit with the updated form data
     onSubmit(formData);
   };
 
   // Gestion de la date d'échéance
   const [calendarOpen, setCalendarOpen] = useState(false);
-  
-  const handleDateChange = (date) => {
-    if (!date) {
-      setTaskForm({ ...taskForm, dueDate: '' });
-      return;
-    }
-    
-    // Si une date est déjà définie, on conserve l'heure existante
-    if (taskForm.dueDate) {
-      const existingDate = new Date(taskForm.dueDate);
-      date.setHours(existingDate.getHours(), existingDate.getMinutes());
-    } else {
-      // Par défaut, on met 18h00 comme heure
-      date.setHours(18, 0, 0, 0);
-    }
-    
-    setTaskForm({ ...taskForm, dueDate: date.toISOString() });
-  };
-  
-  // Gestion de l'heure
-  const handleTimeChange = (e) => {
-    const time = e.target.value;
-    if (!time || !taskForm.dueDate) return;
-    
-    const [hours, minutes] = time.split(':').map(Number);
-    const newDate = new Date(taskForm.dueDate);
-    newDate.setHours(hours, minutes);
-    
-    setTaskForm({ ...taskForm, dueDate: newDate.toISOString() });
-  };
   
   // Formater la date pour l'affichage
   const formatDate = (dateString) => {
@@ -111,20 +160,54 @@ export function TaskModal({
   const formatTimeInput = (dateString) => {
     if (!dateString) return '18:00';
     const date = new Date(dateString);
-    return date.toTimeString().slice(0, 5);
+    const formatted = date.toTimeString().slice(0, 5);
+    console.log('🕐 [Format Time Input] input:', dateString);
+    console.log('🕐 [Format Time Input] formatted:', formatted);
+    return formatted;
+  };
+
+  // Formater la date de création
+  const formatCreatedDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return format(date, "d MMMM yyyy 'à' HH:mm", { locale: fr });
+  };
+
+  // Trouver le créateur de la tâche
+  const getCreatorName = () => {
+    if (!taskForm.userId || !board?.members) {
+      console.log('❌ Pas de userId ou members:', { userId: taskForm.userId, members: board?.members });
+      return 'Inconnu';
+    }
+    
+    console.log('🔍 Recherche créateur:', {
+      taskUserId: taskForm.userId,
+      taskUserIdType: typeof taskForm.userId,
+      members: board.members.map(m => ({ id: m.id, userId: m.userId, name: m.name }))
+    });
+    
+    const creator = board.members.find(m => 
+      String(m.userId) === String(taskForm.userId) || 
+      String(m.id) === String(taskForm.userId)
+    );
+    
+    console.log('👤 Créateur trouvé:', creator);
+    return creator ? creator.name : 'Inconnu';
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] h-[90vh] p-0 bg-card text-card-foreground overflow-hidden flex flex-col">
-        <div className="flex flex-col h-full">
-          <DialogHeader className="px-6 py-4 border-b border-border relative flex-shrink-0">
-            <DialogTitle className="text-lg font-semibold">
-              {isEditing ? 'Modifier la tâche' : 'Créer une nouvelle tâche'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 h-0 min-h-0">
+      <DialogContent className="sm:max-w-[1000px] h-[90vh] p-0 bg-card text-card-foreground overflow-hidden flex flex-col">
+        <div className="flex h-full">
+          {/* Partie gauche : Formulaire */}
+          <div className="flex-1 flex flex-col border-r">
+            <DialogHeader className="px-6 py-4 border-b border-border relative flex-shrink-0">
+              <DialogTitle className="text-lg font-semibold">
+                {isEditing ? 'Modifier la tâche' : 'Créer une nouvelle tâche'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 h-0 min-h-0">
             {/* Titre */}
             <div className="space-y-2">
               <Label htmlFor="task-title" className="text-sm font-medium">
@@ -133,7 +216,7 @@ export function TaskModal({
               <Input
                 id="task-title"
                 value={taskForm.title}
-                onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                onChange={handleTitleChange}
                 className="w-full bg-background text-foreground border-input focus:border-primary"
                 placeholder="Titre de la tâche"
               />
@@ -147,7 +230,7 @@ export function TaskModal({
               <Textarea
                 id="task-description"
                 value={taskForm.description}
-                onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+                onChange={handleDescriptionChange}
                 className="w-full min-h-[100px] resize-none bg-card text-foreground border-input focus:border-primary focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="Description de la tâche (optionnel)"
                 rows={4}
@@ -308,7 +391,7 @@ export function TaskModal({
                 <div className="flex gap-2">
                   <Input
                     value={taskForm.newTag}
-                    onChange={(e) => setTaskForm({ ...taskForm, newTag: e.target.value })}
+                    onChange={handleNewTagChange}
                     placeholder="Ajouter un tag"
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                     className="flex-1 bg-background"
@@ -344,13 +427,33 @@ export function TaskModal({
             <div className="space-y-3">
               <Checklist 
                 items={taskForm.checklist}
-                onChange={(updatedItems) => setTaskForm({ ...taskForm, checklist: updatedItems })}
+                onChange={handleChecklistChange}
               />
             </div>
-          </div>
-          
-          {/* Footer fixe */}
-          <div className="border-t border-border bg-card px-6 py-4 flex-shrink-0">
+            </div>
+            
+            {/* Footer fixe */}
+            <div className="border-t border-border bg-card px-6 py-4 flex-shrink-0 space-y-3">
+            {/* Informations de création (uniquement en mode édition) */}
+            {isEditing && taskForm.createdAt && (
+              <div className="flex items-center gap-4 text-xs text-muted-foreground pb-2 border-b border-border">
+                <div className="flex items-center gap-1.5">
+                  <User className="h-3 w-3" />
+                  <span>Créé par <span className="font-medium text-foreground">{getCreatorName()}</span></span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" />
+                  <span>{formatCreatedDate(taskForm.createdAt)}</span>
+                </div>
+                {taskForm.updatedAt && taskForm.updatedAt !== taskForm.createdAt && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground/70">• Modifié le {formatCreatedDate(taskForm.updatedAt)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Boutons d'action */}
             <div className="flex justify-end gap-3">
               <Button 
                 variant="outline" 
@@ -373,7 +476,27 @@ export function TaskModal({
                 ) : isEditing ? 'Enregistrer les modifications' : 'Créer la tâche'}
               </Button>
             </div>
+            </div>
           </div>
+
+          {/* Partie droite : Activité et commentaires */}
+          {isEditing && (taskForm.id || taskForm._id) && (
+            <div className="w-[400px] flex flex-col bg-muted/20">
+              <div className="px-4 py-4 border-b border-border">
+                <h3 className="text-sm font-semibold">Activité</h3>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 py-4">
+                <TaskActivity 
+                  task={taskActivityData} 
+                  workspaceId={workspaceId}
+                  currentUser={board?.members?.find(m => m.userId === taskActivityData.userId)}
+                  boardMembers={board?.members || []}
+                  columns={board?.columns || []}
+                  onTaskUpdate={setTaskForm}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

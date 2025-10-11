@@ -416,11 +416,12 @@ export const useKanbanTasks = (boardId, board) => {
     setIsEditTaskOpen(true);
     setTaskForm({
       ...initialTaskForm,
+      id: task?.id || task?._id,
       title: task?.title || "",
       description: task?.description || "",
       status: task?.status || "TODO",
       priority: task?.priority ? task.priority.toLowerCase() : "medium",
-      dueDate: task?.dueDate ? task.dueDate.split("T")[0] : "",
+      dueDate: task?.dueDate || "", // Garder l'heure complète au format ISO
       columnId: task?.columnId || "",
       tags: Array.isArray(task?.tags) ? task.tags : [],
       checklist: Array.isArray(task?.checklist)
@@ -431,6 +432,11 @@ export const useKanbanTasks = (boardId, board) => {
           }))
         : [],
       assignedMembers: Array.isArray(task?.assignedMembers) ? task.assignedMembers : [],
+      comments: Array.isArray(task?.comments) ? task.comments : [],
+      activity: Array.isArray(task?.activity) ? task.activity : [],
+      userId: task?.userId,
+      createdAt: task?.createdAt,
+      updatedAt: task?.updatedAt,
     });
   };
 
