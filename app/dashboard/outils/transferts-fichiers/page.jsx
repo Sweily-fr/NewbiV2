@@ -22,6 +22,7 @@ import TransferTable from "./components/transfer-table";
 import FileUploadNew from "./components/file-upload-new";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useFileTransfer } from "./hooks/useFileTransfer";
+import { useFileTransferR2Direct } from "./hooks/useFileTransferR2Direct";
 import { cn } from "@/src/lib/utils";
 
 function TransfertsContent() {
@@ -61,10 +62,10 @@ function TransfertsContent() {
     const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
     setTransferLink(fullLink);
     setShowSuccessDialog(true);
-    
+
     // Changer d'onglet vers "Mes transferts"
     setActiveTab("list");
-    
+
     // Rafraîchir la liste des transferts
     refetchTransfers();
   };
@@ -129,7 +130,10 @@ function TransfertsContent() {
         {/* Contenu */}
         <div>
           {activeTab === "upload" ? (
-            <FileUploadNew onTransferCreated={handleTransferCreated} />
+            <FileUploadNew
+              onTransferCreated={handleTransferCreated}
+              refetchTransfers={refetchTransfers}
+            />
           ) : (
             <TransferTable
               transfers={transfers}
@@ -198,7 +202,10 @@ function TransfertsContent() {
         <div className="mt-4">
           {activeTab === "upload" ? (
             <div className="px-4">
-              <FileUploadNew onTransferCreated={handleTransferCreated} />
+              <FileUploadNew
+                onTransferCreated={handleTransferCreated}
+                refetchTransfers={refetchTransfers}
+              />
             </div>
           ) : (
             <TransferTable
@@ -214,9 +221,7 @@ function TransfertsContent() {
       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-black">
-              Transfert créé avec succès !
-            </AlertDialogTitle>
+            <AlertDialogTitle>Transfert créé avec succès !</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4">
                 <div>
@@ -224,11 +229,11 @@ function TransfertsContent() {
                   partager le lien avec vos destinataires.
                 </div>
 
-                <div className="bg-gray-50 p-3 rounded-lg border">
-                  <div className="text-xs text-gray-600 mb-2">
+                <div className="bg-[#212124] p-3 rounded-lg border">
+                  <div className="text-xs text-gray-600 dark:text-white mb-2">
                     Lien de partage :
                   </div>
-                  <div className="text-sm font-mono break-all bg-white p-2 rounded border">
+                  <div className="text-xs font-mono break-all p-2 rounded border">
                     {transferLink}
                   </div>
                 </div>

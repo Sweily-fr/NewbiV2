@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useFileTransferR2 } from "../hooks/useFileTransferR2";
+import { useFileTransferR2Multipart } from "../hooks/useFileTransferR2Multipart";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
 import { useUser } from "@/src/lib/auth/hooks";
@@ -23,6 +23,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
+import CircularProgress from "@/src/components/ui/circular-progress";
 import {
   Select,
   SelectContent,
@@ -85,9 +86,16 @@ const getFileIcon = (file) => {
   return <FileIcon className="size-4 opacity-60" />;
 };
 
-export default function FileUploadNew({ onTransferCreated }) {
+export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
   const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
   const maxFiles = 10;
+
+  // Timer pour l'upload
+  const [uploadTime, setUploadTime] = useState(0);
+  const [estimatedTimeLeft, setEstimatedTimeLeft] = useState(0);
+  const timerRef = useRef(null);
+  const lastProgressRef = useRef(0);
+  const lastTimeRef = useRef(0);
 
   // Hooks
   const { session: user } = useUser();
@@ -109,7 +117,7 @@ export default function FileUploadNew({ onTransferCreated }) {
     addFiles,
     removeFile,
     createTransfer,
-  } = useFileTransferR2();
+  } = useFileTransferR2Multipart(refetchTransfers);
 
   // Options de transfert
   const [transferOptions, setTransferOptions] = useState({
@@ -127,6 +135,68 @@ export default function FileUploadNew({ onTransferCreated }) {
   const [showStripeOnboarding, setShowStripeOnboarding] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Gérer le timer d'upload et calculer le temps restant
+  useEffect(() => {
+    if (isUploading) {
+      setUploadTime(0);
+      lastProgressRef.current = 0;
+      lastTimeRef.current = Date.now();
+
+      timerRef.current = setInterval(() => {
+        setUploadTime((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setEstimatedTimeLeft(0);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isUploading]);
+
+  // Calculer le temps restant estimé basé sur la progression
+  useEffect(() => {
+    if (isUploading && uploadProgress > 0 && uploadProgress < 100) {
+      const currentTime = Date.now();
+      const timeDiff = (currentTime - lastTimeRef.current) / 1000; // en secondes
+      const progressDiff = uploadProgress - lastProgressRef.current;
+
+      if (progressDiff > 0 && timeDiff > 0) {
+        // Vitesse de progression (% par seconde)
+        const progressSpeed = progressDiff / timeDiff;
+
+        // Temps restant estimé
+        const remainingProgress = 100 - uploadProgress;
+        const estimatedSeconds = Math.ceil(remainingProgress / progressSpeed);
+
+        setEstimatedTimeLeft(estimatedSeconds);
+
+        // Mettre à jour les références
+        lastProgressRef.current = uploadProgress;
+        lastTimeRef.current = currentTime;
+      }
+    }
+  }, [uploadProgress, isUploading]);
+
+  // Formater le temps en mm:ss ou "Quelques secondes"
+  const formatTime = (seconds) => {
+    if (seconds < 5) return "Quelques secondes";
+    if (seconds < 60) return `${seconds}s`;
+
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+
+    if (mins === 0) return `${secs}s`;
+    if (secs === 0) return `${mins}min`;
+    return `${mins}min ${secs}s`;
+  };
 
   // Sauvegarder les fichiers sélectionnés avant la redirection Stripe
   useEffect(() => {
@@ -320,7 +390,7 @@ export default function FileUploadNew({ onTransferCreated }) {
       // Rediriger vers l'onglet "Mes transferts" après création réussie
       if (result && result.success) {
         const { shareLink, accessKey } = result;
-        
+
         // Appeler le callback pour changer d'onglet
         if (onTransferCreated) {
           onTransferCreated(shareLink, accessKey);
@@ -375,60 +445,96 @@ export default function FileUploadNew({ onTransferCreated }) {
       <div
         className={`flex flex-col gap-2 ${selectedFiles.length > 0 ? "lg:sticky lg:top-6 lg:self-start lg:max-h-screen lg:overflow-y-auto" : ""}`}
       >
-        {/* Drop area */}
-        <div
-          role="button"
-          onClick={openFileDialog}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          data-dragging={isDragging || undefined}
-          className="border-input hover:bg-accent/50 data-[dragging=true]:border-[#5a50ff]/60 data-[dragging=true]:bg-[#5a50ff]/[0.02] has-[input:focus]:border-ring has-[input:focus]:ring-ring/50 flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 transition-all duration-300 ease-in-out has-disabled:pointer-events-none has-disabled:opacity-50 has-[input:focus]:ring-[3px] cursor-pointer"
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            onChange={handleFileChange}
-            className="sr-only"
-            aria-label="Upload files"
-          />
-
-          <div
-            className={`flex flex-col items-center justify-center text-center transition-all duration-300 ease-in-out ${isDragging ? "scale-[1.02]" : "scale-100"}`}
-          >
-            <div
-              className={`bg-background mb-2 flex size-16 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ease-in-out ${isDragging ? "border-[#5a50ff]/40 bg-[#5a50ff]/5" : ""}`}
-              aria-hidden="true"
-            >
-              <FileUpIcon
-                className={`size-4 transition-all duration-300 ease-in-out ${isDragging ? "text-[#5a50ff] opacity-100" : "opacity-60"}`}
+        {/* Drop area ou Progress */}
+        {isUploading ? (
+          <div className="border-input flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 animate-in fade-in duration-300">
+            <div className="animate-in zoom-in duration-500">
+              <CircularProgress
+                value={Math.round(uploadProgress)}
+                size={160}
+                strokeWidth={12}
+                showLabel
+                labelClassName="text-2xl font-bold"
+                renderLabel={(progress) => `${Math.round(progress)}%`}
+                className="stroke-[#5a50ff]/25"
+                progressClassName="stroke-[#5a50ff] drop-shadow-lg"
               />
             </div>
-            <p
-              className={`mb-1.5 text-sm font-medium transition-all duration-300 ease-in-out ${isDragging ? "text-[#5a50ff]/90" : ""}`}
-            >
-              {isDragging
-                ? "Déposez vos fichiers ici"
-                : "Glissez-déposez vos fichiers ou cliquez pour sélectionner"}
+            <p className="mt-6 text-sm font-medium text-[#5a50ff] animate-pulse">
+              Transfert de fichier en cours...
             </p>
-            <p
-              className={`text-muted-foreground mb-2 text-xs transition-opacity duration-300 ${isDragging ? "opacity-50" : "opacity-100"}`}
-            >
-              Taille maximale : 5GB par fichier • Tous formats acceptés
+            <p className="text-muted-foreground mt-1 text-xs animate-in fade-in duration-700">
+              Veuillez patienter pendant l'envoi de vos fichiers
             </p>
+            {estimatedTimeLeft > 0 && (
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground/70 animate-in fade-in duration-500">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1 h-1 rounded-full bg-[#5a50ff] animate-pulse" />
+                  <span>
+                    Temps restant estimé :{" "}
+                    <span className="font-medium text-muted-foreground">
+                      {formatTime(estimatedTimeLeft)}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div
+            role="button"
+            onClick={openFileDialog}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            data-dragging={isDragging || undefined}
+            className="border-input hover:bg-accent/50 data-[dragging=true]:border-[#5a50ff]/60 data-[dragging=true]:bg-[#5a50ff]/[0.02] has-[input:focus]:border-ring has-[input:focus]:ring-ring/50 flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 transition-all duration-300 ease-in-out has-disabled:pointer-events-none has-disabled:opacity-50 has-[input:focus]:ring-[3px] cursor-pointer"
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              className="sr-only"
+              aria-label="Upload files"
+            />
+
             <div
-              className={`text-muted-foreground/70 flex flex-wrap justify-center gap-1 text-xs transition-opacity duration-300 ${isDragging ? "opacity-30" : "opacity-100"}`}
+              className={`flex flex-col items-center justify-center text-center transition-all duration-300 ease-in-out ${isDragging ? "scale-[1.02]" : "scale-100"}`}
             >
-              <span>Tous les fichiers</span>
-              <span>∙</span>
-              <span>Max {maxFiles} fichiers</span>
-              <span>∙</span>
-              <span>Up to {formatFileSize(maxSize)}</span>
+              <div
+                className={`bg-background mb-2 flex size-16 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ease-in-out ${isDragging ? "border-[#5a50ff]/40 bg-[#5a50ff]/5" : ""}`}
+                aria-hidden="true"
+              >
+                <FileUpIcon
+                  className={`size-4 transition-all duration-300 ease-in-out ${isDragging ? "text-[#5a50ff] opacity-100" : "opacity-60"}`}
+                />
+              </div>
+              <p
+                className={`mb-1.5 text-sm font-medium transition-all duration-300 ease-in-out ${isDragging ? "text-[#5a50ff]/90" : ""}`}
+              >
+                {isDragging
+                  ? "Déposez vos fichiers ici"
+                  : "Glissez-déposez vos fichiers ou cliquez pour sélectionner"}
+              </p>
+              <p
+                className={`text-muted-foreground mb-2 text-xs transition-opacity duration-300 ${isDragging ? "opacity-50" : "opacity-100"}`}
+              >
+                Taille maximale : 5GB par fichier • Tous formats acceptés
+              </p>
+              <div
+                className={`text-muted-foreground/70 flex flex-wrap justify-center gap-1 text-xs transition-opacity duration-300 ${isDragging ? "opacity-30" : "opacity-100"}`}
+              >
+                <span>Tous les fichiers</span>
+                <span>∙</span>
+                <span>Max {maxFiles} fichiers</span>
+                <span>∙</span>
+                <span>Up to {formatFileSize(maxSize)}</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {errors.length > 0 && (
           <div
@@ -462,20 +568,22 @@ export default function FileUploadNew({ onTransferCreated }) {
                   </div>
                 </div>
 
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="text-muted-foreground/80 hover:text-foreground -me-2 size-8 hover:bg-transparent"
-                  onClick={() => removeFile(fileItem.id)}
-                  aria-label="Remove file"
-                >
-                  <XIcon className="size-4" aria-hidden="true" />
-                </Button>
+                {!isUploading && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="text-muted-foreground/80 hover:text-foreground -me-2 size-8 hover:bg-transparent"
+                    onClick={() => removeFile(fileItem.id)}
+                    aria-label="Remove file"
+                  >
+                    <XIcon className="size-4" aria-hidden="true" />
+                  </Button>
+                )}
               </div>
             ))}
 
             {/* Remove all files button */}
-            {selectedFiles.length > 1 && (
+            {selectedFiles.length > 1 && !isUploading && (
               <div>
                 <Button
                   size="sm"
@@ -574,7 +682,11 @@ export default function FileUploadNew({ onTransferCreated }) {
                       className="peer ps-6 pe-12 pr-8"
                       placeholder="1.00"
                       type="text"
-                      value={transferOptions.paymentAmount === 0 ? "" : transferOptions.paymentAmount}
+                      value={
+                        transferOptions.paymentAmount === 0
+                          ? ""
+                          : transferOptions.paymentAmount
+                      }
                       onChange={(e) => {
                         const value = e.target.value;
                         // Permettre seulement les chiffres, points et virgules
@@ -717,7 +829,7 @@ export default function FileUploadNew({ onTransferCreated }) {
             <Button
               onClick={handleCreateTransfer}
               disabled={isUploading}
-              className="flex items-center gap-2 font-normal"
+              className="flex items-center gap-2 font-normal cursor-pointer"
             >
               {isUploading ? (
                 <>

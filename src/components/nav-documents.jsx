@@ -192,7 +192,7 @@ export function NavDocuments({ items }) {
               className={cn(
                 "relative",
                 !hasAccess && "opacity-60 cursor-not-allowed",
-                isActiveLink && hasAccess && "bg-[#F0F0F0] hover:bg-[#F0F0F0]/90 active:bg-[#F0F0F0] text-black min-w-8 duration-200 ease-linear"
+                isActiveLink && hasAccess && "bg-[#F0F0F0] dark:bg-sidebar-accent hover:bg-[#F0F0F0]/90 dark:hover:bg-sidebar-accent/90 active:bg-[#F0F0F0] dark:active:bg-sidebar-accent text-sidebar-foreground min-w-8 duration-200 ease-linear"
               )}
               disabled={!hasAccess}
             >

@@ -3,20 +3,22 @@ import { useMutation } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { v4 as uuidv4 } from "uuid";
 import {
-  UPLOAD_FILE_CHUNK_TO_R2,
+  GENERATE_PRESIGNED_UPLOAD_URLS,
+  CONFIRM_CHUNK_UPLOADED,
   CREATE_FILE_TRANSFER_WITH_IDS_R2,
 } from "../graphql/mutations";
 
-const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB par chunk (minimum S3 multipart = 5MB)
+const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB par chunk
 
-export const useFileTransferR2 = (refetchTransfers) => {
+export const useFileTransferR2Direct = (refetchTransfers) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [transferResult, setTransferResult] = useState(null);
 
   // Mutations GraphQL
-  const [uploadFileChunkToR2Mutation] = useMutation(UPLOAD_FILE_CHUNK_TO_R2);
+  const [generatePresignedUrlsMutation] = useMutation(GENERATE_PRESIGNED_UPLOAD_URLS);
+  const [confirmChunkUploadedMutation] = useMutation(CONFIRM_CHUNK_UPLOADED);
   const [createFileTransferWithIdsR2Mutation] = useMutation(
     CREATE_FILE_TRANSFER_WITH_IDS_R2
   );
@@ -38,29 +40,97 @@ export const useFileTransferR2 = (refetchTransfers) => {
   };
 
   /**
-   * Upload un fichier en chunks vers Cloudflare R2
+   * Upload un chunk directement vers R2 via presigned URL
    */
-  const uploadFileInChunksToR2 = async (fileData) => {
+  const uploadChunkDirectToR2 = async (chunk, uploadUrl, chunkIndex) => {
+    try {
+      console.log(`📤 Upload chunk ${chunkIndex} vers R2 (${(chunk.size / 1024 / 1024).toFixed(2)} MB)`);
+      console.log(`🔗 URL: ${uploadUrl.substring(0, 100)}...`);
+
+      const response = await fetch(uploadUrl, {
+        method: "PUT",
+        body: chunk,
+        headers: {
+          "Content-Type": "application/octet-stream",
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        console.error(`❌ Réponse R2:`, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          body: errorText,
+        });
+        throw new Error(
+          `Upload chunk ${chunkIndex} échoué: ${response.status} ${response.statusText} - ${errorText}`
+        );
+      }
+
+      console.log(`✅ Chunk ${chunkIndex} uploadé avec succès`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Erreur upload chunk ${chunkIndex}:`, error);
+      console.error(`❌ Type d'erreur:`, error.name);
+      console.error(`❌ Message:`, error.message);
+      throw error;
+    }
+  };
+
+  /**
+   * Upload un fichier en chunks directement vers R2
+   */
+  const uploadFileInChunksDirectToR2 = async (fileData) => {
     const { file, id: fileId } = fileData;
     const chunks = createFileChunks(file);
     const totalChunks = chunks.length;
 
     try {
-      console.log(`📦 Début upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalChunks} chunks`);
-      
-      // Nombre de chunks à uploader en parallèle (réduit car chunks plus gros)
+      console.log(
+        `📦 Début upload DIRECT: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalChunks} chunks`
+      );
+
+      // Étape 1 : Obtenir les URLs signées
+      console.log(`🔑 Demande de ${totalChunks} URLs signées...`);
+      const { data: urlsData, errors: urlErrors } = await generatePresignedUrlsMutation({
+        variables: {
+          fileId: fileId,
+          totalChunks: totalChunks,
+          fileName: file.name,
+        },
+      });
+
+      if (urlErrors) {
+        console.error("❌ Erreurs GraphQL lors de la génération des URLs:", urlErrors);
+        throw new Error(`Erreurs GraphQL: ${urlErrors.map(e => e.message).join(", ")}`);
+      }
+
+      if (!urlsData?.generatePresignedUploadUrls?.uploadUrls) {
+        console.error("❌ Réponse GraphQL invalide:", urlsData);
+        throw new Error("Impossible d'obtenir les URLs signées");
+      }
+
+      const uploadUrls = urlsData.generatePresignedUploadUrls.uploadUrls;
+      console.log(`✅ ${uploadUrls.length} URLs signées reçues`);
+      console.log(`📋 Exemple d'URL:`, uploadUrls[0]?.uploadUrl?.substring(0, 150) + "...");
+
+      // Étape 2 : Upload des chunks en parallèle vers R2
       const CONCURRENT_UPLOADS = 5;
       let uploadedCount = 0;
 
-      // Fonction pour uploader un chunk
       const uploadChunk = async (chunk, index) => {
-        const chunkFile = new File([chunk], `chunk-${index}`, {
-          type: "application/octet-stream",
-        });
+        const urlInfo = uploadUrls.find((u) => u.chunkIndex === index);
+        if (!urlInfo) {
+          throw new Error(`URL manquante pour chunk ${index}`);
+        }
 
-        const { data } = await uploadFileChunkToR2Mutation({
+        // Upload DIRECT vers R2
+        await uploadChunkDirectToR2(chunk, urlInfo.uploadUrl, index);
+
+        // Confirmer l'upload au serveur (léger, juste metadata)
+        await confirmChunkUploadedMutation({
           variables: {
-            chunk: chunkFile,
             fileId: fileId,
             chunkIndex: index,
             totalChunks: totalChunks,
@@ -69,36 +139,30 @@ export const useFileTransferR2 = (refetchTransfers) => {
           },
         });
 
-        if (!data?.uploadFileChunkToR2?.chunkReceived) {
-          throw new Error(`Échec de l'upload du chunk ${index + 1}`);
-        }
-
-        // Mettre à jour le progrès
         uploadedCount++;
         const progress = (uploadedCount / totalChunks) * 100;
         setUploadProgress(progress);
-
-        return data;
       };
 
-      // Upload des chunks par batch parallèle
+      // Upload par batch parallèle
       for (let i = 0; i < chunks.length; i += CONCURRENT_UPLOADS) {
         const batch = chunks.slice(i, i + CONCURRENT_UPLOADS);
-        const batchPromises = batch.map((chunk, batchIndex) => 
+        const batchPromises = batch.map((chunk, batchIndex) =>
           uploadChunk(chunk, i + batchIndex)
         );
 
-        // Attendre que tout le batch soit uploadé
         await Promise.all(batchPromises);
-        
-        console.log(`✅ Batch ${Math.floor(i / CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalChunks / CONCURRENT_UPLOADS)} uploadé`);
+
+        console.log(
+          `✅ Batch ${Math.floor(i / CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalChunks / CONCURRENT_UPLOADS)} uploadé`
+        );
       }
 
-      console.log(`✅ Upload terminé: ${totalChunks} chunks uploadés`);
+      console.log(`✅ Upload DIRECT terminé: ${totalChunks} chunks uploadés`);
       return fileId;
     } catch (error) {
-      console.error(`❌ Erreur upload R2 pour ${file.name}:`, error);
-      throw new Error(`Échec de l'upload R2 de ${file.name}: ${error.message}`);
+      console.error(`❌ Erreur upload DIRECT pour ${file.name}:`, error);
+      throw new Error(`Échec de l'upload DIRECT: ${error.message}`);
     }
   };
 
@@ -113,10 +177,9 @@ export const useFileTransferR2 = (refetchTransfers) => {
       const fileData = files[i];
 
       try {
-        const fileId = await uploadFileInChunksToR2(fileData);
+        const fileId = await uploadFileInChunksDirectToR2(fileData);
         uploadedFileIds.push(fileId);
 
-        // Mettre à jour le progrès global
         const globalProgress = ((i + 1) / totalFiles) * 100;
         setUploadProgress(globalProgress);
       } catch (error) {
@@ -143,7 +206,6 @@ export const useFileTransferR2 = (refetchTransfers) => {
         setUploadProgress(0);
         setTransferResult(null);
 
-        // Filtrer les fichiers valides
         const validFiles = selectedFiles.filter(
           (f) =>
             f && f.file && (f.file instanceof File || f.file instanceof Blob)
@@ -153,7 +215,7 @@ export const useFileTransferR2 = (refetchTransfers) => {
           throw new Error("Aucun fichier valide à uploader");
         }
 
-        // Upload tous les fichiers en chunks vers R2
+        // Upload tous les fichiers en chunks DIRECT vers R2
         const uploadedFileIds = await uploadMultipleFilesToR2(validFiles);
 
         // Préparer les options du transfert
@@ -202,12 +264,10 @@ export const useFileTransferR2 = (refetchTransfers) => {
           setTransferResult(result);
           toast.success("Transfert créé avec succès !");
 
-          // Rafraîchir la liste des transferts
           if (refetchTransfers) {
             refetchTransfers();
           }
 
-          // Réinitialiser les fichiers sélectionnés
           setSelectedFiles([]);
 
           return result;
@@ -235,7 +295,8 @@ export const useFileTransferR2 = (refetchTransfers) => {
     },
     [
       selectedFiles,
-      uploadFileChunkToR2Mutation,
+      generatePresignedUrlsMutation,
+      confirmChunkUploadedMutation,
       createFileTransferWithIdsR2Mutation,
       refetchTransfers,
     ]
@@ -285,7 +346,7 @@ export const useFileTransferR2 = (refetchTransfers) => {
     createTransfer: createTransferR2,
 
     // Métadonnées
-    storageType: "r2",
+    storageType: "r2-direct",
     chunkSize: CHUNK_SIZE,
   };
 };

@@ -29,6 +29,110 @@ export const UPLOAD_FILE_CHUNK = gql`
   }
 `;
 
+// Mutation pour démarrer un multipart upload natif
+export const START_MULTIPART_UPLOAD = gql`
+  mutation StartMultipartUpload(
+    $transferId: String!
+    $fileId: String!
+    $fileName: String!
+    $fileSize: Int!
+    $mimeType: String
+    $totalParts: Int!
+  ) {
+    startMultipartUpload(
+      transferId: $transferId
+      fileId: $fileId
+      fileName: $fileName
+      fileSize: $fileSize
+      mimeType: $mimeType
+      totalParts: $totalParts
+    ) {
+      uploadId
+      key
+      presignedUrls {
+        partNumber
+        uploadUrl
+      }
+    }
+  }
+`;
+
+// Mutation pour compléter un multipart upload
+export const COMPLETE_MULTIPART_UPLOAD = gql`
+  mutation CompleteMultipartUpload(
+    $uploadId: String!
+    $key: String!
+    $parts: [PartInput!]!
+    $transferId: String
+    $fileId: String!
+  ) {
+    completeMultipartUpload(
+      uploadId: $uploadId
+      key: $key
+      parts: $parts
+      transferId: $transferId
+      fileId: $fileId
+    ) {
+      success
+      key
+      url
+      size
+      etag
+      fileId
+    }
+  }
+`;
+
+// Nouvelle mutation pour générer des URLs signées (upload direct)
+export const GENERATE_PRESIGNED_UPLOAD_URLS = gql`
+  mutation GeneratePresignedUploadUrls(
+    $fileId: String!
+    $totalChunks: Int!
+    $fileName: String!
+  ) {
+    generatePresignedUploadUrls(
+      fileId: $fileId
+      totalChunks: $totalChunks
+      fileName: $fileName
+    ) {
+      fileId
+      transferId
+      uploadUrls {
+        chunkIndex
+        uploadUrl
+        key
+      }
+      expiresIn
+    }
+  }
+`;
+
+// Nouvelle mutation pour confirmer l'upload d'un chunk
+export const CONFIRM_CHUNK_UPLOADED = gql`
+  mutation ConfirmChunkUploadedToR2(
+    $fileId: String!
+    $chunkIndex: Int!
+    $totalChunks: Int!
+    $fileName: String!
+    $fileSize: Int!
+  ) {
+    confirmChunkUploadedToR2(
+      fileId: $fileId
+      chunkIndex: $chunkIndex
+      totalChunks: $totalChunks
+      fileName: $fileName
+      fileSize: $fileSize
+    ) {
+      chunkReceived
+      fileCompleted
+      fileId
+      fileName
+      filePath
+      storageType
+    }
+  }
+`;
+
 export const UPLOAD_FILE_CHUNK_TO_R2 = gql`
   mutation UploadFileChunkToR2(
     $chunk: Upload!
