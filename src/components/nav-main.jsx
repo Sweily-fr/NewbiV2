@@ -86,8 +86,8 @@ export function NavMain({ items }) {
               <div
                 className={cn(
                   "flex items-center w-full rounded-md transition-colors",
-                  pathname.startsWith("/dashboard/outils") &&
-                    "bg-[#F0F0F0] hover:bg-[#F0F0F0]/90"
+                  pathname === "/dashboard/outils" &&
+                    "bg-[#F0F0F0] dark:bg-sidebar-accent hover:bg-[#F0F0F0]/90 dark:hover:bg-sidebar-accent/90"
                 )}
               >
                 <Link
@@ -97,7 +97,10 @@ export function NavMain({ items }) {
                 >
                   <SidebarMenuButton
                     tooltip="Outils"
-                    className="bg-transparent w-full cursor-pointer hover:bg-transparent"
+                    className={cn(
+                      "bg-transparent w-full cursor-pointer hover:bg-transparent",
+                      pathname === "/dashboard/outils" && "text-sidebar-foreground"
+                    )}
                   >
                     <LayoutPanelLeft />
                     <span>Outils</span>
@@ -159,7 +162,7 @@ export function NavMain({ items }) {
                       (pathname === item.url ||
                         (item.url !== "/dashboard" &&
                           pathname?.startsWith(item.url + "/"))) &&
-                        "bg-[#F0F0F0] hover:bg-[#F0F0F0]/90 active:bg-[#F0F0F0] text-black min-w-8 duration-200 ease-linear"
+                        "bg-[#F0F0F0] dark:bg-sidebar-accent hover:bg-[#F0F0F0]/90 dark:hover:bg-sidebar-accent/90 active:bg-[#F0F0F0] dark:active:bg-sidebar-accent text-sidebar-foreground min-w-8 duration-200 ease-linear"
                     )}
                     tooltip={
                       (isProTab || isPaidProTab) && !hasAccess

@@ -296,6 +296,7 @@ export function ChartAreaInteractive({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              width={35}
               tickFormatter={(value) => {
                 // Formater les valeurs en milliers (k) si > 1000
                 if (value >= 1000) {
