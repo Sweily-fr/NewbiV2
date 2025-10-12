@@ -19,6 +19,13 @@ export const GET_BOARD = gql`
       id
       title
       description
+      members {
+        id
+        userId
+        name
+        email
+        image
+      }
       columns {
         id
         title
@@ -34,6 +41,9 @@ export const GET_BOARD = gql`
         dueDate
         columnId
         position
+        userId
+        createdAt
+        updatedAt
         tags {
           name
           className
@@ -51,6 +61,27 @@ export const GET_BOARD = gql`
           name
           email
           image
+        }
+        comments {
+          id
+          userId
+          userName
+          userImage
+          content
+          createdAt
+          updatedAt
+        }
+        activity {
+          id
+          userId
+          userName
+          userImage
+          type
+          field
+          oldValue
+          newValue
+          description
+          createdAt
         }
       }
     }
@@ -222,7 +253,7 @@ export const MOVE_TASK = gql`
   }
 `;
 
-// Fragments pour les types communs
+// Fragments pour les types communs (déplacés avant leur utilisation)
 export const TASK_FRAGMENT = gql`
   fragment TaskFields on Task {
     id
@@ -233,6 +264,9 @@ export const TASK_FRAGMENT = gql`
     dueDate
     columnId
     position
+    userId
+    createdAt
+    updatedAt
     tags {
       name
       className
@@ -245,7 +279,61 @@ export const TASK_FRAGMENT = gql`
       text
       completed
     }
+    assignedMembers {
+      userId
+      name
+      email
+      image
+    }
+    comments {
+      id
+      userId
+      userName
+      userImage
+      content
+      createdAt
+      updatedAt
+    }
+    activity {
+      id
+      userId
+      userName
+      userImage
+      type
+      field
+      oldValue
+      newValue
+      description
+      createdAt
+    }
   }
+`;
+
+export const ADD_COMMENT = gql`
+  mutation AddComment($taskId: ID!, $input: CommentInput!, $workspaceId: ID) {
+    addComment(taskId: $taskId, input: $input, workspaceId: $workspaceId) {
+      ...TaskFields
+    }
+  }
+  ${TASK_FRAGMENT}
+`;
+
+export const UPDATE_COMMENT = gql`
+  mutation UpdateComment($taskId: ID!, $commentId: ID!, $content: String!, $workspaceId: ID) {
+    updateComment(taskId: $taskId, commentId: $commentId, content: $content, workspaceId: $workspaceId) {
+      ...TaskFields
+    }
+  }
+  ${TASK_FRAGMENT}
+`;
+
+export const DELETE_COMMENT = gql`
+  mutation DeleteComment($taskId: ID!, $commentId: ID!, $workspaceId: ID) {
+    deleteComment(taskId: $taskId, commentId: $commentId, workspaceId: $workspaceId) {
+      ...TaskFields
+    }
+  }
+  ${TASK_FRAGMENT}
 `;
 
 export const COLUMN_FRAGMENT = gql`

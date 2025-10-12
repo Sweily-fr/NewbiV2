@@ -33,6 +33,7 @@ export const auth = betterAuth({
     "https://newbi.fr",
     "https://www.newbi.fr",
     "http://localhost:3000",
+    "https://newbi-v2-git-develop-sofianemtimet6-2653s-projects.vercel.app"
   ],
 
   // Cookie Cache pour optimiser les performances

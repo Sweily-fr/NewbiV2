@@ -28,8 +28,8 @@ export async function POST(request) {
     // Créer un lien d'onboarding
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
-      refresh_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?tab=security&stripe_refresh=true`,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?tab=security&stripe_success=true`,
+      refresh_url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard/settings?tab=security&stripe_refresh=true`,
+      return_url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard/settings?tab=security&stripe_success=true`,
       type: 'account_onboarding',
     });
 

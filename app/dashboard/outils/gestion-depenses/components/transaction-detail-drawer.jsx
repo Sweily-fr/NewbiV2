@@ -25,6 +25,7 @@ import {
   TrashIcon,
   XIcon,
 } from "lucide-react";
+import { formatDateToFrench, formatDateTimeToFrench } from "@/src/utils/dateFormatter";
 
 const paymentMethodIcons = {
   CARD: CreditCardIcon,
@@ -53,69 +54,12 @@ export function TransactionDetailDrawer({
   const PaymentIcon =
     paymentMethodIcons[transaction.paymentMethod] || FileTextIcon;
 
+  // Utiliser les fonctions utilitaires pour formater les dates
   const formatDate = (dateInput, includeTime = false) => {
-    if (!dateInput) return "Date non disponible";
-    
-    let date;
-    
-    // Gérer différents types d'entrée
-    if (typeof dateInput === 'string') {
-      // Cas spécial pour les chaînes vides ou "Invalid Date"
-      if (dateInput === '' || dateInput === 'Invalid Date') {
-        return "Date non disponible";
-      }
-      
-      // Si c'est une date au format YYYY-MM-DD, ajouter une heure pour éviter les problèmes de timezone
-      if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
-        date = new Date(dateInput + 'T12:00:00.000Z');
-      } 
-      // Si c'est un timestamp en string
-      else if (/^\d{10,13}$/.test(dateInput)) {
-        date = new Date(parseInt(dateInput));
-      }
-      // Autres formats de string
-      else {
-        date = new Date(dateInput);
-      }
-    } 
-    // Si c'est un nombre (timestamp)
-    else if (typeof dateInput === 'number') {
-      date = new Date(dateInput);
-    }
-    // Si c'est déjà un objet Date
-    else if (dateInput instanceof Date) {
-      date = dateInput;
-    }
-    // Autres cas
-    else {
-      return "Format de date non supporté";
-    }
-    
-    // Vérifier si la date est valide
-    if (isNaN(date.getTime())) {
-      return "Date invalide";
-    }
-    
-    // Formater selon les besoins
     if (includeTime) {
-      const dateStr = date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-      
-      const timeStr = date.toLocaleTimeString("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      
-      return `${dateStr} ${timeStr}`;
+      return formatDateTimeToFrench(dateInput);
     } else {
-      return date.toLocaleDateString("fr-FR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
+      return formatDateToFrench(dateInput);
     }
   };
 

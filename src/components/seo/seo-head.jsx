@@ -30,7 +30,7 @@ export default function SEOHead({
   language = "fr-FR",
 }) {
   const pathname = usePathname();
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://newbi.fr";
+  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr";
   
   // Construction de l'URL canonique
   const canonicalUrl = canonical || `${baseUrl}${pathname}`;

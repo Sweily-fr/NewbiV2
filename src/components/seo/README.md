@@ -130,7 +130,7 @@ Le SEO a été intégré sur toutes les pages demandées :
 ### Variables d'environnement requises
 
 ```env
-NEXT_PUBLIC_APP_URL=https://newbi.fr
+NEXT_PUBLIC_BETTER_AUTH_URL=https://newbi.fr
 ```
 
 ### Images SEO à ajouter

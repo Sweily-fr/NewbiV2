@@ -23,7 +23,7 @@ export function generateMetadata(seoData) {
     language = "fr-FR"
   } = seoData;
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://newbi.fr";
+  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr";
 
   return {
     title,
