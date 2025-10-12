@@ -22,7 +22,7 @@ export const metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://newbi.fr'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'https://newbi.fr'),
   alternates: {
     canonical: '/',
   },

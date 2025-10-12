@@ -12,7 +12,7 @@ import { getSEOData, generateBasicJsonLd, generateBreadcrumbsJsonLd } from "@/sr
  */
 export function useSEO(pageKey, customSEO = {}, breadcrumbs = []) {
   const pathname = usePathname();
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://newbi.fr";
+  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr";
   const currentUrl = `${baseUrl}${pathname}`;
 
   // Récupération des données SEO de base
@@ -66,9 +66,9 @@ export function useSEO(pageKey, customSEO = {}, breadcrumbs = []) {
  */
 export function useProductSEO(productName, customSEO = {}) {
   const breadcrumbs = [
-    { name: "Accueil", url: process.env.NEXT_PUBLIC_APP_URL || "https://newbi.fr" },
-    { name: "Produits", url: `${process.env.NEXT_PUBLIC_APP_URL || "https://newbi.fr"}/produits` },
-    { name: productName, url: `${process.env.NEXT_PUBLIC_APP_URL || "https://newbi.fr"}/produits/${productName.toLowerCase()}` }
+    { name: "Accueil", url: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr" },
+    { name: "Produits", url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr"}/produits` },
+    { name: productName, url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr"}/produits/${productName.toLowerCase()}` }
   ];
 
   return useSEO(productName.toLowerCase(), customSEO, breadcrumbs);
@@ -82,8 +82,8 @@ export function useProductSEO(productName, customSEO = {}) {
  */
 export function useAuthSEO(authType, customSEO = {}) {
   const breadcrumbs = [
-    { name: "Accueil", url: process.env.NEXT_PUBLIC_APP_URL || "https://newbi.fr" },
-    { name: authType === "login" ? "Connexion" : "Inscription", url: `${process.env.NEXT_PUBLIC_APP_URL || "https://newbi.fr"}/auth/${authType}` }
+    { name: "Accueil", url: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr" },
+    { name: authType === "login" ? "Connexion" : "Inscription", url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr"}/auth/${authType}` }
   ];
 
   return useSEO(authType, customSEO, breadcrumbs);
@@ -102,8 +102,8 @@ export function useLegalSEO(legalType, customSEO = {}) {
   };
 
   const breadcrumbs = [
-    { name: "Accueil", url: process.env.NEXT_PUBLIC_APP_URL || "https://newbi.fr" },
-    { name: pageNames[legalType], url: `${process.env.NEXT_PUBLIC_APP_URL || "https://newbi.fr"}/${legalType}` }
+    { name: "Accueil", url: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr" },
+    { name: pageNames[legalType], url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr"}/${legalType}` }
   ];
 
   const pageKey = legalType === "mentions-legales" ? "mentionsLegales" : "politiqueConfidentialite";

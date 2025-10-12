@@ -17,7 +17,7 @@ export async function POST(request) {
     const result = await auth.api.sendVerificationEmail({
       body: {
         email: email.toLowerCase(),
-        callbackURL: callbackURL || `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email`
+        callbackURL: callbackURL || `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/auth/verify-email`
       }
     });
 
