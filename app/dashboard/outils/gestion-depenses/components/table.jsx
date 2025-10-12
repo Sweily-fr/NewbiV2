@@ -120,6 +120,8 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
 } from "lucide-react";
+import { formatDateToFrench } from "@/src/utils/dateFormatter";
+
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableRowContent =
@@ -165,18 +167,8 @@ const columns = [
     accessorKey: "date",
     cell: ({ row }) => {
       const dateValue = row.getValue("date");
-
-      // Forcer la conversion si c'est un timestamp
-      if (
-        typeof dateValue === "number" ||
-        (typeof dateValue === "string" && /^\d{10,13}$/.test(dateValue))
-      ) {
-        const date = new Date(Number(dateValue));
-        const formatted = date.toISOString().split("T")[0];
-        return <div className="font-normal">{formatted}</div>;
-      }
-
-      return <div className="font-normal">{dateValue}</div>;
+      const formattedDate = formatDateToFrench(dateValue);
+      return <div className="font-normal">{formattedDate}</div>;
     },
     size: 120,
     enableHiding: false,
@@ -793,6 +785,15 @@ export default function TransactionTable() {
   // Fonction pour mapper les catégories du formulaire vers les enums de l'API
   const mapCategoryToEnum = (category) => {
     const categoryMap = {
+      // Mapping depuis le formulaire (minuscules)
+      bureau: "OFFICE_SUPPLIES",
+      transport: "TRAVEL",
+      repas: "MEALS",
+      materiel: "EQUIPMENT",
+      marketing: "MARKETING",
+      formation: "TRAINING",
+      autre: "OTHER",
+      // Mapping ancien format (majuscules) pour compatibilité
       Transport: "TRAVEL",
       Repas: "MEALS",
       Bureau: "OFFICE_SUPPLIES",

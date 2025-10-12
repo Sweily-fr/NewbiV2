@@ -43,6 +43,36 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
     vendor: "",
   });
 
+  // Fonction pour mapper les catégories de l'API vers le formulaire
+  const mapApiCategoryToForm = (apiCategory) => {
+    const categoryMap = {
+      OFFICE_SUPPLIES: "bureau",
+      TRAVEL: "transport",
+      MEALS: "repas",
+      EQUIPMENT: "materiel",
+      MARKETING: "marketing",
+      TRAINING: "formation",
+      OTHER: "autre",
+      SERVICES: "autre",
+      RENT: "autre",
+      SALARIES: "autre",
+    };
+    return categoryMap[apiCategory] || "autre";
+  };
+
+  // Fonction pour mapper les méthodes de paiement de l'API vers le formulaire
+  const mapApiPaymentMethodToForm = (apiPaymentMethod) => {
+    const paymentMethodMap = {
+      CREDIT_CARD: "CARD",
+      BANK_TRANSFER: "TRANSFER",
+      CASH: "CASH",
+      CHECK: "CHECK",
+      PAYPAL: "TRANSFER",
+      OTHER: "TRANSFER",
+    };
+    return paymentMethodMap[apiPaymentMethod] || "CARD";
+  };
+
   // Pré-remplir le formulaire si une transaction est fournie (mode édition)
   useEffect(() => {
     if (transaction && open) {
@@ -74,10 +104,10 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
       const newFormData = {
         type: transaction.type || "EXPENSE",
         amount: transaction.amount?.toString() || "",
-        category: transaction.category || "",
+        category: mapApiCategoryToForm(transaction.category) || "",
         date: formattedDate,
         description: transaction.description || "",
-        paymentMethod: transaction.paymentMethod || "CARD",
+        paymentMethod: mapApiPaymentMethodToForm(transaction.paymentMethod) || "CARD",
         vendor: transaction.vendor || "",
       };
       
@@ -223,6 +253,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                       handleChange("date")(e.target.value);
                     }}
                     className="w-40"
+                    lang="fr-FR"
                   />
                 </div>
               </CardContent>
