@@ -191,6 +191,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       updated: '📝',
       moved: '🔄',
       assigned: '👤',
+      unassigned: '👤',
       completed: '✅',
       reopened: '🔓'
     };
@@ -206,13 +207,26 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       checklist: '✅'
     };
     
-    // Si c'est un déplacement, trouver les colonnes de départ et d'arrivée
     let text = activity.description || `a modifié ${activity.field}`;
     let moveDetails = null;
     
+    // Si c'est un déplacement, trouver les colonnes de départ et d'arrivée
     if (activity.type === 'moved' && columns.length > 0) {
+      console.log('🔍 [TaskActivity] Déplacement détecté:', {
+        activityType: activity.type,
+        oldValue: activity.oldValue,
+        newValue: activity.newValue,
+        columnsCount: columns.length,
+        columnIds: columns.map(c => c.id)
+      });
+      
       const oldColumn = columns.find(col => col.id === activity.oldValue);
       const newColumn = columns.find(col => col.id === activity.newValue);
+      
+      console.log('🔍 [TaskActivity] Colonnes trouvées:', {
+        oldColumn: oldColumn ? { id: oldColumn.id, title: oldColumn.title } : null,
+        newColumn: newColumn ? { id: newColumn.id, title: newColumn.title } : null
+      });
       
       if (oldColumn && newColumn) {
         text = 'a déplacé la tâche';
@@ -223,9 +237,38 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       }
     }
     
+    // Si c'est une assignation ou désassignation, afficher le nom de la personne
+    if ((activity.type === 'assigned' || activity.type === 'unassigned') && boardMembers.length > 0) {
+      // Chercher dans newValue (assignation) ou oldValue (désassignation)
+      const memberIds = [];
+      
+      if (activity.type === 'assigned' && Array.isArray(activity.newValue)) {
+        memberIds.push(...activity.newValue);
+      } else if (activity.type === 'unassigned' && Array.isArray(activity.oldValue)) {
+        memberIds.push(...activity.oldValue);
+      }
+      
+      // Trouver les noms des membres
+      const memberNames = memberIds
+        .map(id => {
+          const member = boardMembers.find(m => m.userId === id || m.id === id);
+          return member ? member.name : null;
+        })
+        .filter(Boolean);
+      
+      if (memberNames.length > 0) {
+        if (activity.type === 'assigned') {
+          text = `a assigné ${memberNames.join(', ')}`;
+        } else {
+          text = `a désassigné ${memberNames.join(', ')}`;
+        }
+      }
+    }
+    
     // Choisir l'icône appropriée
+    // Pour les déplacements, toujours utiliser l'icône de déplacement
     let icon = icons[activity.type] || '📝';
-    if (activity.field && fieldIcons[activity.field]) {
+    if (activity.type !== 'moved' && activity.field && fieldIcons[activity.field]) {
       icon = fieldIcons[activity.field];
     }
     
@@ -365,35 +408,43 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                         </div>
                       </>
                     )
-                  ) : (
-                    <div className="text-sm text-muted-foreground">
-                      <span className="mr-1">{display.icon}</span>
-                      {display.text}
-                      {display.moveDetails && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <div className="flex items-center gap-1.5">
-                            <div 
-                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: display.moveDetails.from.color }}
-                            />
-                            <span className="text-xs text-foreground">
-                              {display.moveDetails.from.title}
-                            </span>
+                  ) : display ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{item.userName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(item.createdAt)}
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        <span className="mr-1">{display.icon}</span>
+                        {display.text}
+                        {display.moveDetails && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="flex items-center gap-1.5">
+                              <div 
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: display.moveDetails.from.color }}
+                              />
+                              <span className="text-xs text-foreground">
+                                {display.moveDetails.from.title}
+                              </span>
+                            </div>
+                            <span className="text-muted-foreground text-xs">→</span>
+                            <div className="flex items-center gap-1.5">
+                              <div 
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: display.moveDetails.to.color }}
+                              />
+                              <span className="text-xs text-foreground">
+                                {display.moveDetails.to.title}
+                              </span>
+                            </div>
                           </div>
-                          <span className="text-muted-foreground text-xs">→</span>
-                          <div className="flex items-center gap-1.5">
-                            <div 
-                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: display.moveDetails.to.color }}
-                            />
-                            <span className="text-xs text-foreground">
-                              {display.moveDetails.to.title}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    </>
+                  ) : null}
                 </div>
               </div>
               );
