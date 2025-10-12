@@ -119,7 +119,7 @@ export default function FeatureGrid({ className }) {
         <div className="mt-6 grid grid-cols-1 gap-3 sm:mt-10 lg:grid-cols-6 lg:grid-rows-2">
           <div className="max-lg:rounded-t-4xl lg:col-span-3 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative h-60 shrink-0">
-              <div className="h-60 bg-[url(/images/lp-home/Factures.jpg)] bg-[100%_auto] bg-no-repeat"></div>
+              <div className="h-60 bg-[url(/images/lp-home/Factures.jpg)] bg-[length:contain] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
             <div className="relative p-6">
@@ -139,7 +139,7 @@ export default function FeatureGrid({ className }) {
 
           <div className="lg:col-span-3 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative h-60 shrink-0">
-              <div className="absolute inset-0 bg-[url(/images/lp-home/Devis.jpg)] bg-[length:100%_auto] bg-no-repeat"></div>
+              <div className="absolute inset-0 bg-[url(/images/lp-home/Devis.jpg)] bg-[length:contain] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
             <div className="relative p-6">
