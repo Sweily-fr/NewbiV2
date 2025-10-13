@@ -6,48 +6,61 @@ import { authClient } from "@/src/lib/auth-client";
 
 /**
  * Hook pour gérer les changements d'organisation
- * Redirige vers la liste appropriée si la ressource actuelle n'existe plus
+ * Redirige IMMÉDIATEMENT vers la liste lors d'un changement d'organisation
  */
 export function useOrganizationChange({ 
   resourceId, 
-  resourceExists, 
   listUrl,
   enabled = true 
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: activeOrganization } = authClient.useActiveOrganization();
-  const previousOrgIdRef = useRef(activeOrganization?.id);
+  const previousOrgIdRef = useRef(null);
+  const isInitializedRef = useRef(false);
 
+  // Écouter l'événement custom de changement d'organisation
   useEffect(() => {
-    if (!enabled || !activeOrganization) return;
+    if (!enabled || !resourceId) return;
 
-    const currentOrgId = activeOrganization.id;
-    const previousOrgId = previousOrgIdRef.current;
+    // Initialiser avec l'organisation actuelle
+    const currentOrgId = activeOrganization?.id;
+    if (currentOrgId && !isInitializedRef.current) {
+      previousOrgIdRef.current = currentOrgId;
+      isInitializedRef.current = true;
+      console.log("[useOrganizationChange] 🎯 Initialisation avec organisation:", currentOrgId);
+    }
 
-    // Détecter un changement d'organisation
-    if (previousOrgId && previousOrgId !== currentOrgId) {
-      console.log("[useOrganizationChange] Changement d'organisation détecté", {
+    // Écouter l'événement custom de changement d'organisation
+    const handleOrganizationChange = (event) => {
+      const { previousOrgId, newOrgId } = event.detail;
+      
+      console.log("[useOrganizationChange] 📢 Événement organizationChanged reçu", {
         previousOrgId,
-        currentOrgId,
+        newOrgId,
         resourceId,
-        resourceExists,
         pathname,
       });
 
-      // Si on est sur une page de détail et que la ressource n'existe pas
-      if (resourceId && resourceExists === false) {
-        console.log("[useOrganizationChange] Ressource inexistante - Redirection vers", listUrl);
+      // Si on est sur une page de détail (avec resourceId), rediriger IMMÉDIATEMENT
+      if (resourceId) {
+        console.log("[useOrganizationChange] ➡️ REDIRECTION IMMEDIATE vers", listUrl);
         router.push(listUrl);
       }
-    }
 
-    // Mettre à jour la référence
-    previousOrgIdRef.current = currentOrgId;
-  }, [activeOrganization?.id, resourceId, resourceExists, listUrl, router, pathname, enabled]);
+      // Mettre à jour la référence
+      previousOrgIdRef.current = newOrgId;
+    };
+
+    window.addEventListener('organizationChanged', handleOrganizationChange);
+
+    return () => {
+      window.removeEventListener('organizationChanged', handleOrganizationChange);
+    };
+  }, [resourceId, listUrl, router, pathname, enabled, activeOrganization?.id]);
 
   return {
-    hasChangedOrganization: previousOrgIdRef.current !== activeOrganization?.id,
+    hasChangedOrganization: isInitializedRef.current && previousOrgIdRef.current !== activeOrganization?.id,
     currentOrganizationId: activeOrganization?.id,
     previousOrganizationId: previousOrgIdRef.current,
   };

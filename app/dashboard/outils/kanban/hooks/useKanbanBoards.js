@@ -71,6 +71,11 @@ export const useKanbanBoards = () => {
       }
     },
     onError: (error) => {
+      // Ne pas afficher d'erreur si c'est un problème d'authentification (changement d'organisation)
+      if (error.message?.includes('connecté')) {
+        // Silencieux - c'est normal pendant un changement d'organisation
+        return;
+      }
       console.error("❌ [Kanban] Erreur subscription:", error);
     }
   });
