@@ -5,6 +5,7 @@ import {
   MoreVertical,
   ChevronUp,
   ChevronDown,
+  GripVertical,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -53,18 +54,12 @@ export function KanbanColumn({
         isOver ? "bg-accent/50 border-primary/50" : ""
       } ${isDragging ? "border-primary shadow-lg" : ""}`}
     >
-      <div
-        {...dragHandleProps}
-        className={`flex items-center justify-between py-2 ${
-          isDragging ? "cursor-grabbing" : "cursor-grab hover:bg-accent/30 rounded-lg px-2 -mx-2 transition-colors duration-150"
-        }`}
-      >
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between py-2">
+        <div className="flex items-center gap-2 flex-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggleCollapse}
-            onPointerDown={(e) => e.stopPropagation()}
             className="h-4 w-4 p-0 mr-1"
           >
             {isCollapsed ? (
@@ -73,6 +68,16 @@ export function KanbanColumn({
               <ChevronUp className="h-3 w-3" />
             )}
           </Button>
+          <button
+            {...dragHandleProps}
+            className={`text-muted-foreground/70 hover:text-foreground p-1 rounded hover:bg-accent/30 transition-colors touch-none ${
+              isDragging ? "cursor-grabbing" : "cursor-grab"
+            }`}
+            title="Faire glisser pour réorganiser"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </button>
           <div
             className="w-[2px] h-4"
             style={{ backgroundColor: column.color }}
@@ -82,7 +87,7 @@ export function KanbanColumn({
             {tasks.length}
           </Badge>
         </div>
-        <div className="flex items-center gap-1" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
