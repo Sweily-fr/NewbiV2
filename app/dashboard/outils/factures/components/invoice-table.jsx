@@ -93,6 +93,7 @@ import {
 import { useInvoiceTable } from "../hooks/use-invoice-table";
 import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import InvoiceExportButton from "./invoice-export-button";
 
 export default function InvoiceTable() {
   const router = useRouter();
@@ -186,6 +187,9 @@ export default function InvoiceTable() {
         </div>
 
         <div className="flex items-center space-x-2">
+          {/* Export button */}
+          <InvoiceExportButton invoices={invoices || []} />
+
           {/* Column visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
