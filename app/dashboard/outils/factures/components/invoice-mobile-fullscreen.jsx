@@ -23,7 +23,7 @@ import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
+import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 
 export default function InvoiceMobileFullscreen({
   isOpen,
@@ -219,14 +219,15 @@ export default function InvoiceMobileFullscreen({
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <UniversalPDFDownloader
+                          <UniversalPDFDownloaderWithFacturX
                             data={cn}
                             type="creditNote"
+                            enableFacturX={true}
                             variant="ghost"
                             size="sm"
                           >
                             Télécharger
-                          </UniversalPDFDownloader>
+                          </UniversalPDFDownloaderWithFacturX>
                         </div>
                       </div>
                     ))}
@@ -314,14 +315,15 @@ export default function InvoiceMobileFullscreen({
             </Button>
           )}
 
-          <UniversalPDFDownloader
+          <UniversalPDFDownloaderWithFacturX
             data={invoice}
             type="invoice"
+            enableFacturX={true}
             variant="outline"
             className="w-full flex items-center justify-center"
           >
             Télécharger PDF
-          </UniversalPDFDownloader>
+          </UniversalPDFDownloaderWithFacturX>
         </div>
       </div>
 

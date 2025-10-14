@@ -4,7 +4,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useCreditNote } from "@/src/graphql/creditNoteQueries";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
+import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 
 export default function CreditNoteMobileFullscreen({
   isOpen,
@@ -127,14 +127,15 @@ export default function CreditNoteMobileFullscreen({
               </div>
 
               {/* Bouton de téléchargement en bas du contenu */}
-              <UniversalPDFDownloader
+              <UniversalPDFDownloaderWithFacturX
                 data={creditNote}
                 type="creditNote"
+                enableFacturX={true}
                 variant="outline"
                 className="w-full flex items-center justify-center"
               >
                 Télécharger PDF
-              </UniversalPDFDownloader>
+              </UniversalPDFDownloaderWithFacturX>
             </div>
           )}
         </div>
