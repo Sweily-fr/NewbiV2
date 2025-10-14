@@ -198,7 +198,7 @@ const UniversalPDFDownloaderWithFacturX = ({
               URL.revokeObjectURL(url);
               
               console.log('✅ PDF Factur-X conforme téléchargé avec succès');
-              toast.success('PDF Factur-X 100% conforme téléchargé', {
+              toast.success('PDF téléchargé', {
                 description: 'PDF/A-3 + XML EN16931 + Métadonnées XMP',
                 icon: <FileCheck className="h-4 w-4" />
               });
