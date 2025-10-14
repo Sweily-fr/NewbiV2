@@ -120,8 +120,7 @@ export function CompanyInfoGuard({ children }) {
 
                 {missingFieldsInfo.generalFields?.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="font-medium text-foreground flex items-center gap-2 text-sm">
-                      <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
+                    <h4 className="font-medium text-foreground text-sm">
                       Informations générales
                     </h4>
                     <ul className="space-y-1.5 ml-2 sm:ml-4">
@@ -140,8 +139,7 @@ export function CompanyInfoGuard({ children }) {
 
                 {missingFieldsInfo.legalFields?.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="font-medium text-foreground flex items-center gap-2 text-sm">
-                      <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
+                    <h4 className="font-medium text-foreground text-sm">
                       Informations légales
                     </h4>
                     <ul className="space-y-1.5 ml-2 sm:ml-4">
@@ -158,8 +156,8 @@ export function CompanyInfoGuard({ children }) {
                   </div>
                 )}
 
-                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5 sm:p-3 mt-3 sm:mt-4">
-                  <p className="text-xs sm:text-sm text-blue-900 dark:text-blue-100 text-left">
+                <div className="bg-[#5b4eff]/10 dark:bg-[#5b4eff]/20 border border-[#5b4eff]/30 dark:border-[#5b4eff]/40 rounded-lg p-2.5 sm:p-3 mt-3 sm:mt-4">
+                  <p className="text-xs sm:text-sm text-[#5b4eff] dark:text-[#8b7fff] text-left">
                     💡 <strong>Astuce :</strong> Ces informations seront
                     automatiquement utilisées pour générer vos documents
                     professionnels.
@@ -177,7 +175,7 @@ export function CompanyInfoGuard({ children }) {
               </Button>
               <Button
                 onClick={handleGoToSettings}
-                className="bg-[#5b4eff] hover:bg-[#4a3dd9] cursor-pointer w-full sm:w-auto order-1 sm:order-2"
+                className="bg-black hover:bg-black/90 text-white cursor-pointer w-full sm:w-auto order-1 sm:order-2"
               >
                 Compléter les informations
               </Button>
