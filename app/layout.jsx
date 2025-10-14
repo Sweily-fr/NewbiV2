@@ -75,7 +75,7 @@ export default function RootLayout({ children }) {
             __html: `
               (function() {
                 try {
-                  const theme = localStorage.getItem('vite-ui-theme') || 'dark';
+                  const theme = localStorage.getItem('vite-ui-theme') || 'system';
                   const isDashboard = window.location.pathname.startsWith('/dashboard');
                   
                   if (!isDashboard) {
@@ -91,7 +91,8 @@ export default function RootLayout({ children }) {
                   }
                 } catch (e) {
                   // Fallback en cas d'erreur
-                  document.documentElement.classList.add('dark');
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  document.documentElement.classList.add(systemTheme);
                 }
               })();
             `,
@@ -100,7 +101,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="font-sans antialiased">
         <ApolloWrapper>
-          <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
             {children}
             <CookieManager />
           </ThemeProvider>
