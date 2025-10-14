@@ -492,38 +492,38 @@ export function SectionCards({ className, activeFilter = "outline" }) {
 
       {/* Modal des champs manquants */}
       <AlertDialog open={isMissingFieldsDialogOpen} onOpenChange={setIsMissingFieldsDialogOpen}>
-        <AlertDialogContent className="max-w-lg">
+        <AlertDialogContent className="max-w-lg w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-2">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
               </div>
-              <div>
-                <AlertDialogTitle className="text-lg">
+              <div className="flex-1">
+                <AlertDialogTitle className="text-base sm:text-lg">
                   Configuration requise
                 </AlertDialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Informations d'entreprise incomplètes
                 </p>
               </div>
             </div>
-            <AlertDialogDescription className="text-sm leading-relaxed space-y-4">
-              <p>
+            <AlertDialogDescription className="text-xs sm:text-sm leading-relaxed space-y-3 sm:space-y-4">
+              <p className="text-left">
                 Pour utiliser les outils de <strong>Facturation</strong> et <strong>Devis</strong>, 
                 vous devez compléter les informations suivantes :
               </p>
 
               {missingFieldsInfo.generalFields?.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="font-medium text-foreground flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  <h4 className="font-medium text-foreground flex items-center gap-2 text-sm">
+                    <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
                     Informations générales
                   </h4>
-                  <ul className="space-y-1.5 ml-4">
+                  <ul className="space-y-1.5 ml-2 sm:ml-4">
                     {missingFieldsInfo.generalFields.map((field, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm">
-                        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <span>{field}</span>
+                      <li key={index} className="flex items-start gap-2 text-xs sm:text-sm">
+                        <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <span className="flex-1">{field}</span>
                       </li>
                     ))}
                   </ul>
@@ -532,40 +532,40 @@ export function SectionCards({ className, activeFilter = "outline" }) {
 
               {missingFieldsInfo.legalFields?.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="font-medium text-foreground flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  <h4 className="font-medium text-foreground flex items-center gap-2 text-sm">
+                    <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
                     Informations légales
                   </h4>
-                  <ul className="space-y-1.5 ml-4">
+                  <ul className="space-y-1.5 ml-2 sm:ml-4">
                     {missingFieldsInfo.legalFields.map((field, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm">
-                        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <span>{field}</span>
+                      <li key={index} className="flex items-start gap-2 text-xs sm:text-sm">
+                        <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <span className="flex-1">{field}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-4">
-                <p className="text-sm text-blue-900 dark:text-blue-100">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5 sm:p-3 mt-3 sm:mt-4">
+                <p className="text-xs sm:text-sm text-blue-900 dark:text-blue-100 text-left">
                   💡 <strong>Astuce :</strong> Ces informations seront automatiquement utilisées 
                   pour générer vos factures et devis professionnels.
                 </p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2">
+          <AlertDialogFooter className="gap-2 sm:gap-2 flex-col sm:flex-row">
             <Button
               variant="outline"
               onClick={() => setIsMissingFieldsDialogOpen(false)}
-              className="cursor-pointer"
+              className="cursor-pointer w-full sm:w-auto order-2 sm:order-1"
             >
               Annuler
             </Button>
             <Button
               onClick={handleOpenSettings}
-              className="bg-[#5b4eff] hover:bg-[#4a3dd9] cursor-pointer"
+              className="bg-[#5b4eff] hover:bg-[#4a3dd9] cursor-pointer w-full sm:w-auto order-1 sm:order-2"
             >
               Compléter les informations
             </Button>
