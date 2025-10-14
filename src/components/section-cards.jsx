@@ -521,7 +521,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                   <ul className="space-y-1.5 ml-2 sm:ml-4">
                     {missingFieldsInfo.generalFields.map((field, index) => (
                       <li key={index} className="flex items-start gap-2 text-xs sm:text-sm">
-                        <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        {/* <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 flex-shrink-0 mt-0.5" /> */}
                         <span className="flex-1">{field}</span>
                       </li>
                     ))}
@@ -537,7 +537,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                   <ul className="space-y-1.5 ml-2 sm:ml-4">
                     {missingFieldsInfo.legalFields.map((field, index) => (
                       <li key={index} className="flex items-start gap-2 text-xs sm:text-sm">
-                        <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        {/* <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 flex-shrink-0 mt-0.5" /> */}
                         <span className="flex-1">{field}</span>
                       </li>
                     ))}
@@ -547,7 +547,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
 
               <div className="bg-[#5b4eff]/10 dark:bg-[#5b4eff]/20 border border-[#5b4eff]/30 dark:border-[#5b4eff]/40 rounded-lg p-2.5 sm:p-3 mt-3 sm:mt-4">
                 <p className="text-xs sm:text-sm text-[#5b4eff] dark:text-[#8b7fff] text-left">
-                  💡 <strong>Astuce :</strong> Ces informations seront automatiquement utilisées 
+                  <strong>Astuce :</strong> Ces informations seront automatiquement utilisées 
                   pour générer vos factures et devis professionnels.
                 </p>
               </div>
