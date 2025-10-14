@@ -119,7 +119,7 @@ export default function FeatureGrid({ className }) {
         <div className="mt-6 grid grid-cols-1 gap-3 sm:mt-10 lg:grid-cols-6 lg:grid-rows-2">
           <div className="max-lg:rounded-t-4xl lg:col-span-3 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative h-60 shrink-0">
-              <div className="h-60 bg-[url(/images/lp-home/facturesPro.svg)] bg-[length:auto_152%] bg-[position:left_12px_top_-20px] bg-no-repeat"></div>
+              <div className="h-60 bg-[url(/images/lp-home/Factures.jpg)] bg-[length:cover] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
             <div className="relative p-6">
@@ -139,7 +139,7 @@ export default function FeatureGrid({ className }) {
 
           <div className="lg:col-span-3 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative h-60 shrink-0">
-              <div className="absolute inset-0 bg-[url(/images/lp-home/competitors.png)] bg-[length:auto_250%] bg-[position:left_-45px_top_-130px] bg-no-repeat"></div>
+              <div className="absolute inset-0 bg-[url(/images/lp-home/Devis.jpg)] bg-[length:cover] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
             <div className="relative p-6">
@@ -159,158 +159,8 @@ export default function FeatureGrid({ className }) {
 
           <div className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative h-60 shrink-0">
-              <div
-                aria-hidden="true"
-                className="relative h-full overflow-hidden"
-              >
-                <div className="absolute inset-0">
-                  <div
-                    style={{
-                      "--opacity": "3%",
-                      width: "528px",
-                      height: "528px",
-                      willChange: "auto",
-                    }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,transparent_25%,color-mix(in_srgb,#5B50FF_var(--opacity),transparent)_100%)] ring-1 ring-blue-500/8 ring-inset"
-                  ></div>
-                  <div
-                    style={{
-                      "--opacity": "5%",
-                      width: "400px",
-                      height: "400px",
-                      willChange: "auto",
-                    }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,transparent_25%,color-mix(in_srgb,#5B50FF_var(--opacity),transparent)_100%)] ring-1 ring-blue-500/8 ring-inset"
-                  ></div>
-                  <div
-                    style={{
-                      "--opacity": "5%",
-                      width: "272px",
-                      height: "272px",
-                      willChange: "auto",
-                    }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,transparent_25%,color-mix(in_srgb,#5B50FF_var(--opacity),transparent)_100%)] ring-1 ring-blue-500/8 ring-inset"
-                  ></div>
-                  <div
-                    style={{
-                      "--opacity": "10%",
-                      width: "144px",
-                      height: "144px",
-                      willChange: "auto",
-                    }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,transparent_25%,color-mix(in_srgb,#5B50FF_var(--opacity),transparent)_100%)] ring-1 ring-blue-500/8 ring-inset"
-                  ></div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-white to-35% dark:from-gray-800 dark:from-[-25%]"></div>
-                </div>
-                <div className="absolute left-1/2 h-full w-104 -translate-x-1/2">
-                  <div
-                    style={{
-                      right: "150px",
-                      top: "120px",
-                      transform: "none",
-                      willChange: "auto",
-                    }}
-                    className="absolute size-16 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center"
-                  >
-                    <img
-                      alt=""
-                      src={getIconUrl("outlook-svgrepo-com.svg")}
-                      className="size-8"
-                    />
-                  </div>
-                  <div
-                    style={{
-                      left: "360px",
-                      top: "144px",
-                      transform: "none",
-                      willChange: "auto",
-                    }}
-                    className="absolute size-16 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center"
-                  >
-                    <img
-                      alt=""
-                      src={getIconUrl("linkedin-icon.svg")}
-                      className="size-8"
-                    />
-                  </div>
-                  <div
-                    style={{
-                      left: "285px",
-                      top: "20px",
-                      transform: "none",
-                      willChange: "auto",
-                    }}
-                    className="absolute size-16 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center"
-                  >
-                    <img
-                      alt=""
-                      src={getIconUrl("google-gmail.svg")}
-                      className="size-8"
-                    />
-                  </div>
-                  <div
-                    style={{
-                      left: "255px",
-                      top: "210px",
-                      transform: "none",
-                      willChange: "auto",
-                    }}
-                    className="absolute size-16 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center"
-                  >
-                    <img
-                      alt=""
-                      src={getIconUrl("yahoo.svg")}
-                      className="size-8"
-                    />
-                  </div>
-                  <div
-                    style={{
-                      left: "144px",
-                      top: "40px",
-                      transform: "none",
-                      willChange: "auto",
-                    }}
-                    className="absolute size-16 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center"
-                  >
-                    <img
-                      alt=""
-                      src={getIconUrl("apple.svg")}
-                      className="size-8"
-                    />
-                  </div>
-                  <div
-                    style={{
-                      left: "36px",
-                      top: "56px",
-                      transform: "none",
-                      willChange: "auto",
-                    }}
-                    className="absolute size-16 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center"
-                  >
-                    <img
-                      alt=""
-                      src={getIconUrl("yahoo.svg")}
-                      className="size-8"
-                    />
-                  </div>
-                  <div
-                    style={{
-                      left: "96px",
-                      top: "176px",
-                      transform: "none",
-                      willChange: "auto",
-                    }}
-                    className="absolute size-16 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center"
-                  >
-                    <img
-                      alt=""
-                      src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Thunderbird_2023_icon.svg"
-                      className="size-8"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
+            <div className="absolute inset-0 bg-[url(/images/lp-home/Signature_de_mail.jpg)] bg-[length:cover] bg-no-repeat"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
             <div className="relative p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
@@ -329,7 +179,7 @@ export default function FeatureGrid({ className }) {
 
           <div className="lg:col-span-2 group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative h-60 shrink-0">
-              <div className="absolute inset-0 bg-[url(/images/lp-home/app.png)] bg-[length:auto_150%] bg-[position:left_-5px_top_0px] bg-no-repeat"></div>
+              <div className="absolute inset-0 bg-[url(/images/lp-home/Kanban.jpg)] bg-[length:cover] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
             <div className="relative p-6">
@@ -346,23 +196,9 @@ export default function FeatureGrid({ className }) {
               </p>
             </div>
           </div>
-          <div className="lg:col-span-2 pt-2 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
+          <div className="lg:col-span-2 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative h-60 shrink-0">
-              {/* Notifications en arrière-plan */}
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute inset-0 scale-90 opacity-100">
-                  <AnimatedList>
-                    {notifications.map((item, idx) => (
-                      <Notification {...item} key={idx} />
-                    ))}
-                  </AnimatedList>
-                </div>
-                {/* Effet de flou blanc en bas */}
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-white to-transparent dark:from-gray-800"></div>
-              </div>
-
-              {/* Image de fond originale */}
-              {/* <div className="absolute inset-0 bg-[url(/profile.png)] bg-[length:auto_100%] bg-[position:left_-20px_top_0px] bg-no-repeat opacity-60"></div> */}
+              <div className="absolute inset-0 bg-[url(/images/lp-home/Transfert.jpg)] bg-[length:cover] bg-no-repeat"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
             </div>
             <div className="relative p-6">

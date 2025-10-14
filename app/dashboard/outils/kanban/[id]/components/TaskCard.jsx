@@ -87,6 +87,7 @@ export function TaskCard({ task, onEdit, onDelete }) {
     transform,
     transition,
     isDragging: isSortableDragging,
+    setActivatorNodeRef,
   } = useSortable({
     id: task.id,
     data: {
@@ -139,19 +140,21 @@ export function TaskCard({ task, onEdit, onDelete }) {
         ref={setNodeRef}
         style={style}
         {...attributes}
-        {...listeners}
         onClick={handleClick}
         className={`bg-card text-card-foreground rounded-lg border border-border p-3 mb-3 shadow-xs hover:shadow-sm transition-all duration-200 ease-out hover:bg-accent/10 will-change-transform ${isSortableDragging ? "opacity-50" : ""} cursor-pointer`}
       >
         {/* En-tête de la carte */}
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div
-              className="text-muted-foreground/70 hover:text-foreground p-1 -ml-1 rounded hover:bg-accent cursor-grab flex-shrink-0"
+            <button
+              ref={setActivatorNodeRef}
+              {...listeners}
+              className="text-muted-foreground/70 hover:text-foreground p-1 -ml-1 rounded hover:bg-accent cursor-grab active:cursor-grabbing flex-shrink-0 touch-none"
               title="Faire glisser pour déplacer"
+              onClick={(e) => e.stopPropagation()}
             >
               <GripVertical className="h-3.5 w-3.5" />
-            </div>
+            </button>
             <Tooltip>
               <TooltipTrigger asChild>
                 <h4 className="font-medium text-sm text-foreground truncate">

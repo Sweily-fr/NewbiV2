@@ -206,10 +206,24 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
           console.warn("⚠️ [Apollo] Erreur auth au chargement initial:", message);
         }
       } else {
-        // Afficher les autres erreurs GraphQL avec message utilisateur
-        toast.error(userMessage, {
-          duration: 4000,
-        });
+        // Ne pas afficher de toast si skipErrorToast est activé (redirection en cours)
+        const skipErrorToast = operation.getContext().skipErrorToast;
+        
+        // Ne pas afficher de toast pour les erreurs "Board not found" (changement d'organisation)
+        const isBoardNotFound = message?.includes("Board not found") || message?.includes("board not found");
+        
+        if (!skipErrorToast && !isBoardNotFound) {
+          // Afficher les autres erreurs GraphQL avec message utilisateur
+          toast.error(userMessage, {
+            duration: 4000,
+          });
+        } else if (isBoardNotFound) {
+          // Log silencieux pour les boards introuvables (changement d'organisation)
+          console.warn("⚠️ [Apollo] Board introuvable (changement d'organisation):", message);
+        } else {
+          // Log silencieux pour les redirections
+          console.warn("⚠️ [Apollo] Erreur silencieuse (redirection en cours):", message);
+        }
       }
     });
   }

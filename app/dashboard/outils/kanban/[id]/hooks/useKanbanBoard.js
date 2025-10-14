@@ -5,7 +5,7 @@ import { useWorkspace } from '@/src/hooks/useWorkspace';
 import { toast } from '@/src/utils/debouncedToast';
 import { useState, useEffect } from 'react';
 
-export const useKanbanBoard = (id) => {
+export const useKanbanBoard = (id, isRedirecting = false) => {
   const { workspaceId } = useWorkspace();
   const { data: session, isPending: sessionLoading } = useSession();
   const [isReady, setIsReady] = useState(false);
@@ -26,13 +26,17 @@ export const useKanbanBoard = (id) => {
       workspaceId 
     },
     errorPolicy: "all",
-    skip: !workspaceId,
+    skip: !workspaceId || isRedirecting,
+    context: {
+      // Ne pas afficher de toast d'erreur si on est en train de rediriger
+      skipErrorToast: isRedirecting,
+    },
   });
 
   // Subscription pour les mises à jour temps réel des tâches
   useSubscription(TASK_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isReady || sessionLoading,
+    skip: !workspaceId || !id || !isReady || sessionLoading || isRedirecting,
     onData: ({ data: subscriptionData }) => {
       if (subscriptionData?.data?.taskUpdated) {
         const { type, task, taskId } = subscriptionData.data.taskUpdated;
@@ -63,19 +67,19 @@ export const useKanbanBoard = (id) => {
       }
     },
     onError: (error) => {
-      // Ne pas afficher d'erreur si c'est un problème d'authentification (token expiré)
+      // Ne pas afficher d'erreur si c'est un problème d'authentification (changement d'organisation)
       if (error.message?.includes('connecté')) {
-        console.warn("⚠️ [Kanban] Subscription tâches: session expirée, reconnexion automatique...");
-      } else {
-        console.error("❌ [Kanban] Erreur subscription tâches:", error);
+        // Silencieux - c'est normal pendant un changement d'organisation
+        return;
       }
+      console.error("❌ [Kanban] Erreur subscription tâches:", error);
     }
   });
 
   // Subscription pour les mises à jour temps réel des colonnes
   useSubscription(COLUMN_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isReady || sessionLoading,
+    skip: !workspaceId || !id || !isReady || sessionLoading || isRedirecting,
     onData: ({ data: subscriptionData }) => {
       if (subscriptionData?.data?.columnUpdated) {
         const { type, column, columnId } = subscriptionData.data.columnUpdated;
@@ -106,12 +110,12 @@ export const useKanbanBoard = (id) => {
       }
     },
     onError: (error) => {
-      // Ne pas afficher d'erreur si c'est un problème d'authentification (token expiré)
+      // Ne pas afficher d'erreur si c'est un problème d'authentification (changement d'organisation)
       if (error.message?.includes('connecté')) {
-        console.warn("⚠️ [Kanban] Subscription colonnes: session expirée, reconnexion automatique...");
-      } else {
-        console.error("❌ [Kanban] Erreur subscription colonnes:", error);
+        // Silencieux - c'est normal pendant un changement d'organisation
+        return;
       }
+      console.error("❌ [Kanban] Erreur subscription colonnes:", error);
     }
   });
 

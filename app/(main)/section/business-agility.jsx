@@ -24,7 +24,7 @@ export default function BusinessAgility() {
               className="max-lg:rounded-t-4xl lg:col-span-4 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
             >
               <div className="relative h-60 shrink-0">
-                <div className="h-60 bg-[url('/images/lp-home/networking.png')] bg-size-[851px_344px] bg-[position:left_0px_top_-80px] bg-no-repeat"></div>
+                <div className="h-60 bg-[url('/images/lp-home/Collaborateur.jpg')] bg-[length:cover] bg-no-repeat"></div>
                 <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div>
               </div>
               <div className="relative p-6">
@@ -44,11 +44,11 @@ export default function BusinessAgility() {
             </div>
             <div
               data-dark="true"
-              className="z-10 overflow-visible! lg:col-span-2 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
+              className="z-10 lg:col-span-2 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
             >
               <div className="relative h-60 shrink-0">
                 <div className="relative h-60 shrink-0">
-                  <div className="h-60 bg-[url('/images/lp-home/engagement.png')] bg-size-[851px_344px] bg-[position:left_0px_top_-80px] bg-no-repeat"></div>
+                  <div className="h-60 bg-[url('/images/lp-home/Vitesse_superieur.jpg')] bg-[length:cover] bg-no-repeat"></div>
                   <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div>
                 </div>
               </div>
@@ -72,7 +72,7 @@ export default function BusinessAgility() {
               className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
             >
               <div className="relative h-60 shrink-0">
-                <div className="h-60 bg-[url('/images/lp-home/engagement.png')] bg-size-[851px_344px] bg-[position:left_0px_top_-80px] bg-no-repeat"></div>
+                <div className="h-60 bg-[url('/images/lp-home/Ecosysteme.jpg')] bg-[length:cover] bg-no-repeat"></div>
                 <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div>
               </div>
               <div className="relative p-6">
@@ -95,7 +95,7 @@ export default function BusinessAgility() {
               className="lg:col-span-4 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
             >
               <div className="relative h-60 shrink-0">
-                <div className="h-60 bg-[url('/images/lp-home/engagement.png')] bg-size-[851px_344px] bg-[position:left_0px_top_-80px] bg-no-repeat"></div>
+                <div className="h-60 bg-[url('/images/lp-home/Reglement.jpg')] bg-[length:cover] bg-no-repeat"></div>
                 <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div>
               </div>
               <div className="relative p-6">

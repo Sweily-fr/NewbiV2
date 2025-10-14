@@ -58,7 +58,6 @@ import { useViewMode } from "./hooks/useViewMode";
 // import { useKanbanRealtimeSync } from "./hooks/useKanbanRealtimeSync"; // SUPPRIMÉ : doublon de useKanbanBoard
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { ResourceNotFound } from "@/src/components/resource-not-found";
 
 // Components
 import { KanbanColumn } from "./components/KanbanColumn";
@@ -95,10 +94,11 @@ import { useMutation } from "@apollo/client";
 export default function KanbanBoardPage({ params }) {
   const router = useRouter();
   const { id } = use(params);
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
 
   // Hooks
   const { board, loading, error, refetch, getTasksByColumn, workspaceId } =
-    useKanbanBoard(id);
+    useKanbanBoard(id, isRedirecting);
   const { loading: workspaceLoading } = useWorkspace();
 
   const {
@@ -216,35 +216,48 @@ export default function KanbanBoardPage({ params }) {
     scrollSpeed: 1.5 
   });
 
-  // Détecter les changements d'organisation et rediriger si nécessaire
-  useOrganizationChange({
+  // Détecter les changements d'organisation et rediriger IMMÉDIATEMENT
+  const { hasChangedOrganization } = useOrganizationChange({
     resourceId: id,
-    resourceExists: !!board && !error,
     listUrl: "/dashboard/outils/kanban",
-    enabled: !loading && !workspaceLoading,
+    enabled: true,
   });
+
+  // Solution de secours : Rediriger si le workspaceId change
+  const previousWorkspaceIdRef = React.useRef(workspaceId);
+  useEffect(() => {
+    if (previousWorkspaceIdRef.current && workspaceId && previousWorkspaceIdRef.current !== workspaceId) {
+      console.log("[Kanban] 🔄 Changement de workspace détecté, redirection...", {
+        from: previousWorkspaceIdRef.current,
+        to: workspaceId,
+      });
+      router.push("/dashboard/outils/kanban");
+    }
+    previousWorkspaceIdRef.current = workspaceId;
+  }, [workspaceId, router]);
+
+  // Rediriger si le board n'existe pas (erreur GraphQL)
+  useEffect(() => {
+    if (error && workspaceId && !isRedirecting) {
+      // Redirection silencieuse - c'est normal lors d'un changement d'organisation
+      setIsRedirecting(true);
+      router.push("/dashboard/outils/kanban");
+    }
+  }, [error, workspaceId, router, id, isRedirecting]);
 
   // Attendre que le workspace soit chargé avant de vérifier l'existence du board
   if (workspaceLoading) {
     return null; // Afficher le loading pendant que le workspace se charge
   }
 
-  // Gérer le cas où le board n'existe pas (changement d'organisation)
-  // Ne vérifier que si on a un workspaceId et que le chargement est terminé
-  if (!loading && !board && !error && workspaceId) {
-    return (
-      <ResourceNotFound
-        resourceType="tableau"
-        resourceName="Ce tableau Kanban"
-        listUrl="/dashboard/outils/kanban"
-        homeUrl="/dashboard/outils"
-      />
-    );
+  // Si un changement d'organisation est en cours, ne rien afficher (redirection en cours)
+  if (hasChangedOrganization) {
+    return null;
   }
 
-  // Vérifier que les données sont chargées
-  if (!board) {
-    return null; // Le composant loading.jsx s'affichera
+  // Si on est en train de rediriger ou si le board n'existe pas, ne rien afficher
+  if (isRedirecting || !board) {
+    return null; // Redirection silencieuse en cours
   }
 
   return (

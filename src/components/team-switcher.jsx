@@ -143,7 +143,17 @@ export function TeamSwitcher() {
       setForceUpdate((prev) => prev + 1);
       console.log("✅ Hooks Better Auth rafraîchis");
 
-      // 6. Notification
+      // 6. Émettre un événement custom pour notifier le changement d'organisation
+      const organizationChangeEvent = new CustomEvent('organizationChanged', {
+        detail: {
+          previousOrgId: oldWorkspaceId,
+          newOrgId: organizationId,
+        }
+      });
+      window.dispatchEvent(organizationChangeEvent);
+      console.log("📢 Événement organizationChanged émis:", { from: oldWorkspaceId, to: organizationId });
+
+      // 7. Notification
       toast.success("Organisation changée");
 
       console.log("✅ Changement terminé sans rechargement");

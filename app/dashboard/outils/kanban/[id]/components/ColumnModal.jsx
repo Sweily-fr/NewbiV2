@@ -26,7 +26,7 @@ export function ColumnModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] h-[300px] p-0 bg-card text-card-foreground overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[425px] h-[300px] p-0 bg-card text-card-foreground overflow-hidden flex flex-col" showCloseButton={false}>
         <div className="flex flex-col h-full">
           <DialogHeader className="px-6 py-4 border-b border-border relative flex-shrink-0 bg-card">
             <DialogTitle className="pr-6">
