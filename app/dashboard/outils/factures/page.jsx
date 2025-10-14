@@ -7,6 +7,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
 import { useRouter } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 
 function InvoicesContent() {
   const router = useRouter();
@@ -70,10 +71,12 @@ function InvoicesContent() {
 }
 
 export default function InvoicesPage() {
-  // Page liste des factures - accessible en Pro
+  // Page liste des factures - accessible en Pro avec informations d'entreprise complètes
   return (
     <ProRouteGuard pageName="Factures">
-      <InvoicesContent />
+      <CompanyInfoGuard>
+        <InvoicesContent />
+      </CompanyInfoGuard>
     </ProRouteGuard>
   );
 }

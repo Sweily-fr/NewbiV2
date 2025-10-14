@@ -14,15 +14,18 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
+import { SettingsModal } from "@/src/components/settings-modal";
 
 /**
  * Composant Guard pour protéger les pages nécessitant des informations d'entreprise complètes
- * Affiche un dialog détaillé avec les champs manquants avant de rediriger
+ * Affiche un dialog détaillé avec les champs manquants puis ouvre la modal de paramètres
  */
 export function CompanyInfoGuard({ children }) {
   const { organization, isLoading } = useDashboardLayoutContext();
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState("generale");
   const [missingFieldsInfo, setMissingFieldsInfo] = useState({
     generalFields: [],
     legalFields: [],
@@ -66,7 +69,9 @@ export function CompanyInfoGuard({ children }) {
       missingFieldsInfo.generalFields.length > 0
         ? "generale"
         : "informations-legales";
-    router.push(`/dashboard/settings?tab=${tab}`);
+    setSettingsInitialTab(tab);
+    setShowDialog(false);
+    setIsSettingsModalOpen(true);
   };
 
   const handleCancel = () => {
@@ -179,6 +184,13 @@ export function CompanyInfoGuard({ children }) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Modal de paramètres */}
+        <SettingsModal
+          open={isSettingsModalOpen}
+          onOpenChange={setIsSettingsModalOpen}
+          initialTab={settingsInitialTab}
+        />
 
         {/* Afficher un loader pendant que le dialog est ouvert */}
         <div className="flex items-center justify-center min-h-screen">

@@ -7,6 +7,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
 import { useRouter } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 
 function QuotesContent() {
   const router = useRouter();
@@ -70,10 +71,12 @@ function QuotesContent() {
 }
 
 export default function QuotesPage() {
-  // Page liste des devis - accessible en Pro
+  // Page liste des devis - accessible en Pro avec informations d'entreprise complètes
   return (
     <ProRouteGuard pageName="Devis">
-      <QuotesContent />
+      <CompanyInfoGuard>
+        <QuotesContent />
+      </CompanyInfoGuard>
     </ProRouteGuard>
   );
 }

@@ -15,6 +15,7 @@ import ModernInvoiceEditor from "../components/modern-invoice-editor";
 import { useRouter, useParams } from "next/navigation";
 import { useInvoice } from "@/src/graphql/invoiceQueries";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 
@@ -130,7 +131,9 @@ function InvoiceDetailsContent() {
 export default function InvoiceDetailsPage() {
   return (
     <ProRouteGuard pageName="Détails facture">
-      <InvoiceDetailsContent />
+      <CompanyInfoGuard>
+        <InvoiceDetailsContent />
+      </CompanyInfoGuard>
     </ProRouteGuard>
   );
 }
