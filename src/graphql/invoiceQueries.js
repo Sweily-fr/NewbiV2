@@ -128,14 +128,44 @@ export const INVOICE_LIST_FRAGMENT = gql`
     id
     number
     prefix
+    purchaseOrderNumber
+    isDeposit
     status
     issueDate
+    executionDate
     dueDate
+    discount
+    discountType
+    discountAmount
+    totalHT
+    totalVAT
+    totalTTC
+    finalTotalHT
+    finalTotalVAT
     finalTotalTTC
+    stripeInvoiceId
+    items {
+      description
+      quantity
+      unitPrice
+      vatRate
+      unit
+      discount
+      discountType
+    }
     client {
       id
       name
       email
+      type
+      siret
+      vatNumber
+      address {
+        street
+        city
+        postalCode
+        country
+      }
       hasDifferentShippingAddress
       shippingAddress {
         fullName
