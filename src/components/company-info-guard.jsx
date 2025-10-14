@@ -98,16 +98,16 @@ export function CompanyInfoGuard({ children }) {
       <>
         <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
           <AlertDialogContent className="max-w-lg w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto">
-            <AlertDialogHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-2">
+            <AlertDialogHeader className="text-left">
+              <div className="flex items-start gap-3 mb-2">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center flex-shrink-0">
                   <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
                 </div>
                 <div className="flex-1">
-                  <AlertDialogTitle className="text-base sm:text-lg">
+                  <AlertDialogTitle className="text-base sm:text-lg text-left">
                     Configuration requise
                   </AlertDialogTitle>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 text-left">
                     Informations d'entreprise incomplètes
                   </p>
                 </div>
