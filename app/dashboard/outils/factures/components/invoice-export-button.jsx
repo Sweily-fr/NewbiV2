@@ -23,13 +23,28 @@ import { DateRangePicker } from "@/src/components/ui/date-range-picker";
 import { exportToCSV, exportToExcel, exportToFEC, exportToSage, exportToCegid } from "@/src/utils/invoice-export";
 import { toast } from "sonner";
 
-export default function InvoiceExportButton({ invoices }) {
+export default function InvoiceExportButton({ invoices, selectedRows = [] }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState(null);
   const [dateRange, setDateRange] = useState({
     from: undefined,
     to: undefined,
   });
+
+  // Déterminer si on exporte les factures sélectionnées ou toutes les factures
+  const hasSelection = selectedRows && selectedRows.length > 0;
+  
+  // Debug: vérifier la structure de selectedRows
+  if (hasSelection && selectedRows.length > 0) {
+    console.log("🔍 Structure selectedRows:", selectedRows[0]);
+  }
+  
+  const invoicesToExport = hasSelection 
+    ? selectedRows.map(row => {
+        // TanStack Table peut utiliser row.original OU directement row
+        return row.original || row;
+      }).filter(Boolean) 
+    : (invoices || []);
 
   const handleFormatSelect = (format) => {
     setSelectedFormat(format);
@@ -40,52 +55,80 @@ export default function InvoiceExportButton({ invoices }) {
     if (!selectedFormat) return;
 
     try {
+      // Debug AVANT transformation
+      console.log("🔍 DEBUG AVANT EXPORT:");
+      console.log("  - hasSelection:", hasSelection);
+      console.log("  - selectedRows:", selectedRows);
+      console.log("  - selectedRows.length:", selectedRows?.length);
+      console.log("  - invoices:", invoices);
+      console.log("  - invoices.length:", invoices?.length);
+      console.log("  - invoicesToExport:", invoicesToExport);
+      console.log("  - invoicesToExport.length:", invoicesToExport?.length);
+      
+      // Utiliser les factures sélectionnées ou toutes les factures
+      const finalInvoices = invoicesToExport;
+      
+      // Si des factures sont sélectionnées, ne pas appliquer le filtre de date
+      const finalDateRange = hasSelection ? null : dateRange;
+      
       // Debug: afficher les informations de filtrage
       console.log("🔍 Export - Informations de debug:");
-      console.log("  - Nombre total de factures:", invoices.length);
-      console.log("  - Plage de dates sélectionnée:", {
-        from: dateRange?.from ? new Date(dateRange.from).toLocaleDateString('fr-FR') : 'non définie',
-        to: dateRange?.to ? new Date(dateRange.to).toLocaleDateString('fr-FR') : 'non définie'
-      });
+      console.log("  - Mode:", hasSelection ? "Factures sélectionnées" : "Toutes les factures");
+      console.log("  - Nombre de factures à exporter:", finalInvoices.length);
+      if (!hasSelection && dateRange?.from && dateRange?.to) {
+        console.log("  - Plage de dates:", {
+          from: new Date(dateRange.from).toLocaleDateString('fr-FR'),
+          to: new Date(dateRange.to).toLocaleDateString('fr-FR')
+        });
+      }
       console.log("  - Format:", selectedFormat);
       
       // Afficher quelques factures pour debug
-      if (invoices.length > 0) {
-        console.log("  - Exemples de factures (données complètes):");
-        invoices.slice(0, 2).forEach((inv, idx) => {
+      if (finalInvoices.length > 0) {
+        console.log("  - Exemples de factures:");
+        finalInvoices.slice(0, 2).forEach((inv, idx) => {
           console.log(`    ${idx + 1}. Facture ${inv.number}:`);
-          console.log(`       - Total HT: ${inv.finalTotalHT} (type: ${typeof inv.finalTotalHT})`);
-          console.log(`       - Total TVA: ${inv.finalTotalVAT} (type: ${typeof inv.finalTotalVAT})`);
-          console.log(`       - Total TTC: ${inv.finalTotalTTC} (type: ${typeof inv.finalTotalTTC})`);
+          console.log(`       - Total HT: ${inv.finalTotalHT}`);
+          console.log(`       - Total TVA: ${inv.finalTotalVAT}`);
+          console.log(`       - Total TTC: ${inv.finalTotalTTC}`);
           console.log(`       - Client: ${inv.client?.name || 'N/A'}`);
-          console.log(`       - Statut: ${inv.status}`);
         });
       }
 
       if (selectedFormat === "csv") {
-        exportToCSV(invoices, dateRange);
+        exportToCSV(finalInvoices, finalDateRange);
         toast.success("Export CSV réussi", {
-          description: "Le fichier a été téléchargé avec succès.",
+          description: hasSelection 
+            ? `${finalInvoices.length} facture(s) sélectionnée(s) exportée(s).`
+            : "Le fichier a été téléchargé avec succès.",
         });
       } else if (selectedFormat === "excel") {
-        exportToExcel(invoices, dateRange);
+        exportToExcel(finalInvoices, finalDateRange);
         toast.success("Export Excel réussi", {
-          description: "Le fichier a été téléchargé avec succès.",
+          description: hasSelection 
+            ? `${finalInvoices.length} facture(s) sélectionnée(s) exportée(s).`
+            : "Le fichier a été téléchargé avec succès.",
         });
       } else if (selectedFormat === "fec") {
-        exportToFEC(invoices, dateRange);
+        exportToFEC(finalInvoices, finalDateRange);
         toast.success("Export FEC réussi", {
-          description: "Fichier des Écritures Comptables généré avec succès.",
+          description: hasSelection 
+            ? `${finalInvoices.length} facture(s) sélectionnée(s) exportée(s).`
+            : "Fichier des Écritures Comptables généré avec succès.",
         });
       } else if (selectedFormat === "sage") {
-        exportToSage(invoices, dateRange);
+        exportToSage(finalInvoices, finalDateRange);
         toast.success("Export Sage Compta réussi", {
-          description: "Le fichier a été téléchargé avec succès.",
+          description: hasSelection 
+            ? `${finalInvoices.length} facture(s) sélectionnée(s) exportée(s).`
+            : "Le fichier a été téléchargé avec succès.",
         });
       } else if (selectedFormat === "cegid") {
-        exportToCegid(invoices, dateRange);
+        exportToCegid(finalInvoices, finalDateRange);
         toast.success("Export Cegid Expert réussi", {
-          description: "Le fichier a été téléchargé avec succès.",
+          description: hasSelection 
+            ? `${finalInvoices.length} facture(s) sélectionnée(s) exportée(s).`
+            : "Le fichier a été téléchargé avec succès.",
         });
       }
       
@@ -114,6 +157,11 @@ export default function InvoiceExportButton({ invoices }) {
           <Button variant="outline" className="font-normal">
             <Download className="mr-2 h-4 w-4" />
             Exporter
+            {hasSelection && (
+              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                {selectedRows.length}
+              </span>
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[220px]">
@@ -158,32 +206,59 @@ export default function InvoiceExportButton({ invoices }) {
               }
             </DialogTitle>
             <DialogDescription>
-              {selectedFormat === "fec" 
-                ? "Format légal obligatoire pour l'administration fiscale française. Génère les écritures comptables au format normalisé."
-                : selectedFormat === "sage"
-                ? "Format compatible avec Sage 100 et Sage 1000. Import direct dans votre logiciel comptable."
-                : selectedFormat === "cegid"
-                ? "Format compatible avec Cegid Expert. Import direct dans votre logiciel comptable."
-                : "Sélectionnez une plage de dates pour filtrer les factures à exporter. Laissez vide pour exporter toutes les factures."
-              }
+              {hasSelection ? (
+                <span className="font-medium text-primary">
+                  {invoicesToExport.length} facture(s) sélectionnée(s) sera(ont) exportée(s).
+                </span>
+              ) : selectedFormat === "fec" ? (
+                "Format légal obligatoire pour l'administration fiscale française. Génère les écritures comptables au format normalisé."
+              ) : selectedFormat === "sage" ? (
+                "Format compatible avec Sage 100 et Sage 1000. Import direct dans votre logiciel comptable."
+              ) : selectedFormat === "cegid" ? (
+                "Format compatible avec Cegid Expert. Import direct dans votre logiciel comptable."
+              ) : (
+                "Sélectionnez une plage de dates pour filtrer les factures à exporter. Laissez vide pour exporter toutes les factures."
+              )}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4">
-            <DateRangePicker date={dateRange} setDate={setDateRange} />
-            
-            {dateRange?.from && dateRange?.to && (
-              <p className="mt-3 text-sm text-muted-foreground">
-                Les factures entre ces dates seront exportées.
-              </p>
-            )}
-            
-            {!dateRange?.from && !dateRange?.to && (
-              <p className="mt-3 text-sm text-muted-foreground">
-                Toutes les factures seront exportées.
-              </p>
-            )}
-          </div>
+          {!hasSelection && (
+            <div className="py-4">
+              <DateRangePicker date={dateRange} setDate={setDateRange} />
+              
+              {dateRange?.from && dateRange?.to && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Les factures entre ces dates seront exportées.
+                </p>
+              )}
+              
+              {!dateRange?.from && !dateRange?.to && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Toutes les factures seront exportées.
+                </p>
+              )}
+            </div>
+          )}
+          
+          {hasSelection && invoicesToExport.length > 0 && (
+            <div className="py-4">
+              <div className="rounded-lg border bg-muted/50 p-4">
+                <p className="text-sm font-medium mb-2">Factures sélectionnées :</p>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  {invoicesToExport.slice(0, 5).map((inv) => inv && (
+                    <li key={inv.id}>
+                      • Facture {inv.prefix || ""}{inv.number} - {inv.client?.name || "Client inconnu"}
+                    </li>
+                  ))}
+                  {invoicesToExport.length > 5 && (
+                    <li className="text-xs italic">
+                      ... et {invoicesToExport.length - 5} autre(s)
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
 
           <DialogFooter>
             <Button variant="outline" onClick={handleCancel}>

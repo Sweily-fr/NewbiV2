@@ -188,7 +188,10 @@ export default function InvoiceTable() {
 
         <div className="flex items-center space-x-2">
           {/* Export button */}
-          <InvoiceExportButton invoices={invoices || []} />
+          <InvoiceExportButton 
+            invoices={invoices || []} 
+            selectedRows={selectedRows}
+          />
 
           {/* Column visibility */}
           <DropdownMenu>

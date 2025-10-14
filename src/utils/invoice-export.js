@@ -8,8 +8,8 @@ import { fr } from "date-fns/locale";
  * @returns {Array} - Factures filtrées
  */
 export function filterInvoicesByDateRange(invoices, dateRange) {
-  // Si pas de plage de dates, retourner toutes les factures
-  if (!dateRange?.from && !dateRange?.to) {
+  // Si pas de plage de dates (null ou undefined), retourner toutes les factures
+  if (!dateRange || (!dateRange.from && !dateRange.to)) {
     return invoices;
   }
 
