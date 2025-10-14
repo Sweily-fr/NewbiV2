@@ -286,7 +286,7 @@ const UniversalPDFDownloaderWithFacturX = ({
             ) : (
               <Download className="h-4 w-4" />
             )}
-            {children || (canUseFacturX ? 'Télécharger (Factur-X)' : 'Télécharger le PDF')}
+            {children || 'Télécharger le PDF'}
           </>
         )}
       </Button>
