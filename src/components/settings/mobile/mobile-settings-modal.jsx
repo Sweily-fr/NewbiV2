@@ -57,6 +57,11 @@ export function MobileSettingsModal({
 
   const currentTab = tabs.find((tab) => tab.id === activeTab);
 
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    setShowNavigation(false);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case "user-info":
@@ -66,6 +71,7 @@ export function MobileSettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrganization}
+            onTabChange={handleTabChange}
           />
         );
       case "generale":
