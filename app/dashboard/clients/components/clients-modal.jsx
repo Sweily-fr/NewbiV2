@@ -298,8 +298,34 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
       }
 
       // La notification est déjà gérée par le hook useUpdateClient/useCreateClient
-      reset();
+      // Réinitialiser complètement le formulaire avec les valeurs par défaut
+      reset({
+        type: "INDIVIDUAL",
+        name: "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        address: {
+          street: "",
+          city: "",
+          postalCode: "",
+          country: "",
+        },
+        shippingAddress: {
+          fullName: "",
+          street: "",
+          city: "",
+          postalCode: "",
+          country: "",
+        },
+        siret: "",
+        vatNumber: "",
+      });
       setCustomErrors({});
+      setHasDifferentShipping(false);
+      setShowCompanySearch(false);
+      setCompanyQuery("");
+      setCompanies([]);
       onOpenChange(false);
     } catch (error) {
       // La notification d'erreur est déjà gérée par le hook useCreateClient/useUpdateClient
