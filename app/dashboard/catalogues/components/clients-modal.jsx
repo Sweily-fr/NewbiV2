@@ -131,7 +131,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-5 max-h-[70vh] p-1 overflow-y-auto"
+          className="space-y-5 max-h-[70vh] p-1 overflow-y-auto pb-20 sm:pb-1"
         >
           <div className="space-y-4">
             {/* Type de client */}
@@ -313,20 +313,25 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
             )}
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-            >
-              Annuler
-            </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? "Enregistrement..." : isEditing ? "Modifier" : "Créer"}
-            </Button>
-          </div>
         </form>
+
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="flex-1"
+          >
+            Annuler
+          </Button>
+          <Button 
+            onClick={handleSubmit(onSubmit)} 
+            disabled={loading} 
+            className="flex-1"
+          >
+            {loading ? "Enregistrement..." : isEditing ? "Modifier" : "Créer"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

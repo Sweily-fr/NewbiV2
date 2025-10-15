@@ -383,21 +383,23 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           </div>
         </div>
 
-        <DialogFooter>
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
+            className="flex-1"
           >
             Annuler
           </Button>
           <Button 
             onClick={handleSubmit(onSubmit)} 
             disabled={loading}
+            className="flex-1"
           >
             {loading ? "Enregistrement..." : isEditing ? "Modifier le produit et/ou service" : "Créer le produit et/ou service"}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
