@@ -383,7 +383,10 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           </div>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+        <div 
+          className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4"
+          style={isMobile ? { paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' } : {}}
+        >
           <Button
             type="button"
             variant="outline"

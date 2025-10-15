@@ -25,13 +25,21 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { useCreateClient, useUpdateClient } from "@/src/hooks/useClients";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function ClientsModal({ client, onSave, open, onOpenChange }) {
   const { createClient, loading: createLoading } = useCreateClient();
   const { updateClient, loading: updateLoading } = useUpdateClient();
   const isEditing = !!client;
   const loading = createLoading || updateLoading;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const {
     register,
@@ -315,7 +323,10 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
         </form>
 
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+        <div 
+          className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4"
+          style={isMobile ? { paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' } : {}}
+        >
           <Button
             type="button"
             variant="outline"
