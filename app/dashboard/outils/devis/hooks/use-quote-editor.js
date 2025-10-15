@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -94,6 +94,12 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // Watch all form data for auto-save
   const formData = watch();
   
+  // Watch items array to detect deep changes
+  const watchedItems = watch("items");
+  
+  // Créer une valeur stable pour détecter les changements dans les items
+  const itemsData = useMemo(() => JSON.stringify(watchedItems || []), [watchedItems]);
+  
   // Re-valider quand le client change
   useEffect(() => {
     setValidationErrors((prevErrors) => {
@@ -160,47 +166,66 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // Re-valider quand les articles changent
   useEffect(() => {
     setValidationErrors((prevErrors) => {
-      if (prevErrors.items && formData.items && formData.items.length > 0) {
+      if (watchedItems && watchedItems.length > 0) {
         const invalidItems = [];
         const itemsWithErrors = [];
         
-        formData.items.forEach((item, index) => {
+        watchedItems.forEach((item, index) => {
           const itemErrors = [];
+          const fields = [];
           
           if (!item.description || item.description.trim() === "") {
             itemErrors.push("description");
+            fields.push("description");
           }
           if (!item.quantity || item.quantity <= 0) {
             itemErrors.push("quantity");
+            fields.push("quantity");
           }
           if (item.unitPrice === undefined || item.unitPrice === null || item.unitPrice <= 0) {
             itemErrors.push("unitPrice");
+            fields.push("unitPrice");
+          }
+          
+          // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+          const vatRate = parseFloat(item.vatRate) || 0;
+          if (vatRate === 0) {
+            const vatExemptionText = item.vatExemptionText;
+            if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+              itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
+              fields.push("vatExemptionText");
+            }
           }
           
           if (itemErrors.length > 0) {
             invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
-            itemsWithErrors.push({ index, fields: itemErrors });
+            itemsWithErrors.push({ index, fields });
           }
         });
         
-        if (invalidItems.length === 0) {
-          const newErrors = { ...prevErrors };
-          delete newErrors.items;
-          return newErrors;
-        } else {
-          return {
-            ...prevErrors,
-            items: {
-              message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
-              canEdit: false,
-              details: itemsWithErrors
-            }
-          };
+        // Si on a déjà une erreur items, mettre à jour ou supprimer
+        if (prevErrors.items) {
+          if (invalidItems.length === 0) {
+            // Tous les articles sont valides, supprimer l'erreur
+            const newErrors = { ...prevErrors };
+            delete newErrors.items;
+            return newErrors;
+          } else {
+            // Mettre à jour le message d'erreur
+            return {
+              ...prevErrors,
+              items: {
+                message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+                canEdit: false,
+                details: itemsWithErrors
+              }
+            };
+          }
         }
       }
       return prevErrors;
     });
-  }, [formData.items]);
+  }, [itemsData, watchedItems]);
 
   // Re-valider quand la remise change
   useEffect(() => {
@@ -580,6 +605,16 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               fields.push("unitPrice");
             }
             
+            // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+            const vatRate = parseFloat(item.vatRate) || 0;
+            if (vatRate === 0) {
+              const vatExemptionText = item.vatExemptionText;
+              if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+                itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
+                fields.push("vatExemptionText");
+              }
+            }
+            
             if (itemErrors.length > 0) {
               invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
               itemsWithErrors.push({ index, fields });
@@ -842,6 +877,16 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             if (isInvalid) {
               itemErrors.push("prix unitaire doit être > 0€");
               fields.push("unitPrice");
+            }
+            
+            // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+            const vatRate = parseFloat(item.vatRate) || 0;
+            if (vatRate === 0) {
+              const vatExemptionText = item.vatExemptionText;
+              if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+                itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
+                fields.push("vatExemptionText");
+              }
             }
             
             if (itemErrors.length > 0) {

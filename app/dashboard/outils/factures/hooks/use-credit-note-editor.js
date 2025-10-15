@@ -229,13 +229,31 @@ export function useCreditNoteEditor({
       }
 
       // Check if all items have required fields
-      const hasInvalidItems = data.items.some(
-        (item) => !item.description || !item.quantity || !item.unitPrice
-      );
+      const invalidItems = [];
+      data.items.forEach((item, index) => {
+        const errors = [];
+        
+        if (!item.description) errors.push("description");
+        if (!item.quantity) errors.push("quantité");
+        if (!item.unitPrice) errors.push("prix unitaire");
+        
+        // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+        const vatRate = parseFloat(item.vatRate) || 0;
+        if (vatRate === 0) {
+          const vatExemptionText = item.vatExemptionText;
+          if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+            errors.push("texte d'exonération de TVA (requis pour TVA à 0%)");
+          }
+        }
+        
+        if (errors.length > 0) {
+          invalidItems.push(`Article ${index + 1}: ${errors.join(", ")}`);
+        }
+      });
 
-      if (hasInvalidItems) {
+      if (invalidItems.length > 0) {
         toast.error(
-          "Veuillez remplir tous les champs obligatoires des articles"
+          `Certains articles sont incomplets:\n${invalidItems.join("\n")}`
         );
         return;
       }

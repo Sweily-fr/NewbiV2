@@ -527,73 +527,84 @@ export default function ItemsSection({
                             >
                               Texte d'exonération de TVA
                             </Label>
-                            <Controller
-                              name={`items.${index}.vatExemptionText`}
-                              render={({ field }) => (
-                                <Select
-                                  value={field.value}
-                                  onValueChange={field.onChange}
-                                  disabled={!canEdit}
-                                >
-                                  <SelectTrigger className="h-10 w-full rounded-lg px-3 text-sm">
-                                    <SelectValue placeholder="Sélectionner une mention" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">
-                                      Sélectionner une mention
-                                    </SelectItem>
-                                    <SelectItem value="Article 259-1 du CGI">
-                                      Article 259-1 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 259 B du CGI">
-                                      Article 259 B du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261 du CGI">
-                                      Article 261 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261 D du CGI">
-                                      Article 261 D du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261 D-4° du CGI">
-                                      Article 261 D-4° du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261 2-4° du CGI">
-                                      Article 261 2-4° du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261-4 du CGI">
-                                      Article 261-4 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261 4-4° du CGI">
-                                      Article 261 4-4° du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 262 du CGI">
-                                      Article 262 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 262 ter-I du CGI">
-                                      Article 262 ter-I du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 275 du CGI">
-                                      Article 275 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 283 du CGI">
-                                      Article 283 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 283-2 du CGI">
-                                      Article 283-2 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 293 B du CGI">
-                                      Article 293 B du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 298 sexies du CGI">
-                                      Article 298 sexies du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 44 de la Directive 2006/112/CE">
-                                      Article 44 de la Directive 2006/112/CE
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
+                            <div className="space-y-1">
+                              <Controller
+                                name={`items.${index}.vatExemptionText`}
+                                render={({ field }) => (
+                                  <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    disabled={!canEdit}
+                                  >
+                                    <SelectTrigger className={`h-10 w-full rounded-lg px-3 text-sm ${
+                                      hasFieldError(index, "vatExemptionText")
+                                        ? "border-destructive focus-visible:ring-destructive"
+                                        : ""
+                                    }`}>
+                                      <SelectValue placeholder="Sélectionner une mention" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">
+                                        Sélectionner une mention
+                                      </SelectItem>
+                                      <SelectItem value="Article 259-1 du CGI">
+                                        Article 259-1 du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 259 B du CGI">
+                                        Article 259 B du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 261 du CGI">
+                                        Article 261 du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 261 D du CGI">
+                                        Article 261 D du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 261 D-4° du CGI">
+                                        Article 261 D-4° du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 261 2-4° du CGI">
+                                        Article 261 2-4° du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 261-4 du CGI">
+                                        Article 261-4 du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 261 4-4° du CGI">
+                                        Article 261 4-4° du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 262 du CGI">
+                                        Article 262 du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 262 ter-I du CGI">
+                                        Article 262 ter-I du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 275 du CGI">
+                                        Article 275 du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 283 du CGI">
+                                        Article 283 du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 283-2 du CGI">
+                                        Article 283-2 du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 293 B du CGI">
+                                        Article 293 B du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 298 sexies du CGI">
+                                        Article 298 sexies du CGI
+                                      </SelectItem>
+                                      <SelectItem value="Article 44 de la Directive 2006/112/CE">
+                                        Article 44 de la Directive 2006/112/CE
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                              {hasFieldError(index, "vatExemptionText") && (
+                                <p className="text-xs text-destructive">
+                                  Le texte d'exonération de TVA est requis lorsque la TVA est à 0%
+                                </p>
                               )}
-                            />
+                            </div>
                           </div>
                         )}
 

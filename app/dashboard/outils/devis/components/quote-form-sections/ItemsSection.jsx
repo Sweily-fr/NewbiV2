@@ -522,7 +522,7 @@ export default function ItemsSection({
                                   disabled={!canEdit}
                                 >
                                   <SelectTrigger className={`h-10 w-full rounded-lg px-3 text-sm ${
-                                    error ? 'border-red-500' : ''
+                                    error || getItemError(index, "vatExemptionText") ? 'border-destructive focus-visible:ring-destructive' : ''
                                   }`}>
                                     <SelectValue placeholder="Sélectionner une mention" />
                                   </SelectTrigger>
@@ -577,9 +577,9 @@ export default function ItemsSection({
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
-                                {error && (
-                                  <p className="text-xs text-red-500">
-                                    {error.message}
+                                {(error || getItemError(index, "vatExemptionText")) && (
+                                  <p className="text-xs text-destructive">
+                                    {error?.message || "Le texte d'exonération de TVA est requis lorsque la TVA est à 0%"}
                                   </p>
                                 )}
                               </div>

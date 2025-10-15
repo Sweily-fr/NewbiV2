@@ -104,8 +104,12 @@ export function useInvoiceEditor({
   // Watch all form data for auto-save
   const formData = watch();
   
+  // Watch items array to detect deep changes
+  const watchedItems = watch("items");
+  
   // Créer des valeurs stables pour éviter les boucles infinies
   const shippingData = useMemo(() => JSON.stringify(formData.shipping || {}), [formData.shipping]);
+  const itemsData = useMemo(() => JSON.stringify(watchedItems || []), [watchedItems]);
   const discount = formData.discount;
   const discountType = formData.discountType;
   
@@ -212,12 +216,12 @@ export function useInvoiceEditor({
   // Re-valider quand les articles changent
   useEffect(() => {
     setValidationErrors((prevErrors) => {
-      // Toujours re-valider les articles s'il y a une erreur existante
-      if (prevErrors.items && formData.items && formData.items.length > 0) {
+      // Valider les articles uniquement s'il y a déjà une erreur OU si on a des articles
+      if (watchedItems && watchedItems.length > 0) {
         const invalidItems = [];
         const itemsWithErrors = [];
         
-        formData.items.forEach((item, index) => {
+        watchedItems.forEach((item, index) => {
           const itemErrors = [];
           const fields = [];
           
@@ -249,32 +253,45 @@ export function useInvoiceEditor({
             }
           }
           
+          // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+          const vatRate = parseFloat(item.vatRate) || 0;
+          if (vatRate === 0) {
+            const vatExemptionText = item.vatExemptionText;
+            if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+              itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
+              fields.push("vatExemptionText");
+            }
+          }
+          
           if (itemErrors.length > 0) {
             invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
             itemsWithErrors.push({ index, fields });
           }
         });
         
-        // Si tous les articles sont valides, supprimer l'erreur
-        if (invalidItems.length === 0) {
-          const newErrors = { ...prevErrors };
-          delete newErrors.items;
-          return newErrors;
-        } else {
-          // Mettre à jour le message d'erreur
-          return {
-            ...prevErrors,
-            items: {
-              message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
-              canEdit: false,
-              details: itemsWithErrors
-            }
-          };
+        // Si on a déjà une erreur items, mettre à jour ou supprimer
+        if (prevErrors.items) {
+          if (invalidItems.length === 0) {
+            // Tous les articles sont valides, supprimer l'erreur
+            const newErrors = { ...prevErrors };
+            delete newErrors.items;
+            return newErrors;
+          } else {
+            // Mettre à jour le message d'erreur
+            return {
+              ...prevErrors,
+              items: {
+                message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+                canEdit: false,
+                details: itemsWithErrors
+              }
+            };
+          }
         }
       }
       return prevErrors;
     });
-  }, [formData.items, editingFields]);
+  }, [itemsData, editingFields, watchedItems]);
 
   // Re-valider quand la remise change
   useEffect(() => {
@@ -676,6 +693,16 @@ export function useInvoiceEditor({
           fields.push("unitPrice");
         }
         
+        // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+        const vatRate = parseFloat(item.vatRate) || 0;
+        if (vatRate === 0) {
+          const vatExemptionText = item.vatExemptionText;
+          if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+            itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
+            fields.push("vatExemptionText");
+          }
+        }
+        
         if (itemErrors.length > 0) {
           invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
           itemsWithErrors.push({ index, fields });
@@ -913,6 +940,16 @@ export function useInvoiceEditor({
         if (isInvalid) {
           itemErrors.push("prix unitaire doit être > 0€");
           fields.push("unitPrice");
+        }
+        
+        // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+        const vatRate = parseFloat(item.vatRate) || 0;
+        if (vatRate === 0) {
+          const vatExemptionText = item.vatExemptionText;
+          if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+            itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
+            fields.push("vatExemptionText");
+          }
         }
         
         if (itemErrors.length > 0) {
