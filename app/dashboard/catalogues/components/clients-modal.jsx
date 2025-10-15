@@ -123,7 +123,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
             ? "!fixed !inset-0 !w-screen !max-w-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
             : "max-h-[90vh] my-4 sm:max-w-lg"
         }`}
-        style={isMobile ? { height: '100dvh' } : {}}
+        style={isMobile ? { height: '100dvh', maxHeight: '100dvh' } : {}}
       >
         {/* Header fixe */}
         <div className="flex-shrink-0 p-6 pb-4 border-b">
@@ -328,8 +328,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
           {/* Footer dans le flux flex - s'adapte automatiquement à Safari */}
           <div 
-            className="flex-shrink-0 flex gap-3 px-6 py-4 border-t bg-background"
-            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+            className="flex-shrink-0 flex gap-3 px-6 border-t bg-background"
+            style={{ 
+              paddingTop: '1rem',
+              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'
+            }}
           >
             <Button
               type="button"
