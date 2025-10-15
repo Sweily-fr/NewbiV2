@@ -416,7 +416,7 @@ export default function InvoiceTable() {
       </div>
 
       {/* Table - Mobile style (Notion-like) */}
-      <div className="md:hidden overflow-x-auto">
+      <div className="md:hidden overflow-x-auto pb-20">
         <Table className="w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

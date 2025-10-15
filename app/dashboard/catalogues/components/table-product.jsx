@@ -962,7 +962,7 @@ export default function TableProduct({ handleAddProduct }) {
         </div>
 
         {/* Mobile Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto pb-20">
           <Table className="w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
