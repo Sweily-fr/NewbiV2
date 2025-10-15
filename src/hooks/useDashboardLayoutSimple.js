@@ -262,20 +262,18 @@ export function useDashboardLayoutSimple() {
   const [onboardingLoading, setOnboardingLoading] = useState(false);
 
   useEffect(() => {
-    if (session?.user?.organization) {
-      const isOwner = session.user.role === "owner";
-      const hasCompletedOnboarding =
-        session.user.organization.hasCompletedOnboarding;
+    const organization = session?.user?.organization;
+    const userRole = session?.user?.role;
+    
+    if (organization && userRole) {
+      const isOwner = userRole === "owner";
+      const hasCompletedOnboarding = organization.hasCompletedOnboarding;
 
       if (isOwner && !hasCompletedOnboarding) {
         setIsOnboardingOpen(true);
       }
     }
-  }, [
-    session?.user?.role,
-    session?.user?.organization?.hasCompletedOnboarding,
-    session?.user?.organization,
-  ]);
+  }, [session?.user?.role, session?.user?.organization]);
 
   const completeOnboarding = async () => {
     if (!session?.user?.organization?.id) {
