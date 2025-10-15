@@ -392,8 +392,8 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
 
           {/* Footer dans le flux flex - s'adapte automatiquement à Safari */}
           <div 
-            className="flex-shrink-0 flex gap-3 p-6 pt-4 border-t bg-background"
-            style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+            className="flex-shrink-0 flex gap-3 px-6 py-4 border-t bg-background"
+            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
           >
             <Button
               type="button"
