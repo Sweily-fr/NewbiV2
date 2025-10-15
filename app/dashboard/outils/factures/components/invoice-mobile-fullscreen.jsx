@@ -239,7 +239,7 @@ export default function InvoiceMobileFullscreen({
         </div>
 
         {/* Footer avec actions */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex flex-col gap-2">
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex flex-col gap-2" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           {invoice.status === INVOICE_STATUS.DRAFT && (
             <>
               <Button

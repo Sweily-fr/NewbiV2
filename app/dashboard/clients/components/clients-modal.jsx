@@ -834,7 +834,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           </div>
 
           {/* Boutons fixés en bas */}
-          <div className="flex gap-3 p-6 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] border-t bg-background">
+          <div className="flex gap-3 p-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] border-t bg-background" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
             <Button
               type="button"
               variant="outline"
