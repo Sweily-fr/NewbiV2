@@ -262,43 +262,49 @@ export function useDashboardLayoutSimple() {
   const [onboardingLoading, setOnboardingLoading] = useState(false);
 
   useEffect(() => {
-    if (session?.user?.organization) {
+    // Utiliser activeOrganization en priorité, sinon fallback vers session.user.organization
+    const organization = activeOrganization || session?.user?.organization;
+    
+    if (organization && session?.user) {
       const isOwner = session.user.role === "owner";
-      const hasCompletedOnboarding =
-        session.user.organization.hasCompletedOnboarding;
+      const hasCompletedOnboarding = organization.hasCompletedOnboarding;
 
-      if (isOwner && !hasCompletedOnboarding) {
+      if (isOwner && !hasCompletedOnboarding && !isOnboardingOpen) {
         setIsOnboardingOpen(true);
       }
     }
   }, [
     session?.user?.role,
+    session?.user,
+    activeOrganization,
+    activeOrganization?.hasCompletedOnboarding,
     session?.user?.organization?.hasCompletedOnboarding,
-    session?.user?.organization,
+    isOnboardingOpen,
   ]);
 
   const completeOnboarding = async () => {
-    if (!session?.user?.organization?.id) {
-      toast.error("Erreur lors de la finalisation de l'onboarding");
+    // Utiliser activeOrganization en priorité
+    const organization = activeOrganization || session?.user?.organization;
+    
+    if (!organization?.id) {
+      console.error("Erreur: Aucune organisation trouvée pour finaliser l'onboarding");
       return;
     }
 
     setOnboardingLoading(true);
 
     try {
-      await updateOrganization(session.user.organization.id, {
+      await updateOrganization(organization.id, {
         hasCompletedOnboarding: true,
         onboardingStep: 6,
       });
 
       setIsOnboardingOpen(false);
-      toast.success("Bienvenue sur Newbi ! 🎉");
 
       // Recharger la page pour mettre à jour les données
       window.location.reload();
     } catch (error) {
       console.error("Erreur lors de la finalisation de l'onboarding:", error);
-      toast.error("Erreur lors de la finalisation de l'onboarding");
     } finally {
       setOnboardingLoading(false);
     }
