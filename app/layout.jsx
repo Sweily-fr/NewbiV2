@@ -17,6 +17,13 @@ export const metadata = {
   authors: [{ name: "Newbi" }],
   creator: "Newbi",
   publisher: "Newbi",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover',
+  },
   formatDetection: {
     email: false,
     address: false,
