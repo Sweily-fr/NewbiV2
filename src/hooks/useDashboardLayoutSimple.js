@@ -262,17 +262,26 @@ export function useDashboardLayoutSimple() {
   const [onboardingLoading, setOnboardingLoading] = useState(false);
 
   useEffect(() => {
+<<<<<<< HEAD
     // Utiliser activeOrganization en priorité, sinon fallback vers session.user.organization
     const organization = activeOrganization || session?.user?.organization;
     
     if (organization && session?.user) {
       const isOwner = session.user.role === "owner";
+=======
+    const organization = session?.user?.organization;
+    const userRole = session?.user?.role;
+    
+    if (organization && userRole) {
+      const isOwner = userRole === "owner";
+>>>>>>> joaquim/maintenant1.1
       const hasCompletedOnboarding = organization.hasCompletedOnboarding;
 
       if (isOwner && !hasCompletedOnboarding && !isOnboardingOpen) {
         setIsOnboardingOpen(true);
       }
     }
+<<<<<<< HEAD
   }, [
     session?.user?.role,
     session?.user,
@@ -281,6 +290,9 @@ export function useDashboardLayoutSimple() {
     session?.user?.organization?.hasCompletedOnboarding,
     isOnboardingOpen,
   ]);
+=======
+  }, [session?.user?.role, session?.user?.organization]);
+>>>>>>> joaquim/maintenant1.1
 
   const completeOnboarding = async () => {
     // Utiliser activeOrganization en priorité
