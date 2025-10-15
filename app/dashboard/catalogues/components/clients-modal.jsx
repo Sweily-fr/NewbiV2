@@ -315,7 +315,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
         </form>
 
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4">
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4">
           <Button
             type="button"
             variant="outline"

@@ -504,7 +504,7 @@ export default function EnhancedInvoiceForm({
       </div>
 
       {/* Footer avec boutons d'action - Positionné en dehors du flux normal */}
-      <div className="pt-4 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent p-4 lg:p-0">
+      <div className="pt-4 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:p-0 lg:pb-0">
         <div className="max-w-2xl mx-auto px-2 md:px-6 lg:px-0">
           <div className="flex justify-between items-center">
             <div className="flex gap-3">
