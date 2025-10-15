@@ -109,14 +109,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           Ajouter un collaborateur
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <div className="flex flex-col gap-2">
-          {/* <div
-            className="flex size-11 shrink-0 items-center justify-center rounded-full border"
-            aria-hidden="true"
-          >
-            <UserRoundPlusIcon className="opacity-80" size={16} />
-          </div> */}
+      <DialogContent className="flex flex-col p-0 overflow-hidden max-h-[90vh]">
+        <div className="flex flex-col gap-2 p-6 pb-0">
           <DialogHeader>
             <DialogTitle className="text-left">
               {client ? "Modifier le client" : "Ajouter un client"}
@@ -131,8 +125,9 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-5 max-h-[70vh] p-1 overflow-y-auto pb-20 sm:pb-1"
+          className="flex flex-col flex-1 min-h-0"
         >
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           <div className="space-y-4">
             {/* Type de client */}
             <div className="space-y-2">
@@ -312,26 +307,27 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
               </div>
             )}
           </div>
+          </div>
 
+          {/* Footer dans le flux flex */}
+          <div className="flex gap-3 p-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] border-t bg-background" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1"
+            >
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleSubmit(onSubmit)} 
+              disabled={loading} 
+              className="flex-1"
+            >
+              {loading ? "Enregistrement..." : isEditing ? "Modifier" : "Créer"}
+            </Button>
+          </div>
         </form>
-
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="flex-1"
-          >
-            Annuler
-          </Button>
-          <Button 
-            onClick={handleSubmit(onSubmit)} 
-            disabled={loading} 
-            className="flex-1"
-          >
-            {loading ? "Enregistrement..." : isEditing ? "Modifier" : "Créer"}
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );

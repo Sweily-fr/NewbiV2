@@ -191,14 +191,8 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           Ajouter un produit / service
         </Button>
       </DialogTrigger>
-      <DialogContent
-        className={`${
-          isMobile
-            ? "!fixed !inset-0 !w-screen !h-screen !max-w-none !max-h-none !m-0 !rounded-none !translate-x-0 !translate-y-0 overflow-y-auto !p-6"
-            : "max-w-2xl sm:max-w-lg"
-        }`}
-      >
-        <div className="flex flex-col gap-2">
+      <DialogContent className="flex flex-col p-0 overflow-hidden max-h-[90vh]">
+        <div className="flex flex-col gap-2 p-6 pb-0">
           <DialogHeader>
             <DialogTitle className="text-left">
               {product ? "Modifier le produit et/ou service" : "Ajouter un produit et/ou service"}
@@ -211,7 +205,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           </DialogHeader>
         </div>
 
-        <div className="space-y-5 max-h-[70vh] p-1 overflow-y-auto pb-20 sm:pb-1">
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
           <div className="space-y-4">
             {/* Nom du produit */}
             <div className="space-y-2">
@@ -383,7 +377,8 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           </div>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+        {/* Footer dans le flux flex */}
+        <div className="flex gap-3 p-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] border-t bg-background" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
           <Button
             type="button"
             variant="outline"
