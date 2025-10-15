@@ -117,14 +117,15 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           Ajouter un collaborateur
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <div className="flex flex-col gap-2">
-          {/* <div
-            className="flex size-11 shrink-0 items-center justify-center rounded-full border"
-            aria-hidden="true"
-          >
-            <UserRoundPlusIcon className="opacity-80" size={16} />
-          </div> */}
+      <DialogContent
+        className={`flex flex-col p-0 overflow-hidden ${
+          isMobile
+            ? "!fixed !inset-0 !w-screen !h-screen !max-w-none !max-h-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
+            : "max-h-[90vh] my-4 sm:max-w-lg"
+        }`}
+      >
+        {/* Header fixe */}
+        <div className="flex-shrink-0 p-6 pb-4 border-b">
           <DialogHeader>
             <DialogTitle className="text-left">
               {client ? "Modifier le client" : "Ajouter un client"}
@@ -137,9 +138,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           </DialogHeader>
         </div>
 
+        {/* Contenu scrollable */}
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-5 max-h-[70vh] p-1 overflow-y-auto pb-20 sm:pb-1"
+          className="flex-1 overflow-y-auto p-6 space-y-5"
+          style={{ paddingBottom: isMobile ? 'calc(80px + env(safe-area-inset-bottom))' : undefined }}
         >
           <div className="space-y-4">
             {/* Type de client */}
@@ -323,9 +326,16 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
         </form>
 
+        {/* Footer fixe */}
         <div 
-          className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 sm:relative sm:border-0 sm:p-0 sm:pt-4"
-          style={isMobile ? { paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' } : {}}
+          className="flex-shrink-0 border-t p-4 flex gap-3 bg-background"
+          style={isMobile ? { 
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            paddingBottom: 'max(1rem, env(safe-area-inset-bottom))'
+          } : {}}
         >
           <Button
             type="button"
