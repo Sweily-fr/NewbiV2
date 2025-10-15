@@ -92,33 +92,55 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
 
   if (!currentStep) return null
 
-  const IconComponent = currentStep.icon
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="gap-0 p-0 max-w-md [&>button:last-child]:text-white">
-        {/* Image/Icon Section */}
-        <div className={cn("p-8 flex items-center justify-center", currentStep.bgColor)}>
-          <div className={cn("p-4 rounded-full bg-white shadow-lg")}>
-            <IconComponent className={cn("w-12 h-12", currentStep.color)} />
+      <DialogContent className="gap-0 p-0 max-w-3xl w-[95vw] sm:w-[90vw] md:w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto [&>button:last-child]:text-white">
+        {/* Header Section */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-3 sm:pb-4 md:pb-6 border-b">
+          <div className="space-y-2 sm:space-y-3">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <span className="text-xl sm:text-2xl md:text-3xl">🚀</span>
+              Bienvenue sur Newbi
+            </h2>
+            <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed">
+              La plateforme tout-en-un pour gérer votre entreprise simplement. 
+              Factures, devis, clients, paiements... Tout ce dont vous avez besoin pour développer votre activité.
+            </p>
           </div>
         </div>
 
         {/* Content Section */}
-        <div className="space-y-6 px-6 pt-4 pb-6">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6 px-4 sm:px-6 md:px-8 pt-4 sm:pt-5 md:pt-6 pb-4 sm:pb-5 md:pb-6">
           <DialogHeader className="text-center">
-            <DialogTitle className="text-xl font-semibold">
+            <DialogTitle className="text-base sm:text-lg md:text-xl font-semibold">
               {currentStep.title}
             </DialogTitle>
-            <DialogDescription className="text-base leading-relaxed mt-2">
+            <DialogDescription className="text-xs sm:text-sm md:text-base leading-relaxed mt-2">
               {currentStep.description}
             </DialogDescription>
           </DialogHeader>
 
-          {/* Progress and Actions */}
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            {/* Progress Dots */}
-            <div className="flex justify-center space-x-2 max-sm:order-1">
+          {/* Progress Dots - Mobile/Tablet centered */}
+          <div className="flex justify-center space-x-2 py-2 md:hidden">
+            {onboardingSteps.map((_, index) => (
+              <div
+                key={index}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-all duration-200",
+                  index + 1 === step 
+                    ? "bg-primary scale-125" 
+                    : index + 1 < step 
+                      ? "bg-primary opacity-60" 
+                      : "bg-gray-300"
+                )}
+              />
+            ))}
+          </div>
+
+          {/* Desktop Layout: Progress Dots left, Buttons right */}
+          <div className="hidden md:flex justify-between items-center gap-4">
+            {/* Progress Dots - Desktop left */}
+            <div className="flex space-x-2">
               {onboardingSteps.map((_, index) => (
                 <div
                   key={index}
@@ -134,8 +156,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
               ))}
             </div>
 
-            {/* Action Buttons */}
-            <DialogFooter className="gap-2">
+            {/* Action Buttons - Desktop right */}
+            <div className="flex items-center gap-3">
               <Button 
                 type="button" 
                 variant="ghost" 
@@ -146,7 +168,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
               </Button>
               
               <Button
-                className="group min-w-[100px]"
+                className="group min-w-[120px]"
                 type="button"
                 onClick={handleContinue}
               >
@@ -163,12 +185,43 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
                   "Commencer"
                 )}
               </Button>
-            </DialogFooter>
+            </div>
+          </div>
+
+          {/* Mobile/Tablet Buttons */}
+          <div className="flex flex-col-reverse gap-2 md:hidden">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={handleSkip}
+              className="w-full text-gray-500 hover:text-gray-700"
+            >
+              Passer
+            </Button>
+            
+            <Button
+              className="group w-full"
+              type="button"
+              onClick={handleContinue}
+            >
+              {step < totalSteps ? (
+                <>
+                  Suivant
+                  <ArrowRightIcon
+                    className="-me-1 ml-1 opacity-60 transition-transform group-hover:translate-x-0.5"
+                    size={16}
+                    aria-hidden="true"
+                  />
+                </>
+              ) : (
+                "Commencer"
+              )}
+            </Button>
           </div>
 
           {/* Step Counter */}
-          <div className="text-center text-sm text-gray-500">
-            {step} sur {totalSteps}
+          <div className="text-center text-xs sm:text-sm text-gray-500 pt-1">
+            Étape {step} sur {totalSteps}
           </div>
         </div>
       </DialogContent>
