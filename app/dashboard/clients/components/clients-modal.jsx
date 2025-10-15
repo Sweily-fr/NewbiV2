@@ -345,11 +345,13 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
       <DialogContent
         className={`flex flex-col p-0 overflow-hidden ${
           isMobile
-            ? "!fixed !inset-0 !w-screen !h-screen !max-w-none !max-h-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
+            ? "!fixed !inset-0 !w-screen !max-w-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
             : "max-h-[90vh] my-4 sm:max-w-lg"
         }`}
+        style={isMobile ? { height: '100dvh', maxHeight: '100dvh' } : {}}
       >
-        <div className="flex flex-col gap-2 p-6 pb-0">
+        {/* Header fixe */}
+        <div className="flex-shrink-0 p-6 pb-4 border-b">
           <DialogHeader>
             <DialogTitle className="text-left">
               {client ? "Modifier le client" : "Ajouter un client"}
@@ -833,10 +835,13 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
             </div>
           </div>
 
-          {/* Boutons fixés en bas */}
+          {/* Footer dans le flux flex - s'adapte automatiquement à Safari */}
           <div 
-            className="flex gap-3 p-6 pt-4 border-t bg-background" 
-            style={isMobile ? { paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' } : {}}
+            className="flex-shrink-0 flex gap-3 px-6 border-t bg-background"
+            style={{ 
+              paddingTop: '1rem',
+              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'
+            }}
           >
             <Button
               type="button"
