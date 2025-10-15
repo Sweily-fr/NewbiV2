@@ -155,7 +155,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <DialogHeader className="text-center">
+          <DialogHeader className="text-left md:text-center">
             <DialogTitle className="text-base sm:text-lg md:text-xl font-semibold">
               {currentStep.title}
             </DialogTitle>
@@ -165,18 +165,18 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
           </DialogHeader>
 
           {/* Mobile/Tablet Buttons */}
-          <div className="flex flex-col-reverse gap-2 md:hidden">
+          <div className="flex flex-row gap-2 md:hidden">
             <Button 
               type="button" 
               variant="ghost" 
               onClick={handleSkip}
-              className="w-full text-gray-500 hover:text-gray-700"
+              className="flex-1 text-gray-500 hover:text-gray-700"
             >
               Passer
             </Button>
             
             <Button
-              className="group w-full"
+              className="group flex-1"
               type="button"
               onClick={handleContinue}
             >
