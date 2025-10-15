@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ArrowRightIcon, Building2, Package, ShoppingCart, Users, Wrench, Sparkles } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 import { Button } from "@/src/components/ui/button"
@@ -67,8 +67,14 @@ const onboardingSteps = [
 
 export default function OnboardingModal({ isOpen, onClose, onComplete }) {
   const [step, setStep] = useState(1)
+  const [touchStart, setTouchStart] = useState(null)
+  const [touchEnd, setTouchEnd] = useState(null)
   const totalSteps = onboardingSteps.length
   const currentStep = onboardingSteps.find(s => s.id === step)
+  const contentRef = useRef(null)
+
+  // Distance minimale pour déclencher un swipe (en pixels)
+  const minSwipeDistance = 50
 
   const handleContinue = () => {
     if (step < totalSteps) {
@@ -81,6 +87,38 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
 
   const handleSkip = () => {
     onComplete()
+  }
+
+  const handleGoToStep = (stepNumber) => {
+    setStep(stepNumber)
+  }
+
+  // Gestion du swipe mobile
+  const onTouchStart = (e) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+
+    if (isLeftSwipe && step < totalSteps) {
+      // Swipe gauche = étape suivante
+      setStep(step + 1)
+    }
+    
+    if (isRightSwipe && step > 1) {
+      // Swipe droite = étape précédente
+      setStep(step - 1)
+    }
   }
 
   // Reset step when modal opens
@@ -110,7 +148,13 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
         </div>
 
         {/* Content Section */}
-        <div className="space-y-4 sm:space-y-5 md:space-y-6 px-4 sm:px-6 md:px-8 pt-4 sm:pt-5 md:pt-6 pb-4 sm:pb-5 md:pb-6">
+        <div 
+          ref={contentRef}
+          className="space-y-4 sm:space-y-5 md:space-y-6 px-4 sm:px-6 md:px-8 pt-4 sm:pt-5 md:pt-6 pb-4 sm:pb-5 md:pb-6"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           <DialogHeader className="text-center">
             <DialogTitle className="text-base sm:text-lg md:text-xl font-semibold">
               {currentStep.title}
@@ -120,27 +164,41 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
             </DialogDescription>
           </DialogHeader>
 
-          {/* Progress Dots - Mobile/Tablet centered */}
-          <div className="flex justify-center space-x-2 py-2 md:hidden">
-            {onboardingSteps.map((_, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "w-2 h-2 rounded-full transition-all duration-200",
-                  index + 1 === step 
-                    ? "bg-primary scale-125" 
-                    : index + 1 < step 
-                      ? "bg-primary opacity-60" 
-                      : "bg-gray-300"
-                )}
-              />
-            ))}
+          {/* Mobile/Tablet Buttons */}
+          <div className="flex flex-col-reverse gap-2 md:hidden">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={handleSkip}
+              className="w-full text-gray-500 hover:text-gray-700"
+            >
+              Passer
+            </Button>
+            
+            <Button
+              className="group w-full"
+              type="button"
+              onClick={handleContinue}
+            >
+              {step < totalSteps ? (
+                <>
+                  Suivant
+                  <ArrowRightIcon
+                    className="-me-1 ml-1 opacity-60 transition-transform group-hover:translate-x-0.5"
+                    size={16}
+                    aria-hidden="true"
+                  />
+                </>
+              ) : (
+                "Commencer"
+              )}
+            </Button>
           </div>
 
-          {/* Desktop Layout: Progress Dots left, Buttons right */}
-          <div className="hidden md:flex justify-between items-center gap-4">
-            {/* Progress Dots - Desktop left */}
-            <div className="flex space-x-2">
+          {/* Progress Dots + Step Counter - Mobile/Tablet */}
+          <div className="flex flex-col items-center gap-2 md:hidden">
+            {/* Progress Dots */}
+            <div className="flex justify-center space-x-2">
               {onboardingSteps.map((_, index) => (
                 <div
                   key={index}
@@ -152,6 +210,34 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
                         ? "bg-primary opacity-60" 
                         : "bg-gray-300"
                   )}
+                />
+              ))}
+            </div>
+            
+            {/* Step Counter */}
+            <div className="text-xs sm:text-sm text-gray-500">
+              Étape {step} sur {totalSteps}
+            </div>
+          </div>
+
+          {/* Desktop Layout: Progress Dots left, Buttons right */}
+          <div className="hidden md:flex justify-between items-center gap-4">
+            {/* Progress Dots - Desktop left (cliquables) */}
+            <div className="flex space-x-2">
+              {onboardingSteps.map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => handleGoToStep(index + 1)}
+                  className={cn(
+                    "w-2 h-2 rounded-full transition-all duration-200 cursor-pointer hover:scale-150",
+                    index + 1 === step 
+                      ? "bg-primary scale-125" 
+                      : index + 1 < step 
+                        ? "bg-primary opacity-60 hover:opacity-100" 
+                        : "bg-gray-300 hover:bg-gray-400"
+                  )}
+                  aria-label={`Aller à l'étape ${index + 1}`}
                 />
               ))}
             </div>
@@ -186,42 +272,6 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
                 )}
               </Button>
             </div>
-          </div>
-
-          {/* Mobile/Tablet Buttons */}
-          <div className="flex flex-col-reverse gap-2 md:hidden">
-            <Button 
-              type="button" 
-              variant="ghost" 
-              onClick={handleSkip}
-              className="w-full text-gray-500 hover:text-gray-700"
-            >
-              Passer
-            </Button>
-            
-            <Button
-              className="group w-full"
-              type="button"
-              onClick={handleContinue}
-            >
-              {step < totalSteps ? (
-                <>
-                  Suivant
-                  <ArrowRightIcon
-                    className="-me-1 ml-1 opacity-60 transition-transform group-hover:translate-x-0.5"
-                    size={16}
-                    aria-hidden="true"
-                  />
-                </>
-              ) : (
-                "Commencer"
-              )}
-            </Button>
-          </div>
-
-          {/* Step Counter */}
-          <div className="text-center text-xs sm:text-sm text-gray-500 pt-1">
-            Étape {step} sur {totalSteps}
           </div>
         </div>
       </DialogContent>
