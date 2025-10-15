@@ -191,8 +191,15 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           Ajouter un produit / service
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex flex-col p-0 overflow-hidden max-h-[90vh]">
-        <div className="flex flex-col gap-2 p-6 pb-0">
+      <DialogContent
+        className={`flex flex-col p-0 overflow-hidden ${
+          isMobile
+            ? "!fixed !inset-0 !w-screen !h-screen !max-w-none !max-h-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
+            : "max-h-[90vh] my-4 sm:max-w-lg"
+        }`}
+      >
+        {/* Header fixe */}
+        <div className="flex-shrink-0 p-6 pb-4 border-b">
           <DialogHeader>
             <DialogTitle className="text-left">
               {product ? "Modifier le produit et/ou service" : "Ajouter un produit et/ou service"}
@@ -205,7 +212,11 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           </DialogHeader>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+        {/* Contenu scrollable */}
+        <div 
+          className="flex-1 overflow-y-auto p-6 space-y-5"
+          style={{ paddingBottom: isMobile ? 'calc(80px + env(safe-area-inset-bottom))' : undefined }}
+        >
           <div className="space-y-4">
             {/* Nom du produit */}
             <div className="space-y-2">
@@ -377,8 +388,17 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           </div>
         </div>
 
-        {/* Footer dans le flux flex */}
-        <div className="flex gap-3 p-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] border-t bg-background" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+        {/* Footer fixe */}
+        <div 
+          className="flex-shrink-0 border-t p-4 flex gap-3 bg-background"
+          style={isMobile ? { 
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            paddingBottom: 'max(1rem, env(safe-area-inset-bottom))'
+          } : {}}
+        >
           <Button
             type="button"
             variant="outline"

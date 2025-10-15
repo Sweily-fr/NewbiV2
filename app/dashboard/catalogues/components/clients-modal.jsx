@@ -25,13 +25,21 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { useCreateClient, useUpdateClient } from "@/src/hooks/useClients";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function ClientsModal({ client, onSave, open, onOpenChange }) {
   const { createClient, loading: createLoading } = useCreateClient();
   const { updateClient, loading: updateLoading } = useUpdateClient();
   const isEditing = !!client;
   const loading = createLoading || updateLoading;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const {
     register,
@@ -109,8 +117,20 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           Ajouter un collaborateur
         </Button>
       </DialogTrigger>
+<<<<<<< HEAD
       <DialogContent className="flex flex-col p-0 overflow-hidden max-h-[90vh]">
         <div className="flex flex-col gap-2 p-6 pb-0">
+=======
+      <DialogContent
+        className={`flex flex-col p-0 overflow-hidden ${
+          isMobile
+            ? "!fixed !inset-0 !w-screen !h-screen !max-w-none !max-h-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
+            : "max-h-[90vh] my-4 sm:max-w-lg"
+        }`}
+      >
+        {/* Header fixe */}
+        <div className="flex-shrink-0 p-6 pb-4 border-b">
+>>>>>>> develop
           <DialogHeader>
             <DialogTitle className="text-left">
               {client ? "Modifier le client" : "Ajouter un client"}
@@ -123,9 +143,15 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
           </DialogHeader>
         </div>
 
+        {/* Contenu scrollable */}
         <form
           onSubmit={handleSubmit(onSubmit)}
+<<<<<<< HEAD
           className="flex flex-col flex-1 min-h-0"
+=======
+          className="flex-1 overflow-y-auto p-6 space-y-5"
+          style={{ paddingBottom: isMobile ? 'calc(80px + env(safe-area-inset-bottom))' : undefined }}
+>>>>>>> develop
         >
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           <div className="space-y-4">
@@ -328,6 +354,37 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
             </Button>
           </div>
         </form>
+<<<<<<< HEAD
+=======
+
+        {/* Footer fixe */}
+        <div 
+          className="flex-shrink-0 border-t p-4 flex gap-3 bg-background"
+          style={isMobile ? { 
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            paddingBottom: 'max(1rem, env(safe-area-inset-bottom))'
+          } : {}}
+        >
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="flex-1"
+          >
+            Annuler
+          </Button>
+          <Button 
+            onClick={handleSubmit(onSubmit)} 
+            disabled={loading} 
+            className="flex-1"
+          >
+            {loading ? "Enregistrement..." : isEditing ? "Modifier" : "Créer"}
+          </Button>
+        </div>
+>>>>>>> develop
       </DialogContent>
     </Dialog>
   );
