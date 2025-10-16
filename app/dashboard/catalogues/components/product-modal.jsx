@@ -289,7 +289,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     rules={{ required: "Le taux de TVA est requis" }}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="TVA" />
                         </SelectTrigger>
                         <SelectContent>
@@ -315,7 +315,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     rules={{ required: "L'unité est requise" }}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Unité" />
                         </SelectTrigger>
                         <SelectContent>
