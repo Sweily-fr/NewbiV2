@@ -22,7 +22,6 @@ import {
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
-import OnboardingTestButton from "@/src/components/onboarding-test-button";
 // import { LoaderCircle } from "lucide-react";
 
 // Composant interne qui utilise le contexte
@@ -130,9 +129,6 @@ function DashboardContent({ children }) {
         onClose={() => setIsOnboardingOpen(false)}
         onComplete={completeOnboarding}
       />
-
-      {/* Bouton de test onboarding - visible uniquement en dev */}
-      <OnboardingTestButton />
     </SidebarProvider>
   );
 }
