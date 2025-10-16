@@ -37,12 +37,13 @@ export const auth = betterAuth({
     "https://newbi-v2-git-develop-sofianemtimet6-2653s-projects.vercel.app",
   ],
 
-  // Cookie Cache pour optimiser les performances
-  // Évite les requêtes DB à chaque useSession() ou useActiveOrganization()
+  // Configuration de la session
   session: {
+    expiresIn: 60 * 60 * 24 * 30, // 30 jours - Durée maximale de la session
+    updateAge: 60 * 60 * 24, // 24 heures - Renouvellement automatique si utilisateur actif
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // Cache de 5 minutes
+      maxAge: 5 * 60, // 5 minutes - Cache pour optimiser les performances
     },
   },
 
