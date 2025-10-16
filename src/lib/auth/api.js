@@ -44,12 +44,23 @@ export async function registerUser(formData) {
     });
 
     if (error) {
-      throw new Error(error.message || "Erreur lors de l'inscription");
+      // Propager le message d'erreur exact de Better Auth
+      const errorMessage = error.message || "Erreur lors de l'inscription";
+      
+      // Gérer les erreurs spécifiques
+      if (errorMessage.toLowerCase().includes("email") && errorMessage.toLowerCase().includes("exist")) {
+        throw new Error("Cet email est déjà utilisé");
+      } else if (errorMessage.toLowerCase().includes("already")) {
+        throw new Error("Cet email est déjà utilisé");
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return data;
   } catch (err) {
-    throw new Error(err.message || "Erreur lors de l'inscription");
+    // Propager l'erreur sans la modifier
+    throw err;
   }
 }
 

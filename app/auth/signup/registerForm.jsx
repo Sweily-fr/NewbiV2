@@ -32,8 +32,9 @@ const RegisterFormContent = () => {
   const invitationEmail = searchParams.get("email");
 
   const onSubmit = async (formData) => {
-    await signUp.email(formData, {
-      onSuccess: async (context) => {
+    // Selon la doc Better Auth, l'erreur est retournée directement dans { data, error }
+    const { data, error } = await signUp.email(formData, {
+      onSuccess: async (ctx) => {
         toast.success("Vous avez reçu un email de verification");
 
         // Si c'est une inscription via invitation, stocker l'invitationId pour l'accepter après la connexion
@@ -53,10 +54,43 @@ const RegisterFormContent = () => {
         // Redirection vers la page de connexion après inscription
         router.push("/auth/login");
       },
-      onError: (error) => {
-        toast.error("Erreur lors de l'inscription");
+      onError: (ctx) => {
+        // L'erreur est gérée via le retour { data, error }
       },
     });
+
+    // Vérifier l'erreur retournée directement (selon la doc Better Auth)
+    if (error) {
+      // Better Auth peut retourner l'erreur dans différents formats
+      let errorMessage = "Erreur lors de l'inscription";
+      
+      // Essayer différentes sources de message
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.statusText) {
+        errorMessage = error.statusText;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      // Gérer les erreurs spécifiques
+      if (errorMessage.toLowerCase().includes("email") && errorMessage.toLowerCase().includes("exist")) {
+        toast.error("Cet email est déjà utilisé");
+      } else if (errorMessage.toLowerCase().includes("already")) {
+        toast.error("Cet email est déjà utilisé");
+      } else if (errorMessage.toLowerCase().includes("utilisé")) {
+        toast.error("Cet email est déjà utilisé");
+      } else if (errorMessage.toLowerCase().includes("duplicate")) {
+        toast.error("Cet email est déjà utilisé");
+      } else if (errorMessage.toLowerCase().includes("unique")) {
+        toast.error("Cet email est déjà utilisé");
+      } else if (error.status === 500) {
+        // Erreur serveur - probablement email dupliqué (contrainte unique MongoDB)
+        toast.error("Cet email est déjà utilisé");
+      } else {
+        toast.error(errorMessage);
+      }
+    }
   };
 
   return (

@@ -8,40 +8,47 @@ const options = {
   maxPoolSize: 10,
   minPoolSize: 2,
   maxIdleTimeMS: 60000, // Fermer les connexions inactives après 1 minute
-  serverSelectionTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 30000, // 30 secondes pour cold start Vercel
   socketTimeoutMS: 45000,
   retryWrites: true,
   retryReads: true,
-  connectTimeoutMS: 10000,
+  connectTimeoutMS: 30000, // 30 secondes pour cold start
 };
 
 let client;
+let clientPromise;
 
 if (!global._mongoClient) {
   client = new MongoClient(uri, options);
   global._mongoClient = client;
-
-  client
-    .connect()
-    .then(() => {
-      global._mongoDb = client.db(dbName);
-      console.log("✅ MongoDB connected successfully");
-    })
-    .catch((err) => {
-      console.error("❌ MongoDB connection error:", err);
-      // Ne pas lancer d'erreur ici pour éviter de casser l'app
-    });
+  
+  // Connexion immédiate pour éviter timeout au premier appel
+  clientPromise = client.connect().then(() => {
+    global._mongoDb = client.db(dbName);
+    console.log("✅ MongoDB connected successfully");
+    return client;
+  }).catch((err) => {
+    console.error("❌ MongoDB initial connection error:", err);
+    throw err;
+  });
+  
+  global._mongoClientPromise = clientPromise;
 } else {
   client = global._mongoClient;
+  clientPromise = global._mongoClientPromise;
 }
 
 // Fonction pour s'assurer que la connexion est établie
 const ensureConnection = async () => {
   try {
+    // Attendre que la connexion initiale soit établie
+    await clientPromise;
+    
+    // global._mongoDb est déjà créé dans clientPromise
     if (!global._mongoDb) {
-      await client.connect();
       global._mongoDb = client.db(dbName);
     }
+    
     // Vérifier que la connexion est toujours active
     await client.db().admin().ping();
     return global._mongoDb;
@@ -49,8 +56,9 @@ const ensureConnection = async () => {
     console.error("❌ MongoDB connection lost, reconnecting...", error.message);
     try {
       // Tenter une reconnexion
-      await client.connect();
-      global._mongoDb = client.db(dbName);
+      const newClient = await client.connect();
+      global._mongoDb = newClient.db(dbName);
+      global._mongoClientPromise = Promise.resolve(newClient);
       console.log("✅ MongoDB reconnected successfully");
       return global._mongoDb;
     } catch (reconnectError) {
@@ -76,6 +84,35 @@ if (client) {
   });
 }
 
-export const mongoClient = global._mongoClient || new MongoClient(uri, options);
-export const mongoDb = global._mongoDb || client?.db(dbName);
+// Exporter une fonction qui retourne la DB après connexion
+export async function getMongoDb() {
+  return await ensureConnection();
+}
+
+// Créer un Proxy qui attend la connexion avant d'accéder à mongoDb
+// Cela permet à Better Auth d'utiliser mongoDb de manière synchrone
+const mongoDbProxy = new Proxy({}, {
+  get(target, prop) {
+    // Si la DB est déjà connectée, retourner directement
+    if (global._mongoDb) {
+      return global._mongoDb[prop];
+    }
+    
+    // Sinon, retourner une fonction qui attend la connexion
+    return async (...args) => {
+      await clientPromise;
+      if (!global._mongoDb) {
+        global._mongoDb = client.db(dbName);
+      }
+      const method = global._mongoDb[prop];
+      if (typeof method === 'function') {
+        return method.apply(global._mongoDb, args);
+      }
+      return method;
+    };
+  }
+});
+
+export const mongoClient = client;
+export const mongoDb = mongoDbProxy;
 export { ensureConnection };
