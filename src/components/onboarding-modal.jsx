@@ -194,8 +194,33 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
             </div>
           )}
 
+          {/* Progress Dots + Step Counter - Mobile/Tablet */}
+          <div className="flex flex-col items-center gap-2 md:hidden mt-6">
+            {/* Progress Dots */}
+            <div className="flex justify-center space-x-2">
+              {onboardingSteps.map((_, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "w-2 h-2 rounded-full transition-all duration-200",
+                    index + 1 === step 
+                      ? "bg-primary scale-125" 
+                      : index + 1 < step 
+                        ? "bg-primary opacity-60" 
+                        : "bg-gray-300"
+                  )}
+                />
+              ))}
+            </div>
+            
+            {/* Step Counter */}
+            <div className="text-xs sm:text-sm text-gray-500">
+              Étape {step} sur {totalSteps}
+            </div>
+          </div>
+
           {/* Mobile/Tablet Buttons */}
-          <div className="flex flex-row gap-2 md:hidden mt-6">
+          <div className="flex flex-row gap-2 md:hidden">
             <Button 
               type="button" 
               variant="ghost" 
@@ -223,31 +248,6 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
                 "Commencer"
               )}
             </Button>
-          </div>
-
-          {/* Progress Dots + Step Counter - Mobile/Tablet */}
-          <div className="flex flex-col items-center gap-2 md:hidden">
-            {/* Progress Dots */}
-            <div className="flex justify-center space-x-2">
-              {onboardingSteps.map((_, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "w-2 h-2 rounded-full transition-all duration-200",
-                    index + 1 === step 
-                      ? "bg-primary scale-125" 
-                      : index + 1 < step 
-                        ? "bg-primary opacity-60" 
-                        : "bg-gray-300"
-                  )}
-                />
-              ))}
-            </div>
-            
-            {/* Step Counter */}
-            <div className="text-xs sm:text-sm text-gray-500">
-              Étape {step} sur {totalSteps}
-            </div>
           </div>
 
           {/* Desktop Layout: Progress Dots left, Buttons right */}
