@@ -14,7 +14,7 @@ export const emailTemplates = {
         
         <!-- Logo -->
         <div style="text-align: center; margin-bottom: 40px;">
-          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px; width: 100px;">
         </div>
         
         <!-- Titre principal -->
@@ -41,10 +41,28 @@ export const emailTemplates = {
         </p>
         
         <!-- Footer -->
-        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
-          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 11px; color: #9ca3af; margin: 0 0 20px 0; text-align: center;">
             Ce lien expire dans 24 heures. Si vous n'avez pas demandé cette réactivation, ignorez cet e-mail.
           </p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="text-align: left; vertical-align: middle;">
+                <img src="https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_NI_Purple.png" alt="Newbi" style="height: 24px; width: auto;">
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <a href="https://www.instagram.com/newbi_fr?igsh=OXhuZHRtY3M5bW83" target="_blank" style="text-decoration: none;">
+                  <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram-black.png" alt="Instagram" style="height: 24px; width: 24px;">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: left; font-size: 10px; color: #9ca3af; line-height: 1.6;">
+            <p style="margin: 0 0 4px 0; font-weight: 600;">SWEILY</p>
+            <p style="margin: 0 0 4px 0;">SAS au capital de 10 000,00 €</p>
+            <p style="margin: 0 0 4px 0;">SIREN : 981 576 549 • RCS Paris</p>
+            <p style="margin: 0;">229 rue Saint-Honoré, 75001 Paris</p>
+          </div>
         </div>
         
       </div>
@@ -66,7 +84,7 @@ export const emailTemplates = {
         
         <!-- Logo -->
         <div style="text-align: center; margin-bottom: 40px;">
-          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px; width: 100px;">
         </div>
         
         <!-- Titre principal -->
@@ -91,6 +109,31 @@ export const emailTemplates = {
           Ce code expire dans 10 minutes. Si vous n'avez pas demandé cette vérification, ignorez cet e-mail.
         </p>
         
+        <!-- Footer -->
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 11px; color: #9ca3af; margin: 0 0 20px 0; text-align: center;">
+            Ce code expire dans 10 minutes. Si vous n'avez pas demandé cette vérification, ignorez cet e-mail.
+          </p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="text-align: left; vertical-align: middle;">
+                <img src="https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_NI_Purple.png" alt="Newbi" style="height: 24px; width: auto;">
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <a href="https://www.instagram.com/newbi_fr?igsh=OXhuZHRtY3M5bW83" target="_blank" style="text-decoration: none;">
+                  <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram-black.png" alt="Instagram" style="height: 24px; width: 24px;">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: left; font-size: 10px; color: #9ca3af; line-height: 1.6;">
+            <p style="margin: 0 0 4px 0; font-weight: 600;">SWEILY</p>
+            <p style="margin: 0 0 4px 0;">SAS au capital de 10 000,00 €</p>
+            <p style="margin: 0 0 4px 0;">SIREN : 981 576 549 • RCS Paris</p>
+            <p style="margin: 0;">229 rue Saint-Honoré, 75001 Paris</p>
+          </div>
+        </div>
+        
       </div>
     </body>
     </html>
@@ -110,7 +153,7 @@ export const emailTemplates = {
         
         <!-- Logo -->
         <div style="text-align: center; margin-bottom: 40px;">
-          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px; width: 100px;">
         </div>
         
         <!-- Titre principal -->
@@ -137,10 +180,28 @@ export const emailTemplates = {
         </p>
         
         <!-- Footer -->
-        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
-          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 11px; color: #9ca3af; margin: 0 0 20px 0; text-align: center;">
             Ce lien expire dans 1 heure. Si vous n'avez pas demandé cette réinitialisation, ignorez cet e-mail.
           </p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="text-align: left; vertical-align: middle;">
+                <img src="https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_NI_Purple.png" alt="Newbi" style="height: 24px; width: auto;">
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <a href="https://www.instagram.com/newbi_fr?igsh=OXhuZHRtY3M5bW83" target="_blank" style="text-decoration: none;">
+                  <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram-black.png" alt="Instagram" style="height: 24px; width: 24px;">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: left; font-size: 10px; color: #9ca3af; line-height: 1.6;">
+            <p style="margin: 0 0 4px 0; font-weight: 600;">SWEILY</p>
+            <p style="margin: 0 0 4px 0;">SAS au capital de 10 000,00 €</p>
+            <p style="margin: 0 0 4px 0;">SIREN : 981 576 549 • RCS Paris</p>
+            <p style="margin: 0;">229 rue Saint-Honoré, 75001 Paris</p>
+          </div>
         </div>
         
       </div>
@@ -162,7 +223,7 @@ export const emailTemplates = {
         
         <!-- Logo -->
         <div style="text-align: center; margin-bottom: 40px;">
-          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px; width: 100px;">
         </div>
         
         <!-- Titre principal -->
@@ -189,10 +250,28 @@ export const emailTemplates = {
         </p>
         
         <!-- Footer -->
-        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
-          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 11px; color: #9ca3af; margin: 0 0 20px 0; text-align: center;">
             Ce lien expire dans 1 heure. Si vous n'avez pas créé de compte, ignorez cet e-mail.
           </p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="text-align: left; vertical-align: middle;">
+                <img src="https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_NI_Purple.png" alt="Newbi" style="height: 24px; width: auto;">
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <a href="https://www.instagram.com/newbi_fr?igsh=OXhuZHRtY3M5bW83" target="_blank" style="text-decoration: none;">
+                  <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram-black.png" alt="Instagram" style="height: 24px; width: 24px;">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: left; font-size: 10px; color: #9ca3af; line-height: 1.6;">
+            <p style="margin: 0 0 4px 0; font-weight: 600;">SWEILY</p>
+            <p style="margin: 0 0 4px 0;">SAS au capital de 10 000,00 €</p>
+            <p style="margin: 0 0 4px 0;">SIREN : 981 576 549 • RCS Paris</p>
+            <p style="margin: 0;">229 rue Saint-Honoré, 75001 Paris</p>
+          </div>
         </div>
         
       </div>
@@ -214,7 +293,7 @@ export const emailTemplates = {
         
         <!-- Logo -->
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px; width: 100px;">
         </div>
         
         <!-- Titre principal -->
@@ -394,10 +473,28 @@ export const emailTemplates = {
         </p>
         
         <!-- Footer -->
-        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
-          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 11px; color: #9ca3af; margin: 0 0 20px 0; text-align: center;">
             Si vous ne souhaitez pas rejoindre cette organisation, vous pouvez ignorer cet e-mail en toute sécurité.
           </p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="text-align: left; vertical-align: middle;">
+                <img src="https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_NI_Purple.png" alt="Newbi" style="height: 24px; width: auto;">
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <a href="https://www.instagram.com/newbi_fr?igsh=OXhuZHRtY3M5bW83" target="_blank" style="text-decoration: none;">
+                  <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram-black.png" alt="Instagram" style="height: 24px; width: 24px;">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: left; font-size: 10px; color: #9ca3af; line-height: 1.6;">
+            <p style="margin: 0 0 4px 0; font-weight: 600;">SWEILY</p>
+            <p style="margin: 0 0 4px 0;">SAS au capital de 10 000,00 €</p>
+            <p style="margin: 0 0 4px 0;">SIREN : 981 576 549 • RCS Paris</p>
+            <p style="margin: 0;">229 rue Saint-Honoré, 75001 Paris</p>
+          </div>
         </div>
         
       </div>
@@ -419,7 +516,7 @@ export const emailTemplates = {
         
         <!-- Logo -->
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px; width: 100px;">
         </div>
         
         <!-- Titre principal -->
@@ -488,7 +585,7 @@ export const emailTemplates = {
                                     ${data.member.user.name || data.member.user.email}
                                   </div>
                                   <div style="font-size: 12px; color: #6b7280;">
-                                    ${data.member.role === 'admin' ? 'Administrateur' : 'Membre'}
+                                    ${data.member.role === "admin" ? "Administrateur" : "Membre"}
                                   </div>
                                 </td>
                               </tr>
@@ -518,10 +615,28 @@ export const emailTemplates = {
         </div>
         
         <!-- Footer -->
-        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
-          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 11px; color: #9ca3af; margin: 0 0 20px 0; text-align: center;">
             Vous pouvez gérer les membres de votre organisation depuis les paramètres.
           </p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="text-align: left; vertical-align: middle;">
+                <img src="https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_NI_Purple.png" alt="Newbi" style="height: 24px; width: auto;">
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <a href="https://www.instagram.com/newbi_fr?igsh=OXhuZHRtY3M5bW83" target="_blank" style="text-decoration: none;">
+                  <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram-black.png" alt="Instagram" style="height: 24px; width: 24px;">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: left; font-size: 10px; color: #9ca3af; line-height: 1.6;">
+            <p style="margin: 0 0 4px 0; font-weight: 600;">SWEILY</p>
+            <p style="margin: 0 0 4px 0;">SAS au capital de 10 000,00 €</p>
+            <p style="margin: 0 0 4px 0;">SIREN : 981 576 549 • RCS Paris</p>
+            <p style="margin: 0;">229 rue Saint-Honoré, 75001 Paris</p>
+          </div>
         </div>
         
       </div>
@@ -543,7 +658,7 @@ export const emailTemplates = {
         
         <!-- Logo -->
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px; width: 100px;">
         </div>
         
         <!-- Titre principal -->
@@ -593,7 +708,7 @@ export const emailTemplates = {
                               ${data.organization.name}
                             </div>
                             <div style="font-size: 12px; color: #6b7280;">
-                              Votre rôle : ${data.member.role === 'admin' ? 'Administrateur' : 'Membre'}
+                              Votre rôle : ${data.member.role === "admin" ? "Administrateur" : "Membre"}
                             </div>
                           </td>
                           <td style="text-align: right; vertical-align: middle;">
@@ -620,10 +735,28 @@ export const emailTemplates = {
         </div>
         
         <!-- Footer -->
-        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
-          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 11px; color: #9ca3af; margin: 0 0 20px 0; text-align: center;">
             Vous pouvez maintenant créer des devis, factures et gérer vos projets avec votre équipe.
           </p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="text-align: left; vertical-align: middle;">
+                <img src="https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_NI_Purple.png" alt="Newbi" style="height: 24px; width: auto;">
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <a href="https://www.instagram.com/newbi_fr?igsh=OXhuZHRtY3M5bW83" target="_blank" style="text-decoration: none;">
+                  <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram-black.png" alt="Instagram" style="height: 24px; width: 24px;">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: left; font-size: 10px; color: #9ca3af; line-height: 1.6;">
+            <p style="margin: 0 0 4px 0; font-weight: 600;">SWEILY</p>
+            <p style="margin: 0 0 4px 0;">SAS au capital de 10 000,00 €</p>
+            <p style="margin: 0 0 4px 0;">SIREN : 981 576 549 • RCS Paris</p>
+            <p style="margin: 0;">229 rue Saint-Honoré, 75001 Paris</p>
+          </div>
         </div>
         
       </div>
@@ -645,7 +778,7 @@ export const emailTemplates = {
         
         <!-- Logo -->
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px; width: 100px;">
         </div>
         
         <!-- Titre principal -->
@@ -744,10 +877,28 @@ export const emailTemplates = {
         </div>
         
         <!-- Footer -->
-        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
-          <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 11px; color: #9ca3af; margin: 0 0 20px 0; text-align: center;">
             Vous pouvez maintenant travailler ensemble sur vos projets.
           </p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="text-align: left; vertical-align: middle;">
+                <img src="https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_NI_Purple.png" alt="Newbi" style="height: 24px; width: auto;">
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <a href="https://www.instagram.com/newbi_fr?igsh=OXhuZHRtY3M5bW83" target="_blank" style="text-decoration: none;">
+                  <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram-black.png" alt="Instagram" style="height: 24px; width: 24px; filter: brightness(0);">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: left; font-size: 10px; color: #9ca3af; line-height: 1.6;">
+            <p style="margin: 0 0 4px 0; font-weight: 600;">SWEILY</p>
+            <p style="margin: 0 0 4px 0;">SAS au capital de 10 000,00 €</p>
+            <p style="margin: 0 0 4px 0;">SIREN : 981 576 549 • RCS Paris</p>
+            <p style="margin: 0;">229 rue Saint-Honoré, 75001 Paris</p>
+          </div>
         </div>
         
       </div>

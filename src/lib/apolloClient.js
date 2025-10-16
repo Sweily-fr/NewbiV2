@@ -132,30 +132,49 @@ if (wsLink && typeof window !== "undefined") {
 
 const authLink = setContext(async (_, { headers }) => {
   try {
-    // Récupérer le JWT via authClient.getSession avec le header set-auth-jwt
     let jwtToken = null;
 
-    const session = await authClient.getSession({
-      fetchOptions: {
-        onSuccess: (ctx) => {
-          const jwt = ctx.response.headers.get("set-auth-jwt");
-          if (jwt && !isTokenExpired(jwt)) {
-            jwtToken = jwt;
-          }
-        },
-        onError: (ctx) => {
-          // Log l'erreur mais ne bloque pas
-          console.warn("⚠️ [Apollo] Session non disponible:", ctx.error?.message);
-        },
-      },
-    });
-
-    // Si on a une session mais pas de JWT, essayer de le récupérer depuis la session
-    if (session?.session && !jwtToken) {
-      // Certaines requêtes peuvent fonctionner avec les cookies seulement
-      console.log("ℹ️ [Apollo] Session disponible sans JWT, utilisation des cookies");
+    // 1. Vérifier d'abord le JWT stocké dans localStorage
+    const storedToken = localStorage.getItem('bearer_token');
+    if (storedToken && !isTokenExpired(storedToken)) {
+      console.log("✅ [Apollo] JWT valide trouvé dans localStorage");
+      jwtToken = storedToken;
+    } else if (storedToken) {
+      console.log("⚠️ [Apollo] JWT expiré dans localStorage, suppression");
+      localStorage.removeItem('bearer_token');
     }
 
+    // 2. Si pas de JWT valide, récupérer un nouveau via getSession
+    if (!jwtToken) {
+      console.log("🔄 [Apollo] Récupération nouveau JWT via getSession...");
+      const session = await authClient.getSession({
+        fetchOptions: {
+          onSuccess: (ctx) => {
+            const jwt = ctx.response.headers.get("set-auth-jwt");
+            if (jwt && !isTokenExpired(jwt)) {
+              jwtToken = jwt;
+              // ✅ CORRECTION: Stocker le JWT dans localStorage
+              localStorage.setItem('bearer_token', jwt);
+              console.log("✅ [Apollo] Nouveau JWT récupéré et stocké");
+            } else if (jwt) {
+              console.warn("⚠️ [Apollo] JWT reçu mais déjà expiré");
+            }
+          },
+          onError: (ctx) => {
+            console.warn("⚠️ [Apollo] Erreur getSession:", ctx.error?.message);
+          },
+        },
+      });
+
+      // Si on a une session mais pas de JWT, utiliser les cookies
+      if (session?.session && !jwtToken) {
+        console.log("ℹ️ [Apollo] Session active, utilisation des cookies httpOnly");
+      } else if (!session?.session && !jwtToken) {
+        console.error("❌ [Apollo] Pas de session ni de JWT disponible");
+      }
+    }
+
+    // 3. Ajouter le JWT au header si disponible
     if (jwtToken) {
       return {
         headers: {
@@ -165,10 +184,10 @@ const authLink = setContext(async (_, { headers }) => {
       };
     }
   } catch (error) {
-    // Erreur silencieuse - ne pas exposer les détails d'authentification
-    console.warn("⚠️ [Apollo] Erreur récupération JWT:", error.message);
+    console.error("❌ [Apollo] Erreur récupération JWT:", error.message);
   }
 
+  // Fallback: utiliser les cookies httpOnly
   return {
     headers: {
       ...headers,
