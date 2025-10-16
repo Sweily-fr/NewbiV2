@@ -253,7 +253,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
             {/* Prix unitaire, TVA et Unité */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label className="font-normal">Prix unitaire (HT) *</Label>
+                <Label className="font-normal h-5 flex items-center">Prix unitaire (HT) *</Label>
                 <div className="relative">
                   <Input
                     type="number"
@@ -279,7 +279,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
               </div>
 
               <div className="space-y-2">
-                <Label className="font-normal">Taux de TVA (%) *</Label>
+                <Label className="font-normal h-5 flex items-center">TVA *</Label>
                 <Controller
                   name="vatRate"
                   control={control}
@@ -305,7 +305,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
               </div>
 
               <div className="space-y-2">
-                <Label className="font-normal">Unité *</Label>
+                <Label className="font-normal h-5 flex items-center">Unité *</Label>
                 <Controller
                   name="unit"
                   control={control}
