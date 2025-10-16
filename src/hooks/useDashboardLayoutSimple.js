@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { useTrial } from "@/src/hooks/useTrial";
 import { authClient } from "@/src/lib/auth-client";
-import { updateOrganization } from "@/src/lib/organization-client";
 /**
  * Version simplifiée du hook dashboard layout sans cache pour éviter les boucles infinies
  * Version temporaire pendant que nous résolvons les problèmes de cache
@@ -257,52 +256,49 @@ export function useDashboardLayoutSimple() {
     };
   }, [isHydrated, session?.session?.activeOrganizationId]);
 
-  // Logique d'onboarding simplifiée
+  // Logique d'onboarding basée sur le nombre de sessions
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
+  const [sessionCount, setSessionCount] = useState(null);
 
   useEffect(() => {
-    // Utiliser activeOrganization en priorité, sinon fallback vers session.user.organization
-    const organization = activeOrganization || session?.user?.organization;
-    
-    if (organization && session?.user) {
-      const isOwner = session.user.role === "owner";
-      const hasCompletedOnboarding = organization.hasCompletedOnboarding;
+    if (!session?.user || !isHydrated) return;
 
-      if (isOwner && !hasCompletedOnboarding && !isOnboardingOpen) {
-        setIsOnboardingOpen(true);
+    const checkSessionCount = async () => {
+      try {
+        // Récupérer toutes les sessions de l'utilisateur via Better Auth
+        const { data: sessions } = await authClient.multiSession.listSessions();
+        
+        if (sessions) {
+          const userSessionCount = sessions.length;
+          setSessionCount(userSessionCount);
+
+          // Afficher l'onboarding seulement si c'est la première session (= première connexion)
+          const isOwner = session.user.role === "owner";
+          
+          if (isOwner && userSessionCount === 1 && !isOnboardingOpen) {
+            setIsOnboardingOpen(true);
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des sessions:", error);
       }
-    }
+    };
+
+    checkSessionCount();
   }, [
     session?.user?.role,
     session?.user,
-    activeOrganization,
-    activeOrganization?.hasCompletedOnboarding,
-    session?.user?.organization?.hasCompletedOnboarding,
+    isHydrated,
     isOnboardingOpen,
   ]);
 
   const completeOnboarding = async () => {
-    // Utiliser activeOrganization en priorité
-    const organization = activeOrganization || session?.user?.organization;
-    
-    if (!organization?.id) {
-      console.error("Erreur: Aucune organisation trouvée pour finaliser l'onboarding");
-      return;
-    }
-
     setOnboardingLoading(true);
 
     try {
-      await updateOrganization(organization.id, {
-        hasCompletedOnboarding: true,
-        onboardingStep: 6,
-      });
-
+      // Simplement fermer le modal, pas besoin de sauvegarder dans l'organization
       setIsOnboardingOpen(false);
-
-      // Recharger la page pour mettre à jour les données
-      window.location.reload();
     } catch (error) {
       console.error("Erreur lors de la finalisation de l'onboarding:", error);
     } finally {
@@ -382,9 +378,9 @@ export function useDashboardLayoutSimple() {
     completeOnboarding,
     skipOnboarding: completeOnboarding,
     onboardingLoading,
+    sessionCount,
     shouldShowOnboarding:
-      session?.user?.role === "owner" &&
-      !finalOrganization?.hasCompletedOnboarding,
+      session?.user?.role === "owner" && sessionCount === 1,
 
     // États de chargement
     isLoading: isLoading || sessionLoading || trial.loading || orgLoading,

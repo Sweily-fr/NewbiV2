@@ -20,6 +20,7 @@ import {
   useDashboardLayoutContext,
 } from "@/src/contexts/dashboard-layout-context";
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
+import { SessionDebugPanel } from "@/src/components/session-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
 // import { LoaderCircle } from "lucide-react";
@@ -129,6 +130,9 @@ function DashboardContent({ children }) {
         onClose={() => setIsOnboardingOpen(false)}
         onComplete={completeOnboarding}
       />
+
+      {/* Panel de debug des sessions (dev uniquement) */}
+      <SessionDebugPanel />
     </SidebarProvider>
   );
 }

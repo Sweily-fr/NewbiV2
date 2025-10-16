@@ -65,9 +65,6 @@ export const authClient = createAuthClient({
             trialEndDate: { type: "string" },
             isTrialActive: { type: "boolean" },
             hasUsedTrial: { type: "boolean" },
-            // Onboarding system fields
-            hasCompletedOnboarding: { type: "boolean" },
-            onboardingStep: { type: "number" },
           },
         },
       }),
