@@ -251,9 +251,10 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
 
 
             {/* Prix unitaire, TVA et Unité */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-4">
+              {/* Prix unitaire - pleine largeur */}
               <div className="space-y-2">
-                <Label className="font-normal h-5 flex items-center">Prix unitaire (HT) *</Label>
+                <Label className="font-normal">Prix unitaire (HT) *</Label>
                 <div className="relative">
                   <Input
                     type="number"
@@ -278,56 +279,59 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label className="font-normal h-5 flex items-center">TVA *</Label>
-                <Controller
-                  name="vatRate"
-                  control={control}
-                  rules={{ required: "Le taux de TVA est requis" }}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="TVA" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {VAT_RATES.map((rate) => (
-                          <SelectItem key={rate.value} value={rate.value}>
-                            {rate.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              {/* TVA et Unité - 50/50 sur mobile, côte à côte sur desktop */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-normal">Taux de TVA (%) *</Label>
+                  <Controller
+                    name="vatRate"
+                    control={control}
+                    rules={{ required: "Le taux de TVA est requis" }}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="TVA" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VAT_RATES.map((rate) => (
+                            <SelectItem key={rate.value} value={rate.value}>
+                              {rate.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.vatRate && (
+                    <p className="text-sm text-red-500">{errors.vatRate.message}</p>
                   )}
-                />
-                {errors.vatRate && (
-                  <p className="text-sm text-red-500">{errors.vatRate.message}</p>
-                )}
-              </div>
+                </div>
 
-              <div className="space-y-2">
-                <Label className="font-normal h-5 flex items-center">Unité *</Label>
-                <Controller
-                  name="unit"
-                  control={control}
-                  rules={{ required: "L'unité est requise" }}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Unité" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {UNITS.map((unit) => (
-                          <SelectItem key={unit.value} value={unit.value}>
-                            {unit.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div className="space-y-2">
+                  <Label className="font-normal">Unité *</Label>
+                  <Controller
+                    name="unit"
+                    control={control}
+                    rules={{ required: "L'unité est requise" }}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Unité" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {UNITS.map((unit) => (
+                            <SelectItem key={unit.value} value={unit.value}>
+                              {unit.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.unit && (
+                    <p className="text-sm text-red-500">{errors.unit.message}</p>
                   )}
-                />
-                {errors.unit && (
-                  <p className="text-sm text-red-500">{errors.unit.message}</p>
-                )}
+                </div>
               </div>
             </div>
 
