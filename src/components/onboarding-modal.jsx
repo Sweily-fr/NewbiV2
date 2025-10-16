@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { ArrowRightIcon, Building2, Package, ShoppingCart, Users, Wrench, Sparkles } from "lucide-react"
+import { ArrowRightIcon, Building2, Package, ShoppingCart, Users, Wrench, Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 import { Button } from "@/src/components/ui/button"
 import {
@@ -69,6 +69,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
   const [step, setStep] = useState(1)
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
+  const [showSwipeHint, setShowSwipeHint] = useState(false)
   const totalSteps = onboardingSteps.length
   const currentStep = onboardingSteps.find(s => s.id === step)
   const contentRef = useRef(null)
@@ -128,6 +129,26 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
     }
   }, [isOpen])
 
+  // Afficher l'indicateur de swipe au premier affichage sur mobile
+  useEffect(() => {
+    if (isOpen && step === 1) {
+      // Afficher après 500ms
+      const showTimer = setTimeout(() => {
+        setShowSwipeHint(true)
+      }, 500)
+
+      // Masquer après 3 secondes
+      const hideTimer = setTimeout(() => {
+        setShowSwipeHint(false)
+      }, 3500)
+
+      return () => {
+        clearTimeout(showTimer)
+        clearTimeout(hideTimer)
+      }
+    }
+  }, [isOpen, step])
+
   if (!currentStep) return null
 
   return (
@@ -155,7 +176,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <DialogHeader className="text-left md:text-center">
+          <DialogHeader className="text-left">
             <DialogTitle className="text-base sm:text-lg md:text-xl font-semibold">
               {currentStep.title}
             </DialogTitle>
@@ -164,8 +185,17 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Swipe Hint Indicator - Mobile only */}
+          {showSwipeHint && (
+            <div className="flex items-center justify-center gap-2 py-2 md:hidden animate-pulse">
+              <ChevronLeft className="w-5 h-5 text-primary animate-bounce" style={{ animationDirection: 'alternate' }} />
+              <span className="text-xs text-primary font-medium">Glissez pour naviguer</span>
+              <ChevronRight className="w-5 h-5 text-primary animate-bounce" style={{ animationDirection: 'alternate' }} />
+            </div>
+          )}
+
           {/* Mobile/Tablet Buttons */}
-          <div className="flex flex-row gap-2 md:hidden">
+          <div className="flex flex-row gap-2 md:hidden mt-6">
             <Button 
               type="button" 
               variant="ghost" 
