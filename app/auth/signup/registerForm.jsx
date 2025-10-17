@@ -40,15 +40,22 @@ const RegisterFormContent = () => {
         // Si c'est une inscription via invitation, stocker l'invitationId pour l'accepter après la connexion
         if (invitationId && invitationEmail) {
           // Stocker dans localStorage pour l'utiliser après la connexion
-          localStorage.setItem("pendingInvitation", JSON.stringify({
-            invitationId,
-            email: invitationEmail,
-            timestamp: Date.now()
-          }));
-          
-          console.log(`📋 Invitation ${invitationId} stockée pour acceptation après connexion`);
-          
-          toast.info("Veuillez vérifier votre email puis vous connecter pour rejoindre l'organisation.");
+          localStorage.setItem(
+            "pendingInvitation",
+            JSON.stringify({
+              invitationId,
+              email: invitationEmail,
+              timestamp: Date.now(),
+            })
+          );
+
+          console.log(
+            `📋 Invitation ${invitationId} stockée pour acceptation après connexion`
+          );
+
+          toast.info(
+            "Veuillez vérifier votre email puis vous connecter pour rejoindre l'organisation."
+          );
         }
 
         // Redirection vers la page de connexion après inscription
@@ -63,18 +70,21 @@ const RegisterFormContent = () => {
     if (error) {
       // Better Auth peut retourner l'erreur dans différents formats
       let errorMessage = "Erreur lors de l'inscription";
-      
+
       // Essayer différentes sources de message
       if (error.message) {
         errorMessage = error.message;
       } else if (error.statusText) {
         errorMessage = error.statusText;
-      } else if (typeof error === 'string') {
+      } else if (typeof error === "string") {
         errorMessage = error;
       }
-      
+
       // Gérer les erreurs spécifiques
-      if (errorMessage.toLowerCase().includes("email") && errorMessage.toLowerCase().includes("exist")) {
+      if (
+        errorMessage.toLowerCase().includes("email") &&
+        errorMessage.toLowerCase().includes("exist")
+      ) {
         toast.error("Cet email est déjà utilisé");
       } else if (errorMessage.toLowerCase().includes("already")) {
         toast.error("Cet email est déjà utilisé");
@@ -156,7 +166,7 @@ const RegisterFormContent = () => {
       </div>
       <SubmitButton
         type="submit"
-        className="mt-4 w-full py-2 font-medium"
+        className="mt-4 w-full py-2 font-medium cursor-pointer"
         isLoading={isSubmitting}
       >
         S'inscrire

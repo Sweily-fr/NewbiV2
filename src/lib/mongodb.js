@@ -89,27 +89,20 @@ export async function getMongoDb() {
   return await ensureConnection();
 }
 
-// Créer un Proxy qui attend la connexion avant d'accéder à mongoDb
-// Cela permet à Better Auth d'utiliser mongoDb de manière synchrone
+// Créer un Proxy qui retourne la DB de manière synchrone
+// Better Auth a besoin d'un accès synchrone à la DB
+// Le Proxy intercepte les accès et retourne global._mongoDb ou client.db(dbName)
 const mongoDbProxy = new Proxy({}, {
-  get(target, prop) {
-    // Si la DB est déjà connectée, retourner directement
-    if (global._mongoDb) {
-      return global._mongoDb[prop];
+  get(target, prop, receiver) {
+    const db = global._mongoDb || client.db(dbName);
+    const value = db[prop];
+    
+    // Si c'est une fonction, la binder au bon contexte
+    if (typeof value === 'function') {
+      return value.bind(db);
     }
     
-    // Sinon, retourner une fonction qui attend la connexion
-    return async (...args) => {
-      await clientPromise;
-      if (!global._mongoDb) {
-        global._mongoDb = client.db(dbName);
-      }
-      const method = global._mongoDb[prop];
-      if (typeof method === 'function') {
-        return method.apply(global._mongoDb, args);
-      }
-      return method;
-    };
+    return value;
   }
 });
 
