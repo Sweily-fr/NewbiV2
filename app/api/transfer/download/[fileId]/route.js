@@ -5,10 +5,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 // Configuration R2
 const s3Client = new S3Client({
   region: "auto",
-  endpoint: process.env.AWS_S3_API_URL,
+  endpoint: process.env.R2_API_URL,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
 });
 

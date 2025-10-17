@@ -225,6 +225,28 @@ function SignatureProviderContent({ children }) {
                 : signatureData.firstName || signatureData.lastName || "",
           };
 
+          // Reconstruire les URLs à partir des clés Cloudflare si nécessaire
+          const SIGNATURE_URL = "https://pub-f4c5982b836541739955ba7662828aa2.r2.dev";
+          
+          // Si on a une clé mais pas d'URL, ou si l'URL est incorrecte/obsolète
+          if (transformedData.photoKey) {
+            // Toujours reconstruire l'URL à partir de la clé pour garantir la cohérence
+            const reconstructedPhotoUrl = `${SIGNATURE_URL}/${transformedData.photoKey}`;
+            if (transformedData.photo !== reconstructedPhotoUrl) {
+              transformedData.photo = reconstructedPhotoUrl;
+              console.log("🔄 [SIGNATURE_DATA] URL photo reconstruite:", transformedData.photo);
+            }
+          }
+          
+          if (transformedData.logoKey) {
+            // Toujours reconstruire l'URL à partir de la clé pour garantir la cohérence
+            const reconstructedLogoUrl = `${SIGNATURE_URL}/${transformedData.logoKey}`;
+            if (transformedData.logo !== reconstructedLogoUrl) {
+              transformedData.logo = reconstructedLogoUrl;
+              console.log("🔄 [SIGNATURE_DATA] URL logo reconstruite:", transformedData.logo);
+            }
+          }
+
           // Merger les données récupérées avec les données par défaut
           const mergedData = {
             ...defaultSignatureData,

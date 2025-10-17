@@ -270,8 +270,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 
 // Configuration du cache sans persistance
 const cache = new InMemoryCache({
-  // Configuration minimale pour éviter les warnings
-  addTypename: true,
+  // addTypename est maintenant activé par défaut, pas besoin de le spécifier
 });
 
 // Variable pour stocker l'instance Apollo Client
@@ -314,8 +313,10 @@ const createApolloClient = () => {
         awaitRefetchQueries: true,
       },
     },
-    // Améliorer les performances avec le mode de développement
-    connectToDevTools: process.env.NODE_ENV === "development",
+    // Configuration des DevTools (nouvelle syntaxe)
+    devtools: {
+      enabled: process.env.NODE_ENV === "development",
+    },
   });
 };
 
