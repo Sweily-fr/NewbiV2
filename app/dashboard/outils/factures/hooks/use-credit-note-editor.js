@@ -127,8 +127,10 @@ export function useCreditNoteEditor({
 
           // Apply item discount
           if (itemDiscount > 0) {
-            if (item.discountType === "PERCENTAGE") {
-              itemTotal = itemTotal * (1 - itemDiscount / 100);
+            if (item.discountType === "PERCENTAGE" || item.discountType === "percentage") {
+              // Limiter la remise à 100% maximum
+              const discountPercent = Math.min(itemDiscount, 100);
+              itemTotal = itemTotal * (1 - discountPercent / 100);
             } else {
               itemTotal = itemTotal - itemDiscount; // Permettre les valeurs négatives pour les avoirs
             }
@@ -148,21 +150,31 @@ export function useCreditNoteEditor({
 
       // Apply global discount
       if (discount > 0) {
-        if (discountType === "PERCENTAGE") {
-          finalTotalHT = finalTotalHT * (1 - discount / 100);
+        if (discountType === "PERCENTAGE" || discountType === "percentage") {
+          // Limiter la remise à 100% maximum
+          const discountPercent = Math.min(discount, 100);
+          finalTotalHT = finalTotalHT * (1 - discountPercent / 100);
         } else {
           finalTotalHT = finalTotalHT - discount; // Permettre les valeurs négatives pour les avoirs
         }
       }
 
       const discountAmount = itemTotals.totalHT - finalTotalHT;
-      const finalTotalTTC = finalTotalHT + itemTotals.totalVAT;
+      
+      // Recalculer la TVA proportionnellement après la remise globale
+      let finalTotalVAT = 0;
+      if (finalTotalHT > 0 && itemTotals.totalHT > 0) {
+        finalTotalVAT = itemTotals.totalVAT * (finalTotalHT / itemTotals.totalHT);
+      }
+      
+      const finalTotalTTC = finalTotalHT + finalTotalVAT;
 
       // Credit notes have negative amounts
       return {
         totalHT: -itemTotals.totalHT,
         totalVAT: -itemTotals.totalVAT,
         finalTotalHT: -finalTotalHT,
+        finalTotalVAT: -finalTotalVAT,
         finalTotalTTC: -finalTotalTTC,
         discountAmount: -discountAmount,
       };
