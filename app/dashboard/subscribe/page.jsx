@@ -7,7 +7,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
 import {
-  Loader2,
+  LoaderCircle,
   Check,
   Crown,
   HelpCircle,
@@ -303,7 +303,7 @@ export default function SubscribePage() {
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
                     ) : (
                       "Passer à Pro"
                     )}
@@ -317,7 +317,7 @@ export default function SubscribePage() {
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
                   ) : (
                     "Résilier votre abonnement"
                   )}
@@ -434,7 +434,7 @@ export default function SubscribePage() {
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
                     ) : (
                       `Passer à Pro ${isAnnual ? "Annuel" : "Mensuel"}`
                     )}
@@ -468,7 +468,7 @@ export default function SubscribePage() {
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
                     ) : (
                       "Rétrograder vers Gratuit"
                     )}
@@ -581,7 +581,7 @@ export default function SubscribePage() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                   Résiliation...
                 </>
               ) : (

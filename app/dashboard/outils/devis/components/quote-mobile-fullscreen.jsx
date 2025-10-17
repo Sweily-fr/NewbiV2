@@ -5,7 +5,7 @@ import {
   FileText,
   XCircle,
   Download,
-  Loader2,
+  LoaderCircle,
   FileCheck,
   Send,
 } from "lucide-react";
@@ -163,7 +163,7 @@ export default function QuoteMobileFullscreen({
         <div className="overflow-y-auto h-[calc(100vh-64px-72px)] pb-4">
           {loadingFullQuote ? (
             <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <LoaderCircle className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <div className="p-4 space-y-6 pb-56">
@@ -243,7 +243,7 @@ export default function QuoteMobileFullscreen({
               className="w-full font-normal"
             >
               {changingStatus ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Send className="mr-2 h-4 w-4" />
               )}
@@ -259,7 +259,7 @@ export default function QuoteMobileFullscreen({
                 className="w-full font-normal"
               >
                 {changingStatus ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <CheckCircle className="mr-2 h-4 w-4" />
                 )}
@@ -285,7 +285,7 @@ export default function QuoteMobileFullscreen({
                 className="w-full font-normal"
               >
                 {converting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <FileCheck className="mr-2 h-4 w-4" />
                 )}

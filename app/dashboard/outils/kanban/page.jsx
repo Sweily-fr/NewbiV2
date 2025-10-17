@@ -5,7 +5,7 @@ import {
   Plus,
   Trash2,
   Edit,
-  Loader2,
+  LoaderCircle,
   Search,
   Calendar,
   User,
@@ -178,7 +178,7 @@ export default function KanbanPage() {
                   <Button type="submit" disabled={loading}>
                     {loading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                         Création...
                       </>
                     ) : (
@@ -369,7 +369,7 @@ export default function KanbanPage() {
               <Button type="submit" disabled={updating}>
                 {updating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                     Modification...
                   </>
                 ) : (
@@ -406,7 +406,7 @@ export default function KanbanPage() {
             >
               {deleting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                   Suppression...
                 </>
               ) : (

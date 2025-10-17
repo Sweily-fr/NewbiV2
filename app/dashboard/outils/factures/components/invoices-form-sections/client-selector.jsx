@@ -8,7 +8,7 @@ import {
   Building,
   Mail,
   Phone,
-  Loader2,
+  LoaderCircle,
   ChevronDown,
   X,
   CheckIcon,
@@ -640,7 +640,7 @@ export default function ClientSelector({
                         <CommandList>
                           {loading ? (
                             <div className="p-3 text-center">
-                              <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                              <LoaderCircle className="h-4 w-4 animate-spin mx-auto" />
                               <span className="text-sm ml-2">Recherche...</span>
                             </div>
                           ) : (
@@ -808,7 +808,7 @@ export default function ClientSelector({
                     {/* Résultats de recherche */}
                     {loadingCompanies && (
                       <div className="flex items-center justify-center p-8">
-                        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                        <LoaderCircle className="h-6 w-6 animate-spin mr-2" />
                         <span className="text-sm">Recherche en cours...</span>
                       </div>
                     )}

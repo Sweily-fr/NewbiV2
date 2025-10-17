@@ -5,7 +5,7 @@ import {
   FileText,
   XCircle,
   Download,
-  Loader2,
+  LoaderCircle,
   Receipt,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -155,7 +155,7 @@ export default function InvoiceMobileFullscreen({
         <div className="overflow-y-auto h-[calc(100vh-64px-72px)] pb-4">
           {loadingFullInvoice ? (
             <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <LoaderCircle className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <div className="p-4 space-y-6 flex flex-col pb-56">
@@ -248,7 +248,7 @@ export default function InvoiceMobileFullscreen({
                 className="w-full font-normal"
               >
                 {changingStatus ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <FileText className="mr-2 h-4 w-4" />
                 )}
@@ -265,7 +265,7 @@ export default function InvoiceMobileFullscreen({
                 className="w-full font-normal"
               >
                 {markingAsPaid ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <CheckCircle className="mr-2 h-4 w-4" />
                 )}

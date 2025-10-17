@@ -13,7 +13,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Switch } from "@/src/components/ui/switch";
-import { Loader2, Check, Crown, AlertTriangle } from "lucide-react";
+import { LoaderCircle, Check, Crown, AlertTriangle } from "lucide-react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { authClient, useSession } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
@@ -268,7 +268,7 @@ export function PricingModal({ isOpen, onClose }) {
                         disabled={isLoading}
                       >
                         {isLoading ? (
-                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
                         ) : (
                           "Passer à Pro"
                         )}
@@ -283,7 +283,7 @@ export function PricingModal({ isOpen, onClose }) {
                       disabled={isLoading}
                     >
                       {isLoading ? (
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
                       ) : (
                         "Résilier votre abonnement"
                       )}
@@ -399,7 +399,7 @@ export function PricingModal({ isOpen, onClose }) {
                         disabled={isLoading}
                       >
                         {isLoading ? (
-                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
                         ) : (
                           `Passer à Pro ${isAnnual ? "Annuel" : "Mensuel"}`
                         )}
@@ -433,7 +433,7 @@ export function PricingModal({ isOpen, onClose }) {
                         disabled={isLoading}
                       >
                         {isLoading ? (
-                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
                         ) : (
                           "Rétrograder vers Gratuit"
                         )}
@@ -492,7 +492,7 @@ export function PricingModal({ isOpen, onClose }) {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                   Résiliation...
                 </>
               ) : (

@@ -13,7 +13,7 @@ import {
   Shield,
   ExternalLink,
   AlertCircle,
-  Loader2,
+  LoaderCircle,
 } from "lucide-react";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 
@@ -90,7 +90,7 @@ const StripeConnectOnboarding = ({
                 {canReceivePayments ? (
                   <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500 mt-0.5 flex-shrink-0" />
                 ) : (
-                  <Loader2 className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0 animate-spin" />
+                  <LoaderCircle className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0 animate-spin" />
                 )}
                 <div className="flex-1 min-w-0">
                   <p
@@ -203,7 +203,7 @@ const StripeConnectOnboarding = ({
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      <LoaderCircle className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                       Vérification
                     </>
                   ) : (
@@ -221,7 +221,7 @@ const StripeConnectOnboarding = ({
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      <LoaderCircle className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                       Connexion
                     </>
                   ) : (
