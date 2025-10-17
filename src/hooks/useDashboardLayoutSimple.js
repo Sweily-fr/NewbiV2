@@ -256,39 +256,24 @@ export function useDashboardLayoutSimple() {
     };
   }, [isHydrated, session?.session?.activeOrganizationId]);
 
-  // Logique d'onboarding basée sur le nombre de sessions
+  // Logique d'onboarding basée sur le champ hasSeenOnboarding du user
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
-  const [sessionCount, setSessionCount] = useState(null);
 
   useEffect(() => {
     if (!session?.user || !isHydrated) return;
 
-    const checkSessionCount = async () => {
-      try {
-        // Récupérer toutes les sessions de l'utilisateur via Better Auth
-        const { data: sessions } = await authClient.multiSession.listSessions();
-        
-        if (sessions) {
-          const userSessionCount = sessions.length;
-          setSessionCount(userSessionCount);
+    const isOwner = session.user.role === "owner";
+    const hasSeenOnboarding = session.user.hasSeenOnboarding;
 
-          // Afficher l'onboarding seulement si c'est la première session (= première connexion)
-          const isOwner = session.user.role === "owner";
-          
-          if (isOwner && userSessionCount === 1 && !isOnboardingOpen) {
-            setIsOnboardingOpen(true);
-          }
-        }
-      } catch (error) {
-        console.error("Erreur lors de la récupération des sessions:", error);
-      }
-    };
-
-    checkSessionCount();
+    // Afficher l'onboarding si l'utilisateur est owner et n'a jamais vu l'onboarding
+    if (isOwner && !hasSeenOnboarding && !isOnboardingOpen) {
+      setIsOnboardingOpen(true);
+    }
   }, [
-    session?.user?.role,
     session?.user,
+    session?.user?.role,
+    session?.user?.hasSeenOnboarding,
     isHydrated,
     isOnboardingOpen,
   ]);
@@ -297,7 +282,11 @@ export function useDashboardLayoutSimple() {
     setOnboardingLoading(true);
 
     try {
-      // Simplement fermer le modal, pas besoin de sauvegarder dans l'organization
+      // Marquer l'onboarding comme vu dans le user
+      await authClient.updateUser({
+        hasSeenOnboarding: true,
+      });
+
       setIsOnboardingOpen(false);
     } catch (error) {
       console.error("Erreur lors de la finalisation de l'onboarding:", error);
@@ -378,9 +367,8 @@ export function useDashboardLayoutSimple() {
     completeOnboarding,
     skipOnboarding: completeOnboarding,
     onboardingLoading,
-    sessionCount,
     shouldShowOnboarding:
-      session?.user?.role === "owner" && sessionCount === 1,
+      session?.user?.role === "owner" && !session?.user?.hasSeenOnboarding,
 
     // États de chargement
     isLoading: isLoading || sessionLoading || trial.loading || orgLoading,
