@@ -158,11 +158,12 @@ export default function QuoteSidebar({
       const result = await convertToInvoice(quote.id);
       toast.success("Devis converti en facture avec succès");
       if (result?.id) {
-        router.push(`/dashboard/outils/factures/${result.id}`);
+        router.push(`/dashboard/outils/factures/${result.id}/editer`);
       } else {
         router.push("/dashboard/outils/factures");
       }
       if (onRefetch) onRefetch();
+      onClose(); // Fermer la sidebar après la conversion
     } catch (error) {
       toast.error("Erreur lors de la conversion en facture");
     }

@@ -112,9 +112,9 @@ export default function QuoteMobileFullscreen({
       toast.success("Devis converti en facture avec succès");
       if (onRefetch) onRefetch();
       onClose();
-      if (result?.data?.convertQuoteToInvoice?.id) {
+      if (result?.id) {
         router.push(
-          `/dashboard/outils/factures/${result.data.convertQuoteToInvoice.id}`
+          `/dashboard/outils/factures/${result.id}/editer`
         );
       }
     } catch (error) {

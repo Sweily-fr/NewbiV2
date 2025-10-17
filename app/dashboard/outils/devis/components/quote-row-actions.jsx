@@ -107,10 +107,10 @@ export default function QuoteRowActions({ row, onRefetch }) {
       const result = await convertToInvoice(quote.id);
       toast.success("Devis converti en facture avec succès");
       if (onRefetch) onRefetch();
-      // Optionnel: rediriger vers la facture créée
-      if (result?.data?.convertQuoteToInvoice?.id) {
+      // Rediriger vers l'éditeur de la facture créée
+      if (result?.id) {
         router.push(
-          `/dashboard/outils/factures/${result.data.convertQuoteToInvoice.id}`
+          `/dashboard/outils/factures/${result.id}/editer`
         );
       }
     } catch (error) {

@@ -20,7 +20,7 @@ const LinkedInvoicesList = ({ quote }) => {
   const linkedInvoices = quote?.linkedInvoices || [];
 
   const handleInvoiceClick = (invoiceId) => {
-    router.push(`/dashboard/outils/factures/${invoiceId}/editer`);
+    router.push(`/dashboard/outils/factures`);
   };
 
   const getStatusBadge = (status) => {
