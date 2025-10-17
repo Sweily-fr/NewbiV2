@@ -137,6 +137,11 @@ export const auth = betterAuth({
         required: false,
         defaultValue: "dashboard",
       },
+      hasSeenOnboarding: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
     },
   },
 
