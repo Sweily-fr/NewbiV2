@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AppSidebar } from "@/src/components/app-sidebar";
 import { SignatureSidebar } from "@/src/components/signature-sidebar";
 import { SiteHeader } from "@/src/components/site-header";
@@ -22,11 +22,12 @@ import {
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
-// import { LoaderCircle } from "lucide-react";
+import { authClient } from "@/src/lib/auth-client";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -42,6 +43,28 @@ function DashboardContent({ children }) {
 
   // Hook pour gérer la déconnexion automatique après 15 minutes d'inactivité
   useInactivityTimer(15, true);
+
+  // Vérification de l'authentification côté client (après hydratation)
+  useEffect(() => {
+    // Attendre l'hydratation pour éviter les erreurs d'hydratation
+    if (!isHydrated) return;
+
+    const checkAuth = async () => {
+      try {
+        const session = await authClient.getSession();
+        
+        if (!session?.data?.user) {
+          // Pas de session, rediriger vers la page de connexion
+          router.push('/auth/login');
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification de la session:', error);
+        router.push('/auth/login');
+      }
+    };
+
+    checkAuth();
+  }, [router, isHydrated]);
 
   // Protection contre l'erreur d'hydratation
   useEffect(() => {
@@ -76,15 +99,6 @@ function DashboardContent({ children }) {
   } catch {
     // Pas de contexte disponible, c'est normal si on n'est pas sur la page de signature
   }
-
-  // // Afficher un loader pendant l'hydratation
-  // if (!isHydrated) {
-  //   return (
-  //     <div className="flex h-screen items-center justify-center">
-  //       <LoaderCircle />
-  //     </div>
-  //   );
-  // }
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>

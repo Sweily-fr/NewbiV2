@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { subscriptionMiddleware } from './src/middleware/subscription';
 
 export async function middleware(request) {
@@ -14,7 +13,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - api/auth (Better Auth endpoints)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public/|api/auth).*)',
   ],
 };

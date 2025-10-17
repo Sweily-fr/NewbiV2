@@ -55,9 +55,13 @@ export async function subscriptionMiddleware(request) {
       headers: request.headers,
     });
 
+    console.log('[Middleware] Vérification auth pour:', pathname);
+    console.log('[Middleware] Session trouvée:', !!session?.user);
+
     if (!session?.user) {
+      console.log('[Middleware] Redirection vers /auth/login - Pas de session');
       // Rediriger vers la page de connexion si pas connecté
-      return NextResponse.redirect(new URL('/auth/signin', request.url));
+      return NextResponse.redirect(new URL('/auth/login', request.url));
     }
 
     const user = session.user;
@@ -96,6 +100,6 @@ export async function subscriptionMiddleware(request) {
     console.error('Erreur dans le middleware d\'abonnement:', error);
     
     // En cas d'erreur, rediriger vers la page de connexion
-    return NextResponse.redirect(new URL('/auth/signin', request.url));
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 }
