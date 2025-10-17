@@ -114,8 +114,16 @@ export default function ModernInvoiceEditor({
     setShowSettings(!showSettings);
   };
 
+  const [closeSettingsHandler, setCloseSettingsHandler] = useState(null);
+
   const handleCloseSettings = () => {
-    setShowSettings(false);
+    // Si un handler personnalisé existe (avec vérification des changements), l'utiliser
+    if (closeSettingsHandler) {
+      closeSettingsHandler();
+    } else {
+      // Sinon, fermer directement
+      setShowSettings(false);
+    }
   };
 
   const handleClientUpdated = (updatedClient) => {
@@ -322,12 +330,13 @@ export default function ModernInvoiceEditor({
                   {showSettings ? (
                     <InvoiceSettingsView
                       canEdit={!isReadOnly}
-                      onCancel={handleCloseSettings}
+                      onCancel={() => setShowSettings(false)}
+                      onCloseAttempt={setCloseSettingsHandler}
                       onSave={async () => {
                         try {
                           // Sauvegarder les paramètres dans l'organisation
                           await saveSettingsToOrganization();
-                          handleCloseSettings();
+                          setShowSettings(false);
                           toast.success(
                             "Paramètres sauvegardés dans l'organisation"
                           );

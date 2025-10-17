@@ -401,7 +401,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             );
             setValue(
               "appearance.headerBgColor",
-              organization.documentHeaderBgColor || "#1d1d1b"
+              organization.documentHeaderBgColor || "#5b50FF"
             );
 
             // Mettre à jour les notes et conditions
@@ -1081,7 +1081,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         documentHeaderTextColor:
           currentFormData.appearance?.headerTextColor || "#ffffff",
         documentHeaderBgColor:
-          currentFormData.appearance?.headerBgColor || "#1d1d1b",
+          currentFormData.appearance?.headerBgColor || "#5b50FF",
         quoteHeaderNotes: currentFormData.headerNotes || "",
         quoteFooterNotes: currentFormData.footerNotes || "",
         quoteTermsAndConditions: currentFormData.termsAndConditions || "",
@@ -1200,7 +1200,7 @@ function getInitialFormData(mode, initialData, session) {
     appearance: {
       textColor: "#000000",
       headerTextColor: "#ffffff",
-      headerBgColor: "#1d1d1b",
+      headerBgColor: "#5b50FF",
     },
 
     // Paramètres d'organisation (pour les valeurs par défaut)
@@ -1497,12 +1497,12 @@ function transformQuoteToFormData(quote) {
       ? {
           textColor: quote.appearance.textColor || "#000000",
           headerTextColor: quote.appearance.headerTextColor || "#ffffff",
-          headerBgColor: quote.appearance.headerBgColor || "#1d1d1b",
+          headerBgColor: quote.appearance.headerBgColor || "#5b50FF",
         }
       : {
           textColor: "#000000",
           headerTextColor: "#ffffff",
-          headerBgColor: "#1d1d1b",
+          headerBgColor: "#5b50FF",
         },
   };
 }
@@ -1877,7 +1877,7 @@ function transformFormDataToInput(
     appearance: {
       textColor: formData.appearance?.textColor || "#000000",
       headerTextColor: formData.appearance?.headerTextColor || "#ffffff",
-      headerBgColor: formData.appearance?.headerBgColor || "#1d1d1b",
+      headerBgColor: formData.appearance?.headerBgColor || "#5b50FF",
     },
     // Inclure les paramètres des coordonnées bancaires
     showBankDetails: formData.showBankDetails || false,

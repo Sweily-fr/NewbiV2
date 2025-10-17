@@ -93,8 +93,16 @@ export default function ModernQuoteEditor({
     setShowSettings(!showSettings);
   };
 
+  const [closeSettingsHandler, setCloseSettingsHandler] = useState(null);
+
   const handleCloseSettings = () => {
-    setShowSettings(false);
+    // Si un handler personnalisé existe (avec vérification des changements), l'utiliser
+    if (closeSettingsHandler) {
+      closeSettingsHandler();
+    } else {
+      // Sinon, fermer directement
+      setShowSettings(false);
+    }
   };
 
   return (
@@ -281,12 +289,13 @@ export default function ModernQuoteEditor({
                   <QuoteSettingsView
                     formData={formData}
                     setFormData={setFormData}
-                    onCancel={handleCloseSettings}
+                    onCancel={() => setShowSettings(false)}
+                    onCloseAttempt={setCloseSettingsHandler}
                     onSave={async () => {
                       try {
                         // Sauvegarder les paramètres dans l'organisation
                         await saveSettingsToOrganization();
-                        handleCloseSettings();
+                        setShowSettings(false);
                         toast.success(
                           "Paramètres sauvegardés dans l'organisation"
                         );
