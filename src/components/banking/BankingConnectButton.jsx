@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
-import { Landmark, Loader2, CheckCircle } from "lucide-react";
+import { Landmark, LoaderCircle, CheckCircle } from "lucide-react";
 import { useBankingConnection } from "@/src/hooks/useBankingConnection";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -72,7 +72,7 @@ export default function BankingConnectButton() {
       size="sm"
     >
       {(isLoading || isConnecting) && (
-        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+        <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
       )}
       <Landmark className="h-4 w-4 mr-2" />
       Connecter un compte bancaire

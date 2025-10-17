@@ -14,7 +14,7 @@ import { OcrResultsDisplay } from "@/src/components/ocr/OcrResultsDisplay";
 import {
   Upload,
   FileText,
-  Loader2,
+  LoaderCircle,
   Receipt,
   AlertCircle,
   CheckCircle,
@@ -257,7 +257,7 @@ export default function OcrTestPage() {
       >
         {isProcessing ? (
           <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
             Traitement OCR en cours...
           </>
         ) : (

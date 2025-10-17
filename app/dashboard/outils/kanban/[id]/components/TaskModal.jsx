@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Loader2, Trash2, X, CalendarIcon, Clock, User, FileText, MessageSquare } from 'lucide-react';
+import { LoaderCircle, Trash2, X, CalendarIcon, Clock, User, FileText, MessageSquare } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/src/components/ui/dialog';
 import { Input } from '@/src/components/ui/input';
@@ -472,7 +472,7 @@ export function TaskModal({
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                     {isEditing ? 'Enregistrement...' : 'Création...'}
                   </>
                 ) : isEditing ? 'Enregistrer les modifications' : 'Créer la tâche'}
@@ -783,7 +783,7 @@ export function TaskModal({
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                         {isEditing ? 'Enregistrement...' : 'Création...'}
                       </>
                     ) : isEditing ? 'Enregistrer' : 'Créer'}

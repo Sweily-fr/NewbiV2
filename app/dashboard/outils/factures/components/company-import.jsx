@@ -12,7 +12,7 @@ const formatIban = (iban) => {
   // Ajouter un espace tous les 4 caractères
   return cleanIban.replace(/(.{4})/g, '$1 ').trim();
 };
-import { Building, Upload, Check, AlertCircle, Loader2 } from "lucide-react";
+import { Building, Upload, Check, AlertCircle, LoaderCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Card,
@@ -131,7 +131,7 @@ export default function CompanyImport({
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            <LoaderCircle className="h-6 w-6 animate-spin mr-2" />
             <span>Chargement des informations...</span>
           </div>
         ) : companyData ? (
@@ -293,7 +293,7 @@ export function QuickCompanyImport({ onImport, className }) {
       className={`gap-2 ${className}`}
     >
       {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <LoaderCircle className="h-4 w-4 animate-spin" />
       ) : (
         <Upload className="h-4 w-4" />
       )}

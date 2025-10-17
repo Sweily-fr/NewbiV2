@@ -6,8 +6,6 @@ import {
   User,
   Plus,
   Building,
-  Mail,
-  Phone,
   LoaderCircle,
   ChevronDown,
   X,
@@ -1660,7 +1658,7 @@ export default function ClientSelector({
                     >
                       {createLoading ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                           Création...
                         </>
                       ) : (

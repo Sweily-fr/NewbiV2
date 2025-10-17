@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Loader2, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, LoaderCircle, Search, Trash2 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
 // UI Components
@@ -608,7 +608,7 @@ export default function KanbanBoardPage({ params }) {
               className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
             >
               {deleteLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Trash2 className="mr-2 h-4 w-4" />
               )}

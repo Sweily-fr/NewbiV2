@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle, XCircle, Loader2, Mail, ArrowRight } from "lucide-react";
+import { CheckCircle, XCircle, LoaderCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 import { Confetti } from "@/src/components/magicui/confetti";
@@ -123,7 +123,7 @@ function VerifyEmailContent() {
         {verificationStatus === "loading" && (
           <div className="flex flex-col items-center text-center space-y-4">
             <div className="bg-[#5a50ff] p-3 rounded-lg">
-              <Loader2 className="h-5 w-5 text-white animate-spin" />
+              <LoaderCircle className="h-5 w-5 text-white animate-spin" />
             </div>
             <div className="space-y-1">
               <h1 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -216,7 +216,7 @@ function VerifyEmailFallback() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center text-center space-y-4">
           <div className="bg-[#5a50ff] p-3 rounded-xl">
-            <Loader2 className="h-5 w-5 text-white animate-spin" />
+            <LoaderCircle className="h-5 w-5 text-white animate-spin" />
           </div>
           <div className="space-y-1">
             <h1 className="text-lg font-medium text-gray-900 dark:text-white">

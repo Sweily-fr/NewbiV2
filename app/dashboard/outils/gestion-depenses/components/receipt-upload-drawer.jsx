@@ -22,7 +22,7 @@ import {
   Info,
   CheckCircleIcon,
   AlertCircleIcon,
-  Loader2Icon,
+  LoaderCircle,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useDocumentUpload } from "@/src/hooks/useDocumentUpload";
@@ -422,12 +422,12 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
               >
                 {isUploading ? (
                   <>
-                    <Loader2Icon className="h-4 w-4 mr-2 animate-spin" />
+                    <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
                     Upload...
                   </>
                 ) : isProcessing ? (
                   <>
-                    <Loader2Icon className="h-4 w-4 mr-2 animate-spin" />
+                    <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
                     Traitement OCR...
                   </>
                 ) : (

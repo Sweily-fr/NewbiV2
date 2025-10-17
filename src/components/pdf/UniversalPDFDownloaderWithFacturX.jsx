@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { Button } from "@/src/components/ui/button";
-import { Download, Loader2, FileCheck } from "lucide-react";
+import { Download, LoaderCircle, FileCheck } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { domToJpeg } from 'modern-screenshot';
 import jsPDF from 'jspdf';
@@ -276,7 +276,7 @@ const UniversalPDFDownloaderWithFacturX = ({
       >
         {isGenerating ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <LoaderCircle className="h-4 w-4 animate-spin" />
             {children || 'Génération...'}
           </>
         ) : (

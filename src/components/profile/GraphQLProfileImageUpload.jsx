@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
-import { CircleUserRound, X, Loader2, Upload, Trash2 } from "lucide-react";
+import { CircleUserRound, X, LoaderCircle } from "lucide-react";
 import { useGraphQLImageUpload } from "@/src/hooks/useGraphQLImageUpload";
 import { cn } from "@/src/lib/utils";
 
@@ -162,7 +162,7 @@ export function GraphQLProfileImageUpload({
             disabled={isDeleting}
           >
             {isDeleting ? (
-              <Loader2 className="size-3 animate-spin" />
+              <LoaderCircle className="size-3 animate-spin" />
             ) : (
               <X className="size-3.5" />
             )}
@@ -172,7 +172,7 @@ export function GraphQLProfileImageUpload({
         {/* Overlay de suppression pour feedback visuel */}
         {isDeleting && displayImageUrl && (
           <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-            <Loader2 className="size-4 animate-spin text-white" />
+            <LoaderCircle className="size-4 animate-spin text-white" />
           </div>
         )}
         <input

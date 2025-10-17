@@ -10,7 +10,7 @@ import {
   Building,
   Tag,
   CreditCard,
-  Loader2,
+  LoaderCircle,
   Edit3,
   Save,
   X,
@@ -599,7 +599,7 @@ export default function OcrEditableDisplay({
           >
             {isCreatingExpense ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
                 Création en cours...
               </>
             ) : (

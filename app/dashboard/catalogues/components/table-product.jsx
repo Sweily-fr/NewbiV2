@@ -28,7 +28,6 @@ import {
   ListFilterIcon,
   PlusIcon,
   TrashIcon,
-  Loader2,
   AlertCircle,
 } from "lucide-react";
 

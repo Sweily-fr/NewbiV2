@@ -1,4 +1,4 @@
-import { Loader2, X } from 'lucide-react';
+import { LoaderCircle, X } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/src/components/ui/dialog';
 import { Input } from '@/src/components/ui/input';
@@ -79,7 +79,7 @@ export function ColumnModal({
               className="bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md transition-all duration-200 shadow-sm"
             >
               {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
               {isEditing ? 'Modifier' : 'Créer'}
             </Button>

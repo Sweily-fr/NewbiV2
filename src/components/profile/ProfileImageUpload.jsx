@@ -6,7 +6,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Progress } from '@/src/components/ui/progress';
-import { User, X, Loader2 } from 'lucide-react';
+import { User, X, LoaderCircle } from 'lucide-react';
 import { useProfileImageUpload } from '@/src/hooks/useProfileImageUpload';
 import { cn } from '@/src/lib/utils';
 
@@ -114,7 +114,7 @@ export function ProfileImageUpload({
           aria-label={displayImageUrl ? "Changer l'image" : "Uploader une image"}
         >
           {isUploading ? (
-            <Loader2 className="size-4 animate-spin opacity-60" />
+            <LoaderCircle className="size-4 animate-spin opacity-60" />
           ) : displayImageUrl ? (
             <img
               className="size-full object-cover"

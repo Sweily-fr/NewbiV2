@@ -10,7 +10,7 @@ import {
   Building,
   Tag,
   CreditCard,
-  Loader2,
+  LoaderCircle,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -320,7 +320,7 @@ export default function OcrResultsDisplay({ ocrResult, onValidate, isCreatingExp
           >
             {isCreatingExpense ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
                 Création en cours...
               </>
             ) : (

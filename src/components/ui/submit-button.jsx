@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { Button } from "./button";
-import { Loader2 } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 
 const SubmitButton = (props) => {
   const { pending } = useFormStatus();
@@ -15,7 +15,7 @@ const SubmitButton = (props) => {
     <Button {...rest} disabled={props.disabled || loading}>
       {loading ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
         </>
       ) : (
         children

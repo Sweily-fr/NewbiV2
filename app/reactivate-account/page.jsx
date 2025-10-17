@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { toast } from "@/src/components/ui/sonner";
-import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle, AlertCircle, LoaderCircle } from "lucide-react";
 
 function ReactivateAccountContent() {
   const [status, setStatus] = useState("loading"); // loading, success, error
@@ -89,7 +89,7 @@ function ReactivateAccountContent() {
           <CardContent className="space-y-6">
             {status === "loading" && (
               <div className="text-center">
-                <Loader2 className="mx-auto h-12 w-12 animate-spin text-[#5b4fff]" />
+                <LoaderCircle className="mx-auto h-12 w-12 animate-spin text-[#5b4fff]" />
                 <p className="mt-4 text-gray-600">
                   Réactivation de votre compte en cours...
                 </p>

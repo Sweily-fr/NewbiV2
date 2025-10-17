@@ -17,7 +17,7 @@ import {
   ImageIcon,
   VideoIcon,
   XIcon,
-  Loader2,
+  LoaderCircle,
 } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
@@ -833,7 +833,7 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
             >
               {isUploading ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" />
+                  <LoaderCircle className="size-4 animate-spin" />
                   Création en cours...
                 </>
               ) : (

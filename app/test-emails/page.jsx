@@ -13,7 +13,7 @@ import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { toast } from "@/src/components/ui/sonner";
-import { Mail, Loader2 } from "lucide-react";
+import { Mail, LoaderCircle } from "lucide-react";
 
 export default function TestEmailsPage() {
   const [selectedTemplate, setSelectedTemplate] = useState("emailVerification");
@@ -248,7 +248,7 @@ export default function TestEmailsPage() {
                 >
                   {isSending ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                       Envoi...
                     </>
                   ) : (

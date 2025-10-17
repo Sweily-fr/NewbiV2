@@ -4,7 +4,7 @@ import {
   UserRoundPlusIcon,
   Search,
   Building,
-  Loader2,
+  LoaderCircle,
   ExternalLink,
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -462,7 +462,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   {/* Résultats de recherche */}
                   {loadingCompanies && (
                     <div className="flex items-center justify-center p-6">
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      <LoaderCircle className="h-5 w-5 animate-spin mr-2" />
                       <span className="text-sm">Recherche en cours...</span>
                     </div>
                   )}

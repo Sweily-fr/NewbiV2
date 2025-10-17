@@ -1,5 +1,5 @@
 "use client";
-import { X, Download, Loader2 } from "lucide-react";
+import { X, Download, LoaderCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useCreditNote } from "@/src/graphql/creditNoteQueries";
@@ -79,7 +79,7 @@ export default function CreditNoteMobileFullscreen({
         <div className="overflow-y-auto h-[calc(100vh-64px)] pb-4">
           {loadingFullCreditNote ? (
             <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <LoaderCircle className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <div className="p-4 space-y-6">

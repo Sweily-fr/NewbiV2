@@ -10,7 +10,7 @@ import {
   FileText,
   XCircle,
   Download,
-  Loader2,
+  LoaderCircle,
   Clock,
   Building,
   Tag,
@@ -468,7 +468,7 @@ export default function InvoiceSidebar({
 
             {loadingCreditNotes ? (
               <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <LoaderCircle className="h-4 w-4 animate-spin" />
               </div>
             ) : creditNotesError ? (
               <div className="text-sm text-red-500 py-2">

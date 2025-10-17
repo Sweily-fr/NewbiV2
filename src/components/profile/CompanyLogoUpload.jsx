@@ -6,7 +6,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Progress } from '@/src/components/ui/progress';
-import { Building2, X, Loader2, AlertCircle } from 'lucide-react';
+import { Building2, X, LoaderCircle, AlertCircle } from 'lucide-react';
 import { useCompanyLogoUpload } from '@/src/hooks/useCompanyLogoUpload';
 import { cn } from '@/src/lib/utils';
 
@@ -147,7 +147,7 @@ export function CompanyLogoUpload({
           aria-label={displayImageUrl ? "Changer le logo" : "Uploader un logo"}
         >
           {isUploading ? (
-            <Loader2 className="size-4 animate-spin opacity-60" />
+            <LoaderCircle className="size-4 animate-spin opacity-60" />
           ) : displayImageUrl ? (
             <img
               className="size-full object-contain"
