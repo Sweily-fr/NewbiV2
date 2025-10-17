@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState, useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import { Tag } from "lucide-react";
 import {
@@ -13,16 +14,102 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { Separator } from "@/src/components/ui/separator";
 import { Button } from "@/src/components/ui/button";
 import { ColorPicker } from "@/src/components/ui/color-picker";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 
 
-export default function QuoteSettingsView({ canEdit, onCancel, onSave }) {
+export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAttempt }) {
   const {
     watch,
     setValue,
     register,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useFormContext();
   const data = watch();
+  
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const initialValuesRef = useRef(null);
+
+  // Exposer la fonction de gestion de fermeture au parent
+  React.useEffect(() => {
+    if (onCloseAttempt) {
+      onCloseAttempt(() => handleCancelClick);
+    }
+  }, [hasUnsavedChanges]);
+
+  // Sauvegarder les valeurs initiales au montage
+  useEffect(() => {
+    if (!initialValuesRef.current) {
+      initialValuesRef.current = {
+        textColor: data.appearance?.textColor,
+        headerTextColor: data.appearance?.headerTextColor,
+        headerBgColor: data.appearance?.headerBgColor,
+        headerNotes: data.headerNotes,
+        footerNotes: data.footerNotes,
+        termsAndConditions: data.termsAndConditions,
+      };
+    }
+  }, []);
+
+  // Détecter les changements non sauvegardés
+  useEffect(() => {
+    if (!initialValuesRef.current) return;
+
+    const hasChanges =
+      data.appearance?.textColor !== initialValuesRef.current.textColor ||
+      data.appearance?.headerTextColor !== initialValuesRef.current.headerTextColor ||
+      data.appearance?.headerBgColor !== initialValuesRef.current.headerBgColor ||
+      data.headerNotes !== initialValuesRef.current.headerNotes ||
+      data.footerNotes !== initialValuesRef.current.footerNotes ||
+      data.termsAndConditions !== initialValuesRef.current.termsAndConditions;
+
+    setHasUnsavedChanges(hasChanges);
+  }, [data]);
+
+  const handleCancelClick = () => {
+    if (hasUnsavedChanges) {
+      setShowConfirmDialog(true);
+    } else {
+      onCancel();
+    }
+  };
+
+  const handleConfirmCancel = () => {
+    // Restaurer les valeurs initiales avec fallback sur les valeurs par défaut
+    if (initialValuesRef.current) {
+      setValue("appearance.textColor", initialValuesRef.current.textColor || "#000000");
+      setValue("appearance.headerTextColor", initialValuesRef.current.headerTextColor || "#ffffff");
+      setValue("appearance.headerBgColor", initialValuesRef.current.headerBgColor || "#5b50FF");
+      setValue("headerNotes", initialValuesRef.current.headerNotes || "");
+      setValue("footerNotes", initialValuesRef.current.footerNotes || "");
+      setValue("termsAndConditions", initialValuesRef.current.termsAndConditions || "");
+    }
+    setShowConfirmDialog(false);
+    onCancel();
+  };
+
+  const handleSaveClick = () => {
+    // Mettre à jour les valeurs de référence après la sauvegarde
+    initialValuesRef.current = {
+      textColor: data.appearance?.textColor,
+      headerTextColor: data.appearance?.headerTextColor,
+      headerBgColor: data.appearance?.headerBgColor,
+      headerNotes: data.headerNotes,
+      footerNotes: data.footerNotes,
+      termsAndConditions: data.termsAndConditions,
+    };
+    setHasUnsavedChanges(false);
+    onSave();
+  };
 
 
   return (
@@ -83,7 +170,7 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave }) {
                 </Label>
                 <ColorPicker
                   className="w-full"
-                  color={data.appearance?.headerBgColor || "#1d1d1b"}
+                  color={data.appearance?.headerBgColor || "#5b50FF"}
                   onChange={(color) => {
                     setValue("appearance.headerBgColor", color, {
                       shouldDirty: true,
@@ -201,14 +288,14 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave }) {
         <div className="max-w-2xl mx-auto flex justify-end gap-3">
           <Button
             variant="outline"
-            onClick={onCancel}
+            onClick={handleCancelClick}
             disabled={!canEdit}
             className="font-normal"
           >
             Annuler
           </Button>
           <Button 
-            onClick={onSave} 
+            onClick={handleSaveClick} 
             disabled={!canEdit} 
             className="font-normal"
           >
@@ -216,6 +303,26 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave }) {
           </Button>
         </div>
       </div>
+
+      {/* Dialog de confirmation */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Modifications non sauvegardées</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous avez des modifications non sauvegardées. Si vous quittez maintenant, ces modifications seront perdues.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowConfirmDialog(false)}>
+              Continuer l'édition
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmCancel}>
+              Quitter sans sauvegarder
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

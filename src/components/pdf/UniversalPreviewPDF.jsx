@@ -20,6 +20,40 @@ const calculateItemTotal = (quantity, unitPrice, discount, discountType) => {
   return subtotal;
 };
 
+// Fonction utilitaire pour appliquer une opacité à une couleur HSL
+const applyOpacityToColor = (color, opacity) => {
+  if (!color) return `rgba(0, 0, 0, ${opacity})`;
+  
+  // Si c'est une couleur HSL
+  if (color.startsWith('hsl')) {
+    const match = color.match(/hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/);
+    if (match) {
+      const [, h, s, l] = match;
+      return `hsla(${h}, ${s}%, ${l}%, ${opacity})`;
+    }
+  }
+  
+  // Si c'est une couleur hex
+  if (color.startsWith('#')) {
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  
+  // Si c'est déjà une couleur rgba/rgb
+  if (color.startsWith('rgb')) {
+    const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/);
+    if (match) {
+      const [, r, g, b] = match;
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+  }
+  
+  return color;
+};
+
 const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF = false }) => {
   const { data: session } = useSession();
   const { organization } = useWorkspace();
@@ -1104,7 +1138,12 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
             )}
 
             {/* 6. Total TTC */}
-            <div className="flex justify-between py-2 px-6 bg-[#F3F3F3] font-medium text-sm mt-2">
+            <div 
+              className="flex justify-between py-2 px-6 font-medium text-sm mt-2"
+              style={{
+                backgroundColor: applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)
+              }}
+            >
               <span className="-ml-3 text-[10px] font-medium dark:text-[#0A0A0A]">
                 Total TTC
               </span>
@@ -1168,10 +1207,11 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
 
       {/* FOOTER - DÉTAILS BANCAIRES */}
       <div 
-        className={isMobile ? "bg-[#F3F3F3] pt-4 pb-4 px-6 w-full" : "bg-[#F3F3F3] pt-8 pb-8 px-14 w-full"}
-        style={forPDF ? {
-          marginTop: 'auto',
-        } : {}}
+        className={isMobile ? "pt-4 pb-4 px-6 w-full" : "pt-8 pb-8 px-14 w-full"}
+        style={{
+          backgroundColor: applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1),
+          ...(forPDF ? { marginTop: 'auto' } : {})
+        }}
         data-pdf-footer="true"
       >
         {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un devis NI un avoir */}

@@ -426,7 +426,7 @@ export function useInvoiceEditor({
       );
       setValue(
         "appearance.headerBgColor",
-        organization.documentHeaderBgColor || "#1d1d1b"
+        organization.documentHeaderBgColor || "#5b50FF"
       );
 
       // Utiliser les notes et conditions spécifiques aux factures
@@ -1033,7 +1033,7 @@ export function useInvoiceEditor({
         documentHeaderTextColor:
           currentFormData.appearance?.headerTextColor || "#ffffff",
         documentHeaderBgColor:
-          currentFormData.appearance?.headerBgColor || "#1d1d1b",
+          currentFormData.appearance?.headerBgColor || "#5b50FF",
         invoiceHeaderNotes: currentFormData.headerNotes || "",
         invoiceFooterNotes: currentFormData.footerNotes || "",
         invoiceTermsAndConditions: currentFormData.termsAndConditions || "",
@@ -1143,7 +1143,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     appearance: {
       textColor: "#000000",
       headerTextColor: "#ffffff",
-      headerBgColor: "#1d1d1b",
+      headerBgColor: "#5b50FF",
     },
   };
 
@@ -1158,7 +1158,7 @@ function getInitialFormData(mode, initialData, session, organization) {
       defaultData.appearance = {
         textColor: organization.defaultTextColor || "#000000",
         headerTextColor: organization.defaultHeaderTextColor || "#ffffff",
-        headerBgColor: organization.defaultHeaderBgColor || "#1d1d1b",
+        headerBgColor: organization.defaultHeaderBgColor || "#5b50FF",
       };
     }
 
@@ -1324,7 +1324,7 @@ function transformInvoiceToFormData(invoice) {
     appearance: {
       textColor: invoice.appearance?.textColor || "#000000",
       headerTextColor: invoice.appearance?.headerTextColor || "#ffffff",
-      headerBgColor: invoice.appearance?.headerBgColor || "#1d1d1b",
+      headerBgColor: invoice.appearance?.headerBgColor || "#5b50FF",
     },
   };
 
@@ -1499,7 +1499,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
     appearance: {
       textColor: formData.appearance?.textColor || "#000000",
       headerTextColor: formData.appearance?.headerTextColor || "#ffffff",
-      headerBgColor: formData.appearance?.headerBgColor || "#1d1d1b",
+      headerBgColor: formData.appearance?.headerBgColor || "#5b50FF",
     },
     shipping: formData.shipping
       ? {
