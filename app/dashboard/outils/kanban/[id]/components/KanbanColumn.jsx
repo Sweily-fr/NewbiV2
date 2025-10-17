@@ -50,16 +50,22 @@ export function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`bg-muted/30 rounded-xl p-3 min-w-[280px] max-w-[280px] sm:min-w-[300px] sm:max-w-[300px] border border-border transition-colors duration-150 flex-shrink-0 ${
+      className={`bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border transition-colors duration-150 flex-shrink-0 ${
         isOver ? "bg-accent/50 border-primary/50" : ""
       } ${isDragging ? "border-primary shadow-lg" : ""}`}
     >
-      <div className="flex items-center justify-between py-2">
+      <div
+        {...dragHandleProps}
+        className={`flex items-center justify-between py-2 ${
+          isDragging ? "cursor-grabbing" : "cursor-grab hover:bg-accent/30 rounded-lg px-2 -mx-2 transition-colors duration-150"
+        }`}
+      >
         <div className="flex items-center gap-2 flex-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggleCollapse}
+            onPointerDown={(e) => e.stopPropagation()}
             className="h-4 w-4 p-0 mr-1"
           >
             {isCollapsed ? (
@@ -87,7 +93,7 @@ export function KanbanColumn({
             {tasks.length}
           </Badge>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" onPointerDown={(e) => e.stopPropagation()}>
           <Button
             variant="ghost"
             size="sm"
