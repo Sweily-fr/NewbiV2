@@ -34,7 +34,7 @@ const calculateItemTotal = (quantity, unitPrice, discount, discountType) => {
 
   // Appliquer la remise si elle existe
   if (discount && discount > 0) {
-    if (discountType === "percentage") {
+    if (discountType === "PERCENTAGE" || discountType === "percentage") {
       subtotal = subtotal * (1 - Math.min(discount, 100) / 100);
     } else {
       subtotal = Math.max(0, subtotal - discount);
@@ -72,7 +72,7 @@ export default function ItemsSection({
     const quantity = productData.quantity || 1;
     const unitPrice = productData.unitPrice || 0;
     const discount = productData.discount || 0;
-    const discountType = productData.discountType || "percentage";
+    const discountType = (productData.discountType === "percentage" ? "PERCENTAGE" : productData.discountType) || "PERCENTAGE";
 
     const total = calculateItemTotal(
       quantity,
@@ -89,7 +89,7 @@ export default function ItemsSection({
       unit: productData.unit || "unités",
       vatRate: productData.vatRate !== undefined ? productData.vatRate : 20,
       discount: discount,
-      discountType: discountType,
+      discountType: discountType === "percentage" ? "PERCENTAGE" : discountType,
       vatExemptionText: productData.vatExemptionText || "",
       total: total,
     });
@@ -162,7 +162,7 @@ export default function ItemsSection({
               const unitPrice = currentItem.unitPrice || 0;
               const vatRate = currentItem.vatRate || 0;
               const discount = currentItem.discount || 0;
-              const discountType = currentItem.discountType || "percentage";
+              const discountType = currentItem.discountType || "PERCENTAGE";
               const unit = currentItem.unit || "unité";
               const description =
                 currentItem.description || `Article ${index + 1}`;
@@ -170,8 +170,8 @@ export default function ItemsSection({
               // Calculer le total en temps réel
               let subtotal = quantity * unitPrice;
               if (discount > 0) {
-                if (discountType === "percentage") {
-                  subtotal = subtotal * (1 - discount / 100);
+                if (discountType === "PERCENTAGE" || discountType === "percentage") {
+                  subtotal = subtotal * (1 - Math.min(discount, 100) / 100);
                 } else {
                   subtotal = Math.max(0, subtotal - discount);
                 }
@@ -204,7 +204,7 @@ export default function ItemsSection({
                             </span>
                             {discount > 0 && (
                               <span className="text-amber-600 dark:text-amber-400">
-                                {discountType === "percentage"
+                                {(discountType === "PERCENTAGE" || discountType === "percentage")
                                   ? `-${discount}%`
                                   : `-${formatCurrency(discount)}`}
                               </span>
@@ -606,21 +606,21 @@ export default function ItemsSection({
                               </Label>
                               <Controller
                                 name={`items.${index}.discountType`}
-                                defaultValue="percentage"
+                                defaultValue="PERCENTAGE"
                                 render={({ field }) => (
                                   <Select
-                                    value={field.value || "percentage"}
+                                    value={field.value || "PERCENTAGE"}
                                     onValueChange={field.onChange}
                                     disabled={!canEdit}
                                   >
-                                    <SelectTrigger className="h-10 w-full rounded-lg px-3 text-sm">
-                                      <SelectValue />
+                                    <SelectTrigger className="w-full h-10 rounded-lg px-3 text-sm">
+                                      <SelectValue placeholder="Pourcentage" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="percentage">
+                                      <SelectItem value="PERCENTAGE">
                                         Pourcentage (%)
                                       </SelectItem>
-                                      <SelectItem value="fixed">
+                                      <SelectItem value="FIXED">
                                         Montant fixe (€)
                                       </SelectItem>
                                     </SelectContent>
@@ -633,8 +633,8 @@ export default function ItemsSection({
                                 htmlFor={`item-discount-${index}`}
                                 className="text-sm font-normal"
                               >
-                                {watch(`items.${index}.discountType`) ===
-                                "percentage"
+                                {(watch(`items.${index}.discountType`) === "PERCENTAGE" ||
+                                 watch(`items.${index}.discountType`) === "percentage")
                                   ? "Pourcentage (%)"
                                   : "Montant (€)"}
                               </Label>
@@ -649,8 +649,8 @@ export default function ItemsSection({
                                       message: "La remise doit être positive",
                                     },
                                     max:
-                                      watch(`items.${index}.discountType`) ===
-                                      "percentage"
+                                      (watch(`items.${index}.discountType`) === "PERCENTAGE" ||
+                                       watch(`items.${index}.discountType`) === "percentage")
                                         ? {
                                             value: 100,
                                             message:
@@ -681,8 +681,8 @@ export default function ItemsSection({
                                   })}
                                   min="0"
                                   max={
-                                    watch(`items.${index}.discountType`) ===
-                                    "percentage"
+                                    (watch(`items.${index}.discountType`) === "PERCENTAGE" ||
+                                     watch(`items.${index}.discountType`) === "percentage")
                                       ? "100"
                                       : undefined
                                   }
