@@ -29,6 +29,20 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
 
   // Déterminer si c'est un avoir (credit note)
   const isCreditNote = type === "creditNote";
+  
+  // Debug: Log des données reçues pour les devis
+  useEffect(() => {
+    if (type === "quote") {
+      console.log("📄 UniversalPreviewPDF - Données reçues:", {
+        prefix: data.prefix,
+        number: data.number,
+        prefixType: typeof data.prefix,
+        numberType: typeof data.number,
+        prefixLength: data.prefix?.length,
+        numberLength: data.number?.length,
+      });
+    }
+  }, [data.prefix, data.number, type]);
 
   // Fonction pour calculer le scale dynamiquement
   useEffect(() => {
@@ -440,10 +454,34 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                   :
                 </span>
                 <span className="dark:text-[#0A0A0A]">
-                  {data.prefix && data.number
-                    ? `${data.prefix}-${data.number}`
-                    : data.number ||
-                      (isCreditNote ? "AV-202507-001" : "F-202507-001")}
+                  {(() => {
+                    // Pour les devis, construire le numéro avec prefix et number
+                    if (type === "quote") {
+                      const prefix = data.prefix?.trim();
+                      const number = data.number?.trim();
+                      
+                      if (prefix && number) {
+                        return `${prefix}-${number}`;
+                      } else if (number) {
+                        return number;
+                      } else if (prefix) {
+                        return prefix;
+                      }
+                      return "D-202507-001"; // Placeholder pour devis
+                    }
+                    
+                    // Pour les factures et avoirs
+                    const prefix = data.prefix?.trim();
+                    const number = data.number?.trim();
+                    
+                    if (prefix && number) {
+                      return `${prefix}-${number}`;
+                    } else if (number) {
+                      return number;
+                    }
+                    
+                    return isCreditNote ? "AV-202507-001" : "F-202507-001";
+                  })()}
                 </span>
               </div>
               <div className="flex justify-end" style={{ fontSize: "10px" }}>
