@@ -287,7 +287,15 @@ export function useDashboardLayoutSimple() {
         hasSeenOnboarding: true,
       });
 
+      // Fermer immédiatement le modal pour éviter qu'il se réaffiche
       setIsOnboardingOpen(false);
+
+      // Rafraîchir la session pour obtenir les nouvelles données
+      await authClient.getSession({
+        fetchOptions: {
+          cache: "no-store"
+        }
+      });
     } catch (error) {
       console.error("Erreur lors de la finalisation de l'onboarding:", error);
     } finally {
