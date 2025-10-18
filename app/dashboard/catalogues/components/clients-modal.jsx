@@ -106,7 +106,6 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
       onOpenChange(false);
     } catch (error) {
       toast.error("Erreur lors de la sauvegarde du client");
-      console.error(error);
     }
   };
 

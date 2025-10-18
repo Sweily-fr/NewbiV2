@@ -34,11 +34,6 @@ export default function InvoiceExportButton({ invoices, selectedRows = [] }) {
   // Déterminer si on exporte les factures sélectionnées ou toutes les factures
   const hasSelection = selectedRows && selectedRows.length > 0;
   
-  // Debug: vérifier la structure de selectedRows
-  if (hasSelection && selectedRows.length > 0) {
-    console.log("🔍 Structure selectedRows:", selectedRows[0]);
-  }
-  
   const invoicesToExport = hasSelection 
     ? selectedRows.map(row => {
         // TanStack Table peut utiliser row.original OU directement row
@@ -55,45 +50,11 @@ export default function InvoiceExportButton({ invoices, selectedRows = [] }) {
     if (!selectedFormat) return;
 
     try {
-      // Debug AVANT transformation
-      console.log("🔍 DEBUG AVANT EXPORT:");
-      console.log("  - hasSelection:", hasSelection);
-      console.log("  - selectedRows:", selectedRows);
-      console.log("  - selectedRows.length:", selectedRows?.length);
-      console.log("  - invoices:", invoices);
-      console.log("  - invoices.length:", invoices?.length);
-      console.log("  - invoicesToExport:", invoicesToExport);
-      console.log("  - invoicesToExport.length:", invoicesToExport?.length);
-      
       // Utiliser les factures sélectionnées ou toutes les factures
       const finalInvoices = invoicesToExport;
       
       // Si des factures sont sélectionnées, ne pas appliquer le filtre de date
       const finalDateRange = hasSelection ? null : dateRange;
-      
-      // Debug: afficher les informations de filtrage
-      console.log("🔍 Export - Informations de debug:");
-      console.log("  - Mode:", hasSelection ? "Factures sélectionnées" : "Toutes les factures");
-      console.log("  - Nombre de factures à exporter:", finalInvoices.length);
-      if (!hasSelection && dateRange?.from && dateRange?.to) {
-        console.log("  - Plage de dates:", {
-          from: new Date(dateRange.from).toLocaleDateString('fr-FR'),
-          to: new Date(dateRange.to).toLocaleDateString('fr-FR')
-        });
-      }
-      console.log("  - Format:", selectedFormat);
-      
-      // Afficher quelques factures pour debug
-      if (finalInvoices.length > 0) {
-        console.log("  - Exemples de factures:");
-        finalInvoices.slice(0, 2).forEach((inv, idx) => {
-          console.log(`    ${idx + 1}. Facture ${inv.number}:`);
-          console.log(`       - Total HT: ${inv.finalTotalHT}`);
-          console.log(`       - Total TVA: ${inv.finalTotalVAT}`);
-          console.log(`       - Total TTC: ${inv.finalTotalTTC}`);
-          console.log(`       - Client: ${inv.client?.name || 'N/A'}`);
-        });
-      }
 
       if (selectedFormat === "csv") {
         exportToCSV(finalInvoices, finalDateRange);
@@ -137,7 +98,6 @@ export default function InvoiceExportButton({ invoices, selectedRows = [] }) {
       setDateRange({ from: undefined, to: undefined });
       setSelectedFormat(null);
     } catch (error) {
-      console.error("❌ Erreur d'export:", error);
       toast.error("Erreur d'export", {
         description: error.message || "Une erreur est survenue lors de l'export.",
       });

@@ -50,10 +50,7 @@ export default function ModernInvoiceEditor({
         const org = await getActiveOrganization();
         setOrganization(org);
       } catch (error) {
-        console.error(
-          "Erreur lors de la récupération de l'organisation:",
-          error
-        );
+        // Error silently ignored
       }
     };
     fetchOrganization();
@@ -341,7 +338,6 @@ export default function ModernInvoiceEditor({
                             "Paramètres sauvegardés dans l'organisation"
                           );
                         } catch (error) {
-                          console.error("Erreur lors de la sauvegarde:", error);
                           toast.error(
                             "Erreur lors de la sauvegarde des paramètres"
                           );

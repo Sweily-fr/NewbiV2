@@ -146,7 +146,6 @@ export default function ClientSelector({
         const results = await searchCompanies(debouncedCompanyQuery, 8);
         setCompanies(results);
       } catch (error) {
-        console.error("Erreur recherche API Gouv:", error);
         toast.error("Erreur lors de la recherche d'entreprises");
         setCompanies([]);
       } finally {
@@ -286,7 +285,6 @@ export default function ClientSelector({
 
     // Si des erreurs sont détectées, arrêter la soumission
     if (hasErrors) {
-      console.error("❌ SOUMISSION BLOQUÉE : Erreurs de validation détectées");
       toast.error(
         "Veuillez corriger les erreurs avant de soumettre le formulaire"
       );
@@ -301,9 +299,6 @@ export default function ClientSelector({
       !newClientForm.address?.postalCode?.trim() ||
       !newClientForm.address?.city?.trim()
     ) {
-      console.error(
-        "❌ VÉRIFICATION FINALE ÉCHOUÉE : Champs obligatoires manquants"
-      );
       toast.error("Des champs obligatoires sont manquants");
       return; // ARRÊT COMPLET - Double sécurité
     }
@@ -356,7 +351,6 @@ export default function ClientSelector({
         setOpen(false); // Fermer le popover après création
       }
     } catch (error) {
-      console.error("Erreur lors de la création du client:", error);
       // Le toast d'erreur est déjà géré par le hook
     }
   };
@@ -419,7 +413,6 @@ export default function ClientSelector({
         }
       }, 100);
     } catch (error) {
-      console.error("Erreur lors de l'import de l'entreprise:", error);
       toast.error("Erreur lors de l'import de l'entreprise");
     }
   };

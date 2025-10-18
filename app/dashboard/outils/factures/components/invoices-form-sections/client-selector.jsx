@@ -145,7 +145,6 @@ export default function ClientSelector({
         const results = await searchCompanies(debouncedCompanyQuery, 8);
         setCompanies(results);
       } catch (error) {
-        console.error("Erreur recherche API Gouv:", error);
         toast.error("Erreur lors de la recherche d'entreprises");
         setCompanies([]);
       } finally {
@@ -441,8 +440,6 @@ export default function ClientSelector({
         setOpen(false);
       }
     } catch (error) {
-      console.error("Erreur lors de la création du client:", error);
-
       // Gestion des erreurs avec des messages clairs pour l'utilisateur
       let errorMessage =
         "Une erreur est survenue lors de la création du client";
@@ -554,7 +551,6 @@ export default function ClientSelector({
         }
       }, 100);
     } catch (error) {
-      console.error("Erreur lors de l'import de l'entreprise:", error);
       toast.error("Erreur lors de l'import de l'entreprise");
     }
   };

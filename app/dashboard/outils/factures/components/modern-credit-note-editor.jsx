@@ -35,7 +35,7 @@ export default function ModernCreditNoteEditor({
         const org = await getActiveOrganization();
         setOrganization(org);
       } catch (error) {
-        console.error("Erreur lors de la récupération de l'organisation:", error);
+        // Error silently ignored
       }
     };
     fetchOrganization();

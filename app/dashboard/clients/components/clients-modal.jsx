@@ -205,7 +205,6 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
         const results = await searchCompanies(debouncedCompanyQuery, 8);
         setCompanies(results);
       } catch (error) {
-        console.error("Erreur recherche API Gouv:", error);
         toast.error("Erreur lors de la recherche d'entreprises");
         setCompanies([]);
       } finally {
@@ -264,7 +263,6 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
       // Notification de succès
       toast.success(`Entreprise "${company.name}" importée avec succès`);
     } catch (error) {
-      console.error("Erreur lors de l'import de l'entreprise:", error);
       toast.error("Erreur lors de l'import de l'entreprise");
     }
   };
@@ -330,7 +328,6 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
     } catch (error) {
       // La notification d'erreur est déjà gérée par le hook useCreateClient/useUpdateClient
       // Ne pas afficher de notification supplémentaire ici
-      console.error(error);
       // Ne pas fermer le modal en cas d'erreur
     }
   };

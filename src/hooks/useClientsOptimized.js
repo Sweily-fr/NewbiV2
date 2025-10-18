@@ -345,10 +345,8 @@ export const usePreloadClients = () => {
         fetchPolicy: 'network-only',
         errorPolicy: 'ignore',
       });
-      
-      console.log('🚀 Clients préchargés avec succès');
     } catch (error) {
-      console.warn('⚠️ Erreur préchargement clients:', error);
+      // Preload error silently ignored
     }
   };
 

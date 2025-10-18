@@ -372,11 +372,6 @@ export default function QuoteInfoSection({
                           return <span>Date invalide</span>;
                         return format(date, "PPP", { locale: fr });
                       } catch (error) {
-                        console.warn(
-                          "Erreur de formatage de date issueDate:",
-                          data.issueDate,
-                          error
-                        );
                         return <span>Date invalide</span>;
                       }
                     })()
@@ -485,11 +480,6 @@ export default function QuoteInfoSection({
 
                         // Vérifier que la date est valide
                         if (!date || isNaN(date.getTime())) {
-                          console.warn("⚠️ Date de validité invalide:", {
-                            value,
-                            type: typeof value,
-                            isDate: value instanceof Date,
-                          });
                           return <span>Date invalide</span>;
                         }
 
@@ -500,14 +490,6 @@ export default function QuoteInfoSection({
 
                         return formattedDate;
                       } catch (error) {
-                        console.error(
-                          "❌ Erreur lors du formatage de la date:",
-                          {
-                            error,
-                            validUntil: data.validUntil,
-                            type: typeof data.validUntil,
-                          }
-                        );
                         return <span>Date invalide</span>;
                       }
                     })()}
@@ -555,11 +537,6 @@ export default function QuoteInfoSection({
                           ? date
                           : undefined;
                       } catch (error) {
-                        console.warn(
-                          "Erreur de formatage de la date sélectionnée:",
-                          data.validUntil,
-                          error
-                        );
                         return undefined;
                       }
                     })()}

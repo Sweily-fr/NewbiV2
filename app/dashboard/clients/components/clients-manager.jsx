@@ -25,7 +25,6 @@ export default function ClientsManager() {
       setIsModalOpen(false);
       setSelectedClient(null);
     } catch (error) {
-      console.error('Error saving client:', error);
       throw error; // Re-throw pour que le modal puisse gérer l'erreur
     }
   };

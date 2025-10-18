@@ -180,7 +180,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         // Reset sera fait automatiquement par l'useEffect quand le modal se ferme
       }
     } catch (error) {
-      console.error("Error saving product:", error);
+      // Error already handled by useCreateProduct/useUpdateProduct hooks
     }
   };
 

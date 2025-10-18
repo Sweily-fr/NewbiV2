@@ -433,10 +433,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             });
           }
         } catch (error) {
-          console.error(
-            "❌ Erreur lors de la récupération de l'organisation:",
-            error
-          );
+          // Error silently ignored
         }
       };
 
@@ -761,7 +758,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           }
         }
       } catch (error) {
-        console.error("❌ Erreur lors de la sauvegarde:", error);
         if (!isAutoSave) {
           handleError(error, 'quote');
         }
@@ -1033,7 +1029,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           router.push("/dashboard/outils/devis");
         }
       } catch (error) {
-        console.error("❌ Erreur lors de la soumission:", error);
         handleError(error, 'quote');
       } finally {
         setSaving(false);
@@ -1090,7 +1085,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
       await updateOrganization(activeOrganization.id, organizationData);
     } catch (error) {
-      console.error("❌ Erreur lors de la sauvegarde des paramètres:", error);
       throw error;
     }
   }, [getValues]);
@@ -1349,10 +1343,6 @@ function transformQuoteToFormData(quote) {
 
       return result;
     } catch (error) {
-      console.error(
-        `❌ Erreur lors de la transformation de ${fieldName}:`,
-        error
-      );
       return "";
     }
   };
@@ -1621,7 +1611,6 @@ function transformFormDataToInput(
         issueDate = d.toISOString().split("T")[0];
       }
     } catch (e) {
-      console.error("Erreur lors de la validation de la date d'émission:", e);
       issueDate = new Date().toISOString().split("T")[0];
     }
   }
@@ -1716,7 +1705,6 @@ function transformFormDataToInput(
       );
     }
   } catch (e) {
-    console.error("Erreur lors de la récupération de la date de validité:", e);
     validUntilDate = new Date(issueDate);
     validUntilDate.setDate(validUntilDate.getDate() + 30); // 30 jours par défaut
   }
@@ -1733,17 +1721,10 @@ function transformFormDataToInput(
 
       const d = new Date(date);
       if (isNaN(d.getTime())) {
-        console.warn("Date invalide fournie à createDateWithoutTime:", date);
         return null;
       }
       return new Date(d.getFullYear(), d.getMonth(), d.getDate());
     } catch (e) {
-      console.error(
-        "Erreur lors de la création de la date:",
-        e,
-        "Valeur:",
-        date
-      );
       return null;
     }
   };
@@ -1758,7 +1739,6 @@ function transformFormDataToInput(
       `❌ Erreur: Date invalide détectée - ` +
       `issueDate: ${issueDate} (${typeof issueDate}), ` +
       `validUntilDate: ${validUntilDate} (${typeof validUntilDate})`;
-    console.error(errorMessage);
 
     // Utiliser des valeurs par défaut sécurisées
     const today = new Date();
@@ -1801,7 +1781,6 @@ function transformFormDataToInput(
 
       return `${year}-${month}-${day}`;
     } catch (e) {
-      console.error("Erreur lors du formatage final de la date:", e);
       return null;
     }
   };

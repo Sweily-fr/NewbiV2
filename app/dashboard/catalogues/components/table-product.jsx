@@ -315,7 +315,7 @@ export default function TableProduct({ handleAddProduct }) {
       table.resetRowSelection();
       await refetch();
     } catch (error) {
-      console.error("Error deleting products:", error);
+      // Error already handled by useDeleteProduct hook
     }
   };
 
@@ -325,7 +325,6 @@ export default function TableProduct({ handleAddProduct }) {
       toast.success("Données actualisées");
     } catch (error) {
       toast.error("Erreur lors de l'actualisation");
-      console.error("Error refreshing products:", error);
     }
   };
 
@@ -1053,7 +1052,6 @@ function RowActions({ row, onEdit, onDelete }) {
       }
       setShowDeleteDialog(false);
     } catch (error) {
-      console.error("Error deleting product:", error);
       toast.error("Erreur lors de la suppression du produit");
     }
   };

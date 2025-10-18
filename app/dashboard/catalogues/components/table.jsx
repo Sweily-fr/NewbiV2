@@ -254,7 +254,7 @@ export default function TableClients({ handleAddUser }) {
       table.resetRowSelection();
       await refetch();
     } catch (error) {
-      console.error("Error deleting clients:", error);
+      // Error already handled by useDeleteClient hook
     }
   };
 
@@ -264,7 +264,6 @@ export default function TableClients({ handleAddUser }) {
       toast.success("Données actualisées");
     } catch (error) {
       toast.error("Erreur lors de l'actualisation");
-      console.error("Error refreshing clients:", error);
     }
   };
 
@@ -780,7 +779,7 @@ function RowActions({ row, onEdit }) {
       await deleteClient(client.id);
       setShowDeleteDialog(false);
     } catch (error) {
-      console.error("Error deleting client:", error);
+      // Error already handled by useDeleteClient hook
     }
   };
 

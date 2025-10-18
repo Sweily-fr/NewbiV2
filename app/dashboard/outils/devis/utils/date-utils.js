@@ -32,20 +32,17 @@ export function formatDate(dateInput) {
       }
     } else {
       // Autre type non pris en charge
-      console.warn('Format de date non supporté:', dateInput);
       return "-";
     }
     
     // Vérifier si la date est valide
     if (isNaN(date.getTime())) {
-      console.warn('Date invalide dans formatDate:', dateInput);
       return "-";
     }
     
     // Formater la date en français
     return date.toLocaleDateString('fr-FR');
   } catch (error) {
-    console.error('Erreur lors du formatage de la date:', error, 'Valeur:', dateInput);
     return "-";
   }
 }
@@ -74,7 +71,6 @@ export function isDateExpired(dateInput) {
   
   // Vérifier si la date est valide
   if (isNaN(date.getTime())) {
-    console.warn('Date invalide dans isDateExpired:', dateInput);
     return false;
   }
   

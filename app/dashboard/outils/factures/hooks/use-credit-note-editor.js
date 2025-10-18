@@ -208,7 +208,6 @@ export function useCreditNoteEditor({
 
         return result;
       } catch (error) {
-        console.error("Erreur lors de la sauvegarde:", error);
         toast.error("Erreur lors de la sauvegarde de l'avoir");
         throw error;
       } finally {

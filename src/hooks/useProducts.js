@@ -43,9 +43,8 @@ export const useCreateProduct = () => {
     onCompleted: () => {
       toast.success('Produit créé avec succès');
     },
-    onError: (error) => {
+    onError: () => {
       toast.error('Erreur lors de la création du produit');
-      console.error('Create product error:', error);
     },
   });
 
@@ -63,9 +62,8 @@ export const useUpdateProduct = () => {
     onCompleted: () => {
       toast.success('Produit modifié avec succès');
     },
-    onError: (error) => {
+    onError: () => {
       toast.error('Erreur lors de la modification du produit');
-      console.error('Update product error:', error);
     },
   });
 
@@ -83,9 +81,8 @@ export const useDeleteProduct = () => {
     onCompleted: () => {
       toast.success('Produit supprimé avec succès');
     },
-    onError: (error) => {
+    onError: () => {
       toast.error('Erreur lors de la suppression du produit');
-      console.error('Delete product error:', error);
     },
   });
 

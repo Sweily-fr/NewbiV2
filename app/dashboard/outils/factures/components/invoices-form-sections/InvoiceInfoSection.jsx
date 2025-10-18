@@ -408,11 +408,6 @@ export default function InvoiceInfoSection({ canEdit }) {
                       if (isNaN(date.getTime())) return "";
                       return format(date, "PPP", { locale: fr });
                     } catch (error) {
-                      console.warn(
-                        "Erreur de formatage de date:",
-                        data.issueDate,
-                        error
-                      );
                       return "";
                     }
                   })()}
@@ -456,11 +451,6 @@ export default function InvoiceInfoSection({ canEdit }) {
                             return <span>Date invalide</span>;
                           return format(date, "PPP", { locale: fr });
                         } catch (error) {
-                          console.warn(
-                            "Erreur de formatage de date executionDate:",
-                            data.executionDate,
-                            error
-                          );
                           return <span>Date invalide</span>;
                         }
                       })()
@@ -538,11 +528,6 @@ export default function InvoiceInfoSection({ canEdit }) {
                             return <span>Date invalide</span>;
                           return format(date, "PPP", { locale: fr });
                         } catch (error) {
-                          console.warn(
-                            "Erreur de formatage de date dueDate:",
-                            data.dueDate,
-                            error
-                          );
                           return <span>Date invalide</span>;
                         }
                       })()

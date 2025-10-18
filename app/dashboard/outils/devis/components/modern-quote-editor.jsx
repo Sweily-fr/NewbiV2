@@ -300,7 +300,6 @@ export default function ModernQuoteEditor({
                           "Paramètres sauvegardés dans l'organisation"
                         );
                       } catch (error) {
-                        console.error("Erreur lors de la sauvegarde:", error);
                         toast.error(
                           "Erreur lors de la sauvegarde des paramètres"
                         );

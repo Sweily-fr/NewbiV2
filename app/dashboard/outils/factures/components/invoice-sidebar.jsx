@@ -121,7 +121,6 @@ export default function InvoiceSidebar({
     }
 
     if (isNaN(date.getTime())) {
-      console.warn("Date invalide:", dateString);
       return "Date invalide";
     }
 

@@ -968,7 +968,6 @@ export function useInvoiceEditor({
     }
     
     if (Object.keys(errors).length > 0) {
-      console.error("❌ Validation échouée - Erreurs:", errors);
       setValidationErrors(errors);
       toast.error("Veuillez corriger les erreurs avant de valider la facture");
       return false;
@@ -1002,7 +1001,6 @@ export function useInvoiceEditor({
         return true;
       }
     } catch (error) {
-      console.error("Submit failed:", error);
       handleError(error, 'invoice', { 
         preventDuplicates: true,
         hideServerErrors: true 
@@ -1042,7 +1040,6 @@ export function useInvoiceEditor({
 
       await updateOrganization(activeOrganization.id, organizationData);
     } catch (error) {
-      console.error("❌ Erreur lors de la sauvegarde des paramètres:", error);
       throw error;
     }
   }, [getValues]);
@@ -1209,14 +1206,12 @@ function transformInvoiceToFormData(invoice) {
       // Sinon, on essaie de la convertir normalement
       const date = new Date(dateValue);
       if (isNaN(date.getTime())) {
-        console.warn(`  ⚠️ ${fieldName} invalide:`, dateValue);
         return null;
       }
 
       const formatted = date.toISOString().split("T")[0];
       return formatted;
     } catch (error) {
-      console.error(`  ❌ Erreur transformation ${fieldName}:`, error);
       return null;
     }
   };

@@ -120,7 +120,6 @@ export const useUpdateClient = () => {
         }
       } catch {
         // Si la query n'existe pas dans le cache, on l'ignore
-        console.log('GET_CLIENTS not in cache, skipping update');
       }
     },
     onCompleted: () => {
@@ -172,7 +171,7 @@ export const useDeleteClient = () => {
           });
         }
       } catch {
-        console.log('GET_CLIENTS not in cache, skipping update');
+        // Si la query n'existe pas dans le cache, on l'ignore
       }
 
       // Nettoyer le cache

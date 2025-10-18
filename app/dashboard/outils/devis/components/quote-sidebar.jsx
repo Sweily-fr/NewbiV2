@@ -88,7 +88,6 @@ export default function QuoteSidebar({
     }
 
     if (isNaN(date.getTime())) {
-      console.warn("Date invalide:", dateString);
       return "Date invalide";
     }
 
@@ -182,7 +181,6 @@ export default function QuoteSidebar({
       if (onRefetch) onRefetch();
       return result;
     } catch (error) {
-      console.error("Erreur lors de la création de la facture liée:", error);
       throw error;
     }
   };

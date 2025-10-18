@@ -75,7 +75,7 @@ export default function CreateLinkedInvoicePopover({
       setIsDeposit(false);
       setOpen(false);
     } catch (error) {
-      console.error("Erreur lors de la création de la facture liée:", error);
+      // Error already handled by createLinkedInvoice
     }
   };
 

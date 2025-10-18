@@ -104,7 +104,6 @@ const formatDateForSearch = (dateValue) => {
         value && self.indexOf(value) === index
     );
   } catch (error) {
-    console.error("Erreur de formatage de date:", error);
     return [];
   }
 };
@@ -546,7 +545,6 @@ export function useQuoteTable({ data = [], onRefetch }) {
         // Les notifications individuelles sont désactivées dans le hook GraphQL
         await Promise.all(batch.map((quote) => deleteQuote(quote.id)));
       } catch (error) {
-        console.error("Error deleting batch:", error);
         toast.error(
           `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`
         );
