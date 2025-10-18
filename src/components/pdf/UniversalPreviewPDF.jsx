@@ -314,8 +314,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
         taxDetails: [],
       };
 
-  // Utiliser le logo depuis les données ou depuis l'organisation comme fallback
-  const companyLogo = data.companyInfo?.logo || organization?.logo;
+  // Utiliser le logo de l'organisation en priorité, puis celui des données comme fallback
+  const companyLogo = organization?.logo || data.companyInfo?.logo;
 
   if (!data) {
     return (
