@@ -362,7 +362,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
         </div>
 
         {/* Fixed footer with buttons */}
-        <div className="flex-shrink-0 border-t bg-white p-4">
+        <div className="flex-shrink-0 border-t bg-white p-4 pb-safe" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           <form onSubmit={handleSubmit}>
             <div className="flex justify-end gap-2">
               <Button

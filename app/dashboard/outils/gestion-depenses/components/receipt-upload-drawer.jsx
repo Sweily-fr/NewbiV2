@@ -404,7 +404,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
 
         {/* Footer - Masqué si OCR terminé */}
         {!ocrResult && (
-          <div className="border-t p-6">
+          <div className="border-t p-6 pb-safe" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
             <div className="flex gap-2">
               <Button
                 variant="outline"
