@@ -263,7 +263,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
         </DrawerHeader>
 
         {/* Content */}
-        <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+        <div className="p-6 space-y-6 flex-1 overflow-y-auto pb-20 md:pb-6">
           {/* Zone d'upload - Masquée si OCR terminé */}
           {!ocrResult && (
             <div className="space-y-4">

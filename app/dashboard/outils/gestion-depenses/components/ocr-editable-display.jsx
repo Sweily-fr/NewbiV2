@@ -578,7 +578,7 @@ export default function OcrEditableDisplay({
 
       {/* Actions */}
       {!isEditing && onValidate && (
-        <div className="flex gap-2 pt-4">
+        <div className="flex gap-2 pt-4 pb-20 md:pb-4">
           <Button
             onClick={() => {
               const updatedFinancialAnalysis = {

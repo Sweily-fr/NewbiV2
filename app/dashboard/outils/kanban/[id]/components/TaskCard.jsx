@@ -142,7 +142,7 @@ export function TaskCard({ task, onEdit, onDelete }) {
         {...attributes}
         {...listeners}
         onClick={handleClick}
-        className={`bg-card text-card-foreground rounded-lg border border-border p-2 sm:p-3 mb-2 sm:mb-3 shadow-xs hover:shadow-sm transition-all duration-200 ease-out hover:bg-accent/10 will-change-transform ${isSortableDragging ? "opacity-50" : ""} cursor-pointer`}
+        className={`bg-card text-card-foreground rounded-lg border border-border p-2 sm:p-3 mb-2 sm:mb-3 shadow-xs hover:shadow-sm transition-all duration-200 ease-out hover:bg-accent/10 will-change-transform min-h-[120px] flex flex-col ${isSortableDragging ? "opacity-50" : ""} cursor-pointer`}
       >
         {/* En-tête de la carte */}
         <div className="flex items-start justify-between mb-1.5 sm:mb-2">
@@ -257,20 +257,29 @@ export function TaskCard({ task, onEdit, onDelete }) {
         )}
 
         {/* Pied de carte */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 sm:mt-3">
+        <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-2 sm:pt-3">
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {task.dueDate && (
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>
-                  {new Date(task.dueDate).toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-            )}
+            {task.dueDate && (() => {
+              try {
+                const date = new Date(task.dueDate);
+                if (isNaN(date.getTime())) return null;
+                return (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span>
+                      {date.toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                );
+              } catch (error) {
+                console.error("Erreur de formatage de date:", error);
+                return null;
+              }
+            })()}
             
             {checklistProgress.total > 0 && (
               <div className="flex items-center gap-1">

@@ -265,54 +265,59 @@ export function TaskForm({
               control={form.control}
               name="dueDate"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Date d'échéance</FormLabel>
-                  <FormControl>
-                    <Popover
-                      open={isDatePickerOpen}
-                      onOpenChange={setIsDatePickerOpen}
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                          disabled={isLoading}
-                          type="button"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                          {field.value ? (
-                            <span className="whitespace-nowrap">
-                              {format(field.value, "PPP", { locale: fr })}
-                              <span className="ml-2 text-muted-foreground">
-                                à {selectedTime}
-                              </span>
+                  <Popover open={isDatePickerOpen} onOpenChange={(open) => {
+                    console.log('🔍 Popover onOpenChange:', open);
+                    setIsDatePickerOpen(open);
+                  }}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal ${!field.value && 'text-muted-foreground'}`}
+                        disabled={isLoading}
+                        type="button"
+                        onClick={(e) => {
+                          console.log('🔍 Button clicked');
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                        {field.value ? (
+                          <span className="whitespace-nowrap">
+                            {format(field.value, "PPP", { locale: fr })}
+                            <span className="ml-2 text-muted-foreground">
+                              à {selectedTime}
                             </span>
-                          ) : (
-                            "Sélectionner une date"
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value || undefined}
-                          onSelect={(date) => {
-                            field.onChange(date);
-                          }}
-                          initialFocus
+                          </span>
+                        ) : (
+                          <span>Sélectionner une date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value || undefined}
+                        onSelect={(date) => {
+                          field.onChange(date);
+                        }}
+                        initialFocus
+                        locale={fr}
+                        disabled={isLoading}
+                      />
+                      <div className="px-4 pb-4">
+                        <Label>Heure</Label>
+                        <Input
+                          type="time"
+                          value={selectedTime}
+                          onChange={(e) => setSelectedTime(e.target.value)}
+                          className="mt-1"
                         />
-                        <div className="px-4 pb-4">
-                          <Label>Heure</Label>
-                          <Input
-                            type="time"
-                            value={selectedTime}
-                            onChange={(e) => setSelectedTime(e.target.value)}
-                            className="mt-1 [&::-webkit-calendar-picker-indicator]:hidden"
-                          />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </FormControl>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
