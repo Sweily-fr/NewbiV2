@@ -944,7 +944,7 @@ export function useInvoiceEditor({
         
         // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
         const vatRate = parseFloat(item.vatRate) || 0;
-        if (vatRate === 0 && !dataToTransform.isReverseCharge) {
+        if (vatRate === 0 && !formData.isReverseCharge) {
           const vatExemptionText = item.vatExemptionText;
           if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
             itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
@@ -1001,7 +1001,13 @@ export function useInvoiceEditor({
         return true;
       }
     } catch (error) {
-      handleError(error, 'invoice', { 
+      console.error('Erreur lors de la sauvegarde de la facture:', error);
+      // Vérifier si l'erreur est vide et la remplacer par un message par défaut
+      const errorToHandle = error && (error.message || error.graphQLErrors || Object.keys(error).length > 0) 
+        ? error 
+        : new Error('Une erreur inconnue est survenue lors de la sauvegarde de la facture');
+      
+      handleError(errorToHandle, 'invoice', { 
         preventDuplicates: true,
         hideServerErrors: true 
       });
@@ -1283,7 +1289,10 @@ function transformInvoiceToFormData(invoice) {
             bankName: "",
           },
         },
-    items: invoice.items || [],
+    items: invoice.items?.map(item => ({
+      ...item,
+      progressPercentage: item.progressPercentage ?? 100
+    })) || [],
     discount: invoice.discount || 0,
     discountType: invoice.discountType || "PERCENTAGE",
     headerNotes: invoice.headerNotes || "",
@@ -1483,6 +1492,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
           discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
           details: item.details || "",
           vatExemptionText: vatExemptionText,
+          progressPercentage: parseFloat(item.progressPercentage) || 100,
         };
       }) || [],
     discount: parseFloat(formData.discount) || 0,

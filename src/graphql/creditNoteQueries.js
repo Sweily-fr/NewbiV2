@@ -91,6 +91,7 @@ export const CREDIT_NOTE_FRAGMENT = gql`
       discountType
       details
       vatExemptionText
+      progressPercentage
     }
     customFields {
       key

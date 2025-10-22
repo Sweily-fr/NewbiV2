@@ -29,9 +29,13 @@ import {
 } from "@/src/components/ui/accordion";
 // Utilisation du composant ProductSearchCombobox défini dans enhanced-invoice-form.jsx
 
-// Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise
-const calculateItemTotal = (quantity, unitPrice, discount, discountType) => {
+// Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
+const calculateItemTotal = (quantity, unitPrice, discount, discountType, progressPercentage = 100) => {
   let subtotal = (quantity || 1) * (unitPrice || 0);
+
+  // Appliquer le pourcentage d'avancement
+  const progress = Math.min(Math.max(progressPercentage || 100, 0), 100);
+  subtotal = subtotal * (progress / 100);
 
   // Appliquer la remise si elle existe
   if (discount && discount > 0) {
@@ -108,7 +112,8 @@ export default function ItemsSection({
       discount: discount,
       discountType: discountType === "percentage" ? "PERCENTAGE" : discountType,
       vatExemptionText: productData.vatExemptionText || "",
-      total: calculateItemTotal(quantity, unitPrice, discount, discountType),
+      progressPercentage: productData.progressPercentage || 100,
+      total: calculateItemTotal(quantity, unitPrice, discount, discountType, 100),
     });
   };
 
@@ -124,26 +129,28 @@ export default function ItemsSection({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-0">
-        {/* Checkbox Auto-liquidation */}
-        <div className="flex items-center space-x-2 py-2">
-          <Controller
-            name="isReverseCharge"
-            render={({ field }) => (
-              <Checkbox
-                id="isReverseCharge"
-                checked={field.value || false}
-                onCheckedChange={field.onChange}
-                disabled={!canEdit}
-              />
-            )}
-          />
-          <label
-            htmlFor="isReverseCharge"
-            className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-          >
-            Auto-liquidation (TVA non applicable - Article 283 du CGI)
-          </label>
-        </div>
+        {/* Checkbox Auto-liquidation - Masquée pour les avoirs car copiée automatiquement depuis la facture */}
+        {!isCreditNoteContext && (
+          <div className="flex items-center space-x-2 py-2">
+            <Controller
+              name="isReverseCharge"
+              render={({ field }) => (
+                <Checkbox
+                  id="isReverseCharge"
+                  checked={field.value || false}
+                  onCheckedChange={field.onChange}
+                  disabled={!canEdit}
+                />
+              )}
+            />
+            <label
+              htmlFor="isReverseCharge"
+              className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              Auto-liquidation (TVA non applicable - Article 283 du CGI)
+            </label>
+          </div>
+        )}
 
         {/* Bouton ajouter article */}
         <div className="flex flex-col md:flex-row gap-3 items-stretch">
@@ -203,11 +210,16 @@ export default function ItemsSection({
                 const discount = currentItem.discount || 0;
                 const discountType = currentItem.discountType || "percentage";
                 const unit = currentItem.unit || "unité";
+                const progressPercentage = currentItem.progressPercentage ?? 100;
                 const description =
                   currentItem.description || `Article ${index + 1}`;
 
-                // Calculer le total en temps réel
+                // Calculer le total en temps réel avec avancement
                 let subtotal = quantity * unitPrice;
+                
+                // Appliquer le pourcentage d'avancement
+                subtotal = subtotal * (progressPercentage / 100);
+                
                 if (discount > 0) {
                   if (discountType === "PERCENTAGE" || discountType === "percentage") {
                     subtotal = subtotal * (1 - Math.min(discount, 100) / 100);
@@ -247,6 +259,14 @@ export default function ItemsSection({
                                     ? `-${discount}%`
                                     : `-${formatCurrency(discount)}`}
                                 </span>
+                              )}
+                              {progressPercentage < 100 && (
+                                <>
+                                  <span className="font-normal">•</span>
+                                  <span style={{ color: "#5b50ff" }} className="font-normal">
+                                    {progressPercentage}% avancement
+                                  </span>
+                                </>
                               )}
                             </div>
                             <div className="font-normal">
@@ -340,8 +360,8 @@ export default function ItemsSection({
                           />
                         </div>
 
-                        {/* Quantité et Unité */}
-                        <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
+                        {/* Quantité, Unité et Avancement */}
+                        <div className="grid grid-cols-3 gap-2 md:gap-4">
                           <div className="space-y-2">
                             <Label
                               htmlFor={`item-quantity-${index}`}
@@ -375,12 +395,15 @@ export default function ItemsSection({
                                     const discountType =
                                       watch(`items.${index}.discountType`) ||
                                       "percentage";
+                                    const progressPercentage =
+                                      watch(`items.${index}.progressPercentage`) || 100;
 
                                     const total = calculateItemTotal(
                                       quantity,
                                       unitPrice,
                                       discount,
-                                      discountType
+                                      discountType,
+                                      progressPercentage
                                     );
                                     setValue(`items.${index}.total`, total, {
                                       shouldDirty: true,
@@ -407,42 +430,104 @@ export default function ItemsSection({
                           </div>
                           <div className="space-y-2">
                             <Label className="text-sm font-normal">Unité</Label>
-                            <Controller
-                              name={`items.${index}.unit`}
-                              defaultValue="unité"
-                              render={({ field }) => (
-                                <Select
-                                  value={field.value || "unité"}
-                                  onValueChange={field.onChange}
-                                  disabled={!canEdit}
-                                >
-                                  <SelectTrigger className="h-10 w-full rounded-lg px-3 text-sm">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="unité">Unité</SelectItem>
-                                    <SelectItem value="pièce">Pièce</SelectItem>
-                                    <SelectItem value="heure">Heure</SelectItem>
-                                    <SelectItem value="jour">Jour</SelectItem>
-                                    <SelectItem value="mois">Mois</SelectItem>
-                                    <SelectItem value="kg">
-                                      Kilogramme
-                                    </SelectItem>
-                                    <SelectItem value="m">Mètre</SelectItem>
-                                    <SelectItem value="m²">
-                                      Mètre carré
-                                    </SelectItem>
-                                    <SelectItem value="m³">
-                                      Mètre cube
-                                    </SelectItem>
-                                    <SelectItem value="litre">Litre</SelectItem>
-                                    <SelectItem value="forfait">
-                                      Forfait
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
+                            <div className="space-y-1">
+                              <Controller
+                                name={`items.${index}.unit`}
+                                defaultValue="unité"
+                                render={({ field }) => (
+                                  <Select
+                                    value={field.value || "unité"}
+                                    onValueChange={field.onChange}
+                                    disabled={!canEdit}
+                                  >
+                                    <SelectTrigger className="h-10 w-full rounded-lg px-3 text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="unité">Unité</SelectItem>
+                                      <SelectItem value="pièce">Pièce</SelectItem>
+                                      <SelectItem value="heure">Heure</SelectItem>
+                                      <SelectItem value="jour">Jour</SelectItem>
+                                      <SelectItem value="mois">Mois</SelectItem>
+                                      <SelectItem value="kg">
+                                        Kilogramme
+                                      </SelectItem>
+                                      <SelectItem value="m">Mètre</SelectItem>
+                                      <SelectItem value="m²">
+                                        Mètre carré
+                                      </SelectItem>
+                                      <SelectItem value="m³">
+                                        Mètre cube
+                                      </SelectItem>
+                                      <SelectItem value="litre">Litre</SelectItem>
+                                      <SelectItem value="forfait">
+                                        Forfait
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor={`item-progress-${index}`}
+                              className="text-sm font-normal"
+                            >
+                              Avancement (%)
+                            </Label>
+                            <div className="space-y-1">
+                              <Input
+                                id={`item-progress-${index}`}
+                                type="number"
+                                {...register(`items.${index}.progressPercentage`, {
+                                  valueAsNumber: true,
+                                  min: {
+                                    value: 0,
+                                    message: "L'avancement doit être entre 0 et 100",
+                                  },
+                                  max: {
+                                    value: 100,
+                                    message: "L'avancement doit être entre 0 et 100",
+                                  },
+                                  onChange: (e) => {
+                                    const progressPercentage =
+                                      parseFloat(e.target.value) || 100;
+                                    const quantity =
+                                      watch(`items.${index}.quantity`) || 1;
+                                    const unitPrice =
+                                      watch(`items.${index}.unitPrice`) || 0;
+                                    const discount =
+                                      watch(`items.${index}.discount`) || 0;
+                                    const discountType =
+                                      watch(`items.${index}.discountType`) ||
+                                      "percentage";
+
+                                    const total = calculateItemTotal(
+                                      quantity,
+                                      unitPrice,
+                                      discount,
+                                      discountType,
+                                      progressPercentage
+                                    );
+                                    setValue(`items.${index}.total`, total, {
+                                      shouldDirty: true,
+                                    });
+                                  },
+                                })}
+                                step="1"
+                                min="0"
+                                max="100"
+                                placeholder="100"
+                                disabled={!canEdit}
+                                className="h-10 rounded-lg text-sm w-full"
+                              />
+                              {errors?.items?.[index]?.progressPercentage && (
+                                <p className="text-xs text-destructive">
+                                  {errors.items[index].progressPercentage.message}
+                                </p>
                               )}
-                            />
+                            </div>
                           </div>
                         </div>
 
@@ -472,12 +557,15 @@ export default function ItemsSection({
                                     const discountType =
                                       watch(`items.${index}.discountType`) ||
                                       "percentage";
+                                    const progressPercentage =
+                                      watch(`items.${index}.progressPercentage`) || 100;
 
                                     const total = calculateItemTotal(
                                       quantity,
                                       unitPrice,
                                       discount,
-                                      discountType
+                                      discountType,
+                                      progressPercentage
                                     );
                                     setValue(`items.${index}.total`, total, {
                                       shouldDirty: true,
@@ -678,12 +766,17 @@ export default function ItemsSection({
                                         parseFloat(
                                           watch(`items.${index}.unitPrice`)
                                         ) || 0;
+                                      const progressPercentage =
+                                        parseFloat(
+                                          watch(`items.${index}.progressPercentage`)
+                                        ) || 100;
 
                                       const total = calculateItemTotal(
                                         quantity,
                                         unitPrice,
                                         discount,
-                                        value
+                                        value,
+                                        progressPercentage
                                       );
 
                                       setValue(`items.${index}.total`, total, {
@@ -769,6 +862,8 @@ export default function ItemsSection({
                                     const discountType =
                                       watch(`items.${index}.discountType`) ||
                                       "percentage";
+                                    const progressPercentage =
+                                      watch(`items.${index}.progressPercentage`) || 100;
 
                                     // Mettre à jour la valeur du champ immédiatement
                                     setValue(
@@ -785,7 +880,8 @@ export default function ItemsSection({
                                       quantity,
                                       unitPrice,
                                       discountValue,
-                                      discountType
+                                      discountType,
+                                      progressPercentage
                                     );
 
                                     setValue(`items.${index}.total`, total, {

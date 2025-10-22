@@ -91,6 +91,7 @@ export const INVOICE_FRAGMENT = gql`
       discountType
       details
       vatExemptionText
+      progressPercentage
     }
     customFields {
       key
@@ -154,6 +155,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
       unit
       discount
       discountType
+      progressPercentage
     }
     client {
       id

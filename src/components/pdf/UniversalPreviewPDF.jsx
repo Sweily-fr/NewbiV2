@@ -4,9 +4,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
-// Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise
-const calculateItemTotal = (quantity, unitPrice, discount, discountType) => {
+// Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
+const calculateItemTotal = (quantity, unitPrice, discount, discountType, progressPercentage = 100) => {
   let subtotal = (quantity || 1) * (unitPrice || 0);
+
+  // Appliquer le pourcentage d'avancement
+  const progress = Math.min(Math.max(progressPercentage || 100, 0), 100);
+  subtotal = subtotal * (progress / 100);
 
   // Appliquer la remise si elle existe
   if (discount && discount > 0) {
@@ -121,6 +125,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
     items.forEach((item) => {
       const quantity = parseFloat(item.quantity) || 0;
       const unitPrice = parseFloat(item.unitPrice) || 0;
+      const progressPercentage = parseFloat(item.progressPercentage) || 100;
 
       // Calcul du montant HT de l'article (quantité * prix unitaire)
       subtotal += quantity * unitPrice;
@@ -130,6 +135,9 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
       const itemDiscountType = item.discountType || "percentage";
 
       let itemTotal = quantity * unitPrice;
+      
+      // Application du pourcentage d'avancement
+      itemTotal = itemTotal * (progressPercentage / 100);
 
       // Application de la remise sur l'article
       if (itemDiscount > 0) {
@@ -173,11 +181,15 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
     items.forEach((item) => {
       const quantity = parseFloat(item.quantity) || 0;
       const unitPrice = parseFloat(item.unitPrice) || 0;
+      const progressPercentage = parseFloat(item.progressPercentage) || 100;
       const vatRate =
         item.vatRate !== undefined ? parseFloat(item.vatRate) : 20;
 
       // 1. Calcul du montant HT de l'article avant remises
       let itemSubtotal = quantity * unitPrice;
+      
+      // 1.5. Application du pourcentage d'avancement
+      itemSubtotal = itemSubtotal * (progressPercentage / 100);
 
       // 2. Application de la remise sur l'article si elle existe
       const itemDiscount = parseFloat(item.discount) || 0;
@@ -843,6 +855,14 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                           {item.details}
                         </div>
                       )}
+                      {item.progressPercentage && item.progressPercentage < 100 && (
+                        <div 
+                          className="text-[9px] mt-0.5"
+                          style={{ color: data.appearance?.headerBgColor || "#5b50FF" }}
+                        >
+                          Avancement: {parseFloat(item.progressPercentage).toFixed(0)}%
+                        </div>
+                      )}
                       {item.discount > 0 && (
                         <div className="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5">
                           Remise:{" "}
@@ -880,9 +900,9 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                             {formatCurrency(
                               isCreditNote
                                 ? -Math.abs(
-                                    (item.quantity || 0) * (item.unitPrice || 0)
+                                    (item.quantity || 0) * (item.unitPrice || 0) * ((item.progressPercentage || 100) / 100)
                                   )
-                                : (item.quantity || 0) * (item.unitPrice || 0)
+                                : (item.quantity || 0) * (item.unitPrice || 0) * ((item.progressPercentage || 100) / 100)
                             )}
                           </span>
                           <span>
@@ -893,14 +913,16 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                                       item.quantity || 0,
                                       item.unitPrice || 0,
                                       item.discount || 0,
-                                      item.discountType || "percentage"
+                                      item.discountType || "percentage",
+                                      item.progressPercentage || 100
                                     )
                                   )
                                 : calculateItemTotal(
                                     item.quantity || 0,
                                     item.unitPrice || 0,
                                     item.discount || 0,
-                                    item.discountType || "percentage"
+                                    item.discountType || "percentage",
+                                    item.progressPercentage || 100
                                   )
                             )}
                           </span>
@@ -909,9 +931,9 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                         formatCurrency(
                           isCreditNote
                             ? -Math.abs(
-                                (item.quantity || 0) * (item.unitPrice || 0)
+                                (item.quantity || 0) * (item.unitPrice || 0) * ((item.progressPercentage || 100) / 100)
                               )
-                            : (item.quantity || 0) * (item.unitPrice || 0)
+                            : (item.quantity || 0) * (item.unitPrice || 0) * ((item.progressPercentage || 100) / 100)
                         )
                       )}
                     </td>

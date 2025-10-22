@@ -85,6 +85,7 @@ export const QUOTE_FRAGMENT = gql`
       discountType
       details
       vatExemptionText
+      progressPercentage
     }
     customFields {
       key
