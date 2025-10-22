@@ -291,18 +291,18 @@ export default function KanbanBoardPage({ params }) {
               <ToggleGroupItem
                 value="board"
                 aria-label="Vue tableau"
-                className="data-[state=on]:bg-background data-[state=on]:shadow-sm gap-1.5 px-2.5 py-1 h-7 rounded-sm"
+                className="data-[state=on]:bg-background data-[state=on]:shadow-sm gap-2 px-3 py-2 rounded-sm hidden md:flex"
               >
-                <LayoutGrid className="h-3 w-3" />
-                <span className="text-xs font-medium">Board</span>
+                <LayoutGrid className="h-4 w-4" />
+                <span className="text-sm font-medium">Board</span>
               </ToggleGroupItem>
               <ToggleGroupItem
                 value="list"
                 aria-label="Vue liste"
-                className="data-[state=on]:bg-background data-[state=on]:shadow-sm gap-1.5 px-2.5 py-1 h-7 rounded-sm"
+                className="data-[state=on]:bg-background data-[state=on]:shadow-sm gap-2 px-3 py-2 rounded-sm"
               >
-                <List className="h-3 w-3" />
-                <span className="text-xs font-medium">List</span>
+                <List className="h-4 w-4" />
+                <span className="text-sm font-medium">List</span>
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
@@ -315,7 +315,7 @@ export default function KanbanBoardPage({ params }) {
               <Input
                 type="search"
                 placeholder="Rechercher des tâches..."
-                className="pl-8 h-7 w-56 text-xs border-muted-foreground/20"
+                className="pl-8 w-56 border-muted-foreground/20"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -325,9 +325,8 @@ export default function KanbanBoardPage({ params }) {
             {collapsedColumnsCount > 0 && isBoard && (
               <Button
                 variant="outline"
-                size="sm"
                 onClick={expandAll}
-                className="text-xs whitespace-nowrap hidden sm:flex h-7 px-2.5"
+                className="whitespace-nowrap hidden sm:flex"
               >
                 Déplier toutes ({collapsedColumnsCount})
               </Button>
@@ -335,8 +334,7 @@ export default function KanbanBoardPage({ params }) {
             {isBoard && (
               <Button
                 variant="default"
-                size="sm"
-                className="font-medium whitespace-nowrap h-7 px-3 text-xs"
+                className="font-medium whitespace-nowrap"
                 onClick={openAddModal}
               >
                 Ajouter une colonne
