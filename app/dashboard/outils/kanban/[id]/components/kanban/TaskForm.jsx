@@ -68,6 +68,7 @@ export function TaskForm({
       ? `${String(new Date(task.dueDate).getHours()).padStart(2, "0")}:${String(new Date(task.dueDate).getMinutes()).padStart(2, "0")}`
       : "12:00"
   );
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -266,13 +267,18 @@ export function TaskForm({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Date d'échéance</FormLabel>
-                  <Popover modal={true}>
+                  <Popover modal={false} open={calendarOpen} onOpenChange={setCalendarOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={`w-full justify-start text-left font-normal ${!field.value && 'text-muted-foreground'}`}
                         disabled={isLoading}
                         type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setCalendarOpen(!calendarOpen);
+                        }}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
                         {field.value ? (
@@ -288,24 +294,36 @@ export function TaskForm({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value || undefined}
-                        onSelect={(date) => {
-                          field.onChange(date);
-                        }}
-                        initialFocus
-                        locale={fr}
-                        disabled={isLoading}
-                      />
-                      <div className="px-4 pb-4 space-y-2">
-                        <Label>Heure</Label>
-                        <Input
-                          type="time"
-                          value={selectedTime}
-                          onChange={(e) => setSelectedTime(e.target.value)}
-                          className="mt-1"
-                        />
+                      <div className="flex flex-col">
+                        <div className="border-b p-4">
+                          <Calendar
+                            mode="single"
+                            selected={field.value || undefined}
+                            onSelect={(date) => {
+                              field.onChange(date);
+                            }}
+                            initialFocus
+                            locale={fr}
+                            disabled={isLoading}
+                            className="border-0"
+                          />
+                        </div>
+                        <div className="p-4 space-y-2">
+                          <Label>Heure</Label>
+                          <Input
+                            type="time"
+                            value={selectedTime}
+                            onChange={(e) => setSelectedTime(e.target.value)}
+                            className="mt-1"
+                          />
+                          <Button
+                            type="button"
+                            className="w-full"
+                            onClick={() => setCalendarOpen(false)}
+                          >
+                            Valider
+                          </Button>
+                        </div>
                       </div>
                     </PopoverContent>
                   </Popover>
