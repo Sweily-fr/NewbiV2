@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Download, Eye, RefreshCw, AlertCircle } from "lucide-react";
+import { FileText, Download, Eye, LoaderCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useStripeInvoices } from "@/src/hooks/useStripeInvoices";
@@ -116,7 +116,11 @@ export default function FacturationSection() {
           disabled={loading}
           className="flex items-center gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          {loading ? (
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+          ) : (
+            <LoaderCircle className="h-4 w-4" />
+          )}
           Actualiser
         </Button>
       </div>
@@ -292,7 +296,7 @@ export default function FacturationSection() {
                   onClick={refetch}
                   className="flex items-center gap-2"
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <LoaderCircle className="h-4 w-4" />
                   Actualiser
                 </Button>
               )}

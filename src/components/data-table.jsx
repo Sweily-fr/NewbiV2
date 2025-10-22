@@ -28,10 +28,10 @@ import {
   IconDotsVertical,
   IconGripVertical,
   IconLayoutColumns,
-  IconLoader,
   IconPlus,
   IconTrendingUp,
 } from "@tabler/icons-react";
+import { LoaderCircle } from "lucide-react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -194,7 +194,7 @@ const columns = [
         {row.original.status === "Done" ? (
           <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
         ) : (
-          <IconLoader />
+          <LoaderCircle className="h-4 w-4 animate-spin" />
         )}
         {row.original.status}
       </Badge>
@@ -414,7 +414,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
           {row.original.status === "Done" ? (
             <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
           ) : (
-            <IconLoader />
+            <LoaderCircle className="h-4 w-4 animate-spin" />
           )}
           {row.original.status}
         </Badge>

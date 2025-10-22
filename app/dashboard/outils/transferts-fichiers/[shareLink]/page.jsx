@@ -22,6 +22,7 @@ import {
   IconCheck,
   IconCreditCard,
 } from "@tabler/icons-react";
+import { LoaderCircle } from "lucide-react";
 import { useQuery, useMutation } from "@apollo/client";
 import {
   GET_TRANSFER_BY_LINK,
@@ -171,7 +172,7 @@ export default function TransferPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }

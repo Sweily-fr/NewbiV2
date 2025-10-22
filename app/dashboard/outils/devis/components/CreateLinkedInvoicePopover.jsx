@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
-import { FileText, Plus, AlertCircle, Euro, Calculator } from "lucide-react";
+import { FileText, Plus, AlertCircle, Euro, Calculator, LoaderCircle } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
 export default function CreateLinkedInvoicePopover({
@@ -272,7 +272,7 @@ export default function CreateLinkedInvoicePopover({
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
                   Création...
                 </>
               ) : (
