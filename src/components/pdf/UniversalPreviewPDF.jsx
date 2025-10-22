@@ -169,6 +169,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
     }
 
     // Calcul de la TVA sur le montant après toutes les remises (articles + globale)
+    // Auto-liquidation : TVA = 0 si isReverseCharge = true
     items.forEach((item) => {
       const quantity = parseFloat(item.quantity) || 0;
       const unitPrice = parseFloat(item.unitPrice) || 0;
@@ -206,12 +207,13 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
       }
 
       // 4. Calcul de la TVA sur le montant après toutes les remises
-      const itemTax = vatRate > 0 ? itemSubtotal * (vatRate / 100) : 0;
+      // Auto-liquidation : TVA = 0 si isReverseCharge = true
+      const itemTax = (data.isReverseCharge || vatRate === 0) ? 0 : itemSubtotal * (vatRate / 100);
 
       totalTax += itemTax;
 
-      // On n'ajoute la TVA au détail que si le taux est supérieur à 0
-      if (vatRate > 0) {
+      // On n'ajoute la TVA au détail que si le taux est supérieur à 0 et pas d'auto-liquidation
+      if (vatRate > 0 && !data.isReverseCharge) {
         if (!taxesByRate[vatRate]) {
           taxesByRate[vatRate] = 0;
         }
@@ -233,14 +235,16 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
       const shippingVatRate = parseFloat(shippingData.shippingVatRate) || 20;
 
       // Calcul de la TVA sur la livraison
-      shippingTax =
-        shippingVatRate > 0 ? shippingAmountHT * (shippingVatRate / 100) : 0;
+      // Auto-liquidation : TVA = 0 si isReverseCharge = true
+      shippingTax = (data.isReverseCharge || shippingVatRate === 0) 
+        ? 0 
+        : shippingAmountHT * (shippingVatRate / 100);
 
       // Ajouter la TVA de livraison au total des taxes
       totalTax += shippingTax;
 
-      // Ajouter la TVA de livraison au détail par taux si le taux est supérieur à 0
-      if (shippingVatRate > 0) {
+      // Ajouter la TVA de livraison au détail par taux si le taux est supérieur à 0 et pas d'auto-liquidation
+      if (shippingVatRate > 0 && !data.isReverseCharge) {
         if (!taxesByRate[shippingVatRate]) {
           taxesByRate[shippingVatRate] = 0;
         }
@@ -1101,8 +1105,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
               </div>
             )}
 
-            {/* 4. Détail des TVA par taux */}
-            {taxDetails.length > 0
+            {/* 4. Détail des TVA par taux - Masqué si auto-liquidation */}
+            {!data.isReverseCharge && taxDetails.length > 0
               ? taxDetails.map((tax, index) => (
                   <div
                     key={`tax-${index}`}
@@ -1116,7 +1120,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                     </span>
                   </div>
                 ))
-              : totalTax > 0 && (
+              : !data.isReverseCharge && totalTax > 0 && (
                   <div className="flex justify-between py-1 px-3">
                     <span className="text-[10px] dark:text-[#0A0A0A]">TVA</span>
                     <span className="dark:text-[#0A0A0A] text-[10px]">
@@ -1125,14 +1129,24 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                   </div>
                 )}
 
-            {/* 5. Total TVA */}
-            {totalTax > 0 && (
+            {/* 5. Total TVA - Masqué si auto-liquidation */}
+            {!data.isReverseCharge && totalTax > 0 && (
               <div className="flex justify-between py-1 px-3 font-medium">
                 <span className="text-[10px] dark:text-[#0A0A0A]">
                   Total TVA
                 </span>
                 <span className="dark:text-[#0A0A0A] text-[10px]">
                   {formatCurrency(totalTax)}
+                </span>
+              </div>
+            )}
+            
+            {/* Auto-liquidation : Afficher "TVA non applicable" au lieu des montants */}
+            {data.isReverseCharge && (
+              <div className="flex justify-between py-1 px-3">
+                <span className="text-[10px] dark:text-[#0A0A0A]">TVA</span>
+                <span className="dark:text-[#0A0A0A] text-[10px] italic">
+                  Auto-liquidation
                 </span>
               </div>
             )}
@@ -1171,8 +1185,17 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
           </div>
         </div>
 
-        {/* TEXTE D'EXONÉRATION DE TVA */}
-        {data.items &&
+        {/* MENTION AUTO-LIQUIDATION */}
+        {data.isReverseCharge && (
+          <div className="mb-4 text-[10px] pt-2">
+            <p className="text-gray-700 dark:text-[#0A0A0A] text-[10px]">
+              <span className="font-medium">Autoliquidation :</span> TVA non applicable, article 283 du CGI
+            </p>
+          </div>
+        )}
+
+        {/* TEXTE D'EXONÉRATION DE TVA - Masqué en auto-liquidation car déjà affiché au-dessus */}
+        {!data.isReverseCharge && data.items &&
           data.items.some(
             (item) =>
               (item.vatRate === 0 || item.vatRate === "0") &&

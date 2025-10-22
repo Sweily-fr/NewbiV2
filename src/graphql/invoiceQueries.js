@@ -29,6 +29,7 @@ export const INVOICE_FRAGMENT = gql`
     discountAmount
     stripeInvoiceId
     showBankDetails
+    isReverseCharge
     createdAt
     updatedAt
     client {
@@ -144,6 +145,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
     finalTotalVAT
     finalTotalTTC
     stripeInvoiceId
+    isReverseCharge
     items {
       description
       quantity

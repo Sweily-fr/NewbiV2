@@ -1837,7 +1837,10 @@ function transformFormDataToInput(
 
         // Ajouter vatExemptionText uniquement si vatRate est 0
         if (itemVatRate === 0) {
-          itemData.vatExemptionText = item.vatExemptionText || "";
+          // Auto-liquidation : si isReverseCharge = true, utiliser "Auto-liquidation" comme texte d'exonération
+          itemData.vatExemptionText = formData.isReverseCharge
+            ? "Auto-liquidation"
+            : (item.vatExemptionText || "");
         }
 
         return itemData;
@@ -1876,6 +1879,7 @@ function transformFormDataToInput(
           shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
         }
       : null,
+    isReverseCharge: formData.isReverseCharge || false,
   };
 }
 

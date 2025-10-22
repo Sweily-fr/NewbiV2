@@ -3,6 +3,7 @@
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Package, Plus, Trash2, Percent } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -123,6 +124,27 @@ export default function ItemsSection({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-0">
+        {/* Checkbox Auto-liquidation */}
+        <div className="flex items-center space-x-2 py-2">
+          <Controller
+            name="isReverseCharge"
+            render={({ field }) => (
+              <Checkbox
+                id="isReverseCharge"
+                checked={field.value || false}
+                onCheckedChange={field.onChange}
+                disabled={!canEdit}
+              />
+            )}
+          />
+          <label
+            htmlFor="isReverseCharge"
+            className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+          >
+            Auto-liquidation (TVA non applicable - Article 283 du CGI)
+          </label>
+        </div>
+
         {/* Bouton ajouter article */}
         <div className="flex flex-col md:flex-row gap-3 items-stretch">
           {ProductSearchCombobox ? (
@@ -518,8 +540,8 @@ export default function ItemsSection({
                           </div>
                         </div>
 
-                        {/* Texte d'exonération TVA (affiché seulement si TVA = 0%) */}
-                        {watch(`items.${index}.vatRate`) === 0 && (
+                        {/* Texte d'exonération TVA (affiché seulement si TVA = 0% et pas d'auto-liquidation) */}
+                        {watch(`items.${index}.vatRate`) === 0 && !watch('isReverseCharge') && (
                           <div className="space-y-2">
                             <Label
                               htmlFor={`item-vat-exemption-${index}`}

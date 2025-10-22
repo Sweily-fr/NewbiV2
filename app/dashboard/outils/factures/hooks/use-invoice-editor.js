@@ -253,9 +253,9 @@ export function useInvoiceEditor({
             }
           }
           
-          // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+          // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
           const vatRate = parseFloat(item.vatRate) || 0;
-          if (vatRate === 0) {
+          if (vatRate === 0 && !formData.isReverseCharge) {
             const vatExemptionText = item.vatExemptionText;
             if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
               itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
@@ -693,9 +693,9 @@ export function useInvoiceEditor({
           fields.push("unitPrice");
         }
         
-        // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+        // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
         const vatRate = parseFloat(item.vatRate) || 0;
-        if (vatRate === 0) {
+        if (vatRate === 0 && !currentFormData.isReverseCharge) {
           const vatExemptionText = item.vatExemptionText;
           if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
             itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
@@ -712,8 +712,8 @@ export function useInvoiceEditor({
       if (invalidItems.length > 0) {
         errors.items = {
           message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
-          canEdit: false,
-          details: itemsWithErrors // Pour afficher les champs en rouge
+          canEdit: true,
+          details: itemsWithErrors
         };
       }
     }
@@ -942,9 +942,9 @@ export function useInvoiceEditor({
           fields.push("unitPrice");
         }
         
-        // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+        // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
         const vatRate = parseFloat(item.vatRate) || 0;
-        if (vatRate === 0) {
+        if (vatRate === 0 && !dataToTransform.isReverseCharge) {
           const vatExemptionText = item.vatExemptionText;
           if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
             itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
@@ -1466,17 +1466,25 @@ function transformFormDataToInput(formData, previousStatus = null) {
     client: cleanClient,
     companyInfo: cleanCompanyInfo,
     items:
-      formData.items?.map((item) => ({
-        description: item.description || "",
-        quantity: parseFloat(item.quantity) || 0,
-        unitPrice: parseFloat(item.unitPrice) || 0,
-        vatRate: parseFloat(item.vatRate || item.taxRate) || 0,
-        unit: item.unit || "pièce",
-        discount: parseFloat(item.discount) || 0,
-        discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
-        details: item.details || "",
-        vatExemptionText: item.vatExemptionText || "",
-      })) || [],
+      formData.items?.map((item) => {
+        const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
+        // Auto-liquidation : si isReverseCharge = true et TVA = 0, utiliser "Auto-liquidation" comme texte d'exonération
+        const vatExemptionText = formData.isReverseCharge && vatRate === 0
+          ? "Auto-liquidation"
+          : (item.vatExemptionText || "");
+        
+        return {
+          description: item.description || "",
+          quantity: parseFloat(item.quantity) || 0,
+          unitPrice: parseFloat(item.unitPrice) || 0,
+          vatRate: vatRate,
+          unit: item.unit || "pièce",
+          discount: parseFloat(item.discount) || 0,
+          discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
+          details: item.details || "",
+          vatExemptionText: vatExemptionText,
+        };
+      }) || [],
     discount: parseFloat(formData.discount) || 0,
     discountType: (formData.discountType || "PERCENTAGE").toUpperCase(),
     headerNotes: formData.headerNotes || "",
@@ -1512,6 +1520,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
           shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
         }
       : null,
+    isReverseCharge: formData.isReverseCharge || false,
   };
 }
 

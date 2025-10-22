@@ -416,12 +416,18 @@ export default function InvoiceSidebar({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">TVA</span>
                 <span>
-                  {formatCurrency(
-                    invoice.finalTotalVAT !== undefined && invoice.finalTotalVAT !== null
-                      ? invoice.finalTotalVAT
-                      : invoice.totalVAT !== undefined && invoice.totalVAT !== null
-                        ? invoice.totalVAT
-                        : 0
+                  {invoice.isReverseCharge ? (
+                    <span className="text-xs italic text-muted-foreground">
+                      Auto-liquidation
+                    </span>
+                  ) : (
+                    formatCurrency(
+                      invoice.finalTotalVAT !== undefined && invoice.finalTotalVAT !== null
+                        ? invoice.finalTotalVAT
+                        : invoice.totalVAT !== undefined && invoice.totalVAT !== null
+                          ? invoice.totalVAT
+                          : 0
+                    )
                   )}
                 </span>
               </div>

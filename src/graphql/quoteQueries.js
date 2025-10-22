@@ -108,6 +108,7 @@ export const QUOTE_FRAGMENT = gql`
       shippingVatRate
     }
     showBankDetails
+    isReverseCharge
     createdBy {
       id
       email
