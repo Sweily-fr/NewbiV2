@@ -68,7 +68,6 @@ export function TaskForm({
       ? `${String(new Date(task.dueDate).getHours()).padStart(2, "0")}:${String(new Date(task.dueDate).getMinutes()).padStart(2, "0")}`
       : "12:00"
   );
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -267,18 +266,13 @@ export function TaskForm({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Date d'échéance</FormLabel>
-                  <Popover modal={true} open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                  <Popover modal={true}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={`w-full justify-start text-left font-normal ${!field.value && 'text-muted-foreground'}`}
                         disabled={isLoading}
                         type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setIsDatePickerOpen(!isDatePickerOpen);
-                        }}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
                         {field.value ? (
@@ -312,13 +306,6 @@ export function TaskForm({
                           onChange={(e) => setSelectedTime(e.target.value)}
                           className="mt-1"
                         />
-                        <Button
-                          type="button"
-                          className="w-full"
-                          onClick={() => setIsDatePickerOpen(false)}
-                        >
-                          Valider
-                        </Button>
                       </div>
                     </PopoverContent>
                   </Popover>
