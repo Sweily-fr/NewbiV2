@@ -36,7 +36,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import { cn } from "@/src/lib/utils";
@@ -197,9 +196,18 @@ export default function QuoteInfoSection({
               <Label htmlFor="quote-prefix" className="text-sm font-normal">
                 Préfixe de devis
               </Label>
-              <span title="Astuce : Tapez MM pour le mois ou AAAA pour l'année">
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>
+                    Préfixe personnalisable pour identifier vos devis. Tapez{" "}
+                    <span className="font-mono">MM</span> pour insérer le mois actuel
+                    ou <span className="font-mono">AAAA</span> pour l'année.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="space-y-1">
               <div className="relative">
@@ -252,9 +260,18 @@ export default function QuoteInfoSection({
               <Label htmlFor="quote-number" className="text-sm font-normal">
                 Numéro de devis
               </Label>
-              <span title="Numéro séquentiel du devis. Il sera automatiquement formaté avec des zéros en préfixe (ex: 000001).">
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>
+                    Numéro unique et séquentiel de votre devis. Il sera automatiquement
+                    formaté avec des zéros (ex: 000001). La numérotation doit être
+                    continue sans saut.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="space-y-1">
               <Input
@@ -317,9 +334,17 @@ export default function QuoteInfoSection({
             <Label htmlFor="project-reference" className="text-sm font-normal">
               Référence projet
             </Label>
-            <span title="Référence du projet associé à ce devis (optionnel). Utile pour le suivi et l'organisation.">
-              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                <p>
+                  Référence du projet associé à ce devis (optionnel). Utile pour
+                  organiser et retrouver facilement vos devis par projet.
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="relative">
             <Input
@@ -341,9 +366,18 @@ export default function QuoteInfoSection({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label className="text-sm font-normal">Date d'émission *</Label>
-              <span title="Date à laquelle le devis est émis. Par défaut, c'est la date d'aujourd'hui.">
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>
+                    Date à laquelle le devis est créé et envoyé au client. Par défaut,
+                    c'est la date du jour. Cette date sert de référence pour calculer
+                    la validité du devis.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <input
               type="hidden"
@@ -407,9 +441,18 @@ export default function QuoteInfoSection({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label className="text-sm font-normal">Valide jusqu'au *</Label>
-              <span title="Date limite de validité du devis. Après cette date, le devis ne sera plus valable.">
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>
+                    Date limite de validité du devis. Après cette date, les conditions
+                    et tarifs proposés ne seront plus garantis. Utilisez le sélecteur
+                    pour ajouter automatiquement 15, 30, 45, 60 ou 90 jours.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="grid grid-cols-2 gap-2 w-full">
               <input
