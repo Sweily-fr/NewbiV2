@@ -24,7 +24,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import {
@@ -212,19 +211,18 @@ export default function InvoiceInfoSection({ canEdit }) {
               <Label htmlFor="invoice-prefix" className="text-sm font-light">
                 Préfixe de facture
               </Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="w-64">
-                    <p>
-                      Tapez <span className="font-mono">MM</span> pour le mois
-                      ou <span className="font-mono">AAAA</span> pour l'année
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>
+                    Préfixe personnalisable pour identifier vos factures. Tapez{" "}
+                    <span className="font-mono">MM</span> pour insérer le mois actuel
+                    ou <span className="font-mono">AAAA</span> pour l'année.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="space-y-1">
               <div className="relative">
@@ -252,18 +250,18 @@ export default function InvoiceInfoSection({ canEdit }) {
               <Label htmlFor="invoice-number" className="text-sm font-light">
                 Numéro de facture
               </Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="w-64">
-                    <p>
-                      Numéro unique généré automatiquement pour cette facture
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>
+                    Numéro unique et séquentiel de votre facture. Il sera automatiquement
+                    formaté avec des zéros (ex: 000001). La numérotation doit être
+                    continue sans saut pour respecter les obligations légales.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="space-y-1">
               <Input
@@ -345,16 +343,17 @@ export default function InvoiceInfoSection({ canEdit }) {
             >
               Référence devis
             </Label>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="w-64">
-                  <p>Référence du devis associé à cette facture (optionnel)</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                <p>
+                  Référence du devis qui a été accepté et transformé en facture
+                  (optionnel). Permet de faire le lien entre devis et facture.
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="relative">
             <Input
@@ -379,19 +378,18 @@ export default function InvoiceInfoSection({ canEdit }) {
                 <Label className="text-sm font-light">
                   Date d'émission <span className="text-red-500">*</span>
                 </Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="w-64">
-                      <p>
-                        La date d'émission est automatiquement définie lors de
-                        la création de la facture
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                    <p>
+                      Date à laquelle la facture est créée et envoyée au client.
+                      Cette date est automatiquement définie lors de la création et
+                      sert de référence pour calculer la date d'échéance.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <input
                 type="hidden"
@@ -489,16 +487,18 @@ export default function InvoiceInfoSection({ canEdit }) {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label className="text-sm font-light">Date d'échéance</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="w-64">
-                    <p>Date limite de paiement de la facture</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>
+                    Date limite de paiement de la facture. Au-delà de cette date,
+                    des pénalités de retard peuvent s'appliquer. Utilisez le sélecteur
+                    pour ajouter automatiquement 15, 30, 45 ou 60 jours.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full">
               <input
