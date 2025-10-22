@@ -308,83 +308,102 @@ export function TaskModal({
             {/* Date d'échéance */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Date d'échéance</Label>
-              <Popover modal={false} open={calendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !taskForm.dueDate && "text-muted-foreground"
-                    )}
-                    onClick={(e) => {
-                      console.log('🔍 [TaskModal] Button clicked, current state:', calendarOpen);
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Forcer l'ouverture manuellement
-                      setCalendarOpen(!calendarOpen);
-                    }}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {taskForm.dueDate ? (
-                      <span>
-                        {formatDate(taskForm.dueDate)} à {formatTimeDisplay(taskForm.dueDate)}
-                      </span>
-                    ) : (
-                      <span>Choisir une date et une heure</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <div className="flex flex-col">
-                    <div className="border-b p-4">
-                      <Calendar
-                        mode="single"
-                        selected={taskForm.dueDate ? new Date(taskForm.dueDate) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            handleDateChange(date);
-                          }
-                        }}
-                        initialFocus
-                        locale={fr}
-                        fromDate={new Date()}
-                        className="border-0"
-                      />
-                    </div>
-                    <div className="p-4 flex items-center gap-2">
-                      <div className="relative flex-1">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                          <Clock className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <Input
-                          type="time"
-                          value={taskForm.dueDate ? formatTimeInput(taskForm.dueDate) : '18:00'}
-                          onChange={handleTimeChange}
-                          className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
-                          step="300" // Pas de 5 minutes
+              
+              {/* Input natif sur mobile */}
+              <div className="md:hidden">
+                <Input
+                  type="datetime-local"
+                  value={taskForm.dueDate ? formatTimeInput(taskForm.dueDate) : ""}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const newDate = new Date(e.target.value);
+                      setTaskForm({ ...taskForm, dueDate: newDate.toISOString() });
+                    } else {
+                      setTaskForm({ ...taskForm, dueDate: '' });
+                    }
+                  }}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Popover sur desktop */}
+              <div className="hidden md:block">
+                <Popover modal={false} open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !taskForm.dueDate && "text-muted-foreground"
+                      )}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCalendarOpen(!calendarOpen);
+                      }}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {taskForm.dueDate ? (
+                        <span>
+                          {formatDate(taskForm.dueDate)} à {formatTimeDisplay(taskForm.dueDate)}
+                        </span>
+                      ) : (
+                        <span>Choisir une date et une heure</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <div className="flex flex-col">
+                      <div className="border-b p-4">
+                        <Calendar
+                          mode="single"
+                          selected={taskForm.dueDate ? new Date(taskForm.dueDate) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              handleDateChange(date);
+                            }
+                          }}
+                          initialFocus
+                          locale={fr}
+                          fromDate={new Date()}
+                          className="border-0"
                         />
                       </div>
-                      <Button 
-                        type="button" 
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTaskForm({ ...taskForm, dueDate: '' })}
-                        disabled={!taskForm.dueDate}
-                      >
-                        Effacer
-                      </Button>
-                      <Button 
-                        type="button" 
-                        size="sm"
-                        onClick={() => setCalendarOpen(false)}
-                      >
-                        Valider
-                      </Button>
+                      <div className="p-4 flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <Clock className="h-4 w-4 text-gray-500" />
+                          </div>
+                          <Input
+                            type="time"
+                            value={taskForm.dueDate ? formatTimeInput(taskForm.dueDate) : '18:00'}
+                            onChange={handleTimeChange}
+                            className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
+                            step="300" // Pas de 5 minutes
+                          />
+                        </div>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTaskForm({ ...taskForm, dueDate: '' })}
+                          disabled={!taskForm.dueDate}
+                        >
+                          Effacer
+                        </Button>
+                        <Button 
+                          type="button" 
+                          size="sm"
+                          onClick={() => setCalendarOpen(false)}
+                        >
+                          Valider
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             {/* Membres assignés */}
