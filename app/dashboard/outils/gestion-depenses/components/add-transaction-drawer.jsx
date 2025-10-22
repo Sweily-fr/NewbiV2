@@ -148,7 +148,11 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
     <Drawer open={open} onOpenChange={handleOpenChange} direction="right">
       <DrawerContent
         className="w-full h-full md:w-[620px] md:max-w-[620px] md:min-w-[620px] md:h-auto"
-        style={{ width: '100vw', height: '100vh' }}
+        style={{ 
+          width: '100vw', 
+          height: '100vh',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+        }}
       >
         <DrawerHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -362,7 +366,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
         </div>
 
         {/* Fixed footer with buttons */}
-        <div className="flex-shrink-0 border-t bg-white p-4" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 80px))' }}>
+        <div className="flex-shrink-0 border-t bg-white p-4">
           <form onSubmit={handleSubmit}>
             <div className="flex justify-end gap-2">
               <Button
