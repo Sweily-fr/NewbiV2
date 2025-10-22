@@ -267,66 +267,87 @@ export function TaskForm({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Date d'échéance</FormLabel>
-                  <Popover modal={false} open={calendarOpen} onOpenChange={setCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-start text-left font-normal ${!field.value && 'text-muted-foreground'}`}
-                        disabled={isLoading}
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setCalendarOpen(!calendarOpen);
-                        }}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                        {field.value ? (
-                          <span className="whitespace-nowrap">
-                            {format(field.value, "PPP", { locale: fr })}
-                            <span className="ml-2 text-muted-foreground">
-                              à {selectedTime}
+                  
+                  {/* Input natif sur mobile */}
+                  <div className="md:hidden">
+                    <Input
+                      type="datetime-local"
+                      value={field.value ? format(new Date(field.value), "yyyy-MM-dd'T'HH:mm") : ""}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          field.onChange(new Date(e.target.value));
+                        } else {
+                          field.onChange(null);
+                        }
+                      }}
+                      disabled={isLoading}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Popover sur desktop */}
+                  <div className="hidden md:block">
+                    <Popover modal={false} open={calendarOpen} onOpenChange={setCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={`w-full justify-start text-left font-normal ${!field.value && 'text-muted-foreground'}`}
+                          disabled={isLoading}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setCalendarOpen(!calendarOpen);
+                          }}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                          {field.value ? (
+                            <span className="whitespace-nowrap">
+                              {format(field.value, "PPP", { locale: fr })}
+                              <span className="ml-2 text-muted-foreground">
+                                à {selectedTime}
+                              </span>
                             </span>
-                          </span>
-                        ) : (
-                          <span>Sélectionner une date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <div className="flex flex-col">
-                        <div className="border-b p-4">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={(date) => {
-                              field.onChange(date);
-                            }}
-                            initialFocus
-                            locale={fr}
-                            disabled={isLoading}
-                            className="border-0"
-                          />
+                          ) : (
+                            <span>Sélectionner une date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <div className="flex flex-col">
+                          <div className="border-b p-4">
+                            <Calendar
+                              mode="single"
+                              selected={field.value || undefined}
+                              onSelect={(date) => {
+                                field.onChange(date);
+                              }}
+                              initialFocus
+                              locale={fr}
+                              disabled={isLoading}
+                              className="border-0"
+                            />
+                          </div>
+                          <div className="p-4 space-y-2">
+                            <Label>Heure</Label>
+                            <Input
+                              type="time"
+                              value={selectedTime}
+                              onChange={(e) => setSelectedTime(e.target.value)}
+                              className="mt-1"
+                            />
+                            <Button
+                              type="button"
+                              className="w-full"
+                              onClick={() => setCalendarOpen(false)}
+                            >
+                              Valider
+                            </Button>
+                          </div>
                         </div>
-                        <div className="p-4 space-y-2">
-                          <Label>Heure</Label>
-                          <Input
-                            type="time"
-                            value={selectedTime}
-                            onChange={(e) => setSelectedTime(e.target.value)}
-                            className="mt-1"
-                          />
-                          <Button
-                            type="button"
-                            className="w-full"
-                            onClick={() => setCalendarOpen(false)}
-                          >
-                            Valider
-                          </Button>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
