@@ -164,7 +164,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 space-y-4 pb-4">
+          <div className="px-4 space-y-4 pb-2 md:pb-4">
             {/* Type de document */}
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2">

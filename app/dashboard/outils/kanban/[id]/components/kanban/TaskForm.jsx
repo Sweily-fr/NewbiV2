@@ -267,10 +267,7 @@ export function TaskForm({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Date d'échéance</FormLabel>
-                  <Popover open={isDatePickerOpen} onOpenChange={(open) => {
-                    console.log('🔍 Popover onOpenChange:', open);
-                    setIsDatePickerOpen(open);
-                  }}>
+                  <Popover modal={true} open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -278,9 +275,9 @@ export function TaskForm({
                         disabled={isLoading}
                         type="button"
                         onClick={(e) => {
-                          console.log('🔍 Button clicked');
                           e.preventDefault();
                           e.stopPropagation();
+                          setIsDatePickerOpen(!isDatePickerOpen);
                         }}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
@@ -307,7 +304,7 @@ export function TaskForm({
                         locale={fr}
                         disabled={isLoading}
                       />
-                      <div className="px-4 pb-4">
+                      <div className="px-4 pb-4 space-y-2">
                         <Label>Heure</Label>
                         <Input
                           type="time"
@@ -315,6 +312,13 @@ export function TaskForm({
                           onChange={(e) => setSelectedTime(e.target.value)}
                           className="mt-1"
                         />
+                        <Button
+                          type="button"
+                          className="w-full"
+                          onClick={() => setIsDatePickerOpen(false)}
+                        >
+                          Valider
+                        </Button>
                       </div>
                     </PopoverContent>
                   </Popover>

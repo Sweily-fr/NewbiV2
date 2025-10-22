@@ -301,7 +301,7 @@ export default function KanbanBoardPage({ params }) {
                 aria-label="Vue liste"
                 className="data-[state=on]:bg-background data-[state=on]:shadow-sm gap-2 px-3 py-2 rounded-sm"
               >
-                <List className="h-4 w-4" />
+                <List className="h-4 w-4 md:inline hidden" />
                 <span className="text-sm font-medium">List</span>
               </ToggleGroupItem>
             </ToggleGroup>
