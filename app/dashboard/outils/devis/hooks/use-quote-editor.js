@@ -373,21 +373,17 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             setValue("companyInfo.siret", organization.siret || "");
             setValue("companyInfo.vatNumber", organization.vatNumber || "");
 
-            // Gérer l'adresse de l'entreprise
-            if (organization.address) {
-              if (typeof organization.address === "string") {
-                setValue("companyInfo.address", organization.address);
-              } else {
-                const addressString = [
-                  organization.address.street,
-                  organization.address.additional,
-                  `${organization.address.postalCode || ""} ${organization.address.city || ""}`.trim(),
-                  organization.address.country,
-                ]
-                  .filter(Boolean)
-                  .join("\n");
-                setValue("companyInfo.address", addressString);
-              }
+            // Gérer l'adresse de l'entreprise à partir des champs séparés de l'organisation
+            const addressString = [
+              organization.addressStreet,
+              `${organization.addressZipCode || ""} ${organization.addressCity || ""}`.trim(),
+              organization.addressCountry,
+            ]
+              .filter(Boolean)
+              .join("\n");
+            
+            if (addressString) {
+              setValue("companyInfo.address", addressString);
             }
 
             // Mettre à jour les paramètres d'apparence
