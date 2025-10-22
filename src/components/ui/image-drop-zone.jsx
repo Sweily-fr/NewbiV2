@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Upload, X, User, Building } from "lucide-react";
+import { Upload, X, User, Building, LoaderCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 
 /**
@@ -223,7 +223,7 @@ export function ImageDropZone({
         ) : (
           <div className="flex flex-col items-center justify-center text-gray-400">
             {isLoading ? (
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
+              <LoaderCircle className="h-6 w-6 animate-spin" />
             ) : (
               <>
                 <IconComponent className={iconSizes[size]} />

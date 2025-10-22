@@ -22,6 +22,7 @@ import {
   CircleArrowUp,
   CheckCircleIcon,
   XCircleIcon,
+  LoaderCircle,
 } from "lucide-react";
 import { Typewriter } from "@/src/components/ui/typewriter-text";
 
@@ -387,7 +388,7 @@ export default function AcceptInvitationPage() {
                 >
                   {isAccepting ? (
                     <>
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                      <LoaderCircle className="h-3 w-3 animate-spin mr-2" />
                       Traitement...
                     </>
                   ) : !session?.user ? (

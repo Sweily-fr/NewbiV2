@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, LoaderCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -82,7 +82,7 @@ export function CompanyInfoGuard({ children }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -158,7 +158,7 @@ export function CompanyInfoGuard({ children }) {
 
                 <div className="bg-[#5b4eff]/10 dark:bg-[#5b4eff]/20 border border-[#5b4eff]/30 dark:border-[#5b4eff]/40 rounded-lg p-2.5 sm:p-3 mt-3 sm:mt-4">
                   <p className="text-xs sm:text-sm text-[#5b4eff] dark:text-[#8b7fff] text-left">
-                    💡 <strong>Astuce :</strong> Ces informations seront
+                    <strong>Astuce :</strong> Ces informations seront
                     automatiquement utilisées pour générer vos documents
                     professionnels.
                   </p>
@@ -193,7 +193,7 @@ export function CompanyInfoGuard({ children }) {
         {/* Afficher un loader pendant que le dialog est ouvert */}
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <LoaderCircle className="h-8 w-8 animate-spin text-primary mx-auto" />
             <p className="text-sm text-muted-foreground">
               Vérification des informations...
             </p>
@@ -207,7 +207,7 @@ export function CompanyInfoGuard({ children }) {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center space-y-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <LoaderCircle className="h-8 w-8 animate-spin text-primary mx-auto" />
         <p className="text-sm text-muted-foreground">
           Chargement de l'organisation...
         </p>

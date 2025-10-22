@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { LoaderCircle } from "lucide-react";
 
 export function DeleteConfirmation({
   isOpen,
@@ -41,7 +42,7 @@ export function DeleteConfirmation({
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                <LoaderCircle className="h-4 w-4 animate-spin" />
                 Suppression...
               </span>
             ) : (

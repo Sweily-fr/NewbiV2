@@ -4,7 +4,7 @@ import {
   EyeOffIcon,
   PhoneIcon,
   AtSignIcon,
-  LoaderCircleIcon,
+  LoaderCircle,
   MicIcon,
   SearchIcon,
 } from "lucide-react";
@@ -165,7 +165,7 @@ function InputLoader({ className, label, placeholder, ...props }) {
         />
         <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
           {isLoading ? (
-            <LoaderCircleIcon
+            <LoaderCircle
               className="animate-spin"
               size={16}
               role="status"
