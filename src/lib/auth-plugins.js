@@ -542,17 +542,6 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
-        // Onboarding system fields
-        hasCompletedOnboarding: {
-          type: "boolean",
-          input: true,
-          required: false,
-        },
-        onboardingStep: {
-          type: "number",
-          input: true,
-          required: false,
-        },
       },
     },
   },

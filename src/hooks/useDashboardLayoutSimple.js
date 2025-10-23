@@ -267,7 +267,8 @@ export function useDashboardLayoutSimple() {
     const hasSeenOnboarding = session.user.hasSeenOnboarding;
 
     // Afficher l'onboarding si l'utilisateur est owner et n'a jamais vu l'onboarding
-    if (isOwner && !hasSeenOnboarding && !isOnboardingOpen) {
+    // Ne pas ajouter isOnboardingOpen dans les dépendances pour éviter la boucle
+    if (isOwner && !hasSeenOnboarding) {
       setIsOnboardingOpen(true);
     }
   }, [
@@ -275,7 +276,6 @@ export function useDashboardLayoutSimple() {
     session?.user?.role,
     session?.user?.hasSeenOnboarding,
     isHydrated,
-    isOnboardingOpen,
   ]);
 
   const completeOnboarding = async () => {

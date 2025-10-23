@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSession } from '@/src/lib/auth-client';
 import { useTrial } from '@/src/hooks/useTrial';
 import { authClient } from '@/src/lib/auth-client';
-import { updateOrganization } from '@/src/lib/organization-client';
 import { toast } from 'sonner';
 
 /**
@@ -182,17 +181,17 @@ export function useDashboardLayout() {
     refreshLayoutData();
   };
 
-  // Logique d'onboarding avec cache
+  // Logique d'onboarding basée sur le user (pas l'organization)
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
 
-  // Calculer l'état d'onboarding de manière dérivée (pas de useEffect)
+  // Calculer l'état d'onboarding de manière dérivée (basé sur user.hasSeenOnboarding)
   const shouldShowOnboardingModal = useMemo(() => {
-    if (!cachedData.user || !cachedData.organization) return false;
+    if (!cachedData.user) return false;
     const isOwner = cachedData.user.role === 'owner';
-    const hasCompletedOnboarding = cachedData.organization.hasCompletedOnboarding;
-    return isOwner && !hasCompletedOnboarding;
-  }, [cachedData.user?.role, cachedData.organization?.hasCompletedOnboarding]);
+    const hasSeenOnboarding = cachedData.user.hasSeenOnboarding;
+    return isOwner && !hasSeenOnboarding;
+  }, [cachedData.user?.role, cachedData.user?.hasSeenOnboarding]);
 
   // Mettre à jour l'état d'onboarding seulement quand nécessaire
   useEffect(() => {
@@ -202,21 +201,23 @@ export function useDashboardLayout() {
   }, [shouldShowOnboardingModal, isOnboardingOpen]);
 
   const completeOnboarding = async () => {
-    if (!cachedData.organization?.id) {
-      toast.error("Erreur lors de la finalisation de l'onboarding");
-      return;
-    }
-
     setOnboardingLoading(true);
     
     try {
-      await updateOrganization(cachedData.organization.id, {
-        hasCompletedOnboarding: true,
-        onboardingStep: 6,
+      // Marquer l'onboarding comme vu dans le user
+      await authClient.updateUser({
+        hasSeenOnboarding: true,
       });
 
       setIsOnboardingOpen(false);
       toast.success("Bienvenue sur Newbi ! 🎉");
+      
+      // Rafraîchir la session pour obtenir les nouvelles données
+      await authClient.getSession({
+        fetchOptions: {
+          cache: "no-store"
+        }
+      });
       
       // Invalider le cache pour forcer le rechargement
       refreshLayoutData();
@@ -274,7 +275,7 @@ export function useDashboardLayout() {
     skipOnboarding: completeOnboarding,
     onboardingLoading,
     shouldShowOnboarding: cachedData.user?.role === 'owner' && 
-                         !cachedData.organization?.hasCompletedOnboarding,
+                         !cachedData.user?.hasSeenOnboarding,
     
     // États de chargement
     isLoading: isLoading || sessionLoading || trial.loading,
