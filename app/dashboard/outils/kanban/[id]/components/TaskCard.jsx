@@ -142,7 +142,7 @@ export function TaskCard({ task, onEdit, onDelete }) {
         {...attributes}
         {...listeners}
         onClick={handleClick}
-        className={`bg-card text-card-foreground rounded-lg border border-border p-2 sm:p-3 mb-2 sm:mb-3 shadow-xs hover:shadow-sm transition-all duration-200 ease-out hover:bg-accent/10 will-change-transform min-h-[120px] flex flex-col ${isSortableDragging ? "opacity-50" : ""} cursor-pointer`}
+        className={`bg-card text-card-foreground rounded-lg border border-border p-2 sm:p-3 mb-2 sm:mb-3 shadow-xs hover:shadow-sm transition-all duration-200 ease-out hover:bg-accent/10 will-change-transform min-h-[148px] flex flex-col ${isSortableDragging ? "opacity-50" : ""} cursor-pointer`}
       >
         {/* En-tête de la carte */}
         <div className="flex items-start justify-between mb-1.5 sm:mb-2">

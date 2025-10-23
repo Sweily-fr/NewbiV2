@@ -106,6 +106,11 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
     onMembersChange(selectedMembers.filter(m => m.userId !== memberId));
   };
 
+  const handleWheel = (e) => {
+    // Permettre le scroll avec la molette/trackpad
+    e.stopPropagation();
+  };
+
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium">Membres</Label>
@@ -166,7 +171,14 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
             </h4>
           </div>
           
-          <ScrollArea className="h-[300px]">
+          <div 
+            className="h-[240px] overflow-y-scroll overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+            onWheel={handleWheel}
+            style={{
+              scrollBehavior: 'smooth',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
             {loading ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
                 Chargement des membres...
@@ -213,7 +225,7 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
                 })}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </PopoverContent>
       </Popover>
     </div>

@@ -21,6 +21,7 @@ import {
 } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { TaskCard } from "./TaskCard";
+import { TaskCardSkeleton } from "./TaskCardSkeleton";
 
 /**
  * Composant pour une colonne avec ses tâches dans le tableau Kanban
@@ -37,6 +38,7 @@ export function KanbanColumn({
   onToggleCollapse,
   dragHandleProps, // Props pour rendre le header draggable
   isDragging, // État de drag pour le feedback visuel
+  isLoading = false, // État de chargement pour afficher les skeletons
 }) {
   // Zone droppable pour les tâches
   const { setNodeRef, isOver } = useDroppable({
@@ -133,18 +135,29 @@ export function KanbanColumn({
             strategy={verticalListSortingStrategy}
           >
             <div className="mt-2 space-y-2">
-              {tasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onEdit={onEditTask}
-                  onDelete={onDeleteTask}
-                />
-              ))}
-              {tasks.length === 0 && (
-                <div className="w-full py-4 text-center text-sm text-muted-foreground">
-                  Aucune tâche
-                </div>
+              {isLoading ? (
+                // Afficher 3 skeletons lors du chargement
+                <>
+                  <TaskCardSkeleton />
+                  <TaskCardSkeleton />
+                  <TaskCardSkeleton />
+                </>
+              ) : (
+                <>
+                  {tasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onEdit={onEditTask}
+                      onDelete={onDeleteTask}
+                    />
+                  ))}
+                  {tasks.length === 0 && (
+                    <div className="w-full py-4 text-center text-sm text-muted-foreground">
+                      Aucune tâche
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </SortableContext>

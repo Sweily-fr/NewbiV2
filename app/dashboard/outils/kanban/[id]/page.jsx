@@ -375,22 +375,40 @@ export default function KanbanBoardPage({ params }) {
 
         {/* Vue Board */}
         {isBoard && (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={(args) => {
-            // Pour les colonnes, utiliser pointerWithin pour une meilleure détection
-            if (args.active.data.current?.type === 'column') {
-              return pointerWithin(args);
-            }
-            // Pour les tâches, utiliser closestCenter
-            return closestCenter(args);
-          }}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="min-h-[600px] w-max min-w-full">
-            {localColumns && localColumns.length > 0 ? (
+          <>
+            {loading ? (
+              // Afficher des skeletons de colonnes pendant le chargement
+              <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex-shrink-0">
+                      <div className="h-8 bg-muted rounded mb-3"></div>
+                      <div className="space-y-2">
+                        <div className="h-[148px] bg-muted rounded"></div>
+                        <div className="h-[148px] bg-muted rounded"></div>
+                        <div className="h-[148px] bg-muted rounded"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={(args) => {
+                  // Pour les colonnes, utiliser pointerWithin pour une meilleure détection
+                  if (args.active.data.current?.type === 'column') {
+                    return pointerWithin(args);
+                  }
+                  // Pour les tâches, utiliser closestCenter
+                  return closestCenter(args);
+                }}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="min-h-[600px] w-max min-w-full">
+                  {localColumns && localColumns.length > 0 ? (
               <>
                 {/* Espace réservé pour maintenir la hauteur */}
                 <div className="h-5 mb-4"></div>
@@ -423,6 +441,7 @@ export default function KanbanBoardPage({ params }) {
                               onToggleCollapse={() =>
                                 toggleColumnCollapse(column.id)
                               }
+                              isLoading={loading}
                             />
                           </SortableColumn>
                         );
@@ -447,79 +466,81 @@ export default function KanbanBoardPage({ params }) {
                   </SortableContext>
                 </div>
               </>
-            ) : (
-              <div className="text-center py-12">
-                <div className="text-muted-foreground mb-4">
-                  Ce tableau ne contient aucune colonne
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="text-muted-foreground mb-4">
+                        Ce tableau ne contient aucune colonne
+                      </div>
+                      <Button variant="default" onClick={openAddModal}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Créer votre première colonne
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <Button variant="default" onClick={openAddModal}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Créer votre première colonne
-                </Button>
-              </div>
-            )}
-          </div>
 
-          <DragOverlay
-            adjustScale={false}
-            dropAnimation={{
-              duration: 250,
-              easing: "cubic-bezier(0.25, 1, 0.5, 1)",
-            }}
-          >
-            {activeTask ? (
-              <div className="transform rotate-3 scale-105 shadow-2xl">
-                <TaskCard
-                  task={activeTask}
-                  onEdit={() => {}}
-                  onDelete={() => {}}
-                />
-              </div>
-            ) : null}
-            {activeColumn ? (
-              <div className="rotate-6 scale-105">
-                {/* Fond noir semi-transparent comme Trello */}
-                <div className="relative">
-                  <div className="absolute inset-0 bg-black/40 rounded-xl" />
-                  <div className="relative bg-muted/95 rounded-xl p-3 min-w-[280px] max-w-[280px] sm:min-w-[300px] sm:max-w-[300px] border-2 border-primary shadow-2xl">
-                    {/* Header de la colonne */}
-                    <div className="flex items-center gap-2 py-2 mb-3">
-                      <div
-                        className="w-[2px] h-4"
-                        style={{ backgroundColor: activeColumn.color }}
+                <DragOverlay
+                  adjustScale={false}
+                  dropAnimation={{
+                    duration: 250,
+                    easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+                  }}
+                >
+                  {activeTask ? (
+                    <div className="transform rotate-3 scale-105 shadow-2xl">
+                      <TaskCard
+                        task={activeTask}
+                        onEdit={() => {}}
+                        onDelete={() => {}}
                       />
-                      <h3 className="font-medium text-foreground">
-                        {activeColumn.title}
-                      </h3>
-                      <span className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-medium text-xs border-transparent bg-secondary text-secondary-foreground">
-                        {getTasksByColumn(activeColumn.id).length}
-                      </span>
                     </div>
-                    
-                    {/* Aperçu des tâches */}
-                    <div className="space-y-2 max-h-[400px] overflow-hidden">
-                      {getTasksByColumn(activeColumn.id).slice(0, 3).map((task) => (
-                        <div
-                          key={task.id}
-                          className="bg-card rounded-lg p-2 border border-border shadow-sm"
-                        >
-                          <p className="text-sm text-foreground line-clamp-2">
-                            {task.title}
-                          </p>
+                  ) : null}
+                  {activeColumn ? (
+                    <div className="rotate-6 scale-105">
+                      {/* Fond noir semi-transparent comme Trello */}
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-black/40 rounded-xl" />
+                        <div className="relative bg-muted/95 rounded-xl p-3 min-w-[280px] max-w-[280px] sm:min-w-[300px] sm:max-w-[300px] border-2 border-primary shadow-2xl">
+                          {/* Header de la colonne */}
+                          <div className="flex items-center gap-2 py-2 mb-3">
+                            <div
+                              className="w-[2px] h-4"
+                              style={{ backgroundColor: activeColumn.color }}
+                            />
+                            <h3 className="font-medium text-foreground">
+                              {activeColumn.title}
+                            </h3>
+                            <span className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-medium text-xs border-transparent bg-secondary text-secondary-foreground">
+                              {getTasksByColumn(activeColumn.id).length}
+                            </span>
+                          </div>
+                          
+                          {/* Aperçu des tâches */}
+                          <div className="space-y-2 max-h-[400px] overflow-hidden">
+                            {getTasksByColumn(activeColumn.id).slice(0, 3).map((task) => (
+                              <div
+                                key={task.id}
+                                className="bg-card rounded-lg p-2 border border-border shadow-sm"
+                              >
+                                <p className="text-sm text-foreground line-clamp-2">
+                                  {task.title}
+                                </p>
+                              </div>
+                            ))}
+                            {getTasksByColumn(activeColumn.id).length > 3 && (
+                              <div className="text-xs text-muted-foreground text-center py-1">
+                                +{getTasksByColumn(activeColumn.id).length - 3} autres tâches
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      ))}
-                      {getTasksByColumn(activeColumn.id).length > 3 && (
-                        <div className="text-xs text-muted-foreground text-center py-1">
-                          +{getTasksByColumn(activeColumn.id).length - 3} autres tâches
-                        </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+            )}
+          </>
         )}
       </div>
 
