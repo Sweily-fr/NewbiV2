@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import { Tag } from "lucide-react";
+import { documentSuggestions } from "@/src/utils/document-suggestions";
+import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
   Card,
   CardContent,
@@ -194,9 +196,16 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
             <CardContent className="space-y-4 p-0">
               {/* Notes d'en-tête */}
               <div>
-                <Label htmlFor="header-notes" className="font-light">
-                  Notes d'en-tête
-                </Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="header-notes" className="font-light">
+                    Notes d'en-tête
+                  </Label>
+                  <SuggestionDropdown
+                    suggestions={documentSuggestions.headerNotes}
+                    onSelect={(value) => setValue("headerNotes", value, { shouldDirty: true })}
+                    label="Suggestions"
+                  />
+                </div>
                 <div className="space-y-1">
                   <Textarea
                     id="header-notes"
@@ -223,9 +232,16 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
 
               {/* Notes de bas de page */}
               <div>
-                <Label htmlFor="footer-notes" className="font-light">
-                  Notes de bas de page
-                </Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="footer-notes" className="font-light">
+                    Notes de bas de page
+                  </Label>
+                  <SuggestionDropdown
+                    suggestions={documentSuggestions.footerNotes}
+                    onSelect={(value) => setValue("footerNotes", value, { shouldDirty: true })}
+                    label="Suggestions"
+                  />
+                </div>
                 <div className="space-y-1">
                   <Textarea
                     id="footer-notes"
@@ -252,9 +268,16 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
 
               {/* Conditions générales */}
               <div>
-                <Label htmlFor="terms-conditions" className="font-light">
-                  Conditions générales
-                </Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="terms-conditions" className="font-light">
+                    Conditions générales
+                  </Label>
+                  <SuggestionDropdown
+                    suggestions={documentSuggestions.termsAndConditions}
+                    onSelect={(value) => setValue("termsAndConditions", value, { shouldDirty: true })}
+                    label="Suggestions"
+                  />
+                </div>
                 <div className="space-y-1">
                   <Textarea
                     id="terms-conditions"

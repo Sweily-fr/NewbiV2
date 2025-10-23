@@ -131,6 +131,39 @@ export function useInvoiceEditor({
     });
   };
   
+  // Mettre à jour companyInfo quand organization est chargée
+  useEffect(() => {
+    if (organization && !formData.companyInfo?.legalForm) {
+      // Toujours mettre à jour avec les données complètes de l'organization
+      const updatedCompanyInfo = {
+        name: organization?.companyName || "",
+        address: {
+          street: organization?.addressStreet || "",
+          city: organization?.addressCity || "",
+          postalCode: organization?.addressZipCode || "",
+          country: organization?.addressCountry || "",
+        },
+        email: organization?.companyEmail || "",
+        phone: organization?.companyPhone || "",
+        siret: organization?.siret || "",
+        vatNumber: organization?.vatNumber || "",
+        rcs: organization?.rcs || "",
+        legalForm: organization?.legalForm || "",
+        capitalSocial: organization?.capitalSocial || "",
+        fiscalRegime: organization?.fiscalRegime || "",
+        website: organization?.website || "",
+        logo: organization?.logo || "",
+        bankDetails: {
+          iban: organization?.bankIban || "",
+          bic: organization?.bankBic || "",
+          bankName: organization?.bankName || "",
+        },
+      };
+      
+      setValue("companyInfo", updatedCompanyInfo, { shouldDirty: false });
+    }
+  }, [organization, formData.companyInfo?.legalForm, setValue]);
+  
   // Re-valider quand le client change
   useEffect(() => {
     setValidationErrors((prevErrors) => {
@@ -1098,6 +1131,10 @@ function getInitialFormData(mode, initialData, session, organization) {
     phone: organization?.companyPhone || "",
     siret: organization?.siret || "",
     vatNumber: organization?.vatNumber || "",
+    rcs: organization?.rcs || "",
+    legalForm: organization?.legalForm || "",
+    capitalSocial: organization?.capitalSocial || "",
+    fiscalRegime: organization?.fiscalRegime || "",
     website: organization?.website || "",
     logo: organization?.logo || "",
     bankDetails: {
@@ -1259,6 +1296,10 @@ function transformInvoiceToFormData(invoice) {
           phone: invoice.companyInfo.phone || "",
           siret: invoice.companyInfo.siret || "",
           vatNumber: invoice.companyInfo.vatNumber || "",
+          rcs: invoice.companyInfo.rcs || "",
+          legalForm: invoice.companyInfo.legalForm || "",
+          capitalSocial: invoice.companyInfo.capitalSocial || "",
+          fiscalRegime: invoice.companyInfo.fiscalRegime || "",
           website: invoice.companyInfo.website || "",
           logo: invoice.companyInfo.logo || "",
           // Nettoyer les métadonnées GraphQL des coordonnées bancaires

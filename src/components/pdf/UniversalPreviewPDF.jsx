@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { generateDynamicFooter } from "@/src/utils/document-suggestions";
 
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
 const calculateItemTotal = (quantity, unitPrice, discount, discountType, progressPercentage = 100) => {
@@ -1356,7 +1357,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
 
         {/* Afficher le trait de séparation seulement si des coordonnées bancaires ou des notes sont présentes */}
         <div
-          className={`text-[10px] dark:text-[#0A0A0A] ${
+          className={`text-[10px] dark:text-[#0A0A0A] whitespace-pre-line ${
             (data.showBankDetails === true &&
               type !== "quote" &&
               !isCreditNote) ||
@@ -1365,13 +1366,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
               : "pt-2"
           }`}
         >
-          <div>
-            {data.companyInfo?.name || "Sweily"}
-            {data.companyInfo?.legalForm && `, ${data.companyInfo.legalForm}`}
-            {data.companyInfo?.capitalSocial &&
-              ` au capital de ${data.companyInfo.capitalSocial}`}
-            {data.companyInfo?.rcs && ` - ${data.companyInfo.rcs}`}
-          </div>
+          {generateDynamicFooter(data.companyInfo)}
         </div>
       </div>
       </div>

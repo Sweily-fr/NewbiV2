@@ -372,6 +372,10 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             setValue("companyInfo.website", organization.website || "");
             setValue("companyInfo.siret", organization.siret || "");
             setValue("companyInfo.vatNumber", organization.vatNumber || "");
+            setValue("companyInfo.rcs", organization.rcs || "");
+            setValue("companyInfo.legalForm", organization.legalForm || "");
+            setValue("companyInfo.capitalSocial", organization.capitalSocial || "");
+            setValue("companyInfo.fiscalRegime", organization.fiscalRegime || "");
 
             // Gérer l'adresse de l'entreprise à partir des champs séparés de l'organisation
             const addressString = [
@@ -1207,6 +1211,10 @@ function getInitialFormData(mode, initialData, session) {
       website: userCompany.website || "",
       siret: userCompany.siret || "",
       vatNumber: userCompany.vatNumber || "",
+      rcs: userCompany.rcs || "",
+      legalForm: userCompany.legalForm || "",
+      capitalSocial: userCompany.capitalSocial || "",
+      fiscalRegime: userCompany.fiscalRegime || "",
       address:
         typeof userCompany.address === "string"
           ? userCompany.address
