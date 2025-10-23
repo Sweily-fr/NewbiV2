@@ -66,8 +66,8 @@ export const getVisibleFields = (legalForm, isVatSubject = false, hasCommercialA
 export const VALIDATION_PATTERNS = {
   // Informations générales - Synchronisé avec le backend (validators.js)
   companyName: {
-    pattern: /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&]{2,50}$/,
-    message: "Le nom doit contenir entre 2 et 50 caractères (lettres, chiffres, espaces et caractères spéciaux autorisés, < et > interdits)",
+    pattern: /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&/\\:;!?@#$%*+=[\]{}|~"_]{2,200}$/,
+    message: "Le nom doit contenir entre 2 et 200 caractères (lettres, chiffres, espaces et caractères spéciaux autorisés, < et > interdits)",
   },
 
   email: {

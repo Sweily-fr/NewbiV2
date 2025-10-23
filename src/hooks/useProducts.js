@@ -43,13 +43,23 @@ export const useCreateProduct = () => {
     onCompleted: () => {
       toast.success('Produit créé avec succès');
     },
-    onError: () => {
-      toast.error('Erreur lors de la création du produit');
+    onError: (error) => {
+      // Afficher un message d'erreur plus détaillé si disponible
+      const errorMessage = error.message || 'Erreur lors de la création du produit';
+      toast.error(errorMessage);
     },
   });
 
   return {
-    createProduct: (input) => createProduct({ variables: { input } }),
+    createProduct: async (input) => {
+      try {
+        const result = await createProduct({ variables: { input } });
+        return result;
+      } catch {
+        // L'erreur est déjà gérée par onError, on retourne null
+        return null;
+      }
+    },
     loading,
     error,
   };
@@ -62,13 +72,23 @@ export const useUpdateProduct = () => {
     onCompleted: () => {
       toast.success('Produit modifié avec succès');
     },
-    onError: () => {
-      toast.error('Erreur lors de la modification du produit');
+    onError: (error) => {
+      // Afficher un message d'erreur plus détaillé si disponible
+      const errorMessage = error.message || 'Erreur lors de la modification du produit';
+      toast.error(errorMessage);
     },
   });
 
   return {
-    updateProduct: (id, input) => updateProduct({ variables: { id, input } }),
+    updateProduct: async (id, input) => {
+      try {
+        const result = await updateProduct({ variables: { id, input } });
+        return result;
+      } catch {
+        // L'erreur est déjà gérée par onError, on retourne null
+        return null;
+      }
+    },
     loading,
     error,
   };

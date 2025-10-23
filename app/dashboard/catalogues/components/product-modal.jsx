@@ -174,13 +174,19 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         result = await createProduct(productData);
       }
 
-      if (result) {
-        onSave?.(result);
+      // Ne fermer le modal que si la mutation a réussi (result n'est pas null et result.data existe)
+      if (result && result.data) {
+        const savedProduct = isEditing ? result.data.updateProduct : result.data.createProduct;
+        onSave?.(savedProduct);
         onOpenChange(false);
         // Reset sera fait automatiquement par l'useEffect quand le modal se ferme
       }
+      // Si result est null ou result.errors existe, la mutation a échoué
+      // Le modal reste ouvert pour que l'utilisateur puisse corriger
     } catch (error) {
       // Error already handled by useCreateProduct/useUpdateProduct hooks
+      // Le modal reste ouvert pour que l'utilisateur puisse corriger
+      console.error('Erreur lors de la soumission:', error);
     }
   };
 
@@ -224,16 +230,25 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
               <Label className="font-normal">Nom du produit *</Label>
               <Input
                 placeholder="Ex: Ordinateur portable Dell XPS 13"
+                className={errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
                 {...register("name", { 
                   required: "Le nom du produit est requis",
                   minLength: {
                     value: 2,
                     message: "Le nom doit contenir au moins 2 caractères"
+                  },
+                  maxLength: {
+                    value: 200,
+                    message: "Le nom ne peut pas dépasser 200 caractères"
+                  },
+                  pattern: {
+                    value: /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&/\\:;!?@#$%*+=[\]{}|~"_]{2,200}$/,
+                    message: "Le nom contient des caractères non autorisés (< et > sont interdits)"
                   }
                 })}
               />
               {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
+                <p className="text-sm text-red-500 font-medium">{errors.name.message}</p>
               )}
             </div>
 
@@ -261,7 +276,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     step="0.01"
                     min="0"
                     placeholder="0.00"
-                    className="pr-8"
+                    className={errors.unitPrice ? "pr-8 border-red-500 focus-visible:ring-red-500" : "pr-8"}
                     {...register("unitPrice", { 
                       required: "Le prix unitaire est requis",
                       min: {
@@ -275,7 +290,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                   </span>
                 </div>
                 {errors.unitPrice && (
-                  <p className="text-sm text-red-500">{errors.unitPrice.message}</p>
+                  <p className="text-sm text-red-500 font-medium">{errors.unitPrice.message}</p>
                 )}
               </div>
 
@@ -289,7 +304,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     rules={{ required: "Le taux de TVA est requis" }}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className={errors.vatRate ? "w-full border-red-500" : "w-full"}>
                           <SelectValue placeholder="TVA" />
                         </SelectTrigger>
                         <SelectContent>
@@ -303,7 +318,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     )}
                   />
                   {errors.vatRate && (
-                    <p className="text-sm text-red-500">{errors.vatRate.message}</p>
+                    <p className="text-sm text-red-500 font-medium">{errors.vatRate.message}</p>
                   )}
                 </div>
 
@@ -315,7 +330,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     rules={{ required: "L'unité est requise" }}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className={errors.unit ? "w-full border-red-500" : "w-full"}>
                           <SelectValue placeholder="Unité" />
                         </SelectTrigger>
                         <SelectContent>
@@ -329,7 +344,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     )}
                   />
                   {errors.unit && (
-                    <p className="text-sm text-red-500">{errors.unit.message}</p>
+                    <p className="text-sm text-red-500 font-medium">{errors.unit.message}</p>
                   )}
                 </div>
               </div>
