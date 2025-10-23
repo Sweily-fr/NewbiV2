@@ -783,6 +783,51 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
           </div>
         )}
 
+        {/* MONTANT DU MARCHÉ - Affiché si au moins un article a un avancement < 100% */}
+        {(() => {
+          // Vérifier si au moins un article a un avancement < 100%
+          const hasProgressItems = data.items?.some(
+            (item) => item.progressPercentage && item.progressPercentage < 100
+          );
+
+          if (!hasProgressItems || isCreditNote) return null;
+
+          // Calculer le montant total HT du marché (sans tenir compte de l'avancement)
+          const marketTotal = data.items.reduce((total, item) => {
+            const quantity = parseFloat(item.quantity) || 0;
+            const unitPrice = parseFloat(item.unitPrice) || 0;
+            let itemTotal = quantity * unitPrice;
+
+            // Appliquer la remise sur l'article si elle existe
+            const itemDiscount = parseFloat(item.discount) || 0;
+            if (itemDiscount > 0) {
+              if (
+                item.discountType === "PERCENTAGE" ||
+                item.discountType === "percentage"
+              ) {
+                itemTotal = itemTotal * (1 - Math.min(itemDiscount, 100) / 100);
+              } else {
+                itemTotal = Math.max(0, itemTotal - itemDiscount);
+              }
+            }
+
+            return total + itemTotal;
+          }, 0);
+
+          return (
+            <div className="mb-3">
+              <div className="flex items-center gap-3">
+                <span className="font-normal text-[10px] dark:text-[#0A0A0A]">
+                  Montant du marché :
+                </span>
+                <span className="font-medium text-[11px] dark:text-[#0A0A0A]">
+                  {formatCurrency(marketTotal)}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* TABLEAU DES ARTICLES */}
         <div className="mb-6">
           <table className="w-full border-collapse text-xs border-b border-[#CCCCCC]">
