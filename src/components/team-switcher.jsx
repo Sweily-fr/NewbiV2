@@ -1,7 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { ChevronsUpDown, Plus, Crown, Settings, Users } from "lucide-react";
+import {
+  ChevronsUpDown,
+  Plus,
+  Crown,
+  Settings,
+  Users,
+  Check,
+  LogOut,
+} from "lucide-react";
 import { IconBuilding } from "@tabler/icons-react";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
@@ -10,6 +18,7 @@ import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import { InviteMemberModal } from "./invite-member-modal";
 import { SettingsModal } from "./settings-modal";
+import { CreateWorkspaceModal } from "./create-workspace-modal";
 import { apolloClient } from "@/src/lib/apolloClient";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, usePathname } from "next/navigation";
@@ -38,6 +47,7 @@ export function TeamSwitcher() {
   const pathname = usePathname();
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
+  const [createWorkspaceOpen, setCreateWorkspaceOpen] = React.useState(false);
   const [settingsInitialTab, setSettingsInitialTab] =
     React.useState("preferences");
   const [isChangingOrg, setIsChangingOrg] = React.useState(false);
@@ -144,14 +154,17 @@ export function TeamSwitcher() {
       console.log("✅ Hooks Better Auth rafraîchis");
 
       // 6. Émettre un événement custom pour notifier le changement d'organisation
-      const organizationChangeEvent = new CustomEvent('organizationChanged', {
+      const organizationChangeEvent = new CustomEvent("organizationChanged", {
         detail: {
           previousOrgId: oldWorkspaceId,
           newOrgId: organizationId,
-        }
+        },
       });
       window.dispatchEvent(organizationChangeEvent);
-      console.log("📢 Événement organizationChanged émis:", { from: oldWorkspaceId, to: organizationId });
+      console.log("📢 Événement organizationChanged émis:", {
+        from: oldWorkspaceId,
+        to: organizationId,
+      });
 
       // 7. Notification
       toast.success("Organisation changée");
@@ -214,7 +227,7 @@ export function TeamSwitcher() {
               >
                 <img src="/newbi.svg" alt="NewBi Logo" className="size-7" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">
+                  <span className="truncate font-medium text-sm">
                     {currentOrganization.name}
                   </span>
                   <span className="truncate text-xs">
@@ -256,19 +269,44 @@ export function TeamSwitcher() {
                     <IconBuilding className="size-3.5 shrink-0" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-medium">{org.name}</span>
-                    {org.slug && (
+                    <span className="font-normal text-xs">{org.name}</span>
+                    {/* {org.slug && (
                       <span className="text-xs text-muted-foreground">
                         @{org.slug}
                       </span>
-                    )}
+                    )} */}
                   </div>
                   {activeOrganization?.id === org.id && (
-                    <div className="ml-auto h-2 w-2 rounded-full bg-[#5b4fff]/80" />
+                    <Check className="ml-auto h-4 w-4 text-[#5b4fff]" />
                   )}
-                  <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  if (isActive()) {
+                    setCreateWorkspaceOpen(true);
+                  }
+                }}
+                disabled={!isActive()}
+                className={`gap-2 p-2 ${
+                  isActive()
+                    ? "cursor-pointer text-[#5b4fff]"
+                    : "cursor-not-allowed opacity-50"
+                }`}
+              >
+                <Plus
+                  className={`h-2 w-2 ${isActive() ? "text-[#5b4fff]" : ""}`}
+                />
+                <span
+                  className={`text-xs ${isActive() ? "text-[#5b4fff]" : ""}`}
+                >
+                  Ajouter un espace de travail
+                </span>
+                {!isActive() && (
+                  <Crown className="ml-auto h-3 w-3 text-[#5b4fff]" />
+                )}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <div className="flex gap-2 p-2">
                 <Button
@@ -298,6 +336,34 @@ export function TeamSwitcher() {
                   )}
                 </Button>
               </div>
+              <div className="p-2 pt-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await authClient.signOut({
+                        fetchOptions: {
+                          onSuccess: () => {
+                            toast.success("Déconnexion réussie");
+                            window.location.href = "/auth/login";
+                          },
+                          onError: (ctx) => {
+                            toast.error("Erreur lors de la déconnexion");
+                          },
+                        },
+                      });
+                    } catch (error) {
+                      console.error("Erreur déconnexion:", error);
+                      toast.error("Erreur lors de la déconnexion");
+                    }
+                  }}
+                  className="w-full h-8 text-xs font-normal cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                >
+                  <LogOut className="size-3 mr-1" />
+                  Déconnexion
+                </Button>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarMenuItem>
@@ -316,6 +382,19 @@ export function TeamSwitcher() {
         open={settingsModalOpen}
         onOpenChange={setSettingsModalOpen}
         initialTab={settingsInitialTab}
+      />
+      <CreateWorkspaceModal
+        open={createWorkspaceOpen}
+        onOpenChange={setCreateWorkspaceOpen}
+        onSuccess={() => {
+          // Rafraîchir les organisations
+          if (refetchOrgs) {
+            refetchOrgs();
+          }
+          if (refetchActiveOrg) {
+            refetchActiveOrg();
+          }
+        }}
       />
     </>
   );

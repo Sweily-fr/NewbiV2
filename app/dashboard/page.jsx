@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 // Bridge components removed
 import { useUser } from "@/src/lib/auth/hooks";
+import { authClient } from "@/src/lib/auth-client";
 import { redirect } from "next/navigation";
 // Financial stats and bridge hooks removed
 import { useExpenses } from "@/src/hooks/useExpenses";

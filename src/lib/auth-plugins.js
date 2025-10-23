@@ -113,29 +113,40 @@ export const stripePlugin = stripe({
       },
     ],
     // Paramètres personnalisés pour le checkout Stripe
-    getCheckoutSessionParams: async ({ user, plan }) => {
+    getCheckoutSessionParams: async ({ user, plan, coupon, metadata }) => {
+      // Déterminer quel coupon utiliser
+      const couponToApply =
+        coupon || process.env.STRIPE_FIRST_YEAR_DISCOUNT_COUPON_ID;
+
+      // Message personnalisé selon le coupon
+      const discountMessage =
+        coupon === process.env.STRIPE_NEW_ORG_COUPON_ID
+          ? "🎉 Réduction de 25% appliquée sur votre nouvelle organisation !"
+          : "🎉 Réduction de 20% appliquée sur votre première année !";
+
+      const discountType =
+        coupon === process.env.STRIPE_NEW_ORG_COUPON_ID
+          ? "new_org_25_percent"
+          : "first_year_20_percent";
+
       return {
         params: {
-          // Appliquer automatiquement une réduction de 20% sur la première année
-          discounts: [
-            {
-              coupon: process.env.STRIPE_FIRST_YEAR_DISCOUNT_COUPON_ID, // ID du coupon de réduction
-            },
-          ],
+          // Appliquer le coupon approprié
+          discounts: couponToApply ? [{ coupon: couponToApply }] : [],
           // Collecter l'adresse de facturation
           billing_address_collection: "required",
           // Message personnalisé
           custom_text: {
             submit: {
-              message:
-                "🎉 Réduction de 20% appliquée sur votre première année !",
+              message: discountMessage,
             },
           },
           // Métadonnées pour le suivi
           metadata: {
             planType: plan.name,
-            discountApplied: "first_year_20_percent",
+            discountApplied: discountType,
             userId: user.id,
+            ...metadata, // Métadonnées additionnelles
           },
         },
         options: {
@@ -155,11 +166,13 @@ export const stripePlugin = stripe({
         case "checkout.session.completed":
           let subscription;
           let referenceId;
+          let userId;
 
           if (event.type === "customer.subscription.created") {
             // Événement direct de création d'abonnement
             subscription = event.data.object;
             referenceId = subscription.metadata?.referenceId;
+            userId = subscription.metadata?.userId;
           } else {
             // Événement de checkout complété
             const session = event.data.object;
@@ -176,67 +189,163 @@ export const stripePlugin = stripe({
             subscription = await stripe.subscriptions.retrieve(
               session.subscription
             );
-            referenceId =
-              session.metadata?.referenceId ||
-              subscription.metadata?.referenceId;
+
+            userId = session.metadata?.userId || subscription.metadata?.userId;
+
+            // Vérifier si c'est une nouvelle organisation
+            const isNewOrg = session.metadata?.isNewOrganization === "true";
+
+            if (isNewOrg) {
+              console.log(
+                "🆕 [STRIPE WEBHOOK] Nouvelle organisation détectée, création..."
+              );
+
+              // Créer l'organisation APRÈS le paiement
+              const orgName = session.metadata?.orgName;
+              const orgType = session.metadata?.orgType;
+              const orgInvitedEmails = session.metadata?.orgInvitedEmails;
+
+              if (!orgName || !userId) {
+                console.error(
+                  "❌ [STRIPE WEBHOOK] Données organisation manquantes"
+                );
+                break;
+              }
+
+              // Créer l'organisation via Better Auth
+              const { mongoDb } = await import("./mongodb.js");
+              const orgSlug = `org-${userId.slice(-8)}-${Date.now().toString(36)}`;
+
+              const newOrg = {
+                name: orgName,
+                slug: orgSlug,
+                createdAt: new Date(),
+                metadata: JSON.stringify({
+                  type: orgType,
+                  invitedEmails: orgInvitedEmails,
+                  createdAt: new Date().toISOString(),
+                  createdAfterPayment: true,
+                }),
+              };
+
+              const orgResult = await mongoDb
+                .collection("organization")
+                .insertOne(newOrg);
+              referenceId = orgResult.insertedId.toString();
+
+              // Créer le membre owner
+              await mongoDb.collection("member").insertOne({
+                userId: userId,
+                organizationId: referenceId,
+                role: "owner",
+                createdAt: new Date(),
+              });
+
+              // Définir comme organisation active
+              await mongoDb
+                .collection("session")
+                .updateMany(
+                  { userId: userId },
+                  { $set: { activeOrganizationId: referenceId } }
+                );
+
+              console.log(
+                `✅ [STRIPE WEBHOOK] Organisation créée: ${referenceId}`
+              );
+            } else {
+              referenceId =
+                session.metadata?.referenceId ||
+                subscription.metadata?.referenceId ||
+                session.metadata?.organizationId;
+            }
           }
 
           if (!referenceId) {
-            console.error(
-              `❌ [STRIPE WEBHOOK] referenceId manquant dans les métadonnées`
-            );
+            console.error(`❌ [STRIPE WEBHOOK] referenceId manquant`);
             break;
           }
 
           try {
+            // Utiliser MongoDB directement au lieu de l'adapter
+            const { mongoDb } = await import("./mongodb.js");
+
             // Vérifier si l'abonnement existe déjà
-            const existingSub = await adapter.findFirst({
-              model: "subscription",
-              where: { stripeSubscriptionId: subscription.id },
-            });
+            const existingSub = await mongoDb
+              .collection("subscription")
+              .findOne({
+                stripeSubscriptionId: subscription.id,
+              });
 
             if (existingSub) {
               console.log(
                 `✅ [STRIPE WEBHOOK] Abonnement existe déjà, mise à jour`
               );
-              await adapter.update({
-                model: "subscription",
-                where: { stripeSubscriptionId: subscription.id },
-                data: {
-                  status: subscription.status,
-                  currentPeriodStart: new Date(
-                    subscription.current_period_start * 1000
-                  ),
-                  currentPeriodEnd: new Date(
-                    subscription.current_period_end * 1000
-                  ),
-                  updatedAt: new Date(),
-                },
-              });
+              await mongoDb.collection("subscription").updateOne(
+                { stripeSubscriptionId: subscription.id },
+                {
+                  $set: {
+                    status: subscription.status,
+                    currentPeriodStart: new Date(
+                      subscription.current_period_start * 1000
+                    ),
+                    currentPeriodEnd: new Date(
+                      subscription.current_period_end * 1000
+                    ),
+                    updatedAt: new Date(),
+                  },
+                }
+              );
             } else {
               console.log(`✅ [STRIPE WEBHOOK] Création nouvel abonnement`);
-              await adapter.create({
-                model: "subscription",
-                data: {
-                  id: subscription.id,
-                  referenceId: referenceId,
-                  status: subscription.status,
-                  planName: "pro",
-                  stripeSubscriptionId: subscription.id,
-                  stripeCustomerId: subscription.customer,
-                  currentPeriodStart: new Date(
-                    subscription.current_period_start * 1000
-                  ),
-                  currentPeriodEnd: new Date(
-                    subscription.current_period_end * 1000
-                  ),
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                },
+
+              // Récupérer le priceId depuis l'abonnement Stripe
+              const priceId = subscription.items?.data?.[0]?.price?.id;
+              console.log(`📋 [STRIPE WEBHOOK] PriceId: ${priceId}`);
+              console.log(`📋 [STRIPE WEBHOOK] Subscription data:`, {
+                current_period_start: subscription.current_period_start,
+                current_period_end: subscription.current_period_end,
+                status: subscription.status,
               });
+
+              // Récupérer les infos du price
+              const priceData = subscription.items?.data?.[0]?.price;
+
+              const subscriptionData = {
+                plan: "pro", // ✅ Nom correct du champ Better Auth (pas "planName")
+                referenceId: referenceId,
+                stripeCustomerId: subscription.customer,
+                status: subscription.status,
+                seats: 1, // ✅ Champ obligatoire Better Auth
+                cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
+                periodEnd: subscription.current_period_end
+                  ? new Date(subscription.current_period_end * 1000)
+                  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                periodStart: subscription.current_period_start
+                  ? new Date(subscription.current_period_start * 1000)
+                  : new Date(),
+                stripeSubscriptionId: subscription.id,
+                currentPeriodEnd: subscription.current_period_end
+                  ? new Date(subscription.current_period_end * 1000)
+                  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                currentPeriodStart: subscription.current_period_start
+                  ? new Date(subscription.current_period_start * 1000)
+                  : new Date(),
+                updatedAt: new Date(),
+              };
+
+              console.log(
+                `📋 [STRIPE WEBHOOK] Données abonnement:`,
+                JSON.stringify(subscriptionData, null, 2)
+              );
+
+              await mongoDb
+                .collection("subscription")
+                .insertOne(subscriptionData);
             }
 
-            console.log(`✅ [STRIPE WEBHOOK] Abonnement traité avec succès`);
+            console.log(
+              `✅ [STRIPE WEBHOOK] Abonnement traité avec succès pour org: ${referenceId}`
+            );
           } catch (error) {
             console.error(
               `❌ [STRIPE WEBHOOK] Erreur création/mise à jour abonnement:`,
