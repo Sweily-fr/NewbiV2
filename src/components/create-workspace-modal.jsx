@@ -17,6 +17,9 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
   const [invitedEmails, setInvitedEmails] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
 
+  // Récupérer la session utilisateur
+  const { data: session } = authClient.useSession();
+
   const totalSteps = 4;
 
   // Réinitialiser le modal quand il se ferme
@@ -54,6 +57,12 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
 
     try {
       setIsCreating(true);
+
+      // Vérifier la session
+      if (!session?.user?.id) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        return;
+      }
 
       // Préparer les données de l'organisation
       const invitedEmailsList = invitedEmails.map((e) => e.value || e.label);
