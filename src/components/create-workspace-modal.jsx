@@ -9,6 +9,7 @@ import { Input } from "@/src/components/ui/input";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import MultipleSelector from "@/src/components/ui/multiselect";
+import { getAssetUrl } from "@/src/lib/image-utils";
 
 export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -139,12 +140,11 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
         />
 
         {/* Logo en haut à gauche */}
-        <div className="absolute top-5 left-5 z-10">
-          <img src="/Logo%20+%20texte.svg" alt="Logo" className="h-6 dark:hidden" />
+        <div className="absolute top-5 left-4 z-10">
           <img
-            src="/Logo%20+%20texte_blanc.svg"
-            alt="Logo"
-            className="h-6 hidden dark:block"
+            src={getAssetUrl("NewbiLogo.svg")}
+            alt="Logo Newbi"
+            className="h-5 w-20"
           />
         </div>
 
