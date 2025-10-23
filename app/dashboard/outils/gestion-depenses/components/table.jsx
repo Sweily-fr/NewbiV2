@@ -109,6 +109,7 @@ import {
   useUpdateExpense,
   useDeleteExpense,
   useDeleteMultipleExpenses,
+  useAddExpenseFile,
 } from "@/src/hooks/useExpenses";
 import { useInvoices, useCreateInvoice } from "@/src/graphql/invoiceQueries";
 // Bridge integration removed
@@ -572,12 +573,12 @@ export default function TransactionTable() {
   });
 
   // Hooks pour la création, modification et suppression
-  const { createExpense, loading: createLoading } = useCreateExpense();
-  const { updateExpense, loading: updateLoading } = useUpdateExpense();
-  const { createInvoice, loading: createInvoiceLoading } = useCreateInvoice();
-  const { deleteExpense, loading: deleteLoading } = useDeleteExpense();
-  const { deleteMultipleExpenses, loading: deleteMultipleLoading } =
-    useDeleteMultipleExpenses();
+  const { createExpense, loading: createExpenseLoading } = useCreateExpense();
+  const { updateExpense, loading: updateExpenseLoading } = useUpdateExpense();
+  const { deleteExpense, loading: deleteExpenseLoading } = useDeleteExpense();
+  const { deleteMultipleExpenses, loading: deleteMultipleExpensesLoading } = useDeleteMultipleExpenses();
+  const deleteMultipleLoading = deleteMultipleExpensesLoading; // Alias pour compatibilité
+  const { addExpenseFile, loading: addExpenseFileLoading } = useAddExpenseFile();
 
   // Récupération des factures payées depuis l'API
   const {
@@ -857,10 +858,23 @@ export default function TransactionTable() {
           status: "PAID",
           isVatDeductible: false, // Les revenus ne sont généralement pas déductibles
           notes: `[INCOME] ${transaction.description}`,
-          // Retirer le champ type car il n'existe pas dans le modèle Expense
         };
 
         const result = await createExpense(expenseInput);
+        
+        // Ajouter le fichier si présent (après création de la dépense)
+        if (result.success && transaction.receiptImage && result.expense?.id) {
+          try {
+            await addExpenseFile(result.expense.id, {
+              cloudflareUrl: transaction.receiptImage,
+              fileName: "receipt.pdf",
+              mimeType: transaction.receiptImage.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+              processOCR: false,
+            });
+          } catch (fileError) {
+            console.error("Erreur ajout fichier:", fileError);
+          }
+        }
 
         if (result.success) {
           setIsAddTransactionDrawerOpen(false);
@@ -873,7 +887,7 @@ export default function TransactionTable() {
         // Pour les dépenses, utiliser l'API existante
         // Préparer assignedMember en ne gardant que les champs définis dans le schéma
         let assignedMember = null;
-        if (transaction.assignedMember) {
+        if (transaction.assignedMember && transaction.assignedMember.userId) {
           assignedMember = {
             userId: transaction.assignedMember.userId,
             name: transaction.assignedMember.name,
@@ -894,15 +908,42 @@ export default function TransactionTable() {
           status: "PAID",
           isVatDeductible: true,
           notes: `[EXPENSE] ${transaction.description}`,
-          // Ajouter expenseType et assignedMember
           expenseType: transaction.expenseType || "ORGANIZATION",
-          assignedMember: assignedMember,
         };
+        
+        // Ajouter assignedMember seulement s'il existe
+        if (assignedMember) {
+          expenseInput.assignedMember = assignedMember;
+        }
 
         console.log("📝 [CREATE EXPENSE] Données envoyées:", expenseInput);
         const result = await createExpense(expenseInput);
-
+        console.log("📝 [CREATE RESULT]", result);
+        
         if (result.success) {
+          // Ajouter le fichier si présent (après création de la dépense)
+          if (transaction.receiptImage && result.expense?.id) {
+            console.log("📎 [ADD FILE] Ajout du fichier pour l'expense:", result.expense.id);
+            console.log("📎 [ADD FILE] URL Cloudflare:", transaction.receiptImage);
+            try {
+              const fileResult = await addExpenseFile(result.expense.id, {
+                cloudflareUrl: transaction.receiptImage,
+                fileName: "receipt.pdf",
+                mimeType: transaction.receiptImage.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+                processOCR: false,
+              });
+              console.log("✅ [ADD FILE] Fichier ajouté avec succès:", fileResult);
+            } catch (fileError) {
+              console.error("❌ [ADD FILE] Erreur ajout fichier:", fileError);
+              // Ne pas bloquer la création même si l'ajout du fichier échoue
+            }
+          } else {
+            console.log("⚠️ [ADD FILE] Conditions non remplies:", {
+              hasReceiptImage: !!transaction.receiptImage,
+              hasExpenseId: !!result.expense?.id,
+            });
+          }
+          
           setIsAddTransactionDrawerOpen(false);
           // Forcer le refetch des données pour mettre à jour les graphiques
           refetchExpenses();
@@ -999,6 +1040,24 @@ export default function TransactionTable() {
       };
 
       const result = await updateExpense(editingTransaction.id, updateInput);
+      
+      // Ajouter le fichier si présent (après mise à jour de la dépense)
+      if (result.success && updatedTransaction.receiptImage && editingTransaction.id) {
+        // Vérifier si c'est une nouvelle image (pas l'ancienne)
+        const isNewImage = updatedTransaction.receiptImage !== editingTransaction.attachment;
+        if (isNewImage) {
+          try {
+            await addExpenseFile(editingTransaction.id, {
+              cloudflareUrl: updatedTransaction.receiptImage,
+              fileName: "receipt.pdf",
+              mimeType: updatedTransaction.receiptImage.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+              processOCR: false,
+            });
+          } catch (fileError) {
+            console.error("Erreur ajout fichier:", fileError);
+          }
+        }
+      }
 
       if (result.success) {
         handleCloseEditModal();

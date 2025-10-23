@@ -14,6 +14,7 @@ import {
   Edit3,
   Save,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -42,6 +43,7 @@ export default function OcrEditableDisplay({
   ocrResult,
   onValidate,
   isCreatingExpense = false,
+  imageUrl = null,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState(null);
@@ -140,6 +142,23 @@ export default function OcrEditableDisplay({
     }));
   };
 
+  // Fonction pour formater la date en français (dd/mm/aa)
+  const formatDateFr = (dateString) => {
+    if (!dateString) return "Non spécifiée";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString;
+      
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+      
+      return `${day}/${month}/${year}`;
+    } catch (error) {
+      return dateString;
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Header avec bouton d'édition */}
@@ -209,6 +228,48 @@ export default function OcrEditableDisplay({
               </Badge>
             )}
           </div>
+
+          {/* Preview de l'image OCR */}
+          {imageUrl && (
+            <div className="mt-4">
+              <div 
+                className="border-input relative flex h-48 w-full items-center justify-center overflow-hidden rounded-md border bg-gray-50 dark:bg-gray-900 cursor-pointer hover:border-blue-500 transition-colors group"
+                onClick={() => window.open(imageUrl, '_blank')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.open(imageUrl, '_blank');
+                  }
+                }}
+              >
+                {imageUrl.toLowerCase().endsWith('.pdf') ? (
+                  <iframe
+                    src={imageUrl}
+                    className="h-full w-full pointer-events-none"
+                    title="Preview du document OCR"
+                  />
+                ) : (
+                  <img
+                    className="h-full w-full object-contain"
+                    src={imageUrl}
+                    alt="Preview du document OCR"
+                    loading="lazy"
+                  />
+                )}
+                {/* Overlay avec icône */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg">
+                    <ExternalLink className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                  </div>
+                </div>
+              </div>
+              <p className="text-muted-foreground mt-2 text-xs text-center">
+                Cliquez pour ouvrir en plein écran
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
       <Separator />
@@ -355,7 +416,7 @@ export default function OcrEditableDisplay({
                 />
               ) : (
                 <div className="text-sm text-gray-600">
-                  {editedData.transaction_date || "Non détectée"}
+                  {formatDateFr(editedData.transaction_date)}
                 </div>
               )}
             </div>
@@ -373,7 +434,7 @@ export default function OcrEditableDisplay({
                 />
               ) : (
                 <div className="text-sm text-gray-600">
-                  {editedData.due_date || "Non définie"}
+                  {editedData.due_date ? formatDateFr(editedData.due_date) : "Non définie"}
                 </div>
               )}
             </div>

@@ -5,6 +5,7 @@ import {
   UPDATE_EXPENSE,
   DELETE_EXPENSE,
   DELETE_MULTIPLE_EXPENSES,
+  ADD_EXPENSE_FILE,
 } from "../graphql/mutations/expense";
 import { toast } from "@/src/components/ui/sonner";
 
@@ -258,6 +259,52 @@ export const useUpdateExpense = () => {
 
   return {
     updateExpense,
+    loading,
+  };
+};
+
+/**
+ * Hook pour ajouter un fichier à une dépense
+ */
+export const useAddExpenseFile = () => {
+  const [addExpenseFileMutation, { loading }] = useMutation(ADD_EXPENSE_FILE);
+
+  const addExpenseFile = async (expenseId, fileInput) => {
+    try {
+      console.log("📎 [ADD FILE MUTATION] Variables:", { expenseId, input: fileInput });
+      const result = await addExpenseFileMutation({
+        variables: {
+          expenseId,
+          input: fileInput,
+        },
+      });
+
+      console.log("📎 [ADD FILE MUTATION] Result:", result);
+      console.log("📎 [ADD FILE MUTATION] Result.data:", result.data);
+
+      // Si result.data est null mais qu'il n'y a pas d'erreur, considérer comme un succès
+      if (result.data === null && !result.errors) {
+        console.log("⚠️ [ADD FILE MUTATION] Result.data est null mais pas d'erreur - considéré comme succès");
+        return { success: true, expense: null };
+      }
+
+      if (result.data?.addExpenseFile) {
+        console.log("✅ [ADD FILE MUTATION] Succès:", result.data.addExpenseFile);
+        return { success: true, expense: result.data.addExpenseFile };
+      } else {
+        console.error("❌ [ADD FILE MUTATION] Pas de données dans result.data.addExpenseFile");
+        throw new Error("Erreur lors de l'ajout du fichier");
+      }
+    } catch (error) {
+      console.error("❌ [ADD FILE MUTATION] Erreur:", error);
+      console.error("❌ [ADD FILE MUTATION] GraphQL Errors:", error.graphQLErrors);
+      console.error("❌ [ADD FILE MUTATION] Network Error:", error.networkError);
+      return { success: false, error };
+    }
+  };
+
+  return {
+    addExpenseFile,
     loading,
   };
 };

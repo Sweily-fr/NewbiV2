@@ -398,6 +398,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
               ocrResult={ocrResult}
               onValidate={handleValidateOcr}
               isCreatingExpense={isCreatingExpense}
+              imageUrl={uploadResult?.url}
             />
           )}
         </div>

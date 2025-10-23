@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   XIcon,
   Euro,
@@ -9,6 +9,10 @@ import {
   Tag,
   CreditCard,
   FileText,
+  Upload,
+  ExternalLink,
+  Trash2,
+  LoaderCircle,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -32,6 +36,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
+import { useDocumentUpload } from "@/src/hooks/useDocumentUpload";
 
 export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction = null, organizationMembers = [] }) {
   const [formData, setFormData] = useState({
@@ -44,7 +49,22 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
     vendor: "",
     expenseType: "ORGANIZATION", // Défaut à dépense de l'organisation
     assignedMember: null, // Membre assigné pour les notes de frais
+    receiptImage: null, // URL de l'image du reçu
   });
+  
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
+  const fileInputRef = useRef(null);
+  
+  // Hook pour l'upload vers Cloudflare
+  const {
+    isUploading: isUploadingReceipt,
+    uploadError: uploadReceiptError,
+    uploadResult: uploadReceiptResult,
+    uploadDocument: uploadReceiptDocument,
+    resetUpload: resetReceiptUpload,
+  } = useDocumentUpload();
 
   // Fonction pour mapper les catégories de l'API vers le formulaire
   const mapApiCategoryToForm = (apiCategory) => {
@@ -117,7 +137,16 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
         vendor: transaction.vendor || "",
         expenseType: transaction.expenseType || "ORGANIZATION",
         assignedMember: transaction.assignedMember || null,
+        receiptImage: transaction.receiptImage || transaction.attachment || null,
       };
+      
+      // Charger la preview si une image existe (priorité: receiptImage, puis attachment pour les OCR)
+      const imageToPreview = transaction.receiptImage || transaction.attachment;
+      if (imageToPreview) {
+        setPreviewUrl(imageToPreview);
+      } else {
+        setPreviewUrl(null);
+      }
       
       setFormData(newFormData);
     }
@@ -137,7 +166,12 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
         vendor: "",
         expenseType: "ORGANIZATION",
         assignedMember: null,
+        receiptImage: null,
       });
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setUploadedFileUrl(null);
+      resetReceiptUpload();
     }
     onOpenChange(isOpen);
   };
@@ -158,6 +192,62 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
   };
 
   const isIncome = formData.type === "INCOME";
+  
+  // Gestion de l'upload d'image
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validation du fichier
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      
+      if (!allowedTypes.includes(file.type)) {
+        alert("Type de fichier non supporté. Veuillez uploader une image (JPEG, PNG, WEBP) ou un PDF.");
+        return;
+      }
+      
+      if (file.size > maxSize) {
+        alert("Fichier trop volumineux. Taille maximale : 10MB");
+        return;
+      }
+      
+      setSelectedFile(file);
+      
+      // Créer une preview locale
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+      
+      // Upload vers Cloudflare
+      try {
+        await uploadReceiptDocument(file, "receipts");
+      } catch (error) {
+        console.error("❌ Erreur upload reçu:", error);
+        alert("Erreur lors de l'upload du reçu");
+      }
+    }
+  };
+  
+  // Mettre à jour formData quand l'upload est terminé
+  useEffect(() => {
+    if (uploadReceiptResult?.url) {
+      setUploadedFileUrl(uploadReceiptResult.url);
+      setFormData(prev => ({ ...prev, receiptImage: uploadReceiptResult.url }));
+    }
+  }, [uploadReceiptResult]);
+  
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setUploadedFileUrl(null);
+    setFormData(prev => ({ ...prev, receiptImage: null }));
+    resetReceiptUpload();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange} direction="right">
@@ -418,6 +508,134 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                     className="flex-1 ml-4"
                   />
                 </div>
+              </CardContent>
+            </Card>
+            
+            {/* Upload d'image de reçu */}
+            <Card className="shadow-none border-none py-2">
+              <CardContent className="px-2 space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm font-medium">Reçu (optionnel)</span>
+                </div>
+                
+                {previewUrl ? (
+                  <div className="space-y-3">
+                    {/* Grande preview cliquable */}
+                    <div 
+                      className="border-input relative flex h-48 w-full items-center justify-center overflow-hidden rounded-md border bg-gray-50 dark:bg-gray-900 cursor-pointer hover:border-blue-500 transition-colors group"
+                      onClick={() => window.open(previewUrl, '_blank')}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      {previewUrl.toLowerCase().includes('pdf') || selectedFile?.type === 'application/pdf' ? (
+                        <iframe
+                          src={previewUrl}
+                          className="h-full w-full pointer-events-none"
+                          title="Preview du reçu"
+                        />
+                      ) : (
+                        <img
+                          className="h-full w-full object-contain"
+                          src={previewUrl}
+                          alt="Preview du reçu"
+                        />
+                      )}
+                      {/* Overlay avec icône */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg">
+                          <ExternalLink className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Boutons d'action */}
+                    <div className="flex gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={handleFileSelect}
+                        className="sr-only"
+                        id="receipt-upload"
+                        aria-label="Upload receipt file"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex-1 cursor-pointer"
+                        disabled={isUploadingReceipt}
+                      >
+                        {isUploadingReceipt ? (
+                          <>
+                            <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+                            Upload...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Changer
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleRemoveImage}
+                        className="cursor-pointer text-red-600 hover:text-red-700"
+                        disabled={isUploadingReceipt}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <p className="text-muted-foreground text-xs text-center">
+                      Cliquez pour ouvrir en plein écran
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleFileSelect}
+                      className="sr-only"
+                      id="receipt-upload"
+                      aria-label="Upload receipt file"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full cursor-pointer"
+                      disabled={isUploadingReceipt}
+                    >
+                      {isUploadingReceipt ? (
+                        <>
+                          <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+                          Upload en cours...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Ajouter un reçu
+                        </>
+                      )}
+                    </Button>
+                    {uploadReceiptError && (
+                      <p className="text-xs text-red-600 text-center">
+                        Erreur: {uploadReceiptError}
+                      </p>
+                    )}
+                    {!uploadReceiptError && (
+                      <p className="text-xs text-gray-500 text-center">
+                        Image ou PDF • Max 10MB
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
