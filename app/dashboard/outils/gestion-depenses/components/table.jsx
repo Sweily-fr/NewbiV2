@@ -39,6 +39,7 @@ import {
   TrendingUp,
   TrendingDown,
   Upload,
+  Download,
 } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
@@ -103,6 +104,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { TransactionDetailDrawer } from "./transaction-detail-drawer";
 import { AddTransactionDrawer } from "./add-transaction-drawer";
 import { ReceiptUploadDrawer } from "./receipt-upload-drawer";
+import { ExportDialog } from "./export-dialog";
 import {
   useExpenses,
   useCreateExpense,
@@ -482,6 +484,7 @@ export default function TransactionTable() {
     useState(false);
   const [isReceiptUploadDrawerOpen, setIsReceiptUploadDrawerOpen] =
     useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   // Récupération des membres de l'organisation avec leurs avatars
   // Utiliser EXACTEMENT la même approche que MemberSelector.jsx du Kanban
@@ -1431,6 +1434,15 @@ export default function TransactionTable() {
               </AlertDialogContent>
             </AlertDialog>
           )}
+          {/* Export button */}
+          <Button
+            className="cursor-pointer font-normal"
+            variant="outline"
+            onClick={() => setIsExportDialogOpen(true)}
+          >
+            <Download className="-ms-1 opacity-60" size={16} aria-hidden="true" />
+            Exporter
+          </Button>
           {/* Add transaction button */}
           <Button
             className="ml-auto cursor-pointer font-normal"
@@ -1701,6 +1713,14 @@ export default function TransactionTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Export Dialog */}
+      <ExportDialog
+        open={isExportDialogOpen}
+        onOpenChange={setIsExportDialogOpen}
+        transactions={transactions}
+        members={organizationMembers}
+      />
 
       {/* Pagination - Desktop only */}
       <div className="hidden md:flex items-center justify-between gap-8">
