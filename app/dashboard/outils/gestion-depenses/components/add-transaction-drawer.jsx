@@ -31,8 +31,9 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { Badge } from "@/src/components/ui/badge";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 
-export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction = null }) {
+export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction = null, organizationMembers = [] }) {
   const [formData, setFormData] = useState({
     type: "EXPENSE", // Défaut à EXPENSE pour les dépenses
     amount: "",
@@ -41,6 +42,8 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
     description: "",
     paymentMethod: "CARD",
     vendor: "",
+    expenseType: "ORGANIZATION", // Défaut à dépense de l'organisation
+    assignedMember: null, // Membre assigné pour les notes de frais
   });
 
   // Fonction pour mapper les catégories de l'API vers le formulaire
@@ -76,6 +79,9 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
   // Pré-remplir le formulaire si une transaction est fournie (mode édition)
   useEffect(() => {
     if (transaction && open) {
+      console.log("🔄 [DRAWER EDIT] Transaction reçue:", transaction);
+      console.log("🔄 [DRAWER EDIT] expenseType:", transaction.expenseType);
+      console.log("🔄 [DRAWER EDIT] assignedMember:", transaction.assignedMember);
       
       // Formater la date pour l'input date (format YYYY-MM-DD)
       let formattedDate = new Date().toISOString().split("T")[0]; // Défaut
@@ -109,6 +115,8 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
         description: transaction.description || "",
         paymentMethod: mapApiPaymentMethodToForm(transaction.paymentMethod) || "CARD",
         vendor: transaction.vendor || "",
+        expenseType: transaction.expenseType || "ORGANIZATION",
+        assignedMember: transaction.assignedMember || null,
       };
       
       setFormData(newFormData);
@@ -127,6 +135,8 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
         description: "",
         paymentMethod: "CARD",
         vendor: "",
+        expenseType: "ORGANIZATION",
+        assignedMember: null,
       });
     }
     onOpenChange(isOpen);
@@ -139,7 +149,12 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
   };
 
   const handleChange = (field) => (value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    console.log(`🔄 [DRAWER] Changement de ${field}:`, value);
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+      console.log(`📝 [DRAWER] FormData mis à jour:`, newData);
+      return newData;
+    });
   };
 
   const isIncome = formData.type === "INCOME";
@@ -187,24 +202,71 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                   </span>
                 </div>
                 <div className="space-y-4">
-                  {/* Type de transaction */}
+                  {/* Type de dépense */}
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                      Type de transaction
+                      Type de dépense
                     </Label>
                     <Select
-                      value={formData.type}
-                      onValueChange={handleChange("type")}
+                      value={formData.expenseType}
+                      onValueChange={handleChange("expenseType")}
                     >
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger className="w-48">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="INCOME">Revenu</SelectItem>
-                        <SelectItem value="EXPENSE">Dépense</SelectItem>
+                        <SelectItem value="ORGANIZATION">Dépense de l'organisation</SelectItem>
+                        <SelectItem value="EXPENSE_REPORT">Note de frais</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Sélecteur de membre (uniquement pour les notes de frais) */}
+                  {formData.expenseType === "EXPENSE_REPORT" && (
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                        Assigné à
+                      </Label>
+                      <Select
+                        value={formData.assignedMember?.userId || ""}
+                        onValueChange={(userId) => {
+                          const member = organizationMembers.find(m => m.userId === userId);
+                          handleChange("assignedMember")(member || null);
+                        }}
+                      >
+                        <SelectTrigger className="w-48">
+                          {formData.assignedMember ? (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={formData.assignedMember.image} alt={formData.assignedMember.name} />
+                                <AvatarFallback className="text-xs">
+                                  {formData.assignedMember.name?.charAt(0)?.toUpperCase() || "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="truncate">{formData.assignedMember.name}</span>
+                            </div>
+                          ) : (
+                            <SelectValue placeholder="Sélectionner un membre" />
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {organizationMembers.map((member) => (
+                            <SelectItem key={member.userId} value={member.userId}>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={member.image} alt={member.name} />
+                                  <AvatarFallback className="text-xs">
+                                    {member.name?.charAt(0)?.toUpperCase() || "?"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span>{member.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   {/* Montant */}
                   <div className="flex items-center justify-between">

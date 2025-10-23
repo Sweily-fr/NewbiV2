@@ -29,7 +29,7 @@ export const INVOICE_FRAGMENT = gql`
     discountAmount
     stripeInvoiceId
     showBankDetails
-    isReverseCharge
+    # isReverseCharge
     createdAt
     updatedAt
     client {
@@ -91,7 +91,7 @@ export const INVOICE_FRAGMENT = gql`
       discountType
       details
       vatExemptionText
-      progressPercentage
+      # progressPercentage
     }
     customFields {
       key
@@ -146,7 +146,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
     finalTotalVAT
     finalTotalTTC
     stripeInvoiceId
-    isReverseCharge
+    # isReverseCharge
     items {
       description
       quantity
@@ -155,7 +155,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
       unit
       discount
       discountType
-      progressPercentage
+      # progressPercentage
     }
     client {
       id

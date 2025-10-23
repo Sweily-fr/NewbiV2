@@ -336,15 +336,13 @@ export const useOrganizationInvitations = () => {
           return { success: false, error };
         }
 
-        // Filtrer les membres pour exclure les owners
-        const filteredMembers = (fullOrg?.members || []).filter(
-          (member) => member.role !== "owner"
-        );
+        // Récupérer TOUS les membres (y compris les owners)
+        const allMembers = fullOrg?.members || [];
         const invitations = fullOrg?.invitations || [];
 
         console.log(
           "📊 getAllCollaborators - Membres:",
-          filteredMembers.length
+          allMembers.length
         );
         console.log(
           "📊 getAllCollaborators - Invitations:",
@@ -352,13 +350,18 @@ export const useOrganizationInvitations = () => {
         );
         console.log(
           "📋 Détails membres:",
-          filteredMembers.map((m) => ({
+          allMembers.map((m) => ({
             email: m.email || m.user?.email,
             role: m.role,
             avatar: m.avatar || m.user?.avatar,
             user: m.user ? "présent" : "absent",
           }))
         );
+        
+        // Log détaillé de la structure du premier membre
+        if (allMembers.length > 0) {
+          console.log("🔍 Structure complète du premier membre:", JSON.stringify(allMembers[0], null, 2));
+        }
         console.log(
           "📋 Détails invitations:",
           invitations.map((i) => ({ email: i.email, status: i.status }))
@@ -366,7 +369,7 @@ export const useOrganizationInvitations = () => {
 
         // Combiner membres et invitations avec un type pour les différencier
         const collaborators = [
-          ...filteredMembers.map((member) => ({ ...member, type: "member" })),
+          ...allMembers.map((member) => ({ ...member, type: "member" })),
           ...invitations.map((invitation) => ({
             ...invitation,
             type: "invitation",

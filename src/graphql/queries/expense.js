@@ -46,6 +46,14 @@ export const GET_EXPENSES = gql`
         notes
         tags
         isVatDeductible
+        expenseType
+        assignedMember {
+          userId
+          name
+          email
+          image
+        }
+        taskId
         files {
           id
           filename
@@ -99,6 +107,14 @@ export const GET_EXPENSE = gql`
       notes
       tags
       isVatDeductible
+      expenseType
+      assignedMember {
+        userId
+        name
+        email
+        image
+      }
+      taskId
       files {
         id
         filename

@@ -56,6 +56,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -121,6 +122,9 @@ import {
   ArrowDownIcon,
 } from "lucide-react";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
+import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
+import { useActiveOrganization } from "@/src/lib/organization-client";
+import { useSession } from "@/src/lib/auth-client";
 
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
@@ -179,34 +183,18 @@ const columns = [
     cell: ({ row }) => {
       const type = row.getValue("type");
       const source = row.original.source;
+      const expenseType = row.original.expenseType;
+      const assignedMember = row.original.assignedMember;
 
       // Configuration des badges selon le type et la source
       const getBadgeConfig = () => {
-        // Bridge transactions removed - keeping only expenses and invoices
-        if (false) {
-          if (type === "INCOME") {
-            return {
-              className:
-                "bg-transparent border-blue-300 text-blue-800 font-normal",
-              icon: <ArrowUpIcon size={12} />,
-              label: "Virement reçu",
-            };
-          } else {
-            return {
-              className:
-                "bg-transparent border-blue-300 text-blue-800 font-normal",
-              icon: <Landmark size={12} />,
-              label: "Virement",
-            };
-          }
-        }
-
         // Factures - Entrées d'argent (vert)
         if (type === "INCOME" && source === "invoice") {
           return {
             className: "bg-transparent bg-green-50 text-green-800 font-normal",
             icon: <TrendingUp size={12} />,
             label: "Facture",
+            showAvatar: false,
           };
         }
 
@@ -223,34 +211,25 @@ const columns = [
                 "bg-transparent bg-green-50 text-green-800 font-normal",
               icon: <TrendingUp size={12} />,
               label: "Entrée",
+              showAvatar: false,
             };
           } else {
-            // Dépenses manuelles - Sorties d'argent (rouge) avec sous-type
-            const subType = row.original.subType;
-            let subLabel = "Dépense";
-
-            switch (subType) {
-              case "transport":
-                subLabel = "Transport";
-                break;
-              case "repas":
-                subLabel = "Repas";
-                break;
-              case "bureau":
-                subLabel = "Bureau";
-                break;
-              case "prestation":
-                subLabel = "Prestation";
-                break;
-              default:
-                subLabel = "Dépense";
+            // Dépenses manuelles - Afficher selon expenseType
+            if (expenseType === "EXPENSE_REPORT") {
+              return {
+                className: "bg-transparent bg-orange-50 text-orange-800 font-normal",
+                icon: <TrendingDown size={12} />,
+                label: "Note de frais",
+                showAvatar: true,
+              };
+            } else {
+              return {
+                className: "bg-transparent bg-red-50 text-red-800 font-normal",
+                icon: <TrendingDown size={12} />,
+                label: "Dépense de l'organisation",
+                showAvatar: false,
+              };
             }
-
-            return {
-              className: "bg-transparent bg-red-50 text-red-800 font-normal",
-              icon: <TrendingDown size={12} />,
-              label: subLabel,
-            };
           }
         }
 
@@ -259,28 +238,60 @@ const columns = [
           className: "bg-transparent border-gray-300 text-gray-800 font-normal",
           icon: <ArrowDownIcon size={12} />,
           label: "Inconnu",
+          showAvatar: false,
         };
       };
 
       const config = getBadgeConfig();
 
       return (
-        <Badge
-          className={cn("flex items-center gap-1 w-fit", config.className)}
-        >
-          {config.icon} {config.label}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge
+            className={cn("flex items-center gap-1 w-fit", config.className)}
+          >
+            {config.icon} {config.label}
+          </Badge>
+          {config.showAvatar && assignedMember && (
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={assignedMember.image} alt={assignedMember.name} />
+              <AvatarFallback className="text-xs">
+                {assignedMember.name?.charAt(0)?.toUpperCase() || "?"}
+              </AvatarFallback>
+            </Avatar>
+          )}
+        </div>
       );
     },
-    size: 100,
+    size: 200,
     filterFn: typeFilterFn,
   },
   {
     header: "Catégorie",
     accessorKey: "category",
-    cell: ({ row }) => (
-      <div className="font-normal">{row.getValue("category")}</div>
-    ),
+    cell: ({ row }) => {
+      const category = row.getValue("category");
+      
+      // Fonction pour traduire les catégories en français
+      const translateCategory = (cat) => {
+        const categoryMap = {
+          OFFICE_SUPPLIES: "Fournitures de bureau",
+          TRAVEL: "Transport",
+          MEALS: "Repas",
+          EQUIPMENT: "Matériel",
+          MARKETING: "Marketing",
+          TRAINING: "Formation",
+          SERVICES: "Services",
+          RENT: "Loyer",
+          SALARIES: "Salaires",
+          OTHER: "Autre",
+        };
+        return categoryMap[cat] || cat;
+      };
+      
+      return (
+        <div className="font-normal">{translateCategory(category)}</div>
+      );
+    },
     size: 140,
   },
   {
@@ -461,11 +472,91 @@ export default function TransactionTable() {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  
+  // États pour les filtres de notes de frais
+  const [expenseTypeFilter, setExpenseTypeFilter] = useState(null); // null, "ORGANIZATION", "EXPENSE_REPORT"
+  const [assignedMemberFilter, setAssignedMemberFilter] = useState(null); // userId ou null
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [isAddTransactionDrawerOpen, setIsAddTransactionDrawerOpen] =
     useState(false);
   const [isReceiptUploadDrawerOpen, setIsReceiptUploadDrawerOpen] =
     useState(false);
+
+  // Récupération des membres de l'organisation avec leurs avatars
+  // Utiliser EXACTEMENT la même approche que MemberSelector.jsx du Kanban
+  const { getAllCollaborators } = useOrganizationInvitations();
+  const { organization: activeOrg } = useActiveOrganization();
+  const { data: session } = useSession();
+  const [organizationMembers, setOrganizationMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  
+  const currentUser = session?.user;
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      // Attendre que l'organisation soit chargée
+      if (!activeOrg?.id) {
+        console.log("⏳ [DEPENSES] En attente de l'organisation...");
+        return;
+      }
+      
+      try {
+        setLoadingMembers(true);
+        console.log("🔍 [DEPENSES] Organisation chargée:", activeOrg.id);
+        
+        const result = await getAllCollaborators();
+
+        if (result.success) {
+          // Formatter les membres (seulement les membres actifs, pas les invitations)
+          // EXACTEMENT comme dans MemberSelector.jsx
+          const formattedMembers = result.data
+            .filter(item => item.type === 'member') // Seulement les membres actifs
+            .map(item => ({
+              userId: item.user?.id || item.userId || item.id,
+              name: item.user?.name || item.name || item.user?.email?.split('@')[0] || 'Utilisateur',
+              email: item.user?.email || item.email,
+              image: item.user?.image || item.user?.avatar || item.avatar || null,
+              role: item.role,
+            }));
+          
+          // Ajouter l'utilisateur connecté s'il n'est pas dans la liste
+          const currentUserInList = formattedMembers.some(m => 
+            m.userId === currentUser?.id || m.email === currentUser?.email
+          );
+          
+          if (currentUser && !currentUserInList) {
+            formattedMembers.unshift({
+              userId: currentUser.id,
+              name: currentUser.name || currentUser.email?.split('@')[0] || 'Moi',
+              email: currentUser.email,
+              image: currentUser.image || currentUser.avatar || null,
+              role: 'owner',
+            });
+          }
+          
+          console.log("✅ [DEPENSES] Membres finaux:", formattedMembers);
+          console.log("🖼️ [DEPENSES] Détails des avatars:");
+          formattedMembers.forEach(m => {
+            console.log(`  - ${m.email}: image="${m.image}"`);
+          });
+          
+          setOrganizationMembers(formattedMembers);
+        } else {
+          console.error("❌ [DEPENSES] Erreur:", result.error);
+          setOrganizationMembers([]);
+        }
+      } catch (error) {
+        console.error("❌ [DEPENSES] Exception:", error);
+        setOrganizationMembers([]);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+
+    if (activeOrg?.id) {
+      fetchMembers();
+    }
+  }, [activeOrg?.id]); // Se déclenche quand l'organisation est chargée
 
   // Récupération des dépenses depuis l'API
   const {
@@ -559,6 +650,9 @@ export default function TransactionTable() {
         createdAt: expense.createdAt,
         updatedAt: expense.updatedAt,
         source: "expense", // Identifier la source
+        // Ajouter expenseType et assignedMember pour l'édition
+        expenseType: expense.expenseType || "ORGANIZATION",
+        assignedMember: expense.assignedMember || null,
       };
     });
 
@@ -596,7 +690,28 @@ export default function TransactionTable() {
     }));
 
     // Combiner et trier par date (plus récent en premier)
-    const allTransactions = [...expenseTransactions, ...invoiceTransactions];
+    let allTransactions = [...expenseTransactions, ...invoiceTransactions];
+
+    // Appliquer les filtres de type de dépense et de membre assigné
+    if (expenseTypeFilter || assignedMemberFilter) {
+      allTransactions = allTransactions.filter((transaction) => {
+        // Filtrer par type de dépense
+        if (expenseTypeFilter) {
+          if (transaction.expenseType !== expenseTypeFilter) {
+            return false;
+          }
+        }
+        
+        // Filtrer par membre assigné (seulement pour les notes de frais)
+        if (assignedMemberFilter && expenseTypeFilter === "EXPENSE_REPORT") {
+          if (!transaction.assignedMember || transaction.assignedMember.userId !== assignedMemberFilter) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+    }
 
     // Trier sans convertir les dates en timestamps
     return allTransactions.sort((a, b) => {
@@ -610,7 +725,7 @@ export default function TransactionTable() {
           : new Date(b.date).toISOString().split("T")[0];
       return dateB.localeCompare(dateA);
     });
-  }, [expenses, paidInvoices]);
+  }, [expenses, paidInvoices, expenseTypeFilter, assignedMemberFilter]);
 
   const totalItems = totalCount;
 
@@ -738,6 +853,7 @@ export default function TransactionTable() {
           category: mapCategoryToEnum(transaction.category),
           date: transaction.date,
           paymentMethod: mapPaymentMethodToEnum(transaction.paymentMethod),
+          vendor: transaction.vendor || "",
           status: "PAID",
           isVatDeductible: false, // Les revenus ne sont généralement pas déductibles
           notes: `[INCOME] ${transaction.description}`,
@@ -755,6 +871,17 @@ export default function TransactionTable() {
         }
       } else {
         // Pour les dépenses, utiliser l'API existante
+        // Préparer assignedMember en ne gardant que les champs définis dans le schéma
+        let assignedMember = null;
+        if (transaction.assignedMember) {
+          assignedMember = {
+            userId: transaction.assignedMember.userId,
+            name: transaction.assignedMember.name,
+            email: transaction.assignedMember.email,
+            image: transaction.assignedMember.image || null,
+          };
+        }
+
         const expenseInput = {
           title: transaction.description || "Dépense manuelle",
           description: transaction.description,
@@ -763,12 +890,16 @@ export default function TransactionTable() {
           category: mapCategoryToEnum(transaction.category),
           date: transaction.date,
           paymentMethod: mapPaymentMethodToEnum(transaction.paymentMethod),
+          vendor: transaction.vendor || "",
           status: "PAID",
           isVatDeductible: true,
           notes: `[EXPENSE] ${transaction.description}`,
-          // Retirer le champ type car il n'existe pas dans le modèle Expense
+          // Ajouter expenseType et assignedMember
+          expenseType: transaction.expenseType || "ORGANIZATION",
+          assignedMember: assignedMember,
         };
 
+        console.log("📝 [CREATE EXPENSE] Données envoyées:", expenseInput);
         const result = await createExpense(expenseInput);
 
         if (result.success) {
@@ -839,6 +970,17 @@ export default function TransactionTable() {
 
     try {
       // Mapper les données du formulaire vers le format de l'API
+      // Préparer assignedMember en ne gardant que les champs définis dans le schéma
+      let assignedMember = null;
+      if (updatedTransaction.assignedMember) {
+        assignedMember = {
+          userId: updatedTransaction.assignedMember.userId,
+          name: updatedTransaction.assignedMember.name,
+          email: updatedTransaction.assignedMember.email,
+          image: updatedTransaction.assignedMember.image || null,
+        };
+      }
+
       const updateInput = {
         title: updatedTransaction.description || "Transaction modifiée",
         description: updatedTransaction.description,
@@ -851,6 +993,9 @@ export default function TransactionTable() {
         notes: updatedTransaction.description,
         status: "PAID", // Garder le statut PAID pour les dépenses modifiées
         isVatDeductible: true, // Valeur par défaut
+        // Ajouter expenseType et assignedMember
+        expenseType: updatedTransaction.expenseType || "ORGANIZATION",
+        assignedMember: assignedMember,
       };
 
       const result = await updateExpense(editingTransaction.id, updateInput);
@@ -1003,6 +1148,9 @@ export default function TransactionTable() {
             )}
           </div>
           {/* Filter by type */}
+        
+          
+          {/* Filtre par type de dépense et membre */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="font-normal">
@@ -1011,41 +1159,109 @@ export default function TransactionTable() {
                   size={16}
                   aria-hidden="true"
                 />
-                Type
-                {selectedTypes.length > 0 && (
+                Filtre
+                {(expenseTypeFilter || assignedMemberFilter) && (
                   <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
-                    {selectedTypes.length}
+                    {expenseTypeFilter && assignedMemberFilter ? "2" : "1"}
                   </span>
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto min-w-36 p-3" align="start">
-              <div className="space-y-3">
-                <div className="text-muted-foreground text-xs font-medium">
-                  Filtres
+            <PopoverContent className="w-80 p-4" align="start">
+              <div className="space-y-4">
+                <div className="text-sm font-medium">Filtrer les dépenses</div>
+                
+                {/* Sélection du type de dépense */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Type de dépense</Label>
+                  <Select
+                    value={expenseTypeFilter || "all"}
+                    onValueChange={(value) => {
+                      setExpenseTypeFilter(value === "all" ? null : value);
+                      if (value !== "EXPENSE_REPORT") {
+                        setAssignedMemberFilter(null);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les dépenses</SelectItem>
+                      <SelectItem value="ORGANIZATION">Dépenses de l'organisation</SelectItem>
+                      <SelectItem value="EXPENSE_REPORT">Notes de frais</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-3">
-                  {uniqueTypeValues.map((value, i) => (
-                    <div key={value} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`${id}-${i}`}
-                        checked={selectedTypes.includes(value)}
-                        onCheckedChange={(checked) =>
-                          handleTypeChange(checked, value)
-                        }
-                      />
-                      <Label className="flex grow justify-between gap-2 font-normal">
-                        {value === "INCOME" ? "Entrées" : "Sorties"}{" "}
-                        <span className="text-muted-foreground ms-2 text-xs">
-                          {typeCounts.get(value)}
-                        </span>
-                      </Label>
-                    </div>
-                  ))}
-                </div>
+                
+                {/* Sélection du membre (uniquement si "Notes de frais" est sélectionné) */}
+                {expenseTypeFilter === "EXPENSE_REPORT" && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Membre assigné</Label>
+                    <Select
+                      value={assignedMemberFilter || "all"}
+                      onValueChange={(value) => {
+                        setAssignedMemberFilter(value === "all" ? null : value);
+                      }}
+                    >
+                      <SelectTrigger>
+                        {assignedMemberFilter ? (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage 
+                                src={organizationMembers.find(m => m.userId === assignedMemberFilter)?.image} 
+                                alt={organizationMembers.find(m => m.userId === assignedMemberFilter)?.name} 
+                              />
+                              <AvatarFallback className="text-xs">
+                                {organizationMembers.find(m => m.userId === assignedMemberFilter)?.name?.charAt(0)?.toUpperCase() || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="truncate">
+                              {organizationMembers.find(m => m.userId === assignedMemberFilter)?.name}
+                            </span>
+                          </div>
+                        ) : (
+                          <SelectValue placeholder="Tous les membres" />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les membres</SelectItem>
+                        {organizationMembers.map((member) => (
+                          <SelectItem key={member.userId} value={member.userId}>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={member.image} alt={member.name} />
+                                <AvatarFallback className="text-xs">
+                                  {member.name?.charAt(0)?.toUpperCase() || "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>{member.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {/* Bouton pour réinitialiser les filtres */}
+                {(expenseTypeFilter || assignedMemberFilter) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setExpenseTypeFilter(null);
+                      setAssignedMemberFilter(null);
+                    }}
+                  >
+                    Réinitialiser les filtres
+                  </Button>
+                )}
               </div>
             </PopoverContent>
           </Popover>
+          
           {/* Toggle columns visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1544,6 +1760,7 @@ export default function TransactionTable() {
         open={isAddTransactionDrawerOpen}
         onOpenChange={setIsAddTransactionDrawerOpen}
         onSubmit={handleAddTransaction}
+        organizationMembers={organizationMembers}
       />
 
       {/* Edit Transaction Drawer */}
@@ -1552,6 +1769,7 @@ export default function TransactionTable() {
         onOpenChange={setIsEditModalOpen}
         onSubmit={handleSaveTransaction}
         transaction={editingTransaction}
+        organizationMembers={organizationMembers}
       />
 
       {/* Receipt Upload Drawer */}

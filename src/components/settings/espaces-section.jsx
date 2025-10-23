@@ -150,7 +150,11 @@ export default function EspacesSection() {
           });
 
           const deduplicatedMembers = Array.from(emailMap.values());
-          setMembers(deduplicatedMembers);
+          
+          // Filtrer les owners uniquement pour l'affichage dans les paramètres
+          const membersWithoutOwner = deduplicatedMembers.filter(m => m.role !== "owner");
+          
+          setMembers(membersWithoutOwner);
         } else {
           console.error("Error fetching members:", result.error);
         }

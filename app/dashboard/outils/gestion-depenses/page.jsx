@@ -103,21 +103,11 @@ function GestionDepensesContent() {
           </Button>
         </div>
         
-        {/* Graphiques */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Graphique des entrées avec vraies données */}
+        {/* Graphique des dépenses uniquement */}
+        <div className="grid grid-cols-1 gap-4">
+          {/* Graphique des dépenses avec vraies données */}
           <ChartAreaInteractive
-            title="Entrées"
-            description={loading ? "Chargement..." : formatCurrency(totalIncome)}
-            height="150px"
-            className="shadow-xs"
-            config={incomeChartConfig}
-            data={incomeChartData}
-            hideMobileCurve={true}
-          />
-          {/* Graphique des sorties avec vraies données */}
-          <ChartAreaInteractive
-            title="Sorties"
+            title="Dépenses"
             description={
               loading ? "Chargement..." : formatCurrency(totalExpenses)
             }
