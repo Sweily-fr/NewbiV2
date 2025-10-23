@@ -214,6 +214,7 @@ export const stripePlugin = stripe({
 
               // Créer l'organisation via Better Auth
               const { mongoDb } = await import("./mongodb.js");
+              const { ObjectId } = require("mongodb");
               const orgSlug = `org-${userId.slice(-8)}-${Date.now().toString(36)}`;
 
               const newOrg = {
@@ -231,12 +232,14 @@ export const stripePlugin = stripe({
               const orgResult = await mongoDb
                 .collection("organization")
                 .insertOne(newOrg);
-              referenceId = orgResult.insertedId.toString();
+              
+              const organizationObjectId = orgResult.insertedId; // Garder comme ObjectId
+              referenceId = organizationObjectId.toString(); // String pour l'abonnement
 
-              // Créer le membre owner
+              // Créer le membre owner avec ObjectId
               await mongoDb.collection("member").insertOne({
-                userId: userId,
-                organizationId: referenceId,
+                userId: new ObjectId(userId), // ✅ Convertir en ObjectId
+                organizationId: organizationObjectId, // ✅ Utiliser ObjectId
                 role: "owner",
                 createdAt: new Date(),
               });
@@ -252,6 +255,80 @@ export const stripePlugin = stripe({
               console.log(
                 `✅ [STRIPE WEBHOOK] Organisation créée: ${referenceId}`
               );
+
+              // Envoyer les invitations aux emails invités
+              if (orgInvitedEmails) {
+                try {
+                  const invitedEmailsList = JSON.parse(orgInvitedEmails);
+                  
+                  if (Array.isArray(invitedEmailsList) && invitedEmailsList.length > 0) {
+                    console.log(`📧 [STRIPE WEBHOOK] Envoi de ${invitedEmailsList.length} invitation(s)...`);
+                    
+                    // Récupérer les infos de l'inviteur et de l'organisation
+                    const inviterUser = await mongoDb.collection("user").findOne({ 
+                      _id: new ObjectId(userId)
+                    });
+                    
+                    const org = await mongoDb.collection("organization").findOne({ 
+                      _id: organizationObjectId 
+                    });
+                    
+                    if (!inviterUser || !org) {
+                      console.error("❌ [STRIPE WEBHOOK] Inviteur ou organisation introuvable");
+                      console.error("Inviteur:", inviterUser);
+                      console.error("Organisation:", org);
+                    } else {
+                      // Envoyer les invitations seulement si on a trouvé l'inviteur et l'org
+                      for (const email of invitedEmailsList) {
+                        if (email && email.trim()) {
+                          try {
+                            // Créer l'invitation directement dans MongoDB
+                            const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+                            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                            
+                            await mongoDb.collection("invitation").insertOne({
+                              id: invitationId,
+                              organizationId: referenceId,
+                              email: email.trim(),
+                              role: "member",
+                              inviterId: userId,
+                              status: "pending",
+                              expiresAt: expiresAt,
+                              createdAt: new Date(),
+                            });
+                            
+                            // Envoyer l'email d'invitation
+                            const { sendOrganizationInvitationEmail } = await import("./auth-utils.js");
+                            
+                            await sendOrganizationInvitationEmail({
+                              id: invitationId,
+                              email: email.trim(),
+                              role: "member",
+                              organization: {
+                                id: referenceId,
+                                name: org.name,
+                              },
+                              inviter: {
+                                user: {
+                                  id: userId,
+                                  name: inviterUser.name,
+                                  email: inviterUser.email,
+                                },
+                              },
+                            });
+                            
+                            console.log(`✅ [STRIPE WEBHOOK] Invitation envoyée à ${email}`);
+                          } catch (inviteError) {
+                            console.error(`❌ [STRIPE WEBHOOK] Erreur invitation ${email}:`, inviteError);
+                          }
+                        }
+                      }
+                    }
+                  }
+                } catch (parseError) {
+                  console.error("❌ [STRIPE WEBHOOK] Erreur parsing emails invités:", parseError);
+                }
+              }
             } else {
               referenceId =
                 session.metadata?.referenceId ||

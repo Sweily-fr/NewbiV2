@@ -140,9 +140,9 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
 
         {/* Logo en haut à gauche */}
         <div className="absolute top-5 left-5 z-10">
-          <img src="/Logo + texte.svg" alt="Logo" className="h-6 dark:hidden" />
+          <img src="/Logo%20+%20texte.svg" alt="Logo" className="h-6 dark:hidden" />
           <img
-            src="/Logo + texte_blanc.svg"
+            src="/Logo%20+%20texte_blanc.svg"
             alt="Logo"
             className="h-6 hidden dark:block"
           />
