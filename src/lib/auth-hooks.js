@@ -128,14 +128,33 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
         organization
       );
     } catch (error) {
+      console.error("❌ [OAuth] Erreur avec internalAdapter:", error);
+      
       // Fallback: essayer avec l'adapter normal
       try {
+        // Calculer les dates de trial (14 jours)
+        const now = new Date();
+        const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+        
         const organizationData = {
           name: user.name
             ? `Organisation de ${user.name}`
             : `Organisation de ${user.email}`,
           slug: `org-${user.id.slice(-8)}`,
+          createdAt: now,
+          metadata: JSON.stringify({
+            autoCreated: true,
+            createdAt: now.toISOString(),
+            createdVia: "oauth",
+          }),
+          // ✅ Ajouter les champs trial
+          trialStartDate: now.toISOString(),
+          trialEndDate: trialEnd.toISOString(),
+          isTrialActive: true,
+          hasUsedTrial: true,
         };
+
+        console.log("🔄 [OAuth Fallback] Création organisation avec adapter normal...");
 
         const organization = await ctx.context.adapter.create({
           model: "organization",
@@ -148,10 +167,13 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
             userId: userId,
             organizationId: organization.id,
             role: "owner",
+            createdAt: now,
           },
         });
+
+        console.log("✅ [OAuth Fallback] Organisation créée avec trial:", organization.id);
       } catch (fallbackError) {
-        console.error("Erreur même avec le fallback:", fallbackError);
+        console.error("❌ [OAuth Fallback] Erreur même avec le fallback:", fallbackError);
       }
     }
   }
