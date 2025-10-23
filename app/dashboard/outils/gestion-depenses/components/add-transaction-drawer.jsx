@@ -220,9 +220,9 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
       };
       reader.readAsDataURL(file);
       
-      // Upload vers Cloudflare
+      // Upload vers Cloudflare (bucket OCR pour les uploads temporaires)
       try {
-        await uploadReceiptDocument(file, "receipts");
+        await uploadReceiptDocument(file, "temp");
       } catch (error) {
         console.error("❌ Erreur upload reçu:", error);
         alert("Erreur lors de l'upload du reçu");
@@ -524,20 +524,20 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                     {/* Grande preview cliquable */}
                     <div 
                       className="border-input relative flex h-48 w-full items-center justify-center overflow-hidden rounded-md border bg-gray-50 dark:bg-gray-900 cursor-pointer hover:border-blue-500 transition-colors group"
-                      onClick={() => window.open(previewUrl, '_blank')}
+                      onClick={() => window.open(uploadedFileUrl || previewUrl, '_blank')}
                       role="button"
                       tabIndex={0}
                     >
                       {previewUrl.toLowerCase().includes('pdf') || selectedFile?.type === 'application/pdf' ? (
                         <iframe
-                          src={previewUrl}
+                          src={uploadedFileUrl || previewUrl}
                           className="h-full w-full pointer-events-none"
                           title="Preview du reçu"
                         />
                       ) : (
                         <img
                           className="h-full w-full object-contain"
-                          src={previewUrl}
+                          src={uploadedFileUrl || previewUrl}
                           alt="Preview du reçu"
                         />
                       )}

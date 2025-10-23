@@ -128,6 +128,7 @@ import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
+import { usePromoteTemporaryFile } from "@/src/hooks/usePromoteTemporaryFile";
 
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
@@ -582,6 +583,21 @@ export default function TransactionTable() {
   const { deleteMultipleExpenses, loading: deleteMultipleExpensesLoading } = useDeleteMultipleExpenses();
   const deleteMultipleLoading = deleteMultipleExpensesLoading; // Alias pour compatibilité
   const { addExpenseFile, loading: addExpenseFileLoading } = useAddExpenseFile();
+  const { promoteTemporaryFile, promoteResult } = usePromoteTemporaryFile();
+  const pendingTransactionRef = useRef(null);
+
+  // Gérer le résultat de la promotion
+  useEffect(() => {
+    if (promoteResult?.success && promoteResult?.url && pendingTransactionRef.current) {
+      console.log('✅ [PROMOTE] Fichier promu avec succès:', promoteResult.url);
+      const transaction = pendingTransactionRef.current;
+      transaction.receiptImage = promoteResult.url;
+      pendingTransactionRef.current = null;
+      
+      // Relancer l'ajout de la transaction avec l'URL promue
+      handleAddTransaction(transaction);
+    }
+  }, [promoteResult]);
 
   // Récupération des factures payées depuis l'API
   const {
@@ -847,6 +863,33 @@ export default function TransactionTable() {
 
   const handleAddTransaction = async (transaction) => {
     try {
+      let promotedReceiptUrl = transaction.receiptImage;
+      
+      // Si le fichier est temporaire (commence par temp/), le promouvoir
+      if (transaction.receiptImage && transaction.receiptImage.includes('/temp/')) {
+        console.log('📎 [PROMOTE] Promotion du fichier temporaire:', transaction.receiptImage);
+        try {
+          // Extraire la clé du fichier de l'URL
+          // URL format: https://pub-xxx.r2.dev/temp/userId/uniqueId.ext
+          const urlParts = transaction.receiptImage.split('/');
+          const tempKey = urlParts.slice(-3).join('/');
+          console.log('📋 [PROMOTE] Clé extraite:', tempKey);
+          
+          // Stocker la transaction en attente et appeler la promotion
+          pendingTransactionRef.current = transaction;
+          await promoteTemporaryFile(tempKey);
+          // La promotion est asynchrone, on retourne ici et on attend le useEffect
+          return;
+        } catch (promoteError) {
+          console.error('❌ [PROMOTE] Erreur promotion:', promoteError);
+          // Continuer avec l'URL temporaire si la promotion échoue
+          promotedReceiptUrl = transaction.receiptImage;
+        }
+      }
+      
+      // Mettre à jour la transaction avec l'URL promue si disponible
+      transaction.receiptImage = promotedReceiptUrl;
+      
       if (transaction.type === "INCOME") {
         // Pour les revenus, créer une dépense avec montant positif
         const expenseInput = {
@@ -866,12 +909,13 @@ export default function TransactionTable() {
         const result = await createExpense(expenseInput);
         
         // Ajouter le fichier si présent (après création de la dépense)
-        if (result.success && transaction.receiptImage && result.expense?.id) {
+        if (result.success && (promotedReceiptUrl || transaction.receiptImage) && result.expense?.id) {
           try {
+            const fileUrl = promotedReceiptUrl || transaction.receiptImage;
             await addExpenseFile(result.expense.id, {
-              cloudflareUrl: transaction.receiptImage,
+              cloudflareUrl: fileUrl,
               fileName: "receipt.pdf",
-              mimeType: transaction.receiptImage.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+              mimeType: fileUrl.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
               processOCR: false,
             });
           } catch (fileError) {
@@ -925,14 +969,15 @@ export default function TransactionTable() {
         
         if (result.success) {
           // Ajouter le fichier si présent (après création de la dépense)
-          if (transaction.receiptImage && result.expense?.id) {
+          if ((promotedReceiptUrl || transaction.receiptImage) && result.expense?.id) {
             console.log("📎 [ADD FILE] Ajout du fichier pour l'expense:", result.expense.id);
-            console.log("📎 [ADD FILE] URL Cloudflare:", transaction.receiptImage);
+            const fileUrl = promotedReceiptUrl || transaction.receiptImage;
+            console.log("📎 [ADD FILE] URL Cloudflare:", fileUrl);
             try {
               const fileResult = await addExpenseFile(result.expense.id, {
-                cloudflareUrl: transaction.receiptImage,
+                cloudflareUrl: fileUrl,
                 fileName: "receipt.pdf",
-                mimeType: transaction.receiptImage.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+                mimeType: fileUrl.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
                 processOCR: false,
               });
               console.log("✅ [ADD FILE] Fichier ajouté avec succès:", fileResult);
@@ -942,7 +987,7 @@ export default function TransactionTable() {
             }
           } else {
             console.log("⚠️ [ADD FILE] Conditions non remplies:", {
-              hasReceiptImage: !!transaction.receiptImage,
+              hasReceiptImage: !!(promotedReceiptUrl || transaction.receiptImage),
               hasExpenseId: !!result.expense?.id,
             });
           }
