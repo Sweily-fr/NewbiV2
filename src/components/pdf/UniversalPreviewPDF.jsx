@@ -609,49 +609,47 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
             <div className="font-normal" style={{ fontSize: "10px" }}>
               {/* Adresse de l'entreprise */}
               {data.companyInfo?.address ? (
-                <div className="whitespace-pre-line dark:text-[#0A0A0A] mb-1">
+                <div className="whitespace-pre-line dark:text-[#0A0A0A]">
                   {formatAddress(data.companyInfo.address)}
                 </div>
               ) : (
-                <div className="whitespace-pre-line dark:text-[#0A0A0A] mb-1">
+                <div className="whitespace-pre-line dark:text-[#0A0A0A]">
                   229 Rue Saint-Honoré\n75001 Paris, FR
                 </div>
               )}
 
               {/* Email */}
               {data.companyInfo?.email && (
-                <div className="dark:text-[#0A0A0A] mb-0.5">
+                <div className="dark:text-[#0A0A0A]">
                   {data.companyInfo.email}
                 </div>
               )}
 
               {/* Téléphone */}
               {data.companyInfo?.phone && (
-                <div className="dark:text-[#0A0A0A] mb-0.5">
+                <div className="dark:text-[#0A0A0A]">
                   {data.companyInfo.phone}
                 </div>
               )}
 
               {/* Site web */}
               {data.companyInfo?.website && (
-                <div className="dark:text-[#0A0A0A] mb-0.5">
+                <div className="dark:text-[#0A0A0A]">
                   {data.companyInfo.website}
                 </div>
               )}
 
               {/* SIRET et numéro de TVA */}
-              <div className="space-y-0.5 mt-1">
-                {data.companyInfo?.siret && (
-                  <div className="dark:text-[#0A0A0A]">
-                    SIRET: {data.companyInfo.siret}
-                  </div>
-                )}
-                {data.companyInfo?.vatNumber && (
-                  <div className="dark:text-[#0A0A0A]">
-                    N° TVA: {data.companyInfo.vatNumber}
-                  </div>
-                )}
-              </div>
+              {data.companyInfo?.siret && (
+                <div className="dark:text-[#0A0A0A]">
+                  SIRET: {data.companyInfo.siret}
+                </div>
+              )}
+              {data.companyInfo?.vatNumber && (
+                <div className="dark:text-[#0A0A0A]">
+                  N° TVA: {data.companyInfo.vatNumber}
+                </div>
+              )}
             </div>
           </div>
 
@@ -679,20 +677,26 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                     {formatAddress(data.client.address) || ""}
                   </div>
                 )}
-                <span className="dark:text-[#0A0A0A]">
-                  {data.client?.email && <div>{data.client.email}</div>}
-                </span>
-                <span className="dark:text-[#0A0A0A]">
-                  {data.client?.phone && <div>{data.client.phone}</div>}
-                </span>
-                <span className="dark:text-[#0A0A0A]">
-                  {data.client?.siret && <div>SIRET: {data.client.siret}</div>}
-                </span>
-                <span className="dark:text-[#0A0A0A]">
-                  {data.client?.vatNumber && (
-                    <div>N° TVA: {data.client.vatNumber}</div>
-                  )}
-                </span>
+                {data.client?.email && (
+                  <div className="dark:text-[#0A0A0A]">
+                    {data.client.email}
+                  </div>
+                )}
+                {data.client?.phone && (
+                  <div className="dark:text-[#0A0A0A]">
+                    {data.client.phone}
+                  </div>
+                )}
+                {data.client?.siret && (
+                  <div className="dark:text-[#0A0A0A]">
+                    SIRET: {data.client.siret}
+                  </div>
+                )}
+                {data.client?.vatNumber && (
+                  <div className="dark:text-[#0A0A0A]">
+                    N° TVA: {data.client.vatNumber}
+                  </div>
+                )}
               </div>
             </div>
           )}

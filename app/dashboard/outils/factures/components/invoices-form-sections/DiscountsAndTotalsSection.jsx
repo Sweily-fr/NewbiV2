@@ -147,7 +147,7 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
         <Separator />
 
         {/* Champs personnalisés */}
-        <div className="space-y-4">
+        <div className="space-y-4 mb-6">
           <div className="mb-2">
             <Label className="text-sm font-normal">Champs personnalisés</Label>
           </div>
