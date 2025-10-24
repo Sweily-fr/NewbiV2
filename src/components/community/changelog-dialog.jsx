@@ -70,22 +70,22 @@ export function ChangelogDialog({ open, onOpenChange }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPortal>
         <DialogOverlay />
-        <DialogPrimitive.Content className="bg-background fixed top-1/2 left-1/2 z-50 w-[calc(100%-4rem)] h-[calc(100%-4rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg border shadow-lg">
+        <DialogPrimitive.Content className="bg-background fixed inset-0 z-50 w-full h-full md:w-[calc(100%-4rem)] md:h-[calc(100%-4rem)] md:rounded-lg border shadow-lg md:-translate-x-1/2 md:-translate-y-1/2 md:top-1/2 md:left-1/2">
           <DialogTitle>
             <VisuallyHidden>Changelog</VisuallyHidden>
           </DialogTitle>
           
-          <DialogPrimitive.Close className="absolute top-4 right-4 w-14 h-14 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-            <X className="w-8 h-8" />
+          <DialogPrimitive.Close className="absolute top-2 right-2 w-10 h-10 md:top-4 md:right-4 md:w-14 md:h-14 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+            <X className="w-5 h-5 md:w-8 md:h-8" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
           
           <div className="w-full h-full flex flex-col overflow-hidden">
-            <div className="p-6 pb-4 border-b">
+            <div className="p-4 md:p-6 pb-3 md:pb-4 border-b">
               <h2 className="text-2xl font-bold mb-2">Changelog Newbi</h2>
               <p className="text-muted-foreground">Découvrez les dernières mises à jour et améliorations de la plateforme.</p>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 pt-24">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-6 md:pt-24">
               <div className="mx-auto max-w-3xl space-y-16 md:space-y-24">
                 {entries.map((entry, index) => (
                   <div key={index} className="relative flex flex-col gap-4 md:flex-row md:gap-16">
