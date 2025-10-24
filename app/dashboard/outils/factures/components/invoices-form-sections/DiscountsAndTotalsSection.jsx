@@ -61,7 +61,10 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
         <div className="flex gap-4">
           {/* Type de remise - 50% de la largeur */}
           <div className="w-1/2 space-y-2">
-            <Label className="text-sm font-normal">Type de remise</Label>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-normal">Type de remise</Label>
+              <span className="h-4 w-4" aria-hidden="true"></span>
+            </div>
             <div className="space-y-1">
               <Select
                 value={data.discountType || "PERCENTAGE"}
@@ -99,9 +102,12 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
 
           {/* Valeur de la remise - 50% de la largeur */}
           <div className="w-1/2 space-y-2">
-            <Label htmlFor="discount-value" className="text-sm font-normal">
-              Valeur de la remise
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="discount-value" className="text-sm font-normal">
+                Valeur de la remise
+              </Label>
+              <span className="h-4 w-4" aria-hidden="true"></span>
+            </div>
             <div className="space-y-1">
               <Input
                 id="discount-value"

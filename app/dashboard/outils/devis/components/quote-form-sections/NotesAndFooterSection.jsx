@@ -88,7 +88,10 @@ export default function NotesAndFooterSection({ canEdit }) {
       <CardContent className="space-y-4 p-0">
         {/* Notes d'en-tête */}
         <div>
-          <Label htmlFor="header-notes">Notes d'en-tête</Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="header-notes">Notes d'en-tête</Label>
+            <span className="h-4 w-4" aria-hidden="true"></span>
+          </div>
           <div className="space-y-1">
             <Textarea
               id="header-notes"
@@ -119,7 +122,10 @@ export default function NotesAndFooterSection({ canEdit }) {
 
         {/* Notes de bas de page */}
         <div>
-          <Label htmlFor="footer-notes">Notes de bas de page</Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="footer-notes">Notes de bas de page</Label>
+            <span className="h-4 w-4" aria-hidden="true"></span>
+          </div>
           <div className="space-y-1">
             <Textarea
               id="footer-notes"
@@ -152,7 +158,10 @@ export default function NotesAndFooterSection({ canEdit }) {
 
         {/* Conditions générales */}
         <div>
-          <Label htmlFor="terms">Conditions générales</Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="terms">Conditions générales</Label>
+            <span className="h-4 w-4" aria-hidden="true"></span>
+          </div>
           <div className="space-y-1">
             <Textarea
               id="terms"
@@ -259,7 +268,10 @@ export default function NotesAndFooterSection({ canEdit }) {
 
                 <div className="space-y-4">
                   <div className="space-y-1">
-                    <Label className="text-sm font-normal">IBAN</Label>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm font-normal">IBAN</Label>
+                      <span className="h-4 w-4" aria-hidden="true"></span>
+                    </div>
                     <div className="p-3 bg-muted/50 rounded-md border">
                       <p className="font-mono text-sm">
                         {formatIban(data.bankDetails?.iban) || "Non renseigné"}
@@ -267,7 +279,10 @@ export default function NotesAndFooterSection({ canEdit }) {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-sm font-normal">BIC/SWIFT</Label>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm font-normal">BIC/SWIFT</Label>
+                      <span className="h-4 w-4" aria-hidden="true"></span>
+                    </div>
                     <div className="p-3 bg-muted/50 rounded-md border">
                       <p className="font-mono text-sm">
                         {data.bankDetails?.bic || "Non renseigné"}
@@ -276,9 +291,12 @@ export default function NotesAndFooterSection({ canEdit }) {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-sm font-normal">
-                    Nom de la banque
-                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm font-normal">
+                      Nom de la banque
+                    </Label>
+                    <span className="h-4 w-4" aria-hidden="true"></span>
+                  </div>
                   <div className="p-3 bg-muted/50 rounded-md border">
                     <p className="text-sm">
                       {data.bankDetails?.bankName || "Non renseigné"}

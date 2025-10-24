@@ -155,7 +155,10 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
 
             {/* Nom complet */}
             <div className="space-y-2">
-              <Label htmlFor="shippingFullName" className="font-normal">Nom complet</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="shippingFullName" className="font-normal">Nom complet</Label>
+                <span className="h-4 w-4" aria-hidden="true"></span>
+              </div>
               <Input
                 id="shippingFullName"
                 placeholder="Nom complet du destinataire"
@@ -172,7 +175,10 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
 
             {/* Adresse de livraison */}
             <div className="space-y-2">
-              <Label htmlFor="shippingStreet" className="font-normal">Adresse de livraison *</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="shippingStreet" className="font-normal">Adresse de livraison *</Label>
+                <span className="h-4 w-4" aria-hidden="true"></span>
+              </div>
               <Textarea
                 id="shippingStreet"
                 placeholder="Adresse complète de livraison"
@@ -196,7 +202,10 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
             {/* Ville et Code postal */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="shippingCity" className="font-normal">Ville *</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="shippingCity" className="font-normal">Ville *</Label>
+                  <span className="h-4 w-4" aria-hidden="true"></span>
+                </div>
                 <Input
                   id="shippingCity"
                   placeholder="Ville"
@@ -217,7 +226,10 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="shippingPostalCode" className="font-normal">Code postal *</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="shippingPostalCode" className="font-normal">Code postal *</Label>
+                  <span className="h-4 w-4" aria-hidden="true"></span>
+                </div>
                 <Input
                   id="shippingPostalCode"
                   placeholder="Code postal"
@@ -240,7 +252,10 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
 
             {/* Pays */}
             <div className="space-y-2">
-              <Label htmlFor="shippingCountry" className="font-normal">Pays *</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="shippingCountry" className="font-normal">Pays *</Label>
+                <span className="h-4 w-4" aria-hidden="true"></span>
+              </div>
               <Input
                 id="shippingCountry"
                 placeholder="Pays"
@@ -263,7 +278,10 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
             {/* Montant et TVA */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="shippingAmountHT" className="font-normal">Montant HT (€) *</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="shippingAmountHT" className="font-normal">Montant HT (€) *</Label>
+                  <span className="h-4 w-4" aria-hidden="true"></span>
+                </div>
                 <Input
                   id="shippingAmountHT"
                   type="number"
@@ -285,7 +303,10 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="shippingVatRate" className="font-normal">TVA (%)</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="shippingVatRate" className="font-normal">TVA (%)</Label>
+                  <span className="h-4 w-4" aria-hidden="true"></span>
+                </div>
                 <Select
                   value={shipping.shippingVatRate?.toString() || "20"}
                   onValueChange={(value) =>
