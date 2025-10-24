@@ -82,7 +82,7 @@ export function ChangelogDialog({ open, onOpenChange }) {
           
           <div className="w-full h-full flex flex-col overflow-hidden">
             <div className="p-4 md:p-6 pb-3 md:pb-4 border-b">
-              <h2 className="text-2xl font-bold mb-2">Changelog Newbi</h2>
+              <h2 className="text-2xl font-medium mb-2">Changelog Newbi</h2>
               <p className="text-muted-foreground">Découvrez les dernières mises à jour et améliorations de la plateforme.</p>
             </div>
             <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-6 md:pt-24">
