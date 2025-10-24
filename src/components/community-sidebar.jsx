@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Lightbulb, Bug, CheckCircle2, Plus } from 'lucide-react';
+import { Lightbulb, Bug, CheckCircle2, Plus, History } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
@@ -12,11 +12,13 @@ import { IdeasTab } from './community/ideas-tab';
 import { BugsTab } from './community/bugs-tab';
 import { ValidatedTab } from './community/validated-tab';
 import { CreateSuggestionDialog } from './community/create-suggestion-dialog';
+import { ChangelogDialog } from './community/changelog-dialog';
 
 export function CommunitySidebar({ open, onOpenChange }) {
   const [activeTab, setActiveTab] = useState('ideas');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createType, setCreateType] = useState('idea');
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   // Récupérer les statistiques
   const { data: statsData } = useQuery(GET_COMMUNITY_SUGGESTION_STATS, {
@@ -44,12 +46,23 @@ export function CommunitySidebar({ open, onOpenChange }) {
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-full sm:max-w-2xl p-0 flex flex-col">
-          <SheetHeader className="px-6 py-4 border-b">
-            <SheetTitle className="text-2xl font-bold">Communauté</SheetTitle>
-            <p className="text-sm text-muted-foreground mt-2">
+          <div className="px-6 py-4 border-b">
+            <div className="flex items-center gap-2 mb-2">
+              <SheetTitle className="text-2xl font-bold">Communauté</SheetTitle>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setChangelogOpen(true)}
+                title="Voir le changelog"
+                className="h-8 w-8 p-0 hover:cursor-pointer ml-4"
+              >
+                <History className="h-5 w-5" />
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
               Partagez vos idées, signalez des problèmes et découvrez les fonctionnalités validées
             </p>
-          </SheetHeader>
+          </div>
 
           <div className="flex-1 overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
@@ -114,6 +127,11 @@ export function CommunitySidebar({ open, onOpenChange }) {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         type={createType}
+      />
+
+      <ChangelogDialog
+        open={changelogOpen}
+        onOpenChange={setChangelogOpen}
       />
     </>
   );
