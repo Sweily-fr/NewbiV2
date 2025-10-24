@@ -189,7 +189,7 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }) {
+export function AppSidebar({ onCommunityClick, ...props }) {
   const { session } = useUser();
   const {
     isLoading: subscriptionLoading,
@@ -247,7 +247,7 @@ export function AppSidebar({ ...props }) {
           <>
             <NavMain items={data.navMain} />
             <NavDocuments items={data.documents} />
-            <NavSecondary items={data.navSecondary} className="mt-auto" />
+            <NavSecondary items={data.navSecondary} onCommunityClick={onCommunityClick} className="mt-auto" />
           </>
         ) : (
           <>

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppSidebar } from "@/src/components/app-sidebar";
 import { SignatureSidebar } from "@/src/components/signature-sidebar";
+import { CommunitySidebar } from "@/src/components/community-sidebar";
 import { SiteHeader } from "@/src/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/src/components/ui/sidebar";
 import { SearchCommand } from "@/src/components/search-command";
@@ -31,6 +32,7 @@ function DashboardContent({ children }) {
   const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
 
   // Hook pour gérer l'onboarding et les données du layout
   const {
@@ -102,7 +104,7 @@ function DashboardContent({ children }) {
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset" onCommunityClick={() => setIsCommunitySidebarOpen(true)} />
       <SidebarInset className="md:pt-0 pt-10">
         <SiteHeader />
         <div className="flex flex-1 flex-col">
@@ -142,6 +144,12 @@ function DashboardContent({ children }) {
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
         onComplete={completeOnboarding}
+      />
+
+      {/* Sidebar communautaire */}
+      <CommunitySidebar
+        open={isCommunitySidebarOpen}
+        onOpenChange={setIsCommunitySidebarOpen}
       />
     </SidebarProvider>
   );

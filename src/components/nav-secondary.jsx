@@ -143,7 +143,7 @@ function SettingsDropdownMenu() {
   );
 }
 
-export function NavSecondary({ items, ...props }) {
+export function NavSecondary({ items, onCommunityClick, ...props }) {
   const [open, setOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const { isActive } = useSubscription();
@@ -175,6 +175,12 @@ export function NavSecondary({ items, ...props }) {
                       e.preventDefault();
                       // Déclencher l'événement personnalisé pour ouvrir la recherche
                       window.dispatchEvent(new Event("open-search-command"));
+                    } else if (item.title === "Communauté") {
+                      e.preventDefault();
+                      // Ouvrir la sidebar communautaire
+                      if (onCommunityClick) {
+                        onCommunityClick();
+                      }
                     }
                     handleLinkClick();
                   }}
