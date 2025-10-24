@@ -1,16 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Package, Plus, Trash2, Percent } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
+import { SelectNative } from "@/src/components/ui/select-native";
 import {
   Card,
   CardContent,
@@ -19,6 +14,8 @@ import {
 } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
+import { CurrencyInput } from "@/src/components/ui/currency-input";
+import { QuantityInput } from "@/src/components/ui/quantity-input";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Separator } from "@/src/components/ui/separator";
 import {
@@ -61,6 +58,9 @@ export default function ItemsSection({
 
   // Observer les changements en temps réel pour tous les items
   const watchedItems = watch("items") || [];
+  
+  // État pour gérer l'affichage des champs optionnels par article
+  const [showDiscount, setShowDiscount] = useState({});
   
   // Helper pour vérifier si un article a une erreur
   const getItemError = (index, fieldName) => {
@@ -265,12 +265,15 @@ export default function ItemsSection({
                     <div className="space-y-4 pt-2">
                       {/* Description */}
                       <div className="space-y-2">
-                        <Label
-                          htmlFor={`item-description-${index}`}
-                          className="text-sm font-normal"
-                        >
-                          Description de l'article
-                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Label
+                            htmlFor={`item-description-${index}`}
+                            className="text-sm font-normal"
+                          >
+                            Nom
+                          </Label>
+                          <span className="h-4 w-4" aria-hidden="true"></span>
+                        </div>
                         <div className="space-y-1">
                           <Input
                             id={`item-description-${index}`}
@@ -305,12 +308,15 @@ export default function ItemsSection({
 
                       {/* Détails supplémentaires */}
                       <div className="space-y-2">
-                        <Label
-                          htmlFor={`item-details-${index}`}
-                          className="text-sm font-normal"
-                        >
-                          Détails supplémentaires (optionnel)
-                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Label
+                            htmlFor={`item-details-${index}`}
+                            className="text-sm font-normal"
+                          >
+                            Détails supplémentaires (optionnel)
+                          </Label>
+                          <span className="h-4 w-4" aria-hidden="true"></span>
+                        </div>
                         <Textarea
                           id={`item-details-${index}`}
                           {...register(`items.${index}.details`)}
@@ -324,16 +330,18 @@ export default function ItemsSection({
                       {/* Quantité et Unité */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label
-                            htmlFor={`item-quantity-${index}`}
-                            className="text-sm font-normal"
-                          >
-                            Quantité
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label
+                              htmlFor={`item-quantity-${index}`}
+                              className="text-sm font-normal"
+                            >
+                              Quantité
+                            </Label>
+                            <span className="h-4 w-4" aria-hidden="true"></span>
+                          </div>
                           <div className="space-y-1">
-                            <Input
+                            <QuantityInput
                               id={`item-quantity-${index}`}
-                              type="number"
                               {...register(`items.${index}.quantity`, {
                                 valueAsNumber: true,
                                 required: "La quantité est requise",
@@ -364,10 +372,8 @@ export default function ItemsSection({
                                   });
                                 },
                               })}
-                              min="0"
-                              step="0.01"
                               disabled={!canEdit}
-                              className={`h-10 rounded-lg text-sm w-full ${
+                              className={`h-10 text-sm w-full ${
                                 errors?.items?.[index]?.quantity || getItemError(index, "quantity")
                                   ? "border-destructive focus-visible:ring-destructive"
                                   : ""
@@ -381,37 +387,32 @@ export default function ItemsSection({
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-normal">Unité</Label>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-normal">Unité</Label>
+                            <span className="h-4 w-4" aria-hidden="true"></span>
+                          </div>
                           <Controller
                             name={`items.${index}.unit`}
                             defaultValue="unité"
                             render={({ field }) => (
-                              <Select
+                              <SelectNative
                                 value={field.value || "unité"}
-                                onValueChange={field.onChange}
+                                onChange={(e) => field.onChange(e.target.value)}
                                 disabled={!canEdit}
+                                className="w-full text-sm"
                               >
-                                <SelectTrigger className="h-10 w-full rounded-lg px-3 text-sm">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="unité">Unité</SelectItem>
-                                  <SelectItem value="pièce">Pièce</SelectItem>
-                                  <SelectItem value="heure">Heure</SelectItem>
-                                  <SelectItem value="jour">Jour</SelectItem>
-                                  <SelectItem value="mois">Mois</SelectItem>
-                                  <SelectItem value="kg">Kilogramme</SelectItem>
-                                  <SelectItem value="m">Mètre</SelectItem>
-                                  <SelectItem value="m²">
-                                    Mètre carré
-                                  </SelectItem>
-                                  <SelectItem value="m³">Mètre cube</SelectItem>
-                                  <SelectItem value="litre">Litre</SelectItem>
-                                  <SelectItem value="forfait">
-                                    Forfait
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
+                                <option value="unité">Unité</option>
+                                <option value="pièce">Pièce</option>
+                                <option value="heure">Heure</option>
+                                <option value="jour">Jour</option>
+                                <option value="mois">Mois</option>
+                                <option value="kg">Kilogramme</option>
+                                <option value="m">Mètre</option>
+                                <option value="m²">Mètre carré</option>
+                                <option value="m³">Mètre cube</option>
+                                <option value="litre">Litre</option>
+                                <option value="forfait">Forfait</option>
+                              </SelectNative>
                             )}
                           />
                         </div>
@@ -420,16 +421,18 @@ export default function ItemsSection({
                       {/* Prix unitaire et Taux de TVA */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label
-                            htmlFor={`item-price-${index}`}
-                            className="text-sm font-normal"
-                          >
-                            Prix unitaire (€)
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label
+                              htmlFor={`item-price-${index}`}
+                              className="text-sm font-normal"
+                            >
+                              Prix unitaire (€)
+                            </Label>
+                            <span className="h-4 w-4" aria-hidden="true"></span>
+                          </div>
                           <div className="space-y-1">
-                            <Input
+                            <CurrencyInput
                               id={`item-price-${index}`}
-                              type="number"
                               {...register(`items.${index}.unitPrice`, {
                                 valueAsNumber: true,
                                 required: "Le prix est requis",
@@ -459,10 +462,8 @@ export default function ItemsSection({
                                   });
                                 },
                               })}
-                              min="0"
-                              step="0.01"
                               disabled={!canEdit}
-                              className={`h-10 rounded-lg text-sm w-full ${
+                              className={`h-10 text-sm w-full ${
                                 errors?.items?.[index]?.unitPrice || getItemError(index, "unitPrice")
                                   ? "border-destructive focus-visible:ring-destructive"
                                   : ""
@@ -476,38 +477,29 @@ export default function ItemsSection({
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-normal">
-                            Taux de TVA
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-normal">
+                              Taux de TVA
+                            </Label>
+                            <span className="h-4 w-4" aria-hidden="true"></span>
+                          </div>
                           <Controller
                             name={`items.${index}.vatRate`}
                             defaultValue={20}
                             render={({ field }) => (
-                              <Select
+                              <SelectNative
                                 value={field.value?.toString() || "20"}
-                                onValueChange={(value) =>
-                                  field.onChange(parseFloat(value))
+                                onChange={(e) =>
+                                  field.onChange(parseFloat(e.target.value))
                                 }
                                 disabled={!canEdit}
+                                className="w-full text-sm"
                               >
-                                <SelectTrigger className="h-10 w-full rounded-lg px-3 text-sm">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="0">
-                                    0% - Exonéré
-                                  </SelectItem>
-                                  <SelectItem value="5.5">
-                                    5,5% - Taux réduit
-                                  </SelectItem>
-                                  <SelectItem value="10">
-                                    10% - Taux intermédiaire
-                                  </SelectItem>
-                                  <SelectItem value="20">
-                                    20% - Taux normal
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
+                                <option value="0">0% - Exonéré</option>
+                                <option value="5.5">5,5% - Taux réduit</option>
+                                <option value="10">10% - Taux intermédiaire</option>
+                                <option value="20">20% - Taux normal</option>
+                              </SelectNative>
                             )}
                           />
                         </div>
@@ -516,12 +508,15 @@ export default function ItemsSection({
                       {/* Texte d'exonération TVA (affiché seulement si TVA = 0% et pas d'auto-liquidation) */}
                       {watch(`items.${index}.vatRate`) === 0 && !watch('isReverseCharge') && (
                         <div className="space-y-2">
-                          <Label
-                            htmlFor={`item-vat-exemption-${index}`}
-                            className="text-sm font-normal"
-                          >
-                            Texte d'exonération de TVA
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label
+                              htmlFor={`item-vat-exemption-${index}`}
+                              className="text-sm font-normal"
+                            >
+                              Texte d'exonération de TVA
+                            </Label>
+                            <span className="h-4 w-4" aria-hidden="true"></span>
+                          </div>
                           <Controller
                             name={`items.${index}.vatExemptionText`}
                             rules={{
@@ -538,67 +533,32 @@ export default function ItemsSection({
                             }}
                             render={({ field, fieldState: { error } }) => (
                               <div className="space-y-1">
-                                <Select
+                                <SelectNative
                                   value={field.value || ''}
-                                  onValueChange={field.onChange}
+                                  onChange={(e) => field.onChange(e.target.value)}
                                   disabled={!canEdit}
-                                >
-                                  <SelectTrigger className={`h-10 w-full rounded-lg px-3 text-sm ${
+                                  className={`w-full text-sm ${
                                     error || getItemError(index, "vatExemptionText") ? 'border-destructive focus-visible:ring-destructive' : ''
-                                  }`}>
-                                    <SelectValue placeholder="Sélectionner une mention" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Article 259-1 du CGI">
-                                      Article 259-1 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 259 B du CGI">
-                                      Article 259 B du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261 du CGI">
-                                      Article 261 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261 D du CGI">
-                                      Article 261 D du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261 D-4° du CGI">
-                                      Article 261 D-4° du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261 2-4° du CGI">
-                                      Article 261 2-4° du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261-4 du CGI">
-                                      Article 261-4 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 261 4-4° du CGI">
-                                      Article 261 4-4° du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 262 du CGI">
-                                      Article 262 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 262 ter-I du CGI">
-                                      Article 262 ter-I du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 275 du CGI">
-                                      Article 275 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 283 du CGI">
-                                      Article 283 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 283-2 du CGI">
-                                      Article 283-2 du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 293 B du CGI">
-                                      Article 293 B du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 298 sexies du CGI">
-                                      Article 298 sexies du CGI
-                                    </SelectItem>
-                                    <SelectItem value="Article 44 de la Directive 2006/112/CE">
-                                      Article 44 de la Directive 2006/112/CE
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  }`}
+                                >
+                                  <option value="">Sélectionner une mention</option>
+                                  <option value="Article 259-1 du CGI">Article 259-1 du CGI</option>
+                                  <option value="Article 259 B du CGI">Article 259 B du CGI</option>
+                                  <option value="Article 261 du CGI">Article 261 du CGI</option>
+                                  <option value="Article 261 D du CGI">Article 261 D du CGI</option>
+                                  <option value="Article 261 D-4° du CGI">Article 261 D-4° du CGI</option>
+                                  <option value="Article 261 2-4° du CGI">Article 261 2-4° du CGI</option>
+                                  <option value="Article 261-4 du CGI">Article 261-4 du CGI</option>
+                                  <option value="Article 261 4-4° du CGI">Article 261 4-4° du CGI</option>
+                                  <option value="Article 262 du CGI">Article 262 du CGI</option>
+                                  <option value="Article 262 ter-I du CGI">Article 262 ter-I du CGI</option>
+                                  <option value="Article 275 du CGI">Article 275 du CGI</option>
+                                  <option value="Article 283 du CGI">Article 283 du CGI</option>
+                                  <option value="Article 283-2 du CGI">Article 283-2 du CGI</option>
+                                  <option value="Article 293 B du CGI">Article 293 B du CGI</option>
+                                  <option value="Article 298 sexies du CGI">Article 298 sexies du CGI</option>
+                                  <option value="Article 44 de la Directive 2006/112/CE">Article 44 de la Directive 2006/112/CE</option>
+                                </SelectNative>
                                 {(error || getItemError(index, "vatExemptionText")) && (
                                   <p className="text-xs text-destructive">
                                     {error?.message || "Le texte d'exonération de TVA est requis lorsque la TVA est à 0%"}
@@ -610,112 +570,172 @@ export default function ItemsSection({
                         </div>
                       )}
 
-                      {/* Remise sur l'article */}
-                      <div className="space-y-4">
-                        <Separator />
+                      {/* Remise sur l'article - Affichage conditionnel */}
+                      {!showDiscount[index] ? (
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowDiscount(prev => ({ ...prev, [index]: true }));
+                              setValue(`items.${index}.discount`, 0);
+                              setValue(`items.${index}.discountType`, "PERCENTAGE");
+                            }}
+                            disabled={!canEdit}
+                            className="text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            style={{ color: '#5b50FF' }}
+                          >
+                            + Ajouter une remise à l'article
+                          </button>
+                        </div>
+                      ) : (
                         <div className="space-y-4">
-                          <div className="flex items-center gap-2">
-                            <Percent className="h-4 w-4" />
-                            <span className="text-sm font-normal text-foreground">
-                              Remise sur cet article
-                            </span>
+                          <div className="flex items-center justify-between">
+                            <Separator className="flex-1" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowDiscount(prev => ({ ...prev, [index]: false }));
+                                setValue(`items.${index}.discount`, 0);
+                                setValue(`items.${index}.discountType`, "PERCENTAGE");
+                                // Recalculer le total
+                                const quantity = watch(`items.${index}.quantity`) || 1;
+                                const unitPrice = watch(`items.${index}.unitPrice`) || 0;
+                                const total = calculateItemTotal(quantity, unitPrice, 0, "PERCENTAGE");
+                                setValue(`items.${index}.total`, total, { shouldDirty: true });
+                              }}
+                              disabled={!canEdit}
+                              className="text-xs hover:text-destructive transition-colors px-3 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+                              style={{ color: '#5b50FF' }}
+                            >
+                              Retirer la remise
+                            </button>
+                            <Separator className="flex-1" />
                           </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label className="text-sm font-normal">
-                                Type de remise
-                              </Label>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-normal">
+                                  Type de remise
+                                </Label>
+                                <span className="h-4 w-4" aria-hidden="true"></span>
+                              </div>
                               <Controller
                                 name={`items.${index}.discountType`}
                                 defaultValue="PERCENTAGE"
                                 render={({ field }) => (
-                                  <Select
+                                  <SelectNative
                                     value={field.value || "PERCENTAGE"}
-                                    onValueChange={field.onChange}
+                                    onChange={(e) => field.onChange(e.target.value)}
                                     disabled={!canEdit}
+                                    className="w-full text-sm"
                                   >
-                                    <SelectTrigger className="w-full h-10 rounded-lg px-3 text-sm">
-                                      <SelectValue placeholder="Pourcentage" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="PERCENTAGE">
-                                        Pourcentage (%)
-                                      </SelectItem>
-                                      <SelectItem value="FIXED">
-                                        Montant fixe (€)
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                    <option value="PERCENTAGE">Pourcentage (%)</option>
+                                    <option value="FIXED">Montant fixe (€)</option>
+                                  </SelectNative>
                                 )}
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label
-                                htmlFor={`item-discount-${index}`}
-                                className="text-sm font-normal"
-                              >
-                                {(watch(`items.${index}.discountType`) === "PERCENTAGE" ||
-                                 watch(`items.${index}.discountType`) === "percentage")
-                                  ? "Pourcentage (%)"
-                                  : "Montant (€)"}
-                              </Label>
+                              <div className="flex items-center gap-2">
+                                <Label
+                                  htmlFor={`item-discount-${index}`}
+                                  className="text-sm font-normal"
+                                >
+                                  {(watch(`items.${index}.discountType`) === "PERCENTAGE" ||
+                                   watch(`items.${index}.discountType`) === "percentage")
+                                    ? "Pourcentage (%)"
+                                    : "Montant (€)"}
+                                </Label>
+                                <span className="h-4 w-4" aria-hidden="true"></span>
+                              </div>
                               <div className="space-y-1">
-                                <Input
-                                  id={`item-discount-${index}`}
-                                  type="number"
-                                  {...register(`items.${index}.discount`, {
-                                    valueAsNumber: true,
-                                    min: {
-                                      value: 0,
-                                      message: "La remise doit être positive",
-                                    },
-                                    max:
-                                      (watch(`items.${index}.discountType`) === "PERCENTAGE" ||
-                                       watch(`items.${index}.discountType`) === "percentage")
-                                        ? {
-                                            value: 100,
-                                            message:
-                                              "La remise ne peut pas dépasser 100%",
-                                          }
-                                        : undefined,
-                                    onChange: (e) => {
-                                      const discount =
-                                        parseFloat(e.target.value) || 0;
-                                      const quantity =
-                                        watch(`items.${index}.quantity`) || 1;
-                                      const unitPrice =
-                                        watch(`items.${index}.unitPrice`) || 0;
-                                      const discountType =
-                                        watch(`items.${index}.discountType`) ||
-                                        "percentage";
+                                {(watch(`items.${index}.discountType`) === "FIXED") ? (
+                                  <CurrencyInput
+                                    id={`item-discount-${index}`}
+                                    {...register(`items.${index}.discount`, {
+                                      valueAsNumber: true,
+                                      min: {
+                                        value: 0,
+                                        message: "La remise doit être positive",
+                                      },
+                                      onChange: (e) => {
+                                        const discount =
+                                          parseFloat(e.target.value) || 0;
+                                        const quantity =
+                                          watch(`items.${index}.quantity`) || 1;
+                                        const unitPrice =
+                                          watch(`items.${index}.unitPrice`) || 0;
+                                        const discountType =
+                                          watch(`items.${index}.discountType`) ||
+                                          "percentage";
 
-                                      const total = calculateItemTotal(
-                                        quantity,
-                                        unitPrice,
-                                        discount,
-                                        discountType
-                                      );
-                                      setValue(`items.${index}.total`, total, {
-                                        shouldDirty: true,
-                                      });
-                                    },
-                                  })}
-                                  min="0"
-                                  max={
-                                    (watch(`items.${index}.discountType`) === "PERCENTAGE" ||
-                                     watch(`items.${index}.discountType`) === "percentage")
-                                      ? "100"
-                                      : undefined
-                                  }
-                                  step="0.01"
-                                  disabled={!canEdit}
-                                  className={`h-10 rounded-lg text-sm w-full ${
-                                    errors?.items?.[index]?.discount
-                                      ? "border-red-500"
-                                      : ""
-                                  }`}
-                                />
+                                        const total = calculateItemTotal(
+                                          quantity,
+                                          unitPrice,
+                                          discount,
+                                          discountType
+                                        );
+                                        setValue(`items.${index}.total`, total, {
+                                          shouldDirty: true,
+                                        });
+                                      },
+                                    })}
+                                    disabled={!canEdit}
+                                    className={`h-10 text-sm w-full ${
+                                      errors?.items?.[index]?.discount
+                                        ? "border-red-500"
+                                        : ""
+                                    }`}
+                                  />
+                                ) : (
+                                  <Input
+                                    id={`item-discount-${index}`}
+                                    type="number"
+                                    {...register(`items.${index}.discount`, {
+                                      valueAsNumber: true,
+                                      min: {
+                                        value: 0,
+                                        message: "La remise doit être positive",
+                                      },
+                                      max: {
+                                        value: 100,
+                                        message:
+                                          "La remise ne peut pas dépasser 100%",
+                                      },
+                                      onChange: (e) => {
+                                        const discount =
+                                          parseFloat(e.target.value) || 0;
+                                        const quantity =
+                                          watch(`items.${index}.quantity`) || 1;
+                                        const unitPrice =
+                                          watch(`items.${index}.unitPrice`) || 0;
+                                        const discountType =
+                                          watch(`items.${index}.discountType`) ||
+                                          "percentage";
+
+                                        const total = calculateItemTotal(
+                                          quantity,
+                                          unitPrice,
+                                          discount,
+                                          discountType
+                                        );
+                                        setValue(`items.${index}.total`, total, {
+                                          shouldDirty: true,
+                                        });
+                                      },
+                                    })}
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    disabled={!canEdit}
+                                    className={`h-10 rounded-lg text-sm w-full ${
+                                      errors?.items?.[index]?.discount
+                                        ? "border-red-500"
+                                        : ""
+                                    }`}
+                                  />
+                                )}
                                 {errors?.items?.[index]?.discount && (
                                   <p className="text-xs text-red-500">
                                     {errors.items[index].discount.message}
@@ -723,9 +743,10 @@ export default function ItemsSection({
                                 )}
                               </div>
                             </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>

@@ -1,16 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Package, Plus, Trash2, Percent } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
+import { SelectNative } from "@/src/components/ui/select-native";
 import {
   Card,
   CardContent,
@@ -19,6 +14,8 @@ import {
 } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
+import { CurrencyInput } from "@/src/components/ui/currency-input";
+import { QuantityInput } from "@/src/components/ui/quantity-input";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Separator } from "@/src/components/ui/separator";
 import {
@@ -88,6 +85,10 @@ export default function ItemsSection({
 
   // Observer les changements en temps réel pour tous les items
   const watchedItems = watch("items") || [];
+  
+  // État pour gérer l'affichage des champs optionnels par article
+  const [showProgress, setShowProgress] = useState({});
+  const [showDiscount, setShowDiscount] = useState({});
   
   // Helper pour vérifier si un champ a une erreur
   const hasFieldError = (itemIndex, fieldName) => {
@@ -302,12 +303,15 @@ export default function ItemsSection({
                       <div className="space-y-4 pt-2">
                         {/* Description */}
                         <div className="space-y-2">
-                          <Label
-                            htmlFor={`item-description-${index}`}
-                            className="text-sm font-normal"
-                          >
-                            Description de l'article
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label
+                              htmlFor={`item-description-${index}`}
+                              className="text-sm font-normal"
+                            >
+                              Nom
+                            </Label>
+                            <span className="h-4 w-4" aria-hidden="true"></span>
+                          </div>
                           <div className="space-y-1">
                             <Input
                               id={`item-description-${index}`}
@@ -344,12 +348,15 @@ export default function ItemsSection({
 
                         {/* Détails supplémentaires */}
                         <div className="space-y-2">
-                          <Label
-                            htmlFor={`item-details-${index}`}
-                            className="text-sm font-normal"
-                          >
-                            Détails supplémentaires (optionnel)
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label
+                              htmlFor={`item-details-${index}`}
+                              className="text-sm font-normal"
+                            >
+                              Détails supplémentaires (optionnel)
+                            </Label>
+                            <span className="h-4 w-4" aria-hidden="true"></span>
+                          </div>
                           <Textarea
                             id={`item-details-${index}`}
                             {...register(`items.${index}.details`)}
@@ -360,19 +367,21 @@ export default function ItemsSection({
                           />
                         </div>
 
-                        {/* Quantité, Unité et Avancement */}
-                        <div className="grid grid-cols-3 gap-2 md:gap-4">
+                        {/* Quantité et Unité */}
+                        <div className="grid grid-cols-2 gap-2 md:gap-4">
                           <div className="space-y-2">
-                            <Label
-                              htmlFor={`item-quantity-${index}`}
-                              className="text-sm font-normal"
-                            >
-                              Quantité
-                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Label
+                                htmlFor={`item-quantity-${index}`}
+                                className="text-sm font-normal"
+                              >
+                                Quantité
+                              </Label>
+                              <span className="h-4 w-4" aria-hidden="true"></span>
+                            </div>
                             <div className="space-y-1">
-                              <Input
+                              <QuantityInput
                                 id={`item-quantity-${index}`}
-                                type="number"
                                 {...register(`items.${index}.quantity`, {
                                   valueAsNumber: true,
                                   required: "La quantité est requise",
@@ -410,9 +419,8 @@ export default function ItemsSection({
                                     });
                                   },
                                 })}
-                                step="0.01"
                                 disabled={!canEdit}
-                                className={`h-10 rounded-lg text-sm w-full ${
+                                className={`h-10 text-sm w-full ${
                                   errors?.items?.[index]?.quantity || hasFieldError(index, "quantity")
                                     ? "border-destructive focus-visible:ring-destructive"
                                     : ""
@@ -429,104 +437,35 @@ export default function ItemsSection({
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-sm font-normal">Unité</Label>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-sm font-normal">Unité</Label>
+                              <span className="h-4 w-4" aria-hidden="true"></span>
+                            </div>
                             <div className="space-y-1">
                               <Controller
                                 name={`items.${index}.unit`}
                                 defaultValue="unité"
                                 render={({ field }) => (
-                                  <Select
+                                  <SelectNative
                                     value={field.value || "unité"}
-                                    onValueChange={field.onChange}
+                                    onChange={(e) => field.onChange(e.target.value)}
                                     disabled={!canEdit}
+                                    className="w-full text-sm"
                                   >
-                                    <SelectTrigger className="h-10 w-full rounded-lg px-3 text-sm">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="unité">Unité</SelectItem>
-                                      <SelectItem value="pièce">Pièce</SelectItem>
-                                      <SelectItem value="heure">Heure</SelectItem>
-                                      <SelectItem value="jour">Jour</SelectItem>
-                                      <SelectItem value="mois">Mois</SelectItem>
-                                      <SelectItem value="kg">
-                                        Kilogramme
-                                      </SelectItem>
-                                      <SelectItem value="m">Mètre</SelectItem>
-                                      <SelectItem value="m²">
-                                        Mètre carré
-                                      </SelectItem>
-                                      <SelectItem value="m³">
-                                        Mètre cube
-                                      </SelectItem>
-                                      <SelectItem value="litre">Litre</SelectItem>
-                                      <SelectItem value="forfait">
-                                        Forfait
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                    <option value="unité">Unité</option>
+                                    <option value="pièce">Pièce</option>
+                                    <option value="heure">Heure</option>
+                                    <option value="jour">Jour</option>
+                                    <option value="mois">Mois</option>
+                                    <option value="kg">Kilogramme</option>
+                                    <option value="m">Mètre</option>
+                                    <option value="m²">Mètre carré</option>
+                                    <option value="m³">Mètre cube</option>
+                                    <option value="litre">Litre</option>
+                                    <option value="forfait">Forfait</option>
+                                  </SelectNative>
                                 )}
                               />
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label
-                              htmlFor={`item-progress-${index}`}
-                              className="text-sm font-normal"
-                            >
-                              Avancement (%)
-                            </Label>
-                            <div className="space-y-1">
-                              <Input
-                                id={`item-progress-${index}`}
-                                type="number"
-                                {...register(`items.${index}.progressPercentage`, {
-                                  valueAsNumber: true,
-                                  min: {
-                                    value: 0,
-                                    message: "L'avancement doit être entre 0 et 100",
-                                  },
-                                  max: {
-                                    value: 100,
-                                    message: "L'avancement doit être entre 0 et 100",
-                                  },
-                                  onChange: (e) => {
-                                    const progressPercentage =
-                                      parseFloat(e.target.value) || 100;
-                                    const quantity =
-                                      watch(`items.${index}.quantity`) || 1;
-                                    const unitPrice =
-                                      watch(`items.${index}.unitPrice`) || 0;
-                                    const discount =
-                                      watch(`items.${index}.discount`) || 0;
-                                    const discountType =
-                                      watch(`items.${index}.discountType`) ||
-                                      "percentage";
-
-                                    const total = calculateItemTotal(
-                                      quantity,
-                                      unitPrice,
-                                      discount,
-                                      discountType,
-                                      progressPercentage
-                                    );
-                                    setValue(`items.${index}.total`, total, {
-                                      shouldDirty: true,
-                                    });
-                                  },
-                                })}
-                                step="1"
-                                min="0"
-                                max="100"
-                                placeholder="100"
-                                disabled={!canEdit}
-                                className="h-10 rounded-lg text-sm w-full"
-                              />
-                              {errors?.items?.[index]?.progressPercentage && (
-                                <p className="text-xs text-destructive">
-                                  {errors.items[index].progressPercentage.message}
-                                </p>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -534,16 +473,18 @@ export default function ItemsSection({
                         {/* Prix unitaire et Taux de TVA */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                           <div className="space-y-2">
-                            <Label
-                              htmlFor={`item-price-${index}`}
-                              className="text-sm font-normal"
-                            >
-                              Prix unitaire (€)
-                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Label
+                                htmlFor={`item-price-${index}`}
+                                className="text-sm font-normal"
+                              >
+                                Prix unitaire (€)
+                              </Label>
+                              <span className="h-4 w-4" aria-hidden="true"></span>
+                            </div>
                             <div className="space-y-1">
-                              <Input
+                              <CurrencyInput
                                 id={`item-price-${index}`}
-                                type="number"
                                 {...register(`items.${index}.unitPrice`, {
                                   valueAsNumber: true,
                                   required: "Le prix est requis",
@@ -572,9 +513,8 @@ export default function ItemsSection({
                                     });
                                   },
                                 })}
-                                step="0.01"
                                 disabled={!canEdit}
-                                className={`h-10 rounded-lg text-sm w-full ${
+                                className={`h-10 text-sm w-full ${
                                   errors?.items?.[index]?.unitPrice || hasFieldError(index, "unitPrice")
                                     ? "border-destructive focus-visible:ring-destructive"
                                     : ""
@@ -591,38 +531,37 @@ export default function ItemsSection({
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-sm font-normal">
-                              Taux de TVA
-                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-sm font-normal">
+                                Taux de TVA
+                              </Label>
+                              <span className="h-4 w-4" aria-hidden="true"></span>
+                            </div>
                             <Controller
                               name={`items.${index}.vatRate`}
                               defaultValue={20}
                               render={({ field }) => (
-                                <Select
+                                <SelectNative
                                   value={field.value?.toString() || "20"}
-                                  onValueChange={(value) =>
-                                    field.onChange(parseFloat(value))
+                                  onChange={(e) =>
+                                    field.onChange(parseFloat(e.target.value))
                                   }
                                   disabled={!canEdit}
+                                  className="w-full text-sm"
                                 >
-                                  <SelectTrigger className="h-10 w-full rounded-lg px-3 text-sm">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="0">
-                                      0% - Exonéré
-                                    </SelectItem>
-                                    <SelectItem value="5.5">
-                                      5,5% - Taux réduit
-                                    </SelectItem>
-                                    <SelectItem value="10">
-                                      10% - Taux intermédiaire
-                                    </SelectItem>
-                                    <SelectItem value="20">
-                                      20% - Taux normal
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  <option value="0">
+                                    0% - Exonéré
+                                  </option>
+                                  <option value="5.5">
+                                    5,5% - Taux réduit
+                                  </option>
+                                  <option value="10">
+                                    10% - Taux intermédiaire
+                                  </option>
+                                  <option value="20">
+                                    20% - Taux normal
+                                  </option>
+                                </SelectNative>
                               )}
                             />
                           </div>
@@ -631,82 +570,47 @@ export default function ItemsSection({
                         {/* Texte d'exonération TVA (affiché seulement si TVA = 0% et pas d'auto-liquidation) */}
                         {watch(`items.${index}.vatRate`) === 0 && !watch('isReverseCharge') && (
                           <div className="space-y-2">
-                            <Label
-                              htmlFor={`item-vat-exemption-${index}`}
-                              className="text-sm font-normal"
-                            >
-                              Texte d'exonération de TVA
-                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Label
+                                htmlFor={`item-vat-exemption-${index}`}
+                                className="text-sm font-normal"
+                              >
+                                Texte d'exonération de TVA
+                              </Label>
+                              <span className="h-4 w-4" aria-hidden="true"></span>
+                            </div>
                             <div className="space-y-1">
                               <Controller
                                 name={`items.${index}.vatExemptionText`}
                                 render={({ field }) => (
-                                  <Select
-                                    value={field.value}
-                                    onValueChange={field.onChange}
+                                  <SelectNative
+                                    value={field.value || "none"}
+                                    onChange={(e) => field.onChange(e.target.value)}
                                     disabled={!canEdit}
-                                  >
-                                    <SelectTrigger className={`h-10 w-full rounded-lg px-3 text-sm ${
+                                    className={`w-full text-sm ${
                                       hasFieldError(index, "vatExemptionText")
                                         ? "border-destructive focus-visible:ring-destructive"
                                         : ""
-                                    }`}>
-                                      <SelectValue placeholder="Sélectionner une mention" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">
-                                        Sélectionner une mention
-                                      </SelectItem>
-                                      <SelectItem value="Article 259-1 du CGI">
-                                        Article 259-1 du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 259 B du CGI">
-                                        Article 259 B du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 261 du CGI">
-                                        Article 261 du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 261 D du CGI">
-                                        Article 261 D du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 261 D-4° du CGI">
-                                        Article 261 D-4° du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 261 2-4° du CGI">
-                                        Article 261 2-4° du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 261-4 du CGI">
-                                        Article 261-4 du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 261 4-4° du CGI">
-                                        Article 261 4-4° du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 262 du CGI">
-                                        Article 262 du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 262 ter-I du CGI">
-                                        Article 262 ter-I du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 275 du CGI">
-                                        Article 275 du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 283 du CGI">
-                                        Article 283 du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 283-2 du CGI">
-                                        Article 283-2 du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 293 B du CGI">
-                                        Article 293 B du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 298 sexies du CGI">
-                                        Article 298 sexies du CGI
-                                      </SelectItem>
-                                      <SelectItem value="Article 44 de la Directive 2006/112/CE">
-                                        Article 44 de la Directive 2006/112/CE
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                    }`}
+                                  >
+                                      <option value="none">Sélectionner une mention</option>
+                                      <option value="Article 259-1 du CGI">Article 259-1 du CGI</option>
+                                      <option value="Article 259 B du CGI">Article 259 B du CGI</option>
+                                      <option value="Article 261 du CGI">Article 261 du CGI</option>
+                                      <option value="Article 261 D du CGI">Article 261 D du CGI</option>
+                                      <option value="Article 261 D-4° du CGI">Article 261 D-4° du CGI</option>
+                                      <option value="Article 261 2-4° du CGI">Article 261 2-4° du CGI</option>
+                                      <option value="Article 261-4 du CGI">Article 261-4 du CGI</option>
+                                      <option value="Article 261 4-4° du CGI">Article 261 4-4° du CGI</option>
+                                      <option value="Article 262 du CGI">Article 262 du CGI</option>
+                                      <option value="Article 262 ter-I du CGI">Article 262 ter-I du CGI</option>
+                                      <option value="Article 275 du CGI">Article 275 du CGI</option>
+                                      <option value="Article 283 du CGI">Article 283 du CGI</option>
+                                      <option value="Article 283-2 du CGI">Article 283-2 du CGI</option>
+                                      <option value="Article 293 B du CGI">Article 293 B du CGI</option>
+                                      <option value="Article 298 sexies du CGI">Article 298 sexies du CGI</option>
+                                      <option value="Article 44 de la Directive 2006/112/CE">Article 44 de la Directive 2006/112/CE</option>
+                                    </SelectNative>
                                 )}
                               />
                               {hasFieldError(index, "vatExemptionText") && (
@@ -718,29 +622,165 @@ export default function ItemsSection({
                           </div>
                         )}
 
-                        {/* Remise sur l'article */}
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-2 my-4">
-                            <Separator className="flex-1" />
-                            <div className="flex items-center gap-2 px-3 text-sm text-muted-foreground whitespace-nowrap">
-                              <Percent className="h-4 w-4" />
-                              Remise sur cet article (optionnel)
-                            </div>
-                            <Separator className="flex-1" />
+                        {/* Avancement - Affichage conditionnel */}
+                        {!showProgress[index] ? (
+                          <div className="pt-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowProgress(prev => ({ ...prev, [index]: true }));
+                                setValue(`items.${index}.progressPercentage`, 100);
+                              }}
+                              disabled={!canEdit}
+                              className="text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                              style={{ color: '#5b50FF' }}
+                            >
+                              + Facturer partiellement (%)
+                            </button>
                           </div>
-                          <div className="space-y-3 md:space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label
+                                htmlFor={`item-progress-${index}`}
+                                className="text-sm font-normal"
+                              >
+                                Facturer partiellement (%)
+                              </Label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowProgress(prev => ({ ...prev, [index]: false }));
+                                  setValue(`items.${index}.progressPercentage`, 100);
+                                  // Recalculer le total
+                                  const quantity = watch(`items.${index}.quantity`) || 1;
+                                  const unitPrice = watch(`items.${index}.unitPrice`) || 0;
+                                  const discount = watch(`items.${index}.discount`) || 0;
+                                  const discountType = watch(`items.${index}.discountType`) || "percentage";
+                                  const total = calculateItemTotal(quantity, unitPrice, discount, discountType, 100);
+                                  setValue(`items.${index}.total`, total, { shouldDirty: true });
+                                }}
+                                disabled={!canEdit}
+                                className="text-xs hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                style={{ color: '#5b50FF' }}
+                              >
+                                Retirer
+                              </button>
+                            </div>
+                            <div className="space-y-1">
+                              <Input
+                                id={`item-progress-${index}`}
+                                type="number"
+                                {...register(`items.${index}.progressPercentage`, {
+                                    valueAsNumber: true,
+                                    min: {
+                                      value: 0,
+                                      message: "L'avancement doit être entre 0 et 100",
+                                    },
+                                    max: {
+                                      value: 100,
+                                      message: "L'avancement doit être entre 0 et 100",
+                                    },
+                                    onChange: (e) => {
+                                      const progressPercentage =
+                                        parseFloat(e.target.value) || 100;
+                                      const quantity =
+                                        watch(`items.${index}.quantity`) || 1;
+                                      const unitPrice =
+                                        watch(`items.${index}.unitPrice`) || 0;
+                                      const discount =
+                                        watch(`items.${index}.discount`) || 0;
+                                      const discountType =
+                                        watch(`items.${index}.discountType`) ||
+                                        "percentage";
+
+                                      const total = calculateItemTotal(
+                                        quantity,
+                                        unitPrice,
+                                        discount,
+                                        discountType,
+                                        progressPercentage
+                                      );
+                                      setValue(`items.${index}.total`, total, {
+                                        shouldDirty: true,
+                                      });
+                                    },
+                                  })}
+                                  step="1"
+                                  min="0"
+                                  max="100"
+                                  placeholder="100"
+                                  disabled={!canEdit}
+                                  className="h-10 rounded-lg text-sm w-full"
+                                />
+                                {errors?.items?.[index]?.progressPercentage && (
+                                  <p className="text-xs text-destructive">
+                                    {errors.items[index].progressPercentage.message}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                        )}
+
+                        {/* Remise sur l'article - Affichage conditionnel */}
+                        {!showDiscount[index] ? (
+                          <div className="pt-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowDiscount(prev => ({ ...prev, [index]: true }));
+                                setValue(`items.${index}.discount`, 0);
+                                setValue(`items.${index}.discountType`, "PERCENTAGE");
+                              }}
+                              disabled={!canEdit}
+                              className="text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                              style={{ color: '#5b50FF' }}
+                            >
+                              + Ajouter une remise à l'article
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <Separator className="flex-1" />
+                              <button
+                              type="button"
+                              onClick={() => {
+                                setShowDiscount(prev => ({ ...prev, [index]: false }));
+                                setValue(`items.${index}.discount`, 0);
+                                setValue(`items.${index}.discountType`, "PERCENTAGE");
+                                // Recalculer le total
+                                const quantity = watch(`items.${index}.quantity`) || 1;
+                                const unitPrice = watch(`items.${index}.unitPrice`) || 0;
+                                const progressPercentage = watch(`items.${index}.progressPercentage`) || 100;
+                                const total = calculateItemTotal(quantity, unitPrice, 0, "PERCENTAGE", progressPercentage);
+                                setValue(`items.${index}.total`, total, { shouldDirty: true });
+                              }}
+                              disabled={!canEdit}
+                              className="text-xs hover:text-destructive transition-colors px-3 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+                              style={{ color: '#5b50FF' }}
+                            >
+                              Retirer la remise
+                            </button>
+                              <Separator className="flex-1" />
+                            </div>
+                            <div className="space-y-3 md:space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                               <div className="space-y-2">
-                                <Label className="text-sm font-normal">
-                                  Type de remise
-                                </Label>
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm font-normal">
+                                    Type de remise
+                                  </Label>
+                                  <span className="h-4 w-4" aria-hidden="true"></span>
+                                </div>
                               <Controller
                                 name={`items.${index}.discountType`}
                                 defaultValue="PERCENTAGE"
                                 render={({ field }) => (
-                                  <Select
+                                  <SelectNative
                                     value={field.value || "PERCENTAGE"}
-                                    onValueChange={(value) => {
+                                    onChange={(e) => {
+                                      const value = e.target.value;
                                       field.onChange(value);
 
                                       // Mettre à jour le type de remise immédiatement
@@ -784,111 +824,141 @@ export default function ItemsSection({
                                       });
                                     }}
                                     disabled={!canEdit}
+                                    className="w-full text-sm"
                                   >
-                                    <SelectTrigger className="w-full h-10 rounded-lg px-3 text-sm">
-                                      <SelectValue placeholder="Pourcentage" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="PERCENTAGE">
-                                        Pourcentage (%)
-                                      </SelectItem>
-                                      <SelectItem value="FIXED">
-                                        Montant fixe (€)
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                    <option value="PERCENTAGE">Pourcentage (%)</option>
+                                    <option value="FIXED">Montant fixe (€)</option>
+                                  </SelectNative>
                                 )}
                               />
                               </div>
                               <div className="space-y-2">
-                                <Label
-                                  htmlFor={`item-discount-${index}`}
-                                  className="text-sm font-normal"
-                                >
-                                  {(watch(`items.${index}.discountType`) === "PERCENTAGE" ||
-                                   watch(`items.${index}.discountType`) === "percentage")
-                                    ? "Pourcentage (%)"
-                                    : "Montant (€)"}
-                                </Label>
-                              <div className="space-y-1">
-                                <Input
-                                  id={`item-discount-${index}`}
-                                  type="number"
-                                  {...register(`items.${index}.discount`, {
-                                    valueAsNumber: true,
-                                    min: {
-                                      value: 0,
-                                      message:
-                                        "La remise doit être positive ou nulle",
-                                    },
-                                    max: {
-                                      value:
-                                        (watch(`items.${index}.discountType`) === "PERCENTAGE" ||
-                                         watch(`items.${index}.discountType`) === "percentage")
-                                          ? 100
-                                          : undefined,
-                                      message:
-                                        "La remise ne peut pas dépasser 100%",
-                                    },
-                                    validate: (value) => {
-                                      if (
-                                        (watch(`items.${index}.discountType`) === "PERCENTAGE" ||
-                                         watch(`items.${index}.discountType`) === "percentage") &&
-                                        value > 100
-                                      ) {
-                                        return "La remise ne peut pas dépasser 100%";
-                                      }
-                                      return true;
-                                    },
-                                  })}
-                                  max={
-                                    (watch(`items.${index}.discountType`) === "PERCENTAGE" ||
+                                <div className="flex items-center gap-2">
+                                  <Label
+                                    htmlFor={`item-discount-${index}`}
+                                    className="text-sm font-normal"
+                                  >
+                                    {(watch(`items.${index}.discountType`) === "PERCENTAGE" ||
                                      watch(`items.${index}.discountType`) === "percentage")
-                                      ? "100"
-                                      : undefined
-                                  }
-                                  step="0.01"
-                                  disabled={!canEdit}
-                                  className={`w-full h-10 rounded-lg text-sm ${errors?.items?.[index]?.discount ? "border-red-500" : ""}`}
-                                  // Utilisation de onInput pour une mise à jour en temps réel
-                                  onInput={(e) => {
-                                    const value = e.target.value;
-                                    const discountValue =
-                                      parseFloat(value) || 0;
-                                    const quantity =
-                                      watch(`items.${index}.quantity`) || 1;
-                                    const unitPrice =
-                                      watch(`items.${index}.unitPrice`) || 0;
-                                    const discountType =
-                                      watch(`items.${index}.discountType`) ||
-                                      "percentage";
-                                    const progressPercentage =
-                                      watch(`items.${index}.progressPercentage`) || 100;
+                                      ? "Pourcentage (%)"
+                                      : "Montant (€)"}
+                                  </Label>
+                                  <span className="h-4 w-4" aria-hidden="true"></span>
+                                </div>
+                              <div className="space-y-1">
+                                {(watch(`items.${index}.discountType`) === "FIXED") ? (
+                                  <CurrencyInput
+                                    id={`item-discount-${index}`}
+                                    {...register(`items.${index}.discount`, {
+                                      valueAsNumber: true,
+                                      min: {
+                                        value: 0,
+                                        message:
+                                          "La remise doit être positive ou nulle",
+                                      },
+                                    })}
+                                    disabled={!canEdit}
+                                    className={`w-full h-10 text-sm ${errors?.items?.[index]?.discount ? "border-red-500" : ""}`}
+                                    onInput={(e) => {
+                                      const value = e.target.value;
+                                      const discountValue =
+                                        parseFloat(value) || 0;
+                                      const quantity =
+                                        watch(`items.${index}.quantity`) || 1;
+                                      const unitPrice =
+                                        watch(`items.${index}.unitPrice`) || 0;
+                                      const discountType =
+                                        watch(`items.${index}.discountType`) ||
+                                        "percentage";
+                                      const progressPercentage =
+                                        watch(`items.${index}.progressPercentage`) || 100;
 
-                                    // Mettre à jour la valeur du champ immédiatement
-                                    setValue(
-                                      `items.${index}.discount`,
-                                      discountValue,
-                                      {
+                                      setValue(
+                                        `items.${index}.discount`,
+                                        discountValue,
+                                        {
+                                          shouldDirty: true,
+                                          shouldValidate: true,
+                                        }
+                                      );
+
+                                      const total = calculateItemTotal(
+                                        quantity,
+                                        unitPrice,
+                                        discountValue,
+                                        discountType,
+                                        progressPercentage
+                                      );
+
+                                      setValue(`items.${index}.total`, total, {
                                         shouldDirty: true,
-                                        shouldValidate: true,
-                                      }
-                                    );
+                                      });
+                                    }}
+                                  />
+                                ) : (
+                                  <Input
+                                    id={`item-discount-${index}`}
+                                    type="number"
+                                    {...register(`items.${index}.discount`, {
+                                      valueAsNumber: true,
+                                      min: {
+                                        value: 0,
+                                        message:
+                                          "La remise doit être positive ou nulle",
+                                      },
+                                      max: {
+                                        value: 100,
+                                        message:
+                                          "La remise ne peut pas dépasser 100%",
+                                      },
+                                      validate: (value) => {
+                                        if (value > 100) {
+                                          return "La remise ne peut pas dépasser 100%";
+                                        }
+                                        return true;
+                                      },
+                                    })}
+                                    max="100"
+                                    step="0.01"
+                                    disabled={!canEdit}
+                                    className={`w-full h-10 rounded-lg text-sm ${errors?.items?.[index]?.discount ? "border-red-500" : ""}`}
+                                    onInput={(e) => {
+                                      const value = e.target.value;
+                                      const discountValue =
+                                        parseFloat(value) || 0;
+                                      const quantity =
+                                        watch(`items.${index}.quantity`) || 1;
+                                      const unitPrice =
+                                        watch(`items.${index}.unitPrice`) || 0;
+                                      const discountType =
+                                        watch(`items.${index}.discountType`) ||
+                                        "percentage";
+                                      const progressPercentage =
+                                        watch(`items.${index}.progressPercentage`) || 100;
 
-                                    // Calculer et mettre à jour le total
-                                    const total = calculateItemTotal(
-                                      quantity,
-                                      unitPrice,
-                                      discountValue,
-                                      discountType,
-                                      progressPercentage
-                                    );
+                                      setValue(
+                                        `items.${index}.discount`,
+                                        discountValue,
+                                        {
+                                          shouldDirty: true,
+                                          shouldValidate: true,
+                                        }
+                                      );
 
-                                    setValue(`items.${index}.total`, total, {
-                                      shouldDirty: true,
-                                    });
-                                  }}
-                                />
+                                      const total = calculateItemTotal(
+                                        quantity,
+                                        unitPrice,
+                                        discountValue,
+                                        discountType,
+                                        progressPercentage
+                                      );
+
+                                      setValue(`items.${index}.total`, total, {
+                                        shouldDirty: true,
+                                      });
+                                    }}
+                                  />
+                                )}
                                 {errors?.items?.[index]?.discount && (
                                   <p className="text-xs text-red-500">
                                     {errors.items[index].discount.message}
@@ -896,10 +966,11 @@ export default function ItemsSection({
                                 )}
                               </div>
                             </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
-                    </div>
                     </AccordionContent>
                   </AccordionItem>
                 );

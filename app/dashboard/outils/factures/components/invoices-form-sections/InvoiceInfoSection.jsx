@@ -421,7 +421,10 @@ export default function InvoiceInfoSection({ canEdit }) {
               )}
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-light">Date d'exécution</Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-light">Date d'exécution</Label>
+                <span className="h-4 w-4" aria-hidden="true"></span>
+              </div>
               <input
                 type="hidden"
                 {...register("executionDate", {
