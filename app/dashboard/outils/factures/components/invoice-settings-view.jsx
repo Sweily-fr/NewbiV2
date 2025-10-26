@@ -29,6 +29,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
+import { useActiveOrganization } from "@/src/hooks/useActiveOrganization";
 
 // Fonction de validation de l'IBAN
 const validateIBAN = (value) => {
@@ -69,8 +71,11 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
   } = useFormContext();
   const data = watch();
 
+  const { organization, refetch: refetchOrganization } = useActiveOrganization();
+
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showBankDetailsDialog, setShowBankDetailsDialog] = useState(false);
   const initialValuesRef = useRef(null);
 
   // Exposer la fonction de gestion de fermeture au parent
@@ -243,13 +248,15 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                     Aucune coordonnée bancaire n'est configurée pour votre
                     entreprise.
                   </p>
-                  <a
-                    href="/dashboard/settings"
-                    className="text-primary hover:underline font-medium flex items-center gap-1"
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="p-0 h-auto font-medium flex items-center gap-1"
+                    onClick={() => setShowBankDetailsDialog(true)}
                   >
                     <Settings className="h-4 w-4" />
-                    Configurer les coordonnées bancaires dans les paramètres
-                  </a>
+                    Configurer les coordonnées bancaires
+                  </Button>
                 </div>
               )}
 
@@ -524,6 +531,14 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog de configuration des coordonnées bancaires */}
+      <BankDetailsDialog
+        open={showBankDetailsDialog}
+        onOpenChange={setShowBankDetailsDialog}
+        organization={organization}
+        onSuccess={refetchOrganization}
+      />
     </div>
   );
 }
