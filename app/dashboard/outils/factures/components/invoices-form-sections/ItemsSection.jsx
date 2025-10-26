@@ -470,8 +470,10 @@ export default function ItemsSection({
                           </div>
                         </div>
 
-                        {/* Prix unitaire et Taux de TVA */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                        {/* Prix unitaire et Taux de TVA - Taux de TVA masqué en auto-liquidation */}
+                        <div className={`grid gap-3 md:gap-4 ${
+                          watch('isReverseCharge') ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'
+                        }`}>
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <Label
@@ -530,41 +532,43 @@ export default function ItemsSection({
                               )}
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Label className="text-sm font-normal">
-                                Taux de TVA
-                              </Label>
-                              <span className="h-4 w-4" aria-hidden="true"></span>
+                          {!watch('isReverseCharge') && (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm font-normal">
+                                  Taux de TVA
+                                </Label>
+                                <span className="h-4 w-4" aria-hidden="true"></span>
+                              </div>
+                              <Controller
+                                name={`items.${index}.vatRate`}
+                                defaultValue={20}
+                                render={({ field }) => (
+                                  <SelectNative
+                                    value={field.value?.toString() || "20"}
+                                    onChange={(e) =>
+                                      field.onChange(parseFloat(e.target.value))
+                                    }
+                                    disabled={!canEdit}
+                                    className="w-full text-sm"
+                                  >
+                                    <option value="0">
+                                      0% - Exonéré
+                                    </option>
+                                    <option value="5.5">
+                                      5,5% - Taux réduit
+                                    </option>
+                                    <option value="10">
+                                      10% - Taux intermédiaire
+                                    </option>
+                                    <option value="20">
+                                      20% - Taux normal
+                                    </option>
+                                  </SelectNative>
+                                )}
+                              />
                             </div>
-                            <Controller
-                              name={`items.${index}.vatRate`}
-                              defaultValue={20}
-                              render={({ field }) => (
-                                <SelectNative
-                                  value={field.value?.toString() || "20"}
-                                  onChange={(e) =>
-                                    field.onChange(parseFloat(e.target.value))
-                                  }
-                                  disabled={!canEdit}
-                                  className="w-full text-sm"
-                                >
-                                  <option value="0">
-                                    0% - Exonéré
-                                  </option>
-                                  <option value="5.5">
-                                    5,5% - Taux réduit
-                                  </option>
-                                  <option value="10">
-                                    10% - Taux intermédiaire
-                                  </option>
-                                  <option value="20">
-                                    20% - Taux normal
-                                  </option>
-                                </SelectNative>
-                              )}
-                            />
-                          </div>
+                          )}
                         </div>
 
                         {/* Texte d'exonération TVA (affiché seulement si TVA = 0% et pas d'auto-liquidation) */}
