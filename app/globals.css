@@ -1,31 +1,31 @@
 /* PolySans Font Family - Déclarées avant Tailwind */
 @font-face {
-  font-family: 'PolySans';
-  src: url('/fonts/polysanstrial-slim.otf') format('opentype');
+  font-family: "PolySans";
+  src: url("/fonts/polysanstrial-slim.otf") format("opentype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'PolySans';
-  src: url('/fonts/polysanstrial-neutral.otf') format('opentype');
+  font-family: "PolySans";
+  src: url("/fonts/polysanstrial-neutral.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'PolySans';
-  src: url('/fonts/polysanstrial-median.otf') format('opentype');
+  font-family: "PolySans";
+  src: url("/fonts/polysanstrial-median.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'PolySans';
-  src: url('/fonts/polysanstrial-bulky.otf') format('opentype');
+  font-family: "PolySans";
+  src: url("/fonts/polysanstrial-bulky.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -36,7 +36,7 @@
 
 /* Classe pour utiliser la police PolySans (conservée pour compatibilité) */
 .font-polysans {
-  font-family: 'PolySans', system-ui, sans-serif;
+  font-family: "PolySans", system-ui, sans-serif;
 }
 
 /* Custom scrollbar styles */
@@ -86,23 +86,26 @@
   * {
     font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
-  
+
   html,
   body {
     font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
-  
+
   /* Override font for authentication pages - utilise aussi Geist */
   .auth-layout {
     font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
-  
+
   .auth-layout * {
     font-family: inherit;
   }
-  
+
   /* Police monospace pour le code */
-  code, pre, kbd, samp {
+  code,
+  pre,
+  kbd,
+  samp {
     font-family: var(--font-geist-mono), ui-monospace, monospace;
   }
 }
@@ -263,7 +266,7 @@
   .modal-footer-fixed {
     padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
   }
-  
+
   /* Alternative avec min() pour plus de compatibilité */
   [class*="fixed"][class*="bottom-0"] {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));

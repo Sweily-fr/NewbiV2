@@ -1,7 +1,16 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { Menu, X, LayoutDashboard, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  ChevronDown,
+  ChevronUp,
+  TrendingUp,
+  Rocket,
+  Lightbulb,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { authClient } from "@/src/lib/auth-client";
@@ -66,7 +75,43 @@ const menuItems = [
     ],
   },
   { name: "Tarifs", href: "/#pricing" },
-  // { name: "Ressources", href: "/blog" },
+  { name: "Blog", href: "/blog" },
+  // {
+  //   name: "Blog",
+  //   href: "#link",
+  //   hasDropdown: true,
+  //   isBlogDropdown: true,
+  //   dropdownItems: [
+  //     {
+  //       name: "Comment optimiser votre facturation",
+  //       description:
+  //         "Découvrez les meilleures pratiques pour automatiser et simplifier votre processus de facturation.",
+  //       image: "/images/blog/facturation-optimisation.jpg",
+  //       href: "/blog/optimiser-facturation",
+  //       category: "Facturation",
+  //       readTime: "5 min",
+  //       isLarge: true,
+  //     },
+  //     {
+  //       name: "Gérer sa trésorerie efficacement",
+  //       description:
+  //         "Les clés pour un suivi financier optimal de votre entreprise.",
+  //       image: "/images/blog/tresorerie.jpg",
+  //       href: "/blog/gerer-tresorerie",
+  //       category: "Finance",
+  //       readTime: "4 min",
+  //     },
+  //     {
+  //       name: "Digitaliser son entreprise en 2025",
+  //       description:
+  //         "Guide complet pour réussir votre transformation digitale.",
+  //       image: "/images/blog/digitalisation.jpg",
+  //       href: "/blog/digitalisation-entreprise",
+  //       category: "Digital",
+  //       readTime: "6 min",
+  //     },
+  //   ],
+  // },
 ];
 
 const HeroHeader = ({ className }) => {
@@ -74,7 +119,7 @@ const HeroHeader = ({ className }) => {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [activeDropdown, setActiveDropdown] = React.useState(null);
   const [dropdownTimeout, setDropdownTimeout] = React.useState(null);
-  const [mobileDropdownOpen, setMobileDropdownOpen] = React.useState(false);
+  const [mobileDropdownOpen, setMobileDropdownOpen] = React.useState(null);
   const session = useUser();
 
   React.useEffect(() => {
@@ -167,7 +212,10 @@ const HeroHeader = ({ className }) => {
                     {/* Dropdown */}
                     {item.hasDropdown && activeDropdown === index && (
                       <Card
-                        className="absolute w-150 shadow-none top-full left-1/2 transform -translate-x-1/2 mt-10 p-3 z-50"
+                        className={cn(
+                          "absolute shadow-none top-full left-1/2 transform -translate-x-1/2 mt-10 p-3 z-50",
+                          item.isBlogDropdown ? "w-[600px]" : "w-150"
+                        )}
                         onMouseEnter={() => {
                           if (dropdownTimeout) {
                             clearTimeout(dropdownTimeout);
@@ -182,31 +230,95 @@ const HeroHeader = ({ className }) => {
                           setDropdownTimeout(timeout);
                         }}
                       >
-                        <div className="grid grid-cols-2 gap-3">
-                          {item.dropdownItems.map(
-                            (dropdownItem, dropdownIndex) => (
-                              <Link
-                                key={dropdownIndex}
-                                href={dropdownItem.href}
-                                className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 group"
-                              >
-                                <div
-                                  className={`w-10 h-10 ${dropdownItem.bgColor} rounded-lg flex items-center justify-center ${dropdownItem.textColor} text-lg flex-shrink-0 bg-opacity-30`}
+                        {item.isBlogDropdown ? (
+                          <div className="space-y-0 divide-y divide-gray-100">
+                            {/* Première ligne - 1 bloc large */}
+                            {item.dropdownItems
+                              .filter((item) => item.isLarge)
+                              .map((dropdownItem, dropdownIndex) => (
+                                <Link
+                                  key={dropdownIndex}
+                                  href={dropdownItem.href}
+                                  className="flex items-start gap-4 p-4 hover:bg-gray-50 hover:rounded-lg transition-all duration-200 group"
                                 >
-                                  {dropdownItem.icon}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="text-[#171717] text-sm mb-1">
-                                    {dropdownItem.name}
-                                  </h3>
-                                  <p className="text-xs text-gray-500 leading-relaxed">
-                                    {dropdownItem.description}
-                                  </p>
-                                </div>
-                              </Link>
-                            )
-                          )}
-                        </div>
+                                  <div className="w-24 h-20 rounded-lg flex-shrink-0 border border-dashed border-gray-300 flex items-center justify-center">
+                                    <TrendingUp
+                                      size={24}
+                                      className="text-gray-400"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="text-[#171717] text-sm mb-1">
+                                      {dropdownItem.name}
+                                    </h3>
+                                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+                                      {dropdownItem.description}
+                                    </p>
+                                  </div>
+                                </Link>
+                              ))}
+                            {/* Deuxième ligne - 2 blocs */}
+                            <div className="grid grid-cols-2 gap-0 divide-x divide-gray-100">
+                              {item.dropdownItems
+                                .filter((item) => !item.isLarge)
+                                .map((dropdownItem, dropdownIndex) => (
+                                  <Link
+                                    key={dropdownIndex}
+                                    href={dropdownItem.href}
+                                    className="flex flex-col gap-3 p-4 hover:bg-gray-50 hover:rounded-lg transition-all duration-200 group"
+                                  >
+                                    <div className="w-full h-20 rounded-lg border border-dashed border-gray-300 flex items-center justify-center">
+                                      {dropdownIndex === 0 ? (
+                                        <Rocket
+                                          size={24}
+                                          className="text-gray-400"
+                                        />
+                                      ) : (
+                                        <Lightbulb
+                                          size={24}
+                                          className="text-gray-400"
+                                        />
+                                      )}
+                                    </div>
+                                    <div className="flex-1">
+                                      <h3 className="text-[#171717] text-sm mb-1">
+                                        {dropdownItem.name}
+                                      </h3>
+                                      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+                                        {dropdownItem.description}
+                                      </p>
+                                    </div>
+                                  </Link>
+                                ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-3">
+                            {item.dropdownItems.map(
+                              (dropdownItem, dropdownIndex) => (
+                                <Link
+                                  key={dropdownIndex}
+                                  href={dropdownItem.href}
+                                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 group"
+                                >
+                                  <div
+                                    className={`w-10 h-10 ${dropdownItem.bgColor} rounded-lg flex items-center justify-center ${dropdownItem.textColor} text-lg flex-shrink-0 bg-opacity-30`}
+                                  >
+                                    {dropdownItem.icon}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="text-[#171717] text-sm mb-1">
+                                      {dropdownItem.name}
+                                    </h3>
+                                    <p className="text-xs text-gray-500 leading-relaxed">
+                                      {dropdownItem.description}
+                                    </p>
+                                  </div>
+                                </Link>
+                              )
+                            )}
+                          </div>
+                        )}
                       </Card>
                     )}
                   </li>
@@ -256,46 +368,91 @@ const HeroHeader = ({ className }) => {
                         <div>
                           <button
                             onClick={() =>
-                              setMobileDropdownOpen(!mobileDropdownOpen)
+                              setMobileDropdownOpen(
+                                mobileDropdownOpen === index ? null : index
+                              )
                             }
                             className="text-muted-foreground hover:text-accent-foreground flex items-center justify-between w-full duration-150"
                           >
                             <span>{item.name}</span>
-                            {mobileDropdownOpen ? (
+                            {mobileDropdownOpen === index ? (
                               <ChevronUp className="h-4 w-4" />
                             ) : (
                               <ChevronDown className="h-4 w-4" />
                             )}
                           </button>
-                          {mobileDropdownOpen && (
+                          {mobileDropdownOpen === index && (
                             <div className="mt-3 ml-4 space-y-3">
-                              {item.dropdownItems.map(
-                                (dropdownItem, dropdownIndex) => (
-                                  <Link
-                                    key={dropdownIndex}
-                                    href={dropdownItem.href}
-                                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                                    onClick={() => {
-                                      setMenuState(false);
-                                      setMobileDropdownOpen(false);
-                                    }}
-                                  >
-                                    <div
-                                      className={`w-8 h-8 ${dropdownItem.bgColor} rounded-lg flex items-center justify-center ${dropdownItem.textColor} flex-shrink-0 bg-opacity-30`}
-                                    >
-                                      {dropdownItem.icon}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <h3 className="text-[#171717] text-sm font-medium mb-1">
-                                        {dropdownItem.name}
-                                      </h3>
-                                      <p className="text-xs text-gray-500 leading-relaxed">
-                                        {dropdownItem.description}
-                                      </p>
-                                    </div>
-                                  </Link>
-                                )
-                              )}
+                              {item.isBlogDropdown
+                                ? // Layout spécial pour Blog mobile
+                                  item.dropdownItems.map(
+                                    (dropdownItem, dropdownIndex) => (
+                                      <Link
+                                        key={dropdownIndex}
+                                        href={dropdownItem.href}
+                                        className="flex flex-col gap-3 p-4 hover:bg-gray-50 hover:rounded-lg transition-all duration-200"
+                                        onClick={() => {
+                                          setMenuState(false);
+                                          setMobileDropdownOpen(null);
+                                        }}
+                                      >
+                                        <div className="w-full h-20 rounded-lg border border-dashed border-gray-300 flex items-center justify-center">
+                                          {dropdownIndex === 0 ? (
+                                            <TrendingUp
+                                              size={24}
+                                              className="text-gray-400"
+                                            />
+                                          ) : dropdownIndex === 1 ? (
+                                            <Rocket
+                                              size={24}
+                                              className="text-gray-400"
+                                            />
+                                          ) : (
+                                            <Lightbulb
+                                              size={24}
+                                              className="text-gray-400"
+                                            />
+                                          )}
+                                        </div>
+                                        <div className="flex-1">
+                                          <h3 className="text-[#171717] text-sm mb-1">
+                                            {dropdownItem.name}
+                                          </h3>
+                                          <p className="text-xs text-gray-500 leading-relaxed">
+                                            {dropdownItem.description}
+                                          </p>
+                                        </div>
+                                      </Link>
+                                    )
+                                  )
+                                : // Layout standard pour Produits
+                                  item.dropdownItems.map(
+                                    (dropdownItem, dropdownIndex) => (
+                                      <Link
+                                        key={dropdownIndex}
+                                        href={dropdownItem.href}
+                                        className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                                        onClick={() => {
+                                          setMenuState(false);
+                                          setMobileDropdownOpen(null);
+                                        }}
+                                      >
+                                        <div
+                                          className={`w-8 h-8 ${dropdownItem.bgColor} rounded-lg flex items-center justify-center ${dropdownItem.textColor} flex-shrink-0 bg-opacity-30`}
+                                        >
+                                          {dropdownItem.icon}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <h3 className="text-[#171717] text-sm font-medium mb-1">
+                                            {dropdownItem.name}
+                                          </h3>
+                                          <p className="text-xs text-gray-500 leading-relaxed">
+                                            {dropdownItem.description}
+                                          </p>
+                                        </div>
+                                      </Link>
+                                    )
+                                  )}
                             </div>
                           )}
                         </div>
