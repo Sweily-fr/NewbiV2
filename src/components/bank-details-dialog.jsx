@@ -13,8 +13,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { Alert, AlertDescription } from "@/src/components/ui/alert";
-import { Shield, Hash, Building2, CreditCard } from "lucide-react";
+import { Hash, Building2, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { updateOrganization } from "@/src/lib/organization-client";
 import {
@@ -40,6 +39,7 @@ export function BankDetailsDialog({
   open,
   onOpenChange,
   organization,
+  onSuccess,
 }) {
   const [displayIban, setDisplayIban] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -156,7 +156,7 @@ export function BankDetailsDialog({
       }
 
       // Mettre à jour l'organisation
-      await updateOrganization(
+      const result = await updateOrganization(
         organization.id,
         {
           bankName: formData.bankName || "",
@@ -166,6 +166,19 @@ export function BankDetailsDialog({
         {
           onSuccess: () => {
             toast.success("Coordonnées bancaires mises à jour avec succès");
+            
+            // Émettre un événement personnalisé pour forcer la mise à jour
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("organizationUpdated", {
+                  detail: { organizationId: organization.id },
+                })
+              );
+            }
+            
+            if (onSuccess) {
+              onSuccess();
+            }
             onOpenChange(false);
           },
           onError: (error) => {
@@ -192,19 +205,7 @@ export function BankDetailsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Information sur la validation conditionnelle */}
-          <Alert>
-            <Shield className="h-4 w-4" />
-            <AlertDescription>
-              <span className="font-medium">Coordonnées bancaires optionnelles</span>
-              <br />
-              Vous pouvez laisser tous les champs vides. Si vous renseignez une
-              information bancaire, les trois champs (IBAN, BIC et nom de banque)
-              deviennent obligatoires.
-            </AlertDescription>
-          </Alert>
-
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* IBAN */}
           <div className="space-y-2">
             <Label
@@ -329,18 +330,6 @@ export function BankDetailsDialog({
               Nom de votre établissement bancaire
             </p>
           </div>
-
-          {/* Alert sécurité */}
-          <Alert>
-            <Shield className="h-4 w-4 text-green-600" />
-            <AlertDescription>
-              <span className="font-medium">Sécurité des données bancaires</span>
-              <br />
-              Vos informations bancaires sont chiffrées et stockées de manière
-              sécurisée. Elles ne seront utilisées que pour les virements et
-              facturations.
-            </AlertDescription>
-          </Alert>
 
           <DialogFooter>
             <Button

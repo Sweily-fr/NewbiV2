@@ -76,7 +76,19 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showBankDetailsDialog, setShowBankDetailsDialog] = useState(false);
+  const [organizationRefreshKey, setOrganizationRefreshKey] = useState(0);
   const initialValuesRef = useRef(null);
+
+  // Fonction pour rafraîchir les données de l'organisation après mise à jour
+  const handleBankDetailsSuccess = async () => {
+    // Forcer un re-render en changeant la clé
+    setOrganizationRefreshKey(prev => prev + 1);
+    
+    // Recharger la page pour s'assurer que les données sont à jour
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
 
   // Exposer la fonction de gestion de fermeture au parent
   React.useEffect(() => {
@@ -537,6 +549,7 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
         open={showBankDetailsDialog}
         onOpenChange={setShowBankDetailsDialog}
         organization={organization}
+        onSuccess={handleBankDetailsSuccess}
       />
     </div>
   );
