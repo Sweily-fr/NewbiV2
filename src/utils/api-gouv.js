@@ -2,10 +2,9 @@
  * Utilitaires pour l'API Gouv Data - Recherche d'entreprises
  */
 
-const API_GOUV_BASE_URL = 'https://recherche-entreprises.api.gouv.fr/search';
-
 /**
  * Recherche d'entreprises via l'API Gouv Data
+ * Utilise une route API Next.js comme proxy pour éviter les problèmes CORS
  * @param {string} query - Terme de recherche (nom d'entreprise, SIRET, etc.)
  * @param {number} limit - Nombre maximum de résultats (défaut: 10)
  * @returns {Promise<Array>} Liste des entreprises trouvées
@@ -16,14 +15,21 @@ export async function searchCompanies(query, limit = 10) {
   }
 
   try {
-    const url = new URL(API_GOUV_BASE_URL);
+    // Utiliser notre proxy API Next.js au lieu de l'API directe
+    const url = new URL('/api/search-companies', window.location.origin);
     url.searchParams.append('q', query.trim());
     url.searchParams.append('limite', limit.toString());
 
-    const response = await fetch(url.toString());
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
     
     if (!response.ok) {
-      throw new Error(`Erreur API: ${response.status} - ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Erreur API: ${response.status} - ${response.statusText}`);
     }
 
     const data = await response.json();
