@@ -174,9 +174,9 @@ export function KanbanListView({
       case "high":
         return <Flag className={`${className} text-red-500 fill-red-500`} />;
       case "medium":
-        return <Flag className={`${className} text-orange-500 fill-orange-500`} />;
+        return <Flag className={`${className} text-yellow-500 fill-yellow-500`} />;
       case "low":
-        return <Flag className={`${className} text-blue-500 fill-blue-500`} />;
+        return <Flag className={`${className} text-green-500 fill-green-500`} />;
       default:
         return null;
     }

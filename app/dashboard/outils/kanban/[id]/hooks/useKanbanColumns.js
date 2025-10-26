@@ -6,6 +6,7 @@ import {
   CREATE_COLUMN,
   UPDATE_COLUMN,
   DELETE_COLUMN,
+  GET_BOARD,
 } from "@/src/graphql/kanbanQueries";
 
 export const useKanbanColumns = (boardId, refetchBoard) => {
@@ -39,11 +40,14 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
     UPDATE_COLUMN,
     {
       onCompleted: () => {
-        // Plus de toast ici - la subscription temps réel s'en charge
+        // Afficher le toast immédiatement
+        toast.success("Colonne modifiée avec succès");
+        // Fermer le modal et réinitialiser le formulaire
         setIsEditColumnOpen(false);
         setEditingColumn(null);
         setColumnForm({ title: "", color: "#3b82f6" });
-        // Plus besoin de refetch() - la subscription s'en charge
+        // Forcer le refetch pour mettre à jour l'interface
+        refetchBoard();
       },
       onError: (error) => {
         console.error("Erreur lors de la modification de la colonne:", error);

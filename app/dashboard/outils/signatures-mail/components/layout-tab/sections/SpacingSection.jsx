@@ -73,7 +73,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
             </Label>
             <div className="flex items-center gap-3 w-30">
               <Input
-                className="h-8 w-12 px-2 py-1"
+                className="h-8 w-16 px-2 py-1"
                 type="text"
                 inputMode="decimal"
                 value={signatureData.spacings?.global || 12}
@@ -108,7 +108,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
-                  className="h-8 w-12 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.spacings?.nameSpacing ?? ""}
@@ -150,7 +150,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 </Label>
                 <div className="flex items-center gap-3 w-30">
                   <Input
-                    className="h-8 w-12 px-2 py-1"
+                    className="h-8 w-16 px-2 py-1"
                     type="text"
                     inputMode="decimal"
                     value={signatureData.spacings?.logoBottom ?? ""}
@@ -194,7 +194,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
-                  className="h-8 w-12 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.spacings?.nameBottom ?? ""}
@@ -237,7 +237,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
-                  className="h-8 w-12 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.spacings?.positionBottom ?? ""}
@@ -278,7 +278,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
-                  className="h-8 w-12 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.spacings?.phoneToMobile ?? ""}
@@ -319,7 +319,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
-                  className="h-8 w-12 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.spacings?.mobileToEmail ?? ""}
@@ -360,7 +360,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
-                  className="h-8 w-12 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.spacings?.emailToWebsite ?? ""}
@@ -401,7 +401,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
-                  className="h-8 w-12 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.spacings?.websiteToAddress ?? ""}
@@ -442,7 +442,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
-                  className="h-8 w-12 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.spacings?.separatorTop ?? ""}
@@ -475,7 +475,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
-                  className="h-8 w-12 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.spacings?.separatorBottom ?? ""}
@@ -516,7 +516,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </Label>
               <div className="flex items-center gap-3 w-30">
                 <Input
-                  className="h-8 w-12 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.spacings?.logoToSocial ?? ""}
@@ -561,7 +561,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                     </Label>
                     <div className="flex items-center gap-3 w-30">
                       <Input
-                        className="h-8 w-12 px-2 py-1"
+                        className="h-8 w-16 px-2 py-1"
                         type="text"
                         inputMode="decimal"
                         value={
@@ -615,7 +615,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                     </Label>
                     <div className="flex items-center gap-3 w-30">
                       <Input
-                        className="h-8 w-12 px-2 py-1"
+                        className="h-8 w-16 px-2 py-1"
                         type="text"
                         inputMode="decimal"
                         value={

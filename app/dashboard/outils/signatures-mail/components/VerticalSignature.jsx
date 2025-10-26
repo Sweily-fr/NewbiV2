@@ -228,10 +228,7 @@ const VerticalSignature = ({
                           input.onchange = (e) => {
                             const file = e.target.files[0];
                             if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (e) =>
-                                handleImageChange("photo", e.target.result);
-                              reader.readAsDataURL(file);
+                              handleImageChange("photo", file);
                             }
                           };
                           input.click();

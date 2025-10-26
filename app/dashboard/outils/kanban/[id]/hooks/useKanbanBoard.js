@@ -1,4 +1,4 @@
-import { useQuery, useSubscription } from '@apollo/client';
+import { useQuery, useSubscription, useApolloClient } from '@apollo/client';
 import { useSession } from '@/src/lib/auth-client';
 import { GET_BOARD, TASK_UPDATED_SUBSCRIPTION, COLUMN_UPDATED_SUBSCRIPTION } from '@/src/graphql/kanbanQueries';
 import { useWorkspace } from '@/src/hooks/useWorkspace';
@@ -9,13 +9,12 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   const { workspaceId } = useWorkspace();
   const { data: session, isPending: sessionLoading } = useSession();
   const [isReady, setIsReady] = useState(false);
+  const apolloClient = useApolloClient();
   
-  console.log('🔍 [useKanbanBoard] workspaceId:', workspaceId, 'boardId:', id);
   
   // Attendre que la session soit chargée avant d'activer les subscriptions
   useEffect(() => {
     if (!sessionLoading && session?.user) {
-      console.log('✅ [useKanbanBoard] Session chargée, activation subscriptions');
       setIsReady(true);
     }
   }, [sessionLoading, session]);
@@ -41,10 +40,31 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       if (subscriptionData?.data?.taskUpdated) {
         const { type, task, taskId } = subscriptionData.data.taskUpdated;
         
-        console.log("🔄 [Kanban] Mise à jour temps réel tâche:", type, task || taskId);
         
-        // Mettre à jour le cache Apollo automatiquement
-        refetch();
+        // Pour les créations, mettre à jour le cache Apollo manuellement
+        if (type === 'CREATED' && task) {
+          try {
+            const cacheData = apolloClient.cache.readQuery({
+              query: GET_BOARD,
+              variables: { id, workspaceId }
+            });
+            
+            if (cacheData?.board) {
+              apolloClient.cache.writeQuery({
+                query: GET_BOARD,
+                variables: { id, workspaceId },
+                data: {
+                  board: {
+                    ...cacheData.board,
+                    tasks: [...(cacheData.board.tasks || []), task]
+                  }
+                }
+              });
+            }
+          } catch {
+            // Erreur silencieuse - continuer
+          }
+        }
         
         // Notifications utilisateur (debouncing automatique)
         if (type === 'CREATED' && task) {
@@ -86,8 +106,9 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
         
         console.log("🔄 [Kanban] Mise à jour temps réel colonne:", type, column || columnId);
         
-        // Mettre à jour le cache Apollo automatiquement
-        refetch();
+        // Ne pas faire de refetch complet - juste mettre à jour le cache Apollo
+        // Cela évite de recharger toutes les colonnes et de remettre "à l'instant" partout
+        // La subscription elle-même met à jour le cache avec les données reçues
         
         // Notifications utilisateur (debouncing automatique)
         if (type === 'CREATED' && column) {

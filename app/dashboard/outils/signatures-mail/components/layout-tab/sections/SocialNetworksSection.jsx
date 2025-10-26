@@ -251,7 +251,7 @@ export default function SocialNetworksSection({
           <Label className="text-xs text-muted-foreground">Taille logos</Label>
           <div className="flex items-center gap-3 w-30">
             <Input
-              className="h-8 w-12 px-2 py-1"
+              className="h-8 w-16 px-2 py-1"
               type="text"
               inputMode="decimal"
               value={signatureData.socialSize || 24}

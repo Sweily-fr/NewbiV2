@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   Calendar,
   MoreVertical,
@@ -63,6 +63,17 @@ export function TaskCard({ task, onEdit, onDelete }) {
     setShowDeleteDialog(false);
   };
 
+  // Gestion du clic - Utiliser onClick au lieu de onPointerUp pour ne pas bloquer le drag
+  const handleClick = (e) => {
+    // Ignorer si c'est un clic sur un élément interactif
+    const interactiveElements = ["BUTTON", "A", "INPUT", "SELECT", "TEXTAREA"];
+    const clickedElement = e.target.closest(interactiveElements.join(","));
+    
+    if (!clickedElement) {
+      onEdit(task);
+    }
+  };
+
   // Calcul de la progression de la checklist
   const checklistProgress = useMemo(() => {
     if (
@@ -87,7 +98,6 @@ export function TaskCard({ task, onEdit, onDelete }) {
     transform,
     transition,
     isDragging: isSortableDragging,
-    setActivatorNodeRef,
   } = useSortable({
     id: task.id,
     data: {
@@ -95,35 +105,6 @@ export function TaskCard({ task, onEdit, onDelete }) {
       task,
     },
   });
-
-  const handleClick = (e) => {
-    // Ne pas déclencher si l'événement a été annulé ou si c'est un drag
-    if (e.defaultPrevented || isSortableDragging) return;
-
-    // Vérifier si le clic provient d'un élément interactif (bouton, input, etc.)
-    const interactiveElements = [
-      "BUTTON",
-      "A",
-      "INPUT",
-      "SELECT",
-      "TEXTAREA",
-      'DIV[role="menuitem"]',
-    ];
-    const clickedElement = e.target.closest(interactiveElements.join(","));
-
-    if (clickedElement) {
-      // Si c'est un élément du menu déroulant, on ne fait rien
-      if (clickedElement.closest('[role="menu"]')) {
-        return;
-      }
-      // Pour les autres éléments interactifs, on vérifie s'ils ont déjà géré le clic
-      if (clickedElement !== e.target) {
-        return;
-      }
-    }
-
-    onEdit(task);
-  };
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -142,23 +123,22 @@ export function TaskCard({ task, onEdit, onDelete }) {
         {...attributes}
         {...listeners}
         onClick={handleClick}
-        className={`bg-card text-card-foreground rounded-lg border border-border p-2 sm:p-3 mb-2 sm:mb-3 shadow-xs hover:shadow-sm transition-all duration-200 ease-out hover:bg-accent/10 will-change-transform min-h-[148px] flex flex-col ${isSortableDragging ? "opacity-50" : ""} cursor-pointer`}
+        className={`bg-card text-card-foreground rounded-lg border border-border p-2 sm:p-3 mb-2 sm:mb-3 shadow-xs hover:shadow-sm transition-all duration-200 ease-out hover:bg-accent/10 will-change-transform min-h-[148px] flex flex-col ${isSortableDragging ? "opacity-50" : ""} cursor-grab active:cursor-grabbing`}
       >
         {/* En-tête de la carte */}
         <div className="flex items-start justify-between mb-1.5 sm:mb-2">
           <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-            <button
-              ref={setActivatorNodeRef}
-              {...listeners}
-              className="text-muted-foreground/70 hover:text-foreground p-1 -ml-1 rounded hover:bg-accent cursor-grab active:cursor-grabbing flex-shrink-0 touch-none"
+            <div
+              className="text-muted-foreground/70 hover:text-foreground p-1 -ml-1 rounded hover:bg-accent flex-shrink-0 touch-none"
               title="Faire glisser pour déplacer"
-              onClick={(e) => e.stopPropagation()}
             >
               <GripVertical className="h-3.5 w-3.5" />
-            </button>
+            </div>
             <Tooltip>
               <TooltipTrigger asChild>
-                <h4 className="font-medium text-sm text-foreground truncate">
+                <h4 
+                  className="font-medium text-sm text-foreground truncate"
+                >
                   {task.title}
                 </h4>
               </TooltipTrigger>
@@ -175,7 +155,7 @@ export function TaskCard({ task, onEdit, onDelete }) {
                     ? "text-red-500 fill-red-500"
                     : task.priority.toLowerCase() === "medium"
                       ? "text-yellow-500 fill-yellow-500"
-                      : "text-gray-400 fill-gray-400"
+                      : "text-green-500 fill-green-500"
                 }`}
               />
             )}

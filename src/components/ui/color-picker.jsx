@@ -585,9 +585,11 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
                   className="w-full aspect-square rounded border-2 border-gray-300 hover:border-gray-400 hover:scale-105 transition-all"
                   style={{ backgroundColor: preset }}
                   onClick={() => {
+                    const hsv = hexToHsv(preset);
                     setCurrentColor(preset);
                     setHexInput(preset);
-                    setHue(hexToHue(preset));
+                    setHue(hsv.h);
+                    setCursorPosition({ x: hsv.s, y: 100 - hsv.v });
                     onChange(preset);
                   }}
                   title={preset}
