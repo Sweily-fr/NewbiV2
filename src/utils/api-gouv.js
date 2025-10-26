@@ -2,6 +2,10 @@
  * Utilitaires pour l'API Gouv Data - Recherche d'entreprises
  */
 
+// Cache pour éviter les requêtes répétées
+const searchCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Recherche d'entreprises via l'API Gouv Data
  * Utilise une route API Next.js comme proxy pour éviter les problèmes CORS
