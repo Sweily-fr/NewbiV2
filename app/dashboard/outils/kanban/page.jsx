@@ -268,16 +268,22 @@ export default function KanbanPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {boards.map((board) => (
             <Link key={board.id} href={`/dashboard/outils/kanban/${board.id}`}>
-              <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer group relative overflow-hidden flex flex-col min-h-[232px]">
-                <CardHeader className="pb-3 overflow-hidden">
-                  <CardTitle className="text-lg font-medium text-foreground line-clamp-2 break-words w-full overflow-hidden">
-                    {board.title}
-                  </CardTitle>
-                  <CardDescription className="line-clamp-3 text-sm text-muted-foreground break-words w-full overflow-hidden">
+              <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer group relative overflow-hidden flex flex-col min-h-[202px] max-h-[202px]">
+                <div className="flex-shrink-0">
+                  <CardHeader className="pb-1 overflow-hidden">
+                    <CardTitle className="text-lg font-medium text-foreground line-clamp-2 break-words w-full overflow-hidden">
+                      {board.title}
+                    </CardTitle>
+                  </CardHeader>
+                </div>
+                
+                <div className="flex-1 flex items-center px-6 py-1">
+                  <CardDescription className="line-clamp-2 text-sm text-muted-foreground break-words w-full">
                     {board.description || "Aucune description"}
                   </CardDescription>
-                </CardHeader>
-                <CardFooter className="pt-0 mt-auto flex-shrink-0">
+                </div>
+                
+                <CardFooter className="py-1 px-6 flex-shrink-0">
                   <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
