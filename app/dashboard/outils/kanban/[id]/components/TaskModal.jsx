@@ -454,7 +454,7 @@ export function TaskModal({
               <div className="px-4 py-4 border-b border-border">
                 <h3 className="text-sm font-semibold">Activité</h3>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 py-4">
+              <div className="flex-1 overflow-y-auto px-4">
                 <TaskActivity 
                   task={taskActivityData} 
                   workspaceId={workspaceId}
