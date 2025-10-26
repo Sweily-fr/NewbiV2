@@ -4,6 +4,23 @@
 
 const API_GOUV_BASE_URL = 'https://recherche-entreprises.api.gouv.fr/search';
 
+// Cache pour stocker les résultats des requêtes
+const searchCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes de cache
+
+// Options par défaut pour les requêtes fetch
+const defaultOptions = {
+  method: 'GET',
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  },
+  // Utiliser le mode 'cors' avec les bonnes options
+  mode: 'cors',
+  credentials: 'omit',
+  cache: 'default'
+};
+
 /**
  * Recherche d'entreprises via l'API Gouv Data
  * @param {string} query - Terme de recherche (nom d'entreprise, SIRET, etc.)
@@ -15,39 +32,86 @@ export async function searchCompanies(query, limit = 10) {
     return [];
   }
 
+  const cacheKey = `${query.toLowerCase()}-${limit}`;
+  const cachedData = searchCache.get(cacheKey);
+  
+  // Retourner les données en cache si elles sont encore valides
+  if (cachedData && (Date.now() - cachedData.timestamp) < CACHE_DURATION) {
+    return cachedData.data;
+  }
+
+  // Fonction pour traiter les résultats et les mettre en cache
+  const processAndCacheResults = (results) => {
+    const formattedResults = results.map(company => ({
+      id: company.siret || company.siren || Math.random().toString(36).substr(2, 9),
+      siret: company.siret || '',
+      siren: company.siren || '',
+      name: company.nom_raison_sociale || company.nom_complet || 'Entreprise non nommée',
+      address: company.siege?.adresse || '',
+      postalCode: company.siege?.code_postal || '',
+      city: company.siege?.libelle_commune || '',
+      activityCode: company.activite_principale || '',
+      activityLabel: company.activite_principale || '',
+      legalForm: company.forme_juridique || '',
+      legalFormCode: company.forme_juridique_code || '',
+      vatNumber: company.siren ? `FR${((12 + 3 * (parseInt(company.siren) % 97)) % 97).toString().padStart(2, '0')}${company.siren}` : '',
+      isActive: company.etat_administratif === 'A',
+      creationDate: company.date_creation || ''
+    }));
+
+    // Mise en cache des résultats
+    searchCache.set(cacheKey, {
+      data: formattedResults,
+      timestamp: Date.now()
+    });
+
+    return formattedResults;
+  };
+
   try {
+    // Essayer d'abord avec l'API directe
     const url = new URL(API_GOUV_BASE_URL);
     url.searchParams.append('q', query.trim());
     url.searchParams.append('limite', limit.toString());
 
-    const response = await fetch(url.toString());
-    
+    const response = await fetch(url.toString(), {
+      ...defaultOptions,
+      headers: {
+        ...defaultOptions.headers,
+        'Referer': 'https://www.newbi.fr'
+      }
+    });
+
     if (!response.ok) {
       throw new Error(`Erreur API: ${response.status} - ${response.statusText}`);
     }
 
     const data = await response.json();
     
-    return data.results?.map(company => ({
-      id: company.siren,
-      siret: company.siege?.siret || '',
-      name: company.nom_complet || company.nom_raison_sociale,
-      legalName: company.nom_raison_sociale,
-      address: company.siege?.adresse || '',
-      postalCode: company.siege?.code_postal || '',
-      city: company.siege?.libelle_commune || '',
-      activityCode: company.activite_principale,
-      activityLabel: '', // Non disponible dans cette API
-      status: company.etat_administratif,
-      creationDate: company.date_creation,
-      employees: company.tranche_effectif_salarie || '',
-      vatNumber: '', // Non disponible dans cette API
-      // Données brutes pour debug
-      raw: company
-    })) || [];
+    if (data && typeof data === 'object' && Array.isArray(data.results)) {
+      return processAndCacheResults(data.results);
+    } else {
+      throw new Error('Format de réponse inattendu de l\'API');
+    }
   } catch (error) {
-    console.error('Erreur lors de la recherche d\'entreprises:', error);
-    throw new Error('Impossible de rechercher les entreprises. Veuillez réessayer.');
+    console.error('Erreur lors de la recherche directe, tentative avec le fallback:', error);
+    
+    // En cas d'échec, essayer avec la méthode de secours
+    try {
+      const fallbackResults = await searchCompaniesFallback(query, limit);
+      if (fallbackResults && fallbackResults.length > 0) {
+        // Mise en cache des résultats du fallback
+        searchCache.set(cacheKey, {
+          data: fallbackResults,
+          timestamp: Date.now()
+        });
+        return fallbackResults;
+      }
+    } catch (fallbackError) {
+      console.error('Erreur lors de l\'utilisation du fallback:', fallbackError);
+    }
+    
+    return [];
   }
 }
 
@@ -93,6 +157,34 @@ export function parseAddress(fullAddress, postalCode = '', city = '') {
     city: city || '',
     country: 'France'
   };
+}
+
+/**
+ * Méthode de secours pour la recherche d'entreprises en cas d'échec CORS
+ * Utilise une requête proxy via votre propre backend
+ */
+async function searchCompaniesFallback(query, limit = 10) {
+  try {
+    // Utilisez votre propre endpoint backend comme proxy
+    const response = await fetch('/api/search-companies', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query, limit })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erreur du serveur: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.results || [];
+    
+  } catch (fallbackError) {
+    console.error('Erreur lors de la recherche de secours:', fallbackError);
+    throw new Error('Service temporairement indisponible. Veuillez réessayer plus tard.');
+  }
 }
 
 /**
