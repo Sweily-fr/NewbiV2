@@ -190,10 +190,22 @@ export const stripePlugin = stripe({
               session.subscription
             );
 
+            // Copier les métadonnées de la session vers l'abonnement
+            if (session.metadata && Object.keys(session.metadata).length > 0) {
+              console.log("📋 [STRIPE WEBHOOK] Copie des métadonnées de la session vers l'abonnement");
+              await stripe.subscriptions.update(session.subscription, {
+                metadata: session.metadata,
+              });
+              // Mettre à jour l'objet subscription local
+              subscription.metadata = session.metadata;
+            }
+
             userId = session.metadata?.userId || subscription.metadata?.userId;
 
             // Vérifier si c'est une nouvelle organisation
             const isNewOrg = session.metadata?.isNewOrganization === "true";
+
+            console.log(`🔍 [STRIPE WEBHOOK] isNewOrg: ${isNewOrg}, userId: ${userId}`);
 
             if (isNewOrg) {
               console.log(
