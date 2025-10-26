@@ -211,9 +211,19 @@ export function TaskCard({ task, onEdit, onDelete }) {
 
         {/* Description */}
         {task.description && (
-          <p className="text-xs text-muted-foreground mb-1.5 sm:mb-2 line-clamp-2">
+          <p className="text-xs text-muted-foreground mb-1.5 sm:mb-2 line-clamp-3 break-words whitespace-pre-wrap">
             {task.description}
           </p>
+        )}
+
+        {/* Checklist */}
+        {checklistProgress.total > 0 && (
+          <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
+            <CheckSquare className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              {checklistProgress.completed}/{checklistProgress.total}
+            </span>
+          </div>
         )}
 
         {/* Tags */}
@@ -260,15 +270,6 @@ export function TaskCard({ task, onEdit, onDelete }) {
                 return null;
               }
             })()}
-            
-            {checklistProgress.total > 0 && (
-              <div className="flex items-center gap-1">
-                <CheckSquare className="h-3.5 w-3.5" />
-                <span>
-                  {checklistProgress.completed}/{checklistProgress.total}
-                </span>
-              </div>
-            )}
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">

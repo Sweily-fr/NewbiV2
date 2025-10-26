@@ -103,7 +103,7 @@ export default function KanbanBoardPage({ params }) {
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
   // Hooks
-  const { board, loading, error, refetch, getTasksByColumn, workspaceId } =
+  const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction } =
     useKanbanBoard(id, isRedirecting);
   const { loading: workspaceLoading } = useWorkspace();
 
@@ -166,8 +166,8 @@ export default function KanbanBoardPage({ params }) {
 
   // Mutation pour réorganiser les colonnes
   const [reorderColumnsMutation] = useMutation(REORDER_COLUMNS, {
-    refetchQueries: ["GetBoard"],
-    awaitRefetchQueries: false, // Ne pas attendre le refetch pour ne pas bloquer l'UI
+    // Ne pas faire de refetch - la subscription COLUMN_UPDATED_SUBSCRIPTION gère la mise à jour
+    // Cela évite les re-renders inutiles et les "sauts" visuels
   });
 
   // État local pour les colonnes (nécessaire pour le drag and drop en temps réel)
@@ -199,7 +199,8 @@ export default function KanbanBoardPage({ params }) {
     workspaceId,
     localColumns,
     reorderColumnsMutation,
-    setLocalColumns
+    setLocalColumns,
+    markReorderAction
   );
 
   // Configuration des capteurs pour le drag & drop

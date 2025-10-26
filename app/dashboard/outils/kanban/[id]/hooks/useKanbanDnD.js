@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 
-export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, columns, reorderColumns, setLocalColumns) => {
+export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, localColumns, reorderColumns, setLocalColumns, markReorderAction) => {
   const [activeTask, setActiveTask] = useState(null);
   const [activeColumn, setActiveColumn] = useState(null);
 
@@ -31,12 +31,12 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
     // Seulement pour les colonnes
     if (activeData?.type === 'column' && overData?.type === 'column') {
       if (active.id !== over.id) {
-        const oldIndex = columns.findIndex((col) => col.id === active.id);
-        const newIndex = columns.findIndex((col) => col.id === over.id);
+        const oldIndex = localColumns.findIndex((col) => col.id === active.id);
+        const newIndex = localColumns.findIndex((col) => col.id === over.id);
         
         if (oldIndex !== -1 && newIndex !== -1) {
           // Réorganiser localement en temps réel
-          const newColumns = arrayMove(columns, oldIndex, newIndex);
+          const newColumns = arrayMove(localColumns, oldIndex, newIndex);
           setLocalColumns(newColumns);
         }
       }
@@ -60,10 +60,10 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
     if (activeData?.type === 'column') {
       // Les colonnes sont déjà réorganisées localement via handleDragOver
       // On sauvegarde juste l'ordre final en base de données
-      const columnIds = columns.map((col) => col.id);
+      const columnIds = localColumns.map((col) => col.id);
 
-      // SUPPRIMÉ : markAsUpdating n'est plus nécessaire
-      // Les subscriptions dans useKanbanBoard gèrent automatiquement les mises à jour
+      // Marquer l'action locale pour ignorer la subscription REORDERED
+      markReorderAction();
 
       try {
         await reorderColumns({
