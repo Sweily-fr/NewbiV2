@@ -268,7 +268,7 @@ export default function KanbanPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {boards.map((board) => (
             <Link key={board.id} href={`/dashboard/outils/kanban/${board.id}`}>
-              <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer group relative overflow-hidden flex flex-col">
+              <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer group relative overflow-hidden flex flex-col min-h-[232px]">
                 <CardHeader className="pb-3 overflow-hidden">
                   <CardTitle className="text-lg font-medium text-foreground line-clamp-2 break-words w-full overflow-hidden">
                     {board.title}
