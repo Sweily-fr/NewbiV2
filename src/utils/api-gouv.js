@@ -2,27 +2,9 @@
  * Utilitaires pour l'API Gouv Data - Recherche d'entreprises
  */
 
-const API_GOUV_BASE_URL = 'https://recherche-entreprises.api.gouv.fr/search';
-
-// Cache pour stocker les résultats des requêtes
-const searchCache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes de cache
-
-// Options par défaut pour les requêtes fetch
-const defaultOptions = {
-  method: 'GET',
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  },
-  // Utiliser le mode 'cors' avec les bonnes options
-  mode: 'cors',
-  credentials: 'omit',
-  cache: 'default'
-};
-
 /**
  * Recherche d'entreprises via l'API Gouv Data
+ * Utilise une route API Next.js comme proxy pour éviter les problèmes CORS
  * @param {string} query - Terme de recherche (nom d'entreprise, SIRET, etc.)
  * @param {number} limit - Nombre maximum de résultats (défaut: 10)
  * @returns {Promise<Array>} Liste des entreprises trouvées
@@ -69,21 +51,21 @@ export async function searchCompanies(query, limit = 10) {
   };
 
   try {
-    // Essayer d'abord avec l'API directe
-    const url = new URL(API_GOUV_BASE_URL);
+    // Utiliser notre proxy API Next.js au lieu de l'API directe
+    const url = new URL('/api/search-companies', window.location.origin);
     url.searchParams.append('q', query.trim());
     url.searchParams.append('limite', limit.toString());
 
     const response = await fetch(url.toString(), {
-      ...defaultOptions,
+      method: 'GET',
       headers: {
-        ...defaultOptions.headers,
-        'Referer': 'https://www.newbi.fr'
+        'Content-Type': 'application/json'
       }
     });
-
+    
     if (!response.ok) {
-      throw new Error(`Erreur API: ${response.status} - ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Erreur API: ${response.status} - ${response.statusText}`);
     }
 
     const data = await response.json();
