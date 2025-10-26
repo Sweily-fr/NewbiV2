@@ -3,13 +3,14 @@ import { useSession } from '@/src/lib/auth-client';
 import { GET_BOARD, TASK_UPDATED_SUBSCRIPTION, COLUMN_UPDATED_SUBSCRIPTION } from '@/src/graphql/kanbanQueries';
 import { useWorkspace } from '@/src/hooks/useWorkspace';
 import { toast } from '@/src/utils/debouncedToast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export const useKanbanBoard = (id, isRedirecting = false) => {
   const { workspaceId } = useWorkspace();
   const { data: session, isPending: sessionLoading } = useSession();
   const [isReady, setIsReady] = useState(false);
   const apolloClient = useApolloClient();
+  const lastReorderTimeRef = useRef(0);
   
   
   // Attendre que la session soit chargée avant d'activer les subscriptions
@@ -106,6 +107,16 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
         
         console.log("🔄 [Kanban] Mise à jour temps réel colonne:", type, column || columnId);
         
+        // Ignorer les mises à jour REORDERED qui arrivent dans les 500ms après une action locale
+        // Cela évite les re-renders inutiles causés par la subscription après une action drag
+        if (type === 'REORDERED') {
+          const timeSinceLastReorder = Date.now() - lastReorderTimeRef.current;
+          if (timeSinceLastReorder < 500) {
+            console.log("⏭️ [Kanban] Ignorer REORDERED (action locale récente)");
+            return;
+          }
+        }
+        
         // Ne pas faire de refetch complet - juste mettre à jour le cache Apollo
         // Cela évite de recharger toutes les colonnes et de remettre "à l'instant" partout
         // La subscription elle-même met à jour le cache avec les données reçues
@@ -151,6 +162,10 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       .sort((a, b) => (a.position || 0) - (b.position || 0));
   };
 
+  const markReorderAction = () => {
+    lastReorderTimeRef.current = Date.now();
+  };
+
   return {
     board,
     columns,
@@ -159,5 +174,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     refetch,
     getTasksByColumn,
     workspaceId,
+    markReorderAction,
   };
 };

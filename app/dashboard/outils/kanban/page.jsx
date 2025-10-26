@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -9,6 +10,7 @@ import {
   Search,
   Calendar,
   User,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -58,6 +60,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 export default function KanbanPage() {
+  const [boardPreview, setBoardPreview] = React.useState(null);
+
   const {
     // State
     searchTerm,
@@ -264,48 +268,59 @@ export default function KanbanPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {boards.map((board) => (
             <Link key={board.id} href={`/dashboard/outils/kanban/${board.id}`}>
-              <Card className="min-h-42 hover:shadow-lg transition-all duration-200 cursor-pointer group relative">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg font-medium text-foreground">
-                      {board.title}
-                    </CardTitle>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground rounded-full"
-                        onClick={(e) => handleEditClick(board, e)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-full"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setBoardToDelete(board);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <CardDescription className="line-clamp-2 text-sm text-muted-foreground">
+              <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer group relative overflow-hidden flex flex-col">
+                <CardHeader className="pb-3 overflow-hidden">
+                  <CardTitle className="text-lg font-medium text-foreground line-clamp-2 break-words w-full overflow-hidden">
+                    {board.title}
+                  </CardTitle>
+                  <CardDescription className="line-clamp-3 text-sm text-muted-foreground break-words w-full overflow-hidden">
                     {board.description || "Aucune description"}
                   </CardDescription>
                 </CardHeader>
-                <CardFooter className="pt-0">
+                <CardFooter className="pt-0 mt-auto flex-shrink-0">
                   <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       <span>Créé le {formatDate(board.createdAt)}</span>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
-                      Tableau
-                    </Badge>
+                    {/* Boutons Edit, Delete et View - apparaissent au hover */}
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground rounded-full"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setBoardPreview(board);
+                        }}
+                        title="Voir le tableau"
+                      >
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground rounded-full"
+                        onClick={(e) => handleEditClick(board, e)}
+                        title="Modifier"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-full"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setBoardToDelete(board);
+                        }}
+                        title="Supprimer"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </CardFooter>
               </Card>
@@ -316,19 +331,19 @@ export default function KanbanPage() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px] rounded-xl">
           <form onSubmit={handleUpdateBoard}>
-            <DialogHeader className="border-b pb-4">
-              <DialogTitle className="text-foreground">
+            <DialogHeader className="border-b pb-6 mb-6">
+              <DialogTitle className="text-2xl font-bold text-foreground">
                 Modifier le tableau
               </DialogTitle>
-              <DialogDescription className="text-muted-foreground">
+              <DialogDescription className="text-muted-foreground mt-2">
                 Modifiez les informations de votre tableau Kanban.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit-title" className="text-foreground">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="edit-title" className="text-sm font-semibold text-foreground">
                   Titre *
                 </Label>
                 <Input
@@ -339,10 +354,11 @@ export default function KanbanPage() {
                   }
                   placeholder="Nom du tableau"
                   required
+                  className="rounded-lg"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-description" className="text-foreground">
+              <div className="space-y-2">
+                <Label htmlFor="edit-description" className="text-sm font-semibold text-foreground">
                   Description
                 </Label>
                 <Textarea
@@ -355,19 +371,21 @@ export default function KanbanPage() {
                     }))
                   }
                   placeholder="Description du tableau (optionnel)"
-                  rows={3}
+                  rows={4}
+                  className="rounded-lg resize-none"
                 />
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="mt-8 pt-6 border-t">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsEditDialogOpen(false)}
+                className="px-6"
               >
                 Annuler
               </Button>
-              <Button type="submit" disabled={updating}>
+              <Button type="submit" disabled={updating} className="px-6">
                 {updating ? (
                   <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
@@ -417,6 +435,48 @@ export default function KanbanPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={!!boardPreview} onOpenChange={(open) => !open && setBoardPreview(null)}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto [&>button]:hidden">
+          <DialogHeader className="border-b pb-6 mb-6 pr-8">
+            <DialogTitle className="text-foreground text-2xl font-bold break-words" style={{ wordBreak: 'break-word' }}>
+              {boardPreview?.title}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Description Section */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Description
+              </h3>
+              <p className="text-base text-foreground break-words whitespace-pre-wrap leading-relaxed" style={{ wordBreak: 'break-word' }}>
+                {boardPreview?.description || "Aucune description"}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-8 pt-6 border-t flex items-center justify-between">
+            {/* Date en bas à gauche */}
+            <div className="flex items-center gap-3 text-sm">
+              <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <span className="text-foreground">
+                Créé le <span className="font-medium">{boardPreview && formatDate(boardPreview.createdAt)}</span>
+              </span>
+            </div>
+            
+            {/* Bouton en bas à droite */}
+            <Button
+              variant="outline"
+              onClick={() => setBoardPreview(null)}
+              className="px-6"
+            >
+              Fermer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
