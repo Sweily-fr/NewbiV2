@@ -2,7 +2,7 @@ import { useState } from 'react';
 import * as React from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Textarea } from '@/src/components/ui/textarea';
-import { MessageSquare, Activity, Send, Edit2, Trash2 } from 'lucide-react';
+import { Send, Edit2, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
 import { UserAvatar } from '@/src/components/ui/user-avatar';
 import { format } from 'date-fns';
@@ -11,9 +11,6 @@ import { useMutation } from '@apollo/client';
 import { ADD_COMMENT, UPDATE_COMMENT, DELETE_COMMENT } from '@/src/graphql/kanbanQueries';
 import { useSession } from '@/src/lib/auth-client';
 
-/**
- * Composant pour afficher l'activité et les commentaires d'une tâche
- */
 const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, boardMembers = [], columns = [], onTaskUpdate }) => {
   const [task, setTask] = useState(initialTask);
   const [newComment, setNewComment] = useState('');
@@ -21,19 +18,15 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   const [editingContent, setEditingContent] = useState('');
   const { data: session } = useSession();
 
-  // Mettre à jour task quand initialTask change
   React.useEffect(() => {
     setTask(initialTask);
   }, [initialTask]);
 
-  // Fonction pour enrichir les données utilisateur
   const enrichUserData = (item) => {
-    // Si on a déjà un vrai nom (pas un email) et une image, on les garde
     if (item.userName && !item.userName.includes('@') && item.userImage) {
       return item;
     }
     
-    // Si c'est l'utilisateur connecté, utiliser ses données de session
     if (session?.user && item.userId === session.user.id) {
       return {
         ...item,
@@ -42,7 +35,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       };
     }
     
-    // Sinon, chercher dans les membres du board
     const member = boardMembers.find(m => m.userId === item.userId || m.id === item.userId);
     if (member) {
       return {
@@ -57,10 +49,8 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
 
   const [addComment, { loading: addingComment }] = useMutation(ADD_COMMENT, {
     onCompleted: (data) => {
-      // Mettre à jour l'état local avec la tâche mise à jour
       if (data?.addComment) {
         setTask(data.addComment);
-        // Mettre à jour aussi le parent (TaskModal)
         if (onTaskUpdate) {
           onTaskUpdate(prev => ({ ...prev, comments: data.addComment.comments, activity: data.addComment.activity }));
         }
@@ -84,36 +74,32 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     }
   });
 
-  // Ajouter un commentaire
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
 
-    // Récupérer l'ID de la tâche (peut être 'id' ou '_id')
     const taskId = task.id || task._id;
 
     if (!taskId) {
-      console.error('❌ No task ID found!', task);
+      console.error('No task ID found!', task);
       return;
     }
 
     try {
-      const result = await addComment({
+      await addComment({
         variables: {
           taskId,
-          input: { content: newComment, workspaceId },
+          input: { content: newComment },
           workspaceId
         },
-        // Forcer le rafraîchissement 
-        refetchQueries: ['GetBoard', 'GetTask'],
+        refetchQueries: ['GetBoard'],
         awaitRefetchQueries: true,
       });
       setNewComment('');
     } catch (error) {
-      console.error('Error details:', error.graphQLErrors?.[0]?.message);
+      console.error('Error adding comment:', error);
     }
   };
 
-  // Modifier un commentaire
   const handleUpdateComment = async (commentId) => {
     if (!editingContent.trim()) return;
 
@@ -136,7 +122,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     }
   };
 
-  // Supprimer un commentaire
   const handleDeleteComment = async (commentId) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')) return;
 
@@ -156,7 +141,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     }
   };
 
-  // Formater la date
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -172,7 +156,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     }
   };
 
-  // Obtenir l'icône et le texte pour chaque type d'activité
   const getActivityDisplay = (activity) => {
     const icons = {
       created: '✨',
@@ -184,7 +167,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       reopened: '🔓'
     };
     
-    // Icônes spécifiques selon le champ modifié
     const fieldIcons = {
       title: '✏️',
       description: '📄',
@@ -198,12 +180,9 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     let text = activity.description || `a modifié ${activity.field}`;
     let moveDetails = null;
     
-    // Si c'est un déplacement, trouver les colonnes de départ et d'arrivée
     if (activity.type === 'moved' && columns.length > 0) {
-      
       const oldColumn = columns.find(col => col.id === activity.oldValue);
       const newColumn = columns.find(col => col.id === activity.newValue);
-      
       
       if (oldColumn && newColumn) {
         text = 'a déplacé la tâche';
@@ -214,9 +193,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       }
     }
     
-    // Si c'est une assignation ou désassignation, afficher le nom de la personne
     if ((activity.type === 'assigned' || activity.type === 'unassigned') && boardMembers.length > 0) {
-      // Chercher dans newValue (assignation) ou oldValue (désassignation)
       const memberIds = [];
       
       if (activity.type === 'assigned' && Array.isArray(activity.newValue)) {
@@ -225,7 +202,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
         memberIds.push(...activity.oldValue);
       }
       
-      // Trouver les noms des membres
       const memberNames = memberIds
         .map(id => {
           const member = boardMembers.find(m => m.userId === id || m.id === id);
@@ -242,8 +218,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       }
     }
     
-    // Choisir l'icône appropriée
-    // Pour les déplacements, toujours utiliser l'icône de déplacement
     let icon = icons[activity.type] || '📝';
     if (activity.type !== 'moved' && activity.field && fieldIcons[activity.field]) {
       icon = fieldIcons[activity.field];
@@ -256,67 +230,194 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     };
   };
 
-  // Séparer les commentaires et l'activité (créer de nouveaux tableaux pour éviter la mutation)
-  // Enrichir les données utilisateur avec les infos des membres du board
   const comments = [...(task.comments || [])]
     .map(enrichUserData)
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   const activities = [...(task.activity || [])]
-    .filter(a => a.type !== 'comment_added') // Exclure les activités de commentaires
+    .filter(a => a.type !== 'comment_added')
     .map(enrichUserData)
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   
-  // Combiner pour l'onglet "Tout" (récent en bas)
   const allActivity = [
     ...comments.map(c => ({ ...c, type: 'comment' })),
     ...activities.map(a => ({ ...a, type: 'activity' }))
   ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
   return (
-    <div className="space-y-4">
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all" className="text-xs">
-            Tout ({allActivity.length})
-          </TabsTrigger>
-          <TabsTrigger value="comments" className="text-xs">
-            <MessageSquare className="h-3 w-3 mr-1" />
-            Commentaires ({comments.length})
-          </TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs">
-            <Activity className="h-3 w-3 mr-1" />
-            Activité ({activities.length})
-          </TabsTrigger>
-        </TabsList>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="all" className="text-xs">
+              Tout ({allActivity.length})
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="text-xs">
+              Commentaires ({comments.length})
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="text-xs">
+              Activité ({activities.length})
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Tout */}
-        <TabsContent value="all" className="space-y-3 mt-4">
-          {allActivity.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Aucune activité pour le moment
-            </p>
-          ) : (
-            allActivity.map((item, index) => {
-              const display = item.type === 'activity' ? getActivityDisplay(item) : null;
-              return (
-                <div key={`${item.type}-${item.id || index}`} className="flex gap-3">
-                  <UserAvatar
-                    src={item.userImage}
-                    name={item.userName}
-                    size="sm"
-                    className="flex-shrink-0"
-                  />
-                  <div className="flex-1 space-y-2">
-                    {item.type === 'comment' ? (
-                    editingCommentId === item.id ? (
-                      <>
-                        <div className="flex items-center justify-between gap-2">
+          <TabsContent value="all" className="space-y-3 mt-4">
+            {allActivity.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Aucune activité
+              </p>
+            ) : (
+              allActivity.map((item, index) => {
+                const display = item.type === 'activity' ? getActivityDisplay(item) : null;
+                return (
+                  <div key={`${item.type}-${item.id || index}`} className="flex gap-3">
+                    <UserAvatar
+                      src={item.userImage}
+                      name={item.userName}
+                      size="sm"
+                      className="flex-shrink-0"
+                    />
+                    <div className="flex-1 space-y-2">
+                      {item.type === 'comment' ? (
+                        editingCommentId === item.id ? (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">{item.userName}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(item.createdAt)}
+                              </span>
+                            </div>
+                            <div className="space-y-2">
+                              <Textarea
+                                value={editingContent}
+                                onChange={(e) => setEditingContent(e.target.value)}
+                                className="text-sm"
+                                rows={3}
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleUpdateComment(item.id)}
+                                  disabled={updatingComment}
+                                >
+                                  Enregistrer
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingCommentId(null);
+                                    setEditingContent('');
+                                  }}
+                                >
+                                  Annuler
+                                </Button>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">{item.userName}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDate(item.createdAt)}
+                                </span>
+                              </div>
+                              {item.userId === currentUser?.id && (
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => {
+                                      setEditingCommentId(item.id);
+                                      setEditingContent(item.content);
+                                    }}
+                                  >
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                    onClick={() => handleDeleteComment(item.id)}
+                                    disabled={deletingComment}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                            <div className="bg-muted/50 rounded-lg p-3">
+                              <p className="text-sm whitespace-pre-wrap">{item.content}</p>
+                            </div>
+                          </>
+                        )
+                      ) : display ? (
+                        <>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">{item.userName}</span>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(item.createdAt)}
                             </span>
                           </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            <span className="mr-1">{display.icon}</span>
+                            {display.text}
+                            {display.moveDetails && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <div className="flex items-center gap-1.5">
+                                  <div 
+                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: display.moveDetails.from.color }}
+                                  />
+                                  <span className="text-xs text-foreground">
+                                    {display.moveDetails.from.title}
+                                  </span>
+                                </div>
+                                <span className="text-muted-foreground text-xs">→</span>
+                                <div className="flex items-center gap-1.5">
+                                  <div 
+                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: display.moveDetails.to.color }}
+                                  />
+                                  <span className="text-xs text-foreground">
+                                    {display.moveDetails.to.title}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </TabsContent>
+
+          <TabsContent value="comments" className="space-y-3 mt-4">
+            {comments.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Aucun commentaire
+              </p>
+            ) : (
+              comments.map((comment) => (
+                <div key={comment.id} className="flex gap-3">
+                  <UserAvatar
+                    src={comment.userImage}
+                    name={comment.userName}
+                    size="sm"
+                    className="flex-shrink-0"
+                  />
+                  <div className="flex-1 space-y-2">
+                    {editingCommentId === comment.id ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{comment.userName}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(comment.createdAt)}
+                          </span>
                         </div>
                         <div className="space-y-2">
                           <Textarea
@@ -328,7 +429,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              onClick={() => handleUpdateComment(item.id)}
+                              onClick={() => handleUpdateComment(comment.id)}
                               disabled={updatingComment}
                             >
                               Enregistrer
@@ -350,20 +451,20 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                       <>
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{item.userName}</span>
+                            <span className="text-sm font-medium">{comment.userName}</span>
                             <span className="text-xs text-muted-foreground">
-                              {formatDate(item.createdAt)}
+                              {formatDate(comment.createdAt)}
                             </span>
                           </div>
-                          {item.userId === currentUser?.id && (
+                          {comment.userId === currentUser?.id && (
                             <div className="flex gap-1">
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 className="h-7 w-7 p-0"
                                 onClick={() => {
-                                  setEditingCommentId(item.id);
-                                  setEditingContent(item.content);
+                                  setEditingCommentId(comment.id);
+                                  setEditingContent(comment.content);
                                 }}
                               >
                                 <Edit2 className="h-3.5 w-3.5" />
@@ -372,7 +473,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                 size="sm"
                                 variant="ghost"
                                 className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteComment(item.id)}
+                                onClick={() => handleDeleteComment(comment.id)}
                                 disabled={deletingComment}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -381,16 +482,37 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                           )}
                         </div>
                         <div className="bg-muted/50 rounded-lg p-3">
-                          <p className="text-sm whitespace-pre-wrap">{item.content}</p>
+                          <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
                         </div>
                       </>
-                    )
-                  ) : display ? (
-                    <>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="activity" className="space-y-3 mt-4">
+            {activities.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Aucune activité
+              </p>
+            ) : (
+              activities.map((activity, index) => {
+                const display = getActivityDisplay(activity);
+                return (
+                  <div key={activity.id || index} className="flex gap-3">
+                    <UserAvatar
+                      src={activity.userImage}
+                      name={activity.userName}
+                      size="sm"
+                      className="flex-shrink-0"
+                    />
+                    <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{item.userName}</span>
+                        <span className="text-sm font-medium">{activity.userName}</span>
                         <span className="text-xs text-muted-foreground">
-                          {formatDate(item.createdAt)}
+                          {formatDate(activity.createdAt)}
                         </span>
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
@@ -420,175 +542,17 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                           </div>
                         )}
                       </div>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-              );
-            })
-          )}
-        </TabsContent>
-
-        {/* Commentaires uniquement */}
-        <TabsContent value="comments" className="space-y-3 mt-4">
-          {comments.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Aucun commentaire
-            </p>
-          ) : (
-            comments.map((comment) => (
-              <div key={comment.id} className="flex gap-3">
-                <UserAvatar
-                  src={comment.userImage}
-                  name={comment.userName}
-                  size="sm"
-                  className="flex-shrink-0"
-                />
-                <div className="flex-1 space-y-2">
-                  {editingCommentId === comment.id ? (
-                    <>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{comment.userName}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(comment.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Textarea
-                          value={editingContent}
-                          onChange={(e) => setEditingContent(e.target.value)}
-                          className="text-sm"
-                          rows={3}
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleUpdateComment(comment.id)}
-                            disabled={updatingComment}
-                          >
-                            Enregistrer
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingCommentId(null);
-                              setEditingContent('');
-                            }}
-                          >
-                            Annuler
-                          </Button>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{comment.userName}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(comment.createdAt)}
-                          </span>
-                        </div>
-                        {comment.userId === currentUser?.id && (
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 w-7 p-0"
-                              onClick={() => {
-                                setEditingCommentId(comment.id);
-                                setEditingContent(comment.content);
-                              }}
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteComment(comment.id)}
-                              disabled={deletingComment}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                      <div className="bg-muted/50 rounded-lg p-3">
-                        <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </TabsContent>
-
-        {/* Activité uniquement */}
-        <TabsContent value="activity" className="space-y-3 mt-4">
-          {activities.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Aucune activité
-            </p>
-          ) : (
-            activities.map((activity, index) => {
-              const display = getActivityDisplay(activity);
-              return (
-                <div key={activity.id || index} className="flex gap-3">
-                  <UserAvatar
-                    src={activity.userImage}
-                    name={activity.userName}
-                    size="sm"
-                    className="flex-shrink-0"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{activity.userName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(activity.createdAt)}
-                      </span>
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      <span className="mr-1">{display.icon}</span>
-                      {display.text}
-                      {display.moveDetails && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <div className="flex items-center gap-1.5">
-                            <div 
-                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: display.moveDetails.from.color }}
-                            />
-                            <span className="text-xs text-foreground">
-                              {display.moveDetails.from.title}
-                            </span>
-                          </div>
-                          <span className="text-muted-foreground text-xs">→</span>
-                          <div className="flex items-center gap-1.5">
-                            <div 
-                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: display.moveDetails.to.color }}
-                            />
-                            <span className="text-xs text-foreground">
-                              {display.moveDetails.to.title}
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-        </TabsContent>
-      </Tabs>
+                );
+              })
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
 
-      {/* Zone de saisie de commentaire */}
-      <div className="space-y-2">
+      {/* Zone de saisie de commentaire - Sticky en bas */}
+      <div className="border-t border-border bg-background p-3 space-y-2">
         <Textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
@@ -619,9 +583,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   );
 };
 
-// Mémoriser le composant pour éviter les re-renders inutiles
 export const TaskActivity = React.memo(TaskActivityComponent, (prevProps, nextProps) => {
-  // Ne re-render que si les commentaires, l'activité ou les membres changent
   return (
     prevProps.task?.id === nextProps.task?.id &&
     prevProps.task?.comments === nextProps.task?.comments &&
