@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
-import { useActiveOrganization } from "@/src/hooks/useActiveOrganization";
+import { authClient } from "@/src/lib/auth-client";
 
 // Fonction de validation de l'IBAN
 const validateIBAN = (value) => {
@@ -71,7 +71,7 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
   } = useFormContext();
   const data = watch();
 
-  const { organization, refetch: refetchOrganization } = useActiveOrganization();
+  const { data: organization } = authClient.useActiveOrganization();
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -537,7 +537,6 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
         open={showBankDetailsDialog}
         onOpenChange={setShowBankDetailsDialog}
         organization={organization}
-        onSuccess={refetchOrganization}
       />
     </div>
   );

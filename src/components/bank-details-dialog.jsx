@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +40,6 @@ export function BankDetailsDialog({
   open,
   onOpenChange,
   organization,
-  onSuccess,
 }) {
   const [displayIban, setDisplayIban] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -158,6 +157,7 @@ export function BankDetailsDialog({
 
       // Mettre à jour l'organisation
       await updateOrganization(
+        organization.id,
         {
           bankName: formData.bankName || "",
           bankIban: cleanIban(formData.iban || ""),
@@ -167,9 +167,6 @@ export function BankDetailsDialog({
           onSuccess: () => {
             toast.success("Coordonnées bancaires mises à jour avec succès");
             onOpenChange(false);
-            if (onSuccess) {
-              onSuccess();
-            }
           },
           onError: (error) => {
             console.error("Erreur lors de la mise à jour:", error);
@@ -282,8 +279,8 @@ export function BankDetailsDialog({
                 },
               })}
               onChange={(e) => {
-                const sanitized = sanitizeInput(e.target.value, "alphanumeric");
-                e.target.value = sanitized.toUpperCase();
+                const sanitized = sanitizeInput(e.target.value, "alphanumeric").toUpperCase();
+                e.target.value = sanitized;
               }}
             />
             {errors.bic && (
