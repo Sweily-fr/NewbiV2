@@ -606,7 +606,7 @@ export function useSignatureGenerator() {
     };
 
     const profileImageHTML = signatureData.photo
-      ? `<img src="${signatureData.photo}" alt="Profile" style="width: ${signatureData.imageSize || 80}px; height: ${signatureData.imageSize || 80}px; border-radius: ${signatureData.imageShape === "square" ? "8px" : "50%"}; background: url('${signatureData.photo}') center center / cover no-repeat; display: block;" />`
+      ? `<div style="width: ${signatureData.imageSize || 80}px; height: ${signatureData.imageSize || 80}px; border-radius: ${signatureData.imageShape === "square" ? "8px" : "50%"}; background: url('${signatureData.photo}') center center/cover no-repeat; display: block;"></div>`
       : "";
 
     const logoHTML = signatureData.logo

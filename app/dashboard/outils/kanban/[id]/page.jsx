@@ -84,10 +84,16 @@ import {
   closestCenter,
   pointerWithin,
   rectIntersection,
+  useSensors,
+  useSensor,
+  PointerSensor,
+  KeyboardSensor,
 } from "@dnd-kit/core";
 import {
   SortableContext,
   horizontalListSortingStrategy,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { useMutation } from "@apollo/client";
 
@@ -164,39 +170,49 @@ export default function KanbanBoardPage({ params }) {
     awaitRefetchQueries: false, // Ne pas attendre le refetch pour ne pas bloquer l'UI
   });
 
-  // État local pour les colonnes (pour la réorganisation en temps réel)
+  // État local pour les colonnes (nécessaire pour le drag and drop en temps réel)
   const [localColumns, setLocalColumns] = React.useState(board?.columns || []);
+
+  // Mettre à jour localColumns quand board.columns change
+  // Utiliser useRef pour tracker la dernière version sans déclencher de re-render
+  const prevColumnsRef = React.useRef(board?.columns);
+
+  React.useEffect(() => {
+    if (board?.columns) {
+      // Comparer les références directes pour éviter les mises à jour inutiles
+      if (prevColumnsRef.current !== board.columns) {
+        setLocalColumns(board.columns);
+        prevColumnsRef.current = board.columns;
+      }
+    }
+  }, [board?.columns]);
 
   // SUPPRIMÉ : useKanbanRealtimeSync (doublon de useKanbanBoard qui gère déjà les subscriptions)
   // Les subscriptions sont gérées dans useKanbanBoard avec TASK_UPDATED_SUBSCRIPTION et COLUMN_UPDATED_SUBSCRIPTION
 
-  const { activeTask, activeColumn, sensors, handleDragStart, handleDragOver, handleDragEnd } =
-    useKanbanDnD(
-      moveTask,
-      getTasksByColumn,
-      id,
-      workspaceId,
-      localColumns,
-      reorderColumnsMutation,
-      setLocalColumns,
-      null // markAsUpdating n'est plus nécessaire
-    );
+  // Les hooks doivent être appelés dans le même ordre à chaque rendu
+  // useKanbanDnD doit être appelé AVANT useSensors
+  const { handleDragEnd, handleDragOver, handleDragStart, activeTask, activeColumn } = useKanbanDnD(
+    moveTask,
+    getTasksByColumn,
+    id,
+    workspaceId,
+    localColumns,
+    reorderColumnsMutation,
+    setLocalColumns
+  );
 
-  // Mettre à jour les colonnes locales quand board.columns change
-  // Uniquement au chargement initial ou si de nouvelles colonnes sont ajoutées/supprimées
-  React.useEffect(() => {
-    if (board?.columns && board.columns.length > 0) {
-      const currentIds = localColumns.map(c => c.id).sort().join(',');
-      const newIds = board.columns.map(c => c.id).sort().join(',');
-      
-      // Ne mettre à jour que si le nombre de colonnes a changé (ajout/suppression)
-      if (currentIds !== newIds) {
-        console.log('🔄 Mise à jour des colonnes (ajout/suppression détecté)');
-        setLocalColumns(board.columns);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board?.columns?.length, board?.columns?.map(c => c.id).join(',')]);
+  // Configuration des capteurs pour le drag & drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const { searchQuery, setSearchQuery, filterTasks } = useKanbanSearch();
 
@@ -207,12 +223,80 @@ export default function KanbanBoardPage({ params }) {
     collapsedColumnsCount,
   } = useColumnCollapse(id);
 
+  // Mémoriser le rendu des colonnes pour éviter les re-renders inutiles
+  const columnsContent = React.useMemo(() => {
+    if (!localColumns || localColumns.length === 0) {
+      return null;
+    }
+
+    return (
+      <>
+        {/* Espace réservé pour maintenir la hauteur */}
+        <div className="h-5 mb-4"></div>
+
+        <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <SortableContext
+            items={localColumns.map((col) => col.id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
+              {localColumns.map((column) => {
+                const columnTasks = filterTasks(
+                  getTasksByColumn(column.id)
+                );
+                const isCollapsed = isColumnCollapsed(column.id);
+
+                return (
+                  <SortableColumn key={column.id} column={column}>
+                    <KanbanColumn
+                      column={column}
+                      tasks={columnTasks}
+                      onAddTask={openAddTaskModal}
+                      onEditTask={openEditTaskModal}
+                      onDeleteTask={handleDeleteTask}
+                      onEditColumn={openEditModal}
+                      onDeleteColumn={(column) =>
+                        handleDeleteColumn(column)
+                      }
+                      isCollapsed={isCollapsed}
+                      onToggleCollapse={() =>
+                        toggleColumnCollapse(column.id)
+                      }
+                      isLoading={loading}
+                    />
+                  </SortableColumn>
+                );
+              })}
+
+              {/* Add Column Button */}
+              <Card className="w-72 sm:w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors shadow-none cursor-pointer flex-shrink-0">
+                <CardContent className="p-3">
+                  <Button
+                    variant="ghost"
+                    className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:bg-transparent cursor-pointer"
+                    onClick={openAddModal}
+                  >
+                    <Plus className="h-5 w-5" />
+                    <span className="text-sm font-medium">
+                      Ajouter une colonne
+                    </span>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </SortableContext>
+        </div>
+      </>
+    );
+  }, [localColumns, filterTasks, getTasksByColumn, isColumnCollapsed, toggleColumnCollapse, openAddTaskModal, openEditTaskModal, handleDeleteTask, openEditModal, handleDeleteColumn, loading, openAddModal]);
+
   // Hook pour le mode d'affichage (Board/List)
   const { viewMode, setViewMode, isBoard, isList } = useViewMode(id);
 
-  // Hook pour le scroll horizontal par glissement (uniquement en mode Board et quand board est chargé)
+  // Hook pour le scroll horizontal par glissement - DÉSACTIVÉ car interfère avec dnd-kit
+  // TODO: Implémenter un système de scroll compatible avec dnd-kit
   const scrollRef = useDragToScroll({ 
-    enabled: isBoard && !!board, 
+    enabled: false, // Désactivé pour ne pas bloquer le drag and drop
     scrollSpeed: 1.5 
   });
 
@@ -265,6 +349,7 @@ export default function KanbanBoardPage({ params }) {
       ref={scrollRef}
       key={`kanban-board-${id}-${isBoard ? 'board' : 'list'}`}
       className="w-full max-w-[100vw] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      style={{ pointerEvents: isBoard ? 'auto' : 'auto' }}
     >
       {/* Header */}
       <div className="px-4 sm:px-6 py-2 sticky left-0 bg-background z-10 border-b">
@@ -408,64 +493,8 @@ export default function KanbanBoardPage({ params }) {
                 onDragEnd={handleDragEnd}
               >
                 <div className="min-h-[600px] w-max min-w-full">
-                  {localColumns && localColumns.length > 0 ? (
-              <>
-                {/* Espace réservé pour maintenir la hauteur */}
-                <div className="h-5 mb-4"></div>
-
-                <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                  <SortableContext
-                    items={localColumns.map((col) => col.id)}
-                    strategy={horizontalListSortingStrategy}
-                  >
-                    <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
-                      {localColumns.map((column) => {
-                        const columnTasks = filterTasks(
-                          getTasksByColumn(column.id)
-                        );
-                        const isCollapsed = isColumnCollapsed(column.id);
-
-                        return (
-                          <SortableColumn key={column.id} column={column}>
-                            <KanbanColumn
-                              column={column}
-                              tasks={columnTasks}
-                              onAddTask={openAddTaskModal}
-                              onEditTask={openEditTaskModal}
-                              onDeleteTask={handleDeleteTask}
-                              onEditColumn={openEditModal}
-                              onDeleteColumn={(column) =>
-                                handleDeleteColumn(column)
-                              }
-                              isCollapsed={isCollapsed}
-                              onToggleCollapse={() =>
-                                toggleColumnCollapse(column.id)
-                              }
-                              isLoading={loading}
-                            />
-                          </SortableColumn>
-                        );
-                      })}
-
-                      {/* Add Column Button */}
-                      <Card className="w-72 sm:w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors shadow-none cursor-pointer flex-shrink-0">
-                        <CardContent className="p-3">
-                          <Button
-                            variant="ghost"
-                            className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:bg-transparent cursor-pointer"
-                            onClick={openAddModal}
-                          >
-                            <Plus className="h-5 w-5" />
-                            <span className="text-sm font-medium">
-                              Ajouter une colonne
-                            </span>
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </SortableContext>
-                </div>
-              </>
+                  {columnsContent ? (
+                    columnsContent
                   ) : (
                     <div className="text-center py-12">
                       <div className="text-muted-foreground mb-4">

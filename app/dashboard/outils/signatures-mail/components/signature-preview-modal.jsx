@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -12,8 +12,10 @@ import { useQuery } from "@apollo/client";
 import { gql } from "@apollo/client";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { LoaderCircleIcon } from "lucide-react";
+import { toast } from "@/src/components/ui/sonner";
 import HorizontalSignature from "./HorizontalSignature";
 import VerticalSignature from "./VerticalSignature";
+import { generateSignatureHTML } from "../utils/standalone-signature-generator";
 
 // Query pour récupérer une signature complète avec tous les champs nécessaires
 // Query pour récupérer une signature complète (copiée de use-signature-table.js)
@@ -305,39 +307,59 @@ export default function SignaturePreviewModal({
   });
 
   const [signatureData, setSignatureData] = useState(null);
+  const previewRef = useRef(null);
 
   // Fonction de copie indépendante pour le modal
   const copySignatureToClipboard = async (data) => {
     try {
-      // Créer un élément temporaire pour générer le HTML
-      const tempDiv = document.createElement("div");
+      // Copier le HTML directement depuis le DOM rendu (plus précis que la génération)
+      if (previewRef.current) {
+        let signatureHTML = previewRef.current.innerHTML;
+        console.log("📋 HTML copié depuis le DOM:", signatureHTML.substring(0, 200));
+        
+        // Convertir les divs avec background-image en img pour Gmail
+        // Regex pour trouver les divs avec background-image: url(...)
+        signatureHTML = signatureHTML.replace(
+          /<div[^>]*style="[^"]*background-image:\s*url\(&quot;([^&]*?)&quot;\)[^"]*"[^>]*><\/div>/g,
+          (match, imageUrl) => {
+            // Décoder les entités HTML
+            const decodedUrl = imageUrl.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+            return `<img src="${decodedUrl}" alt="Photo" style="width: 110px; height: 110px; border-radius: 50%; display: block;" />`;
+          }
+        );
+        
+        // Aussi gérer le cas avec les guillemets simples
+        signatureHTML = signatureHTML.replace(
+          /background-image:\s*url\('([^']*)'\)/g,
+          (match, imageUrl) => {
+            return `background-image: url('${imageUrl}')`;
+          }
+        );
+        
+        // Copier dans le presse-papiers
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([signatureHTML], { type: "text/html" }),
+            "text/plain": new Blob([signatureHTML.replace(/<[^>]*>/g, "")], {
+              type: "text/plain",
+            }),
+          }),
+        ]);
 
-      // Déterminer quel composant utiliser
-      const isHorizontal = data.orientation === "horizontal";
-
-      // Pour simplifier, on copie juste un message ou on utilise le générateur standalone
-      const signatureHTML = `
-        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: Arial, sans-serif;">
-          <tr>
-            <td>
-              <div style="font-size: 16px; font-weight: bold; color: ${data.primaryColor || "#171717"};">
-                ${data.fullName || ""}
-              </div>
-              ${data.position ? `<div style="font-size: 14px; color: #666666; margin-top: 2px;">${data.position}</div>` : ""}
-              ${data.email ? `<div style="font-size: 12px; color: #666666; margin-top: 4px;">${data.email}</div>` : ""}
-              ${data.phone ? `<div style="font-size: 12px; color: #666666; margin-top: 2px;">${data.phone}</div>` : ""}
-            </td>
-          </tr>
-        </table>
-      `;
-
-      await navigator.clipboard.writeText(signatureHTML);
-
-      // Optionnel : afficher un toast de succès
-      console.log("Signature copiée avec succès");
+        toast.success("Signature copiée avec succès !");
+      } else {
+        throw new Error("Impossible de copier la signature");
+      }
     } catch (error) {
-      console.error("Erreur lors de la copie:", error);
-      throw error;
+      console.error("❌ Erreur copie signature:", error);
+      // Fallback : générer le HTML
+      try {
+        const signatureHTML = generateSignatureHTML(data);
+        await navigator.clipboard.writeText(signatureHTML);
+        toast.success("Signature copiée (texte brut)");
+      } catch (fallbackError) {
+        toast.error("Erreur lors de la copie de la signature");
+      }
     }
   };
 
@@ -441,6 +463,7 @@ export default function SignaturePreviewModal({
                   <div className="border-t pt-4 mt-4">
                     {/* Rendu de la signature avec les composants complets */}
                     <div 
+                      ref={previewRef}
                       className="flex justify-start"
                       style={{ pointerEvents: 'none', userSelect: 'none' }}
                     >

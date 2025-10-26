@@ -29,7 +29,7 @@ import TemplateSelector from "../components/TemplateSelector";
 // Aperçu de l'email avec édition inline
 const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   const { updateSignatureData } = useSignatureData();
-  const { copyToClipboard } = useSignatureGenerator();
+  const { generateHTML: generateSignatureHTMLFromHook } = useSignatureGenerator();
   const { regenerateWithPermanentId } = useCustomSocialIcons(
     signatureData,
     updateSignatureData
@@ -1188,22 +1188,35 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
     setIsCopying(true);
 
     try {
-      // Utiliser notre hook optimisé avec sauvegarde automatique et régénération d'icônes
-      const result = await copyToClipboard(regenerateWithPermanentId);
+      // Générer le HTML directement avec les données actuelles
+      const html = generateSignatureHTMLFromHook();
+      console.log("📋 HTML généré pour copie:", html.substring(0, 200));
+      
+      // Copier dans le presse-papiers
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([html.replace(/<[^>]*>/g, "")], {
+            type: "text/plain",
+          }),
+        }),
+      ]);
 
-      if (result.success) {
-        const message = result.signatureId
-          ? "Signature sauvegardée et copiée avec URLs permanentes !"
-          : "Signature copiée avec espacements optimisés !";
-        toast.success(message);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-      } else {
-        toast.error(result.message);
-      }
+      toast.success("Signature copiée avec succès !");
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
       console.error("❌ Erreur copie signature:", error);
-      toast.error("Erreur lors de la copie de la signature");
+      // Fallback pour les navigateurs qui ne supportent pas ClipboardItem
+      try {
+        const html = generateHTML();
+        await navigator.clipboard.writeText(html);
+        toast.success("Signature copiée (texte brut)");
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      } catch (fallbackError) {
+        toast.error("Erreur lors de la copie de la signature");
+      }
     } finally {
       setIsCopying(false);
     }

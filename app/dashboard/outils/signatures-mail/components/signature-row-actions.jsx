@@ -85,12 +85,6 @@ export default function SignatureRowActions({
             <CopyIcon className="mr-2 h-4 w-4" />
             Dupliquer
           </DropdownMenuItem> */}
-          {!signature.isDefault && (
-            <DropdownMenuItem onClick={handleSetDefault}>
-              <StarIcon className="mr-2 h-4 w-4" />
-              Définir par défaut
-            </DropdownMenuItem>
-          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => setShowDeleteAlert(true)}

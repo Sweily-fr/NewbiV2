@@ -62,13 +62,6 @@ export function TaskModal({
       const [hours, minutes] = time.split(':').map(Number);
       const newDate = new Date(prev.dueDate);
       newDate.setHours(hours, minutes, 0, 0);
-      
-      console.log('⏰ [Time Change] inputTime:', time);
-      console.log('⏰ [Time Change] hours:', hours, 'minutes:', minutes);
-      console.log('⏰ [Time Change] oldDate:', prev.dueDate);
-      console.log('⏰ [Time Change] newDate ISO:', newDate.toISOString());
-      console.log('⏰ [Time Change] newDate formatted:', newDate.toString());
-      
       return { ...prev, dueDate: newDate.toISOString() };
     });
   }, [setTaskForm]);
@@ -80,23 +73,16 @@ export function TaskModal({
     }
     
     setTaskForm(prev => {
-      console.log('📅 [Date Change] prev.dueDate:', prev.dueDate);
-      console.log('📅 [Date Change] prev.dueDate type:', typeof prev.dueDate);
-      
       // Si une date est déjà définie, on conserve l'heure existante
       if (prev.dueDate) {
         const existingDate = new Date(prev.dueDate);
-        console.log('📅 [Date Change] existingDate:', existingDate.toString());
-        console.log('📅 [Date Change] existingDate hours:', existingDate.getHours(), 'minutes:', existingDate.getMinutes());
         date.setHours(existingDate.getHours(), existingDate.getMinutes(), 0, 0);
       } else {
         // Par défaut, on met 18h00 comme heure
-        console.log('📅 [Date Change] Pas de date existante, mise à 18h00');
         date.setHours(18, 0, 0, 0);
       }
       
       const isoDate = date.toISOString();
-      console.log('📅 [Date Change] nouvelle date ISO:', isoDate);
       
       return { ...prev, dueDate: isoDate };
     });
@@ -133,9 +119,6 @@ export function TaskModal({
       priority: getSubmitPriority(taskForm.priority)
     };
     
-    console.log('📤 [Submit Task] dueDate:', formData.dueDate);
-    console.log('📤 [Submit Task] dueDate formatted:', formData.dueDate ? new Date(formData.dueDate).toString() : 'none');
-    
     // Call the parent's onSubmit with the updated form data
     onSubmit(formData);
   };
@@ -161,10 +144,7 @@ export function TaskModal({
   const formatTimeInput = (dateString) => {
     if (!dateString) return '18:00';
     const date = new Date(dateString);
-    const formatted = date.toTimeString().slice(0, 5);
-    console.log('🕐 [Format Time Input] input:', dateString);
-    console.log('🕐 [Format Time Input] formatted:', formatted);
-    return formatted;
+    return date.toTimeString().slice(0, 5);
   };
 
   // Formater la date de création
@@ -177,22 +157,13 @@ export function TaskModal({
   // Trouver le créateur de la tâche
   const getCreatorName = () => {
     if (!taskForm.userId || !board?.members) {
-      console.log('❌ Pas de userId ou members:', { userId: taskForm.userId, members: board?.members });
       return 'Inconnu';
     }
     
-    console.log('🔍 Recherche créateur:', {
-      taskUserId: taskForm.userId,
-      taskUserIdType: typeof taskForm.userId,
-      members: board.members.map(m => ({ id: m.id, userId: m.userId, name: m.name }))
-    });
-    
-    const creator = board.members.find(m => 
-      String(m.userId) === String(taskForm.userId) || 
+    const creator = board.members.find(m =>
       String(m.id) === String(taskForm.userId)
     );
     
-    console.log('👤 Créateur trouvé:', creator);
     return creator ? creator.name : 'Inconnu';
   };
 

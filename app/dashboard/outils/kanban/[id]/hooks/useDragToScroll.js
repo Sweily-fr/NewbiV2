@@ -16,11 +16,9 @@ export function useDragToScroll({ enabled = true, scrollSpeed = 1 } = {}) {
 
   const setupDragScroll = useCallback((element) => {
     if (!element || !enabled) {
-      console.log('🖱️ [DragToScroll] Setup annulé', { hasElement: !!element, enabled });
       return;
     }
 
-    console.log('✅ [DragToScroll] Configuration du scroll horizontal');
 
     // Cleanup précédent si existant
     if (cleanupRef.current) {
@@ -30,6 +28,10 @@ export function useDragToScroll({ enabled = true, scrollSpeed = 1 } = {}) {
     const handleMouseDown = (e) => {
       // Ignorer si on clique sur un élément interactif
       const target = e.target;
+      
+      // Vérifier si c'est une tâche (TaskCard) - elle a cursor-grab
+      const isTaskCard = target.closest('[class*="cursor-grab"]');
+      
       const isInteractive = 
         target.closest('button') ||
         target.closest('a') ||
@@ -39,9 +41,12 @@ export function useDragToScroll({ enabled = true, scrollSpeed = 1 } = {}) {
         target.closest('[role="button"]') ||
         target.closest('[draggable="true"]') ||
         target.closest('[data-sortable-handle]') ||
-        target.closest('[data-dnd-kit-draggable]');
+        target.closest('[data-dnd-kit-draggable]') ||
+        isTaskCard;
 
-      if (isInteractive) return;
+      if (isInteractive) {
+        return;
+      }
 
       isDraggingRef.current = true;
       startXRef.current = e.pageX - element.offsetLeft;
@@ -84,7 +89,6 @@ export function useDragToScroll({ enabled = true, scrollSpeed = 1 } = {}) {
     // Définir le curseur initial
     element.style.cursor = 'grab';
     
-    console.log('🎯 [DragToScroll] Event listeners attachés, curseur grab appliqué');
 
     // Ajouter les écouteurs d'événements
     element.addEventListener('mousedown', handleMouseDown);
@@ -94,7 +98,6 @@ export function useDragToScroll({ enabled = true, scrollSpeed = 1 } = {}) {
 
     // Stocker la fonction de cleanup
     cleanupRef.current = () => {
-      console.log('🧹 [DragToScroll] Nettoyage');
       element.removeEventListener('mousedown', handleMouseDown);
       element.removeEventListener('mousemove', handleMouseMove);
       element.removeEventListener('mouseup', handleMouseUp);
@@ -107,7 +110,6 @@ export function useDragToScroll({ enabled = true, scrollSpeed = 1 } = {}) {
 
   // Callback ref qui se déclenche quand l'élément est monté/démonté
   const scrollRef = useCallback((node) => {
-    console.log('📍 [DragToScroll] Callback ref appelé', { hasNode: !!node, enabled });
     
     elementRef.current = node;
     

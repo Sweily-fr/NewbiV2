@@ -1,22 +1,9 @@
 import { useState } from 'react';
-import { useSensors, useSensor, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
-import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 
 export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, columns, reorderColumns, setLocalColumns) => {
   const [activeTask, setActiveTask] = useState(null);
   const [activeColumn, setActiveColumn] = useState(null);
-
-  // Configuration des capteurs pour le drag & drop
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Distance minimale pour activer le drag
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   // Gestion du début du drag
   const handleDragStart = (event) => {
@@ -100,15 +87,6 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
     let newColumnId = activeTask.columnId;
     let newPosition = activeTask.position || 0;
 
-    console.log('🎯 [DnD] Drag end:', {
-      taskId: activeTask.id,
-      taskTitle: activeTask.title,
-      fromColumn: activeTask.columnId,
-      overType: overData?.type,
-      overId: over.id,
-      overColumnId: overData?.columnId,
-    });
-
     // Déterminer où on a déposé la tâche
     if (overData?.type === 'column') {
       // Déposé sur une colonne (ou zone de drop vide/fermée)
@@ -116,12 +94,6 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
       newColumnId = overData.columnId || over.id;
       const targetColumnTasks = getTasksByColumn(newColumnId);
       newPosition = targetColumnTasks.length;
-      
-      console.log('📦 [DnD] Drop sur colonne:', {
-        newColumnId,
-        newPosition,
-        tasksInColumn: targetColumnTasks.length,
-      });
     } else if (overData?.type === 'task') {
       // Déposé sur une autre tâche
       const targetTask = overData.task;
@@ -140,12 +112,6 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
       newColumnId !== activeTask.columnId ||
       newPosition !== (activeTask.position || 0)
     ) {
-      console.log('💾 [DnD] Sauvegarde du déplacement:', {
-        taskId: activeTask.id,
-        from: activeTask.columnId,
-        to: newColumnId,
-        position: newPosition,
-      });
       
       try {
         await moveTask({
@@ -161,6 +127,7 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
               id: activeTask.id,
               columnId: newColumnId,
               position: newPosition,
+              updatedAt: new Date().toISOString(),
             },
           },
         });
@@ -173,7 +140,6 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, c
   return {
     activeTask,
     activeColumn,
-    sensors,
     handleDragStart,
     handleDragOver,
     handleDragEnd,

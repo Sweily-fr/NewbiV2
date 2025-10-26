@@ -91,15 +91,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     // Récupérer l'ID de la tâche (peut être 'id' ou '_id')
     const taskId = task.id || task._id;
 
-    console.log('💬 Adding comment:', {
-      taskId,
-      taskIdField: task.id ? 'id' : '_id',
-      content: newComment,
-      workspaceId,
-      hasTask: !!task,
-      taskKeys: task ? Object.keys(task).slice(0, 10) : []
-    });
-
     if (!taskId) {
       console.error('❌ No task ID found!', task);
       return;
@@ -109,18 +100,15 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       const result = await addComment({
         variables: {
           taskId,
-          input: { content: newComment },
+          input: { content: newComment, workspaceId },
           workspaceId
         },
-        // Forcer le rafraîchissement du cache
-        refetchQueries: ['GetBoard'],
+        // Forcer le rafraîchissement 
+        refetchQueries: ['GetBoard', 'GetTask'],
         awaitRefetchQueries: true,
       });
-      console.log('✅ Comment added:', result);
-      console.log('✅ Comments in result:', result.data?.addComment?.comments);
       setNewComment('');
     } catch (error) {
-      console.error('❌ Error adding comment:', error);
       console.error('Error details:', error.graphQLErrors?.[0]?.message);
     }
   };
@@ -212,21 +200,10 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     
     // Si c'est un déplacement, trouver les colonnes de départ et d'arrivée
     if (activity.type === 'moved' && columns.length > 0) {
-      console.log('🔍 [TaskActivity] Déplacement détecté:', {
-        activityType: activity.type,
-        oldValue: activity.oldValue,
-        newValue: activity.newValue,
-        columnsCount: columns.length,
-        columnIds: columns.map(c => c.id)
-      });
       
       const oldColumn = columns.find(col => col.id === activity.oldValue);
       const newColumn = columns.find(col => col.id === activity.newValue);
       
-      console.log('🔍 [TaskActivity] Colonnes trouvées:', {
-        oldColumn: oldColumn ? { id: oldColumn.id, title: oldColumn.title } : null,
-        newColumn: newColumn ? { id: newColumn.id, title: newColumn.title } : null
-      });
       
       if (oldColumn && newColumn) {
         text = 'a déplacé la tâche';
