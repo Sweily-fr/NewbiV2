@@ -130,47 +130,51 @@ export function KanbanColumn({
 
       {!isCollapsed && (
         <>
-          <SortableContext
-            items={tasks.map((task) => task.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="mt-2 space-y-2">
-              {isLoading ? (
-                // Afficher 3 skeletons lors du chargement
-                <>
-                  <TaskCardSkeleton />
-                  <TaskCardSkeleton />
-                  <TaskCardSkeleton />
-                </>
-              ) : (
-                <>
-                  {tasks.map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onEdit={onEditTask}
-                      onDelete={onDeleteTask}
-                    />
-                  ))}
-                  {tasks.length === 0 && (
-                    <div className="w-full py-4 text-center text-sm text-muted-foreground">
-                      Aucune tâche
-                    </div>
+          <div className="mt-2 flex flex-col">
+            <div className="max-h-[calc(100vh-320px)] overflow-y-auto overflow-x-hidden pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-border/80">
+              <SortableContext
+                items={tasks.map((task) => task.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {isLoading ? (
+                    // Afficher 3 skeletons lors du chargement
+                    <>
+                      <TaskCardSkeleton />
+                      <TaskCardSkeleton />
+                      <TaskCardSkeleton />
+                    </>
+                  ) : (
+                    <>
+                      {tasks.map((task) => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          onEdit={onEditTask}
+                          onDelete={onDeleteTask}
+                        />
+                      ))}
+                      {tasks.length === 0 && (
+                        <div className="w-full py-4 text-center text-sm text-muted-foreground">
+                          Aucune tâche
+                        </div>
+                      )}
+                    </>
                   )}
-                </>
-              )}
+                </div>
+              </SortableContext>
             </div>
-          </SortableContext>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onAddTask(column.id)}
-            className="w-full cursor-pointer border-dashed border-2 border-border hover:border-foreground/30 text-muted-foreground hover:bg-accent/50"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Ajouter une tâche
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onAddTask(column.id)}
+              className="w-full cursor-pointer border-dashed border-2 border-border hover:border-foreground/30 text-muted-foreground hover:bg-accent/50 mt-2 flex-shrink-0"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Ajouter une tâche
+            </Button>
+          </div>
         </>
       )}
     </div>
