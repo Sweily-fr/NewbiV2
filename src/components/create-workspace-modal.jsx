@@ -122,7 +122,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="max-h-[90vh] md:max-h-[90vh] p-0 gap-0 overflow-hidden bg-white dark:bg-[#171717] dark:border-gray-800"
+        className="max-h-[90vh] md:max-h-[90vh] p-0 gap-0 overflow-hidden bg-white dark:bg-[#171717] dark:border-gray-800 w-[95vw] sm:w-full"
         style={{ maxWidth: "58rem" }}
       >
         <VisuallyHidden>
@@ -140,11 +140,11 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
         />
 
         {/* Logo en haut à gauche */}
-        <div className="absolute top-5 left-4 z-10">
+        <div className="absolute top-4 sm:top-5 left-4 z-10">
           <img
             src={getAssetUrl("NewbiLogo.svg")}
             alt="Logo Newbi"
-            className="h-5 w-20"
+            className="h-4 sm:h-5 w-16 sm:w-20"
           />
         </div>
 
@@ -158,7 +158,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
 
         {/* Contenu du modal */}
         <div
-          className={`min-h-[600px] flex flex-col px-32 py-16 w-full max-w-4xl mx-auto ${
+          className={`min-h-[500px] sm:min-h-[600px] flex flex-col px-6 sm:px-16 md:px-32 py-12 sm:py-16 w-full max-w-4xl mx-auto ${
             currentStep === 1
               ? "items-center justify-center"
               : "items-start justify-center"
@@ -166,32 +166,32 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
         >
           {/* Étape 1: Information sur l'abonnement */}
           {currentStep === 1 && (
-            <div className="w-full max-w-xl text-center space-y-6">
-              <div className="space-y-3">
-                <h2 className="text-2xl font-medium text-gray-900 dark:text-white">
+            <div className="w-full max-w-xl text-center space-y-4 sm:space-y-6">
+              <div className="space-y-2 sm:space-y-3">
+                <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-white px-4">
                   Créer une nouvelle organisation
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed px-4">
                   La création d'une nouvelle organisation nécessite un nouvel
                   abonnement.
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="flex justify-center">
                   <div className="inline-block bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20 text-[#5a50ff] dark:text-[#8b7fff] px-3 py-1 rounded-full text-xs font-medium">
                     -25%
                   </div>
                 </div>
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-4xl font-semibold text-gray-900 dark:text-white">
+                  <span className="text-3xl sm:text-4xl font-semibold text-gray-900 dark:text-white">
                     11,24€
                   </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     HT/mois
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-gray-500 dark:text-gray-400 px-4">
                   *Chaque organisation dispose de son propre abonnement et de
                   ses propres paramètres
                 </p>
@@ -199,7 +199,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
 
               <Button
                 onClick={handleNext}
-                className="gap-2 px-6 py-2.5 text-sm font-normal cursor-pointer bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                className="gap-2 px-6 py-2.5 text-sm font-normal cursor-pointer bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 w-full sm:w-auto"
               >
                 Commencer
                 <ChevronRight className="w-4 h-4" />
@@ -209,15 +209,15 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
 
           {/* Étape 2: Type d'espace de travail */}
           {currentStep === 2 && (
-            <div className="w-full space-y-8">
-              <h2 className="text-2xl font-medium text-gray-900 dark:text-white">
+            <div className="w-full space-y-6 sm:space-y-8">
+              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-white">
                 À quoi servira cet espace de travail ?
               </h2>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setWorkspaceType("work")}
-                  className={`px-8 py-3 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-6 sm:px-8 py-3 rounded-lg text-sm font-medium transition-all ${
                     workspaceType === "work"
                       ? "bg-black dark:bg-white text-white dark:text-black"
                       : "bg-white dark:bg-[#000] text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-[#171717] hover:border-gray-400 dark:hover:border-gray-600"
@@ -228,7 +228,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
 
                 <button
                   onClick={() => setWorkspaceType("personal")}
-                  className={`px-8 py-3 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-6 sm:px-8 py-3 rounded-lg text-sm font-medium transition-all ${
                     workspaceType === "personal"
                       ? "bg-black dark:bg-white text-white dark:text-black"
                       : "bg-white dark:bg-[#000] text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-[#171717] hover:border-gray-400 dark:hover:border-gray-600"
@@ -236,25 +236,14 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
                 >
                   Personnel
                 </button>
-
-                {/* <button
-                  onClick={() => setWorkspaceType("school")}
-                  className={`px-8 py-3 rounded-lg text-sm font-medium transition-all ${
-                    workspaceType === "school"
-                      ? "bg-black text-white"
-                      : "bg-white text-gray-700 border border-gray-300 hover:border-gray-400"
-                  }`}
-                >
-                  École
-                </button> */}
               </div>
             </div>
           )}
 
           {/* Étape 3: Inviter des personnes */}
           {currentStep === 3 && (
-            <div className="w-full space-y-6">
-              <h2 className="text-2xl font-medium text-gray-900 dark:text-white">
+            <div className="w-full space-y-4 sm:space-y-6">
+              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-white">
                 Invitez des personnes dans votre espace :
               </h2>
 
@@ -262,7 +251,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
                 <MultipleSelector
                   value={invitedEmails}
                   onChange={setInvitedEmails}
-                  placeholder="Entrez des adresses email (ou collez-en plusieurs)"
+                  placeholder="Entrez des adresses email"
                   creatable
                   hidePlaceholderWhenSelected
                   emptyIndicator={
@@ -274,7 +263,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
                 />
               </div>
 
-              <div className="flex items-start gap-2 text-sm text-muted-foreground dark:text-gray-400">
+              <div className="flex items-start gap-2 text-xs sm:text-sm text-muted-foreground dark:text-gray-400">
                 <Lightbulb className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-600 dark:text-green-500" />
                 <p>
                   Ne travaillez pas seul - Invitez votre équipe pour commencer
@@ -286,8 +275,8 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
 
           {/* Étape 4: Nommer l'espace de travail */}
           {currentStep === 4 && (
-            <div className="w-full space-y-6">
-              <h2 className="text-2xl font-medium text-gray-900 dark:text-white">
+            <div className="w-full space-y-4 sm:space-y-6">
+              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-white">
                 Enfin, comment souhaitez-vous nommer votre espace ?
               </h2>
 
@@ -300,7 +289,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
                   className="w-full text-base px-4 dark:bg-[#171717] dark:text-white dark:border-gray-700"
                   autoFocus
                 />
-                <p className="text-sm text-muted-foreground dark:text-gray-400">
+                <p className="text-xs sm:text-sm text-muted-foreground dark:text-gray-400">
                   Essayez le nom de votre entreprise ou organisation.
                 </p>
               </div>
@@ -310,16 +299,16 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
 
         {/* Footer avec boutons minimalistes */}
         {currentStep !== 1 && (
-          <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between">
+          <div className="absolute bottom-6 sm:bottom-8 left-4 sm:left-8 right-4 sm:right-8 flex items-center justify-between gap-2">
             {currentStep > 1 ? (
               <Button
                 variant="ghost"
                 onClick={handleBack}
                 disabled={isCreating}
-                className="gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-normal cursor-pointer"
+                className="gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-normal cursor-pointer text-xs sm:text-sm px-3 sm:px-4"
               >
-                <ChevronLeft className="w-4 h-4" />
-                Retour
+                <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Retour</span>
               </Button>
             ) : (
               <div />
@@ -334,10 +323,10 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
                 (currentStep === 4 && !workspaceName.trim()) ||
                 isCreating
               }
-              className="gap-1 px-6 font-normal cursor-pointer bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="gap-1 px-4 sm:px-6 font-normal cursor-pointer bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 text-xs sm:text-sm"
             >
               {currentStep === totalSteps ? "Créer l'espace" : "Suivant"}
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </div>
         )}

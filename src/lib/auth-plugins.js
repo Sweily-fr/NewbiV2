@@ -268,79 +268,140 @@ export const stripePlugin = stripe({
                 `✅ [STRIPE WEBHOOK] Organisation créée: ${referenceId}`
               );
 
-              // Envoyer les invitations aux emails invités
-              if (orgInvitedEmails) {
-                try {
-                  const invitedEmailsList = JSON.parse(orgInvitedEmails);
+              // ⚠️ IMPORTANT : Créer l'abonnement AVANT d'envoyer les invitations
+              // pour éviter les timeouts qui empêchent la création de l'abonnement
+              console.log(`🔄 [STRIPE WEBHOOK] Création abonnement en priorité...`);
+              
+              try {
+                // Vérifier si l'abonnement existe déjà
+                const existingSub = await mongoDb
+                  .collection("subscription")
+                  .findOne({
+                    stripeSubscriptionId: subscription.id,
+                  });
+
+                if (!existingSub) {
+                  const subscriptionData = {
+                    plan: "pro",
+                    referenceId: referenceId,
+                    stripeCustomerId: subscription.customer,
+                    status: subscription.status,
+                    seats: 1,
+                    cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
+                    periodEnd: subscription.current_period_end
+                      ? new Date(subscription.current_period_end * 1000)
+                      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                    periodStart: subscription.current_period_start
+                      ? new Date(subscription.current_period_start * 1000)
+                      : new Date(),
+                    stripeSubscriptionId: subscription.id,
+                    currentPeriodEnd: subscription.current_period_end
+                      ? new Date(subscription.current_period_end * 1000)
+                      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                    currentPeriodStart: subscription.current_period_start
+                      ? new Date(subscription.current_period_start * 1000)
+                      : new Date(),
+                    updatedAt: new Date(),
+                  };
+
+                  await mongoDb
+                    .collection("subscription")
+                    .insertOne(subscriptionData);
                   
-                  if (Array.isArray(invitedEmailsList) && invitedEmailsList.length > 0) {
-                    console.log(`📧 [STRIPE WEBHOOK] Envoi de ${invitedEmailsList.length} invitation(s)...`);
+                  console.log(`✅ [STRIPE WEBHOOK] Abonnement créé pour nouvelle org: ${referenceId}`);
+                } else {
+                  console.log(`✅ [STRIPE WEBHOOK] Abonnement existe déjà`);
+                }
+              } catch (subError) {
+                console.error(`❌ [STRIPE WEBHOOK] Erreur création abonnement:`, subError);
+                // Ne pas bloquer le reste du processus
+              }
+
+              // Envoyer les invitations APRÈS la création de l'abonnement (non bloquant)
+              if (orgInvitedEmails) {
+                // Utiliser Promise.resolve().then() pour rendre l'envoi asynchrone et non-bloquant
+                // Compatible avec Edge Runtime (pas de setImmediate)
+                Promise.resolve().then(async () => {
+                  try {
+                    const invitedEmailsList = JSON.parse(orgInvitedEmails);
                     
-                    // Récupérer les infos de l'inviteur et de l'organisation
-                    const inviterUser = await mongoDb.collection("user").findOne({ 
-                      _id: new ObjectId(userId)
-                    });
-                    
-                    const org = await mongoDb.collection("organization").findOne({ 
-                      _id: organizationObjectId 
-                    });
-                    
-                    if (!inviterUser || !org) {
-                      console.error("❌ [STRIPE WEBHOOK] Inviteur ou organisation introuvable");
-                      console.error("Inviteur:", inviterUser);
-                      console.error("Organisation:", org);
-                    } else {
-                      // Envoyer les invitations seulement si on a trouvé l'inviteur et l'org
-                      for (const email of invitedEmailsList) {
-                        if (email && email.trim()) {
-                          try {
-                            // Créer l'invitation directement dans MongoDB
-                            const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-                            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-                            
-                            await mongoDb.collection("invitation").insertOne({
-                              id: invitationId,
-                              organizationId: referenceId,
-                              email: email.trim(),
-                              role: "member",
-                              inviterId: userId,
-                              status: "pending",
-                              expiresAt: expiresAt,
-                              createdAt: new Date(),
-                            });
-                            
-                            // Envoyer l'email d'invitation
-                            const { sendOrganizationInvitationEmail } = await import("./auth-utils.js");
-                            
-                            await sendOrganizationInvitationEmail({
-                              id: invitationId,
-                              email: email.trim(),
-                              role: "member",
-                              organization: {
-                                id: referenceId,
-                                name: org.name,
-                              },
-                              inviter: {
-                                user: {
-                                  id: userId,
-                                  name: inviterUser.name,
-                                  email: inviterUser.email,
+                    if (Array.isArray(invitedEmailsList) && invitedEmailsList.length > 0) {
+                      console.log(`📧 [STRIPE WEBHOOK] Envoi de ${invitedEmailsList.length} invitation(s) en arrière-plan...`);
+                      
+                      // Récupérer les infos de l'inviteur et de l'organisation
+                      const inviterUser = await mongoDb.collection("user").findOne({ 
+                        _id: new ObjectId(userId)
+                      });
+                      
+                      const org = await mongoDb.collection("organization").findOne({ 
+                        _id: organizationObjectId 
+                      });
+                      
+                      if (!inviterUser || !org) {
+                        console.error("❌ [STRIPE WEBHOOK] Inviteur ou organisation introuvable");
+                      } else {
+                        // Envoyer les invitations en parallèle (plus rapide)
+                        const invitationPromises = invitedEmailsList
+                          .filter(email => email && email.trim())
+                          .map(async (email) => {
+                            try {
+                              const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+                              const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                              
+                              await mongoDb.collection("invitation").insertOne({
+                                id: invitationId,
+                                organizationId: referenceId,
+                                email: email.trim(),
+                                role: "member",
+                                inviterId: userId,
+                                status: "pending",
+                                expiresAt: expiresAt,
+                                createdAt: new Date(),
+                              });
+                              
+                              const { sendOrganizationInvitationEmail } = await import("./auth-utils.js");
+                              
+                              await sendOrganizationInvitationEmail({
+                                id: invitationId,
+                                email: email.trim(),
+                                role: "member",
+                                organization: {
+                                  id: referenceId,
+                                  name: org.name,
                                 },
-                              },
-                            });
-                            
-                            console.log(`✅ [STRIPE WEBHOOK] Invitation envoyée à ${email}`);
-                          } catch (inviteError) {
-                            console.error(`❌ [STRIPE WEBHOOK] Erreur invitation ${email}:`, inviteError);
-                          }
-                        }
+                                inviter: {
+                                  user: {
+                                    id: userId,
+                                    name: inviterUser.name,
+                                    email: inviterUser.email,
+                                  },
+                                },
+                              });
+                              
+                              console.log(`✅ [STRIPE WEBHOOK] Invitation envoyée à ${email}`);
+                            } catch (inviteError) {
+                              console.error(`❌ [STRIPE WEBHOOK] Erreur invitation ${email}:`, inviteError);
+                            }
+                          });
+                        
+                        // Attendre toutes les invitations (mais en arrière-plan)
+                        await Promise.allSettled(invitationPromises);
+                        console.log(`✅ [STRIPE WEBHOOK] Toutes les invitations traitées`);
                       }
                     }
+                  } catch (parseError) {
+                    console.error("❌ [STRIPE WEBHOOK] Erreur parsing emails invités:", parseError);
                   }
-                } catch (parseError) {
-                  console.error("❌ [STRIPE WEBHOOK] Erreur parsing emails invités:", parseError);
-                }
+                }).catch(err => {
+                  console.error("❌ [STRIPE WEBHOOK] Erreur globale invitations:", err);
+                });
+                
+                console.log(`📧 [STRIPE WEBHOOK] Invitations programmées en arrière-plan`);
               }
+              
+              // ⚠️ Ne pas continuer vers la création d'abonnement normale
+              // car on l'a déjà créé ci-dessus
+              break;
             } else {
               referenceId =
                 session.metadata?.referenceId ||
