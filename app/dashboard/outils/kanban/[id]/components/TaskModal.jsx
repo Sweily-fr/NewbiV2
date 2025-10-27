@@ -190,6 +190,7 @@ export function TaskModal({
                 id="task-title"
                 value={taskForm.title}
                 onChange={handleTitleChange}
+                onFocus={(e) => e.target.setSelectionRange(0, 0)}
                 className="w-full bg-background text-foreground border-input focus:border-primary"
                 placeholder="Titre de la tâche"
               />
@@ -502,6 +503,7 @@ export function TaskModal({
                     id="task-title-mobile"
                     value={taskForm.title}
                     onChange={handleTitleChange}
+                    onFocus={(e) => e.target.setSelectionRange(0, 0)}
                     className="w-full bg-background text-foreground border-input focus:border-primary"
                     placeholder="Titre de la tâche"
                   />

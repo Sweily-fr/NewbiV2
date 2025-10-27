@@ -245,21 +245,9 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all" className="text-xs">
-              Tout ({allActivity.length})
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="text-xs">
-              Commentaires ({comments.length})
-            </TabsTrigger>
-            <TabsTrigger value="activity" className="text-xs">
-              Activité ({activities.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="space-y-3 mt-4">
+      <Tabs defaultValue="all" className="flex flex-col h-full">
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <TabsContent value="all" className="space-y-3 mt-0">
             {allActivity.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Aucune activité
@@ -280,7 +268,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                         editingCommentId === item.id ? (
                           <>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">{item.userName}</span>
+                              <span className="text-xs font-medium">{item.userName}</span>
                               <span className="text-xs text-muted-foreground">
                                 {formatDate(item.createdAt)}
                               </span>
@@ -317,7 +305,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                           <>
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">{item.userName}</span>
+                                <span className="text-xs font-medium">{item.userName}</span>
                                 <span className="text-xs text-muted-foreground">
                                   {formatDate(item.createdAt)}
                                 </span>
@@ -548,11 +536,23 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
               })
             )}
           </TabsContent>
-        </Tabs>
-      </div>
+        </div>
 
-      {/* Zone de saisie de commentaire - Sticky en bas */}
-      <div className="border-t border-border bg-background p-3 space-y-2">
+        {/* Tabs juste au-dessus du textarea */}
+        <TabsList className="grid w-full grid-cols-3 bg-transparent rounded-none h-auto p-0 border-t border-border">
+          <TabsTrigger value="all" className="text-xs rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent">
+            Tout ({allActivity.length})
+          </TabsTrigger>
+          <TabsTrigger value="comments" className="text-xs rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent">
+            Commentaires ({comments.length})
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="text-xs rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent">
+            Activité ({activities.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Zone de saisie de commentaire - Sticky en bas */}
+        <div className="bg-background pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
         <Textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
@@ -578,7 +578,8 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
             Envoyer
           </Button>
         </div>
-      </div>
+        </div>
+      </Tabs>
     </div>
   );
 };
