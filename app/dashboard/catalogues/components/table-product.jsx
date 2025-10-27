@@ -377,12 +377,12 @@ export default function TableProduct({ handleAddProduct }) {
 
   // Get unique category values
   const categoryColumn = table.getColumn("category");
-  const uniqueCategoryValues = categoryColumn 
+  const uniqueCategoryValues = categoryColumn
     ? Array.from(categoryColumn.getFacetedUniqueValues().keys()).sort()
     : [];
 
   // Get counts for each category
-  const categoryCounts = categoryColumn 
+  const categoryCounts = categoryColumn
     ? categoryColumn.getFacetedUniqueValues()
     : new Map();
 
@@ -564,8 +564,8 @@ export default function TableProduct({ handleAddProduct }) {
             {table.getSelectedRowModel().rows.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button 
-                    className="ml-auto" 
+                  <Button
+                    className="ml-auto"
                     variant="destructive"
                     data-mobile-delete-trigger-product
                   >
@@ -594,7 +594,10 @@ export default function TableProduct({ handleAddProduct }) {
                   </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteRows} className="text-white">
+                    <AlertDialogAction
+                      onClick={handleDeleteRows}
+                      className="text-white"
+                    >
                       Supprimer
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -603,14 +606,10 @@ export default function TableProduct({ handleAddProduct }) {
             )}
             {/* Add product button */}
             <Button
-              className="ml-auto cursor-pointer font-normal bg-black text-white hover:bg-gray-800"
+              className="ml-auto cursor-pointer font-normal"
               onClick={handleAddProduct}
             >
-              <PlusIcon
-                className="-ms-1 text-white"
-                size={16}
-                aria-hidden="true"
-              />
+              <PlusIcon className="-ms-1" size={16} aria-hidden="true" />
               Ajouter un produit
             </Button>
           </div>
@@ -868,7 +867,6 @@ export default function TableProduct({ handleAddProduct }) {
             </Pagination>
           </div>
         </div>
-
       </div>
       {/* Mobile Layout - Style Notion */}
       <div className="md:hidden">
@@ -938,12 +936,14 @@ export default function TableProduct({ handleAddProduct }) {
                 className="h-9 px-3"
                 onClick={() => {
                   // Trigger the delete dialog
-                  const deleteButton = document.querySelector('[data-mobile-delete-trigger-product]');
+                  const deleteButton = document.querySelector(
+                    "[data-mobile-delete-trigger-product]"
+                  );
                   if (deleteButton) deleteButton.click();
                 }}
               >
-                <TrashIcon className="h-4 w-4 mr-1" />
-                ({table.getSelectedRowModel().rows.length})
+                <TrashIcon className="h-4 w-4 mr-1" />(
+                {table.getSelectedRowModel().rows.length})
               </Button>
             )}
 
@@ -969,20 +969,26 @@ export default function TableProduct({ handleAddProduct }) {
                   className="border-b border-gray-100 dark:border-gray-400"
                 >
                   {headerGroup.headers
-                    .filter((header) => header.column.id === "select" || header.column.id === "name" || header.column.id === "category" || header.column.id === "actions")
+                    .filter(
+                      (header) =>
+                        header.column.id === "select" ||
+                        header.column.id === "name" ||
+                        header.column.id === "category" ||
+                        header.column.id === "actions"
+                    )
                     .map((header) => (
-                    <TableHead
-                      key={header.id}
-                      className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
+                      <TableHead
+                        key={header.id}
+                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
                 </TableRow>
               ))}
             </TableHeader>
@@ -994,27 +1000,28 @@ export default function TableProduct({ handleAddProduct }) {
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
-                    {row.getVisibleCells()
-                      .filter((cell) => cell.column.id === "select" || cell.column.id === "name" || cell.column.id === "category" || cell.column.id === "actions")
+                    {row
+                      .getVisibleCells()
+                      .filter(
+                        (cell) =>
+                          cell.column.id === "select" ||
+                          cell.column.id === "name" ||
+                          cell.column.id === "category" ||
+                          cell.column.id === "actions"
+                      )
                       .map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className="py-3 px-4"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
+                        <TableCell key={cell.id} className="py-3 px-4">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="h-24 text-center"
-                  >
+                  <TableCell colSpan={4} className="h-24 text-center">
                     Aucun produit trouvé.
                   </TableCell>
                 </TableRow>
@@ -1143,88 +1150,88 @@ function CatalogSkeleton() {
           </div>
         </div>
 
-      {/* Table skeleton */}
-      <div className="bg-background overflow-hidden rounded-md border">
-        <div className="table-fixed w-full">
-          {/* Header skeleton */}
-          <div className="border-b">
-            <div className="flex items-center h-11 px-4">
-              <Skeleton className="h-4 w-4 mr-4" />
-              <div className="flex-1 flex gap-4">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-28" />
-                <Skeleton className="h-4 w-20" />
-                <div className="hidden sm:block">
-                  <Skeleton className="h-4 w-16" />
-                </div>
-                <div className="hidden md:block">
-                  <Skeleton className="h-4 w-24" />
-                </div>
-                <div className="hidden lg:block">
-                  <Skeleton className="h-4 w-40" />
-                </div>
-                <Skeleton className="h-4 w-8 ml-auto" />
-              </div>
-            </div>
-          </div>
-
-          {/* Rows skeleton - Responsive */}
-          <div className="divide-y">
-            {Array.from({ length: 10 }).map((_, index) => (
-              <div key={index} className="flex items-center h-14 px-4">
+        {/* Table skeleton */}
+        <div className="bg-background overflow-hidden rounded-md border">
+          <div className="table-fixed w-full">
+            {/* Header skeleton */}
+            <div className="border-b">
+              <div className="flex items-center h-11 px-4">
                 <Skeleton className="h-4 w-4 mr-4" />
-                <div className="flex-1 flex gap-4 items-center">
-                  {/* Nom du produit */}
+                <div className="flex-1 flex gap-4">
                   <Skeleton className="h-4 w-32" />
-                  {/* Référence */}
                   <Skeleton className="h-4 w-24" />
-                  {/* Prix */}
+                  <Skeleton className="h-4 w-28" />
                   <Skeleton className="h-4 w-20" />
-                  {/* TVA */}
-                  <Skeleton className="h-5 w-12 rounded-full" />
-                  {/* Unité - Hidden on mobile */}
                   <div className="hidden sm:block">
                     <Skeleton className="h-4 w-16" />
                   </div>
-                  {/* Catégorie - Hidden on mobile */}
                   <div className="hidden md:block">
-                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-4 w-24" />
                   </div>
-                  {/* Description - Hidden on mobile and tablet */}
                   <div className="hidden lg:block">
                     <Skeleton className="h-4 w-40" />
                   </div>
-                  {/* Actions */}
-                  <div className="ml-auto">
-                    <Skeleton className="h-8 w-8 rounded" />
-                  </div>
+                  <Skeleton className="h-4 w-8 ml-auto" />
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Rows skeleton - Responsive */}
+            <div className="divide-y">
+              {Array.from({ length: 10 }).map((_, index) => (
+                <div key={index} className="flex items-center h-14 px-4">
+                  <Skeleton className="h-4 w-4 mr-4" />
+                  <div className="flex-1 flex gap-4 items-center">
+                    {/* Nom du produit */}
+                    <Skeleton className="h-4 w-32" />
+                    {/* Référence */}
+                    <Skeleton className="h-4 w-24" />
+                    {/* Prix */}
+                    <Skeleton className="h-4 w-20" />
+                    {/* TVA */}
+                    <Skeleton className="h-5 w-12 rounded-full" />
+                    {/* Unité - Hidden on mobile */}
+                    <div className="hidden sm:block">
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    {/* Catégorie - Hidden on mobile */}
+                    <div className="hidden md:block">
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </div>
+                    {/* Description - Hidden on mobile and tablet */}
+                    <div className="hidden lg:block">
+                      <Skeleton className="h-4 w-40" />
+                    </div>
+                    {/* Actions */}
+                    <div className="ml-auto">
+                      <Skeleton className="h-8 w-8 rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Pagination skeleton */}
-      <div className="flex items-center justify-between gap-8">
-        {/* Results per page */}
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-4 w-24 hidden sm:block" />
-          <Skeleton className="h-10 w-16" />
+        {/* Pagination skeleton */}
+        <div className="flex items-center justify-between gap-8">
+          {/* Results per page */}
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-4 w-24 hidden sm:block" />
+            <Skeleton className="h-10 w-16" />
+          </div>
+          {/* Page info */}
+          <div className="flex-1 flex justify-end">
+            <Skeleton className="h-4 w-20" />
+          </div>
+          {/* Pagination buttons */}
+          <div className="flex items-center gap-1">
+            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-10" />
+          </div>
         </div>
-        {/* Page info */}
-        <div className="flex-1 flex justify-end">
-          <Skeleton className="h-4 w-20" />
-        </div>
-        {/* Pagination buttons */}
-        <div className="flex items-center gap-1">
-          <Skeleton className="h-10 w-10" />
-          <Skeleton className="h-10 w-10" />
-          <Skeleton className="h-10 w-10" />
-          <Skeleton className="h-10 w-10" />
-        </div>
-      </div>
       </div>
 
       {/* Mobile Skeleton */}

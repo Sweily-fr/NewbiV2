@@ -2,13 +2,17 @@ import { useMutation, useQuery } from '@apollo/client';
 import { CREATE_PRODUCT, UPDATE_PRODUCT, DELETE_PRODUCT } from '../graphql/mutations/products';
 import { GET_PRODUCTS, GET_PRODUCT } from '../graphql/queries/products';
 import { toast } from '@/src/components/ui/sonner';
+import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
 
 export const useProducts = (page = 1, limit = 10, search = '', category = '') => {
-  const { data, loading, error, refetch } = useQuery(GET_PRODUCTS, {
-    variables: { page, limit, search, category },
+  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
+
+  const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_PRODUCTS, {
+    variables: { workspaceId, page, limit, search, category },
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
     errorPolicy: 'all',
+    skip: !workspaceId,
   });
 
   return {
@@ -17,8 +21,8 @@ export const useProducts = (page = 1, limit = 10, search = '', category = '') =>
     currentPage: page,
     totalPages: Math.ceil((data?.products?.totalCount || 0) / limit),
     hasNextPage: data?.products?.hasNextPage || false,
-    loading: loading && !data?.products,
-    error,
+    loading: workspaceLoading || (queryLoading && !data?.products),
+    error: workspaceError || queryError,
     refetch,
   };
 };
@@ -37,6 +41,8 @@ export const useProduct = (id) => {
 };
 
 export const useCreateProduct = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT, {
     refetchQueries: ['GetProducts'],
     awaitRefetchQueries: true,
@@ -52,8 +58,19 @@ export const useCreateProduct = () => {
 
   return {
     createProduct: async (input) => {
+      if (!workspaceId) {
+        throw new Error("Aucun workspace sélectionné");
+      }
+
       try {
-        const result = await createProduct({ variables: { input } });
+        const result = await createProduct({ 
+          variables: { 
+            input: {
+              ...input,
+              workspaceId,
+            }
+          } 
+        });
         return result;
       } catch {
         // L'erreur est déjà gérée par onError, on retourne null

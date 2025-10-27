@@ -147,8 +147,8 @@ const columns = [
           ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
           : client.name;
       return (
-        <div 
-          className="font-normal max-w-[150px] md:max-w-none truncate" 
+        <div
+          className="font-normal max-w-[150px] md:max-w-none truncate"
           title={displayName}
         >
           {displayName}
@@ -371,446 +371,449 @@ export default function TableClients({ handleAddUser }) {
       <div className="hidden md:block space-y-4">
         {/* Filters */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          {/* Filter by name or email */}
-          <div className="relative">
-            <Input
-              id={`${id}-input`}
-              ref={inputRef}
-              className={cn(
-                "peer min-w-60 ps-9",
-                Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
-              )}
-              value={globalFilter}
-              onChange={(e) => {
-                setGlobalFilter(e.target.value);
-                table.getColumn("name")?.setFilterValue(e.target.value);
-              }}
-              placeholder="Filtrer par nom ou email..."
-              type="text"
-              aria-label="Filter by name or email"
-            />
-            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-              <ListFilterIcon size={16} aria-hidden="true" />
-            </div>
-            {Boolean(globalFilter) && (
-              <button
-                className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Clear filter"
-                onClick={() => {
-                  setGlobalFilter("");
-                  table.getColumn("name")?.setFilterValue("");
-                  if (inputRef.current) {
-                    inputRef.current.focus();
-                  }
-                }}
-              >
-                <CircleXIcon size={16} aria-hidden="true" />
-              </button>
-            )}
-          </div>
-          {/* Filter by type */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="font-normal">
-                <FilterIcon
-                  className="-ms-1 opacity-60"
-                  size={16}
-                  aria-hidden="true"
-                />
-                <span className="hidden sm:inline">Type</span>
-                {selectedTypes.length > 0 && (
-                  <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
-                    {selectedTypes.length}
-                  </span>
+          <div className="flex items-center gap-3">
+            {/* Filter by name or email */}
+            <div className="relative">
+              <Input
+                id={`${id}-input`}
+                ref={inputRef}
+                className={cn(
+                  "peer min-w-60 ps-9",
+                  Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
                 )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto min-w-36 p-3" align="start">
-              <div className="space-y-3">
-                <div className="text-muted-foreground text-xs font-normal">
-                  Filtres
-                </div>
-                <div className="space-y-3">
-                  {uniqueTypeValues.map((value, i) => (
-                    <div key={value} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`${id}-${i}`}
-                        checked={selectedTypes.includes(value)}
-                        onCheckedChange={(checked) =>
-                          handleTypeChange(checked, value)
-                        }
-                      />
-                      <Label
-                        htmlFor={`${id}-${i}`}
-                        className="flex grow justify-between gap-2 font-normal"
-                      >
-                        {value === "INDIVIDUAL" ? "Particulier" : "Entreprise"}{" "}
-                        <span className="text-muted-foreground ms-2 text-xs">
-                          {typeCounts.get(value)}
-                        </span>
-                      </Label>
-                    </div>
-                  ))}
-                </div>
+                value={globalFilter}
+                onChange={(e) => {
+                  setGlobalFilter(e.target.value);
+                  table.getColumn("name")?.setFilterValue(e.target.value);
+                }}
+                placeholder="Filtrer par nom ou email..."
+                type="text"
+                aria-label="Filter by name or email"
+              />
+              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+                <ListFilterIcon size={16} aria-hidden="true" />
               </div>
-            </PopoverContent>
-          </Popover>
-          {/* Toggle columns visibility */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="font-normal hidden md:flex">
-                <Columns3Icon
-                  className="-ms-1 opacity-60"
-                  size={16}
-                  aria-hidden="true"
-                />
-                <span className="hidden sm:inline">Colonnes</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Sélection des colonnes</DropdownMenuLabel>
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  // Traduction des noms de colonnes
-                  const columnNames = {
-                    name: "Nom",
-                    email: "Email",
-                    type: "Type",
-                    address: "Adresse",
-                    siret: "SIRET",
-                  };
-
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                      onSelect={(event) => event.preventDefault()}
-                    >
-                      {columnNames[column.id] || column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Delete button */}
-          {table.getSelectedRowModel().rows.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  className="ml-auto" 
-                  variant="destructive"
-                  data-mobile-delete-trigger
+              {Boolean(globalFilter) && (
+                <button
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Clear filter"
+                  onClick={() => {
+                    setGlobalFilter("");
+                    table.getColumn("name")?.setFilterValue("");
+                    if (inputRef.current) {
+                      inputRef.current.focus();
+                    }
+                  }}
                 >
-                  <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer ({table.getSelectedRowModel().rows.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                  <div
-                    className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                  <CircleXIcon size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+            {/* Filter by type */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="font-normal">
+                  <FilterIcon
+                    className="-ms-1 opacity-60"
+                    size={16}
                     aria-hidden="true"
-                  >
-                    <CircleAlertIcon className="opacity-80" size={16} />
+                  />
+                  <span className="hidden sm:inline">Type</span>
+                  {selectedTypes.length > 0 && (
+                    <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
+                      {selectedTypes.length}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto min-w-36 p-3" align="start">
+                <div className="space-y-3">
+                  <div className="text-muted-foreground text-xs font-normal">
+                    Filtres
                   </div>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Êtes-vous absolument sûr ?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Cette action ne peut pas être annulée. Cela supprimera
-                      définitivement {table.getSelectedRowModel().rows.length}{" "}
-                      {table.getSelectedRowModel().rows.length === 1
-                        ? "client sélectionné"
-                        : "clients sélectionnés"}
-                      .
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                </div>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteRows}
-                    variant="destructive"
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-          {/* Add user button */}
-          <Button
-            className="ml-auto cursor-pointer font-normal"
-            variant="default"
-            onClick={handleAddUser}
-          >
-            <PlusIcon
-              className="-ms-1 text-white"
-              size={16}
-              aria-hidden="true"
-            />
-            Ajouter un client
-          </Button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-background overflow-hidden rounded-md border">
-        <Table className="table-fixed">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead
-                      key={header.id}
-                      style={{ width: `${header.getSize()}px` }}
-                      className="h-11 font-normal"
-                    >
-                      {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                        <div
-                          className={cn(
-                            header.column.getCanSort() &&
-                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
-                          )}
-                          onClick={header.column.getToggleSortingHandler()}
-                          onKeyDown={(e) => {
-                            // Enhanced keyboard handling for sorting
-                            if (
-                              header.column.getCanSort() &&
-                              (e.key === "Enter" || e.key === " ")
-                            ) {
-                              e.preventDefault();
-                              header.column.getToggleSortingHandler()?.(e);
-                            }
-                          }}
-                          tabIndex={header.column.getCanSort() ? 0 : undefined}
+                  <div className="space-y-3">
+                    {uniqueTypeValues.map((value, i) => (
+                      <div key={value} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`${id}-${i}`}
+                          checked={selectedTypes.includes(value)}
+                          onCheckedChange={(checked) =>
+                            handleTypeChange(checked, value)
+                          }
+                        />
+                        <Label
+                          htmlFor={`${id}-${i}`}
+                          className="flex grow justify-between gap-2 font-normal"
                         >
-                          {flexRender(
+                          {value === "INDIVIDUAL"
+                            ? "Particulier"
+                            : "Entreprise"}{" "}
+                          <span className="text-muted-foreground ms-2 text-xs">
+                            {typeCounts.get(value)}
+                          </span>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            {/* Toggle columns visibility */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="font-normal hidden md:flex"
+                >
+                  <Columns3Icon
+                    className="-ms-1 opacity-60"
+                    size={16}
+                    aria-hidden="true"
+                  />
+                  <span className="hidden sm:inline">Colonnes</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Sélection des colonnes</DropdownMenuLabel>
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    // Traduction des noms de colonnes
+                    const columnNames = {
+                      name: "Nom",
+                      email: "Email",
+                      type: "Type",
+                      address: "Adresse",
+                      siret: "SIRET",
+                    };
+
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                        onSelect={(event) => event.preventDefault()}
+                      >
+                        {columnNames[column.id] || column.id}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Delete button */}
+            {table.getSelectedRowModel().rows.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className="ml-auto"
+                    variant="destructive"
+                    data-mobile-delete-trigger
+                  >
+                    <TrashIcon className="mr-2 h-4 w-4" />
+                    Supprimer ({table.getSelectedRowModel().rows.length})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                    <div
+                      className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                      aria-hidden="true"
+                    >
+                      <CircleAlertIcon className="opacity-80" size={16} />
+                    </div>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Êtes-vous absolument sûr ?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action ne peut pas être annulée. Cela supprimera
+                        définitivement {table.getSelectedRowModel().rows.length}{" "}
+                        {table.getSelectedRowModel().rows.length === 1
+                          ? "client sélectionné"
+                          : "clients sélectionnés"}
+                        .
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteRows}
+                      variant="destructive"
+                    >
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            {/* Add user button */}
+            <Button
+              className="ml-auto cursor-pointer font-normal"
+              variant="default"
+              onClick={handleAddUser}
+            >
+              <PlusIcon className="-ms-1" size={16} aria-hidden="true" />
+              Ajouter un client
+            </Button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-background overflow-hidden rounded-md border">
+          <Table className="table-fixed">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead
+                        key={header.id}
+                        style={{ width: `${header.getSize()}px` }}
+                        className="h-11 font-normal"
+                      >
+                        {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                          <div
+                            className={cn(
+                              header.column.getCanSort() &&
+                                "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
+                            )}
+                            onClick={header.column.getToggleSortingHandler()}
+                            onKeyDown={(e) => {
+                              // Enhanced keyboard handling for sorting
+                              if (
+                                header.column.getCanSort() &&
+                                (e.key === "Enter" || e.key === " ")
+                              ) {
+                                e.preventDefault();
+                                header.column.getToggleSortingHandler()?.(e);
+                              }
+                            }}
+                            tabIndex={
+                              header.column.getCanSort() ? 0 : undefined
+                            }
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {{
+                              asc: (
+                                <ChevronUpIcon
+                                  className="shrink-0 opacity-60"
+                                  size={16}
+                                  aria-hidden="true"
+                                />
+                              ),
+                              desc: (
+                                <ChevronDownIcon
+                                  className="shrink-0 opacity-60"
+                                  size={16}
+                                  aria-hidden="true"
+                                />
+                              ),
+                            }[header.column.getIsSorted()] ?? null}
+                          </div>
+                        ) : (
+                          flexRender(
                             header.column.columnDef.header,
                             header.getContext()
-                          )}
-                          {{
-                            asc: (
-                              <ChevronUpIcon
-                                className="shrink-0 opacity-60"
-                                size={16}
-                                aria-hidden="true"
-                              />
-                            ),
-                            desc: (
-                              <ChevronDownIcon
-                                className="shrink-0 opacity-60"
-                                size={16}
-                                aria-hidden="true"
-                              />
-                            ),
-                          }[header.column.getIsSorted()] ?? null}
-                        </div>
-                      ) : (
-                        flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )
-                      )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              // Skeleton loading state
-              Array.from({ length: pagination.pageSize }).map((_, index) => (
-                <TableRow key={`skeleton-${index}`}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-4 rounded" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-32" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-40" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-20 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <Skeleton className="h-3 w-24" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-28" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end">
-                      <Skeleton className="h-8 w-8 rounded" />
-                    </div>
-                  </TableCell>
+                          )
+                        )}
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="last:py-0">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : error ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-red-500"
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <span>Erreur lors du chargement des clients</span>
-                    <button
-                      onClick={handleRefresh}
-                      className="text-blue-600 hover:text-blue-800 underline"
-                    >
-                      Réessayer
-                    </button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  Aucun client trouvé.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between gap-8">
-        {/* Results per page */}
-        <div className="flex items-center gap-3">
-          <Label htmlFor={id} className="max-sm:sr-only font-normal">
-            Lignes par page
-          </Label>
-          <Select
-            value={table.getState().pagination.pageSize.toString()}
-            onValueChange={(value) => {
-              table.setPageSize(Number(value));
-            }}
-          >
-            <SelectTrigger id={id} className="w-fit whitespace-nowrap">
-              <SelectValue placeholder="Select number of results" />
-            </SelectTrigger>
-            <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
-              {[5, 10, 25, 50].map((pageSize) => (
-                <SelectItem key={pageSize} value={pageSize.toString()}>
-                  {pageSize}
-                </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {/* Page number information */}
-        <div className="text-muted-foreground flex grow justify-end text-sm whitespace-nowrap">
-          <p
-            className="text-muted-foreground text-sm whitespace-nowrap"
-            aria-live="polite"
-          >
-            <span className="text-foreground">
-              {pagination.pageIndex * pagination.pageSize + 1}-
-              {Math.min(
-                (pagination.pageIndex + 1) * pagination.pageSize,
-                totalItems || 0
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                // Skeleton loading state
+                Array.from({ length: pagination.pageSize }).map((_, index) => (
+                  <TableRow key={`skeleton-${index}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-4 rounded" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-40" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end">
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="last:py-0">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : error ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center text-red-500"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <span>Erreur lors du chargement des clients</span>
+                      <button
+                        onClick={handleRefresh}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Réessayer
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Aucun client trouvé.
+                  </TableCell>
+                </TableRow>
               )}
-            </span>{" "}
-            sur <span className="text-foreground">{totalItems || 0}</span>
-          </p>
+            </TableBody>
+          </Table>
         </div>
 
-        {/* Pagination buttons */}
-        <div>
-          <Pagination>
-            <PaginationContent>
-              {/* First page button */}
-              <PaginationItem>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => table.firstPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  aria-label="Go to first page"
-                >
-                  <ChevronFirstIcon size={16} aria-hidden="true" />
-                </Button>
-              </PaginationItem>
-              {/* Previous page button */}
-              <PaginationItem>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  aria-label="Go to previous page"
-                >
-                  <ChevronLeftIcon size={16} aria-hidden="true" />
-                </Button>
-              </PaginationItem>
-              {/* Next page button */}
-              <PaginationItem>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  aria-label="Go to next page"
-                >
-                  <ChevronRightIcon size={16} aria-hidden="true" />
-                </Button>
-              </PaginationItem>
-              {/* Last page button */}
-              <PaginationItem>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => table.lastPage()}
-                  disabled={!table.getCanNextPage()}
-                  aria-label="Go to last page"
-                >
-                  <ChevronLastIcon size={16} aria-hidden="true" />
-                </Button>
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+        {/* Pagination */}
+        <div className="flex items-center justify-between gap-8">
+          {/* Results per page */}
+          <div className="flex items-center gap-3">
+            <Label htmlFor={id} className="max-sm:sr-only font-normal">
+              Lignes par page
+            </Label>
+            <Select
+              value={table.getState().pagination.pageSize.toString()}
+              onValueChange={(value) => {
+                table.setPageSize(Number(value));
+              }}
+            >
+              <SelectTrigger id={id} className="w-fit whitespace-nowrap">
+                <SelectValue placeholder="Select number of results" />
+              </SelectTrigger>
+              <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
+                {[5, 10, 25, 50].map((pageSize) => (
+                  <SelectItem key={pageSize} value={pageSize.toString()}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Page number information */}
+          <div className="text-muted-foreground flex grow justify-end text-sm whitespace-nowrap">
+            <p
+              className="text-muted-foreground text-sm whitespace-nowrap"
+              aria-live="polite"
+            >
+              <span className="text-foreground">
+                {pagination.pageIndex * pagination.pageSize + 1}-
+                {Math.min(
+                  (pagination.pageIndex + 1) * pagination.pageSize,
+                  totalItems || 0
+                )}
+              </span>{" "}
+              sur <span className="text-foreground">{totalItems || 0}</span>
+            </p>
+          </div>
+
+          {/* Pagination buttons */}
+          <div>
+            <Pagination>
+              <PaginationContent>
+                {/* First page button */}
+                <PaginationItem>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="disabled:pointer-events-none disabled:opacity-50"
+                    onClick={() => table.firstPage()}
+                    disabled={!table.getCanPreviousPage()}
+                    aria-label="Go to first page"
+                  >
+                    <ChevronFirstIcon size={16} aria-hidden="true" />
+                  </Button>
+                </PaginationItem>
+                {/* Previous page button */}
+                <PaginationItem>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="disabled:pointer-events-none disabled:opacity-50"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                    aria-label="Go to previous page"
+                  >
+                    <ChevronLeftIcon size={16} aria-hidden="true" />
+                  </Button>
+                </PaginationItem>
+                {/* Next page button */}
+                <PaginationItem>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="disabled:pointer-events-none disabled:opacity-50"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                    aria-label="Go to next page"
+                  >
+                    <ChevronRightIcon size={16} aria-hidden="true" />
+                  </Button>
+                </PaginationItem>
+                {/* Last page button */}
+                <PaginationItem>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="disabled:pointer-events-none disabled:opacity-50"
+                    onClick={() => table.lastPage()}
+                    disabled={!table.getCanNextPage()}
+                    aria-label="Go to last page"
+                  >
+                    <ChevronLastIcon size={16} aria-hidden="true" />
+                  </Button>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </div>
-      </div>
       </div>
 
       {/* Mobile Layout - Style Notion */}
@@ -830,7 +833,7 @@ export default function TableClients({ handleAddUser }) {
                 className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
               />
             </div>
-            
+
             {/* Filter Button - Icon only */}
             <Popover>
               <PopoverTrigger asChild>
@@ -861,7 +864,9 @@ export default function TableClients({ handleAddUser }) {
                           htmlFor={`mobile-${id}-${i}`}
                           className="flex grow justify-between gap-2 font-normal"
                         >
-                          {value === "INDIVIDUAL" ? "Particulier" : "Entreprise"}{" "}
+                          {value === "INDIVIDUAL"
+                            ? "Particulier"
+                            : "Entreprise"}{" "}
                           <span className="text-muted-foreground ms-2 text-xs">
                             {typeCounts.get(value)}
                           </span>
@@ -881,12 +886,14 @@ export default function TableClients({ handleAddUser }) {
                 className="h-9 px-3"
                 onClick={() => {
                   // Trigger the delete dialog
-                  const deleteButton = document.querySelector('[data-mobile-delete-trigger]');
+                  const deleteButton = document.querySelector(
+                    "[data-mobile-delete-trigger]"
+                  );
                   if (deleteButton) deleteButton.click();
                 }}
               >
-                <TrashIcon className="h-4 w-4 mr-1" />
-                ({table.getSelectedRowModel().rows.length})
+                <TrashIcon className="h-4 w-4 mr-1" />(
+                {table.getSelectedRowModel().rows.length})
               </Button>
             )}
 
@@ -912,49 +919,55 @@ export default function TableClients({ handleAddUser }) {
                   className="border-b border-gray-100 dark:border-gray-400"
                 >
                   {headerGroup.headers
-                    .filter((header) => header.column.id === "select" || header.column.id === "name" || header.column.id === "type" || header.column.id === "actions")
+                    .filter(
+                      (header) =>
+                        header.column.id === "select" ||
+                        header.column.id === "name" ||
+                        header.column.id === "type" ||
+                        header.column.id === "actions"
+                    )
                     .map((header) => (
-                    <TableHead
-                      key={header.id}
-                      className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
-                    >
-                      {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                        <div
-                          className={cn(
-                            header.column.getCanSort() &&
-                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
-                          )}
-                          onClick={header.column.getToggleSortingHandler()}
-                        >
-                          {flexRender(
+                      <TableHead
+                        key={header.id}
+                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                      >
+                        {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                          <div
+                            className={cn(
+                              header.column.getCanSort() &&
+                                "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
+                            )}
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {{
+                              asc: (
+                                <ChevronUpIcon
+                                  className="shrink-0 opacity-60"
+                                  size={16}
+                                  aria-hidden="true"
+                                />
+                              ),
+                              desc: (
+                                <ChevronDownIcon
+                                  className="shrink-0 opacity-60"
+                                  size={16}
+                                  aria-hidden="true"
+                                />
+                              ),
+                            }[header.column.getIsSorted()] ?? null}
+                          </div>
+                        ) : (
+                          flexRender(
                             header.column.columnDef.header,
                             header.getContext()
-                          )}
-                          {{
-                            asc: (
-                              <ChevronUpIcon
-                                className="shrink-0 opacity-60"
-                                size={16}
-                                aria-hidden="true"
-                              />
-                            ),
-                            desc: (
-                              <ChevronDownIcon
-                                className="shrink-0 opacity-60"
-                                size={16}
-                                aria-hidden="true"
-                              />
-                            ),
-                          }[header.column.getIsSorted()] ?? null}
-                        </div>
-                      ) : (
-                        flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )
-                      )}
-                    </TableHead>
-                  ))}
+                          )
+                        )}
+                      </TableHead>
+                    ))}
                 </TableRow>
               ))}
             </TableHeader>
@@ -986,19 +999,23 @@ export default function TableClients({ handleAddUser }) {
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
-                    {row.getVisibleCells()
-                      .filter((cell) => cell.column.id === "select" || cell.column.id === "name" || cell.column.id === "type" || cell.column.id === "actions")
+                    {row
+                      .getVisibleCells()
+                      .filter(
+                        (cell) =>
+                          cell.column.id === "select" ||
+                          cell.column.id === "name" ||
+                          cell.column.id === "type" ||
+                          cell.column.id === "actions"
+                      )
                       .map((cell) => (
-                      <TableCell 
-                        key={cell.id} 
-                        className="py-3 px-4"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
+                        <TableCell key={cell.id} className="py-3 px-4">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
                   </TableRow>
                 ))
               ) : error ? (
@@ -1020,10 +1037,7 @@ export default function TableClients({ handleAddUser }) {
                 </TableRow>
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="h-24 text-center"
-                  >
+                  <TableCell colSpan={4} className="h-24 text-center">
                     Aucun client trouvé.
                   </TableCell>
                 </TableRow>

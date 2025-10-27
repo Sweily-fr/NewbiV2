@@ -12,6 +12,7 @@ import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 // Mutation GraphQL pour créer une signature
 const CREATE_EMAIL_SIGNATURE = gql`
@@ -40,6 +41,7 @@ const UPDATE_EMAIL_SIGNATURE = gql`
 const SignatureSave = ({ existingSignatureId = null }) => {
   const { signatureData, editingSignatureId } = useSignatureData();
   const { organization } = useActiveOrganization();
+  const { workspaceId } = useRequiredWorkspace();
   const router = useRouter();
   
   // Utiliser editingSignatureId du hook si existingSignatureId n'est pas fourni
@@ -72,7 +74,7 @@ const SignatureSave = ({ existingSignatureId = null }) => {
   const [createSignature, { loading: creating }] = useMutation(
     CREATE_EMAIL_SIGNATURE,
     {
-      refetchQueries: ["GetMyEmailSignatures"],
+      refetchQueries: [],  // Pas besoin de refetch car on redirige
       onCompleted: (data) => {
         setSaveStatus("success");
         toast.success("Signature créée avec succès !");
@@ -94,7 +96,7 @@ const SignatureSave = ({ existingSignatureId = null }) => {
   const [updateSignature, { loading: updating }] = useMutation(
     UPDATE_EMAIL_SIGNATURE,
     {
-      refetchQueries: ["GetMyEmailSignatures"],
+      refetchQueries: [],  // Pas besoin de refetch car on redirige
       onCompleted: (data) => {
         setSaveStatus("success");
         toast.success("Signature mise à jour avec succès !");

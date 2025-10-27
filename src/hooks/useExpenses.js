@@ -8,26 +8,31 @@ import {
   ADD_EXPENSE_FILE,
 } from "../graphql/mutations/expense";
 import { toast } from "@/src/components/ui/sonner";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 /**
  * Hook pour récupérer les dépenses avec filtres et pagination
  */
 export const useExpenses = (filters = {}) => {
-  const { data, loading, error, refetch } = useQuery(GET_EXPENSES, {
+  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
+
+  const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_EXPENSES, {
     variables: {
+      workspaceId,
       page: 1,
       limit: 20,
       ...filters,
     },
     fetchPolicy: "network-only",
+    skip: !workspaceId, // Ne pas exécuter la query sans workspaceId
   });
 
   return {
     expenses: data?.expenses?.expenses || [],
     totalCount: data?.expenses?.totalCount || 0,
     hasNextPage: data?.expenses?.hasNextPage || false,
-    loading,
-    error,
+    loading: workspaceLoading || queryLoading,
+    error: workspaceError || queryError,
     refetch,
   };
 };
@@ -36,15 +41,21 @@ export const useExpenses = (filters = {}) => {
  * Hook pour récupérer les statistiques des dépenses
  */
 export const useExpenseStats = (dateRange = {}) => {
-  const { data, loading, error } = useQuery(GET_EXPENSE_STATS, {
-    variables: dateRange,
+  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
+
+  const { data, loading: queryLoading, error: queryError } = useQuery(GET_EXPENSE_STATS, {
+    variables: {
+      workspaceId,
+      ...dateRange,
+    },
     fetchPolicy: "network-only",
+    skip: !workspaceId,
   });
 
   return {
     stats: data?.expenseStats,
-    loading,
-    error,
+    loading: workspaceLoading || queryLoading,
+    error: workspaceError || queryError,
   };
 };
 
@@ -101,11 +112,14 @@ export const useDeleteExpense = () => {
  * Hook pour créer une dépense
  */
 export const useCreateExpense = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
   const [createExpenseMutation, { loading }] = useMutation(CREATE_EXPENSE, {
     refetchQueries: [
       {
         query: GET_EXPENSES,
         variables: {
+          workspaceId,
           status: "PAID",
           page: 1,
           limit: 1000,
@@ -116,9 +130,18 @@ export const useCreateExpense = () => {
   });
 
   const createExpense = async (input) => {
+    if (!workspaceId) {
+      throw new Error("Aucun workspace sélectionné");
+    }
+
     try {
       const result = await createExpenseMutation({
-        variables: { input },
+        variables: { 
+          input: {
+            ...input,
+            workspaceId,
+          }
+        },
       });
 
       if (result.data?.createExpense) {
