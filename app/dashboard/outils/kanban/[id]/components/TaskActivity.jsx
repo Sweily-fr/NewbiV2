@@ -133,8 +133,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')) return;
-
     const taskId = task.id || task._id;
     if (!taskId) return;
 
@@ -335,7 +333,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                       <Button
                                         size="sm"
                                         variant="ghost"
-                                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                        className="h-7 w-7 p-0 text-slate-400 hover:text-destructive dark:text-slate-500 dark:hover:text-destructive"
                                         onClick={() => setCommentToDelete(item.id)}
                                       >
                                         <Trash2 className="h-3.5 w-3.5" />
@@ -354,7 +352,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                             setCommentToDelete(null);
                                           }}
                                           disabled={deletingComment}
-                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                          className="bg-destructive text-white hover:bg-destructive/90"
                                         >
                                           Supprimer
                                         </AlertDialogAction>
@@ -491,7 +489,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                    className="h-7 w-7 p-0 text-slate-400 hover:text-destructive dark:text-slate-500 dark:hover:text-destructive"
                                     onClick={() => setCommentToDelete(comment.id)}
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
