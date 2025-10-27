@@ -132,7 +132,7 @@ const cards = [
     href: "/dashboard/outils/gestion-depenses",
     status: "available",
     bgIconColor: "#5B4FFF",
-    Image: "/images/utils/gestion-depenses.png",
+    Image: "/images/utils/Gestion_depenses.png",
     isPro: true,
     category: "financier",
   },
