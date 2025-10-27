@@ -363,9 +363,16 @@ const SignatureSave = ({ existingSignatureId = null }) => {
 
       {/* Modal de sauvegarde */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" style={{ backdropFilter: 'blur(4px)' }}>
+          <div 
+            className="rounded-lg p-6 w-full max-w-md mx-4 border shadow-lg"
+            style={{
+              backgroundColor: 'hsl(var(--background))',
+              borderColor: 'hsl(var(--border))',
+              color: 'hsl(var(--foreground))'
+            }}
+          >
+            <h3 className="text-lg font-semibold mb-4" style={{ color: 'hsl(var(--foreground))' }}>
               {signatureId
                 ? "Mettre à jour la signature"
                 : "Sauvegarder la signature"}
@@ -374,13 +381,18 @@ const SignatureSave = ({ existingSignatureId = null }) => {
             <div className="space-y-4">
               {/* Nom de la signature */}
               <div>
-                <Label htmlFor="signatureName">Nom de la signature</Label>
+                <Label htmlFor="signatureName" style={{ color: 'hsl(var(--foreground))' }}>Nom de la signature</Label>
                 <Input
                   id="signatureName"
                   value={signatureName}
                   onChange={(e) => setSignatureName(e.target.value)}
                   placeholder="Ma signature professionnelle"
                   className="mt-1"
+                  style={{
+                    backgroundColor: 'hsl(var(--input))',
+                    borderColor: 'hsl(var(--border))',
+                    color: 'hsl(var(--foreground))'
+                  }}
                 />
               </div>
 
@@ -391,21 +403,35 @@ const SignatureSave = ({ existingSignatureId = null }) => {
                   checked={isDefault}
                   onCheckedChange={setIsDefault}
                 />
-                <Label htmlFor="isDefault">
+                <Label htmlFor="isDefault" style={{ color: 'hsl(var(--foreground))' }}>
                   Définir comme signature par défaut
                 </Label>
               </div>
 
               {/* Status de sauvegarde */}
               {saveStatus === "success" && (
-                <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-md">
+                <div 
+                  className="flex items-center gap-2 p-3 rounded-md border"
+                  style={{
+                    backgroundColor: 'hsl(var(--success) / 0.1)',
+                    borderColor: 'hsl(var(--success) / 0.3)',
+                    color: 'hsl(var(--success))'
+                  }}
+                >
                   <Check className="w-4 h-4" />
                   <span>Signature sauvegardée avec succès !</span>
                 </div>
               )}
 
               {saveStatus === "error" && (
-                <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-md">
+                <div 
+                  className="flex items-center gap-2 p-3 rounded-md border"
+                  style={{
+                    backgroundColor: 'hsl(var(--destructive) / 0.1)',
+                    borderColor: 'hsl(var(--destructive) / 0.3)',
+                    color: 'hsl(var(--destructive))'
+                  }}
+                >
                   <AlertCircle className="w-4 h-4" />
                   <span>Erreur lors de la sauvegarde</span>
                 </div>
@@ -418,13 +444,14 @@ const SignatureSave = ({ existingSignatureId = null }) => {
                 variant="outline"
                 onClick={() => setIsModalOpen(false)}
                 disabled={isLoading}
+                className="dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
               >
                 Annuler
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={isLoading || !signatureName.trim()}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
               >
                 {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
                 {signatureId ? "Mettre à jour" : "Sauvegarder"}
