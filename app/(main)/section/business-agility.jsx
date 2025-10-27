@@ -21,13 +21,17 @@ export default function BusinessAgility() {
           <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-16 lg:grid-cols-6 lg:grid-rows-2">
             <div
               data-dark="true"
-              className="max-lg:rounded-t-4xl lg:col-span-4 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
+              className="max-lg:rounded-t-4xl lg:col-span-4 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg ring-1 ring-blue-500/20 data-dark:ring-blue-400/30" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
             >
-              <div className="relative h-60 shrink-0">
-                <div className="h-60 bg-[url('/images/lp-home/Collaborateur.png')] bg-[length:cover] bg-no-repeat"></div>
+              <div className="relative h-60 w-full overflow-hidden flex items-center justify-center flex-shrink-0">
+                <img 
+                  src="/images/lp-home/Collaborateur.png" 
+                  alt="Collaborateur" 
+                  className="w-full h-full object-contain"
+                />
                 <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div>
               </div>
-              <div className="relative p-6">
+              <div className="p-6">
                 <h3
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
@@ -44,15 +48,17 @@ export default function BusinessAgility() {
             </div>
             <div
               data-dark="true"
-              className="z-10 lg:col-span-2 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
+              className="z-10 lg:col-span-2 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg ring-1 ring-blue-500/20 data-dark:ring-blue-400/30" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
             >
-              <div className="relative h-60 shrink-0">
-                <div className="relative h-60 shrink-0">
-                  <div className="h-60 bg-[url('/images/lp-home/Vitesse_superieur.png')] bg-[length:cover] bg-no-repeat"></div>
-                  <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div>
-                </div>
+              <div className="relative w-full overflow-hidden flex items-center justify-center flex-shrink-0">
+                <img 
+                  src="/images/lp-home/Vitesse_superieur.png" 
+                  alt="Vitesse supérieure" 
+                  className="w-full h-full object-contain"
+                />
+                {/* <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div> */}
               </div>
-              <div className="relative p-6">
+              <div className="p-6">
                 <h3
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
@@ -69,13 +75,19 @@ export default function BusinessAgility() {
             </div>
             <div
               data-dark="true"
-              className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
+              className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg ring-1 ring-blue-500/20 data-dark:ring-blue-400/30" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
             >
-              <div className="relative h-60 shrink-0">
-                <div className="h-60 bg-[url('/images/lp-home/Ecosysteme.png')] bg-[length:cover] bg-no-repeat"></div>
+              <div className="relative w-full overflow-hidden flex items-center justify-center flex-shrink-0 p-6">
+                <div className="w-full h-full border-5 border-white/5 rounded-lg flex items-center justify-center to-transparent backdrop-blur-sm">
+                  <img 
+                    src="/images/lp-home/Ecosysteme.png" 
+                    alt="Écosystème" 
+                    className="w-full h-full object-contain rounded-lg"
+                  />
+                </div>
                 {/* <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div> */}
               </div>
-              <div className="relative p-6">
+              <div className="p-6">
                 <h3
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"
@@ -92,13 +104,17 @@ export default function BusinessAgility() {
             </div>
             <div
               data-dark="true"
-              className="lg:col-span-4 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 data-dark:bg-gray-800 data-dark:ring-white/15"
+              className="lg:col-span-4 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg ring-1 ring-blue-500/20 data-dark:ring-blue-400/30" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
             >
-              <div className="relative h-60 shrink-0">
-                <div className="h-60 bg-[url('/images/lp-home/Reglement.jpg')] bg-[length:cover] bg-no-repeat"></div>
+              <div className="relative w-full overflow-hidden flex items-center justify-center flex-shrink-0 px-7">
+                <img 
+                  src="/images/lp-home/Reglement.jpg" 
+                  alt="Règlement" 
+                  className="w-full h-full object-contain rounded-b-4xl"
+                />
                 {/* <div className="absolute inset-0 bg-linear-to-b from-white to-50% group-data-dark:from-gray-800 group-data-dark:from-[-25%]"></div> */}
               </div>
-              <div className="relative p-6">
+              <div className="p-6">
                 <h3
                   data-dark="true"
                   className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"

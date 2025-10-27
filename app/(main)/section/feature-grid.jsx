@@ -118,11 +118,15 @@ export default function FeatureGrid({ className }) {
         </h2>
         <div className="mt-6 grid grid-cols-1 gap-3 sm:mt-10 lg:grid-cols-6 lg:grid-rows-2">
           <div className="max-lg:rounded-t-4xl lg:col-span-3 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-60 shrink-0 overflow-hidden">
-              <div className="absolute inset-0 bg-[url(/images/lp-home/Factures.jpg)] bg-cover bg-center"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
+            <div className="relative w-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+              <img 
+                src="/images/lp-home/Factures.jpg" 
+                alt="Factures" 
+                className="w-full h-full object-contain"
+              />
+              {/* <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div> */}
             </div>
-            <div className="relative p-6">
+            <div className="p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
                 Facturation
               </h3>
@@ -138,15 +142,15 @@ export default function FeatureGrid({ className }) {
           </div>
 
           <div className="lg:col-span-3 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-60 shrink-0 overflow-hidden">
+            <div className="relative w-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 flex-shrink-0">
               <img 
                 src="/images/lp-home/Devis.jpg" 
                 alt="Devis" 
-                className="absolute inset-0 w-full h-full object-cover object-center"
+                className="w-full h-full object-contain"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
+              {/* <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div> */}
             </div>
-            <div className="relative p-6">
+            <div className="p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
                 Devis
               </h3>
@@ -162,11 +166,15 @@ export default function FeatureGrid({ className }) {
           </div>
 
           <div className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-60 shrink-0 overflow-hidden">
-              <div className="absolute inset-0 bg-[url(/images/lp-home/Signature_de_mail.jpg)] bg-cover bg-center"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
+            <div className="relative w-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+              <img 
+                src="/images/lp-home/Signature_de_mail.jpg" 
+                alt="Signature de mail" 
+                className="w-full h-full object-contain"
+              />
+              {/* <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div> */}
             </div>
-            <div className="relative p-6">
+            <div className="p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
                 Signature
               </h3>
@@ -182,11 +190,15 @@ export default function FeatureGrid({ className }) {
           </div>
 
           <div className="lg:col-span-2 group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-60 shrink-0 overflow-hidden">
-              <div className="absolute inset-0 bg-[url(/images/lp-home/Kanban.jpg)] bg-cover bg-center"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
+            <div className="relative w-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+              <img 
+                src="/images/lp-home/Kanban.jpg" 
+                alt="Kanban" 
+                className="w-full h-full object-contain"
+              />
+              {/* <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div> */}
             </div>
-            <div className="relative p-6">
+            <div className="p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
                 Organisation
               </h3>
@@ -201,11 +213,15 @@ export default function FeatureGrid({ className }) {
             </div>
           </div>
           <div className="lg:col-span-2 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
-            <div className="relative h-60 shrink-0 overflow-hidden">
-              <div className="absolute inset-0 bg-[url(/images/lp-home/Transfert.jpg)] bg-cover bg-center"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div>
+            <div className="relative w-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+              <img 
+                src="/images/lp-home/Transfert.jpg" 
+                alt="Transfert de fichiers" 
+                className="w-full h-full object-contain"
+              />
+              {/* <div className="absolute inset-0 bg-gradient-to-t from-white to-50% dark:from-gray-800 dark:from-[-25%]"></div> */}
             </div>
-            <div className="relative p-6">
+            <div className="p-6">
               <h3 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase dark:text-gray-400">
                 Partage
               </h3>
