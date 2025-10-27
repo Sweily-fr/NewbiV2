@@ -10,11 +10,12 @@ import {
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
 const GET_MY_EMAIL_SIGNATURES = gql`
-  query GetMyEmailSignatures {
-    getMyEmailSignatures {
+  query GetMyEmailSignatures($workspaceId: ID!) {
+    getMyEmailSignatures(workspaceId: $workspaceId) {
       id
       signatureName
       firstName
@@ -270,9 +271,13 @@ const CREATE_EMAIL_SIGNATURE = gql`
 
 // Hook pour récupérer les signatures
 export const useSignatures = () => {
-  const { data, loading, error, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
+  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
+
+  const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
+    variables: { workspaceId },
     fetchPolicy: "network-only",
     notifyOnNetworkStatusChange: true,
+    skip: !workspaceId,
     onCompleted: (data) => {
       console.log("✅ [QUERY] Signatures récupérées:");
     },
@@ -285,8 +290,8 @@ export const useSignatures = () => {
 
   return {
     signatures,
-    loading,
-    error,
+    loading: workspaceLoading || queryLoading,
+    error: workspaceError || queryError,
     refetch,
   };
 };
@@ -295,6 +300,7 @@ export const useSignatures = () => {
 export const useSignatureActions = () => {
   const router = useRouter();
   const client = useApolloClient();
+  const { workspaceId } = useRequiredWorkspace();
 
   const [deleteSignature, { loading: deleting }] = useMutation(
     DELETE_EMAIL_SIGNATURE,
@@ -331,7 +337,12 @@ export const useSignatureActions = () => {
   const [deleteMultipleSignatures, { loading: deletingMultiple }] = useMutation(
     DELETE_MULTIPLE_EMAIL_SIGNATURES,
     {
-      refetchQueries: ["GetMyEmailSignatures"],
+      refetchQueries: [
+        {
+          query: GET_MY_EMAIL_SIGNATURES,
+          variables: { workspaceId },
+        },
+      ],
       onCompleted: (data) => {
         const count = data?.deleteMultipleEmailSignatures || 0;
         toast.success(
@@ -347,7 +358,12 @@ export const useSignatureActions = () => {
   const [setDefaultSignature, { loading: settingDefault }] = useMutation(
     SET_DEFAULT_EMAIL_SIGNATURE,
     {
-      refetchQueries: ["GetMyEmailSignatures"],
+      refetchQueries: [
+        {
+          query: GET_MY_EMAIL_SIGNATURES,
+          variables: { workspaceId },
+        },
+      ],
       onCompleted: (data) => {
         toast.success("Signature définie comme défaut");
       },
@@ -382,7 +398,12 @@ export const useSignatureActions = () => {
   const [createSignature, { loading: duplicating }] = useMutation(
     CREATE_EMAIL_SIGNATURE,
     {
-      refetchQueries: ["GetMyEmailSignatures"],
+      refetchQueries: [
+        {
+          query: GET_MY_EMAIL_SIGNATURES,
+          variables: { workspaceId },
+        },
+      ],
       onCompleted: (data) => {
         toast.success("Signature dupliquée avec succès");
       },
@@ -479,7 +500,14 @@ export const useSignatureActions = () => {
           )
         );
 
-        await createSignature({ variables: { input: filteredData } });
+        await createSignature({ 
+          variables: { 
+            input: {
+              ...filteredData,
+              workspaceId,
+            }
+          } 
+        });
       }
     } catch (error) {
       toast.error("Erreur lors de la duplication de la signature");

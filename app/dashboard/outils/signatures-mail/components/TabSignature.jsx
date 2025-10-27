@@ -60,8 +60,8 @@ const UPDATE_EMAIL_SIGNATURE = gql`
 
 // Query pour récupérer toutes les signatures (utilisée pour la mise à jour du cache)
 const GET_MY_EMAIL_SIGNATURES = gql`
-  query GetMyEmailSignatures {
-    getMyEmailSignatures {
+  query GetMyEmailSignatures($workspaceId: ID!) {
+    getMyEmailSignatures(workspaceId: $workspaceId) {
       id
       signatureName
       firstName
@@ -163,7 +163,7 @@ export function TabSignature({ existingSignatureId = null }) {
   const [createSignature, { loading: creating, client }] = useMutation(
     CREATE_EMAIL_SIGNATURE,
     {
-      refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES }],
+      refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES, variables: { workspaceId } }],
       awaitRefetchQueries: true,
       onCompleted: (data) => {
         setSaveStatus("success");
@@ -194,7 +194,7 @@ export function TabSignature({ existingSignatureId = null }) {
   const [updateSignature, { loading: updating, client: updateClient }] = useMutation(
     UPDATE_EMAIL_SIGNATURE,
     {
-      refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES }],
+      refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES, variables: { workspaceId } }],
       awaitRefetchQueries: true,
       onCompleted: (data) => {
         toast.success("Signature mise à jour avec succès !");
