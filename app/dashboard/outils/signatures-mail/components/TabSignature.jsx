@@ -27,6 +27,7 @@ import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useQuery } from "@apollo/client";
 
 // Import du composant LayoutTab pour l'onglet 1
 import LayoutTab from "./layout-tab/layout-tab";
@@ -147,8 +148,14 @@ export function TabSignature({ existingSignatureId = null }) {
     signatureData.signatureName || ""
   );
   const [isDefault, setIsDefault] = useState(signatureData.isDefault || false);
-  const [saveStatus, setSaveStatus] = useState(null); // null, 'success', 'error'
+  const [saveStatus, setSaveStatus] = useState(null); // null, 'success', 'error', 'duplicate'
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  // Récupérer toutes les signatures existantes pour vérifier les doublons
+  const { data: signaturesData } = useQuery(GET_MY_EMAIL_SIGNATURES, {
+    skip: !isModalOpen, // Charger uniquement quand le modal est ouvert
+  });
 
   // Effet pour synchroniser le nom de la signature avec les données chargées
   useEffect(() => {
@@ -485,6 +492,24 @@ export function TabSignature({ existingSignatureId = null }) {
   };
 
   const handleSave = async () => {
+    // Vérifier si le nom existe déjà (sauf si c'est la même signature en édition)
+    const existingSignatures = signaturesData?.getMyEmailSignatures || [];
+    const isDuplicate = existingSignatures.some(
+      (sig) =>
+        sig.signatureName.toLowerCase() === signatureName.toLowerCase() &&
+        sig.id !== existingSignatureId // Permettre le même nom si on édite la même signature
+    );
+
+    if (isDuplicate) {
+      setErrorMessage("Ce nom de signature existe déjà");
+      setSaveStatus("duplicate");
+      return; // Ne pas fermer le modal
+    }
+
+    // Réinitialiser le message d'erreur si pas de doublon
+    setErrorMessage(null);
+    setSaveStatus(null);
+
     // Utiliser la fonction prepareSignatureData qui contient TOUS les champs avancés
     const completeData = prepareSignatureData();
 
@@ -525,6 +550,7 @@ export function TabSignature({ existingSignatureId = null }) {
           error.message || "Une erreur est survenue lors de la sauvegarde.",
       });
       setSaveStatus("error");
+      setErrorMessage("Erreur lors de la sauvegarde");
     }
   };
 
@@ -610,9 +636,16 @@ export function TabSignature({ existingSignatureId = null }) {
       </div>
       {/* Modal de sauvegarde */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" style={{ backdropFilter: 'blur(4px)' }}>
+          <div 
+            className="rounded-lg p-6 w-full max-w-md mx-4 border shadow-lg"
+            style={{
+              backgroundColor: '#1e293b',
+              borderColor: '#334155',
+              color: '#f1f5f9'
+            }}
+          >
+            <h3 className="text-lg font-semibold mb-4" style={{ color: '#f1f5f9' }}>
               {existingSignatureId
                 ? "Mettre à jour la signature"
                 : "Sauvegarder la signature"}
@@ -621,13 +654,18 @@ export function TabSignature({ existingSignatureId = null }) {
             <div className="space-y-4">
               {/* Nom de la signature */}
               <div>
-                <Label htmlFor="signatureName">Nom de la signature</Label>
+                <Label htmlFor="signatureName" style={{ color: '#cbd5e1' }}>Nom de la signature</Label>
                 <Input
                   id="signatureName"
                   value={signatureName}
                   onChange={(e) => setSignatureName(e.target.value)}
                   placeholder="Ma signature professionnelle"
                   className="mt-1"
+                  style={{
+                    backgroundColor: '#0f172a',
+                    borderColor: '#334155',
+                    color: '#f1f5f9'
+                  }}
                 />
               </div>
 
@@ -639,16 +677,23 @@ export function TabSignature({ existingSignatureId = null }) {
                   className="scale-75"
                   onCheckedChange={setIsDefault}
                 />
-                <Label htmlFor="isDefault">
+                <Label htmlFor="isDefault" style={{ color: '#cbd5e1' }}>
                   Définir comme signature par défaut
                 </Label>
               </div>
 
               {/* Status de sauvegarde */}
-              {saveStatus === "error" && (
-                <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-md">
+              {(saveStatus === "error" || saveStatus === "duplicate") && (
+                <div 
+                  className="flex items-center gap-2 p-3 rounded-md border"
+                  style={{
+                    backgroundColor: '#7f1d1d',
+                    borderColor: '#991b1b',
+                    color: '#fca5a5'
+                  }}
+                >
                   <AlertCircle className="w-4 h-4" />
-                  <span>Erreur lors de la sauvegarde</span>
+                  <span>{errorMessage || "Erreur lors de la sauvegarde"}</span>
                 </div>
               )}
             </div>
@@ -656,16 +701,25 @@ export function TabSignature({ existingSignatureId = null }) {
             {/* Boutons d'action */}
             <div className="flex justify-end gap-3 mt-6">
               <Button
-                variant="outline"
                 onClick={() => setIsModalOpen(false)}
                 disabled={isLoading}
+                style={{
+                  backgroundColor: '#0f172a',
+                  borderColor: '#334155',
+                  color: '#f1f5f9',
+                  border: '1px solid #334155'
+                }}
               >
-                Annuler
+                Continuer l'édition
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={isLoading || !signatureName.trim()}
                 className="flex items-center font-normal gap-2"
+                style={{
+                  backgroundColor: '#ef4444',
+                  color: '#fff'
+                }}
               >
                 {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
                 {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}

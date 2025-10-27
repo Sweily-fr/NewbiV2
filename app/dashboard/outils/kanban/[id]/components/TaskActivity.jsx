@@ -5,6 +5,15 @@ import { Textarea } from '@/src/components/ui/textarea';
 import { Send, Edit2, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
 import { UserAvatar } from '@/src/components/ui/user-avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/src/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useMutation } from '@apollo/client';
@@ -16,6 +25,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   const [newComment, setNewComment] = useState('');
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
+  const [commentToDelete, setCommentToDelete] = useState(null);
   const { data: session } = useSession();
 
   React.useEffect(() => {
@@ -306,9 +316,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-medium">{item.userName}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {formatDate(item.createdAt)}
-                                </span>
                               </div>
                               {item.userId === currentUser?.id && (
                                 <div className="flex gap-1">
@@ -323,30 +330,52 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                   >
                                     <Edit2 className="h-3.5 w-3.5" />
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                                    onClick={() => handleDeleteComment(item.id)}
-                                    disabled={deletingComment}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
+                                  <AlertDialog open={commentToDelete === item.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                        onClick={() => setCommentToDelete(item.id)}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
+                                      </AlertDialogDescription>
+                                      <div className="flex gap-2 justify-end">
+                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => {
+                                            handleDeleteComment(item.id);
+                                            setCommentToDelete(null);
+                                          }}
+                                          disabled={deletingComment}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Supprimer
+                                        </AlertDialogAction>
+                                      </div>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               )}
                             </div>
                             <div className="bg-muted/50 rounded-lg p-3">
                               <p className="text-sm whitespace-pre-wrap">{item.content}</p>
                             </div>
+                            <span className="text-xs text-muted-foreground block">
+                              {formatDate(item.createdAt)}
+                            </span>
                           </>
                         )
                       ) : display ? (
                         <>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">{item.userName}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDate(item.createdAt)}
-                            </span>
                           </div>
                           <div className="text-sm text-muted-foreground mt-1">
                             <span className="mr-1">{display.icon}</span>
@@ -375,6 +404,9 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                               </div>
                             )}
                           </div>
+                          <span className="text-xs text-muted-foreground mt-1 block">
+                            {formatDate(item.createdAt)}
+                          </span>
                         </>
                       ) : null}
                     </div>
@@ -440,9 +472,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">{comment.userName}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDate(comment.createdAt)}
-                            </span>
                           </div>
                           {comment.userId === currentUser?.id && (
                             <div className="flex gap-1">
@@ -457,21 +486,46 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                               >
                                 <Edit2 className="h-3.5 w-3.5" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteComment(comment.id)}
-                                disabled={deletingComment}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                              <AlertDialog open={commentToDelete === comment.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                    onClick={() => setCommentToDelete(comment.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
+                                  </AlertDialogDescription>
+                                  <div className="flex gap-2 justify-end">
+                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => {
+                                        handleDeleteComment(comment.id);
+                                        setCommentToDelete(null);
+                                      }}
+                                      disabled={deletingComment}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Supprimer
+                                    </AlertDialogAction>
+                                  </div>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
                           )}
                         </div>
                         <div className="bg-muted/50 rounded-lg p-3">
                           <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
                         </div>
+                        <span className="text-xs text-muted-foreground block">
+                          {formatDate(comment.createdAt)}
+                        </span>
                       </>
                     )}
                   </div>
@@ -499,9 +553,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{activity.userName}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(activity.createdAt)}
-                        </span>
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
                         <span className="mr-1">{display.icon}</span>
@@ -530,6 +581,9 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                           </div>
                         )}
                       </div>
+                      <span className="text-xs text-muted-foreground mt-1 block">
+                        {formatDate(activity.createdAt)}
+                      </span>
                     </div>
                   </div>
                 );
@@ -552,12 +606,12 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
         </TabsList>
 
         {/* Zone de saisie de commentaire - Sticky en bas */}
-        <div className="bg-background pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
+        <div className=" pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
         <Textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Ajouter un commentaire..."
-          className="min-h-[80px] text-sm"
+          className="min-h-[80px] text-sm bg-muted/50 border-border"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
