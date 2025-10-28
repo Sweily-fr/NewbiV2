@@ -861,8 +861,8 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
       {/* Mobile Layout - Style Notion */}
       <div className="md:hidden">
         {/* Mobile Toolbar - Style Notion */}
-        <div className="px-4 py-3">
-          <div className="flex items-center gap-3">
+        <div className="px-3 sm:px-4 py-3 sticky top-0 bg-background z-10 border-b">
+          <div className="flex items-center gap-2">
             {/* Search Input */}
             <div className="flex-1 relative">
               <Input
@@ -872,7 +872,7 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                   setGlobalFilter(e.target.value);
                   table.getColumn("name")?.setFilterValue(e.target.value);
                 }}
-                className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
+                className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-xs sm:text-sm w-full"
               />
             </div>
 
@@ -954,7 +954,7 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
         </div>
 
         {/* Table - Mobile style (Notion-like) */}
-        <div className="overflow-x-auto pb-20">
+        <div className="overflow-x-auto pb-24">
           <Table className="w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -973,7 +973,7 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                     .map((header) => (
                       <TableHead
                         key={header.id}
-                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                        className="py-3 px-3 sm:px-4 text-left font-medium text-gray-600 dark:text-gray-400 text-xs sm:text-sm"
                       >
                         {header.isPlaceholder ? null : header.column.getCanSort() ? (
                           <div
@@ -1053,7 +1053,7 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                           cell.column.id === "actions"
                       )
                       .map((cell) => (
-                        <TableCell key={cell.id} className="py-3 px-4">
+                        <TableCell key={cell.id} className="py-3 px-3 sm:px-4 text-xs sm:text-sm">
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
