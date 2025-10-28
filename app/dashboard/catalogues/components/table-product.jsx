@@ -882,8 +882,9 @@ export default function TableProduct({ handleAddProduct }) {
       {/* Mobile Layout - Style Notion */}
       <div className="md:hidden">
         {/* Mobile Toolbar */}
-        <div className="px-3 sm:px-4 py-3 sticky top-0 bg-background z-10 border-b">
-          <div className="flex flex-col gap-3">
+        <div className="px-3 sm:px-4 py-3 sticky top-0 bg-background z-10 border-b space-y-2">
+          {/* First Row: Search + Delete Button */}
+          <div className="flex items-center gap-2">
             {/* Search Input */}
             <div className="flex-1 relative">
               <Input
@@ -897,21 +898,42 @@ export default function TableProduct({ handleAddProduct }) {
               />
             </div>
 
-            {/* Buttons Row */}
-            <div className="flex items-center gap-2">
-              {/* Filter Button */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-9 px-2 sm:px-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs"
-                    title="Filtrer par catégorie"
-                  >
-                    <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400 mr-1" />
-                    <span className="hidden sm:inline">Filtrer</span>
-                  </Button>
-                </PopoverTrigger>
+            {/* Delete button for mobile - shown when rows are selected */}
+            {table.getSelectedRowModel().rows.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-9 px-2 sm:px-3 text-xs flex-shrink-0"
+                title={`Supprimer ${table.getSelectedRowModel().rows.length} produit(s)`}
+                onClick={() => {
+                  // Trigger the delete dialog
+                  const deleteButton = document.querySelector(
+                    "[data-mobile-delete-trigger-product]"
+                  );
+                  if (deleteButton) deleteButton.click();
+                }}
+              >
+                <TrashIcon className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">({table.getSelectedRowModel().rows.length})</span>
+              </Button>
+            )}
+          </div>
+
+          {/* Second Row: Filter, Import, Export */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {/* Filter Button */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 px-2 sm:px-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs flex-shrink-0"
+                  title="Filtrer par catégorie"
+                >
+                  <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400 mr-1" />
+                  <span className="hidden sm:inline">Filtrer</span>
+                </Button>
+              </PopoverTrigger>
               <PopoverContent className="w-auto min-w-36 p-3" align="end">
                 <div className="space-y-3">
                   <div className="text-muted-foreground text-xs font-normal">
@@ -941,35 +963,14 @@ export default function TableProduct({ handleAddProduct }) {
                   </div>
                 </div>
               </PopoverContent>
-              </Popover>
+            </Popover>
 
-              {/* Import/Export buttons for mobile */}
-              <ProductImportDialog onImportComplete={refetch} />
-              <ProductExportButton 
-                products={allProducts} 
-                selectedRows={table.getSelectedRowModel().rows}
-              />
-
-              {/* Delete button for mobile - shown when rows are selected */}
-              {table.getSelectedRowModel().rows.length > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="h-9 px-2 sm:px-3 text-xs"
-                  onClick={() => {
-                    // Trigger the delete dialog
-                    const deleteButton = document.querySelector(
-                      "[data-mobile-delete-trigger-product]"
-                    );
-                    if (deleteButton) deleteButton.click();
-                  }}
-                >
-                  <TrashIcon className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">({table.getSelectedRowModel().rows.length})</span>
-                  <span className="sm:hidden">{table.getSelectedRowModel().rows.length}</span>
-                </Button>
-              )}
-            </div>
+            {/* Import/Export buttons for mobile */}
+            <ProductImportDialog onImportComplete={refetch} />
+            <ProductExportButton 
+              products={allProducts} 
+              selectedRows={table.getSelectedRowModel().rows}
+            />
           </div>
         </div>
 
