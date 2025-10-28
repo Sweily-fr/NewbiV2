@@ -8,31 +8,27 @@ import {
   ADD_EXPENSE_FILE,
 } from "../graphql/mutations/expense";
 import { toast } from "@/src/components/ui/sonner";
-import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 /**
  * Hook pour récupérer les dépenses avec filtres et pagination
  */
 export const useExpenses = (filters = {}) => {
-  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
-
   const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_EXPENSES, {
     variables: {
-      workspaceId,
       page: 1,
       limit: 20,
       ...filters,
     },
-    fetchPolicy: "network-only",
-    skip: !workspaceId, // Ne pas exécuter la query sans workspaceId
+    fetchPolicy: "cache-and-network",
+    notifyOnNetworkStatusChange: false,
   });
 
   return {
     expenses: data?.expenses?.expenses || [],
     totalCount: data?.expenses?.totalCount || 0,
     hasNextPage: data?.expenses?.hasNextPage || false,
-    loading: workspaceLoading || queryLoading,
-    error: workspaceError || queryError,
+    loading: queryLoading,
+    error: queryError,
     refetch,
   };
 };
@@ -41,21 +37,17 @@ export const useExpenses = (filters = {}) => {
  * Hook pour récupérer les statistiques des dépenses
  */
 export const useExpenseStats = (dateRange = {}) => {
-  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
-
   const { data, loading: queryLoading, error: queryError } = useQuery(GET_EXPENSE_STATS, {
     variables: {
-      workspaceId,
       ...dateRange,
     },
     fetchPolicy: "network-only",
-    skip: !workspaceId,
   });
 
   return {
     stats: data?.expenseStats,
-    loading: workspaceLoading || queryLoading,
-    error: workspaceError || queryError,
+    loading: queryLoading,
+    error: queryError,
   };
 };
 
@@ -64,17 +56,8 @@ export const useExpenseStats = (dateRange = {}) => {
  */
 export const useDeleteExpense = () => {
   const [deleteExpenseMutation, { loading }] = useMutation(DELETE_EXPENSE, {
-    refetchQueries: [
-      {
-        query: GET_EXPENSES,
-        variables: {
-          status: "PAID",
-          page: 1,
-          limit: 100, // Correspondre à la limite utilisée dans le tableau
-        },
-      },
-    ],
-    awaitRefetchQueries: true,
+    refetchQueries: [GET_EXPENSES],
+    awaitRefetchQueries: false,
   });
 
   const deleteExpense = async (id) => {
@@ -112,35 +95,16 @@ export const useDeleteExpense = () => {
  * Hook pour créer une dépense
  */
 export const useCreateExpense = () => {
-  const { workspaceId } = useRequiredWorkspace();
-
   const [createExpenseMutation, { loading }] = useMutation(CREATE_EXPENSE, {
-    refetchQueries: [
-      {
-        query: GET_EXPENSES,
-        variables: {
-          workspaceId,
-          status: "PAID",
-          page: 1,
-          limit: 1000,
-        },
-      },
-    ],
-    awaitRefetchQueries: true,
+    refetchQueries: [GET_EXPENSES],
+    awaitRefetchQueries: false,
   });
 
   const createExpense = async (input) => {
-    if (!workspaceId) {
-      throw new Error("Aucun workspace sélectionné");
-    }
-
     try {
       const result = await createExpenseMutation({
         variables: { 
-          input: {
-            ...input,
-            workspaceId,
-          }
+          input
         },
       });
 
@@ -183,7 +147,7 @@ export const useDeleteMultipleExpenses = () => {
     {
       // Utiliser refetchQueries sans variables spécifiques pour rafraîchir toutes les requêtes GET_EXPENSES
       refetchQueries: [GET_EXPENSES],
-      awaitRefetchQueries: true,
+      awaitRefetchQueries: false,
     }
   );
 
@@ -242,17 +206,8 @@ export const useDeleteMultipleExpenses = () => {
  */
 export const useUpdateExpense = () => {
   const [updateExpenseMutation, { loading }] = useMutation(UPDATE_EXPENSE, {
-    refetchQueries: [
-      {
-        query: GET_EXPENSES,
-        variables: {
-          status: "PAID",
-          page: 1,
-          limit: 100,
-        },
-      },
-    ],
-    awaitRefetchQueries: true,
+    refetchQueries: [GET_EXPENSES],
+    awaitRefetchQueries: false,
   });
 
   const updateExpense = async (id, input) => {

@@ -295,14 +295,11 @@ export const useKanbanTasks = (boardId, board) => {
     }
 
     try {
-      // S'assurer que assignedMembers est toujours un tableau valide avec la bonne structure
+      // Envoyer seulement les userId (tableau simple d'IDs), filtrer les nulls
       const assignedMembers = Array.isArray(taskForm.assignedMembers) 
-        ? taskForm.assignedMembers.map(member => ({
-            userId: member.userId,
-            name: member.name,
-            email: member.email,
-            image: member.image || null,
-          }))
+        ? taskForm.assignedMembers
+            .map(member => typeof member === 'string' ? member : member?.userId)
+            .filter(Boolean)
         : [];
       
       await createTask({
@@ -339,14 +336,11 @@ export const useKanbanTasks = (boardId, board) => {
     }
 
     try {
-      // S'assurer que assignedMembers est toujours un tableau valide avec la bonne structure
+      // Envoyer seulement les userId (tableau simple d'IDs), filtrer les nulls
       const assignedMembers = Array.isArray(taskForm.assignedMembers) 
-        ? taskForm.assignedMembers.map(member => ({
-            userId: member.userId,
-            name: member.name,
-            email: member.email,
-            image: member.image || null,
-          }))
+        ? taskForm.assignedMembers
+            .map(member => typeof member === 'string' ? member : member?.userId)
+            .filter(Boolean)
         : [];
       
       const input = {

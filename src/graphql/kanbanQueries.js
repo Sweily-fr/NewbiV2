@@ -56,12 +56,7 @@ export const GET_BOARD = gql`
           text
           completed
         }
-        assignedMembers {
-          userId
-          name
-          email
-          image
-        }
+        assignedMembers
         comments {
           id
           userId
@@ -280,12 +275,7 @@ export const TASK_FRAGMENT = gql`
       text
       completed
     }
-    assignedMembers {
-      userId
-      name
-      email
-      image
-    }
+    assignedMembers
     comments {
       id
       userId

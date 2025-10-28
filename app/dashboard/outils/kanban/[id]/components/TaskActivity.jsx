@@ -16,9 +16,10 @@ import {
 } from '@/src/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useMutation } from '@apollo/client';
-import { ADD_COMMENT, UPDATE_COMMENT, DELETE_COMMENT } from '@/src/graphql/kanbanQueries';
+import { useMutation, useQuery } from '@apollo/client';
+import { ADD_COMMENT, UPDATE_COMMENT, DELETE_COMMENT, GET_ORGANIZATION_MEMBERS } from '@/src/graphql/kanbanQueries';
 import { useSession } from '@/src/lib/auth-client';
+import { useAssignedMembersInfo } from '@/src/hooks/useAssignedMembersInfo';
 
 const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, boardMembers = [], columns = [], onTaskUpdate }) => {
   const [task, setTask] = useState(initialTask);
@@ -28,29 +29,57 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   const [commentToDelete, setCommentToDelete] = useState(null);
   const { data: session } = useSession();
 
+  // Récupérer les membres de l'organisation directement via GraphQL (même procédé que MemberSelector)
+  const { data: membersData } = useQuery(GET_ORGANIZATION_MEMBERS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+  });
+
   React.useEffect(() => {
     setTask(initialTask);
   }, [initialTask]);
 
+  // Récupérer les IDs des utilisateurs des commentaires et activités
+  const allUserIds = React.useMemo(() => {
+    const ids = new Set();
+    if (task?.comments) {
+      task.comments.forEach(c => c.userId && ids.add(c.userId));
+    }
+    if (task?.activity) {
+      task.activity.forEach(a => a.userId && ids.add(a.userId));
+    }
+    // Ajouter aussi l'utilisateur actuel
+    if (session?.user?.id) {
+      ids.add(session.user.id);
+    }
+    return Array.from(ids);
+  }, [task?.comments, task?.activity, session?.user?.id]);
+
+  // Récupérer les infos complètes des utilisateurs (avec avatars)
+  const { members: usersInfo } = useAssignedMembersInfo(allUserIds);
+
   const enrichUserData = (item) => {
+    // Si on a déjà le nom et l'image, retourner l'item
     if (item.userName && !item.userName.includes('@') && item.userImage) {
       return item;
     }
     
+    // Chercher dans usersInfo d'abord (qui a les avatars depuis la collection user)
+    const userInfo = usersInfo.find(u => u.id === item.userId);
+    if (userInfo) {
+      return {
+        ...item,
+        userName: userInfo.name || item.userName,
+        userImage: userInfo.image || item.userImage
+      };
+    }
+    
+    // Fallback sur l'utilisateur actuel
     if (session?.user && item.userId === session.user.id) {
       return {
         ...item,
         userName: session.user.name || session.user.email,
         userImage: session.user.image || null
-      };
-    }
-    
-    const member = boardMembers.find(m => m.userId === item.userId || m.id === item.userId);
-    if (member) {
-      return {
-        ...item,
-        userName: member.name || item.userName,
-        userImage: member.image || item.userImage
       };
     }
     
@@ -238,18 +267,26 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     };
   };
 
-  const comments = [...(task.comments || [])]
-    .map(enrichUserData)
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  const activities = [...(task.activity || [])]
-    .filter(a => a.type !== 'comment_added')
-    .map(enrichUserData)
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  // Recalculer les commentaires et activités enrichis quand usersInfo change
+  const comments = React.useMemo(() => {
+    return [...(task.comments || [])]
+      .map(enrichUserData)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }, [task?.comments, usersInfo, session?.user]);
+
+  const activities = React.useMemo(() => {
+    return [...(task.activity || [])]
+      .filter(a => a.type !== 'comment_added')
+      .map(enrichUserData)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }, [task?.activity, usersInfo, session?.user]);
   
-  const allActivity = [
-    ...comments.map(c => ({ ...c, type: 'comment' })),
-    ...activities.map(a => ({ ...a, type: 'activity' }))
-  ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const allActivity = React.useMemo(() => {
+    return [
+      ...comments.map(c => ({ ...c, type: 'comment' })),
+      ...activities.map(a => ({ ...a, type: 'activity' }))
+    ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }, [comments, activities]);
 
   return (
     <div className="flex flex-col h-full">

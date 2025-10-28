@@ -40,12 +40,16 @@ import {
   formatDateRelative,
 } from "../../../../../../src/utils/kanbanHelpers";
 import { AvatarGroup } from "@/src/components/ui/user-avatar";
+import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 
 /**
  * Composant pour une tâche draggable dans le tableau Kanban
  */
 export function TaskCard({ task, onEdit, onDelete }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // Récupérer les infos complètes des membres assignés (avec avatars)
+  const { members: assignedMembersInfo } = useAssignedMembersInfo(task.assignedMembers || []);
 
   const handleDeleteClick = (e) => {
     e.stopPropagation();
@@ -273,9 +277,9 @@ export function TaskCard({ task, onEdit, onDelete }) {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {task.assignedMembers && task.assignedMembers.length > 0 && (
+            {assignedMembersInfo && assignedMembersInfo.length > 0 && (
               <AvatarGroup 
-                users={task.assignedMembers} 
+                users={assignedMembersInfo} 
                 max={2} 
                 size="xs"
               />
