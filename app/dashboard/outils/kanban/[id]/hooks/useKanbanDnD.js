@@ -67,30 +67,34 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
           });
         }
       } else {
-        // Colonnes différentes : déplacer la tâche
-        const sourceColumnId = activeTask.columnId;
-        const targetColumnId = overTask.columnId;
-        
-        const sourceTasks = localTasksByColumn[sourceColumnId] || getTasksByColumn(sourceColumnId);
-        const targetTasks = localTasksByColumn[targetColumnId] || getTasksByColumn(targetColumnId);
-        
-        const activeIndex = sourceTasks.findIndex((t) => t.id === activeTask.id);
-        const overIndex = targetTasks.findIndex((t) => t.id === overTask.id);
-        
-        if (activeIndex !== -1 && overIndex !== -1) {
-          // Retirer de la source
-          const newSourceTasks = sourceTasks.filter((t) => t.id !== activeTask.id);
-          // Insérer dans la cible avec la nouvelle columnId
-          const movedTask = { ...activeTask, columnId: targetColumnId };
-          const newTargetTasks = [...targetTasks];
-          newTargetTasks.splice(overIndex, 0, movedTask);
-          
-          setLocalTasksByColumn({
-            ...localTasksByColumn,
-            [sourceColumnId]: newSourceTasks,
-            [targetColumnId]: newTargetTasks,
-          });
-        }
+        // Colonnes différentes : déplacer la tâche pour la preview visuelle
+        // Utiliser requestAnimationFrame pour éviter les conflits avec dnd-kit
+        requestAnimationFrame(() => {
+          const sourceColumnId = activeTask.columnId;
+          const targetColumnId = overTask.columnId;
+
+          const sourceTasks = localTasksByColumn[sourceColumnId] || getTasksByColumn(sourceColumnId);
+          const targetTasks = localTasksByColumn[targetColumnId] || getTasksByColumn(targetColumnId);
+
+          const activeIndex = sourceTasks.findIndex((t) => t.id === activeTask.id);
+          const overIndex = targetTasks.findIndex((t) => t.id === overTask.id);
+
+          if (activeIndex !== -1 && overIndex !== -1) {
+            // Retirer de la source
+            const newSourceTasks = sourceTasks.filter((t) => t.id !== activeTask.id);
+            // Insérer dans la cible avec la nouvelle columnId
+            const movedTask = { ...activeTask, columnId: targetColumnId };
+            const newTargetTasks = [...targetTasks];
+            newTargetTasks.splice(overIndex, 0, movedTask);
+
+            // Mettre à jour pour la preview
+            setLocalTasksByColumn({
+              ...localTasksByColumn,
+              [sourceColumnId]: newSourceTasks,
+              [targetColumnId]: newTargetTasks,
+            });
+          }
+        });
       }
     }
   };
@@ -151,16 +155,26 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
       // Déposé sur une autre tâche
       const targetTask = overData.task;
       newColumnId = targetTask.columnId;
-      
-      // Utiliser les tâches réorganisées localement si disponibles
-      const targetColumnTasks = localTasksByColumn[targetTask.columnId] || getTasksByColumn(targetTask.columnId);
-      const targetIndex = targetColumnTasks.findIndex(
-        (t) => t.id === targetTask.id
-      );
 
-      // Utiliser l'index de la tâche cible comme position finale
-      // Les tâches ont déjà été réorganisées en temps réel via handleDragOver
-      newPosition = targetIndex;
+      // Pour les déplacements entre colonnes, calculer la position directement
+      if (newColumnId !== activeTask.columnId) {
+        // Déplacement entre colonnes : calculer où insérer la tâche
+        // La tâche sera insérée avant la tâche sur laquelle on a lâché
+        const targetColumnTasks = getTasksByColumn(targetTask.columnId);
+        const targetIndex = targetColumnTasks.findIndex(
+          (t) => t.id === targetTask.id
+        );
+
+        newPosition = targetIndex; // Insérer à la position de la tâche cible
+      } else {
+        // Même colonne : utiliser les tâches réorganisées localement
+        const targetColumnTasks = localTasksByColumn[targetTask.columnId] || getTasksByColumn(targetTask.columnId);
+        const activeTaskIndex = targetColumnTasks.findIndex(
+          (t) => t.id === activeTask.id
+        );
+
+        newPosition = activeTaskIndex !== -1 ? activeTaskIndex : 0;
+      }
     }
 
     // Recalculer les positions locales immédiatement (comme le backend le fera)
@@ -227,11 +241,9 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
       });
     }
 
-    // Si la position ou la colonne a changé, effectuer la mutation
-    if (
-      newColumnId !== activeTask.columnId ||
-      newPosition !== (activeTask.position || 0)
-    ) {
+    // Si la colonne a changé OU la position a changé, effectuer la mutation
+    // IMPORTANT : même si la position reste la même, il faut envoyer la mutation si la colonne change
+    if (newColumnId !== activeTask.columnId || newPosition !== (activeTask.position || 0)) {
       
       try {
         await moveTask({
