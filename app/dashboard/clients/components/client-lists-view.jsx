@@ -74,7 +74,7 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
       </div>
 
       {filteredLists.length === 0 && lists.length === 0 ? (
-        <Card>
+        <Card className="shadow-none border-none">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="w-12 h-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground">Aucune liste créée</p>
