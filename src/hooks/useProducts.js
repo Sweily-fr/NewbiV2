@@ -40,18 +40,23 @@ export const useProduct = (id) => {
   };
 };
 
-export const useCreateProduct = () => {
+export const useCreateProduct = (options = {}) => {
   const { workspaceId } = useRequiredWorkspace();
+  const { showToast = true } = options;
 
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT, {
     refetchQueries: ['GetProducts'],
     onCompleted: () => {
-      toast.success('Produit créé avec succès');
+      if (showToast) {
+        toast.success('Produit créé avec succès');
+      }
     },
     onError: (error) => {
-      // Afficher un message d'erreur plus détaillé si disponible
-      const errorMessage = error.message || 'Erreur lors de la création du produit';
-      toast.error(errorMessage);
+      if (showToast) {
+        // Afficher un message d'erreur plus détaillé si disponible
+        const errorMessage = error.message || 'Erreur lors de la création du produit';
+        toast.error(errorMessage);
+      }
     },
   });
 
@@ -109,14 +114,20 @@ export const useUpdateProduct = () => {
   };
 };
 
-export const useDeleteProduct = () => {
+export const useDeleteProduct = (options = {}) => {
+  const { showToast = true } = options;
+
   const [deleteProduct, { loading, error }] = useMutation(DELETE_PRODUCT, {
     refetchQueries: ['GetProducts'],
     onCompleted: () => {
-      toast.success('Produit supprimé avec succès');
+      if (showToast) {
+        toast.success('Produit supprimé avec succès');
+      }
     },
     onError: () => {
-      toast.error('Erreur lors de la suppression du produit');
+      if (showToast) {
+        toast.error('Erreur lors de la suppression du produit');
+      }
     },
   });
 

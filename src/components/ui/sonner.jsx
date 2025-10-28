@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 const SuccessToast = ({ message }) => (
   <div className="bg-background max-w-[400px] rounded-md border px-4 py-3 shadow-lg">
     <div className="flex gap-2">
-      <p className="grow text-sm">
+      <p className="grow text-sm text-foreground">
         <CheckCircleIcon
           className="me-3 -mt-0.5 inline-flex text-emerald-500"
           size={16}
@@ -43,7 +43,7 @@ const SuccessToast = ({ message }) => (
 const ErrorToast = ({ message }) => (
   <div className="bg-background max-w-[400px] rounded-md border px-4 py-3 shadow-lg">
     <div className="flex gap-2">
-      <p className="grow text-sm">
+      <p className="grow text-sm text-foreground">
         <AlertCircleIcon
           className="me-3 -mt-0.5 inline-flex text-red-500"
           size={16}
@@ -71,7 +71,7 @@ const ErrorToast = ({ message }) => (
 const InfoToast = ({ message }) => (
   <div className="bg-background max-w-[400px] rounded-md border px-4 py-3 shadow-lg">
     <div className="flex gap-2">
-      <p className="grow text-sm">
+      <p className="grow text-sm text-foreground">
         <InfoIcon
           className="me-3 -mt-0.5 inline-flex text-blue-500"
           size={16}

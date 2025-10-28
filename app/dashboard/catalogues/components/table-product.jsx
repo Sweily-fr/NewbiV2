@@ -92,6 +92,8 @@ import { toast } from "@/src/components/ui/sonner";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useProducts, useDeleteProduct } from "@/src/hooks/useProducts";
 import ProductModal from "./product-modal";
+import ProductExportButton from "./product-export-button";
+import ProductImportDialog from "./product-import-dialog";
 
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
@@ -285,7 +287,8 @@ export default function TableProduct({ handleAddProduct }) {
     refetch,
   } = useProducts(1, 100, ""); // Récupère 100 produits max (pagination côté client)
 
-  const { deleteProduct: deleteProductMain } = useDeleteProduct();
+  const { deleteProduct: deleteProductMain } = useDeleteProduct({ showToast: false });
+  const { deleteProduct: deleteProductSingle } = useDeleteProduct({ showToast: true });
 
   // Filtrage local des produits
   const filteredProducts = useMemo(() => {
@@ -308,14 +311,16 @@ export default function TableProduct({ handleAddProduct }) {
 
   const handleDeleteRows = async () => {
     const selectedRows = table.getSelectedRowModel().rows;
+    const count = selectedRows.length;
     try {
       await Promise.all(
         selectedRows.map((row) => deleteProductMain(row.original.id))
       );
       table.resetRowSelection();
       await refetch();
+      toast.success(`${count} produit${count > 1 ? 's' : ''} supprimé${count > 1 ? 's' : ''} avec succès`);
     } catch (error) {
-      // Error already handled by useDeleteProduct hook
+      toast.error('Erreur lors de la suppression des produits');
     }
   };
 
@@ -369,7 +374,7 @@ export default function TableProduct({ handleAddProduct }) {
     meta: {
       handleEditProduct,
       handleDeleteProduct: async (id) => {
-        await deleteProductMain(id);
+        await deleteProductSingle(id);
         await refetch();
       },
     },
@@ -560,6 +565,12 @@ export default function TableProduct({ handleAddProduct }) {
             </DropdownMenu>
           </div>
           <div className="flex items-center gap-3">
+            {/* Import/Export buttons */}
+            <ProductImportDialog onImportComplete={refetch} />
+            <ProductExportButton 
+              products={allProducts} 
+              selectedRows={table.getSelectedRowModel().rows}
+            />
             {/* Delete button */}
             {table.getSelectedRowModel().rows.length > 0 && (
               <AlertDialog>
@@ -871,32 +882,36 @@ export default function TableProduct({ handleAddProduct }) {
       {/* Mobile Layout - Style Notion */}
       <div className="md:hidden">
         {/* Mobile Toolbar */}
-        <div className="px-4 py-3">
-          <div className="flex items-center gap-3">
+        <div className="px-3 sm:px-4 py-3 sticky top-0 bg-background z-10 border-b">
+          <div className="flex flex-col gap-3">
             {/* Search Input */}
             <div className="flex-1 relative">
               <Input
-                placeholder="Rechercher des produits..."
+                placeholder="Rechercher..."
                 value={globalFilter}
                 onChange={(e) => {
                   setGlobalFilter(e.target.value);
                   table.getColumn("name")?.setFilterValue(e.target.value);
                 }}
-                className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
+                className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-xs sm:text-sm w-full"
               />
             </div>
 
-            {/* Filter Button */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                </Button>
-              </PopoverTrigger>
+            {/* Buttons Row */}
+            <div className="flex items-center gap-2">
+              {/* Filter Button */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 px-2 sm:px-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs"
+                    title="Filtrer par catégorie"
+                  >
+                    <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400 mr-1" />
+                    <span className="hidden sm:inline">Filtrer</span>
+                  </Button>
+                </PopoverTrigger>
               <PopoverContent className="w-auto min-w-36 p-3" align="end">
                 <div className="space-y-3">
                   <div className="text-muted-foreground text-xs font-normal">
@@ -926,41 +941,40 @@ export default function TableProduct({ handleAddProduct }) {
                   </div>
                 </div>
               </PopoverContent>
-            </Popover>
+              </Popover>
 
-            {/* Delete button for mobile - shown when rows are selected */}
-            {table.getSelectedRowModel().rows.length > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-9 px-3"
-                onClick={() => {
-                  // Trigger the delete dialog
-                  const deleteButton = document.querySelector(
-                    "[data-mobile-delete-trigger-product]"
-                  );
-                  if (deleteButton) deleteButton.click();
-                }}
-              >
-                <TrashIcon className="h-4 w-4 mr-1" />(
-                {table.getSelectedRowModel().rows.length})
-              </Button>
-            )}
+              {/* Import/Export buttons for mobile */}
+              <ProductImportDialog onImportComplete={refetch} />
+              <ProductExportButton 
+                products={allProducts} 
+                selectedRows={table.getSelectedRowModel().rows}
+              />
 
-            {/* Add Product Button */}
-            {/* <Button
-              variant="default"
-              size="sm"
-              className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
-              onClick={handleAddProduct}
-            >
-              <PlusIcon className="h-4 w-4" />
-            </Button> */}
+              {/* Delete button for mobile - shown when rows are selected */}
+              {table.getSelectedRowModel().rows.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-9 px-2 sm:px-3 text-xs"
+                  onClick={() => {
+                    // Trigger the delete dialog
+                    const deleteButton = document.querySelector(
+                      "[data-mobile-delete-trigger-product]"
+                    );
+                    if (deleteButton) deleteButton.click();
+                  }}
+                >
+                  <TrashIcon className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">({table.getSelectedRowModel().rows.length})</span>
+                  <span className="sm:hidden">{table.getSelectedRowModel().rows.length}</span>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Mobile Table */}
-        <div className="overflow-x-auto pb-20">
+        <div className="overflow-x-auto pb-24">
           <Table className="w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -979,7 +993,7 @@ export default function TableProduct({ handleAddProduct }) {
                     .map((header) => (
                       <TableHead
                         key={header.id}
-                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                        className="py-3 px-3 sm:px-4 text-left font-medium text-gray-600 dark:text-gray-400 text-xs sm:text-sm"
                       >
                         {header.isPlaceholder
                           ? null
@@ -1010,7 +1024,7 @@ export default function TableProduct({ handleAddProduct }) {
                           cell.column.id === "actions"
                       )
                       .map((cell) => (
-                        <TableCell key={cell.id} className="py-3 px-4">
+                        <TableCell key={cell.id} className="py-3 px-3 sm:px-4 text-xs sm:text-sm">
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
