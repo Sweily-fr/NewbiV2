@@ -50,8 +50,8 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
       const activeTask = activeData.task;
       const overTask = overData.task;
       
-      // Seulement si c'est dans la même colonne
       if (activeTask.columnId === overTask.columnId) {
+        // Même colonne : réorganiser avec arrayMove
         const columnId = activeTask.columnId;
         const currentTasks = localTasksByColumn[columnId] || getTasksByColumn(columnId);
         
@@ -64,6 +64,31 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
           setLocalTasksByColumn({
             ...localTasksByColumn,
             [columnId]: newTasks,
+          });
+        }
+      } else {
+        // Colonnes différentes : déplacer la tâche
+        const sourceColumnId = activeTask.columnId;
+        const targetColumnId = overTask.columnId;
+        
+        const sourceTasks = localTasksByColumn[sourceColumnId] || getTasksByColumn(sourceColumnId);
+        const targetTasks = localTasksByColumn[targetColumnId] || getTasksByColumn(targetColumnId);
+        
+        const activeIndex = sourceTasks.findIndex((t) => t.id === activeTask.id);
+        const overIndex = targetTasks.findIndex((t) => t.id === overTask.id);
+        
+        if (activeIndex !== -1 && overIndex !== -1) {
+          // Retirer de la source
+          const newSourceTasks = sourceTasks.filter((t) => t.id !== activeTask.id);
+          // Insérer dans la cible avec la nouvelle columnId
+          const movedTask = { ...activeTask, columnId: targetColumnId };
+          const newTargetTasks = [...targetTasks];
+          newTargetTasks.splice(overIndex, 0, movedTask);
+          
+          setLocalTasksByColumn({
+            ...localTasksByColumn,
+            [sourceColumnId]: newSourceTasks,
+            [targetColumnId]: newTargetTasks,
           });
         }
       }
@@ -162,6 +187,43 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
       setLocalTasksByColumn({
         ...localTasksByColumn,
         [newColumnId]: tasksWithNewPositions,
+      });
+    } else {
+      // Colonnes différentes : recalculer les positions dans les deux colonnes
+      const sourceColumnId = activeTask.columnId;
+      const targetColumnId = newColumnId;
+      
+      // Colonne source : retirer la tâche et recalculer les positions
+      const sourceTasks = localTasksByColumn[sourceColumnId] || getTasksByColumn(sourceColumnId);
+      const sourceTasksWithoutMoved = sourceTasks.filter(t => t.id !== activeTask.id);
+      const sourceTasksWithNewPositions = sourceTasksWithoutMoved.map((task, index) => ({
+        ...task,
+        position: index
+      }));
+      
+      // Colonne cible : insérer la tâche et recalculer les positions
+      const targetTasks = localTasksByColumn[targetColumnId] || getTasksByColumn(targetColumnId);
+      const movedTaskWithNewColumnId = {
+        ...activeTask,
+        columnId: targetColumnId
+      };
+      
+      const targetTasksWithMoved = [
+        ...targetTasks.slice(0, newPosition),
+        movedTaskWithNewColumnId,
+        ...targetTasks.slice(newPosition)
+      ];
+      
+      const targetTasksWithNewPositions = targetTasksWithMoved.map((task, index) => ({
+        ...task,
+        position: index
+      }));
+      
+      // Mettre à jour localement les deux colonnes
+      setLocalTasksByColumn({
+        ...localTasksByColumn,
+        [sourceColumnId]: sourceTasksWithNewPositions,
+        [targetColumnId]: targetTasksWithNewPositions,
       });
     }
 
