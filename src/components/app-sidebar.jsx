@@ -105,7 +105,7 @@ const data = {
     //   icon: IconHeart,
     // },
     {
-      title: "Clients",
+      title: "Clients (CRM)",
       url: "/dashboard/clients",
       icon: Users,
     },

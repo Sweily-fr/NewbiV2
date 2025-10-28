@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Plus } from "lucide-react";
-import TableUser from "./components/table";
+import ClientsTabs from "./components/clients-tabs";
 import ClientsModal from "./components/clients-modal";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
@@ -19,15 +19,13 @@ function ClientsContent() {
     <>
       {/* Desktop Layout */}
       <div className="hidden md:block space-y-6 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Gestion des Clients</h1>
-            <p className="text-muted-foreground text-sm">
-              Gérez efficacement vos clients en un seul endroit.
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-medium mb-2">Gestion des contacts (CRM)</h1>
+          <p className="text-muted-foreground text-sm">
+            Centralisez vos contacts, organisez-les en listes et suivez vos interactions commerciales.
+          </p>
         </div>
-        <TableUser handleAddUser={handleOpenInviteDialog} />
+        <ClientsTabs />
       </div>
 
       {/* Mobile Layout - Style Notion */}
@@ -42,8 +40,10 @@ function ClientsContent() {
           </div>
         </div>
 
-        {/* Table */}
-        <TableUser handleAddUser={handleOpenInviteDialog} />
+        {/* Tabs */}
+        <div className="px-4">
+          <ClientsTabs />
+        </div>
 
         {/* Bouton flottant mobile */}
         <Button
