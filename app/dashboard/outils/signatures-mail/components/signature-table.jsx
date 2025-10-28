@@ -133,7 +133,7 @@ export default function SignatureTable() {
           <p className="text-muted-foreground mb-4">
             Impossible de charger les signatures
           </p>
-          <Button onClick={refetch}>Réessayer</Button>
+          <Button onClick={() => refetch()}>Réessayer</Button>
         </div>
       </div>
     );
@@ -171,7 +171,7 @@ export default function SignatureTable() {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={handleDeleteSelected}
+                    onClick={() => handleDeleteSelected()}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     Supprimer

@@ -5,17 +5,15 @@ import {
   useMutation,
   useLazyQuery,
   gql,
-  useApolloClient,
 } from "@apollo/client";
-import { useState, useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
 const GET_MY_EMAIL_SIGNATURES = gql`
-  query GetMyEmailSignatures($workspaceId: ID!) {
-    getMyEmailSignatures(workspaceId: $workspaceId) {
+  query GetMyEmailSignatures {
+    getMyEmailSignatures {
       id
       signatureName
       firstName
@@ -271,27 +269,17 @@ const CREATE_EMAIL_SIGNATURE = gql`
 
 // Hook pour récupérer les signatures
 export const useSignatures = () => {
-  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
-
   const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
-    variables: { workspaceId },
     fetchPolicy: "network-only",
     notifyOnNetworkStatusChange: true,
-    skip: !workspaceId,
-    onCompleted: (data) => {
-      console.log("✅ [QUERY] Signatures récupérées:");
-    },
-    onError: (error) => {
-      console.error("❌ [QUERY] Erreur:", error);
-    },
   });
 
   const signatures = data?.getMyEmailSignatures || [];
 
   return {
     signatures,
-    loading: workspaceLoading || queryLoading,
-    error: workspaceError || queryError,
+    loading: queryLoading,
+    error: queryError,
     refetch,
   };
 };
@@ -299,7 +287,6 @@ export const useSignatures = () => {
 // Hook pour les actions de signature
 export const useSignatureActions = () => {
   const router = useRouter();
-  const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
 
   const [deleteSignature, { loading: deleting }] = useMutation(
@@ -325,107 +312,48 @@ export const useSignatureActions = () => {
           }
         }
       },
-      onCompleted: () => {
-        toast.success("Signature supprimée avec succès");
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la suppression de la signature");
-      },
     }
   );
 
   const [deleteMultipleSignatures, { loading: deletingMultiple }] = useMutation(
     DELETE_MULTIPLE_EMAIL_SIGNATURES,
     {
-      refetchQueries: [
-        {
-          query: GET_MY_EMAIL_SIGNATURES,
-          variables: { workspaceId },
-        },
-      ],
-      onCompleted: (data) => {
-        const count = data?.deleteMultipleEmailSignatures || 0;
-        toast.success(
-          `${count} signature${count > 1 ? "s" : ""} supprimée${count > 1 ? "s" : ""} avec succès`
-        );
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la suppression des signatures");
-      },
+      refetchQueries: [GET_MY_EMAIL_SIGNATURES],
     }
   );
 
   const [setDefaultSignature, { loading: settingDefault }] = useMutation(
     SET_DEFAULT_EMAIL_SIGNATURE,
     {
-      refetchQueries: [
-        {
-          query: GET_MY_EMAIL_SIGNATURES,
-          variables: { workspaceId },
-        },
-      ],
-      onCompleted: (data) => {
-        toast.success("Signature définie comme défaut");
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la définition par défaut");
-      },
+      refetchQueries: [GET_MY_EMAIL_SIGNATURES],
     }
   );
 
-  const [getSignatureForEdit, { loading: loadingEdit }] = useLazyQuery(
-    GET_EMAIL_SIGNATURE,
-    {
-      onCompleted: (data) => {
-        if (data?.getEmailSignature) {
-          const signatureData = data.getEmailSignature;
-
-          // Rediriger avec l'ID dans l'URL au lieu d'utiliser localStorage
-          router.push(
-            `/dashboard/outils/signatures-mail/new?edit=true&id=${signatureData.id}`
-          );
-        } else {
-          console.error("❌ [EDIT] Aucune signature trouvée dans la réponse");
-          toast.error("Signature introuvable");
-        }
-      },
-      onError: (error) => {
-        toast.error("Erreur lors de la récupération de la signature");
-      },
-    }
-  );
+  const [getSignatureForEdit] = useLazyQuery(GET_EMAIL_SIGNATURE);
 
   const [createSignature, { loading: duplicating }] = useMutation(
     CREATE_EMAIL_SIGNATURE,
     {
-      refetchQueries: [
-        {
-          query: GET_MY_EMAIL_SIGNATURES,
-          variables: { workspaceId },
-        },
-      ],
-      onCompleted: (data) => {
-        toast.success("Signature dupliquée avec succès");
-      },
-      onError: (error) => {
-        console.error("❌ Erreur duplication:", error);
-        toast.error("Erreur lors de la duplication de la signature");
-      },
+      refetchQueries: [GET_MY_EMAIL_SIGNATURES],
     }
   );
 
   // Handlers pour les actions
   const handleEdit = async (signature) => {
     try {
-      const result = await getSignatureForEdit({
+      const { data } = await getSignatureForEdit({
         variables: { id: signature.id },
       });
+      if (data?.getEmailSignature) {
+        router.push(
+          `/dashboard/outils/signatures-mail/new?edit=true&id=${data.getEmailSignature.id}`
+        );
+      } else {
+        toast.error("Signature introuvable");
+      }
     } catch (error) {
-      console.error(
-        "❌ [EDIT] Erreur lors de l'ouverture de l'éditeur:",
-        error
-      );
-      console.error("❌ [EDIT] Détails:", error.message, error.graphQLErrors);
+      console.error("❌ [EDIT] Erreur lors de l'ouverture de l'éditeur:", error);
+      toast.error("Erreur lors de la récupération de la signature");
     }
   };
 
@@ -465,7 +393,7 @@ export const useSignatureActions = () => {
       });
 
       toast.success("Signature supprimée avec succès");
-    } catch (error) {
+    } catch {
       toast.error("Erreur lors de la suppression de la signature");
     }
   };
@@ -495,7 +423,7 @@ export const useSignatureActions = () => {
 
         const filteredData = Object.fromEntries(
           Object.entries(duplicateData).filter(
-            ([_, value]) =>
+            ([key, value]) =>
               value !== null && value !== undefined && value !== ""
           )
         );
@@ -508,8 +436,9 @@ export const useSignatureActions = () => {
             }
           } 
         });
+        toast.success("Signature dupliquée avec succès");
       }
-    } catch (error) {
+    } catch {
       toast.error("Erreur lors de la duplication de la signature");
     }
   };

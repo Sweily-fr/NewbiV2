@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Users, X, Plus, Check } from 'lucide-react';
+import { useQuery } from '@apollo/client';
 import { Button } from '@/src/components/ui/button';
 import { Label } from '@/src/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/src/components/ui/popover';
 import { UserAvatar } from '@/src/components/ui/user-avatar';
 import { Badge } from '@/src/components/ui/badge';
 import { ScrollArea } from '@/src/components/ui/scroll-area';
-import { useOrganizationInvitations } from '@/src/hooks/useOrganizationInvitations';
 import { useSession } from '@/src/lib/auth-client';
+import { GET_ORGANIZATION_MEMBERS } from '@/src/graphql/kanbanQueries';
+import { useWorkspace } from '@/src/hooks/useWorkspace';
+import { useAssignedMembersInfo } from '@/src/hooks/useAssignedMembersInfo';
 
 /**
  * Composant pour sélectionner les membres assignés à une tâche
@@ -15,69 +18,41 @@ import { useSession } from '@/src/lib/auth-client';
 export function MemberSelector({ workspaceId, selectedMembers = [], onMembersChange }) {
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
   
-  const { getAllCollaborators } = useOrganizationInvitations();
   const { data: session } = useSession();
+  const { workspaceId: contextWorkspaceId } = useWorkspace();
   
   const currentUser = session?.user;
+  const finalWorkspaceId = workspaceId || contextWorkspaceId;
 
-  // Logs supprimés pour optimiser les performances
+  // Récupérer les membres de l'organisation directement via GraphQL
+  const { data, loading, error } = useQuery(GET_ORGANIZATION_MEMBERS, {
+    variables: { workspaceId: finalWorkspaceId },
+    skip: !finalWorkspaceId,
+  });
 
-  // Récupérer les membres de l'organisation via Better Auth (comme espaces-section)
+  // Récupérer les infos complètes des membres sélectionnés
+  const { members: selectedMembersInfo } = useAssignedMembersInfo(selectedMembers);
+
+  // Traiter les données GraphQL des membres du workspace
   useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        setLoading(true);
-        const result = await getAllCollaborators(workspaceId);
-
-        if (result.success) {
-          // Formatter les membres (seulement les membres actifs, pas les invitations)
-          const formattedMembers = result.data
-            .filter(item => item.type === 'member') // Seulement les membres actifs
-            .map(item => ({
-              id: item.user?.id || item.id,
-              name: item.user?.name || item.name || item.user?.email?.split('@')[0] || 'Utilisateur',
-              email: item.user?.email || item.email,
-              image: item.user?.image || item.user?.avatar || item.avatar || null,
-              role: item.role,
-            }));
-          
-          // Ajouter l'utilisateur connecté s'il n'est pas dans la liste
-          const currentUserInList = formattedMembers.some(m => 
-            m.id === currentUser?.id || m.email === currentUser?.email
-          );
-          
-          if (currentUser && !currentUserInList) {
-            formattedMembers.unshift({
-              id: currentUser.id,
-              name: currentUser.name || currentUser.email?.split('@')[0] || 'Moi',
-              email: currentUser.email,
-              image: currentUser.image || currentUser.avatar || null,
-              role: 'owner',
-            });
-          }
-          
-          setMembers(formattedMembers);
-        } else {
-          setMembers([]);
-        }
-      } catch (error) {
-        setMembers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (workspaceId) {
-      fetchMembers();
+    if (data?.organizationMembers) {
+      const formattedMembers = data.organizationMembers.map(member => ({
+        id: member.id,
+        name: member.name,
+        email: member.email,
+        image: member.image || null,
+        role: member.role,
+      }));
+      setMembers(formattedMembers);
+    } else {
+      setMembers([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId]); // Retirer getAllCollaborators des dépendances pour éviter la boucle
+  }, [data]);
 
   // Vérifier si un membre est sélectionné
   const isMemberSelected = (memberId) => {
-    return selectedMembers.some(m => m.userId === memberId);
+    return selectedMembers.includes(memberId);
   };
 
   // Ajouter ou retirer un membre
@@ -86,24 +61,16 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
     
     if (isSelected) {
       // Retirer le membre
-      onMembersChange(selectedMembers.filter(m => m.userId !== member.id));
+      onMembersChange(selectedMembers.filter(id => id !== member.id));
     } else {
-      // Ajouter le membre avec l'image
-      onMembersChange([
-        ...selectedMembers,
-        {
-          userId: member.id,
-          name: member.name,
-          email: member.email,
-          image: member.image || null,
-        },
-      ]);
+      // Ajouter seulement l'ID du membre
+      onMembersChange([...selectedMembers, member.id]);
     }
   };
 
   const removeMember = (memberId, e) => {
     e.stopPropagation();
-    onMembersChange(selectedMembers.filter(m => m.userId !== memberId));
+    onMembersChange(selectedMembers.filter(id => id !== memberId));
   };
 
   const handleWheel = (e) => {
@@ -117,12 +84,12 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
       
       {selectedMembers.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {selectedMembers.map((member) => {
-            const isCurrentUserMember = currentUser && member.userId === currentUser.id;
+          {selectedMembersInfo.map((member) => {
+            const isCurrentUserMember = currentUser && member.id === currentUser.id;
             
             return (
               <Badge
-                key={member.userId}
+                key={member.id}
                 variant="secondary"
                 className="flex items-center gap-1.5 pl-1 pr-2 py-1"
               >
@@ -138,7 +105,7 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
                   )}
                 </span>
                 <button
-                  onClick={(e) => removeMember(member.userId, e)}
+                  onClick={(e) => removeMember(member.id, e)}
                   className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
                 >
                   <X className="h-3 w-3" />
