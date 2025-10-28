@@ -33,9 +33,9 @@ function ClientsContent() {
         {/* Header - Style Notion sur mobile */}
         <div className="px-4 py-6">
           <div>
-            <h1 className="text-2xl font-medium mb-2">Clients</h1>
+            <h1 className="text-2xl font-medium mb-2">Gestion des contacts (CRM)</h1>
             <p className="text-muted-foreground text-sm">
-              Gérez efficacement vos clients en un seul endroit.
+              Centralisez vos contacts, organisez-les en listes et suivez vos interactions commerciales.
             </p>
           </div>
         </div>
