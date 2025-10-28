@@ -145,7 +145,7 @@ export default function ClientsTable({ workspaceId, lists, onListsUpdated, clien
 
   return (
     <div className="space-y-4">
-      {selectedClients.size > 0 && (
+      {selectedClients.size > 0 && lists && lists.length > 0 && (
         <div className="flex flex-col gap-3 p-3 sm:p-4 bg-[rgba(91,80,255,0.05)] rounded-lg border border-[rgba(91,80,255,0.2)]">
           <div className="flex items-center justify-between">
             <span className="text-xs sm:text-sm font-normal">
@@ -163,42 +163,40 @@ export default function ClientsTable({ workspaceId, lists, onListsUpdated, clien
 
           {/* Boutons d'action */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            {lists && lists.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={assigningLists}
+                  className="gap-2 cursor-pointer font-normal"
+                >
+                  {assigningLists && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <Plus className="w-4 h-4" />
+                  Ajouter aux listes
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>Ajouter à une liste</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {lists.map((list) => (
+                  <DropdownMenuItem
+                    key={list.id}
+                    onClick={() => handleAddToList(list.id)}
                     disabled={assigningLists}
-                    className="gap-2 cursor-pointer font-normal"
+                    className="cursor-pointer"
                   >
-                    {assigningLists && <Loader2 className="w-4 h-4 animate-spin" />}
-                    <Plus className="w-4 h-4" />
-                    Ajouter aux listes
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>Ajouter à une liste</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {lists.map((list) => (
-                    <DropdownMenuItem
-                      key={list.id}
-                      onClick={() => handleAddToList(list.id)}
-                      disabled={assigningLists}
-                      className="cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2 w-full">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: list.color }}
-                        />
-                        <span>{list.name}</span>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                    <div className="flex items-center gap-2 w-full">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: list.color }}
+                      />
+                      <span>{list.name}</span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       )}
