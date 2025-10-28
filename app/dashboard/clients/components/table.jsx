@@ -279,12 +279,14 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
   }, [globalFilter]);
 
   const handleDeleteRows = async () => {
-    const selectedRows = table.getSelectedRowModel().rows;
     try {
       await Promise.all(
-        selectedRows.map((row) => deleteClient(row.original.id))
+        Array.from(selectedClients).map((clientId) => deleteClient(clientId))
       );
-      table.resetRowSelection();
+      // Réinitialiser la sélection via le callback parent
+      if (onSelectAll) {
+        onSelectAll(false, clients);
+      }
       await refetch();
     } catch (error) {
       // Error already handled by useDeleteClient hook
@@ -546,17 +548,17 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
             </DropdownMenu>
           </div>
           <div className="flex items-center gap-3">
-            {/* Delete button */}
-            {table.getSelectedRowModel().rows.length > 0 && (
+            {/* Delete button - shown when rows are selected */}
+            {selectedClients.size > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className="ml-auto"
                     variant="destructive"
                     data-mobile-delete-trigger
+                    className="cursor-pointer font-normal"
                   >
                     <TrashIcon className="mr-2 h-4 w-4" />
-                    Supprimer ({table.getSelectedRowModel().rows.length})
+                    Supprimer ({selectedClients.size})
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -573,8 +575,8 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                       </AlertDialogTitle>
                       <AlertDialogDescription>
                         Cette action ne peut pas être annulée. Cela supprimera
-                        définitivement {table.getSelectedRowModel().rows.length}{" "}
-                        {table.getSelectedRowModel().rows.length === 1
+                        définitivement {selectedClients.size}{" "}
+                        {selectedClients.size === 1
                           ? "client sélectionné"
                           : "clients sélectionnés"}
                         .
