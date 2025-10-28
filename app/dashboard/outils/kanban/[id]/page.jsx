@@ -294,10 +294,10 @@ export default function KanbanBoardPage({ params }) {
   // Hook pour le mode d'affichage (Board/List)
   const { viewMode, setViewMode, isBoard, isList } = useViewMode(id);
 
-  // Hook pour le scroll horizontal par glissement - DÉSACTIVÉ car interfère avec dnd-kit
-  // TODO: Implémenter un système de scroll compatible avec dnd-kit
+  // Hook pour le scroll horizontal par glissement
+  // Ignore automatiquement les éléments draggables de dnd-kit
   const scrollRef = useDragToScroll({ 
-    enabled: false, // Désactivé pour ne pas bloquer le drag and drop
+    enabled: true, // Activé - ignore les tâches draggables
     scrollSpeed: 1.5 
   });
 
