@@ -9,8 +9,8 @@ export const useProducts = (page = 1, limit = 10, search = '', category = '') =>
 
   const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_PRODUCTS, {
     variables: { workspaceId, page, limit, search, category },
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
+    fetchPolicy: 'cache-first',
+    notifyOnNetworkStatusChange: false,
     errorPolicy: 'all',
     skip: !workspaceId,
   });
@@ -45,7 +45,6 @@ export const useCreateProduct = () => {
 
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT, {
     refetchQueries: ['GetProducts'],
-    awaitRefetchQueries: true,
     onCompleted: () => {
       toast.success('Produit créé avec succès');
     },
@@ -85,7 +84,6 @@ export const useCreateProduct = () => {
 export const useUpdateProduct = () => {
   const [updateProduct, { loading, error }] = useMutation(UPDATE_PRODUCT, {
     refetchQueries: ['GetProducts'],
-    awaitRefetchQueries: true,
     onCompleted: () => {
       toast.success('Produit modifié avec succès');
     },
@@ -114,7 +112,6 @@ export const useUpdateProduct = () => {
 export const useDeleteProduct = () => {
   const [deleteProduct, { loading, error }] = useMutation(DELETE_PRODUCT, {
     refetchQueries: ['GetProducts'],
-    awaitRefetchQueries: true,
     onCompleted: () => {
       toast.success('Produit supprimé avec succès');
     },

@@ -274,7 +274,7 @@ export default function TableProduct({ handleAddProduct }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Utilisation du hook pour récupérer les produits (sans recherche côté serveur)
-  // On récupère TOUS les produits car la pagination est gérée côté client
+  // On récupère les produits avec pagination côté client
   const {
     products: allProducts,
     totalItems,
@@ -283,7 +283,7 @@ export default function TableProduct({ handleAddProduct }) {
     loading,
     error,
     refetch,
-  } = useProducts(1, 1000, ""); // Récupère tous les produits (pagination côté client)
+  } = useProducts(1, 100, ""); // Récupère 100 produits max (pagination côté client)
 
   const { deleteProduct: deleteProductMain } = useDeleteProduct();
 
