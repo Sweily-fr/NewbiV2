@@ -97,6 +97,7 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 // Le composant est exporté par défaut, pas en named export
 import { useClients, useDeleteClient } from "@/src/hooks/useClients";
+import { useClientListsByClient } from "@/src/hooks/useClientLists";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
 // Custom filter function for multi-column searching
@@ -113,23 +114,25 @@ const typeFilterFn = (row, columnId, filterValue) => {
   return filterValue.includes(type);
 };
 
-const columns = [
+const columns = (selectedClients, onSelectClient, onSelectAll, allClients) => [
   {
     id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
+    header: () => {
+      const allSelected = allClients?.length > 0 && allClients.every(client => selectedClients.has(client.id));
+      const someSelected = allClients?.some(client => selectedClients.has(client.id)) && !allSelected;
+      
+      return (
+        <Checkbox
+          checked={allSelected || (someSelected && "indeterminate")}
+          onCheckedChange={(value) => onSelectAll?.(!!value)}
+          aria-label="Sélectionner tout"
+        />
+      );
+    },
     cell: ({ row }) => (
       <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        checked={selectedClients.has(row.original.id)}
+        onCheckedChange={() => onSelectClient?.(row.original.id)}
         aria-label="Select row"
       />
     ),
@@ -214,14 +217,16 @@ const columns = [
     header: () => <span className="sr-only">Actions</span>,
     cell: ({ row, table }) => {
       const handleEditClient = table.options.meta?.handleEditClient;
-      return <RowActions row={row} onEdit={handleEditClient} />;
+      const onSelectList = table.options.meta?.onSelectList;
+      const workspaceId = table.options.meta?.workspaceId;
+      return <RowActions row={row} onEdit={handleEditClient} onSelectList={onSelectList} workspaceId={workspaceId} />;
     },
     size: 60,
     enableHiding: false,
   },
 ];
 
-export default function TableClients({ handleAddUser }) {
+export default function TableClients({ handleAddUser, selectedClients = new Set(), onSelectClient, onSelectAll, clients: clientsProp, useProvidedClients = false, onSelectList, workspaceId }) {
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -234,16 +239,27 @@ export default function TableClients({ handleAddUser }) {
   const [editingClient, setEditingClient] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Utilisation du hook pour récupérer les clients
+  // Utilisation du hook pour récupérer les clients ou utilisation des clients passés en props
+  const hookResult = useClients(pagination.pageIndex + 1, pagination.pageSize, globalFilter);
+  
   const {
-    clients,
-    totalItems,
-    currentPage,
-    totalPages,
-    loading,
-    error,
-    refetch,
-  } = useClients(pagination.pageIndex + 1, pagination.pageSize, globalFilter);
+    clients: hookClients,
+    totalItems: hookTotalItems,
+    currentPage: hookCurrentPage,
+    totalPages: hookTotalPages,
+    loading: hookLoading,
+    error: hookError,
+    refetch: hookRefetch,
+  } = hookResult;
+
+  // Utiliser les clients passés en props si disponibles
+  const clients = useProvidedClients ? (clientsProp || []) : hookClients;
+  const totalItems = useProvidedClients ? (clientsProp?.length || 0) : hookTotalItems;
+  const currentPage = useProvidedClients ? 1 : hookCurrentPage;
+  const totalPages = useProvidedClients ? 1 : hookTotalPages;
+  const loading = useProvidedClients ? false : hookLoading;
+  const error = useProvidedClients ? null : hookError;
+  const refetch = useProvidedClients ? () => {} : hookRefetch;
 
   const { deleteClient } = useDeleteClient();
 
@@ -299,9 +315,31 @@ export default function TableClients({ handleAddUser }) {
     handleCloseEditModal();
   };
 
+  const handleSelectAll = useCallback((checked) => {
+    // Utiliser onSelectAll si disponible, sinon fallback sur onSelectClient
+    if (onSelectAll) {
+      onSelectAll(checked, clients);
+    } else {
+      // Fallback: appeler onSelectClient pour chaque client (moins optimal)
+      if (checked) {
+        clients.forEach(client => {
+          if (!selectedClients.has(client.id)) {
+            onSelectClient?.(client.id);
+          }
+        });
+      } else {
+        clients.forEach(client => {
+          if (selectedClients.has(client.id)) {
+            onSelectClient?.(client.id);
+          }
+        });
+      }
+    }
+  }, [clients, selectedClients, onSelectClient, onSelectAll]);
+
   const table = useReactTable({
     data: clients,
-    columns,
+    columns: columns(selectedClients, onSelectClient, handleSelectAll, clients),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
@@ -321,6 +359,8 @@ export default function TableClients({ handleAddUser }) {
     },
     meta: {
       handleEditClient,
+      onSelectList,
+      workspaceId,
     },
   });
 
@@ -412,7 +452,7 @@ export default function TableClients({ handleAddUser }) {
             {/* Filter by type */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="font-normal">
+                <Button variant="outline" className="font-normal cursor-pointer">
                   <FilterIcon
                     className="-ms-1 opacity-60"
                     size={16}
@@ -463,7 +503,7 @@ export default function TableClients({ handleAddUser }) {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="font-normal hidden md:flex"
+                  className="font-normal hidden md:flex cursor-pointer"
                 >
                   <Columns3Icon
                     className="-ms-1 opacity-60"
@@ -560,7 +600,7 @@ export default function TableClients({ handleAddUser }) {
               onClick={handleAddUser}
             >
               <PlusIcon className="-ms-1" size={16} aria-hidden="true" />
-              Ajouter un client
+              Ajouter un contact
             </Button>
           </div>
         </div>
@@ -701,10 +741,10 @@ export default function TableClients({ handleAddUser }) {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length}
+                    colSpan={columns(selectedClients, onSelectClient, handleSelectAll, clients).length}
                     className="h-24 text-center"
                   >
-                    Aucun client trouvé.
+                    Aucun contact trouvé.
                   </TableCell>
                 </TableRow>
               )}
@@ -1038,7 +1078,7 @@ export default function TableClients({ handleAddUser }) {
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center">
-                    Aucun client trouvé.
+                    Aucun contact trouvé.
                   </TableCell>
                 </TableRow>
               )}
@@ -1058,10 +1098,11 @@ export default function TableClients({ handleAddUser }) {
   );
 }
 
-function RowActions({ row, onEdit }) {
+function RowActions({ row, onEdit, onSelectList, workspaceId }) {
   const client = row.original;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { deleteClient } = useDeleteClient();
+  const { lists } = useClientListsByClient(workspaceId || '', client.id);
 
   const handleEdit = useCallback(() => {
     if (onEdit) {
@@ -1157,6 +1198,34 @@ function RowActions({ row, onEdit }) {
               <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
+          
+          {/* Listes liées */}
+          {lists && lists.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <span>Listes liées</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {lists.map((list) => (
+                    <DropdownMenuItem
+                      key={list.id}
+                      onClick={() => onSelectList?.(list)}
+                      className="flex items-center gap-2"
+                    >
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: list.color }}
+                      />
+                      <span>{list.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </>
+          )}
+          
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"

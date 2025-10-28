@@ -35,11 +35,12 @@ import { Badge } from "@/src/components/ui/badge";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { useCreateClient, useUpdateClient } from "@/src/hooks/useClients";
+import { useAddClientToLists } from "@/src/hooks/useClientLists";
 
 // Import API Gouv utilities
 import { searchCompanies, convertCompanyToClient } from "@/src/utils/api-gouv";
 
-export default function ClientsModal({ client, onSave, open, onOpenChange }) {
+export default function ClientsModal({ client, onSave, open, onOpenChange, defaultListId = null, workspaceId = null }) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
 
   const { createClient, loading: createLoading } = useCreateClient();
   const { updateClient, loading: updateLoading } = useUpdateClient();
+  const { addToLists } = useAddClientToLists();
   const isEditing = !!client;
   const loading = createLoading || updateLoading;
 
@@ -289,6 +291,15 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
         result = await updateClient(client.id, clientData);
       } else {
         result = await createClient(clientData);
+        
+        // Si un defaultListId est fourni, ajouter le contact à cette liste
+        if (defaultListId && workspaceId && result?.id) {
+          try {
+            await addToLists(workspaceId, result.id, [defaultListId]);
+          } catch (error) {
+            console.error('Erreur lors de l\'ajout du contact à la liste:', error);
+          }
+        }
       }
 
       if (onSave) {
