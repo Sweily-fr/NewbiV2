@@ -4,6 +4,9 @@ import { arrayMove } from '@dnd-kit/sortable';
 export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, localColumns, reorderColumns, setLocalColumns, markReorderAction) => {
   const [activeTask, setActiveTask] = useState(null);
   const [activeColumn, setActiveColumn] = useState(null);
+  
+  // Créer une structure locale des tâches par colonne pour la réorganisation en temps réel
+  const [localTasksByColumn, setLocalTasksByColumn] = useState({});
 
   // Gestion du début du drag
   const handleDragStart = (event) => {
@@ -28,7 +31,7 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
     const activeData = active.data.current;
     const overData = over.data.current;
     
-    // Seulement pour les colonnes
+    // Cas 1: Réorganisation des colonnes
     if (activeData?.type === 'column' && overData?.type === 'column') {
       if (active.id !== over.id) {
         const oldIndex = localColumns.findIndex((col) => col.id === active.id);
@@ -41,6 +44,30 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
         }
       }
     }
+    
+    // Cas 2: Réorganisation des tâches (même logique que les colonnes)
+    if (activeData?.type === 'task' && overData?.type === 'task') {
+      const activeTask = activeData.task;
+      const overTask = overData.task;
+      
+      // Seulement si c'est dans la même colonne
+      if (activeTask.columnId === overTask.columnId) {
+        const columnId = activeTask.columnId;
+        const currentTasks = localTasksByColumn[columnId] || getTasksByColumn(columnId);
+        
+        const activeIndex = currentTasks.findIndex((t) => t.id === activeTask.id);
+        const overIndex = currentTasks.findIndex((t) => t.id === overTask.id);
+        
+        if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+          // Réorganiser localement en temps réel avec arrayMove
+          const newTasks = arrayMove(currentTasks, activeIndex, overIndex);
+          setLocalTasksByColumn({
+            ...localTasksByColumn,
+            [columnId]: newTasks,
+          });
+        }
+      }
+    }
   };
 
   // Gestion de la fin du drag
@@ -50,6 +77,7 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
     // Réinitialiser les états
     setActiveTask(null);
     setActiveColumn(null);
+    setLocalTasksByColumn({}); // Réinitialiser les tâches locales
 
     if (!over) return;
 
@@ -98,13 +126,43 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
       // Déposé sur une autre tâche
       const targetTask = overData.task;
       newColumnId = targetTask.columnId;
-      const targetColumnTasks = getTasksByColumn(targetTask.columnId);
+      
+      // Utiliser les tâches réorganisées localement si disponibles
+      const targetColumnTasks = localTasksByColumn[targetTask.columnId] || getTasksByColumn(targetTask.columnId);
       const targetIndex = targetColumnTasks.findIndex(
         (t) => t.id === targetTask.id
       );
 
-      // Ajuster la position si nécessaire
+      // Utiliser l'index de la tâche cible comme position finale
+      // Les tâches ont déjà été réorganisées en temps réel via handleDragOver
       newPosition = targetIndex;
+    }
+
+    // Recalculer les positions locales immédiatement (comme le backend le fera)
+    // Cela met à jour l'affichage sans attendre la subscription
+    if (newColumnId === activeTask.columnId) {
+      // Même colonne : recalculer les positions
+      const allTasks = localTasksByColumn[newColumnId] || getTasksByColumn(newColumnId);
+      const tasksWithoutMoved = allTasks.filter(t => t.id !== activeTask.id);
+      
+      // Créer le nouvel ordre
+      const reorderedTasks = [
+        ...tasksWithoutMoved.slice(0, newPosition),
+        activeTask,
+        ...tasksWithoutMoved.slice(newPosition)
+      ];
+      
+      // Recalculer les positions (0, 1, 2, 3...)
+      const tasksWithNewPositions = reorderedTasks.map((task, index) => ({
+        ...task,
+        position: index
+      }));
+      
+      // Mettre à jour localement
+      setLocalTasksByColumn({
+        ...localTasksByColumn,
+        [newColumnId]: tasksWithNewPositions,
+      });
     }
 
     // Si la position ou la colonne a changé, effectuer la mutation
@@ -137,11 +195,18 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
     }
   };
 
+  // Fonction pour obtenir les tâches d'une colonne (locales ou de la base de données)
+  const getLocalTasksByColumn = (columnId) => {
+    return localTasksByColumn[columnId] || getTasksByColumn(columnId);
+  };
+
   return {
     activeTask,
     activeColumn,
     handleDragStart,
     handleDragOver,
     handleDragEnd,
+    getLocalTasksByColumn,
+    localTasksByColumn,
   };
 };

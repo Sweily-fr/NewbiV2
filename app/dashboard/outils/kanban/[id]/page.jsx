@@ -192,7 +192,7 @@ export default function KanbanBoardPage({ params }) {
 
   // Les hooks doivent être appelés dans le même ordre à chaque rendu
   // useKanbanDnD doit être appelé AVANT useSensors
-  const { handleDragEnd, handleDragOver, handleDragStart, activeTask, activeColumn } = useKanbanDnD(
+  const { handleDragEnd, handleDragOver, handleDragStart, activeTask, activeColumn, getLocalTasksByColumn } = useKanbanDnD(
     moveTask,
     getTasksByColumn,
     id,
@@ -243,7 +243,7 @@ export default function KanbanBoardPage({ params }) {
             <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
               {localColumns.map((column) => {
                 const columnTasks = filterTasks(
-                  getTasksByColumn(column.id)
+                  getLocalTasksByColumn(column.id)
                 );
                 const isCollapsed = isColumnCollapsed(column.id);
 
@@ -289,7 +289,7 @@ export default function KanbanBoardPage({ params }) {
         </div>
       </>
     );
-  }, [localColumns, filterTasks, getTasksByColumn, isColumnCollapsed, toggleColumnCollapse, openAddTaskModal, openEditTaskModal, handleDeleteTask, openEditModal, handleDeleteColumn, loading, openAddModal]);
+  }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, toggleColumnCollapse, openAddTaskModal, openEditTaskModal, handleDeleteTask, openEditModal, handleDeleteColumn, loading, openAddModal]);
 
   // Hook pour le mode d'affichage (Board/List)
   const { viewMode, setViewMode, isBoard, isList } = useViewMode(id);
@@ -436,7 +436,7 @@ export default function KanbanBoardPage({ params }) {
         {isList && (
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCenter}
+            collisionDetection={rectIntersection}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
@@ -481,14 +481,7 @@ export default function KanbanBoardPage({ params }) {
             ) : (
               <DndContext
                 sensors={sensors}
-                collisionDetection={(args) => {
-                  // Pour les colonnes, utiliser pointerWithin pour une meilleure détection
-                  if (args.active.data.current?.type === 'column') {
-                    return pointerWithin(args);
-                  }
-                  // Pour les tâches, utiliser closestCenter
-                  return closestCenter(args);
-                }}
+                collisionDetection={rectIntersection}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
