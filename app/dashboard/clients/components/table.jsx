@@ -921,11 +921,12 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
             </Popover>
 
             {/* Delete button for mobile - shown when rows are selected */}
-            {table.getSelectedRowModel().rows.length > 0 && (
+            {selectedClients.size > 0 && (
               <Button
                 variant="destructive"
                 size="sm"
-                className="h-9 px-3"
+                className="h-9 px-2 sm:px-3 text-xs flex-shrink-0"
+                title={`Supprimer ${selectedClients.size} client(s)`}
                 onClick={() => {
                   // Trigger the delete dialog
                   const deleteButton = document.querySelector(
@@ -934,8 +935,9 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                   if (deleteButton) deleteButton.click();
                 }}
               >
-                <TrashIcon className="h-4 w-4 mr-1" />(
-                {table.getSelectedRowModel().rows.length})
+                <TrashIcon className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">({selectedClients.size})</span>
+                <span className="sm:hidden ml-1">{selectedClients.size}</span>
               </Button>
             )}
 
