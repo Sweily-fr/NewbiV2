@@ -801,11 +801,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   </Label>
 
                   <div className="space-y-2">
-                    <Label className="font-normal">SIRET</Label>
+                    <Label className="font-normal">SIRET *</Label>
                     <Input
                       placeholder="12345678901234"
                       className={cn(errors.siret && "border-red-500 focus:border-red-500")}
-                      {...register("siret", getValidationRules("siret"))}
+                      {...register("siret", getValidationRules("siret", true))}
                     />
                     {errors.siret && (
                       <p className="text-sm text-red-500">
