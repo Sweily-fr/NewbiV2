@@ -1,4 +1,4 @@
-import React, { useState, Fragment } from "react";
+import React, { useState, Fragment, useMemo } from "react";
 import { MoreHorizontal, Calendar, ChevronDown, ChevronRight, Plus, Flag, MessageSquare, Paperclip, MoreVertical, GripVertical } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 
 /**
  * Zone de drop pour les colonnes vides
@@ -127,6 +128,23 @@ export function KanbanListView({
   members = [],
 }) {
   const [collapsedColumns, setCollapsedColumns] = useState(new Set());
+  
+  // Récupérer tous les IDs de membres de toutes les tâches
+  const allMemberIds = useMemo(() => {
+    const ids = new Set();
+    columns.forEach(column => {
+      const tasks = getTasksByColumn(column.id);
+      tasks.forEach(task => {
+        if (task.assignedMembers && Array.isArray(task.assignedMembers)) {
+          task.assignedMembers.forEach(id => ids.add(id));
+        }
+      });
+    });
+    return Array.from(ids);
+  }, [columns, getTasksByColumn]);
+
+  // Récupérer les infos complètes de tous les membres
+  const { members: membersInfo } = useAssignedMembersInfo(allMemberIds);
   
   // Fonction pour récupérer un membre par son ID
   const getMemberById = (memberId) => {
@@ -326,16 +344,20 @@ export function KanbanListView({
                       <div className="col-span-2 flex items-center gap-0.5 min-w-0">
                         {task.assignedMembers && task.assignedMembers.length > 0 ? (
                           <div className="flex -space-x-1.5">
-                            {task.assignedMembers.slice(0, 3).map((member, idx) => (
-                              <UserAvatar
-                                key={member.userId || member.email}
-                                src={member.image}
-                                name={member.name || member.email}
-                                size="sm"
-                                className="border-2 border-background"
-                                style={{ zIndex: task.assignedMembers.length - idx }}
-                              />
-                            ))}
+                            {task.assignedMembers.slice(0, 3).map((memberId, idx) => {
+                              // Chercher les infos du membre dans membersInfo
+                              const memberInfo = membersInfo.find(m => m.id === memberId);
+                              return (
+                                <UserAvatar
+                                  key={memberId}
+                                  src={memberInfo?.image}
+                                  name={memberInfo?.name || memberId}
+                                  size="sm"
+                                  className="border-2 border-background"
+                                  style={{ zIndex: task.assignedMembers.length - idx }}
+                                />
+                              );
+                            })}
                             {task.assignedMembers.length > 3 && (
                               <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] font-medium flex-shrink-0">
                                 +{task.assignedMembers.length - 3}
