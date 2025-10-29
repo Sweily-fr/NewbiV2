@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
   Palette,
   Edit3,
+  ChevronRight,
 } from "lucide-react";
 import { IconBuilding } from "@tabler/icons-react";
 import {
@@ -35,10 +36,12 @@ import { authClient } from "@/src/lib/auth-client";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import Link from "next/link";
 import { InviteMemberModal } from "./invite-member-modal";
 import { SettingsModal } from "./settings-modal";
 import { CreateWorkspaceModal } from "./create-workspace-modal";
+import { RenameOrganizationModal } from "./rename-organization-modal";
 import { apolloClient } from "@/src/lib/apolloClient";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, usePathname } from "next/navigation";
@@ -51,6 +54,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from "@/src/components/ui/dropdown-menu";
 import {
   SidebarMenu,
@@ -68,6 +75,8 @@ export function TeamSwitcher() {
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
   const [createWorkspaceOpen, setCreateWorkspaceOpen] = React.useState(false);
+  const [renameModalOpen, setRenameModalOpen] = React.useState(false);
+  const [selectedOrganization, setSelectedOrganization] = React.useState(null);
   const [settingsInitialTab, setSettingsInitialTab] =
     React.useState("preferences");
   const [isChangingOrg, setIsChangingOrg] = React.useState(false);
@@ -143,11 +152,11 @@ export function TeamSwitcher() {
             organizationIds: newOrder.map((org) => org.id),
           }),
         });
-        
+
         if (!response.ok) {
           throw new Error("Erreur sauvegarde");
         }
-        
+
         console.log("✅ Ordre sauvegardé avec succès");
       } catch (error) {
         console.error("Erreur sauvegarde ordre:", error);
@@ -372,6 +381,10 @@ export function TeamSwitcher() {
                       isActive={activeOrganization?.id === org.id}
                       onSelect={handleSetActiveOrganization}
                       disabled={isChangingOrg}
+                      onRename={(org) => {
+                        setSelectedOrganization(org);
+                        setRenameModalOpen(true);
+                      }}
                     />
                   ))}
                 </SortableContext>
@@ -489,13 +502,35 @@ export function TeamSwitcher() {
           }
         }}
       />
+      <RenameOrganizationModal
+        open={renameModalOpen}
+        onOpenChange={setRenameModalOpen}
+        organization={selectedOrganization}
+        onSuccess={() => {
+          // Rafraîchir les organisations
+          loadOrganizations();
+          if (refetchActiveOrg) {
+            refetchActiveOrg();
+          }
+        }}
+      />
     </>
   );
 }
 
 // Composant sortable pour chaque organisation
-function SortableOrganizationItem({ org, isActive, onSelect, disabled }) {
+function SortableOrganizationItem({
+  org,
+  isActive,
+  onSelect,
+  disabled,
+  onRename,
+}) {
   const [isHovered, setIsHovered] = React.useState(false);
+  const [showActionsMenu, setShowActionsMenu] = React.useState(false);
+  const [showColorMenu, setShowColorMenu] = React.useState(false);
+  const buttonRef = React.useRef(null);
+  const colorButtonRef = React.useRef(null);
   const {
     attributes,
     listeners,
@@ -534,6 +569,7 @@ function SortableOrganizationItem({ org, isActive, onSelect, disabled }) {
         }`}
         disabled={disabled}
         style={{ cursor: isDragging ? "grabbing" : "grab" }}
+        onSelect={(e) => e.preventDefault()}
       >
         {/* Icône qui change au hover : Building (avec carré) -> Grip (sans carré) */}
         <div className="flex size-6 items-center justify-center relative">
@@ -558,48 +594,171 @@ function SortableOrganizationItem({ org, isActive, onSelect, disabled }) {
         <div className="flex flex-col flex-1">
           <span className="font-normal text-xs">{org.name}</span>
         </div>
-        
+
         {/* Check si actif */}
         {isActive && <Check className="ml-auto h-4 w-4 text-[#5b4fff]" />}
-        
-        {/* Menu 3 points au hover */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              onClick={(e) => {
-                e.stopPropagation(); // Empêcher la sélection de l'org
-              }}
-              className={`flex items-center justify-center h-6 w-6 rounded hover:bg-accent transition-opacity ${
-                isHovered && !disabled ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log("Renommer:", org.name);
-                // TODO: Ouvrir modal de renommage
-              }}
-            >
-              <Edit3 className="mr-2 h-4 w-4" />
-              <span>Renommer</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log("Couleur et icône:", org.name);
-                // TODO: Ouvrir modal de personnalisation
-              }}
-            >
-              <Palette className="mr-2 h-4 w-4" />
-              <span>Couleur et icône</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+        {/* Bouton 3 points */}
+        <button
+          ref={buttonRef}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowActionsMenu(!showActionsMenu);
+          }}
+          className={`flex items-center justify-center h-6 w-6 rounded hover:bg-accent transition-opacity ${
+            isHovered && !disabled ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+        </button>
       </DropdownMenuItem>
+
+      {/* Menu des actions - COMPLÈTEMENT SÉPARÉ */}
+      {showActionsMenu && (
+        <div
+          className="fixed inset-0 z-50"
+          onClick={() => setShowActionsMenu(false)}
+        >
+          <div
+            className="absolute bg-popover text-popover-foreground rounded-md border shadow-md w-48 p-1"
+            style={{
+              top: buttonRef.current?.getBoundingClientRect().top - 8,
+              left: buttonRef.current?.getBoundingClientRect().right - 240,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowActionsMenu(false);
+                if (onRename) {
+                  onRename(org);
+                }
+              }}
+            >
+              <Edit3 className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-normal">Renommer</span>
+            </div>
+            <div
+              ref={colorButtonRef}
+              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+              onMouseEnter={() => setShowColorMenu(true)}
+              onMouseLeave={() => setShowColorMenu(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowColorMenu(!showColorMenu);
+              }}
+            >
+              <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-normal flex-1">Couleur et icône</span>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sous-menu Couleur et icône */}
+      {showColorMenu && showActionsMenu && (
+        <div
+          className="fixed inset-0 z-[60]"
+          onClick={() => {
+            setShowColorMenu(false);
+            setShowActionsMenu(false);
+          }}
+        >
+          <div
+            className="absolute bg-white dark:bg-gray-900 rounded-md border shadow-lg w-64 p-4"
+            style={{
+              top: colorButtonRef.current?.getBoundingClientRect().top - 16,
+              left: colorButtonRef.current?.getBoundingClientRect().right - 245,
+            }}
+            onMouseEnter={() => setShowColorMenu(true)}
+            onMouseLeave={() => setShowColorMenu(false)}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Palette de couleurs */}
+            <div className="mb-4">
+              <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2.5">
+                Color
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "#7c3aed", // Violet
+                  "#2563eb", // Bleu
+                  "#0891b2", // Cyan
+                  "#059669", // Vert
+                  "#0d9488", // Teal
+                  "#eab308", // Jaune
+                  "#f97316", // Orange
+                  "#ef4444", // Rouge
+                  "#ec4899", // Rose
+                  "#a855f7", // Violet clair
+                  "#78716c", // Brun
+                  "#000000", // Noir
+                ].map((color) => (
+                  <button
+                    key={color}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log("Couleur sélectionnée:", color);
+                      setShowColorMenu(false);
+                      setShowActionsMenu(false);
+                    }}
+                    className="w-6 h-6 rounded-full transition-all hover:scale-110 hover:shadow-sm ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600"
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Grille d'icônes */}
+            <div>
+              <div className="flex items-center gap-2 mb-2.5">
+                <Input
+                  type="text"
+                  placeholder="Search"
+                  className="flex-1 h-7 text-xs"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-7 px-2.5 text-xs"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Upload
+                </Button>
+              </div>
+              <div className="grid grid-cols-8 gap-1.5 max-h-40 overflow-y-auto">
+                {[
+                  "🏢", "🏪", "🏭", "🏗️", "🏛️", "🏦", "💼", "📊", "📈",
+                  "💰", "💳", "🎯", "🚀", "⚡", "🔥", "💡", "🎨", "🎭",
+                  "🎪", "🎬", "📱", "💻", "⌨️", "🖥️", "📷", "📹", "🎥",
+                  "🎤", "🎧", "🎵", "🍕", "☕", "🍔", "🍰", "🎂", "🍺",
+                  "🎮", "⚽", "🏀", "🎾", "🏈", "⚾", "🎱", "🏓", "🏸",
+                  "🥊", "🥋", "⛳", "🏹", "🎣", "🤿", "🎿", "🛷", "⛸️",
+                ].map((icon, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log("Icône sélectionnée:", icon);
+                      setShowColorMenu(false);
+                      setShowActionsMenu(false);
+                    }}
+                    className="w-7 h-7 flex items-center justify-center text-base hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                    title={icon}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

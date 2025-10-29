@@ -25,6 +25,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { Typewriter } from "@/src/components/ui/typewriter-text";
+import { Callout } from "@/src/components/ui/callout";
 
 export default function AcceptInvitationPage() {
   const { invitationId } = useParams();
@@ -120,7 +121,10 @@ export default function AcceptInvitationPage() {
 
       if (!response.ok) {
         // Afficher un message d'erreur plus détaillé
-        const errorMessage = result.details || result.error || `Erreur ${response.status}: ${response.statusText}`;
+        const errorMessage =
+          result.details ||
+          result.error ||
+          `Erreur ${response.status}: ${response.statusText}`;
         throw new Error(errorMessage);
       }
 
@@ -218,27 +222,33 @@ export default function AcceptInvitationPage() {
 
   const getRoleColor = (role) => {
     switch (role) {
+      case "owner":
+        return "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
       case "admin":
-        return "bg-red-100 text-red-800";
+        return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
       case "member":
-        return "bg-blue-100 text-blue-800";
-      case "guest":
-        return "bg-gray-100 text-gray-800";
+        return "bg-[#5a50ff]/10 text-[#5a50ff] border-[#5a50ff]/20 dark:bg-[#5a50ff]/10 dark:text-[#8b85ff] dark:border-[#5a50ff]/30";
+      case "viewer":
+        return "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
+      case "accountant":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700";
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
       case "accepted":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800";
       case "rejected":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800";
+      case "canceled":
+        return "bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700";
     }
   };
 
@@ -304,24 +314,33 @@ export default function AcceptInvitationPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Rôle</span>
               <Badge
-                variant="secondary"
-                className="text-xs border-[#5b4fff]/40 bg-[#5b4fff]/10 text-[#5b4fff]"
+                variant="outline"
+                className={`text-xs border ${getRoleColor(invitation.role)}`}
               >
-                {invitation.role}
+                {invitation.role === "owner" && "Propriétaire"}
+                {invitation.role === "admin" && "Administrateur"}
+                {invitation.role === "member" && "Collaborateur"}
+                {invitation.role === "viewer" && "Consultation"}
+                {invitation.role === "accountant" && "Comptable"}
+                {!["owner", "admin", "member", "viewer", "accountant"].includes(
+                  invitation.role
+                ) && invitation.role}
               </Badge>
             </div>
 
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Statut</span>
               <Badge
-                variant={
-                  invitation.status === "pending" ? "default" : "secondary"
-                }
-                className="text-xs "
+                variant="outline"
+                className={`text-xs border ${getStatusColor(invitation.status)}`}
               >
-                {invitation.status === "pending"
-                  ? "En attente"
-                  : invitation.status}
+                {invitation.status === "pending" && "En attente"}
+                {invitation.status === "accepted" && "Acceptée"}
+                {invitation.status === "rejected" && "Refusée"}
+                {invitation.status === "canceled" && "Annulée"}
+                {!["pending", "accepted", "rejected", "canceled"].includes(
+                  invitation.status
+                ) && invitation.status}
               </Badge>
             </div>
 
@@ -345,11 +364,18 @@ export default function AcceptInvitationPage() {
                     {session.user.email}
                   </span>
                 </div>
-                {session.user.email.toLowerCase() !== invitation.email.toLowerCase() && (
+                {session.user.email.toLowerCase() !==
+                  invitation.email.toLowerCase() && (
                   <div className="p-3 bg-yellow-50 rounded-md text-xs text-yellow-800 border border-yellow-200 space-y-2">
                     <p className="font-medium">⚠️ Attention</p>
-                    <p>Cette invitation est destinée à <strong>{invitation.email}</strong></p>
-                    <p>Vous êtes actuellement connecté avec <strong>{session.user.email}</strong></p>
+                    <p>
+                      Cette invitation est destinée à{" "}
+                      <strong>{invitation.email}</strong>
+                    </p>
+                    <p>
+                      Vous êtes actuellement connecté avec{" "}
+                      <strong>{session.user.email}</strong>
+                    </p>
                     <Button
                       onClick={async () => {
                         await authClient.signOut();
@@ -380,11 +406,12 @@ export default function AcceptInvitationPage() {
                 <Button
                   onClick={handleAcceptInvitation}
                   disabled={
-                    isAccepting || 
-                    (session?.user && session.user.email.toLowerCase() !== invitation.email.toLowerCase())
+                    isAccepting ||
+                    (session?.user &&
+                      session.user.email.toLowerCase() !==
+                        invitation.email.toLowerCase())
                   }
                   className="w-full bg-[#5b4fff] text-white hover:bg-[#5b4fff]/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  size="sm"
                 >
                   {isAccepting ? (
                     <>
@@ -397,7 +424,8 @@ export default function AcceptInvitationPage() {
                     ) : (
                       "Créer mon compte"
                     )
-                  ) : session.user.email.toLowerCase() !== invitation.email.toLowerCase() ? (
+                  ) : session.user.email.toLowerCase() !==
+                    invitation.email.toLowerCase() ? (
                     "Mauvais compte connecté"
                   ) : (
                     "Accepter l'invitation"
@@ -409,18 +437,16 @@ export default function AcceptInvitationPage() {
                   disabled={isAccepting}
                   variant="outline"
                   className="w-full cursor-pointer"
-                  size="sm"
                 >
                   {isAccepting ? "Traitement..." : "Refuser"}
                 </Button>
 
                 {!session?.user && (
-                  <div className="p-3 bg-[#5b4fff]/10 rounded text-xs text-[#5b4fff]/80 rounded-md border border-[#5b4fff]/40">
-                    <strong>Info:</strong>{" "}
+                  <Callout type="info" noMargin>
                     {userExists
                       ? "Vous serez redirigé vers la connexion pour accéder à votre compte existant."
                       : "Vous serez redirigé vers l'inscription avec vos informations pré-remplies."}
-                  </div>
+                  </Callout>
                 )}
               </div>
             </>

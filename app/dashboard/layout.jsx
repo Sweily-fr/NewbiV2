@@ -54,14 +54,14 @@ function DashboardContent({ children }) {
     const checkAuth = async () => {
       try {
         const session = await authClient.getSession();
-        
+
         if (!session?.data?.user) {
           // Pas de session, rediriger vers la page de connexion
-          router.push('/auth/login');
+          router.push("/auth/login");
         }
       } catch (error) {
-        console.error('Erreur lors de la vérification de la session:', error);
-        router.push('/auth/login');
+        console.error("Erreur lors de la vérification de la session:", error);
+        router.push("/auth/login");
       }
     };
 
@@ -104,7 +104,10 @@ function DashboardContent({ children }) {
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <AppSidebar variant="inset" onCommunityClick={() => setIsCommunitySidebarOpen(true)} />
+      <AppSidebar
+        variant="inset"
+        onCommunityClick={() => setIsCommunitySidebarOpen(true)}
+      />
       <SidebarInset className="md:pt-0 pt-10">
         <SiteHeader />
         <div className="flex flex-1 flex-col">

@@ -16,6 +16,7 @@ import {
   sendResetPasswordEmail,
   sendVerificationEmail,
 } from "./auth-utils";
+import { ac, admin, member, viewer, accountant } from "./permissions";
 
 export const auth = betterAuth({
   database: mongodbAdapter(mongoDb),

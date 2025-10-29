@@ -183,8 +183,30 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
                           <SelectValue placeholder="Sélectionner" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="member">Membre</SelectItem>
-                          <SelectItem value="admin">Administrateur</SelectItem>
+                          <SelectItem value="admin">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Administrateur</span>
+                              <span className="text-xs text-muted-foreground">
+                                Gestion complète de l'organisation
+                              </span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="member">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Collaborateur</span>
+                              <span className="text-xs text-muted-foreground">
+                                Création et édition de documents
+                              </span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="viewer">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Consultation</span>
+                              <span className="text-xs text-muted-foreground">
+                                Lecture seule
+                              </span>
+                            </div>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     )}

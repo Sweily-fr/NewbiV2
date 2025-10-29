@@ -229,11 +229,11 @@ function TransfertsContent() {
                   partager le lien avec vos destinataires.
                 </div>
 
-                <div className="bg-[#212124] p-3 rounded-lg border">
-                  <div className="text-xs text-gray-600 dark:text-white mb-2">
+                <div className="bg-muted p-3 rounded-lg border">
+                  <div className="text-xs text-muted-foreground mb-2">
                     Lien de partage :
                   </div>
-                  <div className="text-xs font-mono break-all p-2 rounded border">
+                  <div className="text-xs font-mono break-all p-2 rounded border bg-background">
                     {transferLink}
                   </div>
                 </div>

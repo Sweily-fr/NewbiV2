@@ -12,11 +12,19 @@ import {
   send2FAEmail,
   sendOrganizationInvitationEmail,
 } from "./auth-utils";
+import { ac, admin as adminRole, member, viewer, accountant } from "./permissions";
 
-// Configuration du plugin Admin
+// Configuration du plugin Admin avec permissions personnalisées
 export const adminPlugin = admin({
   adminUserIds: ["685ff0250e083b9a2987a0b9"],
-  defaultRole: "owner", // Rôle par défaut pour les nouveaux utilisateurs
+  defaultRole: "member", // Rôle par défaut pour les nouveaux utilisateurs
+  ac, // Access controller
+  roles: {
+    admin: adminRole,
+    member,
+    viewer,
+    accountant,
+  },
 });
 
 // Configuration du plugin Phone Number
