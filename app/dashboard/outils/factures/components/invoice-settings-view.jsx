@@ -213,6 +213,31 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
       {/* Contenu scrollable */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto pl-2 pr-2 space-y-6">
+          {/* Bannière d'erreur globale */}
+          {Object.keys(errors).length > 0 && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                <div className="font-medium mb-2">Veuillez corriger les erreurs suivantes :</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {errors.headerNotes && (
+                    <li className="text-sm">Notes d'en-tête : {errors.headerNotes.message}</li>
+                  )}
+                  {errors.footerNotes && (
+                    <li className="text-sm">Notes de bas de page : {errors.footerNotes.message}</li>
+                  )}
+                  {errors.termsAndConditions && (
+                    <li className="text-sm">Conditions générales : {errors.termsAndConditions.message}</li>
+                  )}
+                  {errors.bankDetails?.iban && (
+                    <li className="text-sm">IBAN : {errors.bankDetails.iban.message}</li>
+                  )}
+                  {errors.bankDetails?.bic && (
+                    <li className="text-sm">BIC/SWIFT : {errors.bankDetails.bic.message}</li>
+                  )}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
           {/* Coordonnées bancaires */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
@@ -450,9 +475,9 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                     className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
                     {...register("footerNotes", {
                       maxLength: {
-                        value: 1000,
+                        value: 2000,
                         message:
-                          "Les notes de bas de page ne doivent pas dépasser 1000 caractères",
+                          "Les notes de bas de page ne doivent pas dépasser 2000 caractères",
                       },
                     })}
                     defaultValue={data.footerNotes || ""}
