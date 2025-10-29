@@ -45,7 +45,7 @@ import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 /**
  * Composant pour une tâche draggable dans le tableau Kanban
  */
-export function TaskCard({ task, onEdit, onDelete }) {
+export function TaskCard({ task, onEdit, onDelete, index }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Récupérer les infos complètes des membres assignés (avec avatars)
@@ -107,6 +107,7 @@ export function TaskCard({ task, onEdit, onDelete }) {
     data: {
       type: "task",
       task,
+      index,
     },
   });
 
