@@ -28,12 +28,12 @@ import {
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import TemplateSelector from "./TemplateSelector";
 import { toast } from "@/src/components/ui/sonner";
-import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+// import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
 const GET_MY_EMAIL_SIGNATURES = gql`
-  query GetMyEmailSignatures($workspaceId: ID!) {
-    getMyEmailSignatures(workspaceId: $workspaceId) {
+  query GetMyEmailSignatures {
+    getMyEmailSignatures {
       id
       signatureName
       isDefault
@@ -256,7 +256,7 @@ const SignatureManager = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [copyingId, setCopyingId] = useState(null);
   const client = useApolloClient();
-  const { workspaceId } = useRequiredWorkspace();
+  // const { workspaceId } = useRequiredWorkspace();
 
   // Éviter l'erreur d'hydratation
   useEffect(() => {
@@ -264,8 +264,7 @@ const SignatureManager = () => {
   }, []);
 
   const { data, loading, error, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
-    variables: { workspaceId },
-    skip: !isMounted || !workspaceId,
+    skip: !isMounted,
     onCompleted: (data) => {
       console.log("📋 [FRONTEND] Signatures:");
     },

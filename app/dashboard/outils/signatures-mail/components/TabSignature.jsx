@@ -26,7 +26,6 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
-import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useQuery } from "@apollo/client";
 
 // Import du composant LayoutTab pour l'onglet 1
@@ -61,8 +60,8 @@ const UPDATE_EMAIL_SIGNATURE = gql`
 
 // Query pour récupérer toutes les signatures (utilisée pour la mise à jour du cache)
 const GET_MY_EMAIL_SIGNATURES = gql`
-  query GetMyEmailSignatures($workspaceId: ID!) {
-    getMyEmailSignatures(workspaceId: $workspaceId) {
+  query GetMyEmailSignatures {
+    getMyEmailSignatures {
       id
       signatureName
       firstName
@@ -141,13 +140,11 @@ const cleanGraphQLData = (obj) => {
 
 export function TabSignature({ existingSignatureId = null }) {
   const { signatureData } = useSignatureData();
-  const { workspaceId } = useRequiredWorkspace();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [signatureName, setSignatureName] = useState(
     signatureData.signatureName || ""
   );
-  const [isDefault, setIsDefault] = useState(signatureData.isDefault || false);
   const [saveStatus, setSaveStatus] = useState(null); // null, 'success', 'error', 'duplicate'
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -162,16 +159,13 @@ export function TabSignature({ existingSignatureId = null }) {
     if (signatureData.signatureName) {
       setSignatureName(signatureData.signatureName);
     }
-    if (signatureData.isDefault !== undefined) {
-      setIsDefault(signatureData.isDefault);
-    }
-  }, [signatureData.signatureName, signatureData.isDefault]);
+  }, [signatureData.signatureName]);
 
   const [createSignature, { loading: creating, client }] = useMutation(
     CREATE_EMAIL_SIGNATURE,
     {
-      refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES, variables: { workspaceId } }],
-      awaitRefetchQueries: true,
+      refetchQueries: [GET_MY_EMAIL_SIGNATURES],
+      awaitRefetchQueries: false,
       onCompleted: (data) => {
         setSaveStatus("success");
         toast.success("Signature créée avec succès !");
@@ -201,8 +195,8 @@ export function TabSignature({ existingSignatureId = null }) {
   const [updateSignature, { loading: updating, client: updateClient }] = useMutation(
     UPDATE_EMAIL_SIGNATURE,
     {
-      refetchQueries: [{ query: GET_MY_EMAIL_SIGNATURES, variables: { workspaceId } }],
-      awaitRefetchQueries: true,
+      refetchQueries: [GET_MY_EMAIL_SIGNATURES],
+      awaitRefetchQueries: false,
       onCompleted: (data) => {
         toast.success("Signature mise à jour avec succès !");
         
@@ -308,8 +302,7 @@ export function TabSignature({ existingSignatureId = null }) {
 
     return {
       signatureName,
-      isDefault,
-      workspaceId, // Ajouter le workspaceId dans les données
+      // workspaceId, // Plus nécessaire - le backend filtre automatiquement par utilisateur
       // Orientation de la signature
       orientation: signatureData.orientation || "vertical",
       // Informations personnelles
@@ -517,7 +510,6 @@ export function TabSignature({ existingSignatureId = null }) {
     const rawData = {
       ...completeData,
       signatureName: signatureName || "Ma signature",
-      isDefault: isDefault || false,
     };
 
     // Nettoyer les données pour supprimer tous les champs __typename
@@ -556,7 +548,6 @@ export function TabSignature({ existingSignatureId = null }) {
 
   const handleOpenModal = () => {
     setSignatureName(signatureData.signatureName || "");
-    setIsDefault(signatureData.isDefault || false);
     setIsModalOpen(true);
   };
 
@@ -636,16 +627,9 @@ export function TabSignature({ existingSignatureId = null }) {
       </div>
       {/* Modal de sauvegarde */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" style={{ backdropFilter: 'blur(4px)' }}>
-          <div 
-            className="rounded-lg p-6 w-full max-w-md mx-4 border shadow-lg"
-            style={{
-              backgroundColor: '#1e293b',
-              borderColor: '#334155',
-              color: '#f1f5f9'
-            }}
-          >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: '#f1f5f9' }}>
+        <div className="fixed inset-0 bg-background/80 dark:bg-background/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="rounded-lg p-6 w-full max-w-md mx-4 border shadow-lg bg-card text-card-foreground">
+            <h3 className="text-lg font-semibold mb-4">
               {existingSignatureId
                 ? "Mettre à jour la signature"
                 : "Sauvegarder la signature"}
@@ -654,43 +638,22 @@ export function TabSignature({ existingSignatureId = null }) {
             <div className="space-y-4">
               {/* Nom de la signature */}
               <div>
-                <Label htmlFor="signatureName" style={{ color: '#cbd5e1' }}>Nom de la signature</Label>
+                <Label htmlFor="signatureName" className="text-sm font-medium text-muted-foreground">
+                  Nom de la signature
+                </Label>
                 <Input
                   id="signatureName"
                   value={signatureName}
                   onChange={(e) => setSignatureName(e.target.value)}
                   placeholder="Ma signature professionnelle"
                   className="mt-1"
-                  style={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#334155',
-                    color: '#f1f5f9'
-                  }}
                 />
-              </div>
-
-              {/* Signature par défaut */}
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isDefault"
-                  checked={isDefault}
-                  className="scale-75"
-                  onCheckedChange={setIsDefault}
-                />
-                <Label htmlFor="isDefault" style={{ color: '#cbd5e1' }}>
-                  Définir comme signature par défaut
-                </Label>
               </div>
 
               {/* Status de sauvegarde */}
               {(saveStatus === "error" || saveStatus === "duplicate") && (
                 <div 
-                  className="flex items-center gap-2 p-3 rounded-md border"
-                  style={{
-                    backgroundColor: '#7f1d1d',
-                    borderColor: '#991b1b',
-                    color: '#fca5a5'
-                  }}
+                  className="flex items-center gap-2 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300"
                 >
                   <AlertCircle className="w-4 h-4" />
                   <span>{errorMessage || "Erreur lors de la sauvegarde"}</span>
@@ -702,13 +665,8 @@ export function TabSignature({ existingSignatureId = null }) {
             <div className="flex justify-end gap-3 mt-6">
               <Button
                 onClick={() => setIsModalOpen(false)}
+                variant="outline"
                 disabled={isLoading}
-                style={{
-                  backgroundColor: '#0f172a',
-                  borderColor: '#334155',
-                  color: '#f1f5f9',
-                  border: '1px solid #334155'
-                }}
               >
                 Continuer l'édition
               </Button>
@@ -716,10 +674,6 @@ export function TabSignature({ existingSignatureId = null }) {
                 onClick={handleSave}
                 disabled={isLoading || !signatureName.trim()}
                 className="flex items-center font-normal gap-2"
-                style={{
-                  backgroundColor: '#ef4444',
-                  color: '#fff'
-                }}
               >
                 {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
                 {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}

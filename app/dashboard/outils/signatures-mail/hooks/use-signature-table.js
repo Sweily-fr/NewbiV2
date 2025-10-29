@@ -8,7 +8,7 @@ import {
 } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
-import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+// import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
 const GET_MY_EMAIL_SIGNATURES = gql`
@@ -287,7 +287,7 @@ export const useSignatures = () => {
 // Hook pour les actions de signature
 export const useSignatureActions = () => {
   const router = useRouter();
-  const { workspaceId } = useRequiredWorkspace();
+  // const { workspaceId } = useRequiredWorkspace();
 
   const [deleteSignature, { loading: deleting }] = useMutation(
     DELETE_EMAIL_SIGNATURE,
@@ -432,7 +432,7 @@ export const useSignatureActions = () => {
           variables: { 
             input: {
               ...filteredData,
-              workspaceId,
+              // workspaceId, // Plus nécessaire - le backend filtre automatiquement
             }
           } 
         });

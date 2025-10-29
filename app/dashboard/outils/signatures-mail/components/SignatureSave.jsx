@@ -122,7 +122,7 @@ const SignatureSave = ({ existingSignatureId = null }) => {
     const data = {
       signatureName,
       isDefault,
-      workspaceId: organization?.id,
+      // workspaceId: organization?.id, // Plus nécessaire - le backend filtre automatiquement
       // Informations personnelles
       firstName: signatureData.firstName || "",
       lastName: signatureData.lastName || "",
@@ -354,7 +354,7 @@ const SignatureSave = ({ existingSignatureId = null }) => {
       {/* Bouton pour ouvrir le modal de sauvegarde */}
       <Button
         onClick={handleOpenModal}
-        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
         size="sm"
       >
         <Save className="w-4 h-4" />

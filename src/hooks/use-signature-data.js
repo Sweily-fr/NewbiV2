@@ -200,124 +200,6 @@ function SignatureProviderContent({ children }) {
   const signatureIdFromUrl = searchParams?.get("id");
   const { organization } = useActiveOrganization();
 
-  // Hook pour récupérer une signature spécifique
-  const [getSignature, { loading: loadingSignature }] = useLazyQuery(
-    GET_EMAIL_SIGNATURE,
-    {
-      onCompleted: (data) => {
-        if (data?.getEmailSignature) {
-          const signatureData = data.getEmailSignature;
-          console.log(
-            "🔍 [SIGNATURE_DATA] Données récupérées via GraphQL:",
-            signatureData
-          );
-          console.log(
-            "🎯 [SIGNATURE_DATA] Orientation récupérée:",
-            signatureData.orientation
-          );
-
-          // Transformer firstName + lastName en fullName pour compatibilité
-          const transformedData = {
-            ...signatureData,
-            fullName:
-              signatureData.firstName && signatureData.lastName
-                ? `${signatureData.firstName} ${signatureData.lastName}`.trim()
-                : signatureData.firstName || signatureData.lastName || "",
-          };
-
-          // Reconstruire les URLs à partir des clés Cloudflare si nécessaire
-          const SIGNATURE_URL = "https://pub-f4c5982b836541739955ba7662828aa2.r2.dev";
-          
-          // Si on a une clé mais pas d'URL, ou si l'URL est incorrecte/obsolète
-          if (transformedData.photoKey) {
-            // Toujours reconstruire l'URL à partir de la clé pour garantir la cohérence
-            const reconstructedPhotoUrl = `${SIGNATURE_URL}/${transformedData.photoKey}`;
-            if (transformedData.photo !== reconstructedPhotoUrl) {
-              transformedData.photo = reconstructedPhotoUrl;
-              console.log("🔄 [SIGNATURE_DATA] URL photo reconstruite:", transformedData.photo);
-            }
-          }
-          
-          if (transformedData.logoKey) {
-            // Toujours reconstruire l'URL à partir de la clé pour garantir la cohérence
-            const reconstructedLogoUrl = `${SIGNATURE_URL}/${transformedData.logoKey}`;
-            if (transformedData.logo !== reconstructedLogoUrl) {
-              transformedData.logo = reconstructedLogoUrl;
-              console.log("🔄 [SIGNATURE_DATA] URL logo reconstruite:", transformedData.logo);
-            }
-          }
-
-          // Merger les données récupérées avec les données par défaut
-          const mergedData = {
-            ...defaultSignatureData,
-            ...transformedData,
-            // S'assurer que les objets imbriqués sont bien mergés
-            colors: {
-              ...defaultSignatureData.colors,
-              ...(signatureData.colors || {}),
-            },
-            columnWidths: {
-              ...defaultSignatureData.columnWidths,
-              ...(signatureData.columnWidths || {}),
-            },
-            spacings: {
-              ...defaultSignatureData.spacings,
-              ...(signatureData.spacings || {}),
-            },
-            fontSize: {
-              ...defaultSignatureData.fontSize,
-              ...(signatureData.fontSize || {}),
-            },
-            socialNetworks: {
-              ...defaultSignatureData.socialNetworks,
-              ...(signatureData.socialNetworks || {}),
-            },
-            typography: {
-              fullName: {
-                ...defaultSignatureData.typography.fullName,
-                ...(signatureData.typography?.fullName || {}),
-              },
-              position: {
-                ...defaultSignatureData.typography.position,
-                ...(signatureData.typography?.position || {}),
-              },
-              company: {
-                ...defaultSignatureData.typography.company,
-                ...(signatureData.typography?.company || {}),
-              },
-              email: {
-                ...defaultSignatureData.typography.email,
-                ...(signatureData.typography?.email || {}),
-              },
-              phone: {
-                ...defaultSignatureData.typography.phone,
-                ...(signatureData.typography?.phone || {}),
-              },
-              mobile: {
-                ...defaultSignatureData.typography.mobile,
-                ...(signatureData.typography?.mobile || {}),
-              },
-              website: {
-                ...defaultSignatureData.typography.website,
-                ...(signatureData.typography?.website || {}),
-              },
-              address: {
-                ...defaultSignatureData.typography.address,
-                ...(signatureData.typography?.address || {}),
-              },
-            },
-          };
-
-          setSignatureData(mergedData);
-          console.log("✅ [SIGNATURE_DATA] Données mergées et chargées");
-        }
-      },
-      onError: (error) => {
-        console.error("❌ [SIGNATURE_DATA] Erreur lors du chargement:", error);
-      },
-    }
-  );
-
   // Données par défaut (mémorisées pour éviter les re-renders)
   const defaultSignatureData = useMemo(
     () => ({
@@ -499,8 +381,104 @@ function SignatureProviderContent({ children }) {
     []
   );
 
+  // Hook pour récupérer une signature spécifique
+  const [getSignature, { data: signatureQueryData, error: signatureQueryError, loading: loadingSignature }] = useLazyQuery(
+    GET_EMAIL_SIGNATURE
+  );
+
   const [signatureData, setSignatureData] = useState(defaultSignatureData);
   const [editingSignatureId, setEditingSignatureId] = useState(null);
+
+  // Appliquer les données récupérées via GraphQL en mode édition
+  useEffect(() => {
+    if (isEditMode && signatureQueryData?.getEmailSignature) {
+      const fetchedSignature = signatureQueryData.getEmailSignature;
+
+      const mergedData = {
+        ...defaultSignatureData,
+        ...fetchedSignature,
+        orientation: fetchedSignature.orientation || defaultSignatureData.orientation,
+        colors: {
+          ...defaultSignatureData.colors,
+          ...(fetchedSignature.colors || {}),
+        },
+        columnWidths: {
+          ...defaultSignatureData.columnWidths,
+          ...(fetchedSignature.columnWidths || {}),
+        },
+        spacings: {
+          ...defaultSignatureData.spacings,
+          ...(fetchedSignature.spacings || {}),
+        },
+        separators: {
+          ...defaultSignatureData.separators,
+          ...(fetchedSignature.separators || {}),
+        },
+        socialNetworks: {
+          ...defaultSignatureData.socialNetworks,
+          ...(fetchedSignature.socialNetworks || {}),
+        },
+        socialColors: {
+          ...defaultSignatureData.socialColors,
+          ...(fetchedSignature.socialColors || {}),
+        },
+        customSocialIcons: {
+          ...defaultSignatureData.customSocialIcons,
+          ...(fetchedSignature.customSocialIcons || {}),
+        },
+        fontSize: {
+          ...defaultSignatureData.fontSize,
+          ...(fetchedSignature.fontSize || {}),
+        },
+        typography: {
+          fullName: {
+            ...defaultSignatureData.typography.fullName,
+            ...(fetchedSignature.typography?.fullName || {}),
+          },
+          position: {
+            ...defaultSignatureData.typography.position,
+            ...(fetchedSignature.typography?.position || {}),
+          },
+          company: {
+            ...defaultSignatureData.typography.company,
+            ...(fetchedSignature.typography?.company || {}),
+          },
+          email: {
+            ...defaultSignatureData.typography.email,
+            ...(fetchedSignature.typography?.email || {}),
+          },
+          phone: {
+            ...defaultSignatureData.typography.phone,
+            ...(fetchedSignature.typography?.phone || {}),
+          },
+          mobile: {
+            ...defaultSignatureData.typography.mobile,
+            ...(fetchedSignature.typography?.mobile || {}),
+          },
+          website: {
+            ...defaultSignatureData.typography.website,
+            ...(fetchedSignature.typography?.website || {}),
+          },
+          address: {
+            ...defaultSignatureData.typography.address,
+            ...(fetchedSignature.typography?.address || {}),
+          },
+        },
+      };
+
+      setSignatureData(mergedData);
+
+      if (!fetchedSignature.fullName) {
+        const computedFullName = `${fetchedSignature.firstName || ""} ${fetchedSignature.lastName || ""}`.trim();
+        if (computedFullName) {
+          setSignatureData((prev) => ({
+            ...prev,
+            fullName: computedFullName,
+          }));
+        }
+      }
+    }
+  }, [isEditMode, signatureQueryData, defaultSignatureData]);
 
   // Effet pour charger les données d'édition via GraphQL ou localStorage
   useEffect(() => {
@@ -605,7 +583,7 @@ function SignatureProviderContent({ children }) {
     } else {
       console.log("📝 [SIGNATURE_PROVIDER] Mode création - données par défaut");
     }
-  }, [isEditMode, signatureIdFromUrl, defaultSignatureData, getSignature]);
+  }, [isEditMode, signatureIdFromUrl, getSignature]);
 
   // Effet pour appliquer automatiquement le logo de l'organisation
   useEffect(() => {
@@ -716,7 +694,7 @@ function SignatureProviderContent({ children }) {
         }
       }
     }
-  }, [isEditMode, defaultSignatureData]);
+  }, [isEditMode]);
 
   const updateSignatureData = (key, value) => {
     setSignatureData((prev) => {
