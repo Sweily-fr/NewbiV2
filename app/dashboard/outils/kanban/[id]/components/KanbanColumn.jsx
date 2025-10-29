@@ -146,10 +146,11 @@ export function KanbanColumn({
                     </>
                   ) : (
                     <>
-                      {tasks.map((task) => (
+                      {tasks.map((task, index) => (
                         <TaskCard
                           key={task.id}
                           task={task}
+                          index={task.position || index}
                           onEdit={onEditTask}
                           onDelete={onDeleteTask}
                         />
