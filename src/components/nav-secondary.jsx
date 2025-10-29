@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@tabler/icons-react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
-import { Crown, Settings2, Trash, Settings, Users} from "lucide-react";
+import { Crown, Settings2, Trash, Settings, Users } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { SettingsModal } from "@/src/components/settings-modal";
 
@@ -77,9 +77,7 @@ function SettingsDropdownMenu() {
             }}
           >
             <Settings2 />
-            <span className="">
-              Paramètres entreprise
-            </span>
+            <span className="">Paramètres entreprise</span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -102,9 +100,7 @@ function SettingsDropdownMenu() {
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                   <IconUsers />
-                  <span className="">
-                    Collaborateurs
-                  </span>
+                  <span className="">Collaborateurs</span>
                 </div>
                 <Crown className="w-3 h-3 text-[#5b4fff]" />
               </div>
@@ -117,21 +113,6 @@ function SettingsDropdownMenu() {
               <span className="">Intégrations</span>
             </Link>
           </DropdownMenuItem> */}
-
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            variant="destructive"
-            className="cursor-pointer"
-            asChild
-          >
-            <Link href={"/dashboard/account"}>
-              <Trash />
-              <span className="">
-                Désactiver le compte
-              </span>
-            </Link>
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <SettingsModal
@@ -148,7 +129,7 @@ export function NavSecondary({ items, onCommunityClick, ...props }) {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const { isActive } = useSubscription();
   const { isMobile, setOpenMobile } = useSidebar();
-  
+
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
     if (isMobile) {

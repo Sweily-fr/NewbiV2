@@ -6,11 +6,13 @@ import {
   APPLY_OCR_DATA_TO_EXPENSE,
 } from "../graphql/mutations/expense";
 import { GET_EXPENSES } from "../graphql/queries/expense";
+import { useRequiredWorkspace } from "./useWorkspace";
 
 /**
  * Hook pour la gestion des dépenses
  */
 export const useExpense = () => {
+  const { workspaceId } = useRequiredWorkspace();
   // Mutations pour créer une dépense et gérer les fichiers/OCR
   const [
     createExpense,
@@ -117,6 +119,7 @@ export const useExpense = () => {
 
       // 1. Créer d'abord la dépense sans fichier
       const expenseInput = {
+        workspaceId, // ✅ Ajout du workspaceId requis
         title: input.title,
         description: input.description,
         amount: input.amount,
@@ -143,6 +146,7 @@ export const useExpense = () => {
           {
             query: GET_EXPENSES,
             variables: {
+              workspaceId,
               status: "PAID",
               page: 1,
               limit: 20,
@@ -152,6 +156,7 @@ export const useExpense = () => {
           {
             query: GET_EXPENSES,
             variables: {
+              workspaceId,
               page: 1,
               limit: 20,
             },

@@ -163,19 +163,40 @@ export function useMembersTable({ data = [], onRefetch }) {
           const getRoleBadgeClass = (role) => {
             switch (role) {
               case "owner":
-                return "bg-purple-100 text-purple-800 border-purple-200";
+                return "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
               case "admin":
-                return "bg-blue-100 text-blue-800 border-blue-200";
+                return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
               case "member":
-                return "bg-gray-100 text-gray-800 border-gray-200";
+                return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
+              case "viewer":
+                return "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
+              case "accountant":
+                return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
               default:
-                return "bg-gray-100 text-gray-800 border-gray-200";
+                return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
+            }
+          };
+          
+          const getRoleLabel = (role) => {
+            switch (role) {
+              case "owner":
+                return "Propriétaire";
+              case "admin":
+                return "Administrateur";
+              case "member":
+                return "Collaborateur";
+              case "viewer":
+                return "Consultation";
+              case "accountant":
+                return "Comptable";
+              default:
+                return role;
             }
           };
 
           return (
             <Badge className={cn("font-normal", getRoleBadgeClass(role))}>
-              {role}
+              {getRoleLabel(role)}
             </Badge>
           );
         },

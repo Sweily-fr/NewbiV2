@@ -28,7 +28,6 @@ export const useWorkspace = () => {
       });
     }
   }, [loading, activeOrganization, organizations]);
-  
 
   return {
     workspaceId: activeOrganization?.id || null,

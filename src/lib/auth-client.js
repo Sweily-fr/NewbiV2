@@ -8,11 +8,20 @@ import {
   multiSessionClient,
 } from "better-auth/client/plugins";
 import { stripeClient } from "@better-auth/stripe/client";
+import { ac, admin as adminRole, member, viewer, accountant } from "./permissions";
 
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
   plugins: [
-    adminClient(),
+    adminClient({
+      ac,
+      roles: {
+        admin: adminRole,
+        member,
+        viewer,
+        accountant,
+      },
+    }),
     phoneNumberClient(),
     twoFactorClient(),
     multiSessionClient(),

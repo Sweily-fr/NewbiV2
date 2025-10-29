@@ -65,14 +65,28 @@ export default function MemberRowActions({ row, onRefetch }) {
               disabled={member.role === "admin"}
               className="cursor-pointer"
             >
-              Promouvoir admin
+              Promouvoir Administrateur
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => handleChangeRole("member")}
               disabled={member.role === "member"}
               className="cursor-pointer"
             >
-              Rétrograder membre
+              Définir comme Collaborateur
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleChangeRole("viewer")}
+              disabled={member.role === "viewer"}
+              className="cursor-pointer"
+            >
+              Définir comme Consultation
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleChangeRole("accountant")}
+              disabled={member.role === "accountant"}
+              className="cursor-pointer"
+            >
+              Définir comme Comptable
             </DropdownMenuItem>
             <AlertDialog>
               <AlertDialogTrigger asChild>
