@@ -113,7 +113,7 @@ export async function GET(request, { params }) {
     // Sinon, générer une URL signée pour R2
     if (file.storageType === "r2" && file.r2Key) {
       const command = new GetObjectCommand({
-        Bucket: process.env.TRANSFER_BUCKET_NAME,
+        Bucket: process.env.TRANSFER_BUCKET,
         Key: file.r2Key,
       });
 
