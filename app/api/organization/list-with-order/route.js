@@ -39,6 +39,8 @@ export async function GET(request) {
         slug: org.slug,
         createdAt: org.createdAt,
         metadata: org.metadata,
+        customColor: org.customColor,
+        customIcon: org.customIcon,
         order: member?.order ?? 999, // Si pas d'ordre, mettre à la fin
       };
     });

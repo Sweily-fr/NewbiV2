@@ -13,7 +13,12 @@ import { toast } from "@/src/components/ui/sonner";
  * Hook pour récupérer les dépenses avec filtres et pagination
  */
 export const useExpenses = (filters = {}) => {
-  const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_EXPENSES, {
+  const {
+    data,
+    loading: queryLoading,
+    error: queryError,
+    refetch,
+  } = useQuery(GET_EXPENSES, {
     variables: {
       page: 1,
       limit: 20,
@@ -37,7 +42,11 @@ export const useExpenses = (filters = {}) => {
  * Hook pour récupérer les statistiques des dépenses
  */
 export const useExpenseStats = (dateRange = {}) => {
-  const { data, loading: queryLoading, error: queryError } = useQuery(GET_EXPENSE_STATS, {
+  const {
+    data,
+    loading: queryLoading,
+    error: queryError,
+  } = useQuery(GET_EXPENSE_STATS, {
     variables: {
       ...dateRange,
     },
@@ -77,7 +86,7 @@ export const useDeleteExpense = () => {
         );
       }
     } catch (error) {
-      console.error("Erreur suppression dépense:", error);
+      console.error("Erreur de suppression des dépenses:", error);
       toast.error(
         error.message || "Erreur lors de la suppression de la dépense"
       );
@@ -103,8 +112,8 @@ export const useCreateExpense = () => {
   const createExpense = async (input) => {
     try {
       const result = await createExpenseMutation({
-        variables: { 
-          input
+        variables: {
+          input,
         },
       });
 
@@ -212,7 +221,6 @@ export const useUpdateExpense = () => {
 
   const updateExpense = async (id, input) => {
     try {
-      
       const result = await updateExpenseMutation({
         variables: { id, input },
       });
@@ -221,7 +229,10 @@ export const useUpdateExpense = () => {
         toast.success("Dépense modifiée avec succès");
         return { success: true, expense: result.data.updateExpense };
       } else {
-        console.error("❌ Pas de données dans result.data.updateExpense:", result.data);
+        console.error(
+          "❌ Pas de données dans result.data.updateExpense:",
+          result.data
+        );
         throw new Error("Erreur lors de la modification");
       }
     } catch (error) {
@@ -249,7 +260,10 @@ export const useAddExpenseFile = () => {
 
   const addExpenseFile = async (expenseId, fileInput) => {
     try {
-      console.log("📎 [ADD FILE MUTATION] Variables:", { expenseId, input: fileInput });
+      console.log("📎 [ADD FILE MUTATION] Variables:", {
+        expenseId,
+        input: fileInput,
+      });
       const result = await addExpenseFileMutation({
         variables: {
           expenseId,
@@ -262,21 +276,34 @@ export const useAddExpenseFile = () => {
 
       // Si result.data est null mais qu'il n'y a pas d'erreur, considérer comme un succès
       if (result.data === null && !result.errors) {
-        console.log("⚠️ [ADD FILE MUTATION] Result.data est null mais pas d'erreur - considéré comme succès");
+        console.log(
+          "⚠️ [ADD FILE MUTATION] Result.data est null mais pas d'erreur - considéré comme succès"
+        );
         return { success: true, expense: null };
       }
 
       if (result.data?.addExpenseFile) {
-        console.log("✅ [ADD FILE MUTATION] Succès:", result.data.addExpenseFile);
+        console.log(
+          "✅ [ADD FILE MUTATION] Succès:",
+          result.data.addExpenseFile
+        );
         return { success: true, expense: result.data.addExpenseFile };
       } else {
-        console.error("❌ [ADD FILE MUTATION] Pas de données dans result.data.addExpenseFile");
+        console.error(
+          "❌ [ADD FILE MUTATION] Pas de données dans result.data.addExpenseFile"
+        );
         throw new Error("Erreur lors de l'ajout du fichier");
       }
     } catch (error) {
       console.error("❌ [ADD FILE MUTATION] Erreur:", error);
-      console.error("❌ [ADD FILE MUTATION] GraphQL Errors:", error.graphQLErrors);
-      console.error("❌ [ADD FILE MUTATION] Network Error:", error.networkError);
+      console.error(
+        "❌ [ADD FILE MUTATION] GraphQL Errors:",
+        error.graphQLErrors
+      );
+      console.error(
+        "❌ [ADD FILE MUTATION] Network Error:",
+        error.networkError
+      );
       return { success: false, error };
     }
   };

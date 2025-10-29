@@ -635,6 +635,17 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Customization
+        customColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        customIcon: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Legal information
         siret: {
           type: "string",

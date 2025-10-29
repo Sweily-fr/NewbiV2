@@ -14,6 +14,48 @@ import {
   Palette,
   Edit3,
   ChevronRight,
+  Building2,
+  Store,
+  Factory,
+  Construction,
+  Landmark,
+  Briefcase,
+  BarChart3,
+  TrendingUp,
+  DollarSign,
+  CreditCard,
+  Target,
+  Rocket,
+  Zap,
+  Flame,
+  Lightbulb,
+  Paintbrush,
+  Music,
+  Camera,
+  Smartphone,
+  Laptop,
+  Monitor,
+  Coffee,
+  Pizza,
+  Cake,
+  Gamepad2,
+  Dumbbell,
+  Plane,
+  Car,
+  Home,
+  Heart,
+  Star,
+  Gift,
+  ShoppingCart,
+  Package,
+  Truck,
+  Mail,
+  Phone,
+  MessageSquare,
+  Calendar,
+  Clock,
+  MapPin,
+  Globe,
 } from "lucide-react";
 import { IconBuilding } from "@tabler/icons-react";
 import {
@@ -385,6 +427,7 @@ export function TeamSwitcher() {
                         setSelectedOrganization(org);
                         setRenameModalOpen(true);
                       }}
+                      setSortedOrganizations={setSortedOrganizations}
                     />
                   ))}
                 </SortableContext>
@@ -518,6 +561,54 @@ export function TeamSwitcher() {
   );
 }
 
+// Fonction helper pour obtenir l'icône Lucide correspondante
+const getIconComponent = (iconName) => {
+  const iconMap = {
+    Building: Building2,
+    Store: Store,
+    Factory: Factory,
+    Construction: Construction,
+    Landmark: Landmark,
+    Briefcase: Briefcase,
+    Chart: BarChart3,
+    Trending: TrendingUp,
+    Dollar: DollarSign,
+    Card: CreditCard,
+    Target: Target,
+    Rocket: Rocket,
+    Zap: Zap,
+    Flame: Flame,
+    Lightbulb: Lightbulb,
+    Paint: Paintbrush,
+    Music: Music,
+    Camera: Camera,
+    Phone: Smartphone,
+    Laptop: Laptop,
+    Monitor: Monitor,
+    Coffee: Coffee,
+    Pizza: Pizza,
+    Cake: Cake,
+    Game: Gamepad2,
+    Fitness: Dumbbell,
+    Plane: Plane,
+    Car: Car,
+    Home: Home,
+    Heart: Heart,
+    Star: Star,
+    Gift: Gift,
+    Cart: ShoppingCart,
+    Package: Package,
+    Truck: Truck,
+    Mail: Mail,
+    Message: MessageSquare,
+    Calendar: Calendar,
+    Clock: Clock,
+    Location: MapPin,
+    Globe: Globe,
+  };
+  return iconMap[iconName] || Building2; // Building2 par défaut
+};
+
 // Composant sortable pour chaque organisation
 function SortableOrganizationItem({
   org,
@@ -525,12 +616,18 @@ function SortableOrganizationItem({
   onSelect,
   disabled,
   onRename,
+  setSortedOrganizations,
 }) {
   const [isHovered, setIsHovered] = React.useState(false);
   const [showActionsMenu, setShowActionsMenu] = React.useState(false);
   const [showColorMenu, setShowColorMenu] = React.useState(false);
   const buttonRef = React.useRef(null);
   const colorButtonRef = React.useRef(null);
+  
+  // Récupérer la couleur et l'icône personnalisées
+  const customColor = org.customColor || "#5b4fff";
+  const customIconName = org.customIcon;
+  const CustomIcon = customIconName ? getIconComponent(customIconName) : null;
   const {
     attributes,
     listeners,
@@ -556,7 +653,7 @@ function SortableOrganizationItem({
     <div
       ref={setNodeRef}
       style={style}
-      onMouseEnter={() => !isDragging && setIsHovered(true)}
+      onMouseEnter={() => !isDragging && !showActionsMenu && !showColorMenu && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="relative"
       {...attributes}
@@ -571,15 +668,20 @@ function SortableOrganizationItem({
         style={{ cursor: isDragging ? "grabbing" : "grab" }}
         onSelect={(e) => e.preventDefault()}
       >
-        {/* Icône qui change au hover : Building (avec carré) -> Grip (sans carré) */}
+        {/* Icône qui change au hover : Icône personnalisée (avec carré coloré) -> Grip (sans carré) */}
         <div className="flex size-6 items-center justify-center relative">
-          {/* Icône Building avec bordure (visible par défaut) */}
+          {/* Icône personnalisée avec bordure et couleur de fond (visible par défaut) */}
           <div
-            className={`flex size-6 items-center justify-center rounded-sm border transition-opacity absolute ${
+            className={`flex size-6 items-center justify-center rounded-sm transition-opacity absolute ${
               isHovered && !disabled ? "opacity-0" : "opacity-100"
             }`}
+            style={{ backgroundColor: customColor }}
           >
-            <IconBuilding className="size-3.5 shrink-0" />
+            {CustomIcon ? (
+              <CustomIcon className="size-3.5 shrink-0 text-white" />
+            ) : (
+              <IconBuilding className="size-3.5 shrink-0 text-white" />
+            )}
           </div>
           {/* Icône Grip sans bordure (visible au hover) */}
           <div
@@ -606,7 +708,7 @@ function SortableOrganizationItem({
             setShowActionsMenu(!showActionsMenu);
           }}
           className={`flex items-center justify-center h-6 w-6 rounded hover:bg-accent transition-opacity ${
-            isHovered && !disabled ? "opacity-100" : "opacity-0"
+            isHovered && !disabled && !showColorMenu && !showActionsMenu ? "opacity-100" : "opacity-0"
           }`}
         >
           <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
@@ -699,13 +801,28 @@ function SortableOrganizationItem({
                 ].map((color) => (
                   <button
                     key={color}
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      console.log("Couleur sélectionnée:", color);
-                      setShowColorMenu(false);
-                      setShowActionsMenu(false);
+                      try {
+                        // Mise à jour optimiste : changer immédiatement dans l'état local
+                        setSortedOrganizations((prev) =>
+                          prev.map((o) =>
+                            o.id === org.id ? { ...o, customColor: color } : o
+                          )
+                        );
+                        
+                        // Mise à jour en base de données en arrière-plan
+                        authClient.organization.update({
+                          organizationId: org.id,
+                          data: {
+                            customColor: color,
+                          },
+                        });
+                      } catch (error) {
+                        console.error("Erreur mise à jour couleur:", error);
+                      }
                     }}
-                    className="w-6 h-6 rounded-full transition-all hover:scale-110 hover:shadow-sm ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600"
+                    className="w-5 h-5 rounded-full transition-all hover:scale-110 hover:shadow-sm ring-2 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600"
                     style={{ backgroundColor: color }}
                     title={color}
                   />
@@ -718,40 +835,91 @@ function SortableOrganizationItem({
               <div className="flex items-center gap-2 mb-2.5">
                 <Input
                   type="text"
-                  placeholder="Search"
+                  placeholder="Recherche"
                   className="flex-1 h-7 text-xs"
                   onClick={(e) => e.stopPropagation()}
                 />
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="h-7 px-2.5 text-xs"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Upload
+                  Importer
                 </Button>
               </div>
               <div className="grid grid-cols-8 gap-1.5 max-h-40 overflow-y-auto">
                 {[
-                  "🏢", "🏪", "🏭", "🏗️", "🏛️", "🏦", "💼", "📊", "📈",
-                  "💰", "💳", "🎯", "🚀", "⚡", "🔥", "💡", "🎨", "🎭",
-                  "🎪", "🎬", "📱", "💻", "⌨️", "🖥️", "📷", "📹", "🎥",
-                  "🎤", "🎧", "🎵", "🍕", "☕", "🍔", "🍰", "🎂", "🍺",
-                  "🎮", "⚽", "🏀", "🎾", "🏈", "⚾", "🎱", "🏓", "🏸",
-                  "🥊", "🥋", "⛳", "🏹", "🎣", "🤿", "🎿", "🛷", "⛸️",
-                ].map((icon, index) => (
+                  { Icon: Building2, name: "Building" },
+                  { Icon: Store, name: "Store" },
+                  { Icon: Factory, name: "Factory" },
+                  { Icon: Construction, name: "Construction" },
+                  { Icon: Landmark, name: "Landmark" },
+                  { Icon: Briefcase, name: "Briefcase" },
+                  { Icon: BarChart3, name: "Chart" },
+                  { Icon: TrendingUp, name: "Trending" },
+                  { Icon: DollarSign, name: "Dollar" },
+                  { Icon: CreditCard, name: "Card" },
+                  { Icon: Target, name: "Target" },
+                  { Icon: Rocket, name: "Rocket" },
+                  { Icon: Zap, name: "Zap" },
+                  { Icon: Flame, name: "Flame" },
+                  { Icon: Lightbulb, name: "Lightbulb" },
+                  { Icon: Paintbrush, name: "Paint" },
+                  { Icon: Music, name: "Music" },
+                  { Icon: Camera, name: "Camera" },
+                  { Icon: Smartphone, name: "Phone" },
+                  { Icon: Laptop, name: "Laptop" },
+                  { Icon: Monitor, name: "Monitor" },
+                  { Icon: Coffee, name: "Coffee" },
+                  { Icon: Pizza, name: "Pizza" },
+                  { Icon: Cake, name: "Cake" },
+                  { Icon: Gamepad2, name: "Game" },
+                  { Icon: Dumbbell, name: "Fitness" },
+                  { Icon: Plane, name: "Plane" },
+                  { Icon: Car, name: "Car" },
+                  { Icon: Home, name: "Home" },
+                  { Icon: Heart, name: "Heart" },
+                  { Icon: Star, name: "Star" },
+                  { Icon: Gift, name: "Gift" },
+                  { Icon: ShoppingCart, name: "Cart" },
+                  { Icon: Package, name: "Package" },
+                  { Icon: Truck, name: "Truck" },
+                  { Icon: Mail, name: "Mail" },
+                  { Icon: Phone, name: "Phone" },
+                  { Icon: MessageSquare, name: "Message" },
+                  { Icon: Calendar, name: "Calendar" },
+                  { Icon: Clock, name: "Clock" },
+                  { Icon: MapPin, name: "Location" },
+                  { Icon: Globe, name: "Globe" },
+                ].map(({ Icon, name }, index) => (
                   <button
                     key={index}
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      console.log("Icône sélectionnée:", icon);
-                      setShowColorMenu(false);
-                      setShowActionsMenu(false);
+                      try {
+                        // Mise à jour optimiste : changer immédiatement dans l'état local
+                        setSortedOrganizations((prev) =>
+                          prev.map((o) =>
+                            o.id === org.id ? { ...o, customIcon: name } : o
+                          )
+                        );
+                        
+                        // Mise à jour en base de données en arrière-plan
+                        authClient.organization.update({
+                          organizationId: org.id,
+                          data: {
+                            customIcon: name,
+                          },
+                        });
+                      } catch (error) {
+                        console.error("Erreur mise à jour icône:", error);
+                      }
                     }}
-                    className="w-7 h-7 flex items-center justify-center text-base hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                    title={icon}
+                    className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                    title={name}
                   >
-                    {icon}
+                    <Icon className="w-4 h-4 text-muted-foreground" />
                   </button>
                 ))}
               </div>
