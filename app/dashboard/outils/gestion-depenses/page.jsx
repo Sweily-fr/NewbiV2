@@ -29,6 +29,7 @@ function GestionDepensesContent() {
     invoices,
     loading: invoicesLoading,
     error: invoicesError,
+    refetch: refetchInvoices,
   } = useInvoices();
 
   // Filtrer les factures payées
@@ -47,12 +48,19 @@ function GestionDepensesContent() {
     }).format(amount || 0);
   };
 
-  // Filtrer les dépenses payées (exclure les DRAFT)
-  const paidExpenses = expenses.filter(expense => expense.status === 'PAID');
+  // Filtrer les dépenses payées (exclure les DRAFT) - MÉMORISÉ
+  const paidExpenses = useMemo(() => {
+    return expenses.filter(expense => expense.status === 'PAID');
+  }, [expenses]);
   
-  // Calcul des statistiques réelles avec les utilitaires
-  const totalIncome = paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
-  const totalExpenses = paidExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+  // Calcul des statistiques réelles avec les utilitaires - MÉMORISÉ
+  const totalIncome = useMemo(() => {
+    return paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
+  }, [paidInvoices]);
+  
+  const totalExpenses = useMemo(() => {
+    return paidExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+  }, [paidExpenses]);
 
   // Utiliser les fonctions utilitaires pour les données de graphique
   const incomeChartData = useMemo(() => processInvoicesForCharts(paidInvoices), [paidInvoices]);
@@ -121,7 +129,13 @@ function GestionDepensesContent() {
         
         {/* Tableau */}
         <div className="mt-4">
-          <TransactionTable />
+          <TransactionTable 
+            expenses={expenses}
+            invoices={invoices}
+            loading={loading}
+            refetchExpenses={refetchExpenses}
+            refetchInvoices={refetchInvoices}
+          />
         </div>
       </div>
 
@@ -139,7 +153,13 @@ function GestionDepensesContent() {
         </div>
 
         {/* Table */}
-        <TransactionTable />
+        <TransactionTable 
+          expenses={expenses}
+          invoices={invoices}
+          loading={loading}
+          refetchExpenses={refetchExpenses}
+          refetchInvoices={refetchInvoices}
+        />
       </div>
     </>
   );

@@ -14,6 +14,9 @@ import {
   Palette,
   Edit3,
   ChevronRight,
+  UserPlus,
+  Trash2,
+  Archive,
   Building2,
   Store,
   Factory,
@@ -79,6 +82,14 @@ import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import Link from "next/link";
 import { InviteMemberModal } from "./invite-member-modal";
 import { SettingsModal } from "./settings-modal";
@@ -293,9 +304,9 @@ export function TeamSwitcher() {
       if (refetchActiveOrg) {
         await refetchActiveOrg();
       }
-      if (refetchOrgs) {
-        await refetchOrgs();
-      }
+      
+      // Recharger les organisations
+      await loadOrganizations();
 
       // Forcer un re-render du composant
       setForceUpdate((prev) => prev + 1);
@@ -314,8 +325,10 @@ export function TeamSwitcher() {
         to: organizationId,
       });
 
-      // 7. Notification
-      toast.success("Organisation changée");
+      // 7. Notification avec le nom de l'organisation
+      const newOrg = sortedOrganizations.find(org => org.id === organizationId);
+      const orgName = newOrg?.name || "l'organisation";
+      toast.success(`Vous êtes sur l'espace ${orgName}`);
 
       console.log("✅ Changement terminé sans rechargement");
     } catch (error) {
@@ -428,6 +441,8 @@ export function TeamSwitcher() {
                         setRenameModalOpen(true);
                       }}
                       setSortedOrganizations={setSortedOrganizations}
+                      setInviteDialogOpen={setInviteDialogOpen}
+                      setSettingsModalOpen={setSettingsModalOpen}
                     />
                   ))}
                 </SortableContext>
@@ -523,10 +538,8 @@ export function TeamSwitcher() {
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
         onSuccess={() => {
-          // Rafraîchir les données si nécessaire
-          if (refetchOrgs) {
-            refetchOrgs();
-          }
+          // Rafraîchir les organisations
+          loadOrganizations();
         }}
       />
       <SettingsModal
@@ -617,10 +630,14 @@ function SortableOrganizationItem({
   disabled,
   onRename,
   setSortedOrganizations,
+  setInviteDialogOpen,
+  setSettingsModalOpen,
 }) {
   const [isHovered, setIsHovered] = React.useState(false);
   const [showActionsMenu, setShowActionsMenu] = React.useState(false);
   const [showColorMenu, setShowColorMenu] = React.useState(false);
+  const [showLeaveModal, setShowLeaveModal] = React.useState(false);
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const buttonRef = React.useRef(null);
   const colorButtonRef = React.useRef(null);
   
@@ -673,7 +690,7 @@ function SortableOrganizationItem({
           {/* Icône personnalisée avec bordure et couleur de fond (visible par défaut) */}
           <div
             className={`flex size-6 items-center justify-center rounded-sm transition-opacity absolute ${
-              isHovered && !disabled ? "opacity-0" : "opacity-100"
+              isHovered && !disabled && !showActionsMenu && !showColorMenu ? "opacity-0" : "opacity-100"
             }`}
             style={{ backgroundColor: customColor }}
           >
@@ -686,7 +703,7 @@ function SortableOrganizationItem({
           {/* Icône Grip sans bordure (visible au hover) */}
           <div
             className={`flex items-center justify-center transition-opacity absolute ${
-              isHovered && !disabled ? "opacity-100" : "opacity-0"
+              isHovered && !disabled && !showActionsMenu && !showColorMenu ? "opacity-100" : "opacity-0"
             }`}
           >
             <GripVertical className="h-4 w-4 text-muted-foreground" />
@@ -756,6 +773,79 @@ function SortableOrganizationItem({
               <span className="font-normal flex-1">Couleur et icône</span>
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
+
+            {/* Séparateur */}
+            <div className="h-px bg-border my-1" />
+
+            {/* Ajouter des membres */}
+            <div
+              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowActionsMenu(false);
+                setInviteDialogOpen(true);
+              }}
+            >
+              <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-normal flex-1">Ajouter des membres</span>
+            </div>
+
+            {/* Permissions */}
+            <div
+              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowActionsMenu(false);
+                // TODO: Ouvrir la page des permissions
+              }}
+            >
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-normal flex-1">Permissions</span>
+            </div>
+
+            {/* Paramètres de l'organisation */}
+            <div
+              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowActionsMenu(false);
+                setSettingsModalOpen(true);
+              }}
+            >
+              <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-normal flex-1">Paramètres</span>
+            </div>
+
+            {/* Séparateur Danger Zone */}
+            <div className="h-px bg-border my-1" />
+
+            {/* Quitter l'organisation - Seulement si pas owner */}
+            {org.role !== "owner" && (
+              <div
+                className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-destructive/10 hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowActionsMenu(false);
+                  setShowLeaveModal(true);
+                }}
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="font-normal flex-1">Quitter l'organisation</span>
+              </div>
+            )}
+
+            {/* Supprimer l'organisation (Archive) */}
+            <div
+              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-destructive/10 hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowActionsMenu(false);
+                setShowDeleteModal(true);
+              }}
+            >
+              <Archive className="h-3.5 w-3.5" />
+              <span className="font-normal flex-1">Supprimer l'organisation</span>
+            </div>
           </div>
         </div>
       )}
@@ -770,7 +860,7 @@ function SortableOrganizationItem({
           }}
         >
           <div
-            className="absolute bg-white dark:bg-gray-900 rounded-md border shadow-lg w-64 p-4"
+            className="absolute bg-popover text-popover-foreground rounded-md border shadow-md w-64 p-4"
             style={{
               top: colorButtonRef.current?.getBoundingClientRect().top - 16,
               left: colorButtonRef.current?.getBoundingClientRect().right - 245,
@@ -927,6 +1017,88 @@ function SortableOrganizationItem({
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation - Quitter l'organisation */}
+      <Dialog open={showLeaveModal} onOpenChange={setShowLeaveModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Quitter l'organisation</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir quitter "{org.name}" ? Vous perdrez l'accès à tous les espaces de travail et données de cette organisation.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowLeaveModal(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                try {
+                  // TODO: Implémenter la logique pour quitter l'organisation
+                  // await authClient.organization.leave({ organizationId: org.id });
+                  console.log("Quitter l'organisation:", org.id);
+                  setShowLeaveModal(false);
+                  // Recharger les organisations
+                  window.location.reload();
+                } catch (error) {
+                  console.error("Erreur:", error);
+                }
+              }}
+            >
+              Quitter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmation - Supprimer (Archiver) l'organisation */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer l'organisation</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer "{org.name}" ? L'organisation sera archivée et pourra être restaurée ultérieurement. Cette action nécessite les droits d'administrateur.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                try {
+                  // Archiver l'organisation (soft delete)
+                  await authClient.organization.update({
+                    organizationId: org.id,
+                    data: {
+                      metadata: {
+                        ...org.metadata,
+                        archived: true,
+                        archivedAt: new Date().toISOString(),
+                      },
+                    },
+                  });
+                  setShowDeleteModal(false);
+                  // Recharger les organisations
+                  window.location.reload();
+                } catch (error) {
+                  console.error("Erreur:", error);
+                }
+              }}
+            >
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

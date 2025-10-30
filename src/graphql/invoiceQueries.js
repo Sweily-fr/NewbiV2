@@ -414,7 +414,7 @@ export const useInvoices = () => {
         {}
       ),
     },
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
     notifyOnNetworkStatusChange: true,
     skip: !workspaceId, // Ne pas exécuter la query sans workspaceId
@@ -536,7 +536,7 @@ export const useInvoice = (id) => {
     variables: { id, workspaceId },
     skip: !id || !workspaceId,
     errorPolicy: "all",
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
 
   return useMemo(
@@ -574,7 +574,7 @@ export const useInvoiceStats = () => {
     variables: { workspaceId },
     skip: !workspaceId,
     errorPolicy: "all",
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
 
   return useMemo(

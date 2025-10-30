@@ -81,18 +81,18 @@ export function NavUser({ user }) {
       // Vider tous les caches localStorage
       try {
         console.log("🧹 Nettoyage des caches localStorage...");
-        
+
         // Vider le cache utilisateur
         localStorage.removeItem("user-cache");
-        
+
         // Vider tous les caches d'abonnement
-        Object.keys(localStorage).forEach(key => {
+        Object.keys(localStorage).forEach((key) => {
           if (key.startsWith("subscription-")) {
             localStorage.removeItem(key);
             console.log(`🗑️ Cache supprimé: ${key}`);
           }
         });
-        
+
         console.log("✅ Caches localStorage nettoyés");
       } catch (cacheError) {
         console.warn("⚠️ Erreur lors du nettoyage des caches:", cacheError);

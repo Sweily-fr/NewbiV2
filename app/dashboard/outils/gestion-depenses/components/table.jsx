@@ -464,7 +464,13 @@ const sampleTransactions = [
   },
 ];
 
-export default function TransactionTable() {
+export default function TransactionTable({ 
+  expenses: expensesProp = [], 
+  invoices: invoicesProp = [], 
+  loading: loadingProp = false,
+  refetchExpenses: refetchExpensesProp,
+  refetchInvoices: refetchInvoicesProp
+}) {
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
   const [pagination, setPagination] = useState({
@@ -563,18 +569,12 @@ export default function TransactionTable() {
     }
   }, [activeOrg?.id]); // Se déclenche quand l'organisation est chargée
 
-  // Récupération des dépenses depuis l'API
-  const {
-    expenses,
-    totalCount: expensesTotalCount,
-    loading: expensesLoading,
-    error: expensesError,
-    refetch: refetchExpenses,
-  } = useExpenses({
-    status: "PAID", // Récupérer les dépenses payées
-    page: 1,
-    limit: 100, // Récupérer plus de données pour la pagination côté client
-  });
+  // Utiliser les données passées en props au lieu de les recharger
+  const expenses = expensesProp;
+  const expensesTotalCount = expensesProp.length;
+  const expensesLoading = loadingProp;
+  const expensesError = null;
+  const refetchExpenses = refetchExpensesProp;
 
   // Hooks pour la création, modification et suppression
   const { createExpense, loading: createExpenseLoading } = useCreateExpense();
@@ -599,14 +599,12 @@ export default function TransactionTable() {
     }
   }, [promoteResult]);
 
-  // Récupération des factures payées depuis l'API
-  const {
-    invoices,
-    totalCount: invoicesTotalCount,
-    loading: invoicesLoading,
-    error: invoicesError,
-    refetch: refetchInvoices,
-  } = useInvoices();
+  // Utiliser les factures passées en props
+  const invoices = invoicesProp;
+  const invoicesTotalCount = invoicesProp.length;
+  const invoicesLoading = loadingProp;
+  const invoicesError = null;
+  const refetchInvoices = refetchInvoicesProp;
 
   // Filtrer les factures payées (statut COMPLETED)
   const paidInvoices = useMemo(() => {

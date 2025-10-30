@@ -86,17 +86,18 @@ export function useDashboardLayoutSimple() {
         localStorage.removeItem(cacheKey);
       }
 
-      // Cache intelligent : court (30 secondes) + invalidation après paiement
+      // Cache intelligent : 5 minutes + invalidation après paiement
       try {
         const cached = localStorage.getItem(cacheKey);
         if (cached && !hasStripeSession) { // ← Ne pas utiliser le cache si on revient de Stripe
           const { data: cachedSubscription, timestamp } = JSON.parse(cached);
-          const isValid = Date.now() - timestamp < 30 * 1000; // 30 secondes (bon compromis)
+          const isValid = Date.now() - timestamp < 5 * 60 * 1000; // 5 minutes (évite les flashs)
 
           if (isValid) {
             setSubscription(cachedSubscription);
             setIsLoading(false);
             setIsInitialized(true);
+            console.log("✅ Subscription chargée depuis le cache:", organizationId);
             return;
           }
         }
@@ -228,11 +229,8 @@ export function useDashboardLayoutSimple() {
             window.location.pathname
           );
 
-
-          // Recharger la page pour s'assurer que tout est à jour
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
+          // Pas besoin de recharger - le système de cache et refetch gère la mise à jour
+          console.log("✅ Subscription mise à jour sans rechargement");
         } else if (attempts >= maxAttempts) {
 
           clearInterval(pollInterval);
@@ -332,7 +330,7 @@ export function useDashboardLayoutSimple() {
 
   // Fonction de rafraîchissement simple
   const refreshLayoutData = () => {
-    // Vider tous les caches avant de recharger
+    // Vider tous les caches et forcer un refetch
     try {
       // Cache d'abonnement
       const subscriptionCacheKey = session?.session?.activeOrganizationId
@@ -345,11 +343,14 @@ export function useDashboardLayoutSimple() {
 
       // Cache utilisateur
       localStorage.removeItem("user-cache");
+      
+      // Ne PAS réinitialiser subscription à null - garder l'ancienne valeur pendant le chargement
+      // Le useEffect se chargera de refetch automatiquement
+      setIsLoading(true);
+      console.log("✅ Caches vidés, refetch en cours...");
     } catch (error) {
       console.warn("Erreur suppression caches:", error);
     }
-
-    window.location.reload();
   };
 
   // Utiliser activeOrganization de Better Auth en priorité, sinon fallback vers cache

@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
     const { mongoDb } = await import("@/src/lib/mongodb");
     const { ObjectId } = await import("mongodb");
 
-    // Récupérer l'invitation directement depuis MongoDB
+    // Récupérer l'invitation directement depuis MongoDB par _id
     const invitation = await mongoDb
       .collection("invitation")
       .findOne({ _id: new ObjectId(id) });
@@ -115,9 +115,11 @@ export async function POST(request, { params }) {
       
       // ÉTAPE 1: Accepter l'invitation (rejoint l'organisation de l'owner)
       console.log('🔄 ÉTAPE 1: Appel Better Auth acceptInvitation...');
+      console.log(`📋 _id MongoDB: ${id}`);
+      
       const result = await auth.api.acceptInvitation({
         headers: await headers(),
-        body: { invitationId: id },
+        body: { invitationId: id }, // Utiliser directement l'_id
       });
 
       console.log('📊 Résultat acceptInvitation:', result);

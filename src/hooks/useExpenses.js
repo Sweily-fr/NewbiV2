@@ -8,11 +8,14 @@ import {
   ADD_EXPENSE_FILE,
 } from "../graphql/mutations/expense";
 import { toast } from "@/src/components/ui/sonner";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 /**
  * Hook pour récupérer les dépenses avec filtres et pagination
  */
 export const useExpenses = (filters = {}) => {
+  const { workspaceId } = useRequiredWorkspace();
+  
   const {
     data,
     loading: queryLoading,
@@ -20,12 +23,14 @@ export const useExpenses = (filters = {}) => {
     refetch,
   } = useQuery(GET_EXPENSES, {
     variables: {
+      workspaceId,
       page: 1,
       limit: 20,
       ...filters,
     },
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: false,
+    skip: !workspaceId,
   });
 
   return {
@@ -42,15 +47,19 @@ export const useExpenses = (filters = {}) => {
  * Hook pour récupérer les statistiques des dépenses
  */
 export const useExpenseStats = (dateRange = {}) => {
+  const { workspaceId } = useRequiredWorkspace();
+  
   const {
     data,
     loading: queryLoading,
     error: queryError,
   } = useQuery(GET_EXPENSE_STATS, {
     variables: {
+      workspaceId,
       ...dateRange,
     },
     fetchPolicy: "network-only",
+    skip: !workspaceId,
   });
 
   return {
@@ -64,8 +73,15 @@ export const useExpenseStats = (dateRange = {}) => {
  * Hook pour supprimer une dépense
  */
 export const useDeleteExpense = () => {
+  const { workspaceId } = useRequiredWorkspace();
+  
   const [deleteExpenseMutation, { loading }] = useMutation(DELETE_EXPENSE, {
-    refetchQueries: [GET_EXPENSES],
+    refetchQueries: [
+      {
+        query: GET_EXPENSES,
+        variables: { workspaceId, page: 1, limit: 20 },
+      },
+    ],
     awaitRefetchQueries: false,
   });
 
@@ -104,8 +120,15 @@ export const useDeleteExpense = () => {
  * Hook pour créer une dépense
  */
 export const useCreateExpense = () => {
+  const { workspaceId } = useRequiredWorkspace();
+  
   const [createExpenseMutation, { loading }] = useMutation(CREATE_EXPENSE, {
-    refetchQueries: [GET_EXPENSES],
+    refetchQueries: [
+      {
+        query: GET_EXPENSES,
+        variables: { workspaceId, page: 1, limit: 20 },
+      },
+    ],
     awaitRefetchQueries: false,
   });
 
@@ -151,11 +174,17 @@ export const useCreateExpense = () => {
  * Hook pour supprimer plusieurs dépenses
  */
 export const useDeleteMultipleExpenses = () => {
+  const { workspaceId } = useRequiredWorkspace();
+  
   const [deleteMultipleExpensesMutation, { loading }] = useMutation(
     DELETE_MULTIPLE_EXPENSES,
     {
-      // Utiliser refetchQueries sans variables spécifiques pour rafraîchir toutes les requêtes GET_EXPENSES
-      refetchQueries: [GET_EXPENSES],
+      refetchQueries: [
+        {
+          query: GET_EXPENSES,
+          variables: { workspaceId, page: 1, limit: 20 },
+        },
+      ],
       awaitRefetchQueries: false,
     }
   );
@@ -214,8 +243,15 @@ export const useDeleteMultipleExpenses = () => {
  * Hook pour mettre à jour une dépense
  */
 export const useUpdateExpense = () => {
+  const { workspaceId } = useRequiredWorkspace();
+  
   const [updateExpenseMutation, { loading }] = useMutation(UPDATE_EXPENSE, {
-    refetchQueries: [GET_EXPENSES],
+    refetchQueries: [
+      {
+        query: GET_EXPENSES,
+        variables: { workspaceId, page: 1, limit: 20 },
+      },
+    ],
     awaitRefetchQueries: false,
   });
 

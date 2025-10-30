@@ -19,12 +19,12 @@ import {
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useState, useEffect, useMemo } from "react";
 
-export default function UnifiedTransactions({ 
-  limit = 5, 
-  className, 
-  expenses = [], 
-  invoices = [], 
-  isLoading = false 
+export default function UnifiedTransactions({
+  limit = 5,
+  className,
+  expenses = [],
+  invoices = [],
+  isLoading = false,
 }) {
   const { workspaceId } = useWorkspace();
   const [bankTransactions, setBankTransactions] = useState([]);
@@ -36,7 +36,7 @@ export default function UnifiedTransactions({
 
     try {
       setBankLoading(true);
-      
+
       // Si les données du dashboard viennent du cache, pas besoin d'attendre l'API bancaire
       if (!isLoading) {
         setBankTransactions([]);
@@ -83,7 +83,11 @@ export default function UnifiedTransactions({
     console.log("🔍 Données reçues dans UnifiedTransactions:");
     console.log("- Expenses:", expenses?.length || 0, expenses?.[0]);
     console.log("- Invoices:", invoices?.length || 0, invoices?.[0]);
-    console.log("- Bank transactions:", bankTransactions?.length || 0, bankTransactions?.[0]);
+    console.log(
+      "- Bank transactions:",
+      bankTransactions?.length || 0,
+      bankTransactions?.[0]
+    );
 
     // Ajouter les transactions bancaires
     bankTransactions.forEach((transaction) => {
@@ -152,17 +156,17 @@ export default function UnifiedTransactions({
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
-    
+
     // Log pour debug - voir le format exact des dates reçues
     console.log("📅 Date reçue:", dateString, "Type:", typeof dateString);
-    
+
     let date;
-    
+
     // Essayer différents formats de date
-    if (typeof dateString === 'string') {
+    if (typeof dateString === "string") {
       // Si c'est une chaîne, essayer de la parser
       date = new Date(dateString);
-    } else if (typeof dateString === 'number') {
+    } else if (typeof dateString === "number") {
       // Si c'est un timestamp
       date = new Date(dateString);
     } else if (dateString instanceof Date) {
@@ -172,13 +176,13 @@ export default function UnifiedTransactions({
       console.warn("Format de date non reconnu:", dateString);
       return "";
     }
-    
+
     // Vérifier si la date est valide
     if (isNaN(date.getTime())) {
       console.warn("Date invalide après parsing:", dateString, "→", date);
       return "";
     }
-    
+
     return date.toLocaleDateString("fr-FR", {
       day: "2-digit",
       month: "2-digit",
@@ -267,7 +271,9 @@ export default function UnifiedTransactions({
     return (
       <Card className={className}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-normal">Transactions récentes</CardTitle>
+          <CardTitle className="font-normal text-sm">
+            Transactions récentes
+          </CardTitle>
           <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>

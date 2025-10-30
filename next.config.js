@@ -2,6 +2,11 @@
 const nextConfig = {
   swcMinify: true,
   reactStrictMode: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
   images: {
     unoptimized: process.env.NODE_ENV === "development",
   },

@@ -349,23 +349,25 @@ export const stripePlugin = stripe({
                         console.error("❌ [STRIPE WEBHOOK] Inviteur ou organisation introuvable");
                       } else {
                         // Envoyer les invitations en parallèle (plus rapide)
+                        const { ObjectId } = await import("mongodb");
                         const invitationPromises = invitedEmailsList
                           .filter(email => email && email.trim())
                           .map(async (email) => {
                             try {
-                              const invitationId = `inv_${Date.now()}_${Math.random().toString(36).substring(7)}`;
                               const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
                               
-                              await mongoDb.collection("invitation").insertOne({
-                                id: invitationId,
-                                organizationId: referenceId,
+                              // Insérer l'invitation et récupérer l'_id généré
+                              const insertResult = await mongoDb.collection("invitation").insertOne({
+                                organizationId: new ObjectId(referenceId), // ✅ Convertir en ObjectId
                                 email: email.trim(),
                                 role: "member",
-                                inviterId: userId,
+                                inviterId: new ObjectId(userId), // ✅ Convertir en ObjectId
                                 status: "pending",
                                 expiresAt: expiresAt,
                                 createdAt: new Date(),
                               });
+                              
+                              const invitationId = insertResult.insertedId.toString();
                               
                               const { sendOrganizationInvitationEmail } = await import("./auth-utils.js");
                               

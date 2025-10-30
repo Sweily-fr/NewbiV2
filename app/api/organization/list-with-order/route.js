@@ -28,7 +28,7 @@ export async function GET(request) {
       .find({ _id: { $in: organizationIds } })
       .toArray();
 
-    // Fusionner les données : ajouter le champ order à chaque organisation
+    // Fusionner les données : ajouter le champ order et role à chaque organisation
     const organizationsWithOrder = organizations.map((org) => {
       const member = members.find(
         (m) => m.organizationId.toString() === org._id.toString()
@@ -42,6 +42,7 @@ export async function GET(request) {
         customColor: org.customColor,
         customIcon: org.customIcon,
         order: member?.order ?? 999, // Si pas d'ordre, mettre à la fin
+        role: member?.role, // Ajouter le rôle de l'utilisateur
       };
     });
 
