@@ -1,6 +1,11 @@
 import { gql } from '@apollo/client';
 
+// DEPRECATED: This file is kept for backward compatibility only.
+// Please use @/src/graphql/queries/products instead.
+// The GET_PRODUCTS query now requires workspaceId parameter.
+
 // Requête pour récupérer tous les produits avec recherche
+// ⚠️ DEPRECATED - Use queries/products.js instead
 export const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: String, $page: Int, $limit: Int) {
     products(search: $search, category: $category, page: $page, limit: $limit) {

@@ -18,7 +18,8 @@ import {
   Download,
 } from "lucide-react";
 import { useQuery } from "@apollo/client";
-import { GET_PRODUCTS } from "@/src/graphql/productQueries";
+import { GET_PRODUCTS } from "@/src/graphql/queries/products";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 import { Button } from "@/src/components/ui/button";
 import {
@@ -89,13 +90,16 @@ function ProductSearchCombobox({
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const { workspaceId } = useRequiredWorkspace();
 
   const { data, loading, error } = useQuery(GET_PRODUCTS, {
     variables: {
+      workspaceId,
       search: searchTerm || undefined,
       limit: 20,
     },
     fetchPolicy: "network-only",
+    skip: !workspaceId,
   });
 
   const products =

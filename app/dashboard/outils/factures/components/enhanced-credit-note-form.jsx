@@ -25,7 +25,8 @@ import {
   ChevronDownIcon,
 } from "lucide-react";
 import { useQuery } from "@apollo/client";
-import { GET_PRODUCTS } from "@/src/graphql/productQueries";
+import { GET_PRODUCTS } from "@/src/graphql/queries/products";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -118,13 +119,15 @@ function ProductSearchCombobox({
   }, [searchTerm]);
 
   // Requête GraphQL pour récupérer les produits
+  const { workspaceId } = useRequiredWorkspace();
   const { data, loading, error } = useQuery(GET_PRODUCTS, {
     variables: {
+      workspaceId,
       search: debouncedSearchTerm && debouncedSearchTerm.trim() !== "" ? debouncedSearchTerm : undefined,
       limit: 20,
     },
     fetchPolicy: "network-only",
-    skip: !open, // Ne pas exécuter la requête si le dropdown n'est pas ouvert
+    skip: !open || !workspaceId, // Ne pas exécuter la requête si le dropdown n'est pas ouvert
   });
 
   // Transformation des données pour le composant
