@@ -81,14 +81,47 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
 
   // Fonction pour rafraîchir les données de l'organisation après mise à jour
   const handleBankDetailsSuccess = async () => {
-    // Forcer un re-render en changeant la clé
-    setOrganizationRefreshKey(prev => prev + 1);
-    
-    // Recharger la page pour s'assurer que les données sont à jour
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    // La mise à jour se fera via l'écouteur d'événement ci-dessous
   };
+  
+  // Écouter l'événement personnalisé émis par BankDetailsDialog
+  useEffect(() => {
+    const handleOrganizationUpdated = (event) => {
+      const { bankName, bankIban, bankBic } = event.detail;
+      
+      if (bankIban || bankBic || bankName) {
+        // Mettre à jour les données bancaires dans le formulaire
+        setValue("bankDetails.iban", bankIban || "", {
+          shouldDirty: true,
+        });
+        setValue("bankDetails.bic", bankBic || "", {
+          shouldDirty: true,
+        });
+        setValue("bankDetails.bankName", bankName || "", {
+          shouldDirty: true,
+        });
+        
+        // Mettre à jour userBankDetails pour que la checkbox soit visible
+        setValue("userBankDetails", {
+          iban: bankIban || "",
+          bic: bankBic || "",
+          bankName: bankName || "",
+        });
+        
+        // Cocher automatiquement la checkbox pour afficher les coordonnées bancaires
+        setValue("showBankDetails", true, {
+          shouldDirty: true,
+        });
+      }
+    };
+    
+    window.addEventListener("organizationUpdated", handleOrganizationUpdated);
+    
+    // Nettoyer l'écouteur au démontage
+    return () => {
+      window.removeEventListener("organizationUpdated", handleOrganizationUpdated);
+    };
+  }, [setValue]);
 
   // Exposer la fonction de gestion de fermeture au parent
   React.useEffect(() => {

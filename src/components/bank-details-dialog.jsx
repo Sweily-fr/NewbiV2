@@ -156,22 +156,30 @@ export function BankDetailsDialog({
       }
 
       // Mettre à jour l'organisation
+      const cleanedIban = cleanIban(formData.iban || "");
+      const cleanedBic = (formData.bic || "").toUpperCase();
+      
       const result = await updateOrganization(
         organization.id,
         {
           bankName: formData.bankName || "",
-          bankIban: cleanIban(formData.iban || ""),
-          bankBic: (formData.bic || "").toUpperCase(),
+          bankIban: cleanedIban,
+          bankBic: cleanedBic,
         },
         {
           onSuccess: () => {
             toast.success("Coordonnées bancaires mises à jour avec succès");
             
-            // Émettre un événement personnalisé pour forcer la mise à jour
+            // Émettre un événement personnalisé avec les données mises à jour
             if (typeof window !== "undefined") {
               window.dispatchEvent(
                 new CustomEvent("organizationUpdated", {
-                  detail: { organizationId: organization.id },
+                  detail: { 
+                    organizationId: organization.id,
+                    bankName: formData.bankName || "",
+                    bankIban: cleanedIban,
+                    bankBic: cleanedBic,
+                  },
                 })
               );
             }
