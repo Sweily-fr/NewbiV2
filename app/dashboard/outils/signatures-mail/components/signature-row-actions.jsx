@@ -101,7 +101,7 @@ export default function SignatureRowActions({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer la signature "
+              Êtes-vous sûr de vouloir <span className="text-white">supprimer</span> la signature "
               {signature.signatureName}" ? Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -109,7 +109,7 @@ export default function SignatureRowActions({
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               Supprimer
             </AlertDialogAction>

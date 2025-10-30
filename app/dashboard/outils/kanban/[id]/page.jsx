@@ -84,10 +84,13 @@ import {
   closestCenter,
   pointerWithin,
   rectIntersection,
+  closestCorners,
   useSensors,
   useSensor,
   PointerSensor,
   KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -173,25 +176,27 @@ export default function KanbanBoardPage({ params }) {
   // État local pour les colonnes (nécessaire pour le drag and drop en temps réel)
   const [localColumns, setLocalColumns] = React.useState(board?.columns || []);
 
-  // Mettre à jour localColumns quand board.columns change
-  // Utiliser useRef pour tracker la dernière version sans déclencher de re-render
-  const prevColumnsRef = React.useRef(board?.columns);
+  // Mettre à jour localColumns quand board change
+  // Inclure les tâches dans chaque colonne
+  const prevBoardRef = React.useRef(board);
 
   React.useEffect(() => {
-    if (board?.columns) {
-      // Comparer les références directes pour éviter les mises à jour inutiles
-      if (prevColumnsRef.current !== board.columns) {
-        setLocalColumns(board.columns);
-        prevColumnsRef.current = board.columns;
-      }
+    if (board?.columns && board?.tasks) {
+      // Restructurer les colonnes avec les tâches
+      // Toujours mettre à jour pour que les changements de la subscription soient reflétés
+      const columnsWithTasks = board.columns.map(column => ({
+        ...column,
+        tasks: (board.tasks || []).filter(task => task.columnId === column.id)
+      }));
+      setLocalColumns(columnsWithTasks);
     }
-  }, [board?.columns]);
+  }, [board?.columns, board?.tasks]);
 
   // SUPPRIMÉ : useKanbanRealtimeSync (doublon de useKanbanBoard qui gère déjà les subscriptions)
   // Les subscriptions sont gérées dans useKanbanBoard avec TASK_UPDATED_SUBSCRIPTION et COLUMN_UPDATED_SUBSCRIPTION
 
   // Les hooks doivent être appelés dans le même ordre à chaque rendu
-  // useKanbanDnD doit être appelé AVANT useSensors
+  // useKanbanDnD utilise UNIQUEMENT Redis/subscription, jamais le cache Apollo
   const { handleDragEnd, handleDragOver, handleDragStart, activeTask, activeColumn, getLocalTasksByColumn } = useKanbanDnD(
     moveTask,
     getTasksByColumn,
@@ -203,13 +208,22 @@ export default function KanbanBoardPage({ params }) {
     markReorderAction
   );
 
-  // Configuration des capteurs pour le drag & drop
+  // Configuration des capteurs pour le drag & drop - Optimisé pour la fluidité
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    // Mouse sensor pour desktop - activation immédiate avec petite tolérance
+    useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 3, // 3px minimum pour éviter les drags accidentels
       },
     }),
+    // Touch sensor pour mobile/tablette
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200, // 200ms de délai pour différencier scroll et drag
+        tolerance: 5,
+      },
+    }),
+    // Keyboard sensor pour accessibilité
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -436,7 +450,7 @@ export default function KanbanBoardPage({ params }) {
         {isList && (
           <DndContext
             sensors={sensors}
-            collisionDetection={rectIntersection}
+            collisionDetection={closestCorners}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
@@ -481,7 +495,7 @@ export default function KanbanBoardPage({ params }) {
             ) : (
               <DndContext
                 sensors={sensors}
-                collisionDetection={rectIntersection}
+                collisionDetection={closestCorners}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}

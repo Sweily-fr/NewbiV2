@@ -114,10 +114,10 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
   const style = {
     transform: CSS.Translate.toString(transform),
     transition: isSortableDragging ? "none" : transition,
-    opacity: isSortableDragging ? 0.8 : 1,
+    opacity: isSortableDragging ? 0.5 : 1,
     zIndex: isSortableDragging ? 1000 : "auto",
     position: "relative",
-    touchAction: "none", // Désactive le défilement tactile pendant le drag
+    touchAction: "none",
   };
 
   return (
@@ -128,7 +128,7 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
         {...attributes}
         {...listeners}
         onClick={handleClick}
-        className={`bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 mb-2 sm:mb-3 shadow-xs hover:shadow-sm transition-all duration-200 ease-out hover:bg-accent/10 will-change-transform flex flex-col ${isSortableDragging ? "opacity-50" : ""} cursor-grab active:cursor-grabbing`}
+        className={`bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 mb-2 sm:mb-3 shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-grab active:cursor-grabbing`}
       >
         {/* En-tête de la carte */}
         <div className="flex items-start justify-between mb-1.5 sm:mb-2">

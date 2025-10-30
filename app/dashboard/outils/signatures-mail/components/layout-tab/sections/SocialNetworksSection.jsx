@@ -77,8 +77,14 @@ export default function SocialNetworksSection({
 
   // Gestion de la taille des logos sociaux
   const handleSocialSizeChange = (value) => {
-    const numValue = parseInt(value) || 24;
-    updateSignatureData("socialSize", Math.max(16, Math.min(48, numValue)));
+    if (value === "" || value === null) {
+      updateSignatureData("socialSize", 1);
+      return;
+    }
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue >= 1) {
+      updateSignatureData("socialSize", numValue);
+    }
   };
 
   // Gestion de l'activation/désactivation des réseaux sociaux
@@ -249,29 +255,64 @@ export default function SocialNetworksSection({
         {/* Taille des logos sociaux */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Taille logos</Label>
-          <div className="flex items-center gap-3 w-30">
+          <div className="flex items-center gap-2 w-48">
+            <button
+              onClick={() => handleSocialSizeChange(20)}
+              className="h-8 w-8 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md flex-shrink-0"
+              title="Réinitialiser à 20"
+            >
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
             <Input
-              className="h-8 w-16 px-2 py-1"
+              className="h-8 px-2 py-1 min-w-12"
+              style={{ width: `${Math.max(48, (signatureData.socialSize?.toString().length || 2) * 8 + 16)}px` }}
               type="text"
               inputMode="decimal"
-              value={signatureData.socialSize || 24}
-              onChange={(e) => handleSocialSizeChange(e.target.value)}
-              onBlur={(e) => handleSocialSizeChange(e.target.value)}
+              value={signatureData.socialSize ?? 20}
+              onChange={(e) => {
+                if (e.target.value === "") {
+                  handleSocialSizeChange("");
+                } else {
+                  const numValue = parseInt(e.target.value);
+                  if (!isNaN(numValue) && numValue >= 1) {
+                    handleSocialSizeChange(e.target.value);
+                  }
+                }
+              }}
+              onBlur={(e) => {
+                if (e.target.value === "") {
+                  handleSocialSizeChange("");
+                } else {
+                  const numValue = parseInt(e.target.value);
+                  if (!isNaN(numValue) && numValue >= 1) {
+                    handleSocialSizeChange(e.target.value);
+                  }
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  handleSocialSizeChange(e.target.value);
+                  if (e.target.value === "") {
+                    handleSocialSizeChange("");
+                  } else {
+                    const numValue = parseInt(e.target.value);
+                    if (!isNaN(numValue) && numValue >= 1) {
+                      handleSocialSizeChange(e.target.value);
+                    }
+                  }
                 }
               }}
               aria-label="Taille des logos sociaux"
-              placeholder="24"
+              placeholder="20"
             />
             <Slider
               className="grow"
-              value={[signatureData.socialSize || 24]}
+              value={[signatureData.socialSize || 20]}
               onValueChange={(value) => handleSocialSizeChange(value[0])}
-              min={16}
-              max={48}
-              step={2}
+              min={1}
+              max={120}
+              step={1}
               aria-label="Taille logos sociaux"
             />
             <span className="text-xs text-muted-foreground">px</span>

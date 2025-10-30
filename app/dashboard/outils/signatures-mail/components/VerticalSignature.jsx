@@ -185,7 +185,7 @@ const VerticalSignature = ({
           <td
             style={{
               width: `${photoWidthPx}px`,
-              paddingRight: "15px",
+              paddingRight: "8px",
               verticalAlign: "top",
             }}
           >
@@ -412,6 +412,17 @@ const VerticalSignature = ({
             </table>
           </td>
 
+          {/* Espacement avant séparateur vertical */}
+          {signatureData.separatorVerticalEnabled && (
+            <td
+              style={{
+                width: `22px`,
+              }}
+            >
+              &nbsp;
+            </td>
+          )}
+
           {/* Séparateur vertical - Gmail compatible */}
           {signatureData.separatorVerticalEnabled && (
             <td
@@ -421,6 +432,7 @@ const VerticalSignature = ({
                   signatureData.colors?.separatorVertical || "#e0e0e0",
                 borderRadius: "0px",
                 padding: "0",
+                paddingTop: `${spacings.photoBottom ?? 16}px`,
                 fontSize: "1px",
                 lineHeight: "1px",
                 verticalAlign: "top",
@@ -432,10 +444,21 @@ const VerticalSignature = ({
             </td>
           )}
 
+          {/* Espacement après séparateur vertical */}
+          {signatureData.separatorVerticalEnabled && (
+            <td
+              style={{
+                width: `${spacings.verticalSeparatorRight ?? 22}px`,
+              }}
+            >
+              &nbsp;
+            </td>
+          )}
+
           {/* Colonne de droite : Informations de contact */}
           <td
             style={{
-              paddingLeft: "15px",
+              paddingLeft: `${spacings.global ?? 8}px`,
               verticalAlign: "top",
               width: `${contentWidthPx}px`,
             }}
@@ -749,6 +772,7 @@ const VerticalSignature = ({
                 {/* Séparateur horizontal - après tous les contacts */}
                 <tr>
                   <td
+                    colSpan={signatureData.separatorVerticalEnabled ? "3" : "2"}
                     style={{
                       paddingTop: `${spacings.separatorTop ?? 12}px`,
                       paddingBottom: `${spacings.separatorBottom ?? 12}px`,

@@ -6,7 +6,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useMutation } from "@apollo/client";
 import { Dialog, DialogContent } from "@/src/components/ui/dialog";
 import { TaskForm } from "./TaskForm";
-import { CREATE_TASK, GET_BOARD } from "@/src/graphql/kanbanQueries";
+import { CREATE_TASK } from "@/src/graphql/kanbanQueries";
 
 const AddTaskDialog = ({
   open,
@@ -19,9 +19,9 @@ const AddTaskDialog = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const [createTask] = useMutation(CREATE_TASK, {
-    refetchQueries: [{ query: GET_BOARD, variables: { id: boardId } }],
+    // Pas de refetchQueries - la subscription temps réel s'en charge
     onCompleted: () => {
-      toast.success("Tâche ajoutée avec succès");
+      // Plus de toast ici - la subscription affiche déjà une notification
       onTaskAdded?.();
       onOpenChange?.(false);
     },

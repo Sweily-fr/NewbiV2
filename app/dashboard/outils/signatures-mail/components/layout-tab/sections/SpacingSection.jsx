@@ -9,41 +9,70 @@ import { Switch } from "@/src/components/ui/switch";
 export default function SpacingSection({ signatureData, updateSignatureData }) {
   // Gestion des espacements
   const handleSpacingChange = (spacingKey, value) => {
-    const numValue = value === "" ? 0 : parseInt(value) || 0;
-    const clampedValue = Math.max(0, Math.min(30, numValue)); // Entre 0 et 30px
-    updateSignatureData("spacings", {
-      ...signatureData.spacings,
-      [spacingKey]: clampedValue,
-    });
+    if (value === "" || value === null) {
+      updateSignatureData("spacings", {
+        ...signatureData.spacings,
+        [spacingKey]: 1,
+      });
+      return;
+    }
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue >= 1) {
+      updateSignatureData("spacings", {
+        ...signatureData.spacings,
+        [spacingKey]: numValue,
+      });
+    }
   };
 
   // Fonction spéciale pour l'espacement global
   const handleGlobalSpacingChange = (value) => {
-    const numValue = parseInt(value) || 0;
-    const clampedValue = Math.max(0, Math.min(30, numValue));
-
-    // Applique l'espacement global à tous les espacements pour les deux layouts
-    const updated = {
-      ...signatureData.spacings,
-      global: clampedValue,
-      photoBottom: clampedValue,
-      logoBottom: clampedValue,
-      nameBottom: clampedValue,
-      positionBottom: clampedValue,
-      companyBottom: clampedValue,
-      contactBottom: clampedValue,
-      phoneToMobile: clampedValue,
-      mobileToEmail: clampedValue,
-      emailToWebsite: clampedValue,
-      websiteToAddress: clampedValue,
-      separatorTop: clampedValue,
-      separatorBottom: clampedValue,
-      // Espacements du séparateur vertical
-      verticalSeparatorLeft: 4, // Plus proche de la photo
-      verticalSeparatorRight: clampedValue,
-    };
-
-    updateSignatureData("spacings", updated);
+    if (value === "" || value === null) {
+      const clampedValue = 1;
+      const updated = {
+        ...signatureData.spacings,
+        global: clampedValue,
+        photoBottom: clampedValue,
+        logoBottom: clampedValue,
+        nameBottom: clampedValue,
+        positionBottom: clampedValue,
+        companyBottom: clampedValue,
+        contactBottom: clampedValue,
+        phoneToMobile: clampedValue,
+        mobileToEmail: clampedValue,
+        emailToWebsite: clampedValue,
+        websiteToAddress: clampedValue,
+        separatorTop: clampedValue,
+        separatorBottom: clampedValue,
+        verticalSeparatorLeft: 4,
+        verticalSeparatorRight: clampedValue,
+      };
+      updateSignatureData("spacings", updated);
+      return;
+    }
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue >= 1) {
+      const clampedValue = numValue;
+      const updated = {
+        ...signatureData.spacings,
+        global: clampedValue,
+        photoBottom: clampedValue,
+        logoBottom: clampedValue,
+        nameBottom: clampedValue,
+        positionBottom: clampedValue,
+        companyBottom: clampedValue,
+        contactBottom: clampedValue,
+        phoneToMobile: clampedValue,
+        mobileToEmail: clampedValue,
+        emailToWebsite: clampedValue,
+        websiteToAddress: clampedValue,
+        separatorTop: clampedValue,
+        separatorBottom: clampedValue,
+        verticalSeparatorLeft: 4,
+        verticalSeparatorRight: clampedValue,
+      };
+      updateSignatureData("spacings", updated);
+    }
   };
 
   return (
@@ -71,12 +100,22 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
             <Label className="text-xs text-muted-foreground">
               Espacement global
             </Label>
-            <div className="flex items-center gap-3 w-30">
+            <div className="flex items-center gap-2 w-48">
+              <button
+                onClick={() => handleGlobalSpacingChange(12)}
+                className="h-8 w-8 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md flex-shrink-0"
+                title="Réinitialiser à 12"
+              >
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
               <Input
-                className="h-8 w-16 px-2 py-1"
+                className="h-8 px-2 py-1 min-w-12"
+                style={{ width: `${Math.max(48, (signatureData.spacings?.global?.toString().length || 2) * 8 + 16)}px` }}
                 type="text"
                 inputMode="decimal"
-                value={signatureData.spacings?.global || 12}
+                value={signatureData.spacings?.global ?? 12}
                 onChange={(e) => handleGlobalSpacingChange(e.target.value)}
                 onBlur={(e) => handleGlobalSpacingChange(e.target.value)}
                 onKeyDown={(e) => {
@@ -111,7 +150,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.nameSpacing ?? ""}
+                  value={signatureData.spacings?.nameSpacing ?? 12}
                   onChange={(e) =>
                     handleSpacingChange("nameSpacing", e.target.value)
                   }
@@ -153,7 +192,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                     className="h-8 w-16 px-2 py-1"
                     type="text"
                     inputMode="decimal"
-                    value={signatureData.spacings?.logoBottom ?? ""}
+                    value={signatureData.spacings?.logoBottom ?? 12}
                     onChange={(e) =>
                       handleSpacingChange("logoBottom", e.target.value)
                     }
@@ -197,7 +236,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.nameBottom ?? ""}
+                  value={signatureData.spacings?.nameBottom ?? 8}
                   onChange={(e) =>
                     handleSpacingChange("nameBottom", e.target.value)
                   }
@@ -240,7 +279,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.positionBottom ?? ""}
+                  value={signatureData.spacings?.positionBottom ?? 8}
                   onChange={(e) =>
                     handleSpacingChange("positionBottom", e.target.value)
                   }
@@ -281,7 +320,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.phoneToMobile ?? ""}
+                  value={signatureData.spacings?.phoneToMobile ?? 4}
                   onChange={(e) =>
                     handleSpacingChange("phoneToMobile", e.target.value)
                   }
@@ -322,7 +361,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.mobileToEmail ?? ""}
+                  value={signatureData.spacings?.mobileToEmail ?? 4}
                   onChange={(e) =>
                     handleSpacingChange("mobileToEmail", e.target.value)
                   }
@@ -363,7 +402,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.emailToWebsite ?? ""}
+                  value={signatureData.spacings?.emailToWebsite ?? 4}
                   onChange={(e) =>
                     handleSpacingChange("emailToWebsite", e.target.value)
                   }
@@ -404,7 +443,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.websiteToAddress ?? ""}
+                  value={signatureData.spacings?.websiteToAddress ?? 4}
                   onChange={(e) =>
                     handleSpacingChange("websiteToAddress", e.target.value)
                   }
@@ -435,7 +474,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
               </div>
             </div>
 
-            {/* Espacement au-dessus du séparateur */}
+            {/* Espacement avant séparateur */}
             <div className="flex items-center justify-between">
               <Label className="text-xs text-muted-foreground">
                 Avant séparateur
@@ -445,10 +484,18 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.separatorTop ?? ""}
+                  value={signatureData.spacings?.separatorTop ?? 12}
                   onChange={(e) =>
                     handleSpacingChange("separatorTop", e.target.value)
                   }
+                  onBlur={(e) =>
+                    handleSpacingChange("separatorTop", e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSpacingChange("separatorTop", e.target.value);
+                    }
+                  }}
                   min={0}
                   max={30}
                   aria-label="Espacement avant le séparateur"
@@ -478,7 +525,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.separatorBottom ?? ""}
+                  value={signatureData.spacings?.separatorBottom ?? 12}
                   onChange={(e) =>
                     handleSpacingChange("separatorBottom", e.target.value)
                   }
@@ -519,7 +566,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.logoToSocial ?? ""}
+                  value={signatureData.spacings?.logoToSocial ?? 12}
                   onChange={(e) =>
                     handleSpacingChange("logoToSocial", e.target.value)
                   }
@@ -565,7 +612,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                         type="text"
                         inputMode="decimal"
                         value={
-                          signatureData.spacings?.verticalSeparatorLeft ?? ""
+                          signatureData.spacings?.verticalSeparatorLeft ?? 22
                         }
                         onChange={(e) =>
                           handleSpacingChange(
@@ -619,7 +666,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                         type="text"
                         inputMode="decimal"
                         value={
-                          signatureData.spacings?.verticalSeparatorRight ?? ""
+                          signatureData.spacings?.verticalSeparatorRight ?? 22
                         }
                         onChange={(e) =>
                           handleSpacingChange(

@@ -50,6 +50,43 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
               variables: { id, workspaceId }
             });
             
+            console.log("📝 [Subscription] Création tâche - Cache data:", cacheData?.board?.tasks?.length, "tâches");
+            
+            if (cacheData?.board) {
+              const newTasks = [...(cacheData.board.tasks || []), task];
+              console.log("✅ [Subscription] Ajout tâche au cache:", task.title, "- Total:", newTasks.length);
+              
+              apolloClient.cache.writeQuery({
+                query: GET_BOARD,
+                variables: { id, workspaceId },
+                data: {
+                  board: {
+                    ...cacheData.board,
+                    tasks: newTasks
+                  }
+                }
+              });
+            } else {
+              console.warn("⚠️ [Subscription] Cache board non trouvé pour id:", id, "workspaceId:", workspaceId);
+            }
+          } catch (error) {
+            console.error("❌ [Subscription] Erreur mise à jour cache:", error);
+          }
+          
+          // Important: Afficher une notification pour la création
+          toast.success(`Nouvelle tâche: ${task.title}`, {
+            description: "Mise à jour automatique"
+          });
+        }
+        
+        // Pour les suppressions, mettre à jour le cache Apollo manuellement
+        if (type === 'DELETED' && taskId) {
+          try {
+            const cacheData = apolloClient.cache.readQuery({
+              query: GET_BOARD,
+              variables: { id, workspaceId }
+            });
+            
             if (cacheData?.board) {
               apolloClient.cache.writeQuery({
                 query: GET_BOARD,
@@ -57,7 +94,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                 data: {
                   board: {
                     ...cacheData.board,
-                    tasks: [...(cacheData.board.tasks || []), task]
+                    tasks: (cacheData.board.tasks || []).filter(t => t.id !== taskId)
                   }
                 }
               });
@@ -65,6 +102,16 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           } catch {
             // Erreur silencieuse - continuer
           }
+        }
+        
+        // Pour les déplacements, ignorer les événements MOVED
+        // La subscription mettra à jour localColumns automatiquement
+        // L'optimistic update du frontend gère déjà l'affichage
+        if (type === 'MOVED' && task) {
+          // Ignorer complètement les événements MOVED
+          // Le frontend gère tout avec localTasksByColumn
+          // Les données du serveur arrivent via la subscription et mettent à jour localColumns
+          return;
         }
         
         // Notifications utilisateur (debouncing automatique)
@@ -81,9 +128,8 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
             description: "Mise à jour automatique"
           });
         } else if (type === 'MOVED' && task) {
-          toast.info(`Tâche déplacée: ${task.title}`, {
-            description: "Mise à jour automatique"
-          });
+          // Pas de toast pour les déplacements - trop de bruit
+          // L'utilisateur voit déjà le changement en temps réel
         }
       }
     },

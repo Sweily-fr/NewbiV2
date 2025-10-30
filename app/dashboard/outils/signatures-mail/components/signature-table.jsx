@@ -155,7 +155,7 @@ export default function SignatureTable() {
           {table.getSelectedRowModel().rows.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
+                <Button variant="destructive" size="sm" className="text-white">
                   <TrashIcon className="mr-2 h-4 w-4" />
                   Supprimer ({table.getSelectedRowModel().rows.length})
                 </Button>
@@ -172,7 +172,7 @@ export default function SignatureTable() {
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => handleDeleteSelected()}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="bg-destructive text-white hover:bg-destructive/90"
                   >
                     Supprimer
                   </AlertDialogAction>
@@ -451,7 +451,8 @@ function useSignatureTable({ data, onRefetch, actions }) {
       const selectedIds = table.getSelectedRowModel().rows.map(row => row.original.id);
       await actions.handleDeleteMultiple(selectedIds);
       table.resetRowSelection();
-      onRefetch?.();
+      // Ne pas faire de refetch - le cache Apollo est mis à jour directement
+      // onRefetch?.();
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
     } finally {
