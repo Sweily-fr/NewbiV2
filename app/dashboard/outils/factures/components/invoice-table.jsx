@@ -148,7 +148,7 @@ export default function InvoiceTable() {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-dashed font-normal"
+                className="border-dashed font-normal cursor-pointer"
               >
                 <ListFilterIcon className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Statut</span>
@@ -196,7 +196,7 @@ export default function InvoiceTable() {
           {/* Column visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto font-normal">
+              <Button variant="outline" className="ml-auto font-normal cursor-pointer">
                 <Columns3Icon className="mr-2 h-4 w-4" />
                 Colonnes
               </Button>
@@ -350,41 +350,53 @@ export default function InvoiceTable() {
           </div>
 
           {/* Filter Button - Icon only */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
               >
                 <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Filtrer par statut</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setStatusFilter("")}>
-                Tous les statuts
-              </DropdownMenuItem>
-              {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
-                <DropdownMenuItem
-                  key={value}
-                  onClick={() => setStatusFilter(value)}
-                >
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "mr-2",
-                      INVOICE_STATUS_COLORS[value] || "bg-gray-100"
-                    )}
+            </PopoverTrigger>
+            <PopoverContent align="end">
+              <div className="p-4">
+                <h4 className="font-medium leading-none mb-3">Filtrer par statut</h4>
+                <div className="space-y-2">
+                  {Object.entries(INVOICE_STATUS_LABELS).map(([status, label]) => (
+                    <div key={status} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`mobile-invoice-${status}`}
+                        checked={statusFilter.includes(status)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setStatusFilter([...statusFilter, status]);
+                          } else {
+                            setStatusFilter(
+                              statusFilter.filter((s) => s !== status)
+                            );
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`mobile-invoice-${status}`} className="text-sm font-normal">
+                        {label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {statusFilter.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setStatusFilter([])}
+                    className="w-full mt-3 h-8 px-2 lg:px-3"
                   >
-                    {label}
-                  </Badge>
-                  {label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                    Effacer les filtres
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* Delete button for mobile - shown when rows are selected */}
           {selectedRows.length > 0 && (

@@ -28,7 +28,7 @@ function QuotesContent() {
               Créez et gérez vos devis clients
             </p>
           </div>
-          <Button onClick={handleNewQuote} className="w-full sm:w-auto">
+          <Button onClick={handleNewQuote} className="w-full sm:w-auto cursor-pointer">
             <Plus className="mr-2 h-4 w-4" />
             Nouveau devis
           </Button>

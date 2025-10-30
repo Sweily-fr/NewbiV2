@@ -474,7 +474,7 @@ export default function TableProduct({ handleAddProduct }) {
             {/* Filter by category */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="font-normal">
+                <Button variant="outline" className="font-normal cursor-pointer">
                   <FilterIcon
                     className="-ms-1 opacity-60"
                     size={16}
@@ -521,7 +521,7 @@ export default function TableProduct({ handleAddProduct }) {
             {/* Toggle columns visibility */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="font-normal">
+                <Button variant="outline" className="font-normal cursor-pointer">
                   <Columns3Icon
                     className="-ms-1 opacity-60"
                     size={16}

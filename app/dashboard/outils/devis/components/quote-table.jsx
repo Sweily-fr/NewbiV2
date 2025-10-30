@@ -142,7 +142,7 @@ export default function QuoteTable() {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-dashed font-normal"
+                className="border-dashed font-normal cursor-pointer"
               >
                 <ListFilterIcon className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Statut</span>
@@ -198,7 +198,7 @@ export default function QuoteTable() {
           {/* Column visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto font-normal">
+              <Button variant="outline" className="ml-auto font-normal cursor-pointer">
                 <Columns3Icon className="mr-2 h-4 w-4" />
                 Colonnes
               </Button>
@@ -303,7 +303,7 @@ export default function QuoteTable() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
               >
                 <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               </Button>

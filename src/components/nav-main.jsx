@@ -108,7 +108,7 @@ export function NavMain({ items }) {
                 </Link>
                 <CollapsibleTrigger asChild>
                   <button
-                    className="p-2 hover:bg-transparent transition-colors"
+                    className="p-2 hover:bg-transparent transition-colors cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
                     }}

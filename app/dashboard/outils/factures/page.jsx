@@ -28,7 +28,7 @@ function InvoicesContent() {
               Gérez vos factures et suivez vos paiements
             </p>
           </div>
-          <Button onClick={handleNewInvoice} className="w-full sm:w-auto">
+          <Button onClick={handleNewInvoice} className="w-full sm:w-auto cursor-pointer">
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle facture
           </Button>

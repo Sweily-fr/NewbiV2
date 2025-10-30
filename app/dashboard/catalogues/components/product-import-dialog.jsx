@@ -129,7 +129,7 @@ export default function ProductImportDialog({ onImportComplete }) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="font-normal">
+        <Button variant="outline" className="font-normal cursor-pointer">
           <Upload className="mr-2 h-4 w-4" />
           Importer
         </Button>
@@ -153,7 +153,7 @@ export default function ProductImportDialog({ onImportComplete }) {
                 variant="outline"
                 size="sm"
                 onClick={downloadCSVTemplate}
-                className="flex-1"
+                className="flex-1 cursor-pointer"
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Modèle CSV
@@ -162,7 +162,7 @@ export default function ProductImportDialog({ onImportComplete }) {
                 variant="outline"
                 size="sm"
                 onClick={downloadExcelTemplate}
-                className="flex-1"
+                className="flex-1 cursor-pointer"
               >
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                 Modèle Excel

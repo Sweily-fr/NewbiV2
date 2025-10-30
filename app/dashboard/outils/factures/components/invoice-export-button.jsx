@@ -114,7 +114,7 @@ export default function InvoiceExportButton({ invoices, selectedRows = [] }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="font-normal">
+          <Button variant="outline" className="font-normal cursor-pointer">
             <Download className="mr-2 h-4 w-4" />
             Exporter
             {hasSelection && (

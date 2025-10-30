@@ -454,7 +454,7 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
             {/* Filter by type */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="font-normal cursor-pointer">
+                <Button variant="outline" className="font-normal cursor-pointer hover:cursor-pointer">
                   <FilterIcon
                     className="-ms-1 opacity-60"
                     size={16}
@@ -505,7 +505,7 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="font-normal hidden md:flex cursor-pointer"
+                  className="font-normal hidden md:flex cursor-pointer hover:cursor-pointer"
                 >
                   <Columns3Icon
                     className="-ms-1 opacity-60"
