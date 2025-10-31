@@ -15,16 +15,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { useDroppable } from "@dnd-kit/core";
+import { useDroppable } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { TaskCard } from "./TaskCard";
 import { TaskCardSkeleton } from "./TaskCardSkeleton";
 
 /**
  * Composant pour une colonne avec ses tâches dans le tableau Kanban
+ * Compatible avec dnd-kit
  */
 export function KanbanColumn({
   column,
@@ -36,148 +35,182 @@ export function KanbanColumn({
   onDeleteColumn,
   isCollapsed,
   onToggleCollapse,
-  dragHandleProps, // Props pour rendre le header draggable
-  isDragging, // État de drag pour le feedback visuel
-  isLoading = false, // État de chargement pour afficher les skeletons
+  isLoading = false,
+  dragHandleProps,
+  isDragging,
 }) {
-  // Zone droppable pour les tâches
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
     data: {
-      type: "column",
+      type: 'column',
       column,
     },
   });
 
   return (
     <div
-      ref={setNodeRef}
-      className={`bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border transition-colors duration-150 flex-shrink-0 ${
-        isOver ? "bg-accent/50 border-primary/50" : ""
-      } ${isDragging ? "border-primary shadow-lg" : ""}`}
+      className={`bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex flex-col flex-shrink-0 transition-all duration-200 ${
+        isCollapsed ? "max-w-[80px] min-w-[80px]" : ""
+      } ${isDragging ? "opacity-50" : ""}`}
     >
-      <div
+      {/* Header de la colonne - Draggable sur toute la zone */}
+      <div 
         {...dragHandleProps}
-        className={`flex items-center justify-between py-2 ${
-          isDragging ? "cursor-grabbing" : "cursor-grab hover:bg-accent/30 rounded-lg px-2 -mx-2 transition-colors duration-150"
-        }`}
+        className="flex items-center justify-between mb-2 sm:mb-3 gap-2 cursor-grab active:cursor-grabbing"
+        style={{ touchAction: 'none' }}
       >
-        <div className="flex items-center gap-2 flex-1">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {/* Icône de drag */}
+          <div className="text-muted-foreground hover:text-foreground transition-colors">
+            <GripVertical className="h-4 w-4" />
+          </div>
+
+          {!isCollapsed && (
+            <>
+              <div
+                className="w-3 h-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: column.color || "#94a3b8" }}
+              />
+              <h3 className="font-semibold text-sm sm:text-base truncate">
+                {column.title}
+              </h3>
+              <Badge
+                variant="secondary"
+                className="ml-auto flex-shrink-0 text-xs"
+              >
+                {tasks.length}
+              </Badge>
+            </>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {/* Bouton collapse/expand */}
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
+            className="h-7 w-7 sm:h-8 sm:w-8"
             onClick={onToggleCollapse}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="h-4 w-4 p-0 mr-1"
           >
             {isCollapsed ? (
-              <ChevronDown className="h-3 w-3" />
+              <ChevronDown className="h-4 w-4" />
             ) : (
-              <ChevronUp className="h-3 w-3" />
+              <ChevronUp className="h-4 w-4" />
             )}
           </Button>
-          <button
-            {...dragHandleProps}
-            className={`text-muted-foreground/70 hover:text-foreground p-1 rounded hover:bg-accent/30 transition-colors touch-none ${
-              isDragging ? "cursor-grabbing" : "cursor-grab"
-            }`}
-            title="Faire glisser pour réorganiser"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <GripVertical className="h-3.5 w-3.5" />
-          </button>
-          <div
-            className="w-[2px] h-4"
-            style={{ backgroundColor: column.color }}
-          />
-          <h3 className="font-medium text-foreground">{column.title}</h3>
-          <Badge variant="secondary" className="text-xs">
-            {tasks.length}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-1" onPointerDown={(e) => e.stopPropagation()}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onAddTask(column.id)}
-            className="h-6 w-6 p-0 text-muted-foreground cursor-pointer"
-            title="Ajouter une tâche"
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                <MoreVertical className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => onEditColumn(column)}>
-                <Edit className="mr-2 h-3 w-3" />
-                Modifier
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onDeleteColumn(column.id)}
-                variant="destructive"
-              >
-                <Trash2 className="mr-2 h-3 w-3" />
-                Supprimer
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+
+          {!isCollapsed && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 sm:h-8 sm:w-8"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onEditColumn}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Modifier
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={onDeleteColumn}
+                  className="text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Supprimer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
+      {/* Zone droppable pour les tâches */}
       {!isCollapsed && (
-        <>
-          <div className="mt-2 flex flex-col">
-            <div className="max-h-[calc(100vh-320px)] overflow-y-auto overflow-x-hidden pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-border/80">
-              <SortableContext
-                items={tasks.map((task) => task.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-2">
-                  {isLoading ? (
-                    // Afficher 3 skeletons lors du chargement
-                    <>
-                      <TaskCardSkeleton />
-                      <TaskCardSkeleton />
-                      <TaskCardSkeleton />
-                    </>
-                  ) : (
-                    <>
-                      {tasks.map((task, index) => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          index={task.position || index}
-                          onEdit={onEditTask}
-                          onDelete={onDeleteTask}
-                        />
-                      ))}
-                      {tasks.length === 0 && (
-                        <div className="w-full py-4 text-center text-sm text-muted-foreground">
-                          Aucune tâche
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </SortableContext>
+        <div
+          ref={setNodeRef}
+          className={`flex-1 overflow-y-auto space-y-2 sm:space-y-3 min-h-[100px] rounded-lg transition-colors ${
+            isOver ? 'bg-accent/20' : ''
+          }`}
+        >
+          {isLoading ? (
+            // Afficher des skeletons pendant le chargement
+            <>
+              <TaskCardSkeleton />
+              <TaskCardSkeleton />
+              <TaskCardSkeleton />
+            </>
+          ) : tasks.length === 0 ? (
+            // Message si aucune tâche
+            <div className="text-center text-muted-foreground py-8 text-sm">
+              Aucune tâche
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onAddTask(column.id)}
-              className="w-full cursor-pointer border-dashed border-2 border-border hover:border-foreground/30 text-muted-foreground hover:bg-accent/50 mt-2 flex-shrink-0"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Ajouter une tâche
-            </Button>
-          </div>
-        </>
+          ) : (
+            // Liste des tâches draggables
+            tasks.map((task) => (
+              <SortableTaskItem
+                key={task.id}
+                task={task}
+                onEdit={onEditTask}
+                onDelete={onDeleteTask}
+              />
+            ))
+          )}
+        </div>
       )}
+
+      {/* Bouton ajouter une tâche */}
+      {!isCollapsed && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full mt-2 sm:mt-3 justify-start text-muted-foreground hover:text-foreground"
+          onClick={() => onAddTask(column.id)}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Ajouter une tâche
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Composant pour une tâche draggable avec dnd-kit
+ */
+function SortableTaskItem({ task, onEdit, onDelete }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: task.id,
+    data: {
+      type: 'task',
+      task,
+    },
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <TaskCard
+        task={task}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        isDragging={isDragging}
+      />
     </div>
   );
 }

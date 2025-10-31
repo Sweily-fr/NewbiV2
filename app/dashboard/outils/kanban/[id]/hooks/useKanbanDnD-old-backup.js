@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 
 export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, localColumns, reorderColumns, setLocalColumns, markReorderAction) => {
@@ -8,12 +8,6 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
   const [originalTaskState, setOriginalTaskState] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragEndTimeRef = useRef(0);
-  const localColumnsRef = useRef(localColumns);
-  
-  // Garder localColumnsRef à jour
-  useEffect(() => {
-    localColumnsRef.current = localColumns;
-  }, [localColumns]);
 
   const handleDragStart = (event) => {
     const { active } = event;
@@ -85,14 +79,17 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
         const overTask = overData.task;
         const targetColumnId = overTask.columnId;
 
+
         if (currentColumnId === targetColumnId) {
           // Même colonne - réorganiser avec arrayMove
           const tasks = [...localTasksByColumn[currentColumnId]];
           const activeIndex = tasks.findIndex((t) => t.id === activeTask.id);
           const overIndex = tasks.findIndex((t) => t.id === overTask.id);
           
+          
           if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
             const newTasks = arrayMove(tasks, activeIndex, overIndex);
+            
             
             setLocalTasksByColumn({
               ...localTasksByColumn,
@@ -108,25 +105,22 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
           // Insérer à la position de la tâche survolée
           targetTasks.splice(overIndex, 0, { ...activeTask, columnId: targetColumnId });
           
+          
           setLocalTasksByColumn({
             ...localTasksByColumn,
             [currentColumnId]: sourceTasks,
             [targetColumnId]: targetTasks
           });
         }
-      } else if (overData?.type === 'column' || !overData) {
-        // Drop sur colonne (vide ou zone de drop)
-        // Extraire l'ID de la colonne cible
-        let targetColumnId = over.id;
-        if (overData?.column) {
-          targetColumnId = overData.column.id;
-        }
-        targetColumnId = String(targetColumnId).replace(/^(empty-|collapsed-)/, '');
+      } else if (overData?.type === 'column') {
+        // Drop sur colonne vide
+        const targetColumnId = (overData.columnId || over.id).replace(/^(empty-|collapsed-)/, '');
+        
         
         if (currentColumnId !== targetColumnId) {
           const sourceTasks = localTasksByColumn[currentColumnId].filter(t => t.id !== activeTask.id);
-          // Ajouter à la fin de la colonne cible
           const targetTasks = [...(localTasksByColumn[targetColumnId] || []), { ...activeTask, columnId: targetColumnId }];
+          
           
           setLocalTasksByColumn({
             ...localTasksByColumn,
@@ -142,10 +136,6 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
     const { active, over } = event;
     const activeData = active.data.current;
     
-    // Marquer le temps de fin du drag AVANT de mettre isDragging à false
-    // Cela permet au useEffect de page.jsx de bloquer les mises à jour
-    dragEndTimeRef.current = Date.now();
-    
     setActiveTask(null);
     setActiveColumn(null);
     setIsDragging(false);
@@ -158,10 +148,8 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
 
     // Drag de colonne
     if (activeData?.type === 'column') {
-      // Utiliser localColumnsRef pour avoir l'ordre à jour après handleDragOver
-      const columnIds = localColumnsRef.current.map((col) => col.id);
+      const columnIds = localColumns.map((col) => col.id);
       markReorderAction();
-      
       try {
         await reorderColumns({
           variables: { columns: columnIds, workspaceId },
@@ -186,7 +174,6 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
         const taskIndex = tasks.findIndex(t => t.id === taskId);
         if (taskIndex !== -1) {
           newColumnId = columnId;
-          // La position est simplement l'index dans la colonne
           newPosition = taskIndex;
           break;
         }
@@ -197,6 +184,7 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
       const hasPositionChanged = newPosition !== originalPosition;
 
       if (hasColumnChanged || hasPositionChanged) {
+        
         try {
           await moveTask({
             variables: {
@@ -206,8 +194,6 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
               workspaceId,
             },
           });
-          // Marquer l'action de réorganisation pour ignorer les événements MOVED
-          markReorderAction();
         } catch (error) {
           console.error('❌ Erreur déplacement tâche:', error);
         }
@@ -216,11 +202,15 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
 
     // Nettoyer la preview et l'état d'origine
     setOriginalTaskState(null);
-    // Nettoyer localTasksByColumn après 500ms
+    // Marquer le temps de fin du drag pour bloquer les mises à jour pendant 500ms
+    dragEndTimeRef.current = Date.now();
     setTimeout(() => {
       setLocalTasksByColumn({});
-      // Réinitialiser dragEndTimeRef après le délai
       dragEndTimeRef.current = 0;
+      // Forcer la synchronisation avec les données du serveur
+      if (markReorderAction) {
+        markReorderAction();
+      }
     }, 500);
   };
 

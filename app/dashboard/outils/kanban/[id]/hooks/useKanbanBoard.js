@@ -153,13 +153,39 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
         
         console.log("🔄 [Kanban] Mise à jour temps réel colonne:", type, column || columnId);
         
-        // Ignorer les mises à jour REORDERED qui arrivent dans les 500ms après une action locale
-        // Cela évite les re-renders inutiles causés par la subscription après une action drag
-        if (type === 'REORDERED') {
-          const timeSinceLastReorder = Date.now() - lastReorderTimeRef.current;
-          if (timeSinceLastReorder < 500) {
-            console.log("⏭️ [Kanban] Ignorer REORDERED (action locale récente)");
-            return;
+        // Pour les REORDERED, mettre à jour le cache Apollo avec le nouvel ordre
+        if (type === 'REORDERED' && subscriptionData.data.columnUpdated.columns) {
+          console.log("🔄 [Kanban] Colonnes réorganisées - Mise à jour du cache");
+          
+          try {
+            const cacheData = apolloClient.cache.readQuery({
+              query: GET_BOARD,
+              variables: { id, workspaceId }
+            });
+            
+            if (cacheData?.board) {
+              const newColumnIds = subscriptionData.data.columnUpdated.columns;
+              
+              // Réorganiser les colonnes selon le nouvel ordre
+              const reorderedColumns = newColumnIds.map(columnId => 
+                cacheData.board.columns.find(col => col.id === columnId)
+              ).filter(Boolean); // Filtrer les colonnes non trouvées
+              
+              console.log("✅ [Kanban] Nouvel ordre des colonnes:", reorderedColumns.map(c => c.title));
+              
+              apolloClient.cache.writeQuery({
+                query: GET_BOARD,
+                variables: { id, workspaceId },
+                data: {
+                  board: {
+                    ...cacheData.board,
+                    columns: reorderedColumns
+                  }
+                }
+              });
+            }
+          } catch (error) {
+            console.error("❌ [Kanban] Erreur mise à jour cache colonnes:", error);
           }
         }
         
