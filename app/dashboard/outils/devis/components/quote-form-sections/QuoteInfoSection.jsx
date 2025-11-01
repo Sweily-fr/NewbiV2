@@ -48,6 +48,7 @@ import {
   formatQuoteNumber,
   getQuoteDisplayNumber,
 } from "@/src/utils/quoteUtils";
+import { useLastQuotePrefix } from "@/src/graphql/quoteQueries";
 
 const VALIDITY_PERIOD_SUGGESTIONS = [
   { value: 15, label: "15 jours" },
@@ -119,6 +120,12 @@ export default function QuoteInfoSection({
     setValue("prefix", value, { shouldValidate: true });
   };
 
+  // Get the last quote prefix
+  const { prefix: lastQuotePrefix, loading: loadingLastPrefix } = useLastQuotePrefix();
+  
+  // Flag pour savoir si le préfixe a déjà été initialisé
+  const prefixInitialized = useRef(false);
+
   // Initialize defaults only once on mount
   const [initialized, setInitialized] = useState(false);
 
@@ -129,12 +136,6 @@ export default function QuoteInfoSection({
 
     // Initialize without causing re-renders
     const currentData = getValues();
-    if (!currentData.prefix) {
-      setValue("prefix", generateQuotePrefix(), {
-        shouldValidate: false,
-        shouldDirty: false,
-      });
-    }
 
     if (!currentData.issueDate) {
       const today = new Date();
@@ -144,6 +145,22 @@ export default function QuoteInfoSection({
       });
     }
   }, []);
+
+  // Set default prefix from last quote only once on mount (only for new quotes)
+  useEffect(() => {
+    // Ne pré-remplir que si :
+    // 1. Les données sont chargées
+    // 2. Pas encore initialisé
+    // 3. Le champ prefix est vide
+    // 4. Il existe un préfixe de dernier devis
+    // 5. C'est un nouveau devis (pas d'ID)
+    const isNewQuote = !data.id;
+    
+    if (!loadingLastPrefix && !prefixInitialized.current && !data.prefix && lastQuotePrefix && isNewQuote) {
+      setValue("prefix", lastQuotePrefix, { shouldValidate: false, shouldDirty: false });
+      prefixInitialized.current = true;
+    }
+  }, [lastQuotePrefix, loadingLastPrefix, data.id]);
 
   // Fonction utilitaire pour créer une date sans l'heure
   const createDateWithoutTime = (dateString) => {
@@ -224,7 +241,6 @@ export default function QuoteInfoSection({
                       message: "Format attendu : D-MMAAAA (ex: D-022025)",
                     },
                   })}
-                  value={data.prefix || ""}
                   onChange={handlePrefixChange}
                   onFocus={(e) => {
                     // Show placeholder with current date as an example

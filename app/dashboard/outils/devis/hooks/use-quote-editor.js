@@ -350,12 +350,12 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   // Set next quote number for new quotes
   useEffect(() => {
-    if (mode === "create") {
-      // Pour les nouveaux devis, ne pas définir de numéro côté frontend
-      // Laisser le backend générer le numéro approprié (avec DRAFT- pour les brouillons)
-      setValue("number", "");
+    if (mode === "create" && nextQuoteNumber && !numberLoading) {
+      // Initialiser avec le prochain numéro séquentiel calculé
+      const formattedNumber = String(nextQuoteNumber).padStart(6, '0');
+      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
     }
-  }, [mode, setValue]);
+  }, [mode, nextQuoteNumber, numberLoading, setValue]);
 
   // Effet pour charger les données d'organisation au démarrage
   useEffect(() => {

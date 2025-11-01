@@ -41,6 +41,7 @@ import {
   getCurrentMonthYear,
 } from "@/src/utils/invoiceUtils";
 import { useInvoiceNumber } from "../../hooks/use-invoice-number";
+import { useLastInvoicePrefix } from "@/src/graphql/invoiceQueries";
 
 const PAYMENT_TERMS_SUGGESTIONS = [
   { value: 0, label: "Paiement à réception" },
@@ -68,6 +69,12 @@ export default function InvoiceInfoSection({ canEdit }) {
     getFormattedNextNumber,
     hasExistingInvoices,
   } = useInvoiceNumber();
+
+  // Get the last invoice prefix
+  const { prefix: lastInvoicePrefix, loading: loadingLastPrefix } = useLastInvoicePrefix();
+  
+  // Flag pour savoir si le préfixe a déjà été initialisé
+  const prefixInitialized = React.useRef(false);
 
   // Set default invoice number when nextInvoiceNumber is available
   React.useEffect(() => {
@@ -112,6 +119,8 @@ export default function InvoiceInfoSection({ canEdit }) {
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
 
+    console.log('[InvoiceInfoSection] handlePrefixChange - New value:', value);
+
     // Auto-fill MM (month)
     if (value.includes("MM")) {
       const { month } = getCurrentMonthYear();
@@ -142,12 +151,20 @@ export default function InvoiceInfoSection({ canEdit }) {
     setValue("prefix", value, { shouldValidate: true });
   };
 
-  // Set default prefix on component mount if not already set
+  // Set default prefix from last invoice only once on mount (only for new invoices)
   React.useEffect(() => {
-    if (!data.prefix) {
-      setValue("prefix", generateInvoicePrefix(), { shouldValidate: true });
+    const isNewInvoice = !data.id;
+    
+    console.log('[InvoiceInfoSection] useEffect - Current prefix:', data.prefix);
+    console.log('[InvoiceInfoSection] useEffect - Last invoice prefix:', lastInvoicePrefix);
+    console.log('[InvoiceInfoSection] useEffect - Will set?', !loadingLastPrefix && !prefixInitialized.current && !data.prefix && lastInvoicePrefix && isNewInvoice);
+    
+    if (!loadingLastPrefix && !prefixInitialized.current && !data.prefix && lastInvoicePrefix && isNewInvoice) {
+      console.log('[InvoiceInfoSection] Setting prefix to:', lastInvoicePrefix);
+      setValue("prefix", lastInvoicePrefix, { shouldValidate: false, shouldDirty: false });
+      prefixInitialized.current = true;
     }
-  }, [data.prefix, setValue]);
+  }, [lastInvoicePrefix, loadingLastPrefix, data.id]);
 
   // Set default issue date to today if not already set
   React.useEffect(() => {
@@ -234,7 +251,6 @@ export default function InvoiceInfoSection({ canEdit }) {
                       message: "Le préfixe ne doit pas dépasser 20 caractères",
                     },
                   })}
-                  value={data.prefix || ""}
                   onChange={handlePrefixChange}
                   placeholder="F-MMYYYY"
                   disabled={!canEdit}

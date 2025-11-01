@@ -410,9 +410,11 @@ export function useInvoiceEditor({
   }, [existingInvoice, mode, reset, getValues]);
 
   // Set next invoice number for new invoices
+  // Note: Le prefix est maintenant géré dans InvoiceInfoSection avec le préfixe de la dernière facture
   useEffect(() => {
     if (mode === "create" && nextNumberData?.nextInvoiceNumber) {
-      setValue("prefix", nextNumberData.nextInvoiceNumber.prefix);
+      // Ne plus définir le prefix ici, il est géré dans InvoiceInfoSection
+      // setValue("prefix", nextNumberData.nextInvoiceNumber.prefix);
       setValue("number", nextNumberData.nextInvoiceNumber.number);
     }
   }, [mode, nextNumberData, setValue]);
@@ -548,7 +550,10 @@ export function useInvoiceEditor({
   // Manual save handler
   const handleSave = useCallback(async () => {
     const currentFormData = getValues();
-
+    
+    console.log('[handleSave] Form data before save:', currentFormData);
+    console.log('[handleSave] Prefix in form:', currentFormData.prefix);
+    
     // Validation manuelle pour le brouillon (moins stricte)
     const errors = {};
     
@@ -1018,8 +1023,9 @@ export function useInvoiceEditor({
       };
 
       // Passer le statut précédent pour gérer automatiquement la date d'émission
+      // IMPORTANT: Ne pas définir previousStatus lors de la création pour éviter de vider le préfixe
       const previousStatus =
-        mode === "edit" ? existingInvoice?.status : "DRAFT";
+        mode === "edit" ? existingInvoice?.status : null;
       const input = transformFormDataToInput(dataToTransform, previousStatus);
 
       if (mode === "create") {
@@ -1500,14 +1506,28 @@ function transformFormDataToInput(formData, previousStatus = null) {
   let numberToSend = formData.number || "";
   let prefixToSend = formData.prefix || "";
 
+  console.log('[transformFormDataToInput] Prefix from form:', formData.prefix);
+  console.log('[transformFormDataToInput] Prefix to send:', prefixToSend);
+  console.log('[transformFormDataToInput] previousStatus:', previousStatus);
+  console.log('[transformFormDataToInput] formData.status:', formData.status);
+
   // Si on passe de DRAFT à PENDING, ne pas envoyer le numéro pour permettre la génération automatique
-  if (previousStatus === "DRAFT" && formData.status === "PENDING") {
+  // IMPORTANT: Seulement si previousStatus existe ET est différent du statut actuel (vrai changement de statut)
+  const isStatusTransition = previousStatus && previousStatus !== formData.status;
+  if (isStatusTransition && previousStatus === "DRAFT" && formData.status === "PENDING") {
+    console.log('[transformFormDataToInput] ⚠️ DRAFT->PENDING transition detected, clearing prefix');
     numberToSend = undefined; // Ne pas envoyer le numéro
     prefixToSend = undefined; // Ne pas envoyer le préfixe
   }
 
+  // Ne pas envoyer le prefix s'il est vide (pour laisser le backend utiliser le dernier)
+  // Mais l'envoyer s'il a une valeur (même si c'est une modification)
+  const shouldSendPrefix = prefixToSend !== undefined && prefixToSend !== "";
+  
+  console.log('[transformFormDataToInput] Should send prefix:', shouldSendPrefix, 'Value:', prefixToSend);
+
   return {
-    ...(prefixToSend !== undefined && { prefix: prefixToSend }),
+    ...(shouldSendPrefix && { prefix: prefixToSend }),
     ...(numberToSend !== undefined && { number: numberToSend }),
     issueDate: issueDate,
     executionDate: ensureValidDate(formData.executionDate, "executionDate"),
