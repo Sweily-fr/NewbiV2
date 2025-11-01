@@ -56,6 +56,20 @@ export default function ColumnWidthSection({
                   e.target.value.replace("%", "")
                 )
               }
+              onBlur={(e) =>
+                handleColumnWidthChange(
+                  "photo",
+                  e.target.value.replace("%", "")
+                )
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleColumnWidthChange(
+                    "photo",
+                    e.target.value.replace("%", "")
+                  );
+                }
+              }}
               className="w-14 h-6 px-2 text-xs text-center"
               min="10"
               max="80"
@@ -86,6 +100,20 @@ export default function ColumnWidthSection({
                   e.target.value.replace("%", "")
                 )
               }
+              onBlur={(e) =>
+                handleColumnWidthChange(
+                  "content",
+                  e.target.value.replace("%", "")
+                )
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleColumnWidthChange(
+                    "content",
+                    e.target.value.replace("%", "")
+                  );
+                }
+              }}
               className="w-14 h-6 px-2 text-xs text-center"
               min="10"
               max="80"

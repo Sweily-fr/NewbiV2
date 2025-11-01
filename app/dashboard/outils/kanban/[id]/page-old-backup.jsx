@@ -50,7 +50,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import { useKanbanBoard } from "./hooks/useKanbanBoard";
 import { useKanbanColumns } from "./hooks/useKanbanColumns";
 import { useKanbanTasks } from "./hooks/useKanbanTasks";
-import { useKanbanDnD } from "./hooks/useKanbanDnD";
+import { useKanbanDnD } from "./hooks/useKanbanDnD-new";
 import { useKanbanSearch } from "./hooks/useKanbanSearch";
 import { useColumnCollapse } from "./hooks/useColumnCollapse";
 import { useDragToScroll } from "./hooks/useDragToScroll";
@@ -78,26 +78,7 @@ import {
   DELETE_TASK,
   MOVE_TASK,
 } from "@/src/graphql/kanbanQueries";
-import {
-  DndContext,
-  DragOverlay,
-  closestCenter,
-  pointerWithin,
-  rectIntersection,
-  closestCorners,
-  useSensors,
-  useSensor,
-  PointerSensor,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  horizontalListSortingStrategy,
-  verticalListSortingStrategy,
-  sortableKeyboardCoordinates,
-} from "@dnd-kit/sortable";
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useMutation } from "@apollo/client";
 
 export default function KanbanBoardPage({ params }) {
@@ -106,7 +87,7 @@ export default function KanbanBoardPage({ params }) {
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
   // Hooks
-  const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction, markMoveTaskAction } =
+  const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction } =
     useKanbanBoard(id, isRedirecting);
   const { loading: workspaceLoading } = useWorkspace();
 
@@ -175,12 +156,12 @@ export default function KanbanBoardPage({ params }) {
 
   // État local pour les colonnes (nécessaire pour le drag and drop en temps réel)
   const [localColumns, setLocalColumns] = React.useState(board?.columns || []);
-  const [lastDragEndTime, setLastDragEndTime] = React.useState(0);
+  const [syncTrigger, setSyncTrigger] = React.useState(0);
 
   // Les hooks doivent être appelés dans le même ordre à chaque rendu
   // useKanbanDnD utilise UNIQUEMENT Redis/subscription, jamais le cache Apollo
   // IMPORTANT: Appeler AVANT le useEffect qui utilise isDragging
-  const { handleDragEnd, handleDragOver, handleDragStart, activeTask, activeColumn, getLocalTasksByColumn, isDragging, dragEndTimeRef, isDraggingRef } = useKanbanDnD(
+  const { onDragStart, onDragUpdate, onDragEnd, isDragging, getLocalTasksByColumn, dragEndTimeRef } = useKanbanDnD(
     moveTask,
     getTasksByColumn,
     id,
@@ -188,106 +169,39 @@ export default function KanbanBoardPage({ params }) {
     localColumns,
     reorderColumnsMutation,
     setLocalColumns,
-    markReorderAction,
-    markMoveTaskAction
+    markReorderAction
   );
-
-  // Synchroniser lastDragEndTime avec dragEndTimeRef pour les dépendances du useEffect
-  // Cela force un re-render après le drag pour mettre à jour l'interface
-  React.useEffect(() => {
-    if (dragEndTimeRef.current > 0 && dragEndTimeRef.current !== lastDragEndTime) {
-      setLastDragEndTime(dragEndTimeRef.current);
-    }
-  }, [dragEndTimeRef.current, lastDragEndTime]);
 
   // Mettre à jour localColumns quand board change
   // Inclure les tâches dans chaque colonne
   const prevBoardRef = React.useRef(board);
 
   React.useEffect(() => {
-    // CRITIQUE: NE PAS mettre à jour localColumns pendant un drag
-    // Utiliser isDraggingRef au lieu de isDragging pour une détection plus fiable
-    if (isDraggingRef?.current) {
+    // NE PAS mettre à jour localColumns pendant un drag - cela casse la preview
+    if (isDragging) {
       return;
     }
     
-    // Attendre un peu après la fin du drag avant de mettre à jour
-    // Court délai de 200ms car on travaille directement sur localColumns
-    // Pas besoin d'attendre longtemps puisqu'il n'y a plus de preview séparée
-    const timeSinceLastDrag = Date.now() - dragEndTimeRef.current;
-    if (dragEndTimeRef.current > 0 && timeSinceLastDrag < 200) {
+    // NE PAS mettre à jour pendant 500ms après la fin d'un drag
+    // Cela laisse le temps à la mutation de se propager et évite les permutations
+    const timeSinceDragEnd = Date.now() - dragEndTimeRef.current;
+    if (dragEndTimeRef.current > 0 && timeSinceDragEnd < 500) {
       return;
     }
     
     if (board?.columns && board?.tasks) {
       // Restructurer les colonnes avec les tâches
+      // Toujours mettre à jour pour que les changements de la subscription soient reflétés
       const columnsWithTasks = board.columns.map(column => ({
         ...column,
-        tasks: (board.tasks || []).filter(task => task.columnId === column.id).sort((a, b) => (a.position || 0) - (b.position || 0))
+        tasks: (board.tasks || []).filter(task => task.columnId === column.id)
       }));
-      
-      // Vérifier si l'ordre des colonnes OU le nombre de tâches a changé
-      const currentColumnIds = localColumns.map(col => col.id).join(',');
-      const newColumnIds = columnsWithTasks.map(col => col.id).join(',');
-      const currentTaskCount = localColumns.reduce((sum, col) => sum + (col.tasks?.length || 0), 0);
-      const newTaskCount = columnsWithTasks.reduce((sum, col) => sum + (col.tasks?.length || 0), 0);
-      
-      // Mettre à jour si l'ordre a changé OU si le nombre de tâches a changé (création/suppression)
-      if (currentColumnIds !== newColumnIds || currentTaskCount !== newTaskCount) {
-        console.log('🔄 [Page] Mise à jour localColumns:', {
-          colonnesChanged: currentColumnIds !== newColumnIds,
-          tasksChanged: currentTaskCount !== newTaskCount,
-          oldCount: currentTaskCount,
-          newCount: newTaskCount
-        });
-        setLocalColumns(columnsWithTasks);
-      }
+      setLocalColumns(columnsWithTasks);
     }
-  }, [board?.columns, board?.tasks, isDraggingRef, dragEndTimeRef, localColumns]);
+  }, [board?.columns, board?.tasks, isDragging, dragEndTimeRef]);
 
   // SUPPRIMÉ : useKanbanRealtimeSync (doublon de useKanbanBoard qui gère déjà les subscriptions)
   // Les subscriptions sont gérées dans useKanbanBoard avec TASK_UPDATED_SUBSCRIPTION et COLUMN_UPDATED_SUBSCRIPTION
-
-  // Collision detection personnalisée pour mieux gérer les drops sur colonnes
-  const customCollisionDetection = React.useCallback((args) => {
-    // D'abord, essayer de trouver une tâche avec pointerWithin
-    const pointerCollisions = pointerWithin(args);
-    
-    // Si on trouve une tâche, l'utiliser
-    if (pointerCollisions.length > 0) {
-      return pointerCollisions;
-    }
-    
-    // Sinon, chercher la colonne la plus proche avec rectIntersection
-    const rectCollisions = rectIntersection(args);
-    if (rectCollisions.length > 0) {
-      return rectCollisions;
-    }
-    
-    // En dernier recours, utiliser closestCorners
-    return closestCorners(args);
-  }, []);
-
-  // Configuration des capteurs pour le drag & drop - Optimisé pour la fluidité
-  const sensors = useSensors(
-    // Mouse sensor pour desktop - distance optimisée pour le drag
-    useSensor(MouseSensor, {
-      activationConstraint: {
-        distance: 8, // 8px pour éviter les drags accidentels tout en restant réactif
-      },
-    }),
-    // Touch sensor pour mobile/tablette
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250, // 250ms de délai pour différencier scroll et drag
-        tolerance: 5,
-      },
-    }),
-    // Keyboard sensor pour accessibilité
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   const { searchQuery, setSearchQuery, filterTasks } = useKanbanSearch();
 
@@ -299,7 +213,6 @@ export default function KanbanBoardPage({ params }) {
   } = useColumnCollapse(id);
 
   // Mémoriser le rendu des colonnes pour éviter les re-renders inutiles
-  // IMPORTANT: Ne pas inclure isDragging dans les dépendances pour éviter le clignotement
   const columnsContent = React.useMemo(() => {
     if (!localColumns || localColumns.length === 0) {
       return null;
@@ -310,13 +223,7 @@ export default function KanbanBoardPage({ params }) {
         {/* Espace réservé pour maintenir la hauteur */}
         <div className="h-5 mb-4"></div>
 
-        <div 
-          className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-          style={{ 
-            overflowX: activeColumn ? 'hidden' : 'auto',
-            touchAction: activeColumn ? 'none' : 'auto'
-          }}
-        >
+        <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <SortableContext
             items={localColumns.map((col) => col.id)}
             strategy={horizontalListSortingStrategy}
@@ -370,7 +277,7 @@ export default function KanbanBoardPage({ params }) {
         </div>
       </>
     );
-  }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, toggleColumnCollapse, openAddTaskModal, openEditTaskModal, handleDeleteTask, openEditModal, handleDeleteColumn, loading, openAddModal, activeColumn, lastDragEndTime]);
+  }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, toggleColumnCollapse, openAddTaskModal, openEditTaskModal, handleDeleteTask, openEditModal, handleDeleteColumn, loading, openAddModal]);
 
   // Hook pour le mode d'affichage (Board/List)
   const { viewMode, setViewMode, isBoard, isList } = useViewMode(id);
@@ -517,7 +424,7 @@ export default function KanbanBoardPage({ params }) {
         {isList && (
           <DndContext
             sensors={sensors}
-            collisionDetection={customCollisionDetection}
+            collisionDetection={closestCorners}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
@@ -562,7 +469,7 @@ export default function KanbanBoardPage({ params }) {
             ) : (
               <DndContext
                 sensors={sensors}
-                collisionDetection={customCollisionDetection}
+                collisionDetection={closestCorners}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}

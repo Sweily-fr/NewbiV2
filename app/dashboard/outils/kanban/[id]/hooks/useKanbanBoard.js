@@ -11,6 +11,8 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   const [isReady, setIsReady] = useState(false);
   const apolloClient = useApolloClient();
   const lastReorderTimeRef = useRef(0);
+  const lastMoveTaskTimeRef = useRef(0); // Pour ignorer les événements MOVED après un drag
+  const pendingRefetchRef = useRef(null); // Pour éviter les refetch multiples
   
   
   // Attendre que la session soit chargée avant d'activer les subscriptions
@@ -27,6 +29,9 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     },
     errorPolicy: "all",
     skip: !workspaceId || isRedirecting,
+    // IMPORTANT: Utiliser cache-and-network pour avoir les données en cache
+    // tout en récupérant les dernières données du serveur
+    fetchPolicy: "cache-and-network",
     context: {
       // Ne pas afficher de toast d'erreur si on est en train de rediriger
       skipErrorToast: isRedirecting,
@@ -50,6 +55,48 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
               variables: { id, workspaceId }
             });
             
+            console.log("📝 [Subscription] Création tâche - Cache data:", cacheData?.board?.tasks?.length, "tâches");
+            
+            if (cacheData?.board) {
+              const newTasks = [...(cacheData.board.tasks || []), task];
+              console.log("✅ [Subscription] Ajout tâche au cache:", task.title, "- Total:", newTasks.length);
+              
+              apolloClient.cache.writeQuery({
+                query: GET_BOARD,
+                variables: { id, workspaceId },
+                data: {
+                  board: {
+                    ...cacheData.board,
+                    tasks: newTasks
+                  }
+                }
+              });
+              
+              // IMPORTANT: Refetch après 500ms pour garantir la cohérence des positions
+              setTimeout(() => {
+                refetch();
+              }, 500);
+            } else {
+              console.warn("⚠️ [Subscription] Cache board non trouvé pour id:", id, "workspaceId:", workspaceId);
+            }
+          } catch (error) {
+            console.error("❌ [Subscription] Erreur mise à jour cache:", error);
+          }
+          
+          // Important: Afficher une notification pour la création
+          toast.success(`Nouvelle tâche: ${task.title}`, {
+            description: "Mise à jour automatique"
+          });
+        }
+        
+        // Pour les suppressions, mettre à jour le cache Apollo manuellement
+        if (type === 'DELETED' && taskId) {
+          try {
+            const cacheData = apolloClient.cache.readQuery({
+              query: GET_BOARD,
+              variables: { id, workspaceId }
+            });
+            
             if (cacheData?.board) {
               apolloClient.cache.writeQuery({
                 query: GET_BOARD,
@@ -57,14 +104,44 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                 data: {
                   board: {
                     ...cacheData.board,
-                    tasks: [...(cacheData.board.tasks || []), task]
+                    tasks: (cacheData.board.tasks || []).filter(t => t.id !== taskId)
                   }
                 }
               });
+              
+              // IMPORTANT: Refetch après 500ms pour garantir la cohérence des positions
+              setTimeout(() => {
+                refetch();
+              }, 500);
             }
           } catch {
             // Erreur silencieuse - continuer
           }
+        }
+        
+        // Pour les déplacements, IGNORER les événements MOVED pendant et après un drag
+        // Le backend envoie PLUSIEURS événements MOVED (un pour chaque tâche réorganisée)
+        // Cela cause des mises à jour partielles et des incohérences
+        if (type === 'MOVED' && task) {
+          const timeSinceLastMove = Date.now() - lastMoveTaskTimeRef.current;
+          
+          // Ignorer les événements MOVED pendant 3 secondes après un drag
+          if (lastMoveTaskTimeRef.current > 0 && timeSinceLastMove < 3000) {
+            console.log('⛔ [Subscription] Événement MOVED ignoré (drag récent):', task.title, 'temps écoulé:', timeSinceLastMove + 'ms');
+            return;
+          }
+          
+          // Si c'est un événement MOVED externe (pas de notre drag)
+          // Planifier UN SEUL refetch même si plusieurs événements arrivent
+          if (!pendingRefetchRef.current) {
+            console.log('🔄 [Subscription] Événement MOVED externe détecté, planification refetch...');
+            pendingRefetchRef.current = setTimeout(() => {
+              console.log('🔄 [Subscription] Exécution refetch pour événements MOVED externes');
+              refetch();
+              pendingRefetchRef.current = null;
+            }, 500);
+          }
+          return;
         }
         
         // Notifications utilisateur (debouncing automatique)
@@ -81,9 +158,8 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
             description: "Mise à jour automatique"
           });
         } else if (type === 'MOVED' && task) {
-          toast.info(`Tâche déplacée: ${task.title}`, {
-            description: "Mise à jour automatique"
-          });
+          // Pas de toast pour les déplacements - trop de bruit
+          // L'utilisateur voit déjà le changement en temps réel
         }
       }
     },
@@ -107,13 +183,39 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
         
         console.log("🔄 [Kanban] Mise à jour temps réel colonne:", type, column || columnId);
         
-        // Ignorer les mises à jour REORDERED qui arrivent dans les 500ms après une action locale
-        // Cela évite les re-renders inutiles causés par la subscription après une action drag
-        if (type === 'REORDERED') {
-          const timeSinceLastReorder = Date.now() - lastReorderTimeRef.current;
-          if (timeSinceLastReorder < 500) {
-            console.log("⏭️ [Kanban] Ignorer REORDERED (action locale récente)");
-            return;
+        // Pour les REORDERED, mettre à jour le cache Apollo avec le nouvel ordre
+        if (type === 'REORDERED' && subscriptionData.data.columnUpdated.columns) {
+          console.log("🔄 [Kanban] Colonnes réorganisées - Mise à jour du cache");
+          
+          try {
+            const cacheData = apolloClient.cache.readQuery({
+              query: GET_BOARD,
+              variables: { id, workspaceId }
+            });
+            
+            if (cacheData?.board) {
+              const newColumnIds = subscriptionData.data.columnUpdated.columns;
+              
+              // Réorganiser les colonnes selon le nouvel ordre
+              const reorderedColumns = newColumnIds.map(columnId => 
+                cacheData.board.columns.find(col => col.id === columnId)
+              ).filter(Boolean); // Filtrer les colonnes non trouvées
+              
+              console.log("✅ [Kanban] Nouvel ordre des colonnes:", reorderedColumns.map(c => c.title));
+              
+              apolloClient.cache.writeQuery({
+                query: GET_BOARD,
+                variables: { id, workspaceId },
+                data: {
+                  board: {
+                    ...cacheData.board,
+                    columns: reorderedColumns
+                  }
+                }
+              });
+            }
+          } catch (error) {
+            console.error("❌ [Kanban] Erreur mise à jour cache colonnes:", error);
           }
         }
         
@@ -165,6 +267,18 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   const markReorderAction = () => {
     lastReorderTimeRef.current = Date.now();
   };
+  
+  const markMoveTaskAction = () => {
+    lastMoveTaskTimeRef.current = Date.now();
+    console.log('🕒 [Kanban] Marquage action moveTask - ignorer MOVED pendant 3s');
+    
+    // Annuler tout refetch en attente (au cas où des événements seraient arrivés avant)
+    if (pendingRefetchRef.current) {
+      clearTimeout(pendingRefetchRef.current);
+      pendingRefetchRef.current = null;
+      console.log('❌ [Kanban] Refetch en attente annulé');
+    }
+  };
 
   return {
     board,
@@ -175,5 +289,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     getTasksByColumn,
     workspaceId,
     markReorderAction,
+    markMoveTaskAction, // Exposer pour useKanbanDnD
   };
 };

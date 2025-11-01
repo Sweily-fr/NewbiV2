@@ -4,10 +4,13 @@ import {
   useQuery,
   useMutation,
   useLazyQuery,
+  useSubscription,
+  useApolloClient,
   gql,
 } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 // import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
@@ -267,6 +270,35 @@ const CREATE_EMAIL_SIGNATURE = gql`
   }
 `;
 
+// Subscription pour les mises à jour temps réel des signatures
+const SIGNATURE_UPDATED_SUBSCRIPTION = gql`
+  subscription OnSignatureUpdated {
+    signatureUpdated {
+      type
+      signature {
+        id
+        signatureName
+        firstName
+        lastName
+        email
+        position
+        companyName
+        phone
+        website
+        address
+        photo
+        logo
+        primaryColor
+        isDefault
+        createdAt
+        updatedAt
+      }
+      signatureId
+      workspaceId
+    }
+  }
+`;
+
 // Hook pour récupérer les signatures
 export const useSignatures = () => {
   const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
@@ -275,6 +307,62 @@ export const useSignatures = () => {
   });
 
   const signatures = data?.getMyEmailSignatures || [];
+  const apolloClient = useApolloClient();
+
+  // Subscription pour les mises à jour temps réel
+  useSubscription(SIGNATURE_UPDATED_SUBSCRIPTION, {
+    onData: ({ data: subscriptionData }) => {
+      console.log('📨 [Subscription] Événement reçu:', subscriptionData?.data?.signatureUpdated);
+      
+      if (subscriptionData?.data?.signatureUpdated) {
+        const { type, signature, signatureId } = subscriptionData.data.signatureUpdated;
+        console.log(`🔔 [Subscription] Type: ${type}, SignatureId: ${signatureId}`);
+
+        try {
+          const cacheData = apolloClient.cache.readQuery({
+            query: GET_MY_EMAIL_SIGNATURES,
+          });
+
+          if (cacheData?.getMyEmailSignatures) {
+            let newSignatures;
+
+            if (type === 'DELETED') {
+              // Supprimer la signature du cache
+              newSignatures = cacheData.getMyEmailSignatures.filter(
+                (sig) => sig.id !== signatureId
+              );
+              console.log(`✅ [Subscription] Signature ${signatureId} supprimée du cache`);
+              toast.info('Signature supprimée');
+            } else if (type === 'CREATED' && signature) {
+              // Ajouter la nouvelle signature au cache
+              newSignatures = [signature, ...cacheData.getMyEmailSignatures];
+              console.log(`✅ [Subscription] Nouvelle signature ajoutée au cache`);
+              toast.info('Nouvelle signature créée');
+            } else if (type === 'UPDATED' && signature) {
+              // Mettre à jour la signature dans le cache
+              newSignatures = cacheData.getMyEmailSignatures.map((sig) =>
+                sig.id === signature.id ? signature : sig
+              );
+              console.log(`✅ [Subscription] Signature ${signature.id} mise à jour`);
+              toast.info('Signature mise à jour');
+            } else {
+              return;
+            }
+
+            apolloClient.cache.writeQuery({
+              query: GET_MY_EMAIL_SIGNATURES,
+              data: { getMyEmailSignatures: newSignatures },
+            });
+          }
+        } catch (error) {
+          console.error('❌ Erreur lors de la mise à jour du cache:', error);
+        }
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Erreur subscription signatures:', error);
+    },
+  });
 
   return {
     signatures,
@@ -318,7 +406,8 @@ export const useSignatureActions = () => {
   const [deleteMultipleSignatures, { loading: deletingMultiple }] = useMutation(
     DELETE_MULTIPLE_EMAIL_SIGNATURES,
     {
-      refetchQueries: [GET_MY_EMAIL_SIGNATURES],
+      refetchQueries: [],
+      awaitRefetchQueries: false,
     }
   );
 
@@ -368,32 +457,13 @@ export const useSignatureActions = () => {
     }
 
     try {
+      // Pas de update function - la subscription Redis s'en charge
       await deleteSignature({
         variables: { id: signatureId },
-        optimisticResponse: {
-          __typename: "Mutation",
-          deleteEmailSignature: signatureId,
-        },
-        update: (cache) => {
-          const existingData = cache.readQuery({
-            query: GET_MY_EMAIL_SIGNATURES,
-          });
-
-          if (existingData?.getMyEmailSignatures) {
-            const newSignatures = existingData.getMyEmailSignatures.filter(
-              (sig) => sig.id !== signatureId
-            );
-
-            cache.writeQuery({
-              query: GET_MY_EMAIL_SIGNATURES,
-              data: { getMyEmailSignatures: newSignatures },
-            });
-          }
-        },
       });
-
-      toast.success("Signature supprimée avec succès");
-    } catch {
+      // Pas de toast ici - la subscription s'en charge
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
       toast.error("Erreur lors de la suppression de la signature");
     }
   };
@@ -459,9 +529,14 @@ export const useSignatureActions = () => {
 
   const handleDeleteMultiple = async (signatureIds) => {
     try {
-      await deleteMultipleSignatures({ variables: { ids: signatureIds } });
+      // Pas de update function - la subscription Redis s'en charge
+      await deleteMultipleSignatures({
+        variables: { ids: signatureIds },
+      });
+      // Pas de toast ici - la subscription s'en charge
     } catch (error) {
       console.error("Erreur lors de la suppression multiple:", error);
+      toast.error("Erreur lors de la suppression des signatures");
     }
   };
 
