@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   Plus,
   Edit,
@@ -40,19 +39,12 @@ export function KanbanColumn({
   dragHandleProps,
   isDragging,
 }) {
-  // CRITIQUE : Stabiliser les data pour éviter les re-rendus infinis
-  const droppableData = useMemo(() => ({
-    type: 'column',
-    column: {
-      id: column.id,
-      name: column.name,
-      // NE PAS inclure tasks ici pour éviter les changements de référence
-    }
-  }), [column.id, column.name]);
-
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
-    data: droppableData,
+    data: {
+      type: 'column',
+      column,
+    },
   });
 
   return (
@@ -190,17 +182,6 @@ export function KanbanColumn({
  * Composant pour une tâche draggable avec dnd-kit
  */
 function SortableTaskItem({ task, onEdit, onDelete }) {
-  // CRITIQUE : Stabiliser les data pour éviter les re-rendus infinis
-  const sortableData = useMemo(() => ({
-    type: 'task',
-    task: {
-      id: task.id,
-      title: task.title,
-      columnId: task.columnId,
-      position: task.position,
-    },
-  }), [task.id, task.title, task.columnId, task.position]);
-
   const {
     attributes,
     listeners,
@@ -210,7 +191,10 @@ function SortableTaskItem({ task, onEdit, onDelete }) {
     isDragging,
   } = useSortable({
     id: task.id,
-    data: sortableData,
+    data: {
+      type: 'task',
+      task,
+    },
   });
 
   const style = {

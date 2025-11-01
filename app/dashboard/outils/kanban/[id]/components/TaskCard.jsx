@@ -95,19 +95,6 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
     return { completed, total, percentage };
   }, [task.checklist]);
 
-  // CRITIQUE : Stabiliser les data pour éviter les re-rendus infinis
-  const sortableData = useMemo(() => ({
-    type: "task",
-    task: {
-      id: task.id,
-      title: task.title,
-      columnId: task.columnId,
-      position: task.position,
-      // NE PAS inclure tous les champs pour éviter les changements de référence
-    },
-    index,
-  }), [task.id, task.title, task.columnId, task.position, index]);
-
   const {
     attributes,
     listeners,
@@ -117,7 +104,11 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
     isDragging: isSortableDragging,
   } = useSortable({
     id: task.id,
-    data: sortableData,
+    data: {
+      type: "task",
+      task,
+      index,
+    },
   });
 
   const style = {

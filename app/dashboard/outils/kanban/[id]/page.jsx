@@ -296,26 +296,27 @@ export default function KanbanBoardPage({ params }) {
     }
   }, [board?.id]);
 
+  // Créer une clé stable basée sur les IDs et positions des tâches
+  // Cela évite les re-renders inutiles quand board?.tasks change de référence
+  const tasksKey = React.useMemo(() => {
+    if (!board?.tasks) return '';
+    return board.tasks.map(t => `${t.id}:${t.columnId}:${t.position}`).join('|');
+  }, [board?.tasks]);
+
   // Mettre à jour localColumns quand les tâches changent de position (Redis/subscriptions)
-  // Utiliser une ref pour éviter les dépendances circulaires
-  const prevTasksRef = React.useRef(board?.tasks);
-  
   React.useEffect(() => {
-    // Vérifier si les tâches ont changé (positions, ordre, etc.)
-    if (!board?.tasks || !prevTasksRef.current) {
-      prevTasksRef.current = board?.tasks;
+    if (!board?.tasks || !board?.columns || isDraggingRef?.current) {
       return;
     }
     
-    // Comparer les tâches
-    const tasksChanged = board.tasks.length !== prevTasksRef.current.length ||
-      board.tasks.some((task, idx) => 
-        task.id !== prevTasksRef.current[idx]?.id || 
-        task.columnId !== prevTasksRef.current[idx]?.columnId ||
-        task.position !== prevTasksRef.current[idx]?.position
-      );
+    // Vérifier si localColumns est déjà à jour
+    const needsUpdate = localColumns.some(col => {
+      const newTasks = board.tasks.filter(t => t.columnId === col.id).sort((a, b) => (a.position || 0) - (b.position || 0));
+      return col.tasks?.length !== newTasks.length || 
+             col.tasks?.some((t, idx) => t.id !== newTasks[idx]?.id || t.position !== newTasks[idx]?.position);
+    });
     
-    if (tasksChanged && !isDraggingRef?.current) {
+    if (needsUpdate) {
       console.log('🔄 [Page] Tâches changées - mise à jour localColumns');
       const columnsWithTasks = board.columns.map(column => ({
         ...column,
@@ -323,9 +324,7 @@ export default function KanbanBoardPage({ params }) {
       }));
       setLocalColumns(columnsWithTasks);
     }
-    
-    prevTasksRef.current = board?.tasks;
-  }, [board?.tasks, isDraggingRef]);
+  }, [tasksKey, isDraggingRef, board?.columns]);
 
   // SUPPRIMÉ : useKanbanRealtimeSync (doublon de useKanbanBoard qui gère déjà les subscriptions)
   // Les subscriptions sont gérées dans useKanbanBoard avec TASK_UPDATED_SUBSCRIPTION et COLUMN_UPDATED_SUBSCRIPTION
@@ -399,9 +398,8 @@ export default function KanbanBoardPage({ params }) {
             touchAction: activeColumn ? 'none' : 'auto'
           }}
         >
-          {/* CRITIQUE : Stabiliser les IDs pour éviter les re-rendus */}
           <SortableContext
-            items={React.useMemo(() => localColumns.map((col) => col.id), [localColumns])}
+            items={localColumns.map((col) => col.id)}
             strategy={horizontalListSortingStrategy}
           >
             <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
