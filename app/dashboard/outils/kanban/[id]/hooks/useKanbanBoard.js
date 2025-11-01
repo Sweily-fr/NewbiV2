@@ -11,6 +11,8 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   const [isReady, setIsReady] = useState(false);
   const apolloClient = useApolloClient();
   const lastReorderTimeRef = useRef(0);
+  const lastMoveTaskTimeRef = useRef(0); // Pour ignorer les événements MOVED après un drag
+  const pendingRefetchRef = useRef(null); // Pour éviter les refetch multiples
   
   
   // Attendre que la session soit chargée avant d'activer les subscriptions
@@ -27,6 +29,9 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     },
     errorPolicy: "all",
     skip: !workspaceId || isRedirecting,
+    // IMPORTANT: Utiliser cache-and-network pour avoir les données en cache
+    // tout en récupérant les dernières données du serveur
+    fetchPolicy: "cache-and-network",
     context: {
       // Ne pas afficher de toast d'erreur si on est en train de rediriger
       skipErrorToast: isRedirecting,
@@ -66,6 +71,11 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                   }
                 }
               });
+              
+              // IMPORTANT: Refetch après 500ms pour garantir la cohérence des positions
+              setTimeout(() => {
+                refetch();
+              }, 500);
             } else {
               console.warn("⚠️ [Subscription] Cache board non trouvé pour id:", id, "workspaceId:", workspaceId);
             }
@@ -98,19 +108,39 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                   }
                 }
               });
+              
+              // IMPORTANT: Refetch après 500ms pour garantir la cohérence des positions
+              setTimeout(() => {
+                refetch();
+              }, 500);
             }
           } catch {
             // Erreur silencieuse - continuer
           }
         }
         
-        // Pour les déplacements, ignorer les événements MOVED
-        // La subscription mettra à jour localColumns automatiquement
-        // L'optimistic update du frontend gère déjà l'affichage
+        // Pour les déplacements, IGNORER les événements MOVED pendant et après un drag
+        // Le backend envoie PLUSIEURS événements MOVED (un pour chaque tâche réorganisée)
+        // Cela cause des mises à jour partielles et des incohérences
         if (type === 'MOVED' && task) {
-          // Ignorer complètement les événements MOVED
-          // Le frontend gère tout avec localTasksByColumn
-          // Les données du serveur arrivent via la subscription et mettent à jour localColumns
+          const timeSinceLastMove = Date.now() - lastMoveTaskTimeRef.current;
+          
+          // Ignorer les événements MOVED pendant 3 secondes après un drag
+          if (lastMoveTaskTimeRef.current > 0 && timeSinceLastMove < 3000) {
+            console.log('⛔ [Subscription] Événement MOVED ignoré (drag récent):', task.title, 'temps écoulé:', timeSinceLastMove + 'ms');
+            return;
+          }
+          
+          // Si c'est un événement MOVED externe (pas de notre drag)
+          // Planifier UN SEUL refetch même si plusieurs événements arrivent
+          if (!pendingRefetchRef.current) {
+            console.log('🔄 [Subscription] Événement MOVED externe détecté, planification refetch...');
+            pendingRefetchRef.current = setTimeout(() => {
+              console.log('🔄 [Subscription] Exécution refetch pour événements MOVED externes');
+              refetch();
+              pendingRefetchRef.current = null;
+            }, 500);
+          }
           return;
         }
         
@@ -237,6 +267,18 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   const markReorderAction = () => {
     lastReorderTimeRef.current = Date.now();
   };
+  
+  const markMoveTaskAction = () => {
+    lastMoveTaskTimeRef.current = Date.now();
+    console.log('🕒 [Kanban] Marquage action moveTask - ignorer MOVED pendant 3s');
+    
+    // Annuler tout refetch en attente (au cas où des événements seraient arrivés avant)
+    if (pendingRefetchRef.current) {
+      clearTimeout(pendingRefetchRef.current);
+      pendingRefetchRef.current = null;
+      console.log('❌ [Kanban] Refetch en attente annulé');
+    }
+  };
 
   return {
     board,
@@ -247,5 +289,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     getTasksByColumn,
     workspaceId,
     markReorderAction,
+    markMoveTaskAction, // Exposer pour useKanbanDnD
   };
 };

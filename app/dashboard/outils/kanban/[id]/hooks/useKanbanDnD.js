@@ -1,25 +1,20 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 
-export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, localColumns, reorderColumns, setLocalColumns, markReorderAction) => {
+export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, localColumns, reorderColumns, setLocalColumns, markReorderAction, markMoveTaskAction) => {
   const [activeTask, setActiveTask] = useState(null);
   const [activeColumn, setActiveColumn] = useState(null);
-  const [localTasksByColumn, setLocalTasksByColumn] = useState({});
   const [originalTaskState, setOriginalTaskState] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragEndTimeRef = useRef(0);
-  const localColumnsRef = useRef(localColumns);
-  
-  // Garder localColumnsRef à jour
-  useEffect(() => {
-    localColumnsRef.current = localColumns;
-  }, [localColumns]);
+  const isDraggingRef = useRef(false); // Flag pour bloquer les mises à jour pendant le drag
 
   const handleDragStart = (event) => {
     const { active } = event;
     const activeData = active.data.current;
     
     setIsDragging(true);
+    isDraggingRef.current = true; // Marquer le début du drag
     
     if (activeData?.type === 'task') {
       setActiveTask(activeData.task);
@@ -56,67 +51,64 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
       return;
     }
 
-    // Preview simple pour les tâches
+    // Réorganisation des tâches - MODIFIER DIRECTEMENT localColumns
     if (activeData?.type === 'task') {
-      // Initialiser la preview si pas encore fait
-      if (Object.keys(localTasksByColumn).length === 0) {
-        const preview = {};
-        localColumns.forEach(column => {
-          preview[column.id] = [...(column.tasks || [])];
-        });
-        setLocalTasksByColumn(preview);
-        return;
-      }
-
       const activeTask = activeData.task;
       
-      // IMPORTANT: Trouver où la tâche est ACTUELLEMENT dans la preview (pas sa colonne d'origine)
-      let currentColumnId = activeTask.columnId;
-      for (const [columnId, tasks] of Object.entries(localTasksByColumn)) {
-        if (tasks.find(t => t.id === activeTask.id)) {
-          currentColumnId = columnId;
+      // Trouver où la tâche est ACTUELLEMENT dans localColumns
+      let currentColumnId = null;
+      let currentColumn = null;
+      
+      for (const column of localColumns) {
+        if (column.tasks?.find(t => t.id === activeTask.id)) {
+          currentColumnId = column.id;
+          currentColumn = column;
           break;
         }
       }
       
+      if (!currentColumnId) return;
       
       if (overData?.type === 'task') {
         // Drop sur une tâche
         const overTask = overData.task;
         const targetColumnId = overTask.columnId;
+        const targetColumn = localColumns.find(col => col.id === targetColumnId);
+        
+        if (!targetColumn) return;
 
         if (currentColumnId === targetColumnId) {
           // Même colonne - réorganiser avec arrayMove
-          const tasks = [...localTasksByColumn[currentColumnId]];
+          const tasks = [...currentColumn.tasks];
           const activeIndex = tasks.findIndex((t) => t.id === activeTask.id);
           const overIndex = tasks.findIndex((t) => t.id === overTask.id);
           
           if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
             const newTasks = arrayMove(tasks, activeIndex, overIndex);
             
-            setLocalTasksByColumn({
-              ...localTasksByColumn,
-              [currentColumnId]: newTasks
-            });
+            // Mettre à jour localColumns directement
+            setLocalColumns(localColumns.map(col => 
+              col.id === currentColumnId ? { ...col, tasks: newTasks } : col
+            ));
           }
         } else {
           // Colonnes différentes - retirer de source et ajouter à target
-          const sourceTasks = localTasksByColumn[currentColumnId].filter(t => t.id !== activeTask.id);
-          const targetTasks = [...localTasksByColumn[targetColumnId]];
+          const sourceTasks = currentColumn.tasks.filter(t => t.id !== activeTask.id);
+          const targetTasks = [...targetColumn.tasks];
           const overIndex = targetTasks.findIndex(t => t.id === overTask.id);
           
           // Insérer à la position de la tâche survolée
           targetTasks.splice(overIndex, 0, { ...activeTask, columnId: targetColumnId });
           
-          setLocalTasksByColumn({
-            ...localTasksByColumn,
-            [currentColumnId]: sourceTasks,
-            [targetColumnId]: targetTasks
-          });
+          // Mettre à jour localColumns directement
+          setLocalColumns(localColumns.map(col => {
+            if (col.id === currentColumnId) return { ...col, tasks: sourceTasks };
+            if (col.id === targetColumnId) return { ...col, tasks: targetTasks };
+            return col;
+          }));
         }
       } else if (overData?.type === 'column' || !overData) {
         // Drop sur colonne (vide ou zone de drop)
-        // Extraire l'ID de la colonne cible
         let targetColumnId = over.id;
         if (overData?.column) {
           targetColumnId = overData.column.id;
@@ -124,15 +116,18 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
         targetColumnId = String(targetColumnId).replace(/^(empty-|collapsed-)/, '');
         
         if (currentColumnId !== targetColumnId) {
-          const sourceTasks = localTasksByColumn[currentColumnId].filter(t => t.id !== activeTask.id);
-          // Ajouter à la fin de la colonne cible
-          const targetTasks = [...(localTasksByColumn[targetColumnId] || []), { ...activeTask, columnId: targetColumnId }];
+          const targetColumn = localColumns.find(col => col.id === targetColumnId);
+          if (!targetColumn) return;
           
-          setLocalTasksByColumn({
-            ...localTasksByColumn,
-            [currentColumnId]: sourceTasks,
-            [targetColumnId]: targetTasks
-          });
+          const sourceTasks = currentColumn.tasks.filter(t => t.id !== activeTask.id);
+          const targetTasks = [...(targetColumn.tasks || []), { ...activeTask, columnId: targetColumnId }];
+          
+          // Mettre à jour localColumns directement
+          setLocalColumns(localColumns.map(col => {
+            if (col.id === currentColumnId) return { ...col, tasks: sourceTasks };
+            if (col.id === targetColumnId) return { ...col, tasks: targetTasks };
+            return col;
+          }));
         }
       }
     }
@@ -153,6 +148,7 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
     if (!over) {
       setLocalTasksByColumn({});
       setOriginalTaskState(null);
+      isDraggingRef.current = false;
       return;
     }
 
@@ -169,6 +165,9 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
       } catch (error) {
         console.error('Erreur réorganisation colonnes:', error);
       }
+      
+      // Marquer la fin du drag de colonne
+      isDraggingRef.current = false;
       return;
     }
 
@@ -181,11 +180,11 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
       let newColumnId = originalColumnId;
       let newPosition = originalPosition;
 
-      // Chercher la position finale dans la preview
-      for (const [columnId, tasks] of Object.entries(localTasksByColumn)) {
-        const taskIndex = tasks.findIndex(t => t.id === taskId);
-        if (taskIndex !== -1) {
-          newColumnId = columnId;
+      // Chercher la position finale dans localColumns
+      for (const column of localColumns) {
+        const taskIndex = column.tasks?.findIndex(t => t.id === taskId);
+        if (taskIndex !== undefined && taskIndex !== -1) {
+          newColumnId = column.id;
           // La position est simplement l'index dans la colonne
           newPosition = taskIndex;
           break;
@@ -198,6 +197,15 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
 
       if (hasColumnChanged || hasPositionChanged) {
         try {
+          console.log('📤 [DnD] Envoi mutation moveTask:', {
+            taskId,
+            from: { columnId: originalColumnId, position: originalPosition },
+            to: { columnId: newColumnId, position: newPosition }
+          });
+          
+          // CRITIQUE: Marquer l'action AVANT la mutation pour bloquer les événements MOVED dès le début
+          markMoveTaskAction();
+          
           await moveTask({
             variables: {
               id: taskId,
@@ -206,29 +214,31 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
               workspaceId,
             },
           });
-          // Marquer l'action de réorganisation pour ignorer les événements MOVED
-          markReorderAction();
+          
+          console.log('✅ [DnD] Mutation moveTask réussie');
         } catch (error) {
-          console.error('❌ Erreur déplacement tâche:', error);
+          console.error('❌ [DnD] Erreur déplacement tâche:', error);
+          // En cas d'erreur, le serveur va renvoyer les bonnes données via subscription
         }
       }
     }
 
-    // Nettoyer la preview et l'état d'origine
+    // Nettoyer l'état d'origine et les flags
     setOriginalTaskState(null);
-    // Nettoyer localTasksByColumn après 500ms
+    
+    // Réinitialiser les flags immédiatement
+    // Pas besoin de setTimeout car on travaille directement sur localColumns
     setTimeout(() => {
-      setLocalTasksByColumn({});
-      // Réinitialiser dragEndTimeRef après le délai
       dragEndTimeRef.current = 0;
-    }, 500);
+      isDraggingRef.current = false;
+      console.log('✅ [DnD] Drag terminé, flags réinitialisés');
+    }, 100);
   };
 
   const getLocalTasksByColumn = (columnId) => {
-    if (Object.keys(localTasksByColumn).length > 0) {
-      return localTasksByColumn[columnId] || [];
-    }
-    return getTasksByColumn(columnId);
+    // Toujours retourner depuis localColumns
+    const column = localColumns.find(col => col.id === columnId);
+    return column?.tasks || [];
   };
 
   return {
@@ -239,7 +249,7 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
     handleDragEnd,
     isDragging,
     getLocalTasksByColumn,
-    localTasksByColumn,
     dragEndTimeRef,
+    isDraggingRef, // Exposer le ref pour que page.jsx puisse l'utiliser
   };
 };

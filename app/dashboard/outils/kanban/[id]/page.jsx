@@ -106,7 +106,7 @@ export default function KanbanBoardPage({ params }) {
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
   // Hooks
-  const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction } =
+  const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction, markMoveTaskAction } =
     useKanbanBoard(id, isRedirecting);
   const { loading: workspaceLoading } = useWorkspace();
 
@@ -180,7 +180,7 @@ export default function KanbanBoardPage({ params }) {
   // Les hooks doivent être appelés dans le même ordre à chaque rendu
   // useKanbanDnD utilise UNIQUEMENT Redis/subscription, jamais le cache Apollo
   // IMPORTANT: Appeler AVANT le useEffect qui utilise isDragging
-  const { handleDragEnd, handleDragOver, handleDragStart, activeTask, activeColumn, getLocalTasksByColumn, isDragging, dragEndTimeRef } = useKanbanDnD(
+  const { handleDragEnd, handleDragOver, handleDragStart, activeTask, activeColumn, getLocalTasksByColumn, isDragging, dragEndTimeRef, isDraggingRef } = useKanbanDnD(
     moveTask,
     getTasksByColumn,
     id,
@@ -188,23 +188,34 @@ export default function KanbanBoardPage({ params }) {
     localColumns,
     reorderColumnsMutation,
     setLocalColumns,
-    markReorderAction
+    markReorderAction,
+    markMoveTaskAction
   );
 
   // Synchroniser lastDragEndTime avec dragEndTimeRef pour les dépendances du useEffect
+  // Cela force un re-render après le drag pour mettre à jour l'interface
   React.useEffect(() => {
     if (dragEndTimeRef.current > 0 && dragEndTimeRef.current !== lastDragEndTime) {
       setLastDragEndTime(dragEndTimeRef.current);
     }
-  }, [isDragging, dragEndTimeRef, lastDragEndTime]);
+  }, [dragEndTimeRef.current, lastDragEndTime]);
 
   // Mettre à jour localColumns quand board change
   // Inclure les tâches dans chaque colonne
   const prevBoardRef = React.useRef(board);
 
   React.useEffect(() => {
-    // NE PAS mettre à jour localColumns pendant un drag - cela casse la preview
-    if (isDragging) {
+    // CRITIQUE: NE PAS mettre à jour localColumns pendant un drag
+    // Utiliser isDraggingRef au lieu de isDragging pour une détection plus fiable
+    if (isDraggingRef?.current) {
+      return;
+    }
+    
+    // Attendre un peu après la fin du drag avant de mettre à jour
+    // Court délai de 200ms car on travaille directement sur localColumns
+    // Pas besoin d'attendre longtemps puisqu'il n'y a plus de preview séparée
+    const timeSinceLastDrag = Date.now() - dragEndTimeRef.current;
+    if (dragEndTimeRef.current > 0 && timeSinceLastDrag < 200) {
       return;
     }
     
@@ -215,16 +226,24 @@ export default function KanbanBoardPage({ params }) {
         tasks: (board.tasks || []).filter(task => task.columnId === column.id).sort((a, b) => (a.position || 0) - (b.position || 0))
       }));
       
-      // Vérifier si l'ordre des colonnes OU le contenu a changé
+      // Vérifier si l'ordre des colonnes OU le nombre de tâches a changé
       const currentColumnIds = localColumns.map(col => col.id).join(',');
       const newColumnIds = columnsWithTasks.map(col => col.id).join(',');
+      const currentTaskCount = localColumns.reduce((sum, col) => sum + (col.tasks?.length || 0), 0);
+      const newTaskCount = columnsWithTasks.reduce((sum, col) => sum + (col.tasks?.length || 0), 0);
       
-      // Mettre à jour UNIQUEMENT si l'ordre a changé (pas juste le contenu des tâches)
-      if (currentColumnIds !== newColumnIds) {
+      // Mettre à jour si l'ordre a changé OU si le nombre de tâches a changé (création/suppression)
+      if (currentColumnIds !== newColumnIds || currentTaskCount !== newTaskCount) {
+        console.log('🔄 [Page] Mise à jour localColumns:', {
+          colonnesChanged: currentColumnIds !== newColumnIds,
+          tasksChanged: currentTaskCount !== newTaskCount,
+          oldCount: currentTaskCount,
+          newCount: newTaskCount
+        });
         setLocalColumns(columnsWithTasks);
       }
     }
-  }, [board?.columns, board?.tasks, isDragging, localColumns]);
+  }, [board?.columns, board?.tasks, isDraggingRef, dragEndTimeRef, localColumns]);
 
   // SUPPRIMÉ : useKanbanRealtimeSync (doublon de useKanbanBoard qui gère déjà les subscriptions)
   // Les subscriptions sont gérées dans useKanbanBoard avec TASK_UPDATED_SUBSCRIPTION et COLUMN_UPDATED_SUBSCRIPTION
@@ -254,13 +273,13 @@ export default function KanbanBoardPage({ params }) {
     // Mouse sensor pour desktop - distance optimisée pour le drag
     useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 5, // 5px pour un bon équilibre entre réactivité et prévention des drags accidentels
+        distance: 8, // 8px pour éviter les drags accidentels tout en restant réactif
       },
     }),
     // Touch sensor pour mobile/tablette
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 200, // 200ms de délai pour différencier scroll et drag
+        delay: 250, // 250ms de délai pour différencier scroll et drag
         tolerance: 5,
       },
     }),
@@ -280,6 +299,7 @@ export default function KanbanBoardPage({ params }) {
   } = useColumnCollapse(id);
 
   // Mémoriser le rendu des colonnes pour éviter les re-renders inutiles
+  // IMPORTANT: Ne pas inclure isDragging dans les dépendances pour éviter le clignotement
   const columnsContent = React.useMemo(() => {
     if (!localColumns || localColumns.length === 0) {
       return null;
@@ -350,7 +370,7 @@ export default function KanbanBoardPage({ params }) {
         </div>
       </>
     );
-  }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, toggleColumnCollapse, openAddTaskModal, openEditTaskModal, handleDeleteTask, openEditModal, handleDeleteColumn, loading, openAddModal, activeColumn]);
+  }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, toggleColumnCollapse, openAddTaskModal, openEditTaskModal, handleDeleteTask, openEditModal, handleDeleteColumn, loading, openAddModal, activeColumn, lastDragEndTime]);
 
   // Hook pour le mode d'affichage (Board/List)
   const { viewMode, setViewMode, isBoard, isList } = useViewMode(id);
