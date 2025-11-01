@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
@@ -13,9 +13,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-export default function ManageDevicesPage() {
+function ManageDevicesContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState(null);
@@ -336,5 +335,19 @@ export default function ManageDevicesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ManageDevicesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex items-center justify-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Chargement...</p>
+        </div>
+      }
+    >
+      <ManageDevicesContent />
+    </Suspense>
   );
 }
