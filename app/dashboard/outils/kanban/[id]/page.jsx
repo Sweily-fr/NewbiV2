@@ -177,13 +177,20 @@ export default function KanbanBoardPage({ params }) {
   const [localColumns, setLocalColumns] = React.useState(board?.columns || []);
   const [lastDragEndTime, setLastDragEndTime] = React.useState(0);
 
-  // Créer une clé stable pour déclencher les mises à jour
-  // Inclure les IDs des tâches pour détecter les changements de position
+  // Créer une clé stable basée sur les longueurs et les IDs des premiers/derniers éléments
+  // Cela évite les boucles infinies tout en détectant les changements
   const boardDataKey = React.useMemo(() => {
-    const columnIds = board?.columns?.map(c => c.id).join(',') || '';
-    const taskIds = board?.tasks?.map(t => `${t.id}:${t.columnId}:${t.position}`).join(',') || '';
-    return `${columnIds}|${taskIds}`;
-  }, [board?.columns, board?.tasks]);
+    if (!board?.columns || !board?.tasks) return '0:0';
+    
+    // Créer une clé simple basée sur les longueurs et les premiers/derniers IDs
+    const firstColId = board.columns[0]?.id || '';
+    const lastColId = board.columns[board.columns.length - 1]?.id || '';
+    const firstTaskId = board.tasks[0]?.id || '';
+    const lastTaskId = board.tasks[board.tasks.length - 1]?.id || '';
+    const lastTaskPos = board.tasks[board.tasks.length - 1]?.position || 0;
+    
+    return `${board.columns.length}:${board.tasks.length}:${firstColId}:${lastColId}:${firstTaskId}:${lastTaskId}:${lastTaskPos}`;
+  }, [board?.columns?.length, board?.tasks?.length, board?.columns?.[0]?.id, board?.columns?.[board?.columns?.length - 1]?.id, board?.tasks?.[0]?.id, board?.tasks?.[board?.tasks?.length - 1]?.id, board?.tasks?.[board?.tasks?.length - 1]?.position]);
 
   // Les hooks doivent être appelés dans le même ordre à chaque rendu
   // useKanbanDnD utilise UNIQUEMENT Redis/subscription, jamais le cache Apollo
