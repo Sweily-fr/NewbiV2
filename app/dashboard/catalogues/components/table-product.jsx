@@ -27,6 +27,7 @@ import {
   FilterIcon,
   ListFilterIcon,
   PlusIcon,
+  Search,
   TrashIcon,
   AlertCircle,
 } from "lucide-react";
@@ -45,6 +46,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -433,14 +435,15 @@ export default function TableProduct({ handleAddProduct }) {
       <div className="hidden md:block space-y-4">
         {/* Filters */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          {/* First Button Group: Search, Category, Columns */}
+          <ButtonGroup>
             {/* Filter by name or reference */}
-            <div className="relative">
+            <div className="relative flex-1">
               <Input
                 id={`${id}-input`}
                 ref={inputRef}
                 className={cn(
-                  "peer min-w-60 ps-9",
+                  "peer min-w-60 ps-9 rounded-r-none",
                   Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
                 )}
                 value={globalFilter}
@@ -453,11 +456,11 @@ export default function TableProduct({ handleAddProduct }) {
                 aria-label="Filter by name or reference"
               />
               <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                <ListFilterIcon size={16} aria-hidden="true" />
+                <Search size={16} aria-hidden="true" />
               </div>
               {Boolean(globalFilter) && (
                 <button
-                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Clear filter"
                   onClick={() => {
                     setGlobalFilter("");
@@ -471,6 +474,7 @@ export default function TableProduct({ handleAddProduct }) {
                 </button>
               )}
             </div>
+
             {/* Filter by category */}
             <Popover>
               <PopoverTrigger asChild>
@@ -518,6 +522,7 @@ export default function TableProduct({ handleAddProduct }) {
                 </div>
               </PopoverContent>
             </Popover>
+
             {/* Toggle columns visibility */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -563,67 +568,82 @@ export default function TableProduct({ handleAddProduct }) {
                   })}
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-          <div className="flex items-center gap-3">
+          </ButtonGroup>
+
+          {/* Second Button Group: Import, Export */}
+          <ButtonGroup>
             {/* Import/Export buttons */}
             <ProductImportDialog onImportComplete={refetch} />
             <ProductExportButton 
               products={allProducts} 
               selectedRows={table.getSelectedRowModel().rows}
             />
-            {/* Delete button */}
-            {table.getSelectedRowModel().rows.length > 0 && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    className="ml-auto"
-                    variant="destructive"
-                    data-mobile-delete-trigger-product
-                  >
-                    <TrashIcon className="mr-2 h-4 w-4" />
-                    Supprimer ({table.getSelectedRowModel().rows.length})
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                    <div
-                      className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                      aria-hidden="true"
-                    >
-                      <CircleAlertIcon className="opacity-80" size={16} />
-                    </div>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Êtes-vous absolument sûr ?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action ne peut pas être annulée. Cela supprimera
-                        définitivement {table.getSelectedRowModel().rows.length}{" "}
-                        produit(s) sélectionné(s).
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                  </div>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteRows}
-                      className="text-white"
-                    >
-                      Supprimer
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            {/* Add product button */}
+          </ButtonGroup>
+
+          {/* Add product button with split design */}
+          <ButtonGroup>
             <Button
-              className="ml-auto cursor-pointer font-normal"
+              variant="secondary"
+              className="cursor-pointer font-normal"
               onClick={handleAddProduct}
             >
-              <PlusIcon className="-ms-1" size={16} aria-hidden="true" />
               Ajouter un produit
             </Button>
-          </div>
+            <ButtonGroupSeparator />
+            <Button
+              variant="secondary"
+              size="icon"
+              className="cursor-pointer"
+              onClick={handleAddProduct}
+            >
+              <PlusIcon size={16} aria-hidden="true" />
+            </Button>
+          </ButtonGroup>
+
+          {/* Delete button - shown when rows are selected */}
+          {table.getSelectedRowModel().rows.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  data-mobile-delete-trigger-product
+                  className="cursor-pointer font-normal"
+                >
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  Supprimer ({table.getSelectedRowModel().rows.length})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                  <div
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                    aria-hidden="true"
+                  >
+                    <CircleAlertIcon className="opacity-80" size={16} />
+                  </div>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Êtes-vous absolument sûr ?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action ne peut pas être annulée. Cela supprimera
+                      définitivement {table.getSelectedRowModel().rows.length}{" "}
+                      produit(s) sélectionné(s).
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteRows}
+                    className="text-white"
+                  >
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
 
         {/* Table */}

@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { Button } from "@/src/components/ui/button";
+import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
@@ -21,22 +22,16 @@ function QuotesContent() {
       {/* Desktop Layout */}
       <div className="hidden md:block space-y-6 p-4 sm:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Devis</h1>
-            <p className="text-muted-foreground text-sm">
-              Créez et gérez vos devis clients
-            </p>
-          </div>
-          <Button onClick={handleNewQuote} className="w-full sm:w-auto cursor-pointer">
-            <Plus className="mr-2 h-4 w-4" />
-            Nouveau devis
-          </Button>
+        <div>
+          <h1 className="text-2xl font-medium mb-2">Devis</h1>
+          <p className="text-muted-foreground text-sm">
+            Créez et gérez vos devis clients
+          </p>
         </div>
 
         {/* Table */}
         <Suspense fallback={<QuoteTableSkeleton />}>
-          <QuoteTable />
+          <QuoteTable handleNewQuote={handleNewQuote} />
         </Suspense>
       </div>
 

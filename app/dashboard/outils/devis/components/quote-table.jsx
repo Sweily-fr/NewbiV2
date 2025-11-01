@@ -23,6 +23,7 @@ import {
   FilterIcon,
   ListFilterIcon,
   PlusIcon,
+  Search,
   TrashIcon,
 } from "lucide-react";
 
@@ -40,6 +41,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -92,7 +94,7 @@ import {
 import { useQuoteTable } from "../hooks/use-quote-table";
 import QuoteRowActions from "./quote-row-actions";
 
-export default function QuoteTable() {
+export default function QuoteTable({ handleNewQuote }) {
   const { quotes, loading, error, refetch } = useQuotes();
 
   const {
@@ -126,23 +128,29 @@ export default function QuoteTable() {
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hidden md:flex">
-        <div className="flex flex-1 items-center space-x-2">
-          <Input
-            placeholder="Rechercher des devis..."
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="h-8 w-full sm:w-[150px] lg:w-[250px]"
-          />
+      {/* Filters and Add Quote Button */}
+      <div className="flex items-center justify-between gap-3 hidden md:flex">
+        {/* First Button Group: Search, Status, Columns */}
+        <ButtonGroup>
+          {/* Search */}
+          <div className="relative flex-1">
+            <Input
+              placeholder="Rechercher des devis..."
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              className="w-full sm:w-[150px] lg:w-[250px] ps-9 rounded-r-none"
+            />
+            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
+              <Search size={16} aria-hidden="true" />
+            </div>
+          </div>
 
           {/* Status Filter */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                size="sm"
-                className="border-dashed font-normal cursor-pointer"
+                className="font-normal cursor-pointer"
               >
                 <ListFilterIcon className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Statut</span>
@@ -192,13 +200,11 @@ export default function QuoteTable() {
               </div>
             </PopoverContent>
           </Popover>
-        </div>
 
-        <div className="flex items-center space-x-2">
           {/* Column visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto font-normal cursor-pointer">
+              <Button variant="outline" className="font-normal cursor-pointer">
                 <Columns3Icon className="mr-2 h-4 w-4" />
                 Colonnes
               </Button>
@@ -242,46 +248,66 @@ export default function QuoteTable() {
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+        </ButtonGroup>
 
-          {/* Bulk actions */}
-          {selectedRows.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="destructive" 
-                  disabled={isDeleting}
-                  data-mobile-delete-trigger-quote
+        {/* Add Quote Button Group */}
+        <ButtonGroup>
+          <Button 
+            onClick={handleNewQuote} 
+            variant="secondary"
+            className="cursor-pointer font-normal"
+          >
+            Nouveau devis
+          </Button>
+          <ButtonGroupSeparator />
+          <Button 
+            onClick={handleNewQuote} 
+            variant="secondary"
+            size="icon"
+            className="cursor-pointer"
+          >
+            <PlusIcon size={16} aria-hidden="true" />
+          </Button>
+        </ButtonGroup>
+
+        {/* Bulk actions */}
+        {selectedRows.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                disabled={isDeleting}
+                data-mobile-delete-trigger-quote
+              >
+                <TrashIcon className="mr-2 h-4 w-4" />
+                Supprimer ({selectedRows.length})
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                  devis sélectionné(s) ? Cette action ne peut pas être
+                  annulée.
+                  <br />
+                  <br />
+                  <strong>Note :</strong> Seuls les devis en brouillon peuvent
+                  être supprimés.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteSelected}
+                  className="bg-destructive text-white hover:bg-destructive/90"
                 >
-                  <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer ({selectedRows.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                    devis sélectionné(s) ? Cette action ne peut pas être
-                    annulée.
-                    <br />
-                    <br />
-                    <strong>Note :</strong> Seuls les devis en brouillon peuvent
-                    être supprimés.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteSelected}
-                    className="bg-destructive text-white hover:bg-destructive/90"
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Mobile Toolbar - Style Notion */}

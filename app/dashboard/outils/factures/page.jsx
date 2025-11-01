@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { Button } from "@/src/components/ui/button";
+import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
@@ -21,22 +22,16 @@ function InvoicesContent() {
       {/* Desktop Layout */}
       <div className="hidden md:block space-y-6 p-4 sm:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Factures</h1>
-            <p className="text-muted-foreground text-sm">
-              Gérez vos factures et suivez vos paiements
-            </p>
-          </div>
-          <Button onClick={handleNewInvoice} className="w-full sm:w-auto cursor-pointer">
-            <Plus className="mr-2 h-4 w-4" />
-            Nouvelle facture
-          </Button>
+        <div>
+          <h1 className="text-2xl font-medium mb-2">Factures</h1>
+          <p className="text-muted-foreground text-sm">
+            Gérez vos factures et suivez vos paiements
+          </p>
         </div>
 
         {/* Table */}
         <Suspense fallback={<InvoiceTableSkeleton />}>
-          <InvoiceTable />
+          <InvoiceTable handleNewInvoice={handleNewInvoice} />
         </Suspense>
       </div>
 

@@ -24,6 +24,7 @@ import {
   FilterIcon,
   ListFilterIcon,
   PlusIcon,
+  Search,
   TrashIcon,
 } from "lucide-react";
 
@@ -41,6 +42,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -95,7 +97,7 @@ import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceExportButton from "./invoice-export-button";
 
-export default function InvoiceTable() {
+export default function InvoiceTable({ handleNewInvoice }) {
   const router = useRouter();
   const { invoices, loading, error, refetch } = useInvoices();
 
@@ -134,21 +136,29 @@ export default function InvoiceTable() {
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hidden md:flex">
-        <div className="flex flex-1 items-center space-x-2">
-          <Input
-            placeholder="Rechercher des factures..."
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="h-8 w-full sm:w-[150px] lg:w-[250px]"
-          />
+      {/* Filters and Add Invoice Button */}
+      <div className="flex items-center justify-between gap-3 hidden md:flex">
+        {/* First Button Group: Search, Status, Columns */}
+        <ButtonGroup>
+          {/* Search */}
+          <div className="relative flex-1">
+            <Input
+              placeholder="Rechercher des factures..."
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              className="w-full sm:w-[150px] lg:w-[250px] ps-9 rounded-r-none"
+            />
+            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
+              <Search size={16} aria-hidden="true" />
+            </div>
+          </div>
+
+          {/* Status Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                size="sm"
-                className="border-dashed font-normal cursor-pointer"
+                className="font-normal cursor-pointer"
               >
                 <ListFilterIcon className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Statut</span>
@@ -184,19 +194,11 @@ export default function InvoiceTable() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {/* Export button */}
-          <InvoiceExportButton 
-            invoices={invoices || []} 
-            selectedRows={selectedRows}
-          />
 
           {/* Column visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto font-normal cursor-pointer">
+              <Button variant="outline" className="font-normal cursor-pointer">
                 <Columns3Icon className="mr-2 h-4 w-4" />
                 Colonnes
               </Button>
@@ -240,46 +242,72 @@ export default function InvoiceTable() {
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+        </ButtonGroup>
 
-          {/* Bulk actions */}
-          {selectedRows.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="destructive" 
-                  disabled={isDeleting}
-                  data-mobile-delete-trigger-invoice
+        {/* Export button */}
+        <InvoiceExportButton 
+          invoices={invoices || []} 
+          selectedRows={selectedRows}
+        />
+
+        {/* Add Invoice Button Group */}
+        <ButtonGroup>
+          <Button 
+            onClick={handleNewInvoice} 
+            variant="secondary"
+            className="cursor-pointer font-normal"
+          >
+            Nouvelle facture
+          </Button>
+          <ButtonGroupSeparator />
+          <Button 
+            onClick={handleNewInvoice} 
+            variant="secondary"
+            size="icon"
+            className="cursor-pointer"
+          >
+            <PlusIcon size={16} aria-hidden="true" />
+          </Button>
+        </ButtonGroup>
+
+        {/* Bulk actions */}
+        {selectedRows.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                disabled={isDeleting}
+                data-mobile-delete-trigger-invoice
+              >
+                <TrashIcon className="mr-2 h-4 w-4" />
+                Supprimer ({selectedRows.length})
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                  facture(s) sélectionnée(s) ? Cette action ne peut pas être
+                  annulée.
+                  <br />
+                  <br />
+                  <strong>Note :</strong> Seules les factures en brouillon peuvent
+                  être supprimées.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteSelected}
+                  className="bg-destructive text-white hover:bg-destructive/90"
                 >
-                  <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer ({selectedRows.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                    facture(s) sélectionnée(s) ? Cette action ne peut pas être
-                    annulée.
-                    <br />
-                    <br />
-                    <strong>Note :</strong> Seules les factures en brouillon peuvent
-                    être supprimées.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteSelected}
-                    className="bg-destructive text-white hover:bg-destructive/90"
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Table - Desktop style (original) */}
