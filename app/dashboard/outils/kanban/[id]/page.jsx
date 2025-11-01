@@ -177,21 +177,6 @@ export default function KanbanBoardPage({ params }) {
   const [localColumns, setLocalColumns] = React.useState(board?.columns || []);
   const [lastDragEndTime, setLastDragEndTime] = React.useState(0);
 
-  // Créer une clé stable basée sur les longueurs et les IDs des premiers/derniers éléments
-  // Cela évite les boucles infinies tout en détectant les changements
-  const boardDataKey = React.useMemo(() => {
-    if (!board?.columns || !board?.tasks) return '0:0';
-    
-    // Créer une clé simple basée sur les longueurs et les premiers/derniers IDs
-    const firstColId = board.columns[0]?.id || '';
-    const lastColId = board.columns[board.columns.length - 1]?.id || '';
-    const firstTaskId = board.tasks[0]?.id || '';
-    const lastTaskId = board.tasks[board.tasks.length - 1]?.id || '';
-    const lastTaskPos = board.tasks[board.tasks.length - 1]?.position || 0;
-    
-    return `${board.columns.length}:${board.tasks.length}:${firstColId}:${lastColId}:${firstTaskId}:${lastTaskId}:${lastTaskPos}`;
-  }, [board?.columns?.length, board?.tasks?.length, board?.columns?.[0]?.id, board?.columns?.[board?.columns?.length - 1]?.id, board?.tasks?.[0]?.id, board?.tasks?.[board?.tasks?.length - 1]?.id, board?.tasks?.[board?.tasks?.length - 1]?.position]);
-
   // Les hooks doivent être appelés dans le même ordre à chaque rendu
   // useKanbanDnD utilise UNIQUEMENT Redis/subscription, jamais le cache Apollo
   // IMPORTANT: Appeler AVANT le useEffect qui utilise isDragging
@@ -309,7 +294,38 @@ export default function KanbanBoardPage({ params }) {
         setLocalColumns(columnsWithTasks);
       }
     }
-  }, [boardDataKey]);
+  }, [board?.id]);
+
+  // Mettre à jour localColumns quand les tâches changent de position (Redis/subscriptions)
+  // Utiliser une ref pour éviter les dépendances circulaires
+  const prevTasksRef = React.useRef(board?.tasks);
+  
+  React.useEffect(() => {
+    // Vérifier si les tâches ont changé (positions, ordre, etc.)
+    if (!board?.tasks || !prevTasksRef.current) {
+      prevTasksRef.current = board?.tasks;
+      return;
+    }
+    
+    // Comparer les tâches
+    const tasksChanged = board.tasks.length !== prevTasksRef.current.length ||
+      board.tasks.some((task, idx) => 
+        task.id !== prevTasksRef.current[idx]?.id || 
+        task.columnId !== prevTasksRef.current[idx]?.columnId ||
+        task.position !== prevTasksRef.current[idx]?.position
+      );
+    
+    if (tasksChanged && !isDraggingRef?.current) {
+      console.log('🔄 [Page] Tâches changées - mise à jour localColumns');
+      const columnsWithTasks = board.columns.map(column => ({
+        ...column,
+        tasks: (board.tasks || []).filter(task => task.columnId === column.id).sort((a, b) => (a.position || 0) - (b.position || 0))
+      }));
+      setLocalColumns(columnsWithTasks);
+    }
+    
+    prevTasksRef.current = board?.tasks;
+  }, [board?.tasks, isDraggingRef]);
 
   // SUPPRIMÉ : useKanbanRealtimeSync (doublon de useKanbanBoard qui gère déjà les subscriptions)
   // Les subscriptions sont gérées dans useKanbanBoard avec TASK_UPDATED_SUBSCRIPTION et COLUMN_UPDATED_SUBSCRIPTION
