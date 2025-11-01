@@ -176,8 +176,8 @@ export default function EspacesSection() {
     (member) =>
       member.status === "active" &&
       (member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.role?.toLowerCase().includes(searchTerm.toLowerCase()))
+        member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.role?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleDeleteMember = (member) => {
@@ -447,20 +447,20 @@ export default function EspacesSection() {
                             <SelectTrigger className="w-[240px] border-none shadow-none cursor-pointer hover:bg-[#F0EFED]/90 ml-auto transition-colors">
                               <SelectValue>
                                 <div className="flex flex-col items-start">
-                                  <span className="font-medium text-sm">
+                                  <span className="font-normal text-sm">
                                     {getRoleLabel(member.role)}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
                                     {getRoleLabel(member.role)} de l'espace
                                     d'équipe
-                                  </span> 
+                                  </span>
                                 </div>
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="owner">
                                 <div className="flex flex-col">
-                                  <span className="font-medium text-sm">
+                                  <span className="font-normal text-sm">
                                     Propriétaire
                                   </span>
                                   <span className="text-xs text-muted-foreground">
@@ -470,7 +470,7 @@ export default function EspacesSection() {
                               </SelectItem>
                               <SelectItem value="admin">
                                 <div className="flex flex-col">
-                                  <span className="font-medium text-sm">
+                                  <span className="font-normal text-sm">
                                     Administrateur
                                   </span>
                                   <span className="text-xs text-muted-foreground">
@@ -480,7 +480,7 @@ export default function EspacesSection() {
                               </SelectItem>
                               <SelectItem value="member">
                                 <div className="flex flex-col">
-                                  <span className="font-medium text-sm">
+                                  <span className="font-normal text-sm">
                                     Membre
                                   </span>
                                   <span className="text-xs text-muted-foreground">
@@ -490,7 +490,7 @@ export default function EspacesSection() {
                               </SelectItem>
                               <SelectItem value="accountant">
                                 <div className="flex flex-col">
-                                  <span className="font-medium text-sm">
+                                  <span className="font-normal text-sm">
                                     Comptable
                                   </span>
                                   <span className="text-xs text-muted-foreground">
@@ -500,7 +500,7 @@ export default function EspacesSection() {
                               </SelectItem>
                               <SelectItem value="guest">
                                 <div className="flex flex-col">
-                                  <span className="font-medium text-sm">
+                                  <span className="font-normal text-sm">
                                     Invité
                                   </span>
                                   <span className="text-xs text-muted-foreground">

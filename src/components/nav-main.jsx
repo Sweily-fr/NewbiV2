@@ -36,7 +36,7 @@ import Link from "next/link";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
 
-export function NavMain({ items }) {
+export function NavMain({ items, onOpenNotifications, notificationCount = 0 }) {
   const pathname = usePathname();
   const { isActive } = useSubscription();
   const { setOpenMobile, isMobile } = useSidebar();
@@ -99,7 +99,8 @@ export function NavMain({ items }) {
                     tooltip="Outils"
                     className={cn(
                       "bg-transparent w-full cursor-pointer hover:bg-transparent",
-                      pathname === "/dashboard/outils" && "text-sidebar-foreground"
+                      pathname === "/dashboard/outils" &&
+                        "text-sidebar-foreground"
                     )}
                   >
                     <LayoutPanelLeft />
@@ -147,6 +148,32 @@ export function NavMain({ items }) {
               (!isProTab && !isPaidProTab) ||
               (isProTab && isActive()) ||
               (isPaidProTab && isActive(true)); // true = requirePaidSubscription
+
+            // Gérer l'action spéciale pour ouvrir les notifications
+            if (item.action === "openNotifications") {
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    className="bg-transparent w-full cursor-pointer relative"
+                    tooltip={item.title}
+                    onClick={() => {
+                      if (onOpenNotifications) {
+                        onOpenNotifications();
+                      }
+                      handleLinkClick();
+                    }}
+                  >
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                    {notificationCount > 0 && (
+                      <span className="ml-auto bg-[#5b4eff]/90 text-white text-[10px] rounded-sm px-2 py-0.5 font-medium">
+                        {notificationCount}
+                      </span>
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            }
 
             return (
               <SidebarMenuItem key={item.title}>

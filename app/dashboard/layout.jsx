@@ -25,6 +25,7 @@ import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
 import { authClient } from "@/src/lib/auth-client";
 import { SubscriptionSuccessModal } from "@/src/components/subscription-success-modal";
+import { SettingsModal } from "@/src/components/settings-modal";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -34,6 +35,8 @@ function DashboardContent({ children }) {
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState("notifications");
 
   // Hook pour gérer l'onboarding et les données du layout
   const {
@@ -108,6 +111,10 @@ function DashboardContent({ children }) {
       <AppSidebar
         variant="inset"
         onCommunityClick={() => setIsCommunitySidebarOpen(true)}
+        onOpenNotifications={() => {
+          setSettingsInitialTab("notifications");
+          setSettingsModalOpen(true);
+        }}
       />
       <SidebarInset className="md:pt-0 pt-10">
         <SiteHeader />
@@ -158,6 +165,13 @@ function DashboardContent({ children }) {
 
       {/* Modal de succès d'abonnement */}
       <SubscriptionSuccessModal />
+
+      {/* Modal de paramètres avec notifications */}
+      <SettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        initialTab={settingsInitialTab}
+      />
 
       {/* Bouton de test pour le modal (à retirer en production) */}
       {process.env.NODE_ENV === "development" && (

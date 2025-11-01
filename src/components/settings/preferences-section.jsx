@@ -271,7 +271,7 @@ export function PreferencesSection() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="ml-4 flex items-center gap-2"
+                  className="ml-4 flex font-normal items-center gap-2"
                 >
                   Personnaliser
                   <ChevronDown className="h-4 w-4" />
@@ -282,7 +282,7 @@ export function PreferencesSection() {
                   {/* Strictement nécessaires */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <h4 className="text-sm font-medium mb-1">
+                      <h4 className="text-sm font-normal mb-1">
                         Strictement nécessaires
                       </h4>
                       <p className="text-xs text-gray-500">
@@ -301,7 +301,7 @@ export function PreferencesSection() {
                   {/* Fonctionnels */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <h4 className="text-sm font-medium mb-1">Fonctionnels</h4>
+                      <h4 className="text-sm font-normal mb-1">Fonctionnels</h4>
                       <p className="text-xs text-gray-500">
                         Servent à enregistrer votre sélection et offrir des
                         fonctionnalités avancées.
@@ -324,7 +324,7 @@ export function PreferencesSection() {
                   {/* Analyses */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <h4 className="text-sm font-medium mb-1">Analyses</h4>
+                      <h4 className="text-sm font-normal mb-1">Analyses</h4>
                       <p className="text-xs text-gray-500">
                         Servent à mesurer l'utilisation et à améliorer votre
                         expérience.
@@ -347,7 +347,7 @@ export function PreferencesSection() {
                   {/* Marketing */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <h4 className="text-sm font-medium mb-1">Marketing</h4>
+                      <h4 className="text-sm font-normal mb-1">Marketing</h4>
                       <p className="text-xs text-gray-500">
                         Servent à faire de la publicité ciblée.
                       </p>
@@ -381,10 +381,10 @@ export function PreferencesSection() {
               size="sm"
               onValueChange={handleStartupPageChange}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40 text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="text-xs">
                 <SelectItem value="dashboard">Tableau de bord</SelectItem>
                 <SelectItem value="outils">Outils</SelectItem>
                 <SelectItem value="kanban">Kanban</SelectItem>
