@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState, useEffect } from "react";
 import {
   IconCamera,
   IconChartBar,
@@ -33,6 +34,7 @@ import {
   FileMinus,
   Search,
   MessageCircleQuestionMark,
+  Inbox,
 } from "lucide-react";
 
 import { NavDocuments } from "@/src/components/nav-documents";
@@ -54,6 +56,8 @@ import { getCurrentUser } from "../lib/auth/api";
 import { useUser } from "../lib/auth/hooks";
 import { TeamSwitcher } from "@/src/components/team-switcher";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { authClient } from "@/src/lib/auth-client";
+import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 
 const data = {
   teams: [
@@ -78,6 +82,12 @@ const data = {
       title: "Tableau de bord",
       url: "/dashboard",
       icon: CircleGauge,
+    },
+    {
+      title: "Boîte de réception",
+      url: "#",
+      icon: Inbox,
+      action: "openNotifications", // Action spéciale pour ouvrir le modal
     },
     // {
     //   title: "Intégrations",
@@ -189,7 +199,7 @@ const data = {
   ],
 };
 
-export function AppSidebar({ onCommunityClick, ...props }) {
+export function AppSidebar({ onCommunityClick, onOpenNotifications, ...props }) {
   const { session } = useUser();
   const {
     isLoading: subscriptionLoading,
@@ -197,6 +207,40 @@ export function AppSidebar({ onCommunityClick, ...props }) {
     subscription,
   } = useSubscription();
   const [theme, setTheme] = React.useState("light");
+  const [notificationCount, setNotificationCount] = React.useState(0);
+  const { listInvitations } = useOrganizationInvitations();
+
+  // Récupérer le nombre de notifications
+  React.useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        // Récupérer les invitations reçues
+        const { data: receivedInvitations } = await authClient.organization.listUserInvitations();
+        const pendingReceived = receivedInvitations?.filter(inv => inv.status === "pending") || [];
+        
+        // Récupérer les invitations envoyées
+        const sentResult = await listInvitations();
+        const pendingSent = sentResult.success 
+          ? (sentResult.data?.filter(inv => inv.status === "pending") || [])
+          : [];
+        
+        // Total des notifications
+        const total = pendingReceived.length + pendingSent.length;
+        setNotificationCount(total);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des notifications:", error);
+      }
+    };
+
+    if (session?.user) {
+      fetchNotifications();
+      
+      // Rafraîchir toutes les 30 secondes
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id]); // Dépendre uniquement de l'ID utilisateur
 
   // Effet pour détecter le thème depuis localStorage au chargement du composant
   React.useEffect(() => {
@@ -245,7 +289,7 @@ export function AppSidebar({ onCommunityClick, ...props }) {
       <SidebarContent className="mt-1">
         {session?.user && !subscriptionLoading ? (
           <>
-            <NavMain items={data.navMain} />
+            <NavMain items={data.navMain} onOpenNotifications={onOpenNotifications} notificationCount={notificationCount} />
             <NavDocuments items={data.documents} />
             <NavSecondary items={data.navSecondary} onCommunityClick={onCommunityClick} className="mt-auto" />
           </>

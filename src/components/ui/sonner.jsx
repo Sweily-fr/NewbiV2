@@ -5,7 +5,7 @@ import { Toaster as Sonner, toast as sonnerToast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import {
   XIcon,
-  CheckCircleIcon,
+  CircleCheck,
   AlertCircleIcon,
   InfoIcon,
 } from "lucide-react";
@@ -13,10 +13,10 @@ import { useEffect, useState } from "react";
 
 // Composant de notification de succès
 const SuccessToast = ({ message }) => (
-  <div className="bg-background max-w-[400px] rounded-md border px-4 py-3 shadow-lg">
+  <div className="max-w-[400px] rounded-md px-4 py-3 shadow-lg" style={{ backgroundColor: '#202020' }}>
     <div className="flex gap-2">
-      <p className="grow text-sm text-foreground">
-        <CheckCircleIcon
+      <p className="grow text-sm" style={{ color: '#ffffff' }}>
+        <CircleCheck
           className="me-3 -mt-0.5 inline-flex text-emerald-500"
           size={16}
           aria-hidden="true"
@@ -33,6 +33,7 @@ const SuccessToast = ({ message }) => (
           size={16}
           className="opacity-60 transition-opacity group-hover:opacity-100"
           aria-hidden="true"
+          style={{ color: '#ffffff' }}
         />
       </Button>
     </div>
@@ -41,9 +42,9 @@ const SuccessToast = ({ message }) => (
 
 // Composant de notification d'erreur
 const ErrorToast = ({ message }) => (
-  <div className="bg-background max-w-[400px] rounded-md border px-4 py-3 shadow-lg">
+  <div className="max-w-[400px] rounded-md px-4 py-3 shadow-lg" style={{ backgroundColor: '#202020' }}>
     <div className="flex gap-2">
-      <p className="grow text-sm text-foreground">
+      <p className="grow text-sm" style={{ color: '#ffffff' }}>
         <AlertCircleIcon
           className="me-3 -mt-0.5 inline-flex text-red-500"
           size={16}
@@ -61,6 +62,7 @@ const ErrorToast = ({ message }) => (
           size={16}
           className="opacity-60 transition-opacity group-hover:opacity-100"
           aria-hidden="true"
+          style={{ color: '#ffffff' }}
         />
       </Button>
     </div>
@@ -69,9 +71,9 @@ const ErrorToast = ({ message }) => (
 
 // Composant de notification d'information
 const InfoToast = ({ message }) => (
-  <div className="bg-background max-w-[400px] rounded-md border px-4 py-3 shadow-lg">
+  <div className="max-w-[400px] rounded-md px-4 py-3 shadow-lg" style={{ backgroundColor: '#202020' }}>
     <div className="flex gap-2">
-      <p className="grow text-sm text-foreground">
+      <p className="grow text-sm" style={{ color: '#ffffff' }}>
         <InfoIcon
           className="me-3 -mt-0.5 inline-flex text-blue-500"
           size={16}
@@ -89,6 +91,7 @@ const InfoToast = ({ message }) => (
           size={16}
           className="opacity-60 transition-opacity group-hover:opacity-100"
           aria-hidden="true"
+          style={{ color: '#ffffff' }}
         />
       </Button>
     </div>
