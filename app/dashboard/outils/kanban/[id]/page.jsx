@@ -399,8 +399,9 @@ export default function KanbanBoardPage({ params }) {
             touchAction: activeColumn ? 'none' : 'auto'
           }}
         >
+          {/* CRITIQUE : Stabiliser les IDs pour éviter les re-rendus */}
           <SortableContext
-            items={localColumns.map((col) => col.id)}
+            items={React.useMemo(() => localColumns.map((col) => col.id), [localColumns])}
             strategy={horizontalListSortingStrategy}
           >
             <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
