@@ -4,28 +4,32 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { authClient, useSession } from "@/src/lib/auth-client";
 import { Button } from "@/src/components/ui/button";
+import { cn } from "@/src/lib/utils";
+import { Card, CardContent } from "@/src/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { Badge } from "@/src/components/ui/badge";
-import { Separator } from "@/src/components/ui/separator";
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/avatar";
 import {
-  UserRoundPlusIcon,
-  CalendarIcon,
-  MailIcon,
-  ShieldIcon,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import {
+  ChartSpline,
   LoaderCircleIcon,
-  CircleArrowUp,
   CheckCircleIcon,
   XCircleIcon,
   LoaderCircle,
+  Send,
+  Mail,
+  Shield,
+  Calendar,
+  FileChartColumn,
+  ChartPie,
 } from "lucide-react";
-import { Typewriter } from "@/src/components/ui/typewriter-text";
-import { Callout } from "@/src/components/ui/callout";
 
 export default function AcceptInvitationPage() {
   const { invitationId } = useParams();
@@ -35,6 +39,7 @@ export default function AcceptInvitationPage() {
   const [error, setError] = useState(null);
   const [isAccepting, setIsAccepting] = useState(false);
   const [userExists, setUserExists] = useState(null);
+  const [members, setMembers] = useState([]);
 
   useEffect(() => {
     const fetchInvitation = async () => {
@@ -55,6 +60,60 @@ export default function AcceptInvitationPage() {
         }
 
         setInvitation(data);
+
+        console.log("📋 Invitation data:", data);
+        console.log("🏢 Organization ID:", data.organizationId);
+
+        // Récupérer les membres de l'organisation
+        if (data.organizationId) {
+          try {
+            const membersResponse = await fetch("/api/organization/members", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                organizationId: data.organizationId,
+              }),
+            });
+            console.log("📡 Members response status:", membersResponse.status);
+
+            if (membersResponse.ok) {
+              const result = await membersResponse.json();
+              console.log("👥 Members result:", result);
+
+              // Better Auth retourne les membres dans result.members
+              const membersData = result.members || result || [];
+
+              // Filtrer uniquement les membres actifs et formater
+              const activeMembers = membersData
+                .filter((m) => m.role) // Les membres ont un rôle
+                .map((m) => ({
+                  id: m.userId || m.id,
+                  name: m.user?.name || m.name,
+                  email: m.user?.email || m.email,
+                  avatar: m.user?.image || m.user?.avatar || m.avatar,
+                  role: m.role,
+                }))
+                .slice(0, 4); // Max 4 avatars
+
+              console.log("✅ Active members:", activeMembers);
+              setMembers(activeMembers);
+            } else {
+              console.error(
+                "❌ Members response not OK:",
+                await membersResponse.text()
+              );
+            }
+          } catch (membersError) {
+            console.error(
+              "❌ Erreur lors de la récupération des membres:",
+              membersError
+            );
+          }
+        } else {
+          console.warn("⚠️ Pas d'organizationId dans l'invitation");
+        }
 
         // Vérifier si l'utilisateur existe déjà
         if (data.email) {
@@ -190,7 +249,7 @@ export default function AcceptInvitationPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center p-6">
             <XCircleIcon className="h-12 w-12 text-red-500 mb-4" />
@@ -204,7 +263,7 @@ export default function AcceptInvitationPage() {
 
   if (!invitation) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center p-6">
             <XCircleIcon className="h-12 w-12 text-red-500 mb-4" />
@@ -252,219 +311,227 @@ export default function AcceptInvitationPage() {
     }
   };
 
-  return (
-    <div className="flex h-screen">
-      <div className="w-1/2 flex items-center justify-center p-2">
+  const InvitationCard = ({ children, className, borderClassName }) => {
+    return (
+      <div
+        className={cn(
+          "bg-background relative flex size-20 rounded-xl dark:bg-transparent",
+          className
+        )}
+      >
         <div
-          className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
-          style={{ backgroundImage: "url('/BackgroundAuth.svg')" }}
-        >
-          <div className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto">
-            <div className="text-lg min-h-[27px] flex items-center justify-between">
-              <div className="flex-1">
-                <Typewriter
-                  text={[
-                    "Créez votre compte en quelques secondes.",
-                    "Rejoignez notre communauté.",
-                    "Commencez votre aventure dès maintenant.",
-                  ]}
-                  speed={30}
-                  deleteSpeed={30}
-                  delay={2000}
-                  loop={true}
-                  className="font-medium text-left text-[#1C1C1C] text-[15px]"
-                />
-              </div>
-              <CircleArrowUp className="ml-4 text-[#1C1C1C] flex-shrink-0" />
-            </div>
-          </div>
-          <img
-            src="/ni.svg"
-            alt="Newbi Logo"
-            className="absolute bottom-2 right-3 w-5 h-auto filter brightness-0 invert"
-            style={{ opacity: 0.9 }}
-          />
-        </div>
+          role="presentation"
+          className={cn(
+            "absolute inset-0 rounded-xl border border-black/5 dark:border-white/10",
+            borderClassName
+          )}
+        />
+        <div className="relative z-20 m-auto size-fit *:size-6">{children}</div>
       </div>
-      <div className="w-1/2 flex items-center min-h-screen justify-center">
-        <div className="w-full max-w-md space-y-6">
-          {/* Header */}
-          <div className="text-center pb-6 mb-5">
-            <div className="flex justify-center">
-              <div className="flex size-12 shrink-0 mb-3 items-center justify-center rounded-full border border-[#5b4fff]/40 bg-[#5b4fff]/10">
-                <UserRoundPlusIcon className="h-5 w-5 text-[#5b4fff]" />
-              </div>
-            </div>
-            <h1 className="text-xl font-medium">Invitation</h1>
-            <p className="text-sm font-normal text-muted-foreground">
-              Rejoindre{" "}
-              <strong className="text-[#5b4fff] font-normal">
-                {invitation.organizationName}
-              </strong>
-            </p>
-          </div>
+    );
+  };
 
-          {/* Invitation Details */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Email</span>
-              <span className="font-normal">{invitation.email}</span>
+  return (
+    <section>
+      <div className="bg-white dark:bg-background py-24 md:py-32">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="relative mx-auto w-fit">
+            <div
+              role="presentation"
+              className="absolute inset-0 z-10 bg-gradient-radial from-transparent via-transparent to-white dark:to-background"
+              style={{
+                background:
+                  "radial-gradient(circle, transparent 0%, transparent 40%, white 75%, white 100%)",
+              }}
+            ></div>
+            <div className="mx-auto mb-2 flex w-fit justify-center gap-2">
+              <InvitationCard>
+                <ChartSpline className="text-gray-200 w-6 h-6" />
+              </InvitationCard>
+              <InvitationCard>
+                <Send className="text-gray-200 w-6 h-6" />
+              </InvitationCard>
             </div>
+            <div className="mx-auto my-2 flex w-fit justify-center gap-2">
+              <InvitationCard>
+                <Shield className="text-gray-200 w-6 h-6" />
+              </InvitationCard>
 
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Rôle</span>
-              <Badge
-                variant="outline"
-                className={`text-xs border ${getRoleColor(invitation.role)}`}
+              <InvitationCard
+                borderClassName="shadow-black-950/10 shadow-xl border-black/5 dark:border-white/10"
+                className="dark:bg-white/10"
               >
-                {invitation.role === "owner" && "Propriétaire"}
-                {invitation.role === "admin" && "Administrateur"}
-                {invitation.role === "member" && "Collaborateur"}
-                {invitation.role === "viewer" && "Consultation"}
-                {invitation.role === "accountant" && "Comptable"}
-                {!["owner", "admin", "member", "viewer", "accountant"].includes(
-                  invitation.role
-                ) && invitation.role}
-              </Badge>
+                <img src="/ni2.svg" alt="Newbi" className="w-6 h-6" />
+              </InvitationCard>
+              <InvitationCard>
+                <Calendar className="text-gray-200 w-6 h-6" />
+              </InvitationCard>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Statut</span>
-              <Badge
-                variant="outline"
-                className={`text-xs border ${getStatusColor(invitation.status)}`}
-              >
-                {invitation.status === "pending" && "En attente"}
-                {invitation.status === "accepted" && "Acceptée"}
-                {invitation.status === "rejected" && "Refusée"}
-                {invitation.status === "canceled" && "Annulée"}
-                {!["pending", "accepted", "rejected", "canceled"].includes(
-                  invitation.status
-                ) && invitation.status}
-              </Badge>
-            </div>
+            <div className="mx-auto flex w-fit justify-center gap-2">
+              <InvitationCard>
+                <FileChartColumn className="text-gray-200 w-6 h-6" />
+              </InvitationCard>
 
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Expire le</span>
-              <span className="font-medium text-xs">
-                {new Date(invitation.expiresAt).toLocaleDateString("fr-FR")}
-              </span>
+              <InvitationCard>
+                <ChartPie className="text-gray-200 w-6 h-6" />
+              </InvitationCard>
             </div>
           </div>
+          <div className="mx-auto mt-6 max-w-lg space-y-6 text-center">
+            <div className="space-y-3">
+              <h2 className="text-balance text-3xl font-medium md:text-4xl">
+                Rejoindre {invitation.organizationName}
+              </h2>
 
-          <Separator />
-
-          {/* User Status */}
-          <div className="space-y-2">
-            {session?.user ? (
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 text-sm">
-                  <CheckCircleIcon className="h-4 w-4 text-[#5b4fff]" />
-                  <span className="text-[#5b4fff] font-normal">
-                    {session.user.email}
+              {console.log(
+                "🎨 Rendering members:",
+                members,
+                "Length:",
+                members.length
+              )}
+              {members.length > 0 && (
+                <div className="flex justify-center items-center gap-2">
+                  <TooltipProvider>
+                    <div className="flex -space-x-[0.45rem]">
+                      {members.map((member, index) => (
+                        <Tooltip key={member.id || index}>
+                          <TooltipTrigger asChild>
+                            <Avatar className="h-6 w-6 ring-1 ring-background cursor-pointer">
+                              {member.avatar && (
+                                <AvatarImage
+                                  src={member.avatar}
+                                  alt={member.name || member.email}
+                                />
+                              )}
+                              <AvatarFallback className="text-[10px] bg-[#5b4fff] text-white">
+                                {(
+                                  member.name?.[0] ||
+                                  member.email?.[0] ||
+                                  "U"
+                                ).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">
+                              {member.name || member.email}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </TooltipProvider>
+                  <span className="text-xs text-muted-foreground">
+                    {members.length} membre{members.length > 1 ? "s" : ""}
                   </span>
                 </div>
-                {session.user.email.toLowerCase() !==
-                  invitation.email.toLowerCase() && (
-                  <div className="p-3 bg-yellow-50 rounded-md text-xs text-yellow-800 border border-yellow-200 space-y-2">
-                    <p className="font-medium">⚠️ Attention</p>
-                    <p>
-                      Cette invitation est destinée à{" "}
-                      <strong>{invitation.email}</strong>
-                    </p>
-                    <p>
-                      Vous êtes actuellement connecté avec{" "}
-                      <strong>{session.user.email}</strong>
-                    </p>
-                    <Button
-                      onClick={async () => {
-                        await authClient.signOut();
-                        window.location.reload();
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="w-full mt-2 bg-white"
-                    >
-                      Se déconnecter et utiliser le bon compte
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2 text-sm">
-                <XCircleIcon className="h-4 w-4 text-red-500" />
-                <span>Non connecté</span>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Actions */}
-          {invitation.status === "pending" && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <Button
-                  onClick={handleAcceptInvitation}
-                  disabled={
-                    isAccepting ||
-                    (session?.user &&
-                      session.user.email.toLowerCase() !==
-                        invitation.email.toLowerCase())
-                  }
-                  className="w-full bg-[#5b4fff] text-white hover:bg-[#5b4fff]/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isAccepting ? (
-                    <>
-                      <LoaderCircle className="h-3 w-3 animate-spin mr-2" />
-                      Traitement...
-                    </>
-                  ) : !session?.user ? (
-                    userExists ? (
-                      "Se connecter"
-                    ) : (
-                      "Créer mon compte"
-                    )
-                  ) : session.user.email.toLowerCase() !==
-                    invitation.email.toLowerCase() ? (
-                    "Mauvais compte connecté"
-                  ) : (
-                    "Accepter l'invitation"
+            <p className="text-muted-foreground text-sm">
+              Vous avez été invité à rejoindre{" "}
+              <strong>{invitation.organizationName}</strong> en tant que{" "}
+              <strong>
+                {invitation.role === "owner" && "Propriétaire"}
+                {invitation.role === "admin" && "Administrateur"}
+                {invitation.role === "member" && "Membre"}
+                {invitation.role === "viewer" && "Invité"}
+                {invitation.role === "accountant" && "Comptable"}
+              </strong>
+              .
+            </p>
+
+            {invitation.status === "pending" && (
+              <div className="space-y-3 pt-4">
+                {session?.user &&
+                  session.user.email.toLowerCase() !==
+                    invitation.email.toLowerCase() && (
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800">
+                      <p className="font-medium mb-2">⚠️ Attention</p>
+                      <p className="mb-2">
+                        Cette invitation est destinée à{" "}
+                        <strong>{invitation.email}</strong>
+                      </p>
+                      <p className="mb-3">
+                        Vous êtes connecté avec{" "}
+                        <strong>{session.user.email}</strong>
+                      </p>
+                      <Button
+                        onClick={async () => {
+                          await authClient.signOut();
+                          window.location.reload();
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full bg-white cursor-pointer"
+                      >
+                        Se déconnecter
+                      </Button>
+                    </div>
                   )}
-                </Button>
 
-                <Button
-                  onClick={handleRejectInvitation}
-                  disabled={isAccepting}
-                  variant="outline"
-                  className="w-full cursor-pointer"
-                >
-                  {isAccepting ? "Traitement..." : "Refuser"}
-                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleRejectInvitation}
+                    disabled={isAccepting}
+                    variant="outline"
+                    className="cursor-pointer flex-1"
+                  >
+                    {isAccepting ? "Traitement..." : "Refuser"}
+                  </Button>
+
+                  <Button
+                    onClick={handleAcceptInvitation}
+                    disabled={
+                      isAccepting ||
+                      (session?.user &&
+                        session.user.email.toLowerCase() !==
+                          invitation.email.toLowerCase())
+                    }
+                    className="bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1"
+                  >
+                    {isAccepting ? (
+                      <>
+                        <LoaderCircle className="h-3 w-3 animate-spin mr-2" />
+                        Traitement...
+                      </>
+                    ) : !session?.user ? (
+                      userExists ? (
+                        "Se connecter pour accepter"
+                      ) : (
+                        "Créer mon compte"
+                      )
+                    ) : session.user.email.toLowerCase() !==
+                      invitation.email.toLowerCase() ? (
+                      "Mauvais compte"
+                    ) : (
+                      "Accepter l'invitation"
+                    )}
+                  </Button>
+                </div>
 
                 {!session?.user && (
-                  <Callout type="info" noMargin>
+                  <p className="text-xs text-muted-foreground pt-2">
                     {userExists
-                      ? "Vous serez redirigé vers la connexion pour accéder à votre compte existant."
-                      : "Vous serez redirigé vers l'inscription avec vos informations pré-remplies."}
-                  </Callout>
+                      ? "Vous serez redirigé vers la connexion."
+                      : "Vous serez redirigé vers l'inscription."}
+                  </p>
                 )}
               </div>
-            </>
-          )}
+            )}
 
-          {invitation.status !== "pending" && (
-            <>
-              <Separator />
-              <div className="text-center py-4">
-                <CheckCircleIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+            {invitation.status !== "pending" && (
+              <div className="pt-4">
+                <CheckCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">
                   Cette invitation a déjà été traitée.
                 </p>
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

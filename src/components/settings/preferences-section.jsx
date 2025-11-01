@@ -376,7 +376,11 @@ export function PreferencesSection() {
                 Choisissez ce qui doit être affiché lorsque Newbi démarre
               </p>
             </div>
-            <Select value={startupPage} onValueChange={handleStartupPageChange}>
+            <Select
+              value={startupPage}
+              size="sm"
+              onValueChange={handleStartupPageChange}
+            >
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>

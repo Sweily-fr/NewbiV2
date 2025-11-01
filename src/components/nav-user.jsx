@@ -125,19 +125,46 @@ export function NavUser({ user }) {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                {profileImage ? (
-                  <AvatarImage
-                    className="object-cover"
-                    src={profileImage}
-                    alt={user.name}
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium">
-                    {userInitials}
-                  </div>
+              <div className="relative">
+                <Avatar className="h-8 w-8 rounded-lg">
+                  {profileImage ? (
+                    <AvatarImage
+                      className="object-cover"
+                      src={profileImage}
+                      alt={user.name}
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium">
+                      {userInitials}
+                    </div>
+                  )}
+                </Avatar>
+                {isActive() && (
+                  <span className="absolute -end-1.5 -top-1.5">
+                    <span className="sr-only">Abonnement actif</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        className="fill-background"
+                        d="M3.046 8.277A4.402 4.402 0 0 1 8.303 3.03a4.4 4.4 0 0 1 7.411 0 4.397 4.397 0 0 1 5.19 3.068c.207.713.23 1.466.067 2.19a4.4 4.4 0 0 1 0 7.415 4.403 4.403 0 0 1-3.06 5.187 4.398 4.398 0 0 1-2.186.072 4.398 4.398 0 0 1-7.422 0 4.398 4.398 0 0 1-5.257-5.248 4.4 4.4 0 0 1 0-7.437Z"
+                      />
+                      <path
+                        fill="#5b4fff"
+                        d="M4.674 8.954a3.602 3.602 0 0 1 4.301-4.293 3.6 3.6 0 0 1 6.064 0 3.598 3.598 0 0 1 4.3 4.302 3.6 3.6 0 0 1 0 6.067 3.6 3.6 0 0 1-4.29 4.302 3.6 3.6 0 0 1-6.074 0 3.598 3.598 0 0 1-4.3-4.293 3.6 3.6 0 0 1 0-6.085Z"
+                      />
+                      <path
+                        className="fill-background"
+                        d="M15.707 9.293a1 1 0 0 1 0 1.414l-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 1 1 1.414-1.414L11 12.586l3.293-3.293a1 1 0 0 1 1.414 0Z"
+                      />
+                    </svg>
+                  </span>
                 )}
-              </Avatar>
+              </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="text-muted-foreground truncate text-xs">
@@ -156,19 +183,46 @@ export function NavUser({ user }) {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    {profileImage ? (
-                      <AvatarImage
-                        className="object-cover"
-                        src={profileImage}
-                        alt={user.name}
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium">
-                        {userInitials}
-                      </div>
+                  <div className="relative">
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      {profileImage ? (
+                        <AvatarImage
+                          className="object-cover"
+                          src={profileImage}
+                          alt={user.name}
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium">
+                          {userInitials}
+                        </div>
+                      )}
+                    </Avatar>
+                    {isActive() && (
+                      <span className="absolute -end-1.5 -top-1.5">
+                        <span className="sr-only">Abonnement actif</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            className="fill-background"
+                            d="M3.046 8.277A4.402 4.402 0 0 1 8.303 3.03a4.4 4.4 0 0 1 7.411 0 4.397 4.397 0 0 1 5.19 3.068c.207.713.23 1.466.067 2.19a4.4 4.4 0 0 1 0 7.415 4.403 4.403 0 0 1-3.06 5.187 4.398 4.398 0 0 1-2.186.072 4.398 4.398 0 0 1-7.422 0 4.398 4.398 0 0 1-5.257-5.248 4.4 4.4 0 0 1 0-7.437Z"
+                          />
+                          <path
+                            fill="#5b4fff"
+                            d="M4.674 8.954a3.602 3.602 0 0 1 4.301-4.293 3.6 3.6 0 0 1 6.064 0 3.598 3.598 0 0 1 4.3 4.302 3.6 3.6 0 0 1 0 6.067 3.6 3.6 0 0 1-4.29 4.302 3.6 3.6 0 0 1-6.074 0 3.598 3.598 0 0 1-4.3-4.293 3.6 3.6 0 0 1 0-6.085Z"
+                          />
+                          <path
+                            className="fill-background"
+                            d="M15.707 9.293a1 1 0 0 1 0 1.414l-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 1 1 1.414-1.414L11 12.586l3.293-3.293a1 1 0 0 1 1.414 0Z"
+                          />
+                        </svg>
+                      </span>
                     )}
-                  </Avatar>
+                  </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{user.name}</span>
                     <span className="text-muted-foreground truncate text-xs">
@@ -176,7 +230,7 @@ export function NavUser({ user }) {
                     </span>
                   </div>
                 </div>
-                <Badge
+                {/* <Badge
                   variant="outline"
                   className={`text-xs px-2 py-0.5 mr-1 mb-4 ${
                     isActive()
@@ -186,7 +240,7 @@ export function NavUser({ user }) {
                 >
                   <Crown className="w-3 h-3 mr-1" />
                   {isActive() ? "Pro" : "Free"}
-                </Badge>
+                </Badge> */}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

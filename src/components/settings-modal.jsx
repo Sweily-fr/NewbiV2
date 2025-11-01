@@ -46,6 +46,7 @@ import { SubscriptionSection } from "./settings/subscription-section";
 import { SecuritySection } from "./settings/security-section";
 import PersonnesSection from "./settings/personnes-section";
 import UserInfoSection from "./settings/user-info-section";
+import { NotificationsSection } from "./settings/notifications-section";
 import { MobileSettingsModal } from "./settings/mobile/mobile-settings-modal";
 
 export function SettingsModal({
@@ -274,6 +275,8 @@ export function SettingsModal({
         return <EspacesSection />;
       case "preferences":
         return <PreferencesSection />;
+      case "notifications":
+        return <NotificationsSection />;
       case "generale":
         return (
           <GeneraleSection
@@ -336,7 +339,6 @@ export function SettingsModal({
           id: "notifications",
           label: "Notifications",
           icon: Bell,
-          disabled: true,
         },
       ],
     },
