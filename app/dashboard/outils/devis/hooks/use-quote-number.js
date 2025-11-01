@@ -23,6 +23,9 @@ export const useQuoteNumber = () => {
 
   useEffect(() => {
     if (data?.quotes?.quotes) {
+      console.log('🔍 [use-quote-number] Total quotes received:', data.quotes.quotes.length);
+      console.log('🔍 [use-quote-number] All quotes:', data.quotes.quotes.map(q => ({ number: q.number, status: q.status, prefix: q.prefix })));
+      
       // Filter quotes to only include non-draft ones (PENDING, COMPLETED, CANCELED)
       const finalizedQuotes = data.quotes.quotes
         .filter(quote => {
@@ -30,6 +33,9 @@ export const useQuoteNumber = () => {
           const hasNumber = quote.number && quote.number.trim() !== '';
           return isNotDraft && hasNumber;
         });
+      
+      console.log('🔍 [use-quote-number] Finalized quotes:', finalizedQuotes.length);
+      console.log('🔍 [use-quote-number] Finalized quote numbers:', finalizedQuotes.map(q => q.number));
       
       // Extract numeric quote numbers only
       const numbers = finalizedQuotes
@@ -42,7 +48,10 @@ export const useQuoteNumber = () => {
         })
         .filter(num => num !== null && num > 0);
       
+      console.log('🔍 [use-quote-number] Numeric numbers found:', numbers);
+      
       const highestNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+      console.log('✅ [use-quote-number] Highest number:', highestNumber, '→ Next number:', highestNumber + 1);
       setLastQuoteNumber(highestNumber);
     }
     

@@ -205,6 +205,16 @@ export const GET_QUOTES = gql`
   ${QUOTE_LIST_FRAGMENT}
 `;
 
+export const GET_LAST_QUOTE_PREFIX = gql`
+  query GetLastQuotePrefix($workspaceId: ID!) {
+    quotes(workspaceId: $workspaceId, limit: 1, page: 1) {
+      quotes {
+        prefix
+      }
+    }
+  }
+`;
+
 export const GET_QUOTE = gql`
   query GetQuote($workspaceId: ID!, $id: ID!) {
     quote(workspaceId: $workspaceId, id: $id) {
@@ -413,6 +423,27 @@ export const useQuoteStats = () => {
     error: error || workspaceError,
     refetch,
   };
+};
+
+// Hook pour récupérer le préfixe du dernier devis
+export const useLastQuotePrefix = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, error } = useQuery(GET_LAST_QUOTE_PREFIX, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "network-only", // Toujours récupérer la dernière valeur
+    errorPolicy: "all",
+  });
+
+  return useMemo(
+    () => ({
+      prefix: data?.quotes?.quotes?.[0]?.prefix || null,
+      loading,
+      error,
+    }),
+    [data, loading, error]
+  );
 };
 
 // Hook pour récupérer le prochain numéro de devis

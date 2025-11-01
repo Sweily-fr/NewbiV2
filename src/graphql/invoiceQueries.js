@@ -250,6 +250,16 @@ export const GET_NEXT_INVOICE_NUMBER = gql`
   }
 `;
 
+export const GET_LAST_INVOICE_PREFIX = gql`
+  query GetLastInvoicePrefix($workspaceId: ID!) {
+    invoices(workspaceId: $workspaceId, limit: 1, page: 1) {
+      invoices {
+        prefix
+      }
+    }
+  }
+`;
+
 // ==================== MUTATIONS ====================
 
 export const CREATE_INVOICE = gql`
@@ -609,6 +619,27 @@ export const useNextInvoiceNumber = (prefix, options = {}) => {
     skip: skip || !workspaceId,
     errorPolicy: "all",
   });
+};
+
+// Hook pour récupérer le préfixe de la dernière facture
+export const useLastInvoicePrefix = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, error } = useQuery(GET_LAST_INVOICE_PREFIX, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "network-only", // Toujours récupérer la dernière valeur
+    errorPolicy: "all",
+  });
+
+  return useMemo(
+    () => ({
+      prefix: data?.invoices?.invoices?.[0]?.prefix || null,
+      loading,
+      error,
+    }),
+    [data, loading, error]
+  );
 };
 
 // Hook pour créer une facture
