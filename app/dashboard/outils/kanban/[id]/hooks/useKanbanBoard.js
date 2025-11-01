@@ -22,7 +22,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     }
   }, [sessionLoading, session]);
   
-  const { data, loading, error, refetch } = useQuery(GET_BOARD, {
+  const { data, loading, error, refetch, startPolling, stopPolling } = useQuery(GET_BOARD, {
     variables: { 
       id,
       workspaceId 
@@ -32,11 +32,27 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     // IMPORTANT: Utiliser cache-and-network pour avoir les données en cache
     // tout en récupérant les dernières données du serveur
     fetchPolicy: "cache-and-network",
+    // IMPORTANT: Ne pas notifier sur les changements de statut réseau du polling
+    // Cela évite le clignotement quand le polling récupère les données
+    notifyOnNetworkStatusChange: false,
     context: {
       // Ne pas afficher de toast d'erreur si on est en train de rediriger
       skipErrorToast: isRedirecting,
     },
   });
+  
+  // FALLBACK sans Redis : polling toutes les 5 secondes pour synchroniser entre utilisateurs
+  // Démarre automatiquement le polling quand le board est chargé
+  useEffect(() => {
+    if (data?.board && !isRedirecting) {
+      console.log('🔄 [Polling] Démarrage du polling (5s)');
+      startPolling(5000);
+      return () => {
+        console.log('⏹️ [Polling] Arrêt du polling');
+        stopPolling();
+      };
+    }
+  }, [data?.board?.id, isRedirecting]);
 
   // Subscription pour les mises à jour temps réel des tâches
   useSubscription(TASK_UPDATED_SUBSCRIPTION, {
@@ -134,12 +150,14 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           // Si c'est un événement MOVED externe (pas de notre drag)
           // Planifier UN SEUL refetch même si plusieurs événements arrivent
           if (!pendingRefetchRef.current) {
-            console.log('🔄 [Subscription] Événement MOVED externe détecté, planification refetch...');
+            console.log('🔄 [Subscription] Événement MOVED externe détecté:', task.title, '- planification refetch...');
             pendingRefetchRef.current = setTimeout(() => {
               console.log('🔄 [Subscription] Exécution refetch pour événements MOVED externes');
               refetch();
               pendingRefetchRef.current = null;
-            }, 500);
+            }, 200); // Réduit de 500ms à 200ms pour une réactivité plus rapide
+          } else {
+            console.log('📦 [Subscription] Événement MOVED en attente de refetch:', task.title);
           }
           return;
         }
@@ -321,5 +339,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     workspaceId,
     markReorderAction,
     markMoveTaskAction, // Exposer pour useKanbanDnD
+    stopPolling, // Exposer pour désactiver le polling pendant le drag
+    startPolling, // Exposer pour réactiver le polling après le drag
   };
 };
