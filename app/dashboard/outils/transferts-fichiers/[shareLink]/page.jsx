@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import {
   Card,
@@ -30,7 +30,7 @@ import {
 } from "../graphql/mutations";
 import { toast } from "sonner";
 
-export default function TransferPage() {
+function TransferPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const shareLink = params.shareLink;
@@ -435,5 +435,14 @@ export default function TransferPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Composant wrapper avec Suspense
+export default function TransferPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoaderCircle className="animate-spin" /></div>}>
+      <TransferPageContent />
+    </Suspense>
   );
 }

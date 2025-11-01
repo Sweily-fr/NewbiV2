@@ -10,12 +10,12 @@ import { Badge } from "@/src/components/ui/badge";
 import { InputLoader } from "@/src/components/ui/input";
 import PricingModal from "@/src/components/pricing-modal";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useSession } from "@/src/lib/auth-client";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
-export default function Outils() {
+function OutilsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
@@ -202,5 +202,14 @@ export default function Outils() {
       </div>
       <PricingModal isOpen={isPricingModalOpen} onClose={handleCloseModal} />
     </div>
+  );
+}
+
+// Composant wrapper avec Suspense
+export default function Outils() {
+  return (
+    <Suspense fallback={<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-8"><Skeleton className="h-8 w-48" /></div>}>
+      <OutilsContent />
+    </Suspense>
   );
 }

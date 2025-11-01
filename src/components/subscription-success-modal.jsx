@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -19,7 +19,7 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 
-export function SubscriptionSuccessModal() {
+function SubscriptionSuccessModalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
@@ -175,5 +175,14 @@ export function SubscriptionSuccessModal() {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Composant wrapper avec Suspense
+export function SubscriptionSuccessModal() {
+  return (
+    <Suspense fallback={null}>
+      <SubscriptionSuccessModalContent />
+    </Suspense>
   );
 }
