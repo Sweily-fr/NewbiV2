@@ -70,8 +70,10 @@ export function useDashboardLayoutSimple() {
     if (!isHydrated) return;
 
     // Vérifier si on revient de Stripe (invalider le cache)
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasStripeSession = urlParams.get("session_id");
+    // Utilisation sécurisée pour éviter les erreurs SSR
+    const hasStripeSession = typeof window !== 'undefined' 
+      ? new URLSearchParams(window.location.search).get("session_id")
+      : null;
 
     // Essayer de charger depuis le cache local d'abord
     // Utiliser activeOrganization.id en priorité, sinon session.activeOrganizationId
