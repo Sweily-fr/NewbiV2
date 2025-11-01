@@ -106,7 +106,7 @@ export default function KanbanBoardPage({ params }) {
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
   // Hooks
-  const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction, markMoveTaskAction } =
+  const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction, markMoveTaskAction, stopPolling, startPolling } =
     useKanbanBoard(id, isRedirecting);
   const { loading: workspaceLoading } = useWorkspace();
 
@@ -177,10 +177,18 @@ export default function KanbanBoardPage({ params }) {
   const [localColumns, setLocalColumns] = React.useState(board?.columns || []);
   const [lastDragEndTime, setLastDragEndTime] = React.useState(0);
 
+  // Créer une clé stable pour déclencher les mises à jour
+  // Inclure les IDs des tâches pour détecter les changements de position
+  const boardDataKey = React.useMemo(() => {
+    const columnIds = board?.columns?.map(c => c.id).join(',') || '';
+    const taskIds = board?.tasks?.map(t => `${t.id}:${t.columnId}:${t.position}`).join(',') || '';
+    return `${columnIds}|${taskIds}`;
+  }, [board?.columns, board?.tasks]);
+
   // Les hooks doivent être appelés dans le même ordre à chaque rendu
   // useKanbanDnD utilise UNIQUEMENT Redis/subscription, jamais le cache Apollo
   // IMPORTANT: Appeler AVANT le useEffect qui utilise isDragging
-  const { handleDragEnd, handleDragOver, handleDragStart, activeTask, activeColumn, getLocalTasksByColumn, isDragging, dragEndTimeRef, isDraggingRef } = useKanbanDnD(
+  const { handleDragEnd: originalHandleDragEnd, handleDragOver, handleDragStart: originalHandleDragStart, activeTask, activeColumn, getLocalTasksByColumn, isDragging, dragEndTimeRef, isDraggingRef } = useKanbanDnD(
     moveTask,
     getTasksByColumn,
     id,
@@ -191,6 +199,25 @@ export default function KanbanBoardPage({ params }) {
     markReorderAction,
     markMoveTaskAction
   );
+  
+  // Wrapper pour handleDragStart : arrêter le polling pendant le drag
+  const handleDragStart = React.useCallback((event) => {
+    console.log('🛑 [DnD] Drag start - arrêt du polling');
+    stopPolling?.();
+    originalHandleDragStart(event);
+  }, [stopPolling, originalHandleDragStart]);
+  
+  // Wrapper pour handleDragEnd : redémarrer le polling après le drag
+  const handleDragEnd = React.useCallback(async (event) => {
+    console.log('🏁 [DnD] Drag end - attente de la mutation...');
+    await originalHandleDragEnd(event);
+    // Redémarrer le polling après un court délai pour laisser la mutation se terminer
+    console.log('✅ [DnD] Mutation terminée - redémarrage du polling');
+    setTimeout(() => {
+      console.log('🔄 [DnD] Redémarrage du polling (5s)');
+      startPolling?.(5000);
+    }, 500); // Réduit de 1000ms à 500ms pour une réactivité plus rapide
+  }, [startPolling, originalHandleDragEnd]);
 
   // Synchroniser lastDragEndTime avec dragEndTimeRef pour les dépendances du useEffect
   // Cela force un re-render après le drag pour mettre à jour l'interface
@@ -226,24 +253,56 @@ export default function KanbanBoardPage({ params }) {
         tasks: (board.tasks || []).filter(task => task.columnId === column.id).sort((a, b) => (a.position || 0) - (b.position || 0))
       }));
       
-      // Vérifier si l'ordre des colonnes OU le nombre de tâches a changé
+      // Vérifier si quelque chose a changé
+      let hasChanged = false;
+      
+      // 1. Vérifier si l'ordre des colonnes a changé
       const currentColumnIds = localColumns.map(col => col.id).join(',');
       const newColumnIds = columnsWithTasks.map(col => col.id).join(',');
+      if (currentColumnIds !== newColumnIds) {
+        hasChanged = true;
+        console.log('🔄 [Page] Ordre des colonnes changé');
+      }
+      
+      // 2. Vérifier si le nombre de tâches a changé (création/suppression)
       const currentTaskCount = localColumns.reduce((sum, col) => sum + (col.tasks?.length || 0), 0);
       const newTaskCount = columnsWithTasks.reduce((sum, col) => sum + (col.tasks?.length || 0), 0);
+      if (currentTaskCount !== newTaskCount) {
+        hasChanged = true;
+        console.log('🔄 [Page] Nombre de tâches changé:', currentTaskCount, '->', newTaskCount);
+      }
       
-      // Mettre à jour si l'ordre a changé OU si le nombre de tâches a changé (création/suppression)
-      if (currentColumnIds !== newColumnIds || currentTaskCount !== newTaskCount) {
-        console.log('🔄 [Page] Mise à jour localColumns:', {
-          colonnesChanged: currentColumnIds !== newColumnIds,
-          tasksChanged: currentTaskCount !== newTaskCount,
-          oldCount: currentTaskCount,
-          newCount: newTaskCount
-        });
+      // 3. Vérifier si les positions des tâches ont changé (déplacement)
+      if (!hasChanged) {
+        for (let i = 0; i < columnsWithTasks.length; i++) {
+          const oldCol = localColumns[i];
+          const newCol = columnsWithTasks[i];
+          
+          if (oldCol?.tasks?.length !== newCol?.tasks?.length) {
+            hasChanged = true;
+            console.log('🔄 [Page] Nombre de tâches dans colonne changé');
+            break;
+          }
+          
+          // Vérifier les positions des tâches
+          for (let j = 0; j < (newCol?.tasks?.length || 0); j++) {
+            if (oldCol?.tasks?.[j]?.id !== newCol?.tasks?.[j]?.id || 
+                oldCol?.tasks?.[j]?.position !== newCol?.tasks?.[j]?.position) {
+              hasChanged = true;
+              console.log('🔄 [Page] Position de tâche changée dans colonne', newCol.id);
+              break;
+            }
+          }
+          if (hasChanged) break;
+        }
+      }
+      
+      if (hasChanged) {
+        console.log('✅ [Page] Mise à jour localColumns');
         setLocalColumns(columnsWithTasks);
       }
     }
-  }, [board?.columns, board?.tasks, isDraggingRef, dragEndTimeRef, localColumns]);
+  }, [boardDataKey]);
 
   // SUPPRIMÉ : useKanbanRealtimeSync (doublon de useKanbanBoard qui gère déjà les subscriptions)
   // Les subscriptions sont gérées dans useKanbanBoard avec TASK_UPDATED_SUBSCRIPTION et COLUMN_UPDATED_SUBSCRIPTION
