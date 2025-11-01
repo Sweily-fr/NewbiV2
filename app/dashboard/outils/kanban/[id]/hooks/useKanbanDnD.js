@@ -8,6 +8,7 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
   const [isDragging, setIsDragging] = useState(false);
   const dragEndTimeRef = useRef(0);
   const isDraggingRef = useRef(false); // Flag pour bloquer les mises à jour pendant le drag
+  const pendingMutationRef = useRef(false); // Flag pour éviter les mutations multiples
 
   const handleDragStart = (event) => {
     const { active } = event;
@@ -146,7 +147,6 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
     setIsDragging(false);
 
     if (!over) {
-      setLocalTasksByColumn({});
       setOriginalTaskState(null);
       isDraggingRef.current = false;
       return;
@@ -196,7 +196,15 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
       const hasPositionChanged = newPosition !== originalPosition;
 
       if (hasColumnChanged || hasPositionChanged) {
+        // Éviter les mutations multiples
+        if (pendingMutationRef.current) {
+          console.log('⚠️ [DnD] Mutation déjà en cours, ignorée');
+          return;
+        }
+        
         try {
+          pendingMutationRef.current = true;
+          
           console.log('📤 [DnD] Envoi mutation moveTask:', {
             taskId,
             from: { columnId: originalColumnId, position: originalPosition },
@@ -219,6 +227,11 @@ export const useKanbanDnD = (moveTask, getTasksByColumn, boardId, workspaceId, l
         } catch (error) {
           console.error('❌ [DnD] Erreur déplacement tâche:', error);
           // En cas d'erreur, le serveur va renvoyer les bonnes données via subscription
+        } finally {
+          // Réinitialiser le flag après un court délai
+          setTimeout(() => {
+            pendingMutationRef.current = false;
+          }, 100);
         }
       }
     }
