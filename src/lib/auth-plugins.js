@@ -832,5 +832,5 @@ export const organizationPlugin = organization({
 
 // Configuration du plugin Multi Session
 export const multiSessionPlugin = multiSession({
-  maximumSessions: 2, // Maximum 2 sessions simultanées
+  maximumSessions: 1, // Maximum 1 session par appareil
 });

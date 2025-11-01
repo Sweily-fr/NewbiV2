@@ -1,24 +1,30 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useQuery } from '@apollo/client';
-import { GET_COMMUNITY_SUGGESTIONS } from '../../graphql/queries/communitySuggestion';
-import { SuggestionCard } from './suggestion-card';
-import { SuggestionSkeleton } from './suggestion-skeleton';
-import { EmptyState } from './empty-state';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Lightbulb } from 'lucide-react';
+import { useState } from "react";
+import { useQuery } from "@apollo/client";
+import { GET_COMMUNITY_SUGGESTIONS } from "../../graphql/queries/communitySuggestion";
+import { SuggestionCard } from "./suggestion-card";
+import { SuggestionSkeleton } from "./suggestion-skeleton";
+import { EmptyState } from "./empty-state";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import { Lightbulb } from "lucide-react";
 
 export function IdeasTab() {
-  const [sortBy, setSortBy] = useState('recent');
+  const [sortBy, setSortBy] = useState("recent");
 
   const { data, loading, refetch } = useQuery(GET_COMMUNITY_SUGGESTIONS, {
     variables: {
-      type: 'idea',
-      status: 'pending',
-      sortBy
+      type: "idea",
+      status: "pending",
+      sortBy,
     },
-    fetchPolicy: 'cache-and-network'
+    fetchPolicy: "cache-and-network",
   });
 
   const suggestions = data?.getCommunitySuggestions || [];
@@ -49,7 +55,7 @@ export function IdeasTab() {
       <div className="sticky top-0 bg-background z-10 pt-2 pb-4 border-b mb-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            {suggestions.length} {suggestions.length > 1 ? 'idées' : 'idée'}
+            {suggestions.length} {suggestions.length > 1 ? "idées" : "idée"}
           </p>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-[180px]">

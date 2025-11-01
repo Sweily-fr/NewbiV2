@@ -24,6 +24,7 @@ import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
 import { authClient } from "@/src/lib/auth-client";
+import { SubscriptionSuccessModal } from "@/src/components/subscription-success-modal";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -154,6 +155,22 @@ function DashboardContent({ children }) {
         open={isCommunitySidebarOpen}
         onOpenChange={setIsCommunitySidebarOpen}
       />
+
+      {/* Modal de succès d'abonnement */}
+      <SubscriptionSuccessModal />
+
+      {/* Bouton de test pour le modal (à retirer en production) */}
+      {process.env.NODE_ENV === "development" && (
+        <button
+          onClick={() => {
+            window.history.pushState({}, "", "/dashboard?subscription_success=true&payment_success=true");
+            window.location.reload();
+          }}
+          className="fixed bottom-4 right-4 z-50 bg-[#5b4fff] hover:bg-[#5b4fff]/90 text-white px-4 py-2 rounded-lg shadow-lg text-xs font-medium"
+        >
+          Test Modal Success
+        </button>
+      )}
     </SidebarProvider>
   );
 }

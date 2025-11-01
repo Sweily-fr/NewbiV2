@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,227 +15,237 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
-import { useForm, Controller } from "react-hook-form";
+import { X } from "lucide-react";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
+import MultipleSelector from "@/src/components/ui/multiselect";
+import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { Callout } from "@/src/components/ui/callout";
 
 export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
-  const [memberType, setMemberType] = useState("collaborator");
-  
+  const [invitedEmails, setInvitedEmails] = useState([]);
+  const [membersWithRoles, setMembersWithRoles] = useState([]);
   const { inviteMember, inviting } = useOrganizationInvitations();
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      email: "",
-      role: "member",
-      message: "",
-    },
-  });
+  // Quand on ajoute des emails, les ajouter à la liste avec un rôle par défaut
+  const handleEmailsChange = (emails) => {
+    setInvitedEmails(emails);
 
-  const onInviteSubmit = async (formData, event) => {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
-    let role;
-    if (memberType === "accountant") {
-      role = "accountant";
-    } else {
-      role = formData.role || "member";
-    }
-
-    const result = await inviteMember({
-      email: formData.email,
-      role: role,
-      message: formData.message,
+    // Ajouter les nouveaux emails à la liste avec rôle par défaut
+    const newMembers = emails.map((email) => {
+      const existingMember = membersWithRoles.find(
+        (m) => m.email === (email.value || email.label)
+      );
+      return (
+        existingMember || {
+          email: email.value || email.label,
+          role: "member",
+        }
+      );
     });
 
-    if (result.success) {
-      reset();
-      onOpenChange(false);
-      if (onSuccess) {
-        onSuccess();
-      }
+    setMembersWithRoles(newMembers);
+  };
+
+  // Changer le rôle d'un membre
+  const handleRoleChange = (email, newRole) => {
+    setMembersWithRoles((prev) =>
+      prev.map((member) =>
+        member.email === email ? { ...member, role: newRole } : member
+      )
+    );
+  };
+
+  // Supprimer un membre
+  const handleRemoveMember = (emailToRemove) => {
+    setInvitedEmails((prev) =>
+      prev.filter((e) => (e.value || e.label) !== emailToRemove)
+    );
+    setMembersWithRoles((prev) =>
+      prev.filter((m) => m.email !== emailToRemove)
+    );
+  };
+
+  // Envoyer les invitations
+  const handleInviteAll = async () => {
+    for (const member of membersWithRoles) {
+      await inviteMember({
+        email: member.email,
+        role: member.role,
+      });
+    }
+
+    // Réinitialiser et fermer
+    setInvitedEmails([]);
+    setMembersWithRoles([]);
+    onOpenChange(false);
+    if (onSuccess) {
+      onSuccess();
+    }
+  };
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case "admin":
+        return "Administrateur";
+      case "member":
+        return "Membre";
+      case "guest":
+        return "Invité";
+      case "accountant":
+        return "Comptable";
+      case "owner":
+        return "Propriétaire";
+      default:
+        return role;
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px] p-6 gap-5">
+      <DialogContent className="sm:max-w-[600px] p-6 gap-5">
         <DialogHeader className="space-y-1">
-          <DialogTitle className="text-base font-semibold">
-            Inviter un membre
+          <DialogTitle className="text-base font-medium text-lg">
+            Inviter des membres
           </DialogTitle>
-          <p className="text-xs text-foreground">
+          <p className="text-xs text-muted-foreground">
             Saisissez ou collez les adresses e-mail ci-dessous
           </p>
-          {memberType === "accountant" && (
-            <div className="bg-[#5b4fff]/10 border border-[#5b4fff]/50 rounded-lg p-3">
-              <p className="text-xs text-[#5b4fff]/700">
-                <strong>Comptable gratuit :</strong> Un seul comptable par
-                organisation est autorisé et n'est pas facturé.
-              </p>
-            </div>
-          )}
         </DialogHeader>
 
-        <div className="space-y-5">
-          {/* Switch Collaborateur / Comptable */}
-          <div className="inline-flex items-center gap-1 p-0.5 bg-muted/50 rounded-md">
-            <button
-              type="button"
-              onClick={() => setMemberType("collaborator")}
-              className={`px-3 py-1.5 rounded text-xs font-medium cursor-pointer transition-colors ${
-                memberType === "collaborator"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Collaborateur
-            </button>
-            <button
-              type="button"
-              onClick={() => setMemberType("accountant")}
-              className={`px-3 py-1.5 rounded text-xs font-medium cursor-pointer transition-colors ${
-                memberType === "accountant"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Comptable
-            </button>
+        <div className="space-y-4">
+          {/* Champ d'ajout d'emails */}
+          <div className="space-y-2">
+            <MultipleSelector
+              value={invitedEmails}
+              onChange={handleEmailsChange}
+              placeholder="Entrez des adresses email"
+              creatable
+              className="w-full"
+            />
           </div>
 
-          {/* Information de tarification */}
-          <div className="text-xs text-muted-foreground">
-            {memberType === "collaborator" ? (
-              <span>
-                <span className="text-[#5b4fff] font-medium">7,49€/mois</span>{" "}
-                par collaborateur additionnel
-              </span>
-            ) : (
-              <span>
-                <span className="text-[#5b4fff] font-medium">Gratuit</span> ·
-                Un seul comptable par organisation
-              </span>
-            )}
-          </div>
+          {/* Callout pour le comptable gratuit */}
+          <Callout type="neutral" noMargin>
+            <p className="text-xs">
+              <strong>Comptable gratuit :</strong> Un seul comptable par
+              organisation est autorisé et n'est pas facturé. L'ajout d'autres membres sera facturé en plus de votre abonnement.
+            </p>
+          </Callout>
 
-          {/* Formulaire */}
-          <form onSubmit={handleSubmit(onInviteSubmit)} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="email"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder={
-                  memberType === "collaborator"
-                    ? "nom@exemple.com"
-                    : "comptable@exemple.com"
-                }
-                className="h-9 text-sm"
-                {...register("email", {
-                  required: "L'email est requis",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Email invalide",
-                  },
-                })}
-              />
-              {errors.email && (
-                <p className="text-xs text-red-500">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Champ Rôle */}
-            <div className="space-y-1.5 min-h-[68px]">
-              {memberType === "collaborator" && (
-                <>
-                  <Label
-                    htmlFor="role"
-                    className="text-xs font-medium text-muted-foreground"
+          {/* Liste des membres ajoutés */}
+          {membersWithRoles.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                Membres à inviter ({membersWithRoles.length})
+              </p>
+              <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+                {membersWithRoles.map((member) => (
+                  <div
+                    key={member.email}
+                    className="flex items-center justify-between p-3 hover:bg-muted/50"
                   >
-                    Rôle
-                  </Label>
-                  <Controller
-                    name="role"
-                    control={control}
-                    rules={{ required: "Le rôle est requis" }}
-                    render={({ field }) => (
+                    <div className="flex items-center gap-3 flex-1">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-[#5b4fff]/10 text-[#5b4fff] text-xs">
+                          {member.email[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{member.email}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={member.role}
+                        onValueChange={(newRole) =>
+                          handleRoleChange(member.email, newRole)
+                        }
                       >
-                        <SelectTrigger className="h-9 text-sm">
-                          <SelectValue placeholder="Sélectionner" />
+                        <SelectTrigger className="w-[180px] h-8 text-xs border-none shadow-none hover:bg-muted">
+                          <SelectValue>{getRoleLabel(member.role)}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="admin">
                             <div className="flex flex-col">
-                              <span className="font-medium">Administrateur</span>
+                              <span className="font-medium text-sm">
+                                Administrateur
+                              </span>
                               <span className="text-xs text-muted-foreground">
-                                Gestion complète de l'organisation
+                                Gestion complète
                               </span>
                             </div>
                           </SelectItem>
                           <SelectItem value="member">
                             <div className="flex flex-col">
-                              <span className="font-medium">Collaborateur</span>
+                              <span className="font-medium text-sm">
+                                Membre
+                              </span>
                               <span className="text-xs text-muted-foreground">
-                                Création et édition de documents
+                                Accès standard
                               </span>
                             </div>
                           </SelectItem>
-                          <SelectItem value="viewer">
+                          <SelectItem value="guest">
                             <div className="flex flex-col">
-                              <span className="font-medium">Consultation</span>
+                              <span className="font-medium text-sm">
+                                Invité
+                              </span>
                               <span className="text-xs text-muted-foreground">
-                                Lecture seule
+                                Accès limité
+                              </span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="accountant">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-sm">
+                                Comptable
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Accès comptabilité
                               </span>
                             </div>
                           </SelectItem>
                         </SelectContent>
                       </Select>
-                    )}
-                  />
-                  {errors.role && (
-                    <p className="text-xs text-red-500">
-                      {errors.role.message}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
 
-            <div className="flex gap-2 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => onOpenChange(false)}
-                className="flex-1 h-9 text-sm cursor-pointer"
-              >
-                Annuler
-              </Button>
-              <Button
-                type="submit"
-                disabled={inviting}
-                className="flex-1 h-9 text-sm bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer text-white"
-              >
-                {inviting ? "Envoi..." : "Inviter"}
-              </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveMember(member.email)}
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </form>
+          )}
+
+          {/* Boutons d'action */}
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setInvitedEmails([]);
+                setMembersWithRoles([]);
+                onOpenChange(false);
+              }}
+              className="flex-1 h-9 text-sm cursor-pointer font-normal"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleInviteAll}
+              disabled={inviting || membersWithRoles.length === 0}
+              className="flex-1 h-9 text-sm font-normal bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer text-white"
+            >
+              {inviting
+                ? "Envoi..."
+                : `Inviter ${membersWithRoles.length} membre${membersWithRoles.length > 1 ? "s" : ""}`}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

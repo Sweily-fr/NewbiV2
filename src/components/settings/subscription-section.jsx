@@ -52,7 +52,7 @@ export function SubscriptionSection() {
         plan: plan,
         annual: isAnnual,
         referenceId: activeOrgId,
-        successUrl: `${window.location.origin}/dashboard`,
+        successUrl: `${window.location.origin}/dashboard?subscription_success=true&payment_success=true`,
         cancelUrl: `${window.location.origin}/dashboard/subscribe`,
         disableRedirect: false,
       };

@@ -73,7 +73,9 @@ const ensureActiveOrganization = async () => {
         const now = new Date();
         const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-        console.log(`🔄 Création organisation pour ${user.email} avec trial...`);
+        console.log(
+          `🔄 Création organisation pour ${user.email} avec trial...`
+        );
 
         // Créer l'organisation directement avec authClient + champs trial
         const result = await authClient.organization.create({
@@ -97,7 +99,9 @@ const ensureActiveOrganization = async () => {
           );
         } else {
           console.log(`✅ Organisation créée avec trial:`, result.data);
-          toast.success("Bienvenue ! Votre période d'essai de 14 jours a démarré.");
+          toast.success(
+            "Bienvenue ! Votre période d'essai de 14 jours a démarré."
+          );
         }
       } catch (error) {
         console.error("❌ Erreur lors de la création automatique:", error);
@@ -130,10 +134,15 @@ const LoginForm = () => {
   React.useEffect(() => {}, [showEmailVerification, userEmailForVerification]);
 
   const onSubmit = async (formData) => {
+    console.log("🔐 [LOGIN] Tentative de connexion...");
+
     await authClient.signIn.email(formData, {
       onSuccess: async (ctx) => {
+        console.log("✅ [LOGIN] Connexion réussie, ctx:", ctx);
+
         // Vérifier si l'utilisateur doit passer par la 2FA
         if (ctx.data.twoFactorRedirect) {
+          console.log("🔒 [LOGIN] Redirection 2FA détectée");
           setTwoFactorData(ctx.data);
           setShow2FA(true);
 
@@ -145,6 +154,43 @@ const LoginForm = () => {
         // Connexion normale sans 2FA
         const authToken = ctx.response.headers.get("set-auth-token");
         localStorage.setItem("bearer_token", authToken);
+        console.log("💾 [LOGIN] Token sauvegardé");
+
+        // Vérifier la limite de sessions via l'API Better Auth
+        console.log("🔍 [LOGIN] Vérification de la limite de sessions...");
+        
+        try {
+          // Appeler notre API qui utilise Better Auth côté serveur
+          const sessionCheckResponse = await fetch("/api/check-session-limit", {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          
+          console.log("📡 [LOGIN] Réponse API:", sessionCheckResponse.status);
+          
+          if (sessionCheckResponse.ok) {
+            const sessionData = await sessionCheckResponse.json();
+            console.log("📊 [LOGIN] Résultat vérification sessions:", sessionData);
+            
+            if (sessionData.hasReachedLimit) {
+              console.log("⚠️ [LOGIN] Limite de sessions atteinte, redirection vers /auth/manage-devices");
+              toast.info("Vous êtes déjà connecté sur un autre appareil");
+              router.push("/auth/manage-devices");
+              return;
+            } else {
+              console.log("✅ [LOGIN] Limite OK, nombre de sessions:", sessionData.sessionCount);
+            }
+          } else {
+            console.warn("⚠️ [LOGIN] Impossible de vérifier la limite de sessions");
+          }
+        } catch (sessionCheckError) {
+          console.error("❌ [LOGIN] Erreur vérification sessions:", sessionCheckError);
+          // Continuer la connexion même en cas d'erreur
+        }
+
         toast.success("Connexion réussie");
 
         // Définir l'organisation active après la connexion
@@ -197,10 +243,12 @@ const LoginForm = () => {
               if (result.data) {
                 try {
                   console.log(`🔄 Ajout des champs trial...`);
-                  
+
                   const now = new Date();
-                  const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-                  
+                  const trialEnd = new Date(
+                    now.getTime() + 14 * 24 * 60 * 60 * 1000
+                  );
+
                   const updateResult = await authClient.organization.update({
                     organizationId: result.data.id,
                     data: {
@@ -210,20 +258,31 @@ const LoginForm = () => {
                       hasUsedTrial: true,
                     },
                   });
-                  
+
                   if (updateResult.error) {
-                    console.error(`❌ Erreur mise à jour trial:`, updateResult.error);
-                    toast.success("Bienvenue ! Votre espace de travail a été créé.");
+                    console.error(
+                      `❌ Erreur mise à jour trial:`,
+                      updateResult.error
+                    );
+                    toast.success(
+                      "Bienvenue ! Votre espace de travail a été créé."
+                    );
                   } else {
                     console.log(`✅ Champs trial ajoutés:`, updateResult.data);
-                    toast.success("Bienvenue ! Votre période d'essai de 14 jours a démarré.");
+                    toast.success(
+                      "Bienvenue ! Votre période d'essai de 14 jours a démarré."
+                    );
                   }
                 } catch (updateError) {
                   console.error(`❌ Erreur mise à jour trial:`, updateError);
-                  toast.success("Bienvenue ! Votre espace de travail a été créé.");
+                  toast.success(
+                    "Bienvenue ! Votre espace de travail a été créé."
+                  );
                 }
               } else {
-                toast.success("Bienvenue ! Votre espace de travail a été créé.");
+                toast.success(
+                  "Bienvenue ! Votre espace de travail a été créé."
+                );
               }
             } else {
               console.error(
@@ -308,6 +367,13 @@ const LoginForm = () => {
         }
       },
       onError: async (error) => {
+        console.log("❌ [LOGIN] Erreur de connexion:", error);
+        console.log("❌ [LOGIN] Type d'erreur:", typeof error);
+        console.log(
+          "❌ [LOGIN] Erreur complète:",
+          JSON.stringify(error, null, 2)
+        );
+
         // Essayer différents formats d'erreur
         let errorMessage = null;
 
@@ -319,12 +385,31 @@ const LoginForm = () => {
           errorMessage = error;
         }
 
+        console.log("📝 [LOGIN] Message d'erreur extrait:", errorMessage);
+
+        // Vérifier si c'est une erreur de limite de sessions
+        if (
+          errorMessage &&
+          (errorMessage.toLowerCase().includes("maximum") ||
+            errorMessage.toLowerCase().includes("session") ||
+            errorMessage.toLowerCase().includes("limit") ||
+            errorMessage.toLowerCase().includes("too many"))
+        ) {
+          console.log(
+            "⚠️ [LOGIN] Erreur de limite de sessions détectée, redirection..."
+          );
+          toast.error("Vous êtes déjà connecté sur un autre appareil");
+          router.push("/auth/manage-devices");
+          return;
+        }
+
         // Vérifier si c'est une erreur de compte désactivé
         if (
           errorMessage &&
           (errorMessage.includes("désactivé") ||
             errorMessage.includes("réactivation"))
         ) {
+          console.log("🚫 [LOGIN] Compte désactivé");
           toast.error(errorMessage);
           return;
         }
@@ -336,6 +421,7 @@ const LoginForm = () => {
             errorMessage.includes("email avant de vous connecter") ||
             errorMessage.includes("Veuillez vérifier"))
         ) {
+          console.log("📧 [LOGIN] Email non vérifié");
           // L'utilisateur existe mais n'a pas vérifié son email
           setUserEmailForVerification(formData.email);
           setShowEmailVerification(true);
