@@ -144,13 +144,44 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           return;
         }
         
+        // Pour les mises à jour (UPDATED), mettre à jour le cache Apollo
+        if (type === 'UPDATED' && task) {
+          try {
+            const cacheData = apolloClient.cache.readQuery({
+              query: GET_BOARD,
+              variables: { id, workspaceId }
+            });
+            
+            if (cacheData?.board) {
+              const updatedTasks = (cacheData.board.tasks || []).map(t => 
+                t.id === task.id ? task : t
+              );
+              
+              apolloClient.cache.writeQuery({
+                query: GET_BOARD,
+                variables: { id, workspaceId },
+                data: {
+                  board: {
+                    ...cacheData.board,
+                    tasks: updatedTasks
+                  }
+                }
+              });
+              
+              console.log("✅ [Subscription] Tâche mise à jour dans le cache:", task.title);
+              
+              toast.info(`Tâche modifiée: ${task.title}`, {
+                description: "Mise à jour automatique"
+              });
+            }
+          } catch (error) {
+            console.error("❌ [Subscription] Erreur mise à jour cache (UPDATED):", error);
+          }
+        }
+        
         // Notifications utilisateur (debouncing automatique)
         if (type === 'CREATED' && task) {
           toast.success(`Nouvelle tâche: ${task.title}`, {
-            description: "Mise à jour automatique"
-          });
-        } else if (type === 'UPDATED' && task) {
-          toast.info(`Tâche modifiée: ${task.title}`, {
             description: "Mise à jour automatique"
           });
         } else if (type === 'DELETED' && taskId) {

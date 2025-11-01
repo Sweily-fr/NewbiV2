@@ -270,7 +270,34 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 
 // Configuration du cache sans persistance
 const cache = new InMemoryCache({
-  // addTypename est maintenant activé par défaut, pas besoin de le spécifier
+  typePolicies: {
+    Board: {
+      fields: {
+        tasks: {
+          // Politique de merge pour éviter les conflits lors des mises à jour en temps réel
+          merge(existing = [], incoming, { mergeObjects }) {
+            // Toujours prendre les données entrantes (du serveur ou de la subscription)
+            // Cela évite les conflits de cache lors des drag-and-drop
+            return incoming;
+          },
+        },
+        columns: {
+          merge(existing = [], incoming) {
+            return incoming;
+          },
+        },
+      },
+    },
+    Column: {
+      fields: {
+        tasks: {
+          merge(existing = [], incoming) {
+            return incoming;
+          },
+        },
+      },
+    },
+  },
 });
 
 // Variable pour stocker l'instance Apollo Client
