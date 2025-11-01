@@ -25,7 +25,7 @@ export default function ClientsTabs() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="w-fit grid grid-cols-2">
         <TabsTrigger value="all" className="cursor-pointer">Tous les contacts</TabsTrigger>
         <TabsTrigger value="lists" className="cursor-pointer">Mes listes</TabsTrigger>
       </TabsList>

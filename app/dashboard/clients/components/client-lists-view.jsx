@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { toast } from '@/src/components/ui/sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card';
 import { Button } from '@/src/components/ui/button';
+import { ButtonGroup, ButtonGroupSeparator } from '@/src/components/ui/button-group';
 import { Badge } from '@/src/components/ui/badge';
 import { Input } from '@/src/components/ui/input';
 import { Plus, Edit2, Trash2, Users, Search } from 'lucide-react';
@@ -67,10 +68,15 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
             className="pl-8 h-9 text-sm w-full"
           />
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="gap-2 h-9 cursor-pointer whitespace-nowrap">
-          <Plus className="w-4 h-4" />
-          Nouvelle liste
-        </Button>
+        <ButtonGroup>
+          <Button onClick={() => setShowCreateDialog(true)} variant="secondary" className="h-9 cursor-pointer whitespace-nowrap font-normal">
+            Nouvelle liste
+          </Button>
+          <ButtonGroupSeparator />
+          <Button onClick={() => setShowCreateDialog(true)} variant="secondary" size="icon" className="h-9 w-9 cursor-pointer">
+            <Plus className="w-4 h-4" />
+          </Button>
+        </ButtonGroup>
       </div>
 
       {filteredLists.length === 0 && lists.length === 0 ? (

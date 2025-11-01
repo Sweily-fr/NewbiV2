@@ -34,6 +34,7 @@ import {
   FilterIcon,
   ListFilterIcon,
   PlusIcon,
+  Search,
   TrashIcon,
 } from "lucide-react";
 
@@ -51,6 +52,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -414,138 +416,143 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
         {/* Filters */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            {/* Filter by name or email */}
-            <div className="relative">
-              <Input
-                id={`${id}-input`}
-                ref={inputRef}
-                className={cn(
-                  "peer min-w-60 ps-9",
-                  Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
-                )}
-                value={globalFilter}
-                onChange={(e) => {
-                  setGlobalFilter(e.target.value);
-                  table.getColumn("name")?.setFilterValue(e.target.value);
-                }}
-                placeholder="Filtrer par nom ou email..."
-                type="text"
-                aria-label="Filter by name or email"
-              />
-              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                <ListFilterIcon size={16} aria-hidden="true" />
-              </div>
-              {Boolean(globalFilter) && (
-                <button
-                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Clear filter"
-                  onClick={() => {
-                    setGlobalFilter("");
-                    table.getColumn("name")?.setFilterValue("");
-                    if (inputRef.current) {
-                      inputRef.current.focus();
-                    }
-                  }}
-                >
-                  <CircleXIcon size={16} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-            {/* Filter by type */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="font-normal cursor-pointer hover:cursor-pointer">
-                  <FilterIcon
-                    className="-ms-1 opacity-60"
-                    size={16}
-                    aria-hidden="true"
-                  />
-                  <span className="hidden sm:inline">Type</span>
-                  {selectedTypes.length > 0 && (
-                    <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
-                      {selectedTypes.length}
-                    </span>
+            {/* Button Group with Search, Type, and Columns */}
+            <ButtonGroup>
+              {/* Filter by name or email */}
+              <div className="relative flex-1">
+                <Input
+                  id={`${id}-input`}
+                  ref={inputRef}
+                  className={cn(
+                    "peer min-w-60 ps-9 rounded-r-none",
+                    Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
                   )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto min-w-36 p-3" align="start">
-                <div className="space-y-3">
-                  <div className="text-muted-foreground text-xs font-normal">
-                    Filtres
-                  </div>
-                  <div className="space-y-3">
-                    {uniqueTypeValues.map((value, i) => (
-                      <div key={value} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`${id}-${i}`}
-                          checked={selectedTypes.includes(value)}
-                          onCheckedChange={(checked) =>
-                            handleTypeChange(checked, value)
-                          }
-                        />
-                        <Label
-                          htmlFor={`${id}-${i}`}
-                          className="flex grow justify-between gap-2 font-normal"
-                        >
-                          {value === "INDIVIDUAL"
-                            ? "Particulier"
-                            : "Entreprise"}{" "}
-                          <span className="text-muted-foreground ms-2 text-xs">
-                            {typeCounts.get(value)}
-                          </span>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
+                  value={globalFilter}
+                  onChange={(e) => {
+                    setGlobalFilter(e.target.value);
+                    table.getColumn("name")?.setFilterValue(e.target.value);
+                  }}
+                  placeholder="Filtrer par nom ou email..."
+                  type="text"
+                  aria-label="Filter by name or email"
+                />
+                <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+                  <Search size={16} aria-hidden="true" />
                 </div>
-              </PopoverContent>
-            </Popover>
-            {/* Toggle columns visibility */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="font-normal hidden md:flex cursor-pointer hover:cursor-pointer"
-                >
-                  <Columns3Icon
-                    className="-ms-1 opacity-60"
-                    size={16}
-                    aria-hidden="true"
-                  />
-                  <span className="hidden sm:inline">Colonnes</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Sélection des colonnes</DropdownMenuLabel>
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    // Traduction des noms de colonnes
-                    const columnNames = {
-                      name: "Nom",
-                      email: "Email",
-                      type: "Type",
-                      address: "Adresse",
-                      siret: "SIRET",
-                    };
+                {Boolean(globalFilter) && (
+                  <button
+                    className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Clear filter"
+                    onClick={() => {
+                      setGlobalFilter("");
+                      table.getColumn("name")?.setFilterValue("");
+                      if (inputRef.current) {
+                        inputRef.current.focus();
+                      }
+                    }}
+                  >
+                    <CircleXIcon size={16} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
 
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
-                        onSelect={(event) => event.preventDefault()}
-                      >
-                        {columnNames[column.id] || column.id}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              {/* Filter by type */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="font-normal cursor-pointer hover:cursor-pointer">
+                    <FilterIcon
+                      className="-ms-1 opacity-60"
+                      size={16}
+                      aria-hidden="true"
+                    />
+                    <span className="hidden sm:inline">Type</span>
+                    {selectedTypes.length > 0 && (
+                      <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
+                        {selectedTypes.length}
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto min-w-36 p-3" align="start">
+                  <div className="space-y-3">
+                    <div className="text-muted-foreground text-xs font-normal">
+                      Filtres
+                    </div>
+                    <div className="space-y-3">
+                      {uniqueTypeValues.map((value, i) => (
+                        <div key={value} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`${id}-${i}`}
+                            checked={selectedTypes.includes(value)}
+                            onCheckedChange={(checked) =>
+                              handleTypeChange(checked, value)
+                            }
+                          />
+                          <Label
+                            htmlFor={`${id}-${i}`}
+                            className="flex grow justify-between gap-2 font-normal"
+                          >
+                            {value === "INDIVIDUAL"
+                              ? "Particulier"
+                              : "Entreprise"}{" "}
+                            <span className="text-muted-foreground ms-2 text-xs">
+                              {typeCounts.get(value)}
+                            </span>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Toggle columns visibility */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="font-normal hidden md:flex cursor-pointer hover:cursor-pointer"
+                  >
+                    <Columns3Icon
+                      className="-ms-1 opacity-60"
+                      size={16}
+                      aria-hidden="true"
+                    />
+                    <span className="hidden sm:inline">Colonnes</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Sélection des colonnes</DropdownMenuLabel>
+                  {table
+                    .getAllColumns()
+                    .filter((column) => column.getCanHide())
+                    .map((column) => {
+                      // Traduction des noms de colonnes
+                      const columnNames = {
+                        name: "Nom",
+                        email: "Email",
+                        type: "Type",
+                        address: "Adresse",
+                        siret: "SIRET",
+                      };
+
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) =>
+                            column.toggleVisibility(!!value)
+                          }
+                          onSelect={(event) => event.preventDefault()}
+                        >
+                          {columnNames[column.id] || column.id}
+                        </DropdownMenuCheckboxItem>
+                      );
+                    })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </ButtonGroup>
           </div>
           <div className="flex items-center gap-3">
             {/* Delete button - shown when rows are selected */}
@@ -595,15 +602,25 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            {/* Add user button */}
-            <Button
-              className="ml-auto cursor-pointer font-normal"
-              variant="default"
-              onClick={handleAddUser}
-            >
-              <PlusIcon className="-ms-1" size={16} aria-hidden="true" />
-              Ajouter un contact
-            </Button>
+            {/* Add user button group */}
+            <ButtonGroup>
+              <Button
+                className="cursor-pointer font-normal"
+                variant="secondary"
+                onClick={handleAddUser}
+              >
+                Ajouter un contact
+              </Button>
+              <ButtonGroupSeparator />
+              <Button
+                className="cursor-pointer"
+                variant="secondary"
+                size="icon"
+                onClick={handleAddUser}
+              >
+                <PlusIcon size={16} aria-hidden="true" />
+              </Button>
+            </ButtonGroup>
           </div>
         </div>
 
