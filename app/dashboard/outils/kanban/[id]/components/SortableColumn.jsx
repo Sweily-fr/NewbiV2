@@ -14,8 +14,9 @@ export function SortableColumn({ column, children }) {
     transform,
     transition,
     isDragging,
+    isOver,
   } = useSortable({
-    id: column.id,
+    id: `column-${column.id}`,
     data: {
       type: "column",
       column,
@@ -32,10 +33,11 @@ export function SortableColumn({ column, children }) {
     willChange: "transform",
   };
 
-  // Cloner l'enfant et ajouter les props de drag au header
+  // Cloner l'enfant et ajouter les props de drag au header + isOver
   const childWithDragProps = React.cloneElement(children, {
     dragHandleProps: { ...attributes, ...listeners },
     isDragging,
+    isOver,
   });
 
   return (

@@ -15,8 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { useDroppable } from '@dnd-kit/core';
-import { useSortable } from '@dnd-kit/sortable';
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { TaskCard } from "./TaskCard";
 import { TaskCardSkeleton } from "./TaskCardSkeleton";
@@ -35,18 +34,11 @@ export function KanbanColumn({
   onDeleteColumn,
   isCollapsed,
   onToggleCollapse,
-  isLoading = false,
+  isLoading,
   dragHandleProps,
   isDragging,
+  isOver, // Passé depuis SortableColumn
 }) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: column.id,
-    data: {
-      type: 'column',
-      column,
-    },
-  });
-
   return (
     <div
       className={`bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex flex-col flex-shrink-0 transition-all duration-200 ${
@@ -128,39 +120,49 @@ export function KanbanColumn({
         </div>
       </div>
 
-      {/* Zone droppable pour les tâches */}
-      {!isCollapsed && (
-        <div
-          ref={setNodeRef}
-          className={`flex-1 overflow-y-auto space-y-2 sm:space-y-3 min-h-[100px] rounded-lg transition-colors ${
-            isOver ? 'bg-accent/20' : ''
-          }`}
-        >
-          {isLoading ? (
-            // Afficher des skeletons pendant le chargement
-            <>
-              <TaskCardSkeleton />
-              <TaskCardSkeleton />
-              <TaskCardSkeleton />
-            </>
-          ) : tasks.length === 0 ? (
-            // Message si aucune tâche
-            <div className="text-center text-muted-foreground py-8 text-sm">
-              Aucune tâche
+      {/* Zone droppable pour les tâches ou colonnes effondrées */}
+      <div
+        className={`flex-1 ${!isCollapsed ? 'overflow-y-auto p-2' : ''} min-h-[200px] rounded-lg transition-colors ${
+          isOver ? 'bg-accent/20 border-2 border-accent' : ''
+        }`}
+        style={{
+          // Assurer une hauteur minimale pour une meilleure détection
+          minHeight: isCollapsed ? '100px' : '200px'
+        }}
+      >
+        {!isCollapsed && (
+          <SortableContext
+            items={tasks.map((t) => t.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2 sm:space-y-3">
+              {isLoading ? (
+                // Afficher des skeletons pendant le chargement
+                <>
+                  <TaskCardSkeleton />
+                  <TaskCardSkeleton />
+                  <TaskCardSkeleton />
+                </>
+              ) : tasks.length === 0 ? (
+                // Message si aucune tâche
+                <div className="text-center text-muted-foreground py-8 text-sm">
+                  Aucune tâche
+                </div>
+              ) : (
+                // Liste des tâches draggables
+                tasks.map((task) => (
+                  <SortableTaskItem
+                    key={task.id}
+                    task={task}
+                    onEdit={onEditTask}
+                    onDelete={onDeleteTask}
+                  />
+                ))
+              )}
             </div>
-          ) : (
-            // Liste des tâches draggables
-            tasks.map((task) => (
-              <SortableTaskItem
-                key={task.id}
-                task={task}
-                onEdit={onEditTask}
-                onDelete={onDeleteTask}
-              />
-            ))
-          )}
-        </div>
-      )}
+          </SortableContext>
+        )}
+      </div>
 
       {/* Bouton ajouter une tâche */}
       {!isCollapsed && (
@@ -198,9 +200,9 @@ function SortableTaskItem({ task, onEdit, onDelete }) {
   });
 
   const style = {
-    transform: CSS.Translate.toString(transform),
+    transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.3 : 1,
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, memo } from "react";
 import {
   Calendar,
   MoreVertical,
@@ -7,7 +7,6 @@ import {
   GripVertical,
   Flag,
   CheckSquare,
-  Tag,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -34,21 +33,18 @@ import {
 } from "@/src/components/ui/tooltip";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  getPriorityColor,
-  getPriorityIcon,
-  formatDateRelative,
-} from "../../../../../../src/utils/kanbanHelpers";
+import { formatDateRelative } from "../../../../../../src/utils/kanbanHelpers";
 import { AvatarGroup } from "@/src/components/ui/user-avatar";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 
 /**
- * Composant pour une tâche draggable dans le tableau Kanban
+ * Composant TaskCard optimisé avec React.memo
+ * Évite les re-renders inutiles pendant le drag
  */
-export function TaskCard({ task, onEdit, onDelete, index }) {
+const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Récupérer les infos complètes des membres assignés (avec avatars)
+  // Récupérer les infos des membres assignés
   const { members: assignedMembersInfo } = useAssignedMembersInfo(task.assignedMembers || []);
 
   const handleDeleteClick = (e) => {
@@ -67,9 +63,8 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
     setShowDeleteDialog(false);
   };
 
-  // Gestion du clic - Utiliser onClick au lieu de onPointerUp pour ne pas bloquer le drag
+  // Gestion du clic - onClick au lieu de onPointerUp
   const handleClick = (e) => {
-    // Ignorer si c'est un clic sur un élément interactif
     const interactiveElements = ["BUTTON", "A", "INPUT", "SELECT", "TEXTAREA"];
     const clickedElement = e.target.closest(interactiveElements.join(","));
     
@@ -78,13 +73,9 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
     }
   };
 
-  // Calcul de la progression de la checklist
+  // Calcul de la progression - memoized
   const checklistProgress = useMemo(() => {
-    if (
-      !task.checklist ||
-      !Array.isArray(task.checklist) ||
-      task.checklist.length === 0
-    ) {
+    if (!task.checklist || !Array.isArray(task.checklist) || task.checklist.length === 0) {
       return { completed: 0, total: 0, percentage: 0 };
     }
 
@@ -128,9 +119,9 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
         {...attributes}
         {...listeners}
         onClick={handleClick}
-        className={`bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 mb-2 sm:mb-3 shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-grab active:cursor-grabbing`}
+        className="bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 mb-2 sm:mb-3 shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-grab active:cursor-grabbing"
       >
-        {/* En-tête de la carte */}
+        {/* En-tête */}
         <div className="flex items-start justify-between mb-1.5 sm:mb-2">
           <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
             <div
@@ -141,9 +132,7 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
             </div>
             <Tooltip>
               <TooltipTrigger asChild>
-                <h4 
-                  className="font-medium text-sm text-foreground truncate"
-                >
+                <h4 className="font-medium text-sm text-foreground truncate">
                   {task.title}
                 </h4>
               </TooltipTrigger>
@@ -234,13 +223,12 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
         {/* Tags */}
         {task.tags && task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-1.5 sm:mb-2">
-            {task.tags.map((tag, index) => {
-              // Extraire le nom du tag, qu'il s'agisse d'un objet ou d'une chaîne
+            {task.tags.map((tag, tagIndex) => {
               const tagName =
                 typeof tag === "object" ? tag.name || tag.title || "Tag" : tag;
               return (
                 <Badge
-                  key={index}
+                  key={tagIndex}
                   variant="outline"
                   className="text-xs font-normal text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-full px-2 py-0.5"
                 >
@@ -271,7 +259,7 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
                   </div>
                 );
               } catch (error) {
-                console.error("Erreur de formatage de date:", error);
+                console.error("Erreur formatage date:", error);
                 return null;
               }
             })()}
@@ -295,7 +283,7 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
         </div>
       </div>
 
-      {/* Boîte de dialogue de confirmation de suppression */}
+      {/* Dialog de confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
@@ -320,4 +308,21 @@ export function TaskCard({ task, onEdit, onDelete, index }) {
       </AlertDialog>
     </>
   );
-}
+}, (prevProps, nextProps) => {
+  // Comparaison personnalisée pour éviter les re-renders inutiles
+  return (
+    prevProps.task.id === nextProps.task.id &&
+    prevProps.task.title === nextProps.task.title &&
+    prevProps.task.description === nextProps.task.description &&
+    prevProps.task.position === nextProps.task.position &&
+    prevProps.task.columnId === nextProps.task.columnId &&
+    prevProps.task.priority === nextProps.task.priority &&
+    prevProps.task.dueDate === nextProps.task.dueDate &&
+    prevProps.task.updatedAt === nextProps.task.updatedAt &&
+    JSON.stringify(prevProps.task.tags) === JSON.stringify(nextProps.task.tags) &&
+    JSON.stringify(prevProps.task.checklist) === JSON.stringify(nextProps.task.checklist) &&
+    JSON.stringify(prevProps.task.assignedMembers) === JSON.stringify(nextProps.task.assignedMembers)
+  );
+});
+
+export { TaskCard };
