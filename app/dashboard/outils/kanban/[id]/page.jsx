@@ -55,6 +55,7 @@ import { useKanbanSearch } from "./hooks/useKanbanSearch";
 import { useKanbanMemberFilter } from "./hooks/useKanbanMemberFilter";
 import { useColumnCollapse } from "./hooks/useColumnCollapse";
 import { useViewMode } from "./hooks/useViewMode";
+import { useDragToScroll } from "./hooks/useDragToScroll";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -342,6 +343,9 @@ export default function KanbanBoardPage({ params }) {
 
   const { viewMode, setViewMode, isBoard, isList } = useViewMode(id);
 
+  // Hook pour le drag-to-scroll horizontal
+  const scrollRef = useDragToScroll({ enabled: isBoard, scrollSpeed: 1.5 });
+
   // Détecter les changements d'organisation
   const { hasChangedOrganization } = useOrganizationChange({
     resourceId: id,
@@ -384,6 +388,7 @@ export default function KanbanBoardPage({ params }) {
 
   return (
     <div 
+      ref={scrollRef}
       key={`kanban-board-${id}-${isBoard ? 'board' : 'list'}`}
       className="w-full max-w-[100vw] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       style={{ pointerEvents: isBoard ? 'auto' : 'auto' }}
