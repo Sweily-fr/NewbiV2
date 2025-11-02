@@ -155,6 +155,9 @@ export default function KanbanBoardPage({ params }) {
   
   // Ref pour tracker le dernier drag
   const lastDragTimeRef = React.useRef(0);
+  
+  // State pour tracker si on drag une colonne
+  const [isDraggingColumn, setIsDraggingColumn] = React.useState(false);
 
   // Hook DnD simplifié avec @hello-pangea/dnd
   const { handleDragEnd: dndHandleDragEnd } = useKanbanDnDSimple(
@@ -170,22 +173,27 @@ export default function KanbanBoardPage({ params }) {
   
   // Wrapper pour handleDragEnd : gérer le polling
   const handleDragEnd = React.useCallback(async (result) => {
-    stopPolling?.();
-    
     // Marquer le temps du drag
     lastDragTimeRef.current = Date.now();
+    
+    // Arrêter le drag des colonnes
+    if (result.type === 'column') {
+      setIsDraggingColumn(false);
+    }
     
     try {
       await dndHandleDragEnd(result);
     } catch (error) {
       console.error('❌ Erreur mutation:', error);
-    } finally {
-      // Redémarrer le polling après un délai court
-      setTimeout(() => {
-        startPolling?.(5000);
-      }, 300);
     }
-  }, [stopPolling, startPolling, dndHandleDragEnd]);
+  }, [dndHandleDragEnd]);
+
+  // Détecter le début du drag des colonnes
+  const handleDragStart = React.useCallback((result) => {
+    if (result.type === 'column') {
+      setIsDraggingColumn(true);
+    }
+  }, []);
 
   // Helper pour récupérer les tâches d'une colonne
   const getLocalTasksByColumn = React.useCallback((columnId) => {
@@ -223,6 +231,31 @@ export default function KanbanBoardPage({ params }) {
     collapsedColumnsCount,
   } = useColumnCollapse(id);
 
+  // Callbacks stables pour les colonnes
+  const handleColumnAddTask = React.useCallback((columnId) => {
+    openAddTaskModal(columnId);
+  }, [openAddTaskModal]);
+
+  const handleColumnEditTask = React.useCallback((task) => {
+    openEditTaskModal(task);
+  }, [openEditTaskModal]);
+
+  const handleColumnDeleteTask = React.useCallback((task) => {
+    handleDeleteTask(task);
+  }, [handleDeleteTask]);
+
+  const handleColumnEditColumn = React.useCallback((column) => {
+    openEditModal(column);
+  }, [openEditModal]);
+
+  const handleColumnDeleteColumn = React.useCallback((column) => {
+    handleDeleteColumn(column);
+  }, [handleDeleteColumn]);
+
+  const handleColumnToggleCollapse = React.useCallback((columnId) => {
+    toggleColumnCollapse(columnId);
+  }, [toggleColumnCollapse]);
+
   // Rendu des colonnes avec @hello-pangea/dnd
   const columnsContent = React.useMemo(() => {
     if (!localColumns || localColumns.length === 0) {
@@ -235,11 +268,11 @@ export default function KanbanBoardPage({ params }) {
 
         <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <Droppable droppableId="all-columns" direction="horizontal" type="column">
-            {(provided) => (
+            {(provided, snapshot) => (
               <div 
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="flex gap-4 sm:gap-6 flex-nowrap items-start"
+                className="flex flex-nowrap items-start"
               >
                 {localColumns.map((column, index) => {
                   const columnTasks = filterTasks(
@@ -252,15 +285,16 @@ export default function KanbanBoardPage({ params }) {
                       key={column.id}
                       column={column}
                       tasks={columnTasks}
-                      onAddTask={openAddTaskModal}
-                      onEditTask={openEditTaskModal}
-                      onDeleteTask={handleDeleteTask}
-                      onEditColumn={() => openEditModal(column)}
-                      onDeleteColumn={() => handleDeleteColumn(column)}
+                      onAddTask={handleColumnAddTask}
+                      onEditTask={handleColumnEditTask}
+                      onDeleteTask={handleColumnDeleteTask}
+                      onEditColumn={handleColumnEditColumn}
+                      onDeleteColumn={handleColumnDeleteColumn}
                       isCollapsed={isCollapsed}
-                      onToggleCollapse={() => toggleColumnCollapse(column.id)}
+                      onToggleCollapse={handleColumnToggleCollapse}
                       isLoading={loading}
                       columnIndex={index}
+                      isDraggingAnyColumn={isDraggingColumn}
                     />
                   );
                 })}
@@ -287,7 +321,7 @@ export default function KanbanBoardPage({ params }) {
         </div>
       </>
     );
-  }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, toggleColumnCollapse, openAddTaskModal, openEditTaskModal, handleDeleteTask, openEditModal, handleDeleteColumn, loading, openAddModal]);
+  }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, handleColumnAddTask, handleColumnEditTask, handleColumnDeleteTask, handleColumnEditColumn, handleColumnDeleteColumn, handleColumnToggleCollapse, loading, openAddModal]);
 
   const { viewMode, setViewMode, isBoard, isList } = useViewMode(id);
 
@@ -412,7 +446,7 @@ export default function KanbanBoardPage({ params }) {
       {/* Board Content */}
       <div className="w-full px-4 sm:px-6">
         {isList && (
-          <DragDropContext onDragEnd={handleDragEnd}>
+          <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
             <KanbanListView
               columns={localColumns}
               getTasksByColumn={getTasksByColumn}
@@ -442,7 +476,7 @@ export default function KanbanBoardPage({ params }) {
                 </div>
               </div>
             ) : (
-              <DragDropContext onDragEnd={handleDragEnd}>
+              <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
                 <div className="min-h-[600px] w-max min-w-full">
                   {columnsContent ? (
                     columnsContent
