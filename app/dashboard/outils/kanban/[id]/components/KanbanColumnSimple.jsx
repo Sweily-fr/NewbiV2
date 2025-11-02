@@ -119,9 +119,12 @@ export function KanbanColumnSimple({
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`flex-1 p-2 min-h-[200px] rounded-lg transition-colors ${
+                  className={`flex-1 p-2 rounded-lg transition-colors ${
                     snapshot.isDraggingOver ? 'bg-accent/20 border-2 border-accent' : ''
                   }`}
+                  style={{
+                    minHeight: tasks.length === 0 ? '100px' : '80px'
+                  }}
                 >
                   <div className="space-y-2 sm:space-y-3">
                     {isLoading ? (
@@ -157,8 +160,8 @@ export function KanbanColumnSimple({
                         </Draggable>
                       ))
                     )}
-                    {/* Ne pas afficher le placeholder si on drag depuis cette colonne */}
-                    {!snapshot.draggingFromThisWith && provided.placeholder}
+                    {/* Afficher le placeholder sauf si on drag depuis cette colonne vers une autre */}
+                    {(snapshot.isDraggingOver || !snapshot.draggingFromThisWith) && provided.placeholder}
                   </div>
                 </div>
               )}
