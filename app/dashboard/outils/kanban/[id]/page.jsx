@@ -52,6 +52,7 @@ import { useKanbanColumns } from "./hooks/useKanbanColumns";
 import { useKanbanTasks } from "./hooks/useKanbanTasks";
 import { useKanbanDnDSimple } from "./hooks/useKanbanDnDSimple";
 import { useKanbanSearch } from "./hooks/useKanbanSearch";
+import { useKanbanMemberFilter } from "./hooks/useKanbanMemberFilter";
 import { useColumnCollapse } from "./hooks/useColumnCollapse";
 import { useViewMode } from "./hooks/useViewMode";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
@@ -63,6 +64,7 @@ import { TaskModal } from "./components/TaskModal";
 import { ColumnModal } from "./components/ColumnModal";
 import { DeleteConfirmation } from "./components/DeleteConfirmation";
 import { KanbanListView } from "./components/KanbanListView";
+import { MemberFilterButton } from "./components/MemberFilterButton";
 import {
   GET_BOARD,
   CREATE_COLUMN,
@@ -222,7 +224,22 @@ export default function KanbanBoardPage({ params }) {
     }
   }, [board?.id, board?.columns, board?.tasks]);
 
-  const { searchQuery, setSearchQuery, filterTasks } = useKanbanSearch();
+  const { searchQuery, setSearchQuery, filterTasks: filterTasksBySearch } = useKanbanSearch();
+  
+  const {
+    selectedMemberId,
+    setSelectedMemberId,
+    members,
+    loading: membersLoading,
+    filterTasksByMember,
+  } = useKanbanMemberFilter(workspaceId);
+
+  // Fonction de filtrage combinée (recherche + membre)
+  const filterTasks = React.useCallback((tasks) => {
+    let filtered = filterTasksBySearch(tasks);
+    filtered = filterTasksByMember(filtered);
+    return filtered;
+  }, [filterTasksBySearch, filterTasksByMember]);
 
   const {
     isColumnCollapsed,
@@ -420,6 +437,14 @@ export default function KanbanBoardPage({ params }) {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+
+            {/* Bouton de filtre par utilisateur */}
+            <MemberFilterButton
+              members={members}
+              selectedMemberId={selectedMemberId}
+              onMemberChange={setSelectedMemberId}
+              loading={membersLoading}
+            />
             
             {collapsedColumnsCount > 0 && isBoard && (
               <Button
