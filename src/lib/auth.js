@@ -46,6 +46,47 @@ export const auth = betterAuth({
       enabled: true,
       maxAge: 5 * 60, // 5 minutes - Cache pour optimiser les performances
     },
+    // Ajouter activeOrganizationId aux champs de session
+    additionalFields: {
+      activeOrganizationId: {
+        type: "string",
+        required: false,
+      },
+    },
+  },
+
+  // Database hooks pour gérer la persistance de l'organisation active
+  databaseHooks: {
+    session: {
+      create: {
+        after: async (session) => {
+          // Après la création d'une session, définir la première organisation comme active
+          try {
+            const { mongoDb } = await import("./mongodb.js");
+            const { ObjectId } = await import("mongodb");
+            
+            // Trouver la première organisation de l'utilisateur
+            const member = await mongoDb.collection("member").findOne({
+              userId: new ObjectId(session.userId),
+            });
+            
+            if (member && member.organizationId) {
+              // Mettre à jour la session avec l'organisation active
+              await mongoDb.collection("session").updateOne(
+                { _id: new ObjectId(session.id) },
+                { $set: { activeOrganizationId: member.organizationId.toString() } }
+              );
+              
+              console.log("✅ Organisation active définie lors de la création de session:", member.organizationId.toString());
+            }
+          } catch (error) {
+            console.error("❌ Erreur définition organisation active:", error);
+          }
+          
+          return session;
+        },
+      },
+    },
   },
 
   plugins: [

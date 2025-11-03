@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePermissions } from "@/src/hooks/usePermissions";
 import {
   flexRender,
   getCoreRowModel,
@@ -96,6 +97,9 @@ import QuoteRowActions from "./quote-row-actions";
 
 export default function QuoteTable({ handleNewQuote }) {
   const { quotes, loading, error, refetch } = useQuotes();
+  const { canCreate, canExport } = usePermissions();
+  const [canCreateQuote, setCanCreateQuote] = useState(false);
+  const [canExportQuote, setCanExportQuote] = useState(false);
 
   const {
     table,
@@ -110,6 +114,17 @@ export default function QuoteTable({ handleNewQuote }) {
     data: quotes || [],
     onRefetch: refetch,
   });
+
+  // Vérifier les permissions
+  useEffect(() => {
+    const checkPermissions = async () => {
+      const allowedCreate = await canCreate("quotes");
+      const allowedExport = await canExport("quotes");
+      setCanCreateQuote(allowedCreate);
+      setCanExportQuote(allowedExport);
+    };
+    checkPermissions();
+  }, [canCreate, canExport]);
 
   if (error) {
     return (
@@ -250,25 +265,27 @@ export default function QuoteTable({ handleNewQuote }) {
           </DropdownMenu>
         </ButtonGroup>
 
-        {/* Add Quote Button Group */}
-        <ButtonGroup>
-          <Button 
-            onClick={handleNewQuote} 
-            variant="secondary"
-            className="cursor-pointer font-normal"
-          >
-            Nouveau devis
-          </Button>
-          <ButtonGroupSeparator />
-          <Button 
-            onClick={handleNewQuote} 
-            variant="secondary"
-            size="icon"
-            className="cursor-pointer"
-          >
-            <PlusIcon size={16} aria-hidden="true" />
-          </Button>
-        </ButtonGroup>
+        {/* Add Quote Button Group - Visible uniquement si permission */}
+        {canCreateQuote && (
+          <ButtonGroup>
+            <Button 
+              onClick={handleNewQuote} 
+              variant="secondary"
+              className="cursor-pointer font-normal"
+            >
+              Nouveau devis
+            </Button>
+            <ButtonGroupSeparator />
+            <Button 
+              onClick={handleNewQuote} 
+              variant="secondary"
+              size="icon"
+              className="cursor-pointer"
+            >
+              <PlusIcon size={16} aria-hidden="true" />
+            </Button>
+          </ButtonGroup>
+        )}
 
         {/* Bulk actions */}
         {selectedRows.length > 0 && (

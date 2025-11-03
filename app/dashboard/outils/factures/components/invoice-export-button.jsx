@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, FileSpreadsheet, FileText, FileCheck, Building, Building2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import {
 import { DateRangePicker } from "@/src/components/ui/date-range-picker";
 import { exportToCSV, exportToExcel, exportToFEC, exportToSage, exportToCegid } from "@/src/utils/invoice-export";
 import { toast } from "sonner";
+import { usePermissions } from "@/src/hooks/usePermissions";
 
 export default function InvoiceExportButton({ invoices, selectedRows = [] }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -30,6 +31,17 @@ export default function InvoiceExportButton({ invoices, selectedRows = [] }) {
     from: undefined,
     to: undefined,
   });
+  const [canExportInvoices, setCanExportInvoices] = useState(false);
+  const { canExport } = usePermissions();
+
+  // Vérifier les permissions d'export
+  useEffect(() => {
+    const checkPermission = async () => {
+      const allowed = await canExport("invoices");
+      setCanExportInvoices(allowed);
+    };
+    checkPermission();
+  }, [canExport]);
 
   // Déterminer si on exporte les factures sélectionnées ou toutes les factures
   const hasSelection = selectedRows && selectedRows.length > 0;
@@ -109,6 +121,11 @@ export default function InvoiceExportButton({ invoices, selectedRows = [] }) {
     setDateRange({ from: undefined, to: undefined });
     setSelectedFormat(null);
   };
+
+  // Ne pas afficher le bouton si pas de permission
+  if (!canExportInvoices) {
+    return null;
+  }
 
   return (
     <>

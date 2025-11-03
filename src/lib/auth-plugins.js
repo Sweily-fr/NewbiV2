@@ -12,7 +12,7 @@ import {
   send2FAEmail,
   sendOrganizationInvitationEmail,
 } from "./auth-utils";
-import { ac, admin as adminRole, member, viewer, accountant } from "./permissions";
+import { ac, owner, admin as adminRole, member, viewer, accountant } from "./permissions";
 
 // Configuration du plugin Admin avec permissions personnalisées
 export const adminPlugin = admin({
@@ -20,6 +20,7 @@ export const adminPlugin = admin({
   defaultRole: "member", // Rôle par défaut pour les nouveaux utilisateurs
   ac, // Access controller
   roles: {
+    owner, // ✅ Ajouter le rôle owner
     admin: adminRole,
     member,
     viewer,

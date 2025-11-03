@@ -30,6 +30,7 @@ import {
 import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
 import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
+import { usePermissions } from "@/src/hooks/usePermissions";
 import InvoiceSidebar from "./invoice-sidebar";
 import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 
@@ -37,8 +38,10 @@ export default function InvoiceRowActions({ row, onRefetch }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
   const router = useRouter();
   const invoice = row.original;
+  const { canCreate } = usePermissions();
 
   // Détecter si on est sur mobile
   useEffect(() => {
@@ -49,6 +52,15 @@ export default function InvoiceRowActions({ row, onRefetch }) {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Vérifier les permissions pour créer un avoir
+  useEffect(() => {
+    const checkPermission = async () => {
+      const allowed = await canCreate("creditNotes");
+      setCanCreateCreditNote(allowed);
+    };
+    checkPermission();
+  }, [canCreate]);
 
   // Récupération de la facture complète avec tous ses détails
   const { invoice: fullInvoice, loading: loadingFullInvoice } = useInvoice(
@@ -171,7 +183,7 @@ export default function InvoiceRowActions({ row, onRefetch }) {
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Marquer comme payée
                 </DropdownMenuItem>
-                {!creditNoteLimitReached && (
+                {!creditNoteLimitReached && canCreateCreditNote && (
                   <DropdownMenuItem onClick={handleCreateCreditNote}>
                     <Receipt className="mr-2 h-4 w-4" />
                     Créer un avoir
@@ -188,14 +200,14 @@ export default function InvoiceRowActions({ row, onRefetch }) {
               </>
             )}
 
-            {invoice.status === INVOICE_STATUS.COMPLETED && !creditNoteLimitReached && (
+            {invoice.status === INVOICE_STATUS.COMPLETED && !creditNoteLimitReached && canCreateCreditNote && (
               <DropdownMenuItem onClick={handleCreateCreditNote}>
                 <Receipt className="mr-2 h-4 w-4" />
                 Créer un avoir
               </DropdownMenuItem>
             )}
 
-            {invoice.status === INVOICE_STATUS.CANCELED && !creditNoteLimitReached && (
+            {invoice.status === INVOICE_STATUS.CANCELED && !creditNoteLimitReached && canCreateCreditNote && (
               <DropdownMenuItem onClick={handleCreateCreditNote}>
                 <Receipt className="mr-2 h-4 w-4" />
                 Créer un avoir
