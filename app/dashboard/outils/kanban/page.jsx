@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import {
   Plus,
   Trash2,
@@ -59,7 +60,7 @@ import { KanbanSkeletonAdaptive } from "@/src/components/kanban-skeleton";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-export default function KanbanPage() {
+function KanbanPageContent() {
   const [boardPreview, setBoardPreview] = React.useState(null);
 
   const {
@@ -484,5 +485,17 @@ export default function KanbanPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function KanbanPage() {
+  return (
+    <RoleRouteGuard 
+      roles={["owner", "admin", "member", "viewer"]}
+      fallbackUrl="/dashboard"
+      toastMessage="Vous n'avez pas accès aux tableaux Kanban. Cette fonctionnalité est réservée aux membres de l'équipe."
+    >
+      <KanbanPageContent />
+    </RoleRouteGuard>
   );
 }

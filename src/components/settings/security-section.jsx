@@ -64,10 +64,13 @@ import { useEffect } from "react";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
 import { useUser } from "@/src/lib/auth/hooks";
+import { usePermissions } from "@/src/hooks/usePermissions";
+import { PermissionWarning } from "./PermissionWarning";
 
 export function SecuritySection({
   organization: orgProp,
   orgLoading: orgLoadingProp,
+  canManageOrgSettings = true,
 }) {
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
 
@@ -589,6 +592,7 @@ export function SecuritySection({
       <div>
         <h2 className="text-lg font-medium mb-1">Sécurité</h2>
         <Separator className="hidden md:block" />
+        {!canManageOrgSettings && <PermissionWarning />}
 
         <div className="space-y-6 mt-8">
           {/* Titre section Identité */}
@@ -614,8 +618,9 @@ export function SecuritySection({
                 >
                   <DialogTrigger asChild>
                     <button
-                      className="text-gray-400 underline hover:text-gray-600 cursor-pointer"
-                      disabled={orgLoading}
+                      className="text-gray-400 underline hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={orgLoading || !canManageOrgSettings}
+                      title={!canManageOrgSettings ? "Seuls les owners et admins peuvent modifier" : ""}
                     >
                       Modifier
                     </button>
@@ -700,7 +705,9 @@ export function SecuritySection({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowStripeOnboarding(true)}
+                    disabled={!canManageOrgSettings}
                     className="text-xs h-7 border-[#5b4fff]/20 text-[#5b4fff] hover:bg-[#5b4fff]/5 cursor-pointer"
+                    title={!canManageOrgSettings ? "Seuls les owners et admins peuvent gérer Stripe" : ""}
                   >
                     <ExternalLink className="h-3 w-3 mr-1" />
                     {canReceivePayments ? "Tableau de bord" : "Finaliser"}
@@ -711,8 +718,9 @@ export function SecuritySection({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowStripeOnboarding(true)}
-                  disabled={stripeLoading}
+                  disabled={stripeLoading || !canManageOrgSettings}
                   className="text-xs cursor-pointer h-7 bg-[#5b4fff] border-[#5b4fff]/20 text-[#fff] hover:text-[#fff] hover:bg-[#5b4fff]/90"
+                  title={!canManageOrgSettings ? "Seuls les owners et admins peuvent connecter Stripe" : ""}
                 >
                   <CreditCard className="h-3 w-3 mr-1" />
                   {stripeLoading ? "Chargement..." : "Connecter Stripe"}

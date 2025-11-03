@@ -8,10 +8,11 @@ import { CreditCard, Building2, Hash, Info, Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { useFormContext } from "react-hook-form";
 import {
-  VALIDATION_PATTERNS,
   sanitizeInput,
+  VALIDATION_PATTERNS,
   detectInjectionAttempt,
 } from "@/src/lib/validation";
+import { PermissionWarning } from "./PermissionWarning";
 
 // Fonction de formatage de l'IBAN avec espaces (pour l'affichage)
 const formatIban = (iban) => {
@@ -37,6 +38,7 @@ export function CoordonneesBancairesSection({
   organization,
   updateOrganization,
   refetchOrganization,
+  canManageOrgSettings = true,
 }) {
   // État local pour l'affichage formaté de l'IBAN
   const [displayIban, setDisplayIban] = useState("");
@@ -98,7 +100,8 @@ export function CoordonneesBancairesSection({
       {/* Titre */}
       <div>
         <h2 className="text-lg font-medium mb-1">Coordonnées bancaires</h2>
-        <Separator />
+        <Separator className="hidden md:block" />
+        {!canManageOrgSettings && <PermissionWarning />}
 
         {/* Information sur la validation conditionnelle */}
         <div className="mb-8 mt-12">
@@ -133,6 +136,7 @@ export function CoordonneesBancairesSection({
               id="iban"
               placeholder="FR76 1234 5678 9012 3456 7890 123"
               className="w-full"
+              disabled={!canManageOrgSettings}
               value={displayIban}
               onChange={(e) => {
                 handleIbanInput(e.target.value);
@@ -188,6 +192,7 @@ export function CoordonneesBancairesSection({
               id="bic"
               placeholder="BNPAFRPP"
               className="w-full"
+              disabled={!canManageOrgSettings}
               {...register("bankDetails.bic", {
                 required: hasAnyBankField
                   ? "Le BIC est requis si vous renseignez des coordonnées bancaires"
@@ -231,6 +236,7 @@ export function CoordonneesBancairesSection({
               id="bankName"
               placeholder="BNP Paribas"
               className="w-full"
+              disabled={!canManageOrgSettings}
               {...register("bankDetails.bankName", {
                 required: hasAnyBankField
                   ? "Le nom de la banque est requis si vous renseignez des coordonnées bancaires"

@@ -48,6 +48,7 @@ import PersonnesSection from "./settings/personnes-section";
 import UserInfoSection from "./settings/user-info-section";
 import { NotificationsSection } from "./settings/notifications-section";
 import { MobileSettingsModal } from "./settings/mobile/mobile-settings-modal";
+import { usePermissions } from "@/src/hooks/usePermissions";
 
 export function SettingsModal({
   open,
@@ -60,6 +61,7 @@ export function SettingsModal({
   const [pendingTab, setPendingTab] = useState(null);
   const { data: session } = useSession();
   const { isActive } = useSubscription();
+  const { getUserRole, isOwner, isAdmin } = usePermissions();
   const {
     organization,
     loading: orgLoading,
@@ -67,6 +69,9 @@ export function SettingsModal({
     refetch: refetchOrg,
     updateOrganization,
   } = useActiveOrganization();
+
+  // Vérifier si l'utilisateur peut modifier les paramètres d'organisation
+  const canManageOrgSettings = isOwner() || isAdmin();
 
   const formMethods = useForm({
     mode: "onChange", // Validation en temps réel
@@ -163,6 +168,12 @@ export function SettingsModal({
   // Fonction de sauvegarde
   const handleSaveAll = async (formData) => {
     try {
+      // Vérifier les permissions avant de sauvegarder
+      if (!canManageOrgSettings) {
+        toast.error("Vous n'avez pas la permission de modifier les paramètres de l'organisation");
+        return;
+      }
+
       if (!organization?.id) {
         toast.error("Aucune organisation active trouvée");
         return;
@@ -272,7 +283,7 @@ export function SettingsModal({
     // Les composants vont maintenant utiliser useFormContext()
     switch (activeTab) {
       case "espaces":
-        return <EspacesSection />;
+        return <EspacesSection canManageOrgSettings={canManageOrgSettings} />;
       case "preferences":
         return <PreferencesSection />;
       case "notifications":
@@ -284,6 +295,7 @@ export function SettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrg}
+            canManageOrgSettings={canManageOrgSettings}
           />
         );
       case "coordonnees-bancaires":
@@ -293,6 +305,7 @@ export function SettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrg}
+            canManageOrgSettings={canManageOrgSettings}
           />
         );
       case "informations-legales":
@@ -302,6 +315,7 @@ export function SettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrg}
+            canManageOrgSettings={canManageOrgSettings}
           />
         );
       case "facturation":
@@ -310,9 +324,10 @@ export function SettingsModal({
         return <SubscriptionSection />;
       case "securite":
         return (
-          <SecuritySection 
+          <SecuritySection
             organization={organization}
             orgLoading={orgLoading}
+            canManageOrgSettings={canManageOrgSettings}
           />
         );
       case "personnes":
@@ -553,8 +568,9 @@ export function SettingsModal({
                   ].includes(activeTab) && (
                     <Button
                       type="submit"
-                      disabled={formIsSubmitting || !isDirty}
+                      disabled={formIsSubmitting || !isDirty || !canManageOrgSettings}
                       className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white"
+                      title={!canManageOrgSettings ? "Seuls les owners et admins peuvent modifier les paramètres" : ""}
                     >
                       {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}
                     </Button>

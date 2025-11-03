@@ -54,8 +54,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { usePermissions } from "@/src/hooks/usePermissions";
+import { PermissionWarning } from "./PermissionWarning";
+import { Separator } from "@/src/components/ui/separator";
 
-export default function EspacesSection() {
+export default function EspacesSection({ canManageOrgSettings = true }) {
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [members, setMembers] = useState([]);
@@ -267,6 +270,9 @@ export default function EspacesSection() {
           </p>
         </div>
       </div>
+      
+      <Separator className="hidden md:block" />
+      {!canManageOrgSettings && <PermissionWarning />}
 
       {/* Organizations Table */}
       <div>
@@ -376,7 +382,9 @@ export default function EspacesSection() {
               <Button
                 type="button"
                 onClick={() => setInviteDialogOpen(true)}
+                disabled={!canManageOrgSettings}
                 className="flex items-center gap-1.5 font-normal cursor-pointer bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white px-3 h-9"
+                title={!canManageOrgSettings ? "Seuls les owners et admins peuvent ajouter des membres" : ""}
               >
                 <UserRoundPlusIcon size={14} />
                 Ajouter des membres
@@ -437,6 +445,7 @@ export default function EspacesSection() {
                         <TableCell className="text-right">
                           <Select
                             value={member.role}
+                            disabled={!canManageOrgSettings}
                             onValueChange={(newRole) => {
                               // TODO: Implémenter le changement de rôle
                               console.log(
