@@ -7,7 +7,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { usePermissions } from "@/src/hooks/usePermissions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
 function NewQuoteContent() {
@@ -19,14 +19,14 @@ function NewQuoteContent() {
     const checkPermission = async () => {
       const allowed = await canCreate("quotes");
       setHasPermission(allowed);
-      
+
       if (!allowed) {
         setTimeout(() => {
           router.push("/dashboard/outils/devis");
         }, 2000);
       }
     };
-    
+
     checkPermission();
   }, [canCreate, router]);
 
@@ -92,7 +92,7 @@ function QuoteEditorSkeleton() {
           </div>
         </div>
       </div>
-      
+
       {/* Preview skeleton */}
       <div className="rounded-lg border p-6">
         <Skeleton className="h-6 w-[100px] mb-4" />
