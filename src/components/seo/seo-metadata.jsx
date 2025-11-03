@@ -46,7 +46,7 @@ export function generateMetadata(seoData) {
       description: openGraph.description || description,
       images: [
         {
-          url: openGraph.image || "https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png",
+          url: "https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png",
           width: openGraph.imageWidth || 1200,
           height: openGraph.imageHeight || 1200,
           alt: openGraph.title || title,
@@ -60,7 +60,7 @@ export function generateMetadata(seoData) {
       creator: "@newbi_fr",
       title: twitter.title || title,
       description: twitter.description || description,
-      images: [twitter.image || "https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png"],
+      images: ["https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png"],
       ...twitter,
     },
     other: {

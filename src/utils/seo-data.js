@@ -11,7 +11,7 @@ export const defaultSEO = {
   author: "Newbi",
   language: "fr-FR",
   locale: "fr_FR",
-  defaultImage: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+  defaultImage: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
   favicon: `${baseUrl}/NewbiV2/public/newbi.svg`,
   themeColor: "#3B82F6",
   // Informations de contact et localisation
@@ -41,7 +41,7 @@ export const seoData = {
     openGraph: {
       title: "Newbi - La solution tout-en-un pour entrepreneurs",
       description: "Gérez votre entreprise efficacement : facturation, devis, signatures, organisation. Plus de 200 entrepreneurs nous font confiance.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       type: "website",
       locale: "fr_FR",
       siteName: "Newbi",
@@ -50,14 +50,14 @@ export const seoData = {
       card: "summary_large_image",
       title: "Newbi - La solution tout-en-un pour entrepreneurs",
       description: "Gérez votre entreprise efficacement : facturation, devis, signatures, organisation.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "Newbi",
       "url": baseUrl,
-      "logo": `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      "logo": `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       "description": "Solution de gestion complète pour entrepreneurs et freelances",
       "foundingDate": "2023",
       "address": {
@@ -94,7 +94,7 @@ export const seoData = {
     openGraph: {
       title: "Facturation Professionnelle Simplifiée - Newbi",
       description: "Automatisez votre facturation et suivez vos paiements. Interface intuitive, conformité légale et gain de temps garanti.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       type: "website",
       locale: "fr_FR",
     },
@@ -102,7 +102,7 @@ export const seoData = {
       card: "summary_large_image",
       title: "Facturation Professionnelle Simplifiée - Newbi",
       description: "Automatisez votre facturation et suivez vos paiements.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
@@ -148,7 +148,7 @@ export const seoData = {
     openGraph: {
       title: "Devis Professionnels en Ligne - Newbi",
       description: "Impressionnez vos clients avec des devis professionnels. Conversion facile en facture et suivi des acceptations.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       type: "website",
       locale: "fr_FR",
     },
@@ -156,7 +156,7 @@ export const seoData = {
       card: "summary_large_image",
       title: "Devis Professionnels en Ligne - Newbi",
       description: "Impressionnez vos clients avec des devis professionnels.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
@@ -202,7 +202,7 @@ export const seoData = {
     openGraph: {
       title: "Signatures Électroniques Professionnelles - Newbi",
       description: "Créez des signatures email professionnelles en quelques clics. Templates personnalisables et conformité garantie.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       type: "website",
       locale: "fr_FR",
     },
@@ -210,7 +210,7 @@ export const seoData = {
       card: "summary_large_image",
       title: "Signatures Électroniques Professionnelles - Newbi",
       description: "Créez des signatures email professionnelles en quelques clics.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
@@ -256,7 +256,7 @@ export const seoData = {
     openGraph: {
       title: "Gestion de Projets Kanban - Newbi",
       description: "Boostez votre productivité avec nos tableaux Kanban. Organisation visuelle et collaboration simplifiée.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       type: "website",
       locale: "fr_FR",
     },
@@ -264,7 +264,7 @@ export const seoData = {
       card: "summary_large_image",
       title: "Gestion de Projets Kanban - Newbi",
       description: "Boostez votre productivité avec nos tableaux Kanban.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
@@ -310,7 +310,7 @@ export const seoData = {
     openGraph: {
       title: "Transfert de Fichiers Sécurisé - Newbi",
       description: "Partagez vos fichiers professionnels en toute sécurité. Cryptage avancé et contrôle total sur vos partages.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       type: "website",
       locale: "fr_FR",
     },
@@ -318,7 +318,7 @@ export const seoData = {
       card: "summary_large_image",
       title: "Transfert de Fichiers Sécurisé - Newbi",
       description: "Partagez vos fichiers professionnels en toute sécurité.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
@@ -433,7 +433,7 @@ export const seoData = {
     openGraph: {
       title: "Tarifs Newbi - Plans pour Entrepreneurs",
       description: "Plans flexibles pour votre gestion d'entreprise. Essai gratuit de 14 jours inclus.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       type: "website",
       locale: "fr_FR",
     },
@@ -441,7 +441,7 @@ export const seoData = {
       card: "summary_large_image",
       title: "Tarifs Newbi - Plans pour Entrepreneurs",
       description: "Plans flexibles pour votre gestion d'entreprise.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
@@ -483,7 +483,7 @@ export const seoData = {
     openGraph: {
       title: "Programme de Parrainage Newbi - 50€ par Filleul",
       description: "Parrainez et gagnez 50€ pour chaque abonnement annuel souscrit par vos filleuls.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       type: "website",
       locale: "fr_FR",
     },
@@ -491,7 +491,7 @@ export const seoData = {
       card: "summary_large_image",
       title: "Programme de Parrainage Newbi - 50€ par Filleul",
       description: "Parrainez et gagnez 50€ pour chaque abonnement annuel souscrit.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
@@ -518,7 +518,7 @@ export const seoData = {
     openGraph: {
       title: "FAQ - Toutes vos questions sur Newbi",
       description: "Découvrez les réponses aux questions les plus fréquentes sur Newbi. Support complet et aide détaillée.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       type: "website",
       locale: "fr_FR",
     },
@@ -526,7 +526,7 @@ export const seoData = {
       card: "summary_large_image",
       title: "FAQ - Toutes vos questions sur Newbi",
       description: "Découvrez les réponses aux questions les plus fréquentes sur Newbi.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
@@ -573,7 +573,7 @@ export const seoData = {
     openGraph: {
       title: "Conditions Générales de Vente - Newbi",
       description: "Découvrez les conditions générales de vente et d'utilisation de la plateforme Newbi.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
       type: "website",
       locale: "fr_FR",
     },
@@ -581,7 +581,7 @@ export const seoData = {
       card: "summary_large_image",
       title: "Conditions Générales de Vente - Newbi",
       description: "Conditions générales de vente et d'utilisation de Newbi.",
-      image: `${baseUrl}/NewbiV2/public/Logo + texte.svg`,
+      image: `https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
