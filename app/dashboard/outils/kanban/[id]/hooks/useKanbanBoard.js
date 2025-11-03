@@ -87,22 +87,12 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                   }
                 }
               });
-              
-              // IMPORTANT: Refetch après 500ms pour garantir la cohérence des positions
-              setTimeout(() => {
-                refetch();
-              }, 500);
             } else {
               console.warn("⚠️ [Subscription] Cache board non trouvé pour id:", id, "workspaceId:", workspaceId);
             }
           } catch (error) {
             console.error("❌ [Subscription] Erreur mise à jour cache:", error);
           }
-          
-          // Important: Afficher une notification pour la création
-          toast.success(`Nouvelle tâche: ${task.title}`, {
-            description: "Mise à jour automatique"
-          });
         }
         
         // Pour les suppressions, mettre à jour le cache Apollo manuellement
@@ -124,11 +114,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                   }
                 }
               });
-              
-              // IMPORTANT: Refetch après 500ms pour garantir la cohérence des positions
-              setTimeout(() => {
-                refetch();
-              }, 500);
             }
           } catch {
             // Erreur silencieuse - continuer
@@ -187,10 +172,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
               });
               
               console.log("✅ [Subscription] Tâche mise à jour dans le cache:", task.title);
-              
-              toast.info(`Tâche modifiée: ${task.title}`, {
-                description: "Mise à jour automatique"
-              });
             }
           } catch (error) {
             console.error("❌ [Subscription] Erreur mise à jour cache (UPDATED):", error);
