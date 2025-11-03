@@ -43,7 +43,7 @@ export default function SEOHead({
     siteName: "Newbi - Solution de gestion pour entrepreneurs",
     title: title,
     description: description,
-    image: `${baseUrl}/og-image.jpg`,
+    image: `${baseUrl}/NewbiLogo.svg`,
     imageWidth: 1200,
     imageHeight: 630,
     ...openGraph,
@@ -56,7 +56,7 @@ export default function SEOHead({
     creator: "@newbi_fr",
     title: title,
     description: description,
-    image: `${baseUrl}/og-image.jpg`,
+    image: `${baseUrl}/NewbiLogo.svg`,
     ...twitter,
   };
 
