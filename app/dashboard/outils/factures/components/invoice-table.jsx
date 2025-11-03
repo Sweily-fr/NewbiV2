@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePermissions } from "@/src/hooks/usePermissions";
 import {
   flexRender,
   getCoreRowModel,
@@ -100,6 +101,8 @@ import InvoiceExportButton from "./invoice-export-button";
 export default function InvoiceTable({ handleNewInvoice }) {
   const router = useRouter();
   const { invoices, loading, error, refetch } = useInvoices();
+  const { canCreate } = usePermissions();
+  const [canCreateInvoice, setCanCreateInvoice] = useState(false);
 
   const {
     table,
@@ -114,6 +117,15 @@ export default function InvoiceTable({ handleNewInvoice }) {
     data: invoices || [],
     onRefetch: refetch,
   });
+
+  // Vérifier les permissions de création
+  useEffect(() => {
+    const checkPermission = async () => {
+      const allowed = await canCreate("invoices");
+      setCanCreateInvoice(allowed);
+    };
+    checkPermission();
+  }, [canCreate]);
 
   if (loading) {
     return <InvoiceTableSkeleton />;
@@ -250,25 +262,27 @@ export default function InvoiceTable({ handleNewInvoice }) {
           selectedRows={selectedRows}
         />
 
-        {/* Add Invoice Button Group */}
-        <ButtonGroup>
-          <Button 
-            onClick={handleNewInvoice} 
-            variant="secondary"
-            className="cursor-pointer font-normal"
-          >
-            Nouvelle facture
-          </Button>
-          <ButtonGroupSeparator />
-          <Button 
-            onClick={handleNewInvoice} 
-            variant="secondary"
-            size="icon"
-            className="cursor-pointer"
-          >
-            <PlusIcon size={16} aria-hidden="true" />
-          </Button>
-        </ButtonGroup>
+        {/* Add Invoice Button Group - Visible uniquement si permission */}
+        {canCreateInvoice && (
+          <ButtonGroup>
+            <Button 
+              onClick={handleNewInvoice} 
+              variant="secondary"
+              className="cursor-pointer font-normal"
+            >
+              Nouvelle facture
+            </Button>
+            <ButtonGroupSeparator />
+            <Button 
+              onClick={handleNewInvoice} 
+              variant="secondary"
+              size="icon"
+              className="cursor-pointer"
+            >
+              <PlusIcon size={16} aria-hidden="true" />
+            </Button>
+          </ButtonGroup>
+        )}
 
         {/* Bulk actions */}
         {selectedRows.length > 0 && (

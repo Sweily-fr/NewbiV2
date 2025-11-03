@@ -242,95 +242,46 @@ export function TeamSwitcher() {
         to: organizationId,
       });
 
-      // 1. Changer d'organisation côté serveur avec Better Auth client
-      // Utiliser le client Better Auth au lieu de fetch pour éviter le rechargement
+      // 1. Changer d'organisation côté serveur avec Better Auth
       await authClient.organization.setActive({
         organizationId,
-        fetchOptions: {
-          // Désactiver le rechargement automatique
-          onSuccess: () => {
-            console.log("✅ Organisation changée côté serveur");
-          },
-          onError: (error) => {
-            console.error("❌ Erreur:", error);
-            throw error;
-          },
-        },
       });
 
-      // 2. Nettoyer le LocalStorage de l'ancienne organisation
-      if (oldWorkspaceId) {
-        const oldCacheKey = `dashboard-data-${oldWorkspaceId}`;
-        localStorage.removeItem(oldCacheKey);
-        console.log(`🗑️ Cache LocalStorage supprimé: ${oldCacheKey}`);
-      }
+      console.log("✅ Organisation changée côté serveur");
 
-      // 3. Vider sélectivement le cache Apollo (pas clearStore qui vide TOUT)
-      console.log("🗑️ Vidage sélectif du cache Apollo...");
+      // 2. Nettoyer le cache Apollo pour l'ancienne organisation
       if (oldWorkspaceId) {
-        // Évict uniquement les queries de l'ancienne organisation
+        console.log("🗑️ Nettoyage du cache Apollo...");
+        
+        // Évict les queries spécifiques à l'ancienne organisation
         apolloClient.cache.evict({
           id: "ROOT_QUERY",
           fieldName: "getInvoices",
-          args: { workspaceId: oldWorkspaceId },
         });
         apolloClient.cache.evict({
           id: "ROOT_QUERY",
           fieldName: "getQuotes",
-          args: { workspaceId: oldWorkspaceId },
         });
         apolloClient.cache.evict({
           id: "ROOT_QUERY",
           fieldName: "getClients",
-          args: { workspaceId: oldWorkspaceId },
         });
         apolloClient.cache.evict({
           id: "ROOT_QUERY",
           fieldName: "getExpenses",
-          args: { workspaceId: oldWorkspaceId },
         });
-        apolloClient.cache.gc(); // Garbage collection
-        console.log("✅ Cache Apollo nettoyé (sélectif)");
+        
+        // Garbage collection pour nettoyer les références orphelines
+        apolloClient.cache.gc();
+        console.log("✅ Cache Apollo nettoyé");
       }
 
-      // 4. Rafraîchir les abonnements
-      if (refreshDashboardSubscription) {
-        await refreshDashboardSubscription();
-      }
-      console.log("✅ Abonnements rafraîchis");
-
-      // 5. Forcer le refetch des hooks Better Auth
-      console.log("🔄 Refetch des hooks Better Auth...");
-      if (refetchActiveOrg) {
-        await refetchActiveOrg();
-      }
-      
-      // Recharger les organisations
-      await loadOrganizations();
-
-      // Forcer un re-render du composant
-      setForceUpdate((prev) => prev + 1);
-      console.log("✅ Hooks Better Auth rafraîchis");
-
-      // 6. Émettre un événement custom pour notifier le changement d'organisation
-      const organizationChangeEvent = new CustomEvent("organizationChanged", {
-        detail: {
-          previousOrgId: oldWorkspaceId,
-          newOrgId: organizationId,
-        },
-      });
-      window.dispatchEvent(organizationChangeEvent);
-      console.log("📢 Événement organizationChanged émis:", {
-        from: oldWorkspaceId,
-        to: organizationId,
-      });
-
-      // 7. Notification avec le nom de l'organisation
+      // 3. Notification de succès
       const newOrg = sortedOrganizations.find(org => org.id === organizationId);
       const orgName = newOrg?.name || "l'organisation";
       toast.success(`Vous êtes sur l'espace ${orgName}`);
 
-      console.log("✅ Changement terminé sans rechargement");
+      console.log("✅ Changement d'organisation terminé");
     } catch (error) {
       console.error("❌ Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");
@@ -640,7 +591,7 @@ function SortableOrganizationItem({
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const buttonRef = React.useRef(null);
   const colorButtonRef = React.useRef(null);
-  
+
   // Récupérer la couleur et l'icône personnalisées
   const customColor = org.customColor || "#5b4fff";
   const customIconName = org.customIcon;
@@ -670,7 +621,9 @@ function SortableOrganizationItem({
     <div
       ref={setNodeRef}
       style={style}
-      onMouseEnter={() => !isDragging && !showActionsMenu && !showColorMenu && setIsHovered(true)}
+      onMouseEnter={() =>
+        !isDragging && !showActionsMenu && !showColorMenu && setIsHovered(true)
+      }
       onMouseLeave={() => setIsHovered(false)}
       className="relative"
       {...attributes}
@@ -690,7 +643,9 @@ function SortableOrganizationItem({
           {/* Icône personnalisée avec bordure et couleur de fond (visible par défaut) */}
           <div
             className={`flex size-6 items-center justify-center rounded-sm transition-opacity absolute ${
-              isHovered && !disabled && !showActionsMenu && !showColorMenu ? "opacity-0" : "opacity-100"
+              isHovered && !disabled && !showActionsMenu && !showColorMenu
+                ? "opacity-0"
+                : "opacity-100"
             }`}
             style={{ backgroundColor: customColor }}
           >
@@ -703,7 +658,9 @@ function SortableOrganizationItem({
           {/* Icône Grip sans bordure (visible au hover) */}
           <div
             className={`flex items-center justify-center transition-opacity absolute ${
-              isHovered && !disabled && !showActionsMenu && !showColorMenu ? "opacity-100" : "opacity-0"
+              isHovered && !disabled && !showActionsMenu && !showColorMenu
+                ? "opacity-100"
+                : "opacity-0"
             }`}
           >
             <GripVertical className="h-4 w-4 text-muted-foreground" />
@@ -725,7 +682,9 @@ function SortableOrganizationItem({
             setShowActionsMenu(!showActionsMenu);
           }}
           className={`flex items-center justify-center h-6 w-6 rounded hover:bg-accent transition-opacity ${
-            isHovered && !disabled && !showColorMenu && !showActionsMenu ? "opacity-100" : "opacity-0"
+            isHovered && !disabled && !showColorMenu && !showActionsMenu
+              ? "opacity-100"
+              : "opacity-0"
           }`}
         >
           <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
@@ -830,7 +789,9 @@ function SortableOrganizationItem({
                 }}
               >
                 <LogOut className="h-3.5 w-3.5" />
-                <span className="font-normal flex-1">Quitter l'organisation</span>
+                <span className="font-normal flex-1">
+                  Quitter l'organisation
+                </span>
               </div>
             )}
 
@@ -844,7 +805,9 @@ function SortableOrganizationItem({
               }}
             >
               <Archive className="h-3.5 w-3.5" />
-              <span className="font-normal flex-1">Supprimer l'organisation</span>
+              <span className="font-normal flex-1">
+                Supprimer l'organisation
+              </span>
             </div>
           </div>
         </div>
@@ -900,7 +863,7 @@ function SortableOrganizationItem({
                             o.id === org.id ? { ...o, customColor: color } : o
                           )
                         );
-                        
+
                         // Mise à jour en base de données en arrière-plan
                         authClient.organization.update({
                           organizationId: org.id,
@@ -994,7 +957,7 @@ function SortableOrganizationItem({
                             o.id === org.id ? { ...o, customIcon: name } : o
                           )
                         );
-                        
+
                         // Mise à jour en base de données en arrière-plan
                         authClient.organization.update({
                           organizationId: org.id,
@@ -1024,14 +987,13 @@ function SortableOrganizationItem({
           <DialogHeader>
             <DialogTitle>Quitter l'organisation</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir quitter "{org.name}" ? Vous perdrez l'accès à tous les espaces de travail et données de cette organisation.
+              Êtes-vous sûr de vouloir quitter "{org.name}" ? Vous perdrez
+              l'accès à tous les espaces de travail et données de cette
+              organisation.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowLeaveModal(false)}
-            >
+            <Button variant="outline" onClick={() => setShowLeaveModal(false)}>
               Annuler
             </Button>
             <Button
@@ -1061,14 +1023,13 @@ function SortableOrganizationItem({
           <DialogHeader>
             <DialogTitle>Supprimer l'organisation</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer "{org.name}" ? L'organisation sera archivée et pourra être restaurée ultérieurement. Cette action nécessite les droits d'administrateur.
+              Êtes-vous sûr de vouloir supprimer "{org.name}" ? L'organisation
+              sera archivée et pourra être restaurée ultérieurement. Cette
+              action nécessite les droits d'administrateur.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteModal(false)}
-            >
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
               Annuler
             </Button>
             <Button

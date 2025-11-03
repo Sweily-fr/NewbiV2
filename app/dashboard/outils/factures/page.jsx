@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { Button } from "@/src/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
+import { PermissionButton } from "@/src/components/rbac";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
@@ -52,14 +53,18 @@ function InvoicesContent() {
           <InvoiceTable />
         </Suspense>
 
-        {/* Bouton flottant mobile */}
-        <Button
+        {/* Bouton flottant mobile avec protection RBAC */}
+        <PermissionButton
+          resource="invoices"
+          action="create"
           onClick={handleNewInvoice}
           className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
           size="icon"
+          hideIfNoAccess={true}
+          tooltipNoAccess="Vous n'avez pas la permission de créer des factures"
         >
           <Plus className="h-6 w-6" />
-        </Button>
+        </PermissionButton>
       </div>
     </>
   );

@@ -4,6 +4,7 @@ import { authClient } from "@/src/lib/auth-client";
 /**
  * Hook pour obtenir les informations du workspace actuel
  * Utilise directement les hooks Better Auth pour les organisations
+ * Better Auth gère automatiquement la persistance de l'organisation active dans la session
  * @returns {Object} - { workspaceId, organization, organizations, loading }
  */
 export const useWorkspace = () => {
@@ -15,23 +16,10 @@ export const useWorkspace = () => {
 
   const loading = orgsLoading || activeLoading;
 
-  // Si pas d'organisation active mais qu'il y a des organisations, définir la première comme active
-  React.useEffect(() => {
-    if (
-      !loading &&
-      !activeOrganization &&
-      organizations &&
-      organizations.length > 0
-    ) {
-      authClient.organization.setActive({
-        organizationId: organizations[0].id,
-      });
-    }
-  }, [loading, activeOrganization, organizations]);
-
   return {
     workspaceId: activeOrganization?.id || null,
     organization: activeOrganization,
+    activeOrganization: activeOrganization,
     organizations: organizations || [],
     loading,
   };

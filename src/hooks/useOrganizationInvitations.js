@@ -12,31 +12,35 @@ export const useOrganizationInvitations = () => {
   const { data: organizations } = authClient.useListOrganizations();
   const { data: activeOrganization } = authClient.useActiveOrganization();
 
-  // Définir l'organisation active si ce n'est pas déjà fait
-  useEffect(() => {
-    const setActiveOrg = async () => {
-      if (
-        !activeOrgSet &&
-        organizations &&
-        organizations.length > 0 &&
-        !activeOrganization
-      ) {
-        try {
-          await organization.setActive({
-            organizationId: organizations[0].id,
-          });
-          setActiveOrgSet(true);
-        } catch (error) {
-          console.error(
-            "Erreur lors de la définition de l'organisation active:",
-            error
-          );
-        }
-      }
-    };
-
-    setActiveOrg();
-  }, [organizations, activeOrganization, activeOrgSet]);
+  // ⚠️ NE PAS définir automatiquement l'organisation active ici !
+  // Better Auth gère déjà la persistance de l'organisation active dans la session
+  // Ce useEffect causait un bug : il réinitialisait toujours à la première organisation
+  // après chaque rechargement de page
+  
+  // useEffect(() => {
+  //   const setActiveOrg = async () => {
+  //     if (
+  //       !activeOrgSet &&
+  //       organizations &&
+  //       organizations.length > 0 &&
+  //       !activeOrganization
+  //     ) {
+  //       try {
+  //         await organization.setActive({
+  //           organizationId: organizations[0].id,
+  //         });
+  //         setActiveOrgSet(true);
+  //       } catch (error) {
+  //         console.error(
+  //           "Erreur lors de la définition de l'organisation active:",
+  //           error
+  //         );
+  //       }
+  //     }
+  //   };
+  //
+  //   setActiveOrg();
+  // }, [organizations, activeOrganization, activeOrgSet]);
 
   // Récupérer l'organisation de l'utilisateur
   const getUserOrganization = useCallback(() => {

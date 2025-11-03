@@ -57,6 +57,47 @@ export const ac = createAccessControl(statement);
 
 /**
  * ========================================
+ * RÔLE: OWNER
+ * ========================================
+ * Accès complet à TOUS les modules sans exception
+ */
+export const owner = ac.newRole({
+  ...adminAc.statements, // Permissions admin par défaut Better Auth
+  
+  // Documents commerciaux - Accès complet
+  quotes: ["view", "create", "edit", "delete", "approve", "convert", "send", "export"],
+  invoices: ["view", "create", "edit", "delete", "approve", "send", "export", "mark-paid"],
+  creditNotes: ["view", "create", "edit", "delete", "approve", "send"],
+  
+  // Finances - Accès complet
+  expenses: ["view", "create", "edit", "delete", "approve", "export", "ocr"],
+  payments: ["view", "create", "edit", "delete", "export"],
+  
+  // Données de base - Accès complet
+  clients: ["view", "create", "edit", "delete", "export"],
+  products: ["view", "create", "edit", "delete", "export", "manage-categories"],
+  suppliers: ["view", "create", "edit", "delete"],
+  
+  // Outils - Accès complet
+  fileTransfers: ["view", "create", "delete", "download"],
+  kanban: ["view", "create", "edit", "delete", "assign"],
+  signatures: ["view", "create", "edit", "delete", "set-default"],
+  calendar: ["view", "create", "edit", "delete"],
+  
+  // Rapports - Accès complet
+  reports: ["view", "export"],
+  analytics: ["view", "export"],
+  
+  // Gestion - Accès complet (y compris facturation)
+  team: ["view", "invite", "remove", "change-role"],
+  orgSettings: ["view", "manage"],
+  integrations: ["view", "manage"],
+  billing: ["view", "manage"], // ✅ Owner peut gérer la facturation
+  auditLog: ["view", "export"],
+});
+
+/**
+ * ========================================
  * RÔLE: ADMIN
  * ========================================
  * Accès complet à tous les modules sauf la facturation (réservée au owner)
@@ -104,18 +145,18 @@ export const admin = ac.newRole({
  * Pas de suppression ni validation
  */
 export const member = ac.newRole({
-  // Documents commerciaux - Création + envoi uniquement
-  quotes: ["view", "create", "send"],
-  invoices: ["view", "create", "send"],
-  creditNotes: ["view", "create"],
+  // Documents commerciaux - Création + envoi + export
+  quotes: ["view", "create", "send", "export"],
+  invoices: ["view", "create", "send", "export"],
+  creditNotes: ["view", "create", "export"],
   
-  // Finances - Création uniquement
-  expenses: ["view", "create", "ocr"],
-  payments: ["view", "create"],
+  // Finances - Création + export
+  expenses: ["view", "create", "ocr", "export"],
+  payments: ["view", "create", "export"],
   
-  // Données de base - Création uniquement
-  clients: ["view", "create"],
-  products: ["view", "create"],
+  // Données de base - Création + export
+  clients: ["view", "create", "export"],
+  products: ["view", "create", "export"],
   suppliers: ["view", "create"],
   
   // Outils - Utilisation standard
@@ -124,9 +165,9 @@ export const member = ac.newRole({
   signatures: ["view", "create", "edit", "set-default"],
   calendar: ["view", "create", "edit"],
   
-  // Rapports - Lecture seule
-  reports: ["view"],
-  analytics: ["view"],
+  // Rapports - Lecture + export
+  reports: ["view", "export"],
+  analytics: ["view", "export"],
   
   // Gestion - Lecture seule
   team: ["view"],
