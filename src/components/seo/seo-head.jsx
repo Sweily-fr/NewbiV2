@@ -45,7 +45,7 @@ export default function SEOHead({
     description: description,
     image: "https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png",
     imageWidth: 1200,
-    imageHeight: 630,
+    imageHeight: 1200,
     ...openGraph,
   };
 
