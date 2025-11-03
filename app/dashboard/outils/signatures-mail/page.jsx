@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { Plus, Monitor, Smartphone } from "lucide-react";
+import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -201,7 +202,7 @@ function SignaturesContent() {
   );
 }
 
-export default function SignaturesPage() {
+function EmailSignaturesPageContent() {
   return <SignaturesContent />;
 }
 
@@ -262,5 +263,17 @@ function SignatureTableSkeleton() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function EmailSignaturesPage() {
+  return (
+    <RoleRouteGuard 
+      roles={["owner", "admin", "member", "viewer"]}
+      fallbackUrl="/dashboard"
+      toastMessage="Vous n'avez pas accès aux signatures de mail. Cette fonctionnalité est réservée aux membres de l'équipe."
+    >
+      <EmailSignaturesPageContent />
+    </RoleRouteGuard>
   );
 }

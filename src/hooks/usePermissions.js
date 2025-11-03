@@ -24,7 +24,13 @@ export function usePermissions() {
   const hasLoadedRef = useRef(false);
   const permissionCacheRef = useRef(new Map()); // Cache des permissions
 
-  // Charger l'organisation complète avec les membres UNE SEULE FOIS
+  // Réinitialiser le flag quand l'organisation change
+  useEffect(() => {
+    hasLoadedRef.current = false;
+    setOrgWithMembers(null);
+  }, [activeOrganization?.id]);
+
+  // Charger l'organisation complète avec les membres
   useEffect(() => {
     if (!activeOrganization || hasLoadedRef.current) return;
     

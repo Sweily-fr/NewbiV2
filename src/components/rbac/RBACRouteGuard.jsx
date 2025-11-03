@@ -143,13 +143,19 @@ export function RoleRouteGuard({
 
   useEffect(() => {
     const checkAccess = () => {
-      setIsChecking(true);
-      
       const userRole = getUserRole();
+      
+      // Si le rôle n'est pas encore chargé, rester en mode "checking"
+      if (userRole === null) {
+        setIsChecking(true);
+        return;
+      }
+      
       const rolesArray = Array.isArray(roles) ? roles : [roles];
-      const access = userRole && rolesArray.includes(userRole);
+      const access = rolesArray.includes(userRole);
       
       setHasAccess(access);
+      setIsChecking(false);
       
       if (!access) {
         if (showToast && !toastShownRef.current) {
@@ -161,8 +167,6 @@ export function RoleRouteGuard({
           router.push(fallbackUrl);
         }, 100);
       }
-      
-      setIsChecking(false);
     };
 
     checkAccess();

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { Button } from "@/src/components/ui/button";
 import {
   IconCopy,
@@ -20,7 +21,6 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import TransferTable from "./components/transfer-table";
 import FileUploadNew from "./components/file-upload-new";
-import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useFileTransfer } from "./hooks/useFileTransfer";
 import { useFileTransferR2Direct } from "./hooks/useFileTransferR2Direct";
 import { cn } from "@/src/lib/utils";
@@ -32,21 +32,19 @@ function TransfertsContent() {
   const [activeTab, setActiveTab] = useState("upload"); // "upload" ou "list"
 
   // Vérifier si on revient d'une création de transfert
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const shareLink = urlParams.get("shareLink");
-    const accessKey = urlParams.get("accessKey");
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareLink = urlParams.get("shareLink");
+  const accessKey = urlParams.get("accessKey");
 
-    if (shareLink && accessKey) {
-      const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
-      setTransferLink(fullLink);
-      setShowSuccessDialog(true);
+  if (shareLink && accessKey) {
+    const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
+    setTransferLink(fullLink);
+    setShowSuccessDialog(true);
 
-      // Nettoyer l'URL
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-    }
-  }, []);
+    // Nettoyer l'URL
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+  }
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(transferLink);
@@ -267,10 +265,18 @@ function TransfertsContent() {
   );
 }
 
-export default function TransfertsFichiers() {
+function TransfertsPageContent() {
+  return <TransfertsContent />;
+}
+
+export default function TransfertsPage() {
   return (
-    <ProRouteGuard pageName="Transferts de fichiers">
-      <TransfertsContent />
-    </ProRouteGuard>
+    <RoleRouteGuard 
+      roles={["owner", "admin", "member", "viewer"]}
+      fallbackUrl="/dashboard"
+      toastMessage="Vous n'avez pas accès aux transferts de fichiers. Cette fonctionnalité est réservée aux membres de l'équipe."
+    >
+      <TransfertsPageContent />
+    </RoleRouteGuard>
   );
 }

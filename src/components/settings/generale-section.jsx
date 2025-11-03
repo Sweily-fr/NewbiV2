@@ -19,6 +19,7 @@ import {
   VALIDATION_PATTERNS,
   detectInjectionAttempt,
 } from "@/src/lib/validation";
+import { PermissionWarning } from "./PermissionWarning";
 
 const COUNTRIES = [
   { value: "France", label: "France" },
@@ -33,6 +34,7 @@ export function GeneraleSection({
   organization,
   updateOrganization,
   refetchOrganization,
+  canManageOrgSettings = true,
 }) {
   let formContext;
   try {
@@ -93,6 +95,9 @@ export function GeneraleSection({
       <div>
         <h2 className="text-lg font-medium mb-1">Générale</h2>
         <Separator className="hidden md:block" />
+        
+        {/* Message d'information si pas de permissions */}
+        {!canManageOrgSettings && <PermissionWarning />}
 
         {/* Logo de l'entreprise */}
         <div className="mb-8 mt-12">
@@ -133,6 +138,7 @@ export function GeneraleSection({
                 id="name"
                 placeholder="Nom de votre entreprise"
                 className="w-full"
+                disabled={!canManageOrgSettings}
                 {...register("name", {
                   required: "Le nom est requis",
                   pattern: {
@@ -165,6 +171,7 @@ export function GeneraleSection({
                 type="email"
                 placeholder="contact@entreprise.com"
                 className="w-full"
+                disabled={!canManageOrgSettings}
                 {...register("email", {
                   required: "L'email est requis",
                   pattern: {
@@ -199,6 +206,7 @@ export function GeneraleSection({
                 id="phone"
                 placeholder="+33 1 23 45 67 89"
                 className="w-full"
+                disabled={!canManageOrgSettings}
                 {...register("phone", {
                   pattern: {
                     value: VALIDATION_PATTERNS.phone.pattern,
@@ -229,6 +237,7 @@ export function GeneraleSection({
                 id="website"
                 placeholder="https://www.entreprise.com"
                 className="w-full"
+                disabled={!canManageOrgSettings}
                 {...register("website", {
                   pattern: {
                     value: VALIDATION_PATTERNS.website.pattern,
@@ -268,6 +277,7 @@ export function GeneraleSection({
                 id="address"
                 placeholder="123 Rue de la République"
                 className="w-full"
+                disabled={!canManageOrgSettings}
                 {...register("address.street", {
                   required: "L'adresse est requise",
                   pattern: {
@@ -299,6 +309,7 @@ export function GeneraleSection({
                   id="city"
                   placeholder="Paris"
                   className="w-full"
+                  disabled={!canManageOrgSettings}
                   {...register("address.city", {
                     required: "La ville est requise",
                     pattern: {
@@ -328,6 +339,7 @@ export function GeneraleSection({
                   id="postalCode"
                   placeholder="75001"
                   className="w-full"
+                  disabled={!canManageOrgSettings}
                   {...register("address.postalCode", {
                     required: "Le code postal est requis",
                     pattern: {
@@ -358,6 +370,7 @@ export function GeneraleSection({
               <Select
                 value={selectedCountry}
                 onValueChange={handleCountryChange}
+                disabled={!canManageOrgSettings}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Sélectionnez un pays" />

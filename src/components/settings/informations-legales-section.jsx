@@ -22,6 +22,7 @@ import {
   detectInjectionAttempt,
 } from "@/src/lib/validation";
 import { useFormContext } from "react-hook-form";
+import { PermissionWarning } from "./PermissionWarning";
 
 const LEGAL_FORMS = [
   { value: "SARL", label: "SARL - Société à Responsabilité Limitée" },
@@ -61,6 +62,7 @@ export function InformationsLegalesSection({
   organization,
   updateOrganization,
   refetchOrganization,
+  canManageOrgSettings = true,
 }) {
   // Utiliser le contexte du formulaire global
   const {
@@ -125,7 +127,8 @@ export function InformationsLegalesSection({
       {/* Titre */}
       <div>
         <h2 className="text-lg font-medium mb-1">Informations légales</h2>
-        <Separator />
+        <Separator className="hidden md:block" />
+        {!canManageOrgSettings && <PermissionWarning />}
 
         {/* Switches pour conditions spéciales */}
         <div className="space-y-6 mt-12">
@@ -178,6 +181,7 @@ export function InformationsLegalesSection({
             <Select
               value={selectedLegalForm}
               onValueChange={handleLegalFormChange}
+              disabled={!canManageOrgSettings}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionnez la forme juridique" />
@@ -202,6 +206,7 @@ export function InformationsLegalesSection({
                 id="siret"
                 placeholder="12345678901234"
                 className="w-full"
+                disabled={!canManageOrgSettings}
                 {...register("legal.siret", {
                   required: requiredFields.siret
                     ? "Le numéro SIRET est requis"
@@ -241,6 +246,7 @@ export function InformationsLegalesSection({
                   id="rcs"
                   placeholder="RCS Paris 123 456 789"
                   className="w-full"
+                  disabled={!canManageOrgSettings}
                   {...register("legal.rcs", {
                     required: requiredFields.rcs
                       ? "Le numéro RCS est requis"
@@ -283,6 +289,7 @@ export function InformationsLegalesSection({
                   id="vatNumber"
                   placeholder="FR12345678901"
                   className="w-full"
+                  disabled={!canManageOrgSettings}
                   {...register("legal.vatNumber", {
                     required: requiredFields.vatNumber
                       ? "Le numéro de TVA est requis"
@@ -323,6 +330,7 @@ export function InformationsLegalesSection({
                   id="capital"
                   placeholder="10000"
                   type="number"
+                  disabled={!canManageOrgSettings}
                   className="w-full"
                   {...register("legal.capital", {
                     required: requiredFields.capital
@@ -358,7 +366,7 @@ export function InformationsLegalesSection({
             >
               Régime fiscal
             </RequiredLabel>
-            <Select value={selectedRegime} onValueChange={handleRegimeChange}>
+            <Select value={selectedRegime} onValueChange={handleRegimeChange} disabled={!canManageOrgSettings}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionnez le régime fiscal" />
               </SelectTrigger>
@@ -383,6 +391,7 @@ export function InformationsLegalesSection({
             <Select
               value={selectedCategory}
               onValueChange={handleCategoryChange}
+              disabled={!canManageOrgSettings}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionnez la catégorie d'activité" />

@@ -17,6 +17,7 @@ import {
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Crown } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { usePermissions } from "@/src/hooks/usePermissions";
 
 import {
   DropdownMenu,
@@ -41,6 +42,8 @@ export function NavDocuments({ items }) {
   const { isMobile, setOpenMobile } = useSidebar();
   const { isActive } = useSubscription();
   const pathname = usePathname();
+  const { getUserRole } = usePermissions();
+  const userRole = getUserRole();
   
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
@@ -66,7 +69,7 @@ export function NavDocuments({ items }) {
   };
 
   // Available tools that can be pinned
-  const availableTools = [
+  const allAvailableTools = [
     {
       name: "Factures",
       url: "/dashboard/outils/factures",
@@ -111,6 +114,13 @@ export function NavDocuments({ items }) {
     },
   ];
 
+  // Filtrer les outils selon le rôle
+  const availableTools = userRole === "accountant"
+    ? allAvailableTools.filter(tool => 
+        ["Factures", "Devis", "Dépenses"].includes(tool.name)
+      )
+    : allAvailableTools;
+
   // Load pinned apps from localStorage on component mount
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -119,12 +129,20 @@ export function NavDocuments({ items }) {
         if (savedApps) {
           const parsedApps = JSON.parse(savedApps);
           // Restore icon components from iconName
-          const validApps = parsedApps
+          let validApps = parsedApps
             .filter(app => app.name && app.url && app.iconName)
             .map(app => ({
               ...app,
               icon: iconMap[app.iconName] || IconReceipt // fallback icon
             }));
+          
+          // Filtrer selon le rôle accountant
+          if (userRole === "accountant") {
+            validApps = validApps.filter(app => 
+              ["Factures", "Devis", "Dépenses"].includes(app.name)
+            );
+          }
+          
           if (validApps.length > 0) {
             setPinnedApps(validApps);
           }
@@ -136,7 +154,7 @@ export function NavDocuments({ items }) {
       }
       setIsLoaded(true);
     }
-  }, [items]);
+  }, [items, userRole]);
 
   // Save pinned apps to localStorage whenever they change
   useEffect(() => {
