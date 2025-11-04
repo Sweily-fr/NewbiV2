@@ -9,15 +9,15 @@ import { toast } from "@/src/components/ui/sonner";
 /**
  * Guard de route basé sur les permissions RBAC
  * Redirige l'utilisateur s'il n'a pas la permission requise
- * 
+ *
  * @example
  * <RBACRouteGuard resource="invoices" action="create">
  *   <CreateInvoiceForm />
  * </RBACRouteGuard>
- * 
+ *
  * @example
- * <RBACRouteGuard 
- *   resource="invoices" 
+ * <RBACRouteGuard
+ *   resource="invoices"
  *   action="delete"
  *   fallbackUrl="/dashboard"
  *   showToast={true}
@@ -25,14 +25,14 @@ import { toast } from "@/src/components/ui/sonner";
  *   <DeleteInvoiceButton />
  * </RBACRouteGuard>
  */
-export function RBACRouteGuard({ 
-  children, 
-  resource, 
+export function RBACRouteGuard({
+  children,
+  resource,
   action,
   fallbackUrl = "/dashboard",
   loadingComponent,
   showToast = true,
-  toastMessage = "Vous n'avez pas la permission d'accéder à cette page"
+  toastMessage = "Vous n'avez pas la permission d'accéder à cette page",
 }) {
   const router = useRouter();
   const { hasPermission } = usePermissions();
@@ -42,24 +42,24 @@ export function RBACRouteGuard({
 
   useEffect(() => {
     let isMounted = true; // Pour éviter les mises à jour après démontage
-    
+
     const checkAccess = async () => {
       setIsChecking(true);
-      
+
       try {
         const access = await hasPermission(resource, action);
-        
+
         if (!isMounted) return; // Ne rien faire si le composant est démonté
-        
+
         setHasAccess(access);
-        
+
         if (!access) {
           // Afficher un toast si demandé (une seule fois)
           if (showToast && !toastShownRef.current) {
             toast.error(toastMessage);
             toastShownRef.current = true; // Marquer comme affiché
           }
-          
+
           // Rediriger après un court délai
           setTimeout(() => {
             if (isMounted) {
@@ -69,11 +69,11 @@ export function RBACRouteGuard({
         }
       } catch (error) {
         console.error("Erreur lors de la vérification des permissions:", error);
-        
+
         if (!isMounted) return;
-        
+
         setHasAccess(false);
-        
+
         // En cas d'erreur, rediriger par sécurité
         if (showToast && !toastShownRef.current) {
           toast.error("Erreur lors de la vérification des permissions");
@@ -88,24 +88,34 @@ export function RBACRouteGuard({
     };
 
     checkAccess();
-    
+
     // Cleanup pour éviter les appels multiples
     return () => {
       isMounted = false;
     };
-  }, [resource, action, hasPermission, router, fallbackUrl, showToast, toastMessage]);
+  }, [
+    resource,
+    action,
+    hasPermission,
+    router,
+    fallbackUrl,
+    showToast,
+    toastMessage,
+  ]);
 
   // Afficher le loading pendant la vérification
   if (isChecking) {
-    return loadingComponent || (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-sm text-muted-foreground">
-            Vérification des permissions...
-          </p>
+    return (
+      loadingComponent || (
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="text-sm text-muted-foreground">
+              Vérification des permissions...
+            </p>
+          </div>
         </div>
-      </div>
+      )
     );
   }
 
@@ -121,7 +131,7 @@ export function RBACRouteGuard({
 /**
  * Guard de route basé uniquement sur le rôle
  * Plus simple que RBACRouteGuard pour les cas où on vérifie juste le rôle
- * 
+ *
  * @example
  * <RoleRouteGuard roles={["owner", "admin"]}>
  *   <AdminPanel />
@@ -133,7 +143,7 @@ export function RoleRouteGuard({
   fallbackUrl = "/dashboard",
   loadingComponent,
   showToast = true,
-  toastMessage = "Vous n'avez pas accès à cette page"
+  toastMessage = "Vous n'avez pas accès à cette page",
 }) {
   const router = useRouter();
   const { getUserRole } = usePermissions();
@@ -144,25 +154,25 @@ export function RoleRouteGuard({
   useEffect(() => {
     const checkAccess = () => {
       const userRole = getUserRole();
-      
+
       // Si le rôle n'est pas encore chargé, rester en mode "checking"
       if (userRole === null) {
         setIsChecking(true);
         return;
       }
-      
+
       const rolesArray = Array.isArray(roles) ? roles : [roles];
       const access = rolesArray.includes(userRole);
-      
+
       setHasAccess(access);
       setIsChecking(false);
-      
+
       if (!access) {
         if (showToast && !toastShownRef.current) {
           toast.error(toastMessage);
           toastShownRef.current = true;
         }
-        
+
         setTimeout(() => {
           router.push(fallbackUrl);
         }, 100);
@@ -173,15 +183,17 @@ export function RoleRouteGuard({
   }, [roles, getUserRole, router, fallbackUrl, showToast, toastMessage]);
 
   if (isChecking) {
-    return loadingComponent || (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-sm text-muted-foreground">
-            Vérification du rôle...
-          </p>
+    return (
+      loadingComponent || (
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="text-sm text-muted-foreground">
+              Vérification du rôle...
+            </p>
+          </div>
         </div>
-      </div>
+      )
     );
   }
 
@@ -197,8 +209,8 @@ export function RoleRouteGuard({
  */
 export function OwnerRouteGuard({ children, ...props }) {
   return (
-    <RoleRouteGuard 
-      roles="owner" 
+    <RoleRouteGuard
+      roles="owner"
       toastMessage="Cette page est réservée aux propriétaires de l'organisation"
       {...props}
     >
@@ -212,8 +224,8 @@ export function OwnerRouteGuard({ children, ...props }) {
  */
 export function AdminRouteGuard({ children, ...props }) {
   return (
-    <RoleRouteGuard 
-      roles={["owner", "admin"]} 
+    <RoleRouteGuard
+      roles={["owner", "admin"]}
       toastMessage="Cette page est réservée aux administrateurs"
       {...props}
     >

@@ -1,54 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense } from "react";
 import ModernQuoteEditor from "../components/modern-quote-editor";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
-import { usePermissions } from "@/src/hooks/usePermissions";
-import { Alert, AlertDescription } from "@/src/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { RBACRouteGuard } from "@/src/components/rbac";
 
 function NewQuoteContent() {
-  const router = useRouter();
-  const { canCreate } = usePermissions();
-  const [hasPermission, setHasPermission] = useState(null);
-
-  useEffect(() => {
-    const checkPermission = async () => {
-      const allowed = await canCreate("quotes");
-      setHasPermission(allowed);
-
-      if (!allowed) {
-        setTimeout(() => {
-          router.push("/dashboard/outils/devis");
-        }, 2000);
-      }
-    };
-
-    checkPermission();
-  }, [canCreate, router]);
-
-  // Chargement
-  if (hasPermission === null) {
-    return <QuoteEditorSkeleton />;
-  }
-
-  // Pas de permission
-  if (!hasPermission) {
-    return (
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Vous n'avez pas la permission de créer des devis. Redirection...
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   return (
     <Suspense fallback={<QuoteEditorSkeleton />}>
       <ModernQuoteEditor mode="create" />
@@ -60,7 +19,15 @@ export default function NewQuotePage() {
   return (
     <ProRouteGuard pageName="Nouveau devis">
       <CompanyInfoGuard>
-        <NewQuoteContent />
+        {/* Protection RBAC : Seuls ceux qui peuvent créer des devis peuvent accéder */}
+        <RBACRouteGuard 
+          resource="quotes" 
+          action="create"
+          fallbackUrl="/dashboard/outils/devis"
+          toastMessage="Vous n'avez pas la permission de créer des devis"
+        >
+          <NewQuoteContent />
+        </RBACRouteGuard>
       </CompanyInfoGuard>
     </ProRouteGuard>
   );
