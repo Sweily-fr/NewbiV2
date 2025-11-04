@@ -96,6 +96,7 @@ import { useProducts, useDeleteProduct } from "@/src/hooks/useProducts";
 import ProductModal from "./product-modal";
 import ProductExportButton from "./product-export-button";
 import ProductImportDialog from "./product-import-dialog";
+import ProductFilters from "./product-filters";
 
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
@@ -429,14 +430,22 @@ export default function TableProduct({ handleAddProduct }) {
       ?.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
   };
 
+  // Fonction pour mettre à jour les catégories sélectionnées (utilisée par ProductFilters)
+  const setSelectedCategories = (newCategories) => {
+    table
+      .getColumn("category")
+      ?.setFilterValue(newCategories.length ? newCategories : undefined);
+  };
+
   return (
     <>
       {/* Desktop Layout */}
       <div className="hidden md:block space-y-4">
         {/* Filters */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* First Button Group: Search, Category, Columns */}
-          <ButtonGroup>
+          <div className="flex items-center gap-3">
+            {/* First Button Group: Search, Category, Columns */}
+            <ButtonGroup>
             {/* Filter by name or reference */}
             <div className="relative flex-1">
               <Input
@@ -475,99 +484,13 @@ export default function TableProduct({ handleAddProduct }) {
               )}
             </div>
 
-            {/* Filter by category */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="font-normal cursor-pointer">
-                  <FilterIcon
-                    className="-ms-1 opacity-60"
-                    size={16}
-                    aria-hidden="true"
-                  />
-                  Catégorie
-                  {selectedCategories.length > 0 && (
-                    <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
-                      {selectedCategories.length}
-                    </span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto min-w-36 p-3" align="start">
-                <div className="space-y-3">
-                  <div className="text-muted-foreground text-xs font-medium">
-                    Filtres
-                  </div>
-                  <div className="space-y-3">
-                    {uniqueCategoryValues.map((value, i) => (
-                      <div key={value} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`${id}-${i}`}
-                          checked={selectedCategories.includes(value)}
-                          onCheckedChange={(checked) =>
-                            handleCategoryChange(checked, value)
-                          }
-                        />
-                        <Label
-                          htmlFor={`${id}-${i}`}
-                          className="flex grow justify-between gap-2 font-normal"
-                        >
-                          {value}{" "}
-                          <span className="text-muted-foreground ms-2 text-xs">
-                            {categoryCounts.get(value)}
-                          </span>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* Toggle columns visibility */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="font-normal cursor-pointer">
-                  <Columns3Icon
-                    className="-ms-1 opacity-60"
-                    size={16}
-                    aria-hidden="true"
-                  />
-                  <span className="hidden sm:inline">Colonne</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Sélection des colonnes</DropdownMenuLabel>
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    // Traduction des noms de colonnes
-                    const columnTranslations = {
-                      name: "Nom du produit",
-                      reference: "Référence",
-                      unitPrice: "Prix unitaire (HT)",
-                      vatRate: "Taux TVA",
-                      unit: "Unité",
-                      category: "Catégorie",
-                      description: "Description",
-                    };
-
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
-                        onSelect={(event) => event.preventDefault()}
-                      >
-                        {columnTranslations[column.id] || column.id}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Filters Button */}
+            <ProductFilters
+              selectedCategories={selectedCategories}
+              setSelectedCategories={setSelectedCategories}
+              uniqueCategories={uniqueCategoryValues}
+              table={table}
+            />
           </ButtonGroup>
 
           {/* Second Button Group: Import, Export */}
@@ -579,6 +502,7 @@ export default function TableProduct({ handleAddProduct }) {
               selectedRows={table.getSelectedRowModel().rows}
             />
           </ButtonGroup>
+        </div>
 
           {/* Add product button with split design */}
           <ButtonGroup>

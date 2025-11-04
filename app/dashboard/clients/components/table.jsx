@@ -102,6 +102,7 @@ import { useClients, useDeleteClient } from "@/src/hooks/useClients";
 import { useClientListsByClient } from "@/src/hooks/useClientLists";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
+import ClientFilters from "./client-filters";
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableRowContent =
@@ -409,6 +410,13 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
       ?.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
   };
 
+  // Fonction pour mettre à jour les types sélectionnés (utilisée par ClientFilters)
+  const setSelectedTypes = (newTypes) => {
+    table
+      .getColumn("type")
+      ?.setFilterValue(newTypes.length ? newTypes : undefined);
+  };
+
   return (
     <>
       {/* Desktop Layout */}
@@ -456,102 +464,12 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                 )}
               </div>
 
-              {/* Filter by type */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="font-normal cursor-pointer hover:cursor-pointer">
-                    <FilterIcon
-                      className="-ms-1 opacity-60"
-                      size={16}
-                      aria-hidden="true"
-                    />
-                    <span className="hidden sm:inline">Type</span>
-                    {selectedTypes.length > 0 && (
-                      <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
-                        {selectedTypes.length}
-                      </span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto min-w-36 p-3" align="start">
-                  <div className="space-y-3">
-                    <div className="text-muted-foreground text-xs font-normal">
-                      Filtres
-                    </div>
-                    <div className="space-y-3">
-                      {uniqueTypeValues.map((value, i) => (
-                        <div key={value} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`${id}-${i}`}
-                            checked={selectedTypes.includes(value)}
-                            onCheckedChange={(checked) =>
-                              handleTypeChange(checked, value)
-                            }
-                          />
-                          <Label
-                            htmlFor={`${id}-${i}`}
-                            className="flex grow justify-between gap-2 font-normal"
-                          >
-                            {value === "INDIVIDUAL"
-                              ? "Particulier"
-                              : "Entreprise"}{" "}
-                            <span className="text-muted-foreground ms-2 text-xs">
-                              {typeCounts.get(value)}
-                            </span>
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              {/* Toggle columns visibility */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="font-normal hidden md:flex cursor-pointer hover:cursor-pointer"
-                  >
-                    <Columns3Icon
-                      className="-ms-1 opacity-60"
-                      size={16}
-                      aria-hidden="true"
-                    />
-                    <span className="hidden sm:inline">Colonnes</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Sélection des colonnes</DropdownMenuLabel>
-                  {table
-                    .getAllColumns()
-                    .filter((column) => column.getCanHide())
-                    .map((column) => {
-                      // Traduction des noms de colonnes
-                      const columnNames = {
-                        name: "Nom",
-                        email: "Email",
-                        type: "Type",
-                        address: "Adresse",
-                        siret: "SIRET",
-                      };
-
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={column.id}
-                          className="capitalize"
-                          checked={column.getIsVisible()}
-                          onCheckedChange={(value) =>
-                            column.toggleVisibility(!!value)
-                          }
-                          onSelect={(event) => event.preventDefault()}
-                        >
-                          {columnNames[column.id] || column.id}
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Filters Button */}
+              <ClientFilters
+                selectedTypes={selectedTypes}
+                setSelectedTypes={setSelectedTypes}
+                table={table}
+              />
             </ButtonGroup>
           </div>
           <div className="flex items-center gap-3">

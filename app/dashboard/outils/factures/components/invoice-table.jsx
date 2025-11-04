@@ -155,39 +155,41 @@ export default function InvoiceTable({ handleNewInvoice }) {
     <div className="space-y-4">
       {/* Filters and Add Invoice Button */}
       <div className="flex items-center justify-between gap-3 hidden md:flex">
-        {/* First Button Group: Search, Status, Columns */}
-        <ButtonGroup>
-          {/* Search */}
-          <div className="relative flex-1">
-            <Input
-              placeholder="Rechercher des factures..."
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-              className="w-full sm:w-[150px] lg:w-[250px] ps-9 rounded-r-none"
-            />
-            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-              <Search size={16} aria-hidden="true" />
+        <div className="flex items-center gap-3">
+          {/* First Button Group: Search, Status, Columns */}
+          <ButtonGroup>
+            {/* Search */}
+            <div className="relative flex-1">
+              <Input
+                placeholder="Rechercher des factures..."
+                value={globalFilter ?? ""}
+                onChange={(event) => setGlobalFilter(event.target.value)}
+                className="w-full sm:w-[150px] lg:w-[250px] ps-9 rounded-r-none"
+              />
+              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
+                <Search size={16} aria-hidden="true" />
+              </div>
             </div>
-          </div>
 
-          {/* Filters Button */}
-          <InvoiceFilters
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            clientFilter={clientFilter}
-            setClientFilter={setClientFilter}
-            dateFilter={dateFilter}
-            setDateFilter={setDateFilter}
-            invoices={invoices || []}
-            table={table}
+            {/* Filters Button */}
+            <InvoiceFilters
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              clientFilter={clientFilter}
+              setClientFilter={setClientFilter}
+              dateFilter={dateFilter}
+              setDateFilter={setDateFilter}
+              invoices={invoices || []}
+              table={table}
+            />
+          </ButtonGroup>
+
+          {/* Export button */}
+          <InvoiceExportButton 
+            invoices={invoices || []} 
+            selectedRows={selectedRows}
           />
-        </ButtonGroup>
-
-        {/* Export button */}
-        <InvoiceExportButton 
-          invoices={invoices || []} 
-          selectedRows={selectedRows}
-        />
+        </div>
 
         {/* Add Invoice Button Group - Visible uniquement si permission */}
         {canCreateInvoice && (

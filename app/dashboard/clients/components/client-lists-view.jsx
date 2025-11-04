@@ -7,7 +7,8 @@ import { Button } from '@/src/components/ui/button';
 import { ButtonGroup, ButtonGroupSeparator } from '@/src/components/ui/button-group';
 import { Badge } from '@/src/components/ui/badge';
 import { Input } from '@/src/components/ui/input';
-import { Plus, Edit2, Trash2, Users, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Search, CircleXIcon } from 'lucide-react';
+import { cn } from '@/src/lib/utils';
 import CreateListDialog from './create-list-dialog';
 import EditListDialog from './edit-list-dialog';
 import DeleteListDialog from './delete-list-dialog';
@@ -59,14 +60,28 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="w-full sm:w-60 relative">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="relative w-full sm:w-60">
           <Input
             placeholder="Rechercher..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 h-9 text-sm w-full"
+            className={cn(
+              "peer ps-9",
+              Boolean(searchQuery) && "pe-9"
+            )}
           />
+          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+            <Search size={16} aria-hidden="true" />
+          </div>
+          {Boolean(searchQuery) && (
+            <button
+              className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Clear filter"
+              onClick={() => setSearchQuery("")}
+            >
+              <CircleXIcon size={16} aria-hidden="true" />
+            </button>
+          )}
         </div>
         <ButtonGroup>
           <Button onClick={() => setShowCreateDialog(true)} variant="secondary" className="h-9 cursor-pointer whitespace-nowrap font-normal">
