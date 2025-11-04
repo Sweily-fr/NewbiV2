@@ -709,6 +709,19 @@ export const useUpdateInvoice = () => {
       const result = await updateInvoiceMutation({
         variables: { id, workspaceId, input },
       });
+      
+      // Vérifier s'il y a des erreurs GraphQL
+      if (result.errors) {
+        console.error("GraphQL errors:", result.errors);
+        throw new Error(result.errors.map(e => e.message).join(", "));
+      }
+      
+      // Vérifier si data est null
+      if (!result.data || !result.data.updateInvoice) {
+        console.error("Update failed - no data returned:", result);
+        throw new Error("La mise à jour de la facture a échoué - aucune donnée retournée");
+      }
+      
       return result.data.updateInvoice;
     } catch (error) {
       throw error;

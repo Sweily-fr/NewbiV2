@@ -544,16 +544,6 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                     formatDate(new Date())}
                 </span>
               </div>
-              {!isCreditNote && data.executionDate && (
-                <div className="flex justify-end" style={{ fontSize: "10px" }}>
-                  <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
-                    Date d'exécution:
-                  </span>
-                  <span className="dark:text-[#0A0A0A]">
-                    {formatDate(data.executionDate)}
-                  </span>
-                </div>
-              )}
               {!isCreditNote && (
                 <div className="flex justify-end" style={{ fontSize: "10px" }}>
                   <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
@@ -926,7 +916,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                       className="py-3 px-2 text-right dark:text-[#0A0A0A]"
                       style={{ width: "12%", whiteSpace: "nowrap" }}
                     >
-                      {item.quantity} {item.unit || ""}
+                      {item.quantity}{item.unit ? ` ${item.unit}` : ""}
                     </td>
                     <td
                       className="py-3 px-2 text-right dark:text-[#0A0A0A]"
