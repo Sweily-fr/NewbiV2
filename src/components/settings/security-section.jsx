@@ -65,7 +65,7 @@ import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
 import { useUser } from "@/src/lib/auth/hooks";
 import { usePermissions } from "@/src/hooks/usePermissions";
-import { PermissionWarning } from "./PermissionWarning";
+import { Callout } from "@/src/components/ui/callout";
 
 export function SecuritySection({
   organization: orgProp,
@@ -592,7 +592,16 @@ export function SecuritySection({
       <div>
         <h2 className="text-lg font-medium mb-1">Sécurité</h2>
         <Separator className="hidden md:block" />
-        {!canManageOrgSettings && <PermissionWarning />}
+        {!canManageOrgSettings && (
+          <div className="mt-4">
+            <Callout type="warning" noMargin>
+              <p>
+                Vous n'avez pas la permission de modifier les paramètres de l'organisation. 
+                Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent effectuer ces modifications.
+              </p>
+            </Callout>
+          </div>
+        )}
 
         <div className="space-y-6 mt-8">
           {/* Titre section Identité */}

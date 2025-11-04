@@ -5,7 +5,6 @@ import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
 import { Switch } from "@/src/components/ui/switch";
-import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -13,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { FileText, Building, Euro, Shield, Info } from "lucide-react";
+import { FileText, Building, Euro, Shield } from "lucide-react";
 import {
   getRequiredFields,
   getVisibleFields,
@@ -22,7 +21,7 @@ import {
   detectInjectionAttempt,
 } from "@/src/lib/validation";
 import { useFormContext } from "react-hook-form";
-import { PermissionWarning } from "./PermissionWarning";
+import { Callout } from "@/src/components/ui/callout";
 
 const LEGAL_FORMS = [
   { value: "SARL", label: "SARL - Société à Responsabilité Limitée" },
@@ -128,7 +127,16 @@ export function InformationsLegalesSection({
       <div>
         <h2 className="text-lg font-medium mb-1">Informations légales</h2>
         <Separator className="hidden md:block" />
-        {!canManageOrgSettings && <PermissionWarning />}
+        {!canManageOrgSettings && (
+          <div className="mt-4">
+            <Callout type="warning" noMargin>
+              <p>
+                Vous n'avez pas la permission de modifier les paramètres de l'organisation. 
+                Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent effectuer ces modifications.
+              </p>
+            </Callout>
+          </div>
+        )}
 
         {/* Switches pour conditions spéciales */}
         <div className="space-y-6 mt-12">
@@ -427,16 +435,15 @@ export function InformationsLegalesSection({
             </div>
           </div> */}
           <div className="mb-8 mt-2">
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                <span className="font-medium">Informations légales</span>
+            <Callout type="neutral" noMargin>
+              <p>
+                <strong>Informations légales</strong>
                 <br />
                 Ces informations sont utilisées pour la génération automatique
                 de vos mentions légales et documents officiels. Assurez-vous
                 qu'elles sont exactes et à jour.
-              </AlertDescription>
-            </Alert>
+              </p>
+            </Callout>
           </div>
         </div>
       </div>
