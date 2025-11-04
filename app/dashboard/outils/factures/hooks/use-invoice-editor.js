@@ -1548,7 +1548,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
           quantity: parseFloat(item.quantity) || 0,
           unitPrice: parseFloat(item.unitPrice) || 0,
           vatRate: vatRate,
-          unit: item.unit || "pièce",
+          unit: item.unit !== undefined ? item.unit : "",
           discount: parseFloat(item.discount) || 0,
           discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
           details: item.details || "",

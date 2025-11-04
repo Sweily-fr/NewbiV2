@@ -109,7 +109,7 @@ export default function ItemsSection({
       quantity: quantity,
       unitPrice: unitPrice,
       vatRate: productData.vatRate !== undefined ? productData.vatRate : 20,
-      unit: productData.unit || "unité",
+      unit: productData.unit !== undefined ? productData.unit : "",
       discount: discount,
       discountType: discountType === "percentage" ? "PERCENTAGE" : discountType,
       vatExemptionText: productData.vatExemptionText || "",
@@ -243,7 +243,7 @@ export default function ItemsSection({
                           <div className="text-sm mt-1 space-y-1">
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <span className="font-normal">
-                                {quantity} {unit}
+                                {quantity}{unit ? ` ${unit}` : ""}
                               </span>
                               <span className="font-normal">•</span>
                               <span className="font-normal">
@@ -252,7 +252,7 @@ export default function ItemsSection({
                                   ? "h"
                                   : unit === "jour"
                                     ? "j"
-                                    : "unité"}
+                                    : unit ? "unité" : ""}
                               </span>
                               {discount > 0 && (
                                 <span className="text-amber-600 dark:text-amber-400">
@@ -444,14 +444,15 @@ export default function ItemsSection({
                             <div className="space-y-1">
                               <Controller
                                 name={`items.${index}.unit`}
-                                defaultValue="unité"
+                                defaultValue=""
                                 render={({ field }) => (
                                   <SelectNative
-                                    value={field.value || "unité"}
+                                    value={field.value ?? ""}
                                     onChange={(e) => field.onChange(e.target.value)}
                                     disabled={!canEdit}
                                     className="w-full text-sm"
                                   >
+                                    <option value="">Aucune unité</option>
                                     <option value="unité">Unité</option>
                                     <option value="pièce">Pièce</option>
                                     <option value="heure">Heure</option>
