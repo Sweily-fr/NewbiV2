@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/src/components/ui/dialog";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
+import { Callout } from "@/src/components/ui/callout";
 import { downloadCSVTemplate, downloadExcelTemplate } from "@/src/utils/product-export";
 import { parseCSV, parseExcel, validateFile } from "@/src/utils/product-import";
 import { useCreateProduct } from "@/src/hooks/useProducts";
@@ -216,9 +217,8 @@ export default function ProductImportDialog({ onImportComplete }) {
 
           {/* Produits parsés */}
           {parsedProducts.length > 0 && !importResults && (
-            <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <AlertDescription className="text-green-900 dark:text-green-100">
+            <Callout type="info" noMargin>
+              <div>
                 <strong>{parsedProducts.length} produit{parsedProducts.length > 1 ? 's' : ''}</strong> prêt{parsedProducts.length > 1 ? 's' : ''} à être importé{parsedProducts.length > 1 ? 's' : ''}
                 <ul className="mt-2 text-xs space-y-1">
                   {parsedProducts.slice(0, 3).map((p, i) => (
@@ -228,20 +228,17 @@ export default function ProductImportDialog({ onImportComplete }) {
                     <li className="italic">... et {parsedProducts.length - 3} autre{parsedProducts.length - 3 > 1 ? 's' : ''}</li>
                   )}
                 </ul>
-              </AlertDescription>
-            </Alert>
+              </div>
+            </Callout>
           )}
 
           {/* Résultats de l'import */}
           {importResults && (
             <div className="space-y-2">
               {importResults.success > 0 && (
-                <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <AlertDescription className="text-green-900 dark:text-green-100">
-                    <strong>{importResults.success} produit{importResults.success > 1 ? 's' : ''}</strong> importé{importResults.success > 1 ? 's' : ''} avec succès
-                  </AlertDescription>
-                </Alert>
+                <Callout type="info" noMargin>
+                  <strong>{importResults.success} produit{importResults.success > 1 ? 's' : ''}</strong> importé{importResults.success > 1 ? 's' : ''} avec succès
+                </Callout>
               )}
               
               {importResults.errors.length > 0 && (
