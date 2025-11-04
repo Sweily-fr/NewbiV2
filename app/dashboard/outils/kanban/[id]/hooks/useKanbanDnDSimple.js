@@ -54,14 +54,30 @@ export const useKanbanDnDSimple = (
     }
 
     // === DRAG DE TÂCHE ===
-    const sourceColumnId = source.droppableId;
-    const destColumnId = destination.droppableId;
+    // Nettoyer les IDs (enlever les préfixes collapsed-, empty-, etc.)
+    let sourceColumnId = source.droppableId;
+    let destColumnId = destination.droppableId;
+    
+    // Enlever les préfixes si présents
+    if (sourceColumnId.startsWith('collapsed-')) {
+      sourceColumnId = sourceColumnId.replace('collapsed-', '');
+    }
+    if (sourceColumnId.startsWith('empty-')) {
+      sourceColumnId = sourceColumnId.replace('empty-', '');
+    }
+    if (destColumnId.startsWith('collapsed-')) {
+      destColumnId = destColumnId.replace('collapsed-', '');
+    }
+    if (destColumnId.startsWith('empty-')) {
+      destColumnId = destColumnId.replace('empty-', '');
+    }
 
     // Trouver les colonnes
     const sourceColumn = localColumns.find(col => col.id === sourceColumnId);
     const destColumn = localColumns.find(col => col.id === destColumnId);
 
     if (!sourceColumn || !destColumn) {
+      console.log('❌ Colonnes non trouvées:', { sourceColumnId, destColumnId });
       return;
     }
 
@@ -84,7 +100,6 @@ export const useKanbanDnDSimple = (
       );
 
       setLocalColumns(newColumns);
-      markMoveTaskAction();
 
       // Sauvegarder
       try {
@@ -96,6 +111,8 @@ export const useKanbanDnDSimple = (
             workspaceId
           }
         });
+        // Marquer APRÈS la mutation pour empêcher les updates pendant toute la durée
+        markMoveTaskAction();
       } catch (error) {
         console.error('❌ Erreur moveTask:', error);
       }
@@ -104,18 +121,41 @@ export const useKanbanDnDSimple = (
       const sourceTasks = Array.from(sourceColumn.tasks || []);
       const destTasks = Array.from(destColumn.tasks || []);
 
+      console.log('🔄 [DnD] Déplacement entre colonnes:', {
+        source: { columnId: sourceColumnId, index: source.index, tasksCount: sourceTasks.length },
+        dest: { columnId: destColumnId, index: destination.index, tasksCount: destTasks.length }
+      });
+
       // Retirer la tâche de la source
       const [movedTask] = sourceTasks.splice(source.index, 1);
       
-      // Créer une copie de la tâche avec le nouveau columnId ET la nouvelle position
-      const updatedTask = { 
-        ...movedTask, 
-        columnId: destColumnId,
-        position: destination.index 
-      };
+      // IMPORTANT: Le backend exclut la tâche déplacée quand il récupère les tâches
+      // Donc si la tâche vient de la même colonne, on doit ajuster l'index
+      // Sinon, on utilise destination.index directement
+      let finalPosition = destination.index;
+      if (sourceColumnId === destColumnId && destination.index > source.index) {
+        // Si on déplace dans la même colonne vers le bas, l'index diminue de 1
+        // car la tâche a été retirée de la source
+        finalPosition = destination.index - 1;
+      }
       
-      // Insérer dans la destination
-      destTasks.splice(destination.index, 0, updatedTask);
+      console.log('📍 [DnD] Calcul position:', {
+        sourceColumnId,
+        destColumnId,
+        sameColumn: sourceColumnId === destColumnId,
+        destinationIndex: destination.index,
+        sourceIndex: source.index,
+        finalPosition
+      });
+      
+      // Insérer dans la destination à l'index exact
+      destTasks.splice(destination.index, 0, movedTask);
+
+      console.log('📍 [DnD] Après insertion:', {
+        destTasksCount: destTasks.length,
+        movedTaskIndex: destTasks.findIndex(t => t.id === draggableId),
+        finalPosition: finalPosition
+      });
 
       // Recalculer TOUTES les positions pour être sûr
       const sourceTasksWithPositions = sourceTasks.map((task, index) => ({
@@ -126,8 +166,14 @@ export const useKanbanDnDSimple = (
       const destTasksWithPositions = destTasks.map((task, index) => ({
         ...task,
         position: index,
-        columnId: destColumnId // S'assurer que toutes les tâches ont le bon columnId
+        columnId: task.id === draggableId ? destColumnId : task.columnId
       }));
+
+      console.log('✅ [DnD] Position finale:', {
+        taskId: draggableId,
+        finalPosition,
+        taskTitle: movedTask.title
+      });
 
       const newColumns = localColumns.map(col => {
         if (col.id === sourceColumnId) {
@@ -140,18 +186,20 @@ export const useKanbanDnDSimple = (
       });
 
       setLocalColumns(newColumns);
-      markMoveTaskAction();
 
-      // Sauvegarder
+      // Sauvegarder avec la position finale calculée (pas destination.index)
       try {
         await moveTask({
           variables: {
             id: draggableId,
             columnId: destColumnId,
-            position: destination.index,
+            position: finalPosition,
             workspaceId
           }
         });
+        console.log('✅ Tâche déplacée:', draggableId, 'vers colonne:', destColumnId, 'position:', finalPosition);
+        // Marquer APRÈS la mutation pour empêcher les updates pendant toute la durée
+        markMoveTaskAction();
       } catch (error) {
         console.error('❌ Erreur moveTask:', error);
       }

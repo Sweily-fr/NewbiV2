@@ -71,7 +71,14 @@ export function MemberFilterButton({ members = [], selectedMemberId, onMemberCha
             members.map((member) => (
               <button
                 key={member.id}
-                onClick={() => onMemberChange(member.id)}
+                onClick={() => {
+                  // Si déjà sélectionné, désélectionner. Sinon, sélectionner.
+                  if (selectedMemberId === member.id) {
+                    onMemberChange(null);
+                  } else {
+                    onMemberChange(member.id);
+                  }
+                }}
                 className={`w-full flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors ${
                   selectedMemberId === member.id ? 'bg-accent' : ''
                 }`}

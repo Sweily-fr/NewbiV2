@@ -126,8 +126,8 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
         if (type === 'MOVED' && task) {
           const timeSinceLastMove = Date.now() - lastMoveTaskTimeRef.current;
           
-          // Ignorer les événements MOVED pendant 3 secondes après un drag
-          if (lastMoveTaskTimeRef.current > 0 && timeSinceLastMove < 3000) {
+          // Ignorer les événements MOVED pendant 2 secondes après un drag
+          if (lastMoveTaskTimeRef.current > 0 && timeSinceLastMove < 2000) {
             console.log('⛔ [Subscription] Événement MOVED ignoré (drag récent):', task.title, 'temps écoulé:', timeSinceLastMove + 'ms');
             return;
           }
@@ -300,7 +300,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   
   const markMoveTaskAction = () => {
     lastMoveTaskTimeRef.current = Date.now();
-    console.log('🕒 [Kanban] Marquage action moveTask - ignorer MOVED pendant 3s');
+    console.log('🕒 [Kanban] Marquage action moveTask - ignorer MOVED pendant 2s');
     
     // Annuler tout refetch en attente (au cas où des événements seraient arrivés avant)
     if (pendingRefetchRef.current) {
