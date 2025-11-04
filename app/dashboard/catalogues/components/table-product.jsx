@@ -583,17 +583,15 @@ export default function TableProduct({ handleAddProduct }) {
           {/* Add product button with split design */}
           <ButtonGroup>
             <Button
-              variant="secondary"
-              className="cursor-pointer font-normal"
+              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
               onClick={handleAddProduct}
             >
               Ajouter un produit
             </Button>
             <ButtonGroupSeparator />
             <Button
-              variant="secondary"
               size="icon"
-              className="cursor-pointer"
+              className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
               onClick={handleAddProduct}
             >
               <PlusIcon size={16} aria-hidden="true" />

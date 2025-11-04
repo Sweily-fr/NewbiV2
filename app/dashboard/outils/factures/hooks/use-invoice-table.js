@@ -131,9 +131,47 @@ const memoizedStatusFilter = (row, columnId, filterValue) => {
   return filterValue.includes(status);
 };
 
+// Custom filter function for clients (filtre par nom pour inclure tous les clients avec le même nom)
+const clientFilterFn = (row, columnId, filterValue) => {
+  if (!filterValue?.length) return true;
+  const clientName = row.original.client?.name;
+  return clientName && filterValue.includes(clientName);
+};
+
+// Custom filter function for date range
+const dateFilterFn = (row, columnId, filterValue) => {
+  if (!filterValue?.from && !filterValue?.to) return true;
+  
+  const issueDate = row.original.issueDate;
+  if (!issueDate) return false;
+  
+  const date = new Date(typeof issueDate === 'string' ? parseInt(issueDate) : issueDate);
+  date.setHours(0, 0, 0, 0);
+  
+  if (filterValue.from && filterValue.to) {
+    const from = new Date(filterValue.from);
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(filterValue.to);
+    to.setHours(23, 59, 59, 999);
+    return date >= from && date <= to;
+  } else if (filterValue.from) {
+    const from = new Date(filterValue.from);
+    from.setHours(0, 0, 0, 0);
+    return date >= from;
+  } else if (filterValue.to) {
+    const to = new Date(filterValue.to);
+    to.setHours(23, 59, 59, 999);
+    return date <= to;
+  }
+  
+  return true;
+};
+
 export function useInvoiceTable({ data = [], onRefetch }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
+  const [clientFilter, setClientFilter] = useState([]);
+  const [dateFilter, setDateFilter] = useState(null);
 
   // Hook pour la suppression de factures
   const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
@@ -206,6 +244,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
         meta: {
           label: "Client",
         },
+        filterFn: "client",
         enableHiding: false,
         cell: ({ row }) => {
           const client = row.original.client;
@@ -252,6 +291,7 @@ export function useInvoiceTable({ data = [], onRefetch }) {
         meta: {
           label: "Date d'émission",
         },
+        filterFn: "dateRange",
         cell: ({ row }) => {
           const dateFromGetter = row.getValue("issueDate");
           const dateFromOriginal = row.original.issueDate;
@@ -461,12 +501,17 @@ export function useInvoiceTable({ data = [], onRefetch }) {
     globalFilterFn: memoizedMultiColumnFilter,
     state: {
       globalFilter,
-      columnFilters:
-        statusFilter.length > 0 ? [{ id: "status", value: statusFilter }] : [],
+      columnFilters: [
+        ...(statusFilter.length > 0 ? [{ id: "status", value: statusFilter }] : []),
+        ...(clientFilter.length > 0 ? [{ id: "client", value: clientFilter }] : []),
+        ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
+      ],
     },
     // Use the memoized filter function
     filterFns: {
       status: memoizedStatusFilter,
+      client: clientFilterFn,
+      dateRange: dateFilterFn,
     },
     initialState: {
       pagination: {
@@ -526,6 +571,10 @@ export function useInvoiceTable({ data = [], onRefetch }) {
     setGlobalFilter,
     statusFilter,
     setStatusFilter,
+    clientFilter,
+    setClientFilter,
+    dateFilter,
+    setDateFilter,
     selectedRows,
     handleDeleteSelected,
     isDeleting,

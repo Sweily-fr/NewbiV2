@@ -605,16 +605,14 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
             {/* Add user button group */}
             <ButtonGroup>
               <Button
-                className="cursor-pointer font-normal"
-                variant="secondary"
+                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
                 onClick={handleAddUser}
               >
                 Ajouter un contact
               </Button>
               <ButtonGroupSeparator />
               <Button
-                className="cursor-pointer"
-                variant="secondary"
+                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
                 size="icon"
                 onClick={handleAddUser}
               >

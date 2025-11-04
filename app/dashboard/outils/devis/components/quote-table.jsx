@@ -94,6 +94,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useQuoteTable } from "../hooks/use-quote-table";
 import QuoteRowActions from "./quote-row-actions";
+import QuoteFilters from "./quote-filters";
 
 export default function QuoteTable({ handleNewQuote }) {
   const { quotes, loading, error, refetch } = useQuotes();
@@ -107,6 +108,10 @@ export default function QuoteTable({ handleNewQuote }) {
     setGlobalFilter,
     statusFilter,
     setStatusFilter,
+    clientFilter,
+    setClientFilter,
+    dateFilter,
+    setDateFilter,
     selectedRows,
     handleDeleteSelected,
     isDeleting,
@@ -160,109 +165,17 @@ export default function QuoteTable({ handleNewQuote }) {
             </div>
           </div>
 
-          {/* Status Filter */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="font-normal cursor-pointer"
-              >
-                <ListFilterIcon className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Statut</span>
-                {statusFilter?.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {statusFilter.length}
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0" align="start">
-              <div className="p-4">
-                <h4 className="font-medium leading-none mb-3">Statut</h4>
-                <div className="space-y-2">
-                  {Object.entries(QUOTE_STATUS_LABELS).map(
-                    ([status, label]) => (
-                      <div key={status} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={status}
-                          checked={statusFilter.includes(status)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setStatusFilter([...statusFilter, status]);
-                            } else {
-                              setStatusFilter(
-                                statusFilter.filter((s) => s !== status)
-                              );
-                            }
-                          }}
-                        />
-                        <Label htmlFor={status} className="text-sm font-normal">
-                          {label}
-                        </Label>
-                      </div>
-                    )
-                  )}
-                </div>
-                {statusFilter.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => setStatusFilter([])}
-                    className="w-full mt-3 h-8 px-2 lg:px-3"
-                  >
-                    Effacer les filtres
-                  </Button>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          {/* Column visibility */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="font-normal cursor-pointer">
-                <Columns3Icon className="mr-2 h-4 w-4" />
-                Colonnes
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[180px]">
-              <DropdownMenuLabel>Colonnes visibles</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {table
-                .getAllColumns()
-                .filter(
-                  (column) =>
-                    typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide()
-                )
-                .map((column) => {
-                  // Utiliser le libellé personnalisé s'il existe, sinon utiliser l'ID avec une mise en forme
-                  const getColumnLabel = () => {
-                    if (column.columnDef.meta?.label) {
-                      return column.columnDef.meta.label;
-                    }
-                    return column.id
-                      .split(".")
-                      .map(
-                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                      )
-                      .join(" ");
-                  };
-
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {getColumnLabel()}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Filters Button */}
+          <QuoteFilters
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            clientFilter={clientFilter}
+            setClientFilter={setClientFilter}
+            dateFilter={dateFilter}
+            setDateFilter={setDateFilter}
+            quotes={quotes || []}
+            table={table}
+          />
         </ButtonGroup>
 
         {/* Add Quote Button Group - Visible uniquement si permission */}
@@ -270,17 +183,15 @@ export default function QuoteTable({ handleNewQuote }) {
           <ButtonGroup>
             <Button 
               onClick={handleNewQuote} 
-              variant="secondary"
-              className="cursor-pointer font-normal"
+              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
             >
               Nouveau devis
             </Button>
             <ButtonGroupSeparator />
             <Button 
               onClick={handleNewQuote} 
-              variant="secondary"
               size="icon"
-              className="cursor-pointer"
+              className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
             >
               <PlusIcon size={16} aria-hidden="true" />
             </Button>
