@@ -15,42 +15,91 @@ import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
 // Fonction pour s'assurer qu'une organisation active est définie
 const ensureActiveOrganization = async () => {
   try {
+    console.log("🔍 [ENSURE ORG] Vérification de l'organisation active...");
+    
+    // Vérifier s'il y a déjà une organisation active
+    const { data: activeOrg } = await authClient.organization.getActive();
+
+    if (activeOrg) {
+      console.log(`✅ [ENSURE ORG] Organisation active déjà définie: ${activeOrg.id}`);
+      return;
+    }
+
+    console.log("⚠️ [ENSURE ORG] Aucune organisation active, tentative de définition...");
+    
     // Récupérer les organisations de l'utilisateur
     const { data: organizations, error: orgsError } =
       await authClient.organization.list();
 
     if (orgsError) {
       console.error(
-        "Erreur lors de la récupération des organisations:",
+        "❌ [ENSURE ORG] Erreur lors de la récupération des organisations:",
         orgsError
       );
       return;
     }
 
-    // Vérifier s'il y a déjà une organisation active
-    const { data: activeOrg } = await authClient.organization.getActive();
-
-    if (activeOrg) {
-      return;
-    }
+    console.log(`📊 [ENSURE ORG] ${organizations?.length || 0} organisation(s) trouvée(s)`);
 
     // Si pas d'organisation active et qu'il y a des organisations disponibles
     if (organizations && organizations.length > 0) {
+      // Stratégie de sélection par priorité :
+      // 1. Organisation où l'utilisateur est owner
+      // 2. Organisation où l'utilisateur est admin
+      // 3. Première organisation
+      
+      let selectedOrg = null;
+      
+      // Récupérer les détails de chaque organisation pour connaître le rôle
+      for (const org of organizations) {
+        try {
+          const { data: fullOrg } = await authClient.organization.getFullOrganization({
+            organizationId: org.id,
+          });
+          
+          if (fullOrg) {
+            // Trouver le membre correspondant à l'utilisateur actuel
+            const { data: session } = await authClient.getSession();
+            const currentUserMember = fullOrg.members?.find(
+              m => m.userId === session?.user?.id
+            );
+            
+            if (currentUserMember?.role === "owner") {
+              selectedOrg = org;
+              console.log(`✅ [ENSURE ORG] Organisation owner trouvée: ${org.id}`);
+              break; // Priorité maximale, on arrête la recherche
+            } else if (currentUserMember?.role === "admin" && !selectedOrg) {
+              selectedOrg = org;
+              console.log(`✅ [ENSURE ORG] Organisation admin trouvée: ${org.id}`);
+            }
+          }
+        } catch (error) {
+          console.warn(`⚠️ [ENSURE ORG] Erreur récupération org ${org.id}:`, error);
+        }
+      }
+      
+      // Si aucune organisation owner/admin trouvée, prendre la première
+      if (!selectedOrg) {
+        selectedOrg = organizations[0];
+        console.log(`✅ [ENSURE ORG] Première organisation sélectionnée: ${selectedOrg.id}`);
+      }
+      
       const { error: setActiveError } = await authClient.organization.setActive(
         {
-          organizationId: organizations[0].id,
+          organizationId: selectedOrg.id,
         }
       );
 
       if (setActiveError) {
         console.error(
-          "Erreur lors de la définition de l'organisation active:",
+          "❌ [ENSURE ORG] Erreur lors de la définition de l'organisation active:",
           setActiveError
         );
       } else {
-        console.log("✅ Organisation active définie avec succès");
+        console.log(`✅ [ENSURE ORG] Organisation active définie avec succès: ${selectedOrg.id}`);
       }
     } else {
+      console.log("⚠️ [ENSURE ORG] Aucune organisation trouvée, création d'une nouvelle...");
       try {
         // Récupérer l'utilisateur actuel depuis la session
         const { data: session } = await authClient.getSession();
@@ -158,7 +207,7 @@ const LoginForm = () => {
 
         // Vérifier la limite de sessions via l'API Better Auth
         console.log("🔍 [LOGIN] Vérification de la limite de sessions...");
-        
+
         try {
           // Appeler notre API qui utilise Better Auth côté serveur
           const sessionCheckResponse = await fetch("/api/check-session-limit", {
@@ -168,26 +217,39 @@ const LoginForm = () => {
               "Content-Type": "application/json",
             },
           });
-          
+
           console.log("📡 [LOGIN] Réponse API:", sessionCheckResponse.status);
-          
+
           if (sessionCheckResponse.ok) {
             const sessionData = await sessionCheckResponse.json();
-            console.log("📊 [LOGIN] Résultat vérification sessions:", sessionData);
-            
+            console.log(
+              "📊 [LOGIN] Résultat vérification sessions:",
+              sessionData
+            );
+
             if (sessionData.hasReachedLimit) {
-              console.log("⚠️ [LOGIN] Limite de sessions atteinte, redirection vers /auth/manage-devices");
+              console.log(
+                "⚠️ [LOGIN] Limite de sessions atteinte, redirection vers /auth/manage-devices"
+              );
               toast.info("Vous êtes déjà connecté sur un autre appareil");
               router.push("/auth/manage-devices");
               return;
             } else {
-              console.log("✅ [LOGIN] Limite OK, nombre de sessions:", sessionData.sessionCount);
+              console.log(
+                "✅ [LOGIN] Limite OK, nombre de sessions:",
+                sessionData.sessionCount
+              );
             }
           } else {
-            console.warn("⚠️ [LOGIN] Impossible de vérifier la limite de sessions");
+            console.warn(
+              "⚠️ [LOGIN] Impossible de vérifier la limite de sessions"
+            );
           }
         } catch (sessionCheckError) {
-          console.error("❌ [LOGIN] Erreur vérification sessions:", sessionCheckError);
+          console.error(
+            "❌ [LOGIN] Erreur vérification sessions:",
+            sessionCheckError
+          );
           // Continuer la connexion même en cas d'erreur
         }
 

@@ -18,6 +18,8 @@ import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useSession } from "@/src/lib/auth-client";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
+import { usePermissions } from "@/src/hooks/usePermissions";
+import { Callout } from "@/src/components/ui/callout";
 import {
   Dialog,
   DialogContent,
@@ -28,13 +30,17 @@ import {
 } from "@/src/components/ui/dialog";
 import { Switch } from "@/src/components/ui/switch";
 
-export function SubscriptionSection() {
+export function SubscriptionSection({ canManageSubscription: canManageSubscriptionProp }) {
   const [isLoading, setIsLoading] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [isAnnual, setIsAnnual] = useState(false);
   const { isActive, loading, subscription } = useSubscription();
   const { data: session } = useSession();
+  const { isOwner } = usePermissions();
+  
+  // Utiliser la prop si fournie, sinon vérifier le rôle
+  const canManageSubscription = canManageSubscriptionProp !== undefined ? canManageSubscriptionProp : isOwner();
 
   const handleUpgrade = async (plan) => {
     setIsLoading(true);
@@ -193,6 +199,17 @@ export function SubscriptionSection() {
             : "Passer à un forfait supérieur"}
         </h2>
         <Separator className="hidden md:block" />
+        
+        {/* Message de permission */}
+        {!canManageSubscription && (
+          <div className="mt-4">
+            <Callout type="warning" noMargin>
+              <p>
+                Seul le <strong>propriétaire</strong> de l'organisation peut gérer l'abonnement (changement de plan, résiliation).
+              </p>
+            </Callout>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -250,7 +267,8 @@ export function SubscriptionSection() {
                     size="sm"
                     className="bg-[#5b50fe] hover:bg-[#5b50fe] cursor-pointer text-white w-full md:w-auto"
                     onClick={() => handleUpgrade("pro")}
-                    disabled={isLoading}
+                    disabled={isLoading || !canManageSubscription}
+                    title={!canManageSubscription ? "Seul le propriétaire peut gérer l'abonnement" : ""}
                   >
                     {isLoading ? (
                       <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
@@ -265,7 +283,8 @@ export function SubscriptionSection() {
                   size="sm"
                   className="font-normal cursor-pointer bg-red-100 border border-red-200 text-red-600 hover:bg-red-200 w-full md:w-auto"
                   onClick={openCancelModal}
-                  disabled={isLoading}
+                  disabled={isLoading || !canManageSubscription}
+                  title={!canManageSubscription ? "Seul le propriétaire peut résilier l'abonnement" : ""}
                 >
                   {isLoading ? (
                     <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
@@ -374,7 +393,8 @@ export function SubscriptionSection() {
                   <Button
                     className="w-full bg-[#5b50fe] hover:bg-[#5b50fe] text-white text-sm cursor-pointer mt-auto"
                     onClick={() => handleUpgrade("pro")}
-                    disabled={isLoading}
+                    disabled={isLoading || !canManageSubscription}
+                    title={!canManageSubscription ? "Seul le propriétaire peut changer d'abonnement" : ""}
                   >
                     {isLoading ? (
                       <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
@@ -408,7 +428,8 @@ export function SubscriptionSection() {
                   <Button
                     className="w-full text-sm mt-auto cursor-pointer font-normal"
                     onClick={openCancelModal}
-                    disabled={isLoading}
+                    disabled={isLoading || !canManageSubscription}
+                    title={!canManageSubscription ? "Seul le propriétaire peut résilier l'abonnement" : ""}
                   >
                     {isLoading ? (
                       <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />

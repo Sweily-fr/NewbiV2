@@ -124,11 +124,11 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
             />
           </div>
 
-          {/* Callout pour le comptable gratuit */}
+          {/* Callout pour la facturation */}
           <Callout type="neutral" noMargin>
             <p className="text-xs">
-              <strong>Comptable gratuit :</strong> Un seul comptable par
-              organisation est autorisé et n'est pas facturé. L'ajout d'autres membres sera facturé en plus de votre abonnement.
+              <strong>Facturation :</strong> L'ajout d'un membre (admin, membre ou invité) est facturé <strong>7,49€/mois</strong> en plus de votre abonnement. 
+              Un seul <strong>comptable gratuit</strong> par organisation est autorisé.
             </p>
           </Callout>
 
@@ -166,7 +166,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
                         <SelectContent>
                           <SelectItem value="admin">
                             <div className="flex flex-col">
-                              <span className="font-medium text-sm">
+                              <span className="font-normal text-sm">
                                 Administrateur
                               </span>
                               <span className="text-xs text-muted-foreground">
@@ -176,7 +176,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
                           </SelectItem>
                           <SelectItem value="member">
                             <div className="flex flex-col">
-                              <span className="font-medium text-sm">
+                              <span className="font-normal text-sm">
                                 Membre
                               </span>
                               <span className="text-xs text-muted-foreground">
@@ -186,7 +186,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
                           </SelectItem>
                           <SelectItem value="guest">
                             <div className="flex flex-col">
-                              <span className="font-medium text-sm">
+                              <span className="font-normal text-sm">
                                 Invité
                               </span>
                               <span className="text-xs text-muted-foreground">
@@ -196,7 +196,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
                           </SelectItem>
                           <SelectItem value="accountant">
                             <div className="flex flex-col">
-                              <span className="font-medium text-sm">
+                              <span className="font-normal text-sm">
                                 Comptable
                               </span>
                               <span className="text-xs text-muted-foreground">

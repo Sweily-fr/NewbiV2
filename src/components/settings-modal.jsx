@@ -321,7 +321,7 @@ export function SettingsModal({
       case "facturation":
         return <FacturationSection />;
       case "subscription":
-        return <SubscriptionSection />;
+        return <SubscriptionSection canManageSubscription={isOwner()} />;
       case "securite":
         return (
           <SecuritySection
