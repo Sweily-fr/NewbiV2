@@ -4,15 +4,14 @@ import React, { useEffect, useState } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
-import { CreditCard, Building2, Hash, Info, Shield } from "lucide-react";
-import { Alert, AlertDescription } from "@/src/components/ui/alert";
+import { CreditCard, Building2, Hash, Shield } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import {
   sanitizeInput,
   VALIDATION_PATTERNS,
   detectInjectionAttempt,
 } from "@/src/lib/validation";
-import { PermissionWarning } from "./PermissionWarning";
+import { Callout } from "@/src/components/ui/callout";
 
 // Fonction de formatage de l'IBAN avec espaces (pour l'affichage)
 const formatIban = (iban) => {
@@ -101,22 +100,28 @@ export function CoordonneesBancairesSection({
       <div>
         <h2 className="text-lg font-medium mb-1">Coordonnées bancaires</h2>
         <Separator className="hidden md:block" />
-        {!canManageOrgSettings && <PermissionWarning />}
+        {!canManageOrgSettings && (
+          <div className="mt-4">
+            <Callout type="warning" noMargin>
+              <p>
+                Vous n'avez pas la permission de modifier les paramètres de l'organisation. 
+                Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent effectuer ces modifications.
+              </p>
+            </Callout>
+          </div>
+        )}
 
         {/* Information sur la validation conditionnelle */}
         <div className="mb-8 mt-12">
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <span className="font-medium">
-                Coordonnées bancaires optionnelles
-              </span>
+          <Callout type="neutral" noMargin>
+            <p>
+              <strong>Coordonnées bancaires optionnelles</strong>
               <br />
               Vous pouvez laisser tous les champs vides. Si vous renseignez une
               information bancaire, les trois champs (IBAN, BIC et nom de
               banque) deviennent obligatoires.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </Callout>
         </div>
 
         <Separator />
@@ -270,18 +275,15 @@ export function CoordonneesBancairesSection({
           <Separator />
 
           {/* Information de sécurité */}
-          <Alert>
-            <Shield className="h-4 w-4 text-green-600" />
-            <AlertDescription>
-              <span className="font-medium">
-                Sécurité des données bancaires
-              </span>
+          <Callout type="neutral" noMargin>
+            <p>
+              <strong>Sécurité des données bancaires</strong>
               <br />
               Vos informations bancaires sont chiffrées et stockées de manière
               sécurisée. Elles ne seront utilisées que pour les virements et
               facturations.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </Callout>
         </div>
       </div>
     </div>

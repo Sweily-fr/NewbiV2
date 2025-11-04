@@ -19,7 +19,7 @@ import {
   VALIDATION_PATTERNS,
   detectInjectionAttempt,
 } from "@/src/lib/validation";
-import { PermissionWarning } from "./PermissionWarning";
+import { Callout } from "@/src/components/ui/callout";
 
 const COUNTRIES = [
   { value: "France", label: "France" },
@@ -97,7 +97,16 @@ export function GeneraleSection({
         <Separator className="hidden md:block" />
         
         {/* Message d'information si pas de permissions */}
-        {!canManageOrgSettings && <PermissionWarning />}
+        {!canManageOrgSettings && (
+          <div className="mt-4">
+            <Callout type="warning" noMargin>
+              <p>
+                Vous n'avez pas la permission de modifier les paramètres de l'organisation. 
+                Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent effectuer ces modifications.
+              </p>
+            </Callout>
+          </div>
+        )}
 
         {/* Logo de l'entreprise */}
         <div className="mb-8 mt-12">

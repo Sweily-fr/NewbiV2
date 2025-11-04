@@ -55,7 +55,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { usePermissions } from "@/src/hooks/usePermissions";
-import { PermissionWarning } from "./PermissionWarning";
+import { Callout } from "@/src/components/ui/callout";
 import { Separator } from "@/src/components/ui/separator";
 
 export default function EspacesSection({ canManageOrgSettings = true }) {
@@ -272,7 +272,16 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
       </div>
       
       <Separator className="hidden md:block" />
-      {!canManageOrgSettings && <PermissionWarning />}
+      {!canManageOrgSettings && (
+        <div className="mt-4">
+          <Callout type="warning" noMargin>
+            <p>
+              Vous n'avez pas la permission de modifier les paramètres de l'organisation. 
+              Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent effectuer ces modifications.
+            </p>
+          </Callout>
+        </div>
+      )}
 
       {/* Organizations Table */}
       <div>
