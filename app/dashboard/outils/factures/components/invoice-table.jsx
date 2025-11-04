@@ -97,6 +97,7 @@ import { useInvoiceTable } from "../hooks/use-invoice-table";
 import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceExportButton from "./invoice-export-button";
+import InvoiceFilters from "./invoice-filters";
 
 export default function InvoiceTable({ handleNewInvoice }) {
   const router = useRouter();
@@ -110,6 +111,10 @@ export default function InvoiceTable({ handleNewInvoice }) {
     setGlobalFilter,
     statusFilter,
     setStatusFilter,
+    clientFilter,
+    setClientFilter,
+    dateFilter,
+    setDateFilter,
     selectedRows,
     handleDeleteSelected,
     isDeleting,
@@ -165,95 +170,17 @@ export default function InvoiceTable({ handleNewInvoice }) {
             </div>
           </div>
 
-          {/* Status Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="font-normal cursor-pointer"
-              >
-                <ListFilterIcon className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Statut</span>
-                {statusFilter && INVOICE_STATUS_LABELS[statusFilter] && (
-                  <Badge variant="secondary" className="ml-2">
-                    {INVOICE_STATUS_LABELS[statusFilter]}
-                  </Badge>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Filtrer par statut</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setStatusFilter("")}>
-                Tous les statuts
-              </DropdownMenuItem>
-              {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
-                <DropdownMenuItem
-                  key={value}
-                  onClick={() => setStatusFilter(value)}
-                >
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "mr-2",
-                      INVOICE_STATUS_COLORS[value] || "bg-gray-100"
-                    )}
-                  >
-                    {label}
-                  </Badge>
-                  {label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Column visibility */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="font-normal cursor-pointer">
-                <Columns3Icon className="mr-2 h-4 w-4" />
-                Colonnes
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[180px]">
-              <DropdownMenuLabel>Colonnes visibles</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {table
-                .getAllColumns()
-                .filter(
-                  (column) =>
-                    typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide()
-                )
-                .map((column) => {
-                  // Utiliser le libellé personnalisé s'il existe, sinon utiliser l'ID avec une mise en forme
-                  const getColumnLabel = () => {
-                    if (column.columnDef.meta?.label) {
-                      return column.columnDef.meta.label;
-                    }
-                    return column.id
-                      .split(".")
-                      .map(
-                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                      )
-                      .join(" ");
-                  };
-
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {getColumnLabel()}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Filters Button */}
+          <InvoiceFilters
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            clientFilter={clientFilter}
+            setClientFilter={setClientFilter}
+            dateFilter={dateFilter}
+            setDateFilter={setDateFilter}
+            invoices={invoices || []}
+            table={table}
+          />
         </ButtonGroup>
 
         {/* Export button */}
@@ -267,17 +194,15 @@ export default function InvoiceTable({ handleNewInvoice }) {
           <ButtonGroup>
             <Button 
               onClick={handleNewInvoice} 
-              variant="secondary"
-              className="cursor-pointer font-normal"
+              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
             >
               Nouvelle facture
             </Button>
             <ButtonGroupSeparator />
             <Button 
               onClick={handleNewInvoice} 
-              variant="secondary"
               size="icon"
-              className="cursor-pointer"
+              className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
             >
               <PlusIcon size={16} aria-hidden="true" />
             </Button>

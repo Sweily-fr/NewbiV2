@@ -135,7 +135,7 @@ export default function InvoiceExportButton({ invoices, selectedRows = [] }) {
             <Download className="mr-2 h-4 w-4" />
             Exporter
             {hasSelection && (
-              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-white dark:text-black">
                 {selectedRows.length}
               </span>
             )}
