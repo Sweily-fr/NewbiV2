@@ -4,9 +4,9 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  GripVertical,
   Flag,
   CheckSquare,
+  GripVertical,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -31,8 +31,6 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/src/components/ui/tooltip";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { formatDateRelative } from "../../../../../../src/utils/kanbanHelpers";
 import { AvatarGroup } from "@/src/components/ui/user-avatar";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
@@ -41,7 +39,7 @@ import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
  * Composant TaskCard optimisé avec React.memo
  * Évite les re-renders inutiles pendant le drag
  */
-const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index }) {
+const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragging }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Récupérer les infos des membres assignés
@@ -86,40 +84,13 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index }) {
     return { completed, total, percentage };
   }, [task.checklist]);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isSortableDragging,
-  } = useSortable({
-    id: task.id,
-    data: {
-      type: "task",
-      task,
-      index,
-    },
-  });
-
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition: isSortableDragging ? "none" : transition,
-    opacity: isSortableDragging ? 0.5 : 1,
-    zIndex: isSortableDragging ? 1000 : "auto",
-    position: "relative",
-    touchAction: "none",
-  };
-
   return (
     <>
       <div
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-        {...listeners}
         onClick={handleClick}
-        className="bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 mb-2 sm:mb-3 shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-grab active:cursor-grabbing"
+        className={`bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 mb-2 sm:mb-3 shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-grab active:cursor-grabbing transition-opacity ${
+          isDragging ? "opacity-50" : "opacity-100"
+        }`}
       >
         {/* En-tête */}
         <div className="flex items-start justify-between mb-1.5 sm:mb-2">
@@ -319,6 +290,7 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index }) {
     prevProps.task.priority === nextProps.task.priority &&
     prevProps.task.dueDate === nextProps.task.dueDate &&
     prevProps.task.updatedAt === nextProps.task.updatedAt &&
+    prevProps.isDragging === nextProps.isDragging &&
     JSON.stringify(prevProps.task.tags) === JSON.stringify(nextProps.task.tags) &&
     JSON.stringify(prevProps.task.checklist) === JSON.stringify(nextProps.task.checklist) &&
     JSON.stringify(prevProps.task.assignedMembers) === JSON.stringify(nextProps.task.assignedMembers)

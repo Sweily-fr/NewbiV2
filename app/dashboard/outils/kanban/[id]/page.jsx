@@ -161,6 +161,9 @@ export default function KanbanBoardPage({ params }) {
   
   // State pour tracker si on drag une colonne
   const [isDraggingColumn, setIsDraggingColumn] = React.useState(false);
+  
+  // État pour les tâches sélectionnées
+  const [selectedTaskIds, setSelectedTaskIds] = React.useState(new Set());
 
   // Hook DnD simplifié avec @hello-pangea/dnd
   const { handleDragEnd: dndHandleDragEnd } = useKanbanDnDSimple(
@@ -210,7 +213,7 @@ export default function KanbanBoardPage({ params }) {
       // Ne pas mettre à jour si un drag vient de se produire (< 2 secondes)
       const timeSinceLastDrag = Date.now() - lastDragTimeRef.current;
       if (timeSinceLastDrag < 2000) {
-        console.log('⏸️ Mise à jour ignorée (drag récent)');
+        console.log('⏸️ Mise à jour ignorée (drag récent)', timeSinceLastDrag + 'ms');
         return;
       }
       
@@ -443,6 +446,31 @@ export default function KanbanBoardPage({ params }) {
               />
             </div>
 
+            {/* Bouton Supprimer si des tâches sont sélectionnées */}
+            {selectedTaskIds.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={async () => {
+                  // Supprimer chaque tâche sélectionnée
+                  for (const taskId of selectedTaskIds) {
+                    try {
+                      await handleDeleteTask(taskId);
+                    } catch (error) {
+                      console.error('Erreur suppression tâche:', error);
+                    }
+                  }
+                  // Réinitialiser la sélection
+                  setSelectedTaskIds(new Set());
+                  toast.success(`${selectedTaskIds.size} tâche(s) supprimée(s)`);
+                }}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Supprimer ({selectedTaskIds.size})
+              </Button>
+            )}
+            
             {/* Bouton de filtre par utilisateur */}
             <MemberFilterButton
               members={members}
@@ -479,11 +507,14 @@ export default function KanbanBoardPage({ params }) {
           <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
             <KanbanListView
               columns={localColumns}
-              getTasksByColumn={getTasksByColumn}
+              getTasksByColumn={getLocalTasksByColumn}
+              filterTasks={filterTasks}
               onEditTask={openEditTaskModal}
               onDeleteTask={handleDeleteTask}
               onAddTask={openAddTaskModal}
               members={board?.members || []}
+              selectedTaskIds={selectedTaskIds}
+              setSelectedTaskIds={setSelectedTaskIds}
             />
           </DragDropContext>
         )}
