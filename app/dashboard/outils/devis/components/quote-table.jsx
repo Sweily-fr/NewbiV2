@@ -183,7 +183,7 @@ export default function QuoteTable({ handleNewQuote }) {
           <ButtonGroup>
             <Button 
               onClick={handleNewQuote} 
-              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
+              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
             >
               Nouveau devis
             </Button>
@@ -191,7 +191,7 @@ export default function QuoteTable({ handleNewQuote }) {
             <Button 
               onClick={handleNewQuote} 
               size="icon"
-              className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
+              className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
             >
               <PlusIcon size={16} aria-hidden="true" />
             </Button>

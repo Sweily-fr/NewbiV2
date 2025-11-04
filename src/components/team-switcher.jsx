@@ -335,7 +335,7 @@ export function TeamSwitcher() {
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
               >
                 <img src="/newbi.svg" alt="NewBi Logo" className="size-7" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
