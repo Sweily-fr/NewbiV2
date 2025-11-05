@@ -681,7 +681,7 @@ function SortableOrganizationItem({
             e.stopPropagation();
             setShowActionsMenu(!showActionsMenu);
           }}
-          className={`flex items-center justify-center h-6 w-6 rounded hover:bg-accent transition-opacity ${
+          className={`flex items-center justify-center h-6 w-6 rounded hover:bg-accent transition-opacity cursor-pointer ${
             isHovered && !disabled && !showColorMenu && !showActionsMenu
               ? "opacity-100"
               : "opacity-0"
@@ -749,35 +749,6 @@ function SortableOrganizationItem({
               <span className="font-normal flex-1">Ajouter des membres</span>
             </div>
 
-            {/* Permissions */}
-            <div
-              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowActionsMenu(false);
-                // TODO: Ouvrir la page des permissions
-              }}
-            >
-              <Users className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-normal flex-1">Permissions</span>
-            </div>
-
-            {/* Paramètres de l'organisation */}
-            <div
-              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowActionsMenu(false);
-                setSettingsModalOpen(true);
-              }}
-            >
-              <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-normal flex-1">Paramètres</span>
-            </div>
-
-            {/* Séparateur Danger Zone */}
-            <div className="h-px bg-border my-1" />
-
             {/* Quitter l'organisation - Seulement si pas owner */}
             {org.role !== "owner" && (
               <div
@@ -794,21 +765,6 @@ function SortableOrganizationItem({
                 </span>
               </div>
             )}
-
-            {/* Supprimer l'organisation (Archive) */}
-            <div
-              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-destructive/10 hover:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowActionsMenu(false);
-                setShowDeleteModal(true);
-              }}
-            >
-              <Archive className="h-3.5 w-3.5" />
-              <span className="font-normal flex-1">
-                Supprimer l'organisation
-              </span>
-            </div>
           </div>
         </div>
       )}
@@ -885,22 +841,6 @@ function SortableOrganizationItem({
 
             {/* Grille d'icônes */}
             <div>
-              <div className="flex items-center gap-2 mb-2.5">
-                <Input
-                  type="text"
-                  placeholder="Recherche"
-                  className="flex-1 h-7 text-xs"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-2.5 text-xs"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Importer
-                </Button>
-              </div>
               <div className="grid grid-cols-8 gap-1.5 max-h-40 overflow-y-auto">
                 {[
                   { Icon: Building2, name: "Building" },
