@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useState, useEffect, useMemo } from "react";
+import { findMerchant } from "@/lib/merchants-config";
+import { MerchantLogo } from "@/app/dashboard/outils/gestion-depenses/components/merchant-logo";
 
 export default function UnifiedTransactions({
   limit = 5,
@@ -295,24 +297,37 @@ export default function UnifiedTransactions({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {allTransactions.slice(0, limit).map((transaction) => (
-            <div
-              key={`${transaction.type}-${transaction.id}`}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-[#5b4fff]/15 dark:bg-[#5b4fff]/25 rounded-full flex items-center justify-center">
-                  {getTransactionIcon(transaction)}
+          {allTransactions.slice(0, limit).map((transaction) => {
+            // Trouver le marchand correspondant
+            const merchant = findMerchant(transaction.description || "");
+            
+            return (
+              <div
+                key={`${transaction.type}-${transaction.id}`}
+                className="flex items-center justify-between"
+              >
+                <div className="flex items-center space-x-3">
+                  {/* Afficher le logo du marchand si disponible, sinon l'icône par défaut */}
+                  {merchant ? (
+                    <MerchantLogo
+                      merchant={merchant}
+                      fallbackText={transaction.description}
+                      size="sm"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-[#5b4fff]/15 dark:bg-[#5b4fff]/25 rounded-full flex items-center justify-center">
+                      {getTransactionIcon(transaction)}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-normal truncate max-w-[170px]">
+                      {merchant?.name || transaction.description || "Transaction"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatDate(transaction.date)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-normal truncate max-w-[170px]">
-                    {transaction.description || "Transaction"}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {formatDate(transaction.date)}
-                  </p>
-                </div>
-              </div>
               <div className="flex items-center space-x-2">
                 <span
                   className={`text-sm font-normal ${getTransactionColor(transaction)}`}
@@ -325,8 +340,9 @@ export default function UnifiedTransactions({
                   {formatCurrency(Math.abs(transaction.amount))}
                 </span>
               </div>
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>
