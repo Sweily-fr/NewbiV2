@@ -1,6 +1,10 @@
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Badge } from "@/src/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/avatar";
 import {
   TrendingUp,
   TrendingDown,
@@ -9,6 +13,7 @@ import {
   BanknoteIcon,
   FileTextIcon,
   ImageIcon,
+  Paperclip,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
@@ -93,16 +98,18 @@ export const columns = [
             // Dépenses manuelles - Afficher selon expenseType
             if (expenseType === "EXPENSE_REPORT") {
               return {
-                className: "bg-transparent bg-orange-50 text-orange-800 font-normal",
+                className:
+                  "bg-transparent bg-orange-50 text-orange-800 font-normal",
                 icon: <TrendingDown size={12} />,
                 label: "Note de frais",
                 showAvatar: true,
               };
             } else {
               return {
-                className: "bg-transparent bg-red-50 text-red-800 font-normal",
+                className:
+                  "bg-transparent font-normal text-[#5A50FF] bg-[#5A50FF]/10 border-[#5A50FF]/30 border",
                 icon: <TrendingDown size={12} />,
-                label: "Dépense de l'organisation",
+                label: "Dépense",
                 showAvatar: false,
               };
             }
@@ -124,12 +131,16 @@ export const columns = [
         <div className="flex items-center gap-2">
           <Badge
             className={cn("flex items-center gap-1 w-fit", config.className)}
+            style={config.style}
           >
             {config.icon} {config.label}
           </Badge>
           {config.showAvatar && assignedMember && (
             <Avatar className="h-6 w-6">
-              <AvatarImage src={assignedMember.image} alt={assignedMember.name} />
+              <AvatarImage
+                src={assignedMember.image}
+                alt={assignedMember.name}
+              />
               <AvatarFallback className="text-xs">
                 {assignedMember.name?.charAt(0)?.toUpperCase() || "?"}
               </AvatarFallback>
@@ -146,7 +157,7 @@ export const columns = [
     accessorKey: "category",
     cell: ({ row }) => {
       const category = row.getValue("category");
-      
+
       // Fonction pour traduire les catégories en français
       const translateCategory = (cat) => {
         const categoryMap = {
@@ -163,10 +174,8 @@ export const columns = [
         };
         return categoryMap[cat] || cat;
       };
-      
-      return (
-        <div className="font-normal">{translateCategory(category)}</div>
-      );
+
+      return <div className="font-normal">{translateCategory(category)}</div>;
     },
     size: 140,
   },
@@ -207,6 +216,10 @@ export const columns = [
   {
     header: "Moyen de paiement",
     accessorKey: "paymentMethod",
+    meta: {
+      label: "Moyen de paiement",
+    },
+    enableHiding: true,
     cell: ({ row }) => {
       const method = row.getValue("paymentMethod");
       const getIcon = () => {
@@ -252,13 +265,10 @@ export const columns = [
     cell: ({ row }) => {
       const attachment = row.getValue("attachment");
       return attachment ? (
-        <div className="flex items-center gap-1 text-blue-600">
-          <ImageIcon size={14} />
-          <span className="text-xs">Oui</span>
+        <div className="flex items-center justify-center">
+          <Paperclip size={16} className="text-muted-foreground" />
         </div>
-      ) : (
-        <span className="text-muted-foreground text-xs">Non</span>
-      );
+      ) : null;
     },
     size: 100,
   },

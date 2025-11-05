@@ -346,15 +346,16 @@ export function DesktopFilters({
       )}
 
       {/* Add Transaction Button Group */}
-      <ButtonGroup>
-        <Button
-          onClick={() => setIsAddTransactionDrawerOpen(true)}
-          className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
-        >
-          Nouvelle dépense
-        </Button>
-        <ButtonGroupSeparator />
-        <DropdownMenu>
+      <DropdownMenu>
+        <ButtonGroup>
+          <DropdownMenuTrigger asChild>
+            <Button
+              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
+            >
+              Nouvelle dépense
+            </Button>
+          </DropdownMenuTrigger>
+          <ButtonGroupSeparator />
           <DropdownMenuTrigger asChild>
             <Button
               size="icon"
@@ -363,20 +364,20 @@ export function DesktopFilters({
               <ChevronDownIcon size={16} aria-hidden="true" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="[--radius:1rem]">
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => setIsAddTransactionDrawerOpen(true)}>
-                <Edit3Icon size={16} />
-                Ajouter manuellement
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsReceiptUploadDrawerOpen(true)}>
-                <Upload size={16} />
-                Ajouter avec OCR
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </ButtonGroup>
+        </ButtonGroup>
+        <DropdownMenuContent align="end" className="[--radius:1rem]">
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => setIsAddTransactionDrawerOpen(true)}>
+              <Edit3Icon size={16} />
+              Ajouter manuellement
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsReceiptUploadDrawerOpen(true)}>
+              <Upload size={16} />
+              Ajouter avec OCR
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

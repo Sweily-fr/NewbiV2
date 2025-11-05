@@ -32,6 +32,7 @@ import {
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { usePromoteTemporaryFile } from "@/src/hooks/usePromoteTemporaryFile";
 import { columns } from "./columns/transactionColumns";
 import { multiColumnFilterFn } from "./filters/multiColumnFilterFn";
@@ -72,6 +73,7 @@ export default function TransactionTable({
 
   const { getAllCollaborators } = useOrganizationInvitations();
   const { organization: activeOrg } = useActiveOrganization();
+  const { workspaceId } = useRequiredWorkspace();
   const { data: session } = useSession();
   const [organizationMembers, setOrganizationMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -321,6 +323,10 @@ export default function TransactionTable({
     },
   ]);
 
+  const [columnVisibility, setColumnVisibility] = useState({
+    paymentMethod: false, // Cacher la colonne "Moyen de paiement" par défaut
+  });
+
   useEffect(() => {
     const timer = setTimeout(() => {}, 300);
     return () => clearTimeout(timer);
@@ -446,6 +452,7 @@ export default function TransactionTable({
 
       if (transaction.type === "INCOME") {
         const expenseInput = {
+          workspaceId, // ✅ Ajout du workspaceId requis
           title: transaction.description || "Revenu manuel",
           description: transaction.description,
           amount: parseFloat(transaction.amount),
@@ -499,6 +506,7 @@ export default function TransactionTable({
         }
 
         const expenseInput = {
+          workspaceId, // ✅ Ajout du workspaceId requis
           title: transaction.description || "Dépense manuelle",
           description: transaction.description,
           amount: parseFloat(transaction.amount),
@@ -681,6 +689,7 @@ export default function TransactionTable({
     manualPagination: false,
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     state: {
@@ -688,6 +697,7 @@ export default function TransactionTable({
       pagination,
       columnFilters,
       globalFilter,
+      columnVisibility,
     },
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: multiColumnFilterFn,
@@ -763,6 +773,7 @@ export default function TransactionTable({
         columns={columns}
         error={error}
         handleRefresh={handleRefresh}
+        onRowClick={handleViewTransaction}
       />
 
       {/* Mobile Toolbar */}
@@ -780,6 +791,7 @@ export default function TransactionTable({
         columns={columns}
         error={error}
         loading={loading}
+        onRowClick={handleViewTransaction}
       />
 
       {/* Export Dialog */}

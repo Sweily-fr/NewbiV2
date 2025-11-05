@@ -230,7 +230,7 @@ export function ChartAreaInteractive({
           </CardAction>
         )}
       </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+      <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
         <ChartContainer
           config={config}
           className={`aspect-${aspectRatio} w-full`}

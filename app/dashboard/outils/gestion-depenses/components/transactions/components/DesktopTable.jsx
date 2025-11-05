@@ -10,7 +10,7 @@ import {
 } from "@/src/components/ui/table";
 import { cn } from "@/src/lib/utils";
 
-export function DesktopTable({ table, columns, error, handleRefresh }) {
+export function DesktopTable({ table, columns, error, handleRefresh, onRowClick }) {
   return (
     <div className="hidden md:block bg-background overflow-hidden rounded-md border">
       <Table className="table-fixed">
@@ -81,10 +81,11 @@ export function DesktopTable({ table, columns, error, handleRefresh }) {
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="hover:bg-muted/50"
+                className="hover:bg-muted/50 cursor-pointer h-11"
+                onClick={() => onRowClick?.(row.original)}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="last:py-0">
+                  <TableCell key={cell.id} className="py-2 last:py-0">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

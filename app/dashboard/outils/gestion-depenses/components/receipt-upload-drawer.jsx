@@ -11,6 +11,10 @@ import {
   DrawerTitle,
 } from "@/src/components/ui/drawer";
 import { Button } from "@/src/components/ui/button";
+import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/src/components/ui/button-group";
 import { Progress } from "@/src/components/ui/progress";
 import { Separator } from "@/src/components/ui/separator";
 import {
@@ -23,17 +27,20 @@ import {
   CheckCircleIcon,
   AlertCircleIcon,
   LoaderCircle,
+  PlusIcon,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useDocumentUpload } from "@/src/hooks/useDocumentUpload";
 import { useOcr } from "@/src/hooks/useOcr";
 import { useExpense } from "@/src/hooks/useExpense";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { Callout } from "@/src/components/ui/callout";
 import OcrEditableDisplay from "./ocr-editable-display";
 
 export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Hook pour récupérer le workspace
   const { workspaceId } = useRequiredWorkspace();
@@ -236,7 +243,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent
         className="w-full h-full md:w-[620px] md:max-w-[620px] md:min-w-[620px] md:max-h-[100vh]"
-        style={{ width: '100vw', height: '100vh' }}
+        style={{ width: "100vw", height: "100vh" }}
       >
         {/* Header */}
         <DrawerHeader className="flex flex-col p-6 border-b space-y-0">
@@ -273,7 +280,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                 // Zone de drop
                 <div
                   className={cn(
-                    "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
+                    "border-1 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
                     isDragging
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
                       : "border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500"
@@ -287,7 +294,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                 >
                   <div className="space-y-3">
                     <div className="mx-auto w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                      <UploadIcon className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                      <UploadIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                     </div>
                     <div>
                       <p className="text-sm font-medium">
@@ -301,15 +308,15 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                 </div>
               ) : (
                 // Fichier sélectionné
-                <div className="bg-gray-50 dark:bg-gray-900 border rounded-lg p-4">
+                <div className="bg-gray-50 dark:bg-gray-900 border rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {(() => {
                         const IconComponent = getFileIcon(selectedFile.type);
-                        return <IconComponent className="h-5 w-5" />;
+                        return <IconComponent className="h-4 w-4" />;
                       })()}
                       <div>
-                        <p className="font-medium text-sm">
+                        <p className="font-normal text-sm">
                           {selectedFile.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -323,7 +330,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                       onClick={handleRemoveFile}
                       className="h-8 w-8 cursor-pointer"
                     >
-                      <XIcon className="h-4 w-4" />
+                      <XIcon className="h-3 w-3" />
                     </Button>
                   </div>
 
@@ -342,20 +349,17 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
 
               {/* Informations sur le traitement */}
               {selectedFile && uploadResult && (
-                <div className="dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <Info className="h-6 w-6 text-blue-600" />
-                    <div className="space-y-1">
-                      <h4 className="font-normal text-sm text-blue-700 dark:text-blue-100">
-                        Prêt pour le traitement
-                      </h4>
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        Le fichier a été uploadé avec succès. Cliquez sur
-                        "Traiter le reçu" pour lancer l'analyse OCR.
-                      </p>
-                    </div>
+                <Callout type="info" noMargin>
+                  <div>
+                    <h4 className="font-normal text-sm">
+                      Prêt pour le traitement
+                    </h4>
+                    <p className="text-xs">
+                      Le fichier a été uploadé avec succès. Cliquez sur "Traiter
+                      le reçu" pour lancer l'analyse OCR.
+                    </p>
                   </div>
-                </div>
+                </Callout>
               )}
             </div>
           )}
@@ -399,18 +403,21 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
               onValidate={handleValidateOcr}
               isCreatingExpense={isCreatingExpense}
               imageUrl={uploadResult?.url}
+              isEditing={isEditing}
+              setIsEditing={setIsEditing}
             />
           )}
         </div>
 
-        {/* Footer - Masqué si OCR terminé */}
-        {!ocrResult && (
-          <div className="border-t p-6 pb-safe" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
-            <div className="flex gap-2">
+        {/* Footer fixe */}
+        {!ocrResult ? (
+          // Footer avant OCR
+          <div className="flex-shrink-0 border-t bg-background p-4">
+            <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={handleClose}
-                className="flex-1 cursor-pointer"
+                className="cursor-pointer font-normal"
               >
                 Annuler
               </Button>
@@ -419,7 +426,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                 disabled={
                   !selectedFile || !uploadResult || isUploading || isProcessing
                 }
-                className="flex-1 cursor-pointer"
+                className="bg-primary hover:bg-primary/90 cursor-pointer font-normal"
               >
                 {isUploading ? (
                   <>
@@ -435,6 +442,80 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                   "Traiter le reçu"
                 )}
               </Button>
+            </div>
+          </div>
+        ) : (
+          // Footer après OCR avec logique de modification
+          <div className="flex-shrink-0 border-t bg-background p-4">
+            <div className="flex justify-between gap-2">
+              {isEditing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                    className="cursor-pointer font-normal"
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    onClick={() => handleValidateOcr(ocrResult?.financialAnalysis)}
+                    disabled={isCreatingExpense}
+                    className="bg-primary hover:bg-primary/90 cursor-pointer font-normal"
+                  >
+                    {isCreatingExpense ? (
+                      <>
+                        <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+                        Sauvegarde...
+                      </>
+                    ) : (
+                      "Sauvegarder"
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={handleClose}
+                      className="cursor-pointer font-normal"
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={() => setIsEditing(true)}
+                      className="cursor-pointer font-normal"
+                    >
+                      Modifier
+                    </Button>
+                  </div>
+                  <ButtonGroup>
+                    <Button
+                      onClick={() => handleValidateOcr(ocrResult?.financialAnalysis)}
+                      disabled={isCreatingExpense}
+                      className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
+                    >
+                      {isCreatingExpense ? (
+                        <>
+                          <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+                          Création...
+                        </>
+                      ) : (
+                        "Valider la dépense"
+                      )}
+                    </Button>
+                    <ButtonGroupSeparator />
+                    <Button
+                      size="icon"
+                      onClick={() => handleValidateOcr(ocrResult?.financialAnalysis)}
+                      disabled={isCreatingExpense}
+                      className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
+                    >
+                      <PlusIcon size={16} aria-hidden="true" />
+                    </Button>
+                  </ButtonGroup>
+                </>
+              )}
             </div>
           </div>
         )}

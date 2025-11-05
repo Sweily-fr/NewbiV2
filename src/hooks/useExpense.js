@@ -132,11 +132,13 @@ export const useExpense = () => {
         documentNumber: input.documentNumber,
         vatAmount: input.vatAmount,
         vatRate: input.vatRate,
+        isVatDeductible: true, // ✅ Ajout du champ isVatDeductible
         status: "PAID", // Définir le statut à PAID pour que la dépense apparaisse dans le tableau
         paymentMethod: input.paymentMethod,
         paymentDate: input.paymentDate,
         notes: input.notes,
         tags: input.tags,
+        expenseType: "ORGANIZATION", // ✅ Ajout du type de dépense
       };
 
       const expenseResult = await createExpense({

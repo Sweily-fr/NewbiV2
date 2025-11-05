@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/src/components/ui/table";
 
-export function MobileTable({ table, columns, error, loading }) {
+export function MobileTable({ table, columns, error, loading, onRowClick }) {
   return (
     <div className="md:hidden overflow-x-auto">
       <Table className="w-max">
@@ -41,7 +41,8 @@ export function MobileTable({ table, columns, error, loading }) {
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900"
+                className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                onClick={() => onRowClick?.(row.original)}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id} className="py-3 px-4 text-sm">

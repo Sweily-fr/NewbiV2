@@ -3,11 +3,17 @@ import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
 import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
 import TransactionTable from "./components/table";
+import { ExpenseCategoryChart } from "./components/expense-category-chart";
 import { useState, useMemo } from "react";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useExpenses } from "@/src/hooks/useExpenses";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
-import { processInvoicesForCharts, processExpensesForCharts, getIncomeChartConfig, getExpenseChartConfig } from "@/src/utils/chartDataProcessors";
+import {
+  processInvoicesForCharts,
+  processExpensesForCharts,
+  getIncomeChartConfig,
+  getExpenseChartConfig,
+} from "@/src/utils/chartDataProcessors";
 import { useApolloClient } from "@apollo/client";
 import { Button } from "@/src/components/ui/button";
 import { RefreshCw } from "lucide-react";
@@ -50,21 +56,33 @@ function GestionDepensesContent() {
 
   // Filtrer les dépenses payées (exclure les DRAFT) - MÉMORISÉ
   const paidExpenses = useMemo(() => {
-    return expenses.filter(expense => expense.status === 'PAID');
+    return expenses.filter((expense) => expense.status === "PAID");
   }, [expenses]);
-  
+
   // Calcul des statistiques réelles avec les utilitaires - MÉMORISÉ
   const totalIncome = useMemo(() => {
-    return paidInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
+    return paidInvoices.reduce(
+      (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
+      0
+    );
   }, [paidInvoices]);
-  
+
   const totalExpenses = useMemo(() => {
-    return paidExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+    return paidExpenses.reduce(
+      (sum, expense) => sum + (expense.amount || 0),
+      0
+    );
   }, [paidExpenses]);
 
   // Utiliser les fonctions utilitaires pour les données de graphique
-  const incomeChartData = useMemo(() => processInvoicesForCharts(paidInvoices), [paidInvoices]);
-  const expenseChartData = useMemo(() => processExpensesForCharts(paidExpenses), [paidExpenses]);
+  const incomeChartData = useMemo(
+    () => processInvoicesForCharts(paidInvoices),
+    [paidInvoices]
+  );
+  const expenseChartData = useMemo(
+    () => processExpensesForCharts(paidExpenses),
+    [paidExpenses]
+  );
 
   // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
   const handleOpenInviteDialog = () => {
@@ -79,7 +97,7 @@ function GestionDepensesContent() {
       // Refetch les données
       await refetchExpenses();
     } catch (error) {
-      console.error('Erreur lors du rafraîchissement:', error);
+      console.error("Erreur lors du rafraîchissement:", error);
     }
   };
 
@@ -100,7 +118,7 @@ function GestionDepensesContent() {
               reçus
             </p>
           </div>
-          <Button 
+          {/* <Button 
             onClick={handleRefreshData}
             variant="outline"
             size="sm"
@@ -108,28 +126,31 @@ function GestionDepensesContent() {
           >
             <RefreshCw className="h-4 w-4" />
             Actualiser les données
-          </Button>
+          </Button> */}
         </div>
-        
-        {/* Graphique des dépenses uniquement */}
-        <div className="grid grid-cols-1 gap-4">
+
+        {/* Graphiques des dépenses */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Graphique des dépenses avec vraies données */}
           <ChartAreaInteractive
             title="Dépenses"
             description={
               loading ? "Chargement..." : formatCurrency(totalExpenses)
             }
-            height="150px"
+            height="220px"
             className="shadow-xs"
             config={expenseChartConfig}
             data={expenseChartData}
             hideMobileCurve={true}
           />
+
+          {/* Graphique en donut - Répartition par catégorie */}
+          <ExpenseCategoryChart expenses={expenses} className="shadow-xs" />
         </div>
-        
+
         {/* Tableau */}
         <div className="mt-4">
-          <TransactionTable 
+          <TransactionTable
             expenses={expenses}
             invoices={invoices}
             loading={loading}
@@ -153,7 +174,7 @@ function GestionDepensesContent() {
         </div>
 
         {/* Table */}
-        <TransactionTable 
+        <TransactionTable
           expenses={expenses}
           invoices={invoices}
           loading={loading}
