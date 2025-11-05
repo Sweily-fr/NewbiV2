@@ -64,51 +64,62 @@ export const auth = betterAuth({
           try {
             const { mongoDb } = await import("./mongodb.js");
             const { ObjectId } = await import("mongodb");
-            
-            console.log(`🔄 [USER CREATE] Création organisation pour ${user.email}...`);
-            
+
+            console.log(
+              `🔄 [USER CREATE] Création organisation pour ${user.email}...`
+            );
+
             // Générer le nom et le slug de l'organisation
-            const organizationName = user.name || `Espace ${user.email.split("@")[0]}'s`;
+            const organizationName =
+              user.name || `Espace ${user.email.split("@")[0]}'s`;
             const organizationSlug = `org-${user.id.slice(-8)}`;
-            
+
             // Calculer les dates de trial (14 jours)
             const now = new Date();
             const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-            
+
             // Créer l'organisation
-            const orgResult = await mongoDb.collection("organization").insertOne({
-              name: organizationName,
-              slug: organizationSlug,
-              logo: null,
-              metadata: {
-                autoCreated: true,
-                createdAt: now.toISOString(),
-              },
-              trialStartDate: now,
-              trialEndDate: trialEnd,
-              isTrialActive: true,
-              hasUsedTrial: true,
-              createdAt: now,
-            });
-            
-            const organizationId = orgResult.insertedId;
-            console.log(`✅ [USER CREATE] Organisation créée: ${organizationId}`);
-            
-            // Créer le membre owner
+            const orgResult = await mongoDb
+              .collection("organization")
+              .insertOne({
+                name: organizationName,
+                slug: organizationSlug,
+                logo: null,
+                metadata: {
+                  autoCreated: true,
+                  createdAt: now.toISOString(),
+                },
+                trialStartDate: now,
+                trialEndDate: trialEnd,
+                isTrialActive: true,
+                hasUsedTrial: true,
+                createdAt: now,
+              });
+
+            const organizationId = orgResult.insertedId; // insertedId est déjà un ObjectId
+            console.log(
+              `✅ [USER CREATE] Organisation créée: ${organizationId}`
+            );
+
+            // Créer le membre owner avec ObjectId
             await mongoDb.collection("member").insertOne({
-              organizationId: organizationId,
-              userId: new ObjectId(user.id),
+              organizationId: organizationId, // ✅ Déjà ObjectId depuis insertedId
+              userId: new ObjectId(user.id), // ✅ Conversion explicite en ObjectId
               email: user.email,
               role: "owner",
               createdAt: now,
             });
-            
-            console.log(`✅ [USER CREATE] Membre owner créé pour ${user.email}`);
-            
+
+            console.log(
+              `✅ [USER CREATE] Membre owner créé pour ${user.email}`
+            );
           } catch (error) {
-            console.error("❌ [USER CREATE] Erreur création organisation:", error);
+            console.error(
+              "❌ [USER CREATE] Erreur création organisation:",
+              error
+            );
           }
-          
+
           return user;
         },
       },
@@ -121,64 +132,81 @@ export const auth = betterAuth({
             const { mongoDb } = await import("./mongodb.js");
             const { ObjectId } = await import("mongodb");
 
-            console.log(`🔍 [SESSION CREATE] Recherche organisation pour userId: ${session.userId}`);
-            
+            console.log(
+              `🔍 [SESSION CREATE] Recherche organisation pour userId: ${session.userId}`
+            );
+
             // Récupérer TOUTES les organisations de l'utilisateur
-            const members = await mongoDb.collection("member").find({
-              userId: new ObjectId(session.userId),
-            }).toArray();
-            
+            const members = await mongoDb
+              .collection("member")
+              .find({
+                userId: new ObjectId(session.userId),
+              })
+              .toArray();
+
             if (!members || members.length === 0) {
-              console.warn("⚠️ [SESSION CREATE] Aucune organisation trouvée pour cet utilisateur");
+              console.warn(
+                "⚠️ [SESSION CREATE] Aucune organisation trouvée pour cet utilisateur"
+              );
               return session;
             }
-            
-            console.log(`📊 [SESSION CREATE] ${members.length} organisation(s) trouvée(s)`);
-            
+
+            console.log(
+              `📊 [SESSION CREATE] ${members.length} organisation(s) trouvée(s)`
+            );
+
             // Stratégie de sélection par priorité :
             // 1. Organisation où l'utilisateur est owner
             // 2. Organisation où l'utilisateur est admin
             // 3. Première organisation (par ordre de création)
-            
+
             let selectedMember = null;
-            
+
             // Priorité 1 : Chercher une organisation où l'utilisateur est owner
-            selectedMember = members.find(m => m.role === "owner");
-            
+            selectedMember = members.find((m) => m.role === "owner");
+
             if (selectedMember) {
-              console.log(`✅ [SESSION CREATE] Organisation owner trouvée: ${selectedMember.organizationId}`);
+              console.log(
+                `✅ [SESSION CREATE] Organisation owner trouvée: ${selectedMember.organizationId}`
+              );
             } else {
               // Priorité 2 : Chercher une organisation où l'utilisateur est admin
-              selectedMember = members.find(m => m.role === "admin");
-              
+              selectedMember = members.find((m) => m.role === "admin");
+
               if (selectedMember) {
-                console.log(`✅ [SESSION CREATE] Organisation admin trouvée: ${selectedMember.organizationId}`);
+                console.log(
+                  `✅ [SESSION CREATE] Organisation admin trouvée: ${selectedMember.organizationId}`
+                );
               } else {
                 // Priorité 3 : Prendre la première organisation
                 selectedMember = members[0];
-                console.log(`✅ [SESSION CREATE] Première organisation sélectionnée (${selectedMember.role}): ${selectedMember.organizationId}`);
+                console.log(
+                  `✅ [SESSION CREATE] Première organisation sélectionnée (${selectedMember.role}): ${selectedMember.organizationId}`
+                );
               }
             }
 
             if (selectedMember && selectedMember.organizationId) {
               // Mettre à jour la session avec l'organisation active
-              await mongoDb
-                .collection("session")
-                .updateOne(
-                  { _id: new ObjectId(session.id) },
-                  {
-                    $set: {
-                      activeOrganizationId: selectedMember.organizationId.toString(),
-                    },
-                  }
-                );
+              await mongoDb.collection("session").updateOne(
+                { _id: new ObjectId(session.id) },
+                {
+                  $set: {
+                    activeOrganizationId:
+                      selectedMember.organizationId.toString(),
+                  },
+                }
+              );
 
               console.log(
                 `✅ [SESSION CREATE] Organisation active définie: ${selectedMember.organizationId.toString()} (role: ${selectedMember.role})`
               );
             }
           } catch (error) {
-            console.error("❌ [SESSION CREATE] Erreur définition organisation active:", error);
+            console.error(
+              "❌ [SESSION CREATE] Erreur définition organisation active:",
+              error
+            );
           }
 
           return session;

@@ -38,7 +38,9 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
       throw error;
     }
     // Sinon, logger mais ne pas bloquer la connexion
-    console.error("⚠️ Impossible de vérifier le statut du compte, connexion autorisée");
+    console.error(
+      "⚠️ Impossible de vérifier le statut du compte, connexion autorisée"
+    );
   }
 });
 
@@ -129,13 +131,13 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
       );
     } catch (error) {
       console.error("❌ [OAuth] Erreur avec internalAdapter:", error);
-      
+
       // Fallback: essayer avec l'adapter normal
       try {
         // Calculer les dates de trial (14 jours)
         const now = new Date();
         const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-        
+
         const organizationData = {
           name: user.name
             ? `Organisation de ${user.name}`
@@ -154,26 +156,37 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
           hasUsedTrial: true,
         };
 
-        console.log("🔄 [OAuth Fallback] Création organisation avec adapter normal...");
+        console.log(
+          "🔄 [OAuth Fallback] Création organisation avec adapter normal..."
+        );
 
         const organization = await ctx.context.adapter.create({
           model: "organization",
           data: organizationData,
         });
 
+        // Import ObjectId pour la conversion
+        const { ObjectId } = await import("mongodb");
+
         const member = await ctx.context.adapter.create({
           model: "member",
           data: {
-            userId: userId,
-            organizationId: organization.id,
+            userId: new ObjectId(userId),
+            organizationId: new ObjectId(organization.id),
             role: "owner",
             createdAt: now,
           },
         });
 
-        console.log("✅ [OAuth Fallback] Organisation créée avec trial:", organization.id);
+        console.log(
+          "✅ [OAuth Fallback] Organisation créée avec trial:",
+          organization.id
+        );
       } catch (fallbackError) {
-        console.error("❌ [OAuth Fallback] Erreur même avec le fallback:", fallbackError);
+        console.error(
+          "❌ [OAuth Fallback] Erreur même avec le fallback:",
+          fallbackError
+        );
       }
     }
   }

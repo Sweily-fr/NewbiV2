@@ -269,39 +269,34 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 space-y-4 pb-2 md:pb-4">
+          <div className="px-6 space-y-4 pb-2 md:pb-4">
             {/* Type de document */}
             <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-gray-600" />
-                <span className="text-sm font-normal">Type de transaction</span>
-              </div>
-              <Badge className="bg-[#5b4fff]/30 border-[#5b4fff]/10 text-[#5b4fff] text-[10px] font-normal rounded-sm">
+              <span className="text-sm font-normal">Type de transaction</span>
+              <Badge variant="outline" className="text-xs font-normal px-2.5 py-0.5 border-[#5a50ff]/20 bg-[#5a50ff]/5 text-[#5a50ff] dark:border-[#5a50ff]/30 dark:bg-[#5a50ff]/10 dark:text-[#8b85ff]">
                 Transaction manuelle
               </Badge>
             </div>
             <Separator />
 
             {/* Informations financières */}
-            <Card className="shadow-none border-none py-2">
-              <CardContent className="px-2 space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Euro className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-normal">
-                    Informations financières
-                  </span>
-                </div>
-                <div className="space-y-4">
-                  {/* Type de dépense */}
+            <div className="py-2 space-y-4">
+              <div className="mb-4">
+                <span className="text-sm font-normal">
+                  Informations financières
+                </span>
+              </div>
+              <div className="space-y-4">
+                {/* Type de dépense */}
                   <div className="flex items-center justify-between">
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
                       Type de dépense
                     </Label>
                     <Select
                       value={formData.expenseType}
                       onValueChange={handleChange("expenseType")}
                     >
-                      <SelectTrigger className="w-48">
+                      <SelectTrigger className="w-56">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -314,7 +309,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                   {/* Sélecteur de membre (uniquement pour les notes de frais) */}
                   {formData.expenseType === "EXPENSE_REPORT" && (
                     <div className="flex items-center justify-between">
-                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
                         Assigné à
                       </Label>
                       <Select
@@ -324,7 +319,7 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                           handleChange("assignedMember")(member || null);
                         }}
                       >
-                        <SelectTrigger className="w-48">
+                        <SelectTrigger className="w-56">
                           {formData.assignedMember ? (
                             <div className="flex items-center gap-2">
                               <Avatar className="h-6 w-6">
@@ -360,20 +355,20 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
 
                   {/* Montant */}
                   <div className="flex items-center justify-between">
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
                       Montant
                     </Label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-56">
                       <Input
                         type="number"
                         step="0.01"
                         value={formData.amount}
                         onChange={(e) => handleChange("amount")(e.target.value)}
-                        className="w-24"
+                        className="flex-1"
                         placeholder="0.00"
                       />
                       <Select value="EUR" disabled>
-                        <SelectTrigger className="w-20">
+                        <SelectTrigger className="w-[72px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -382,75 +377,66 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                       </Select>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
             <Separator />
 
             {/* Date */}
-            <Card className="shadow-none border-none py-2">
-              <CardContent className="px-2 space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-normal">Date</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                    Date de transaction
-                  </Label>
-                  <Input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => {
-                      handleChange("date")(e.target.value);
-                    }}
-                    className="w-40"
-                    lang="fr-FR"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="py-2 space-y-4">
+              <div className="mb-4">
+                <span className="text-sm font-normal">Date</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                  Date de transaction
+                </Label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => {
+                    handleChange("date")(e.target.value);
+                  }}
+                  className="w-56"
+                  lang="fr-FR"
+                />
+              </div>
+            </div>
             <Separator />
 
             {/* Fournisseur */}
-            <Card className="shadow-none border-none py-2">
-              <CardContent className="px-2 space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Building className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-normal">Fournisseur</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                    Nom du fournisseur
-                  </Label>
-                  <Input
-                    value={formData.vendor || ""}
-                    onChange={(e) => handleChange("vendor")(e.target.value)}
-                    placeholder="Nom du fournisseur"
-                    className="w-48"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="py-2 space-y-4">
+              <div className="mb-4">
+                <span className="text-sm font-normal">Fournisseur</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                  Nom du fournisseur
+                </Label>
+                <Input
+                  value={formData.vendor || ""}
+                  onChange={(e) => handleChange("vendor")(e.target.value)}
+                  placeholder="Nom du fournisseur"
+                  className="w-56"
+                />
+              </div>
+            </div>
             <Separator />
 
             {/* Classification */}
-            <Card className="shadow-none border-none py-2">
-              <CardContent className="px-2 space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Tag className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium">Classification</span>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                      Catégorie
-                    </Label>
+            <div className="py-2 space-y-4">
+              <div className="mb-4">
+                <span className="text-sm font-normal">Classification</span>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                    Catégorie
+                  </Label>
                     <Select
                       value={formData.category}
                       onValueChange={handleChange("category")}
                     >
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger className="w-56">
                         <SelectValue placeholder="Catégorie" />
                       </SelectTrigger>
                       <SelectContent>
@@ -466,14 +452,14 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
                       Moyen de paiement
                     </Label>
                     <Select
                       value={formData.paymentMethod}
                       onValueChange={handleChange("paymentMethod")}
                     >
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger className="w-56">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -485,45 +471,40 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                     </Select>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
             {/* Description */}
-            <Card className="shadow-none border-none py-2">
-              <CardContent className="px-2 space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-sm font-medium">Description</span>
-                </div>
-                <div className="flex items-start justify-between">
-                  <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mt-1">
-                    Description
-                  </Label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) =>
-                      handleChange("description")(e.target.value)
-                    }
-                    placeholder="Description de la transaction"
-                    rows={3}
-                    className="flex-1 ml-4"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="py-2 space-y-4">
+              <div className="mb-4">
+                <span className="text-sm font-normal">Description</span>
+              </div>
+              <div className="flex items-start justify-between">
+                <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mt-1">
+                  Description
+                </Label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    handleChange("description")(e.target.value)
+                  }
+                  placeholder="Description de la transaction"
+                  rows={3}
+                  className="w-56"
+                />
+              </div>
+            </div>
             
             {/* Upload d'image de reçu */}
-            <Card className="shadow-none border-none py-2">
-              <CardContent className="px-2 space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <FileText className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium">Reçu (optionnel)</span>
-                </div>
+            <div className="py-2 space-y-4">
+              <div className="mb-4">
+                <span className="text-sm font-normal">Reçu (optionnel)</span>
+              </div>
                 
                 {previewUrl ? (
                   <div className="space-y-3">
                     {/* Grande preview cliquable */}
                     <div 
-                      className="border-input relative flex h-48 w-full items-center justify-center overflow-hidden rounded-md border bg-gray-50 dark:bg-gray-900 cursor-pointer hover:border-blue-500 transition-colors group"
+                      className="border-input relative flex h-48 w-full items-center justify-center overflow-hidden rounded-md border bg-muted/30 cursor-pointer hover:border-primary transition-colors group"
                       onClick={() => window.open(uploadedFileUrl || previewUrl, '_blank')}
                       role="button"
                       tabIndex={0}
@@ -543,8 +524,8 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                       )}
                       {/* Overlay avec icône */}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg">
-                          <ExternalLink className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-full p-2 shadow-lg border">
+                          <ExternalLink className="h-5 w-5 text-foreground" />
                         </div>
                       </div>
                     </div>
@@ -630,19 +611,18 @@ export function AddTransactionDrawer({ open, onOpenChange, onSubmit, transaction
                       </p>
                     )}
                     {!uploadReceiptError && (
-                      <p className="text-xs text-gray-500 text-center">
+                      <p className="text-xs text-muted-foreground text-center">
                         Image ou PDF • Max 10MB
                       </p>
                     )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Fixed footer with buttons */}
-        <div className="flex-shrink-0 border-t bg-white p-4">
+        <div className="flex-shrink-0 border-t bg-background p-4">
           <form onSubmit={handleSubmit}>
             <div className="flex justify-end gap-2">
               <Button
