@@ -236,36 +236,14 @@ function KanbanPageContent() {
               </div>
             </>
           ) : (
-            <>
-              {/* Icône pour recherche vide */}
-              <div className="mb-8 flex justify-center">
-                <div className="rounded-full bg-muted p-8">
-                  <SearchX className="h-24 w-24 text-muted-foreground" />
-                </div>
-              </div>
-
-              <div className="text-foreground mb-4">
-                <h3 className="text-lg font-semibold mb-2">
-                  Aucun résultat trouvé
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Essayez avec des mots-clés différents ou créez un nouveau
-                  tableau
-                </p>
-              </div>
-
-              <Button
-                onClick={() => {
-                  setSearchTerm("");
-                  setIsCreateDialogOpen(true);
-                }}
-                variant="default"
-                className="flex items-center gap-2"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Créer un nouveau tableau
-              </Button>
-            </>
+            <div className="text-foreground">
+              <h3 className="text-lg font-semibold mb-2">
+                Aucun résultat trouvé
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Essayez avec des mots-clés différents
+              </p>
+            </div>
           )}
         </div>
       ) : (
