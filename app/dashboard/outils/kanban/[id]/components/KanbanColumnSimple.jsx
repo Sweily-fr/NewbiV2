@@ -49,7 +49,7 @@ export function KanbanColumnSimple({
               maxWidth: isCollapsed ? '80px' : '300px',
             } : {})
           }}
-          className={`bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex flex-col flex-shrink-0 ${
+          className={`bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex flex-col flex-shrink-0 h-auto ${
             isCollapsed ? "max-w-[80px] min-w-[80px]" : ""
           } ${snapshot.isDragging ? "opacity-60 rotate-2" : ""}`}
         >
@@ -130,15 +130,16 @@ export function KanbanColumnSimple({
           {/* Zone droppable pour les tâches */}
           {!isCollapsed && (
             <Droppable droppableId={column.id} type="task">
-              {(provided, snapshot) => (
+              {(providedDroppable, snapshotDroppable) => (
                 <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`flex-1 p-2 rounded-lg transition-colors ${
-                    snapshot.isDraggingOver ? 'bg-accent/20 border-2 border-accent' : ''
+                  ref={providedDroppable.innerRef}
+                  {...providedDroppable.droppableProps}
+                  className={`p-2 rounded-lg transition-colors ${
+                    snapshotDroppable.isDraggingOver ? 'bg-accent/20 border-2 border-accent' : ''
                   }`}
                   style={{
-                    minHeight: tasks.length === 0 ? '100px' : '80px'
+                    minHeight: '100px',
+                    flex: '1 1 auto' // Permet à la colonne de grandir selon son contenu
                   }}
                 >
                   <div className="space-y-2 sm:space-y-3">
@@ -149,9 +150,15 @@ export function KanbanColumnSimple({
                         <TaskCardSkeleton />
                       </>
                     ) : tasks.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-8 text-sm">
-                        Aucune tâche
-                      </div>
+                      // Ne pas afficher "Aucune tâche" si on drag au-dessus
+                      !snapshotDroppable.isDraggingOver && (
+                        <div 
+                          {...provided.dragHandleProps}
+                          className="text-center text-muted-foreground py-8 text-sm cursor-grab active:cursor-grabbing"
+                        >
+                          Aucune tâche
+                        </div>
+                      )
                     ) : (
                       tasks.map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -175,8 +182,16 @@ export function KanbanColumnSimple({
                         </Draggable>
                       ))
                     )}
-                    {/* Afficher le placeholder seulement si on drag AU-DESSUS de cette colonne */}
-                    {snapshot.isDraggingOver && provided.placeholder}
+                    {/* Placeholder - prend exactement la hauteur de la tâche draggée */}
+                    <div 
+                      {...provided.dragHandleProps}
+                      className="cursor-grab active:cursor-grabbing"
+                      style={{ 
+                        display: snapshotDroppable.isDraggingOver ? 'block' : 'none'
+                      }}
+                    >
+                      {providedDroppable.placeholder}
+                    </div>
                   </div>
                 </div>
               )}

@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 export const useKanbanSearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fonction pour filtrer les tâches selon la recherche
-  const filterTasks = (tasks = []) => {
+  // Fonction pour filtrer les tâches selon la recherche (mémorisée pour éviter les re-calculs)
+  const filterTasks = useCallback((tasks = []) => {
     if (!searchQuery?.trim()) return tasks;
 
     const query = searchQuery.toLowerCase().trim();
@@ -76,7 +76,7 @@ export const useKanbanSearch = () => {
 
       return false;
     });
-  };
+  }, [searchQuery]);
 
   return {
     searchQuery,

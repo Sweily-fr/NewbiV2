@@ -165,6 +165,15 @@ export default function KanbanBoardPage({ params }) {
   // État pour les tâches sélectionnées
   const [selectedTaskIds, setSelectedTaskIds] = React.useState(new Set());
 
+  // Hook pour le filtrage par membre (AVANT useKanbanDnDSimple pour éviter l'erreur de hoisting)
+  const {
+    selectedMemberId,
+    setSelectedMemberId,
+    members,
+    loading: membersLoading,
+    filterTasksByMember,
+  } = useKanbanMemberFilter(workspaceId);
+
   // Hook DnD simplifié avec @hello-pangea/dnd
   const { handleDragEnd: dndHandleDragEnd } = useKanbanDnDSimple(
     moveTask,
@@ -174,7 +183,8 @@ export default function KanbanBoardPage({ params }) {
     setLocalColumns,
     reorderColumnsMutation,
     markReorderAction,
-    markMoveTaskAction
+    markMoveTaskAction,
+    selectedMemberId // Passer le filtre pour recalculer les positions correctement
   );
   
   // Wrapper pour handleDragEnd : gérer le polling
@@ -192,14 +202,21 @@ export default function KanbanBoardPage({ params }) {
     } catch (error) {
       console.error('❌ Erreur mutation:', error);
     }
-  }, [dndHandleDragEnd]);
+    
+    // Redémarrer le polling immédiatement (pas de setTimeout pour éviter de bloquer le thread)
+    // La protection contre les mises à jour se fait dans useKanbanBoard via lastMoveTaskTimeRef
+    startPolling(5000);
+  }, [dndHandleDragEnd, startPolling]);
 
   // Détecter le début du drag des colonnes
   const handleDragStart = React.useCallback((result) => {
     if (result.type === 'column') {
       setIsDraggingColumn(true);
     }
-  }, []);
+    
+    // Arrêter le polling pendant le drag pour éviter les requêtes réseau
+    stopPolling();
+  }, [stopPolling]);
 
   // Helper pour récupérer les tâches d'une colonne
   const getLocalTasksByColumn = React.useCallback((columnId) => {
@@ -229,14 +246,6 @@ export default function KanbanBoardPage({ params }) {
   }, [board?.id, board?.columns, board?.tasks]);
 
   const { searchQuery, setSearchQuery, filterTasks: filterTasksBySearch } = useKanbanSearch();
-  
-  const {
-    selectedMemberId,
-    setSelectedMemberId,
-    members,
-    loading: membersLoading,
-    filterTasksByMember,
-  } = useKanbanMemberFilter(workspaceId);
 
   // Fonction de filtrage combinée (recherche + membre)
   const filterTasks = React.useCallback((tasks) => {

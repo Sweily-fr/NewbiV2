@@ -48,7 +48,10 @@ function CollapsedColumnDropZone({ columnId, onOpen, children }) {
             className={`transition-colors ${snapshot.isDraggingOver ? 'bg-primary/10' : ''}`}
           >
             {children}
-            {provided.placeholder}
+            {/* Placeholder avec hauteur limitée */}
+            <div style={{ maxHeight: '100px', overflow: 'hidden' }}>
+              {provided.placeholder}
+            </div>
           </div>
         );
       }}
@@ -495,7 +498,10 @@ export function KanbanListView({
                             </DraggableTaskRow>
                         ))
                       )}
-                      {provided.placeholder}
+                      {/* Placeholder avec hauteur limitée */}
+                      <div style={{ maxHeight: '100px', overflow: 'hidden' }}>
+                        {provided.placeholder}
+                      </div>
                     </div>
                   )}
                 </Droppable>
