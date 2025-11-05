@@ -12,6 +12,7 @@ import {
   Calendar,
   User,
   Eye,
+  SearchX,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -236,9 +237,11 @@ function KanbanPageContent() {
             </>
           ) : (
             <>
-              {/* Illustration SVG moderne pour recherche vide */}
+              {/* Icône pour recherche vide */}
               <div className="mb-8 flex justify-center">
-                <EmptySearchIllustration className="w-[220px] h-[160px]" />
+                <div className="rounded-full bg-muted p-8">
+                  <SearchX className="h-24 w-24 text-muted-foreground" />
+                </div>
               </div>
 
               <div className="text-foreground mb-4">
