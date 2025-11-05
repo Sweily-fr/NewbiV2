@@ -44,7 +44,7 @@ export function MerchantLogo({
     return (
       <div
         className={cn(
-          "rounded-full overflow-hidden flex-shrink-0 relative",
+          "rounded-full overflow-hidden flex-shrink-0 relative border border-border bg-white",
           containerSize,
           className
         )}

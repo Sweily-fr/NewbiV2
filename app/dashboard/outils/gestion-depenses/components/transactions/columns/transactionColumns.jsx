@@ -20,6 +20,9 @@ import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import { RowActions } from "../components/RowActions";
 import { multiColumnFilterFn } from "../filters/multiColumnFilterFn";
 import { typeFilterFn } from "../filters/typeFilterFn";
+import { findMerchant } from "@/lib/merchants-config";
+import { MerchantLogo } from "../../merchant-logo";
+import { getCategoryConfig } from "@/lib/category-icons-config";
 
 export const columns = [
   {
@@ -48,6 +51,46 @@ export const columns = [
     enableHiding: false,
   },
   {
+    header: "Transaction",
+    accessorKey: "description",
+    cell: ({ row }) => {
+      const description = row.getValue("description");
+      const vendor = row.original.vendor;
+      const merchant = findMerchant(vendor || description || "");
+      
+      return (
+        <div className="flex items-center gap-3">
+          <MerchantLogo
+            merchant={merchant}
+            fallbackText={vendor || description}
+            size="sm"
+          />
+          <div className="font-normal truncate max-w-[200px]" title={vendor || description}>
+            {merchant?.name || vendor || description || "Transaction"}
+          </div>
+        </div>
+      );
+    },
+    size: 250,
+    enableHiding: false,
+    filterFn: multiColumnFilterFn,
+  },
+  {
+    header: "Montant",
+    accessorKey: "amount",
+    cell: ({ row }) => {
+      const amount = row.getValue("amount");
+      const type = row.getValue("type");
+      return (
+        <div className="font-normal text-left">
+          {type === "INCOME" ? "+" : "-"}
+          {amount.toFixed(2)} €
+        </div>
+      );
+    },
+    size: 120,
+  },
+  {
     header: "Date",
     accessorKey: "date",
     cell: ({ row }) => {
@@ -59,159 +102,26 @@ export const columns = [
     enableHiding: false,
   },
   {
-    header: "Type",
-    accessorKey: "type",
-    cell: ({ row }) => {
-      const type = row.getValue("type");
-      const source = row.original.source;
-      const expenseType = row.original.expenseType;
-      const assignedMember = row.original.assignedMember;
-
-      // Configuration des badges selon le type et la source
-      const getBadgeConfig = () => {
-        // Factures - Entrées d'argent (vert)
-        if (type === "INCOME" && source === "invoice") {
-          return {
-            className: "bg-transparent bg-green-50 text-green-800 font-normal",
-            icon: <TrendingUp size={12} />,
-            label: "Facture",
-            showAvatar: false,
-          };
-        }
-
-        // Entrées manuelles - Entrées d'argent (vert) basées sur les notes
-        if (source === "expense") {
-          const notes = row.original.notes;
-          const isVatDeductible = row.original.isVatDeductible;
-          const isIncome =
-            (notes && notes.includes("[INCOME]")) || isVatDeductible === false;
-
-          if (isIncome) {
-            return {
-              className:
-                "bg-transparent bg-green-50 text-green-800 font-normal",
-              icon: <TrendingUp size={12} />,
-              label: "Entrée",
-              showAvatar: false,
-            };
-          } else {
-            // Dépenses manuelles - Afficher selon expenseType
-            if (expenseType === "EXPENSE_REPORT") {
-              return {
-                className:
-                  "bg-transparent bg-orange-50 text-orange-800 font-normal",
-                icon: <TrendingDown size={12} />,
-                label: "Note de frais",
-                showAvatar: true,
-              };
-            } else {
-              return {
-                className:
-                  "bg-transparent font-normal text-[#5A50FF] bg-[#5A50FF]/10 border-[#5A50FF]/30 border",
-                icon: <TrendingDown size={12} />,
-                label: "Dépense",
-                showAvatar: false,
-              };
-            }
-          }
-        }
-
-        // Fallback
-        return {
-          className: "bg-transparent border-gray-300 text-gray-800 font-normal",
-          icon: <ArrowDownIcon size={12} />,
-          label: "Inconnu",
-          showAvatar: false,
-        };
-      };
-
-      const config = getBadgeConfig();
-
-      return (
-        <div className="flex items-center gap-2">
-          <Badge
-            className={cn("flex items-center gap-1 w-fit", config.className)}
-            style={config.style}
-          >
-            {config.icon} {config.label}
-          </Badge>
-          {config.showAvatar && assignedMember && (
-            <Avatar className="h-6 w-6">
-              <AvatarImage
-                src={assignedMember.image}
-                alt={assignedMember.name}
-              />
-              <AvatarFallback className="text-xs">
-                {assignedMember.name?.charAt(0)?.toUpperCase() || "?"}
-              </AvatarFallback>
-            </Avatar>
-          )}
-        </div>
-      );
-    },
-    size: 200,
-    filterFn: typeFilterFn,
-  },
-  {
     header: "Catégorie",
     accessorKey: "category",
     cell: ({ row }) => {
       const category = row.getValue("category");
+      const config = getCategoryConfig(category);
+      const Icon = config.icon;
 
-      // Fonction pour traduire les catégories en français
-      const translateCategory = (cat) => {
-        const categoryMap = {
-          OFFICE_SUPPLIES: "Fournitures de bureau",
-          TRAVEL: "Transport",
-          MEALS: "Repas",
-          EQUIPMENT: "Matériel",
-          MARKETING: "Marketing",
-          TRAINING: "Formation",
-          SERVICES: "Services",
-          RENT: "Loyer",
-          SALARIES: "Salaires",
-          OTHER: "Autre",
-        };
-        return categoryMap[cat] || cat;
-      };
-
-      return <div className="font-normal">{translateCategory(category)}</div>;
-    },
-    size: 140,
-  },
-  {
-    header: "Montant",
-    accessorKey: "amount",
-    cell: ({ row }) => {
-      const amount = row.getValue("amount");
-      const type = row.getValue("type");
       return (
-        <div
-          className={cn(
-            "font-normal text-left",
-            type === "INCOME" ? "text-green-600" : "text-red-600"
-          )}
-        >
-          {type === "INCOME" ? "+" : "-"}
-          {amount.toFixed(2)} €
+        <div className="flex items-center gap-2">
+          <div
+            className="h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: config.bgColor }}
+          >
+            <Icon size={14} style={{ color: config.color }} />
+          </div>
+          <span className="font-normal truncate">{config.label}</span>
         </div>
       );
     },
-    size: 120,
-  },
-  {
-    header: "Description",
-    accessorKey: "description",
-    cell: ({ row }) => (
-      <div
-        className="max-w-[200px] truncate"
-        title={row.getValue("description")}
-      >
-        {row.getValue("description")}
-      </div>
-    ),
-    size: 200,
-    filterFn: multiColumnFilterFn,
+    size: 180,
   },
   {
     header: "Moyen de paiement",
@@ -263,12 +173,17 @@ export const columns = [
     header: "Justificatif",
     accessorKey: "attachment",
     cell: ({ row }) => {
-      const attachment = row.getValue("attachment");
-      return attachment ? (
-        <div className="flex items-center justify-center">
+      const files = row.original.files || [];
+      const attachmentCount = files.length;
+      
+      return (
+        <div className="flex items-center gap-1.5">
           <Paperclip size={16} className="text-muted-foreground" />
+          <span className="text-sm font-normal text-muted-foreground">
+            {attachmentCount}
+          </span>
         </div>
-      ) : null;
+      );
     },
     size: 100,
   },
