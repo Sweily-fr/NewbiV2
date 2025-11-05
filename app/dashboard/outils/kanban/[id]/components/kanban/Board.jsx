@@ -350,7 +350,7 @@ const Board = () => {
                                 ...prev,
                                 tags: prev.tags.includes(tag)
                                   ? prev.tags.filter((t) => t !== tag)
-                                  : [...prev.tags, tag],
+                                  : [...prev.tags, tag].filter(Boolean),
                               }));
                             }}
                           >
@@ -426,7 +426,7 @@ const Board = () => {
                 }
               `}</style>
 
-              {columnsWithTasks.map((column) => {
+              {filteredColumnsWithTasks.map((column) => {
                 // Fonction pour normaliser les dates pour la comparaison
                 const normalizeDate = (dateString) => {
                   if (!dateString) return "";
@@ -611,11 +611,11 @@ const Board = () => {
                     }}
                     onUpdate={refetch}
                     isDragging={isDragging}
-                    columns={columnsWithTasks}
+                    columns={filteredColumnsWithTasks}
                   />
                 );
-              })}
-
+              })
+              .filter(Boolean)}
               {/* Bouton pour ajouter une colonne à droite */}
               <div className="flex-shrink-0 w-80 h-27 mt-0">
                 <button

@@ -5,8 +5,8 @@ import {
   Edit,
   Trash2,
   Flag,
-  CheckSquare,
-  GripVertical,
+  CheckCircle,
+  AlignLeft,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -31,6 +31,11 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/src/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { formatDateRelative } from "../../../../../../src/utils/kanbanHelpers";
 import { AvatarGroup } from "@/src/components/ui/user-avatar";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
@@ -41,6 +46,7 @@ import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
  */
 const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragging }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDescriptionPopover, setShowDescriptionPopover] = useState(false);
 
   // Récupérer les infos des membres assignés
   const { members: assignedMembersInfo } = useAssignedMembersInfo(task.assignedMembers || []);
@@ -92,15 +98,9 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
           isDragging ? "opacity-50" : "opacity-100"
         }`}
       >
-        {/* En-tête */}
-        <div className="flex items-start justify-between mb-1.5 sm:mb-2">
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-            <div
-              className="text-muted-foreground/70 hover:text-foreground p-1 -ml-1 rounded hover:bg-accent flex-shrink-0 touch-none"
-              title="Faire glisser pour déplacer"
-            >
-              <GripVertical className="h-3.5 w-3.5" />
-            </div>
+        {/* En-tête avec titre et menu 3 points */}
+        <div className="flex items-start justify-between mb-2 sm:mb-3">
+          <div className="flex-1 min-w-0">
             <Tooltip>
               <TooltipTrigger asChild>
                 <h4 className="font-medium text-sm text-foreground truncate">
@@ -112,131 +112,104 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
               </TooltipContent>
             </Tooltip>
           </div>
-          <div className="flex items-center gap-1">
-            {task.priority && task.priority !== "none" && (
-              <Flag
-                className={`h-3.5 w-3.5 ${
-                  task.priority.toLowerCase() === "high"
-                    ? "text-red-500 fill-red-500"
-                    : task.priority.toLowerCase() === "medium"
-                      ? "text-yellow-500 fill-yellow-500"
-                      : "text-green-500 fill-green-500"
-                }`}
-              />
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-muted-foreground/70 hover:text-foreground hover:bg-transparent"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
-                >
-                  <MoreVertical className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onEdit(task);
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.nativeEvent.stopImmediatePropagation();
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Edit className="mr-2 h-3.5 w-3.5" />
-                  Modifier
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleDeleteClick(e);
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.nativeEvent.stopImmediatePropagation();
-                  }}
-                  className="text-red-600 cursor-pointer"
-                >
-                  <Trash2 className="mr-2 h-3 w-3" />
-                  Supprimer
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          
+          {/* Menu 3 points en haut à droite */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-muted-foreground/70 hover:text-foreground hover:bg-transparent ml-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                <MoreVertical className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit(task);
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                }}
+                className="cursor-pointer"
+              >
+                <Edit className="mr-2 h-3.5 w-3.5" />
+                Modifier
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDeleteClick(e);
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                }}
+                className="text-red-600 cursor-pointer"
+              >
+                <Trash2 className="mr-2 h-3 w-3" />
+                Supprimer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Description */}
-        {task.description && (
-          <p className="text-xs text-muted-foreground mb-1.5 sm:mb-2 line-clamp-3 break-words whitespace-pre-wrap">
-            {task.description}
-          </p>
-        )}
-
-        {/* Checklist */}
-        {checklistProgress.total > 0 && (
-          <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
-            <CheckSquare className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              {checklistProgress.completed}/{checklistProgress.total}
-            </span>
-          </div>
-        )}
-
-        {/* Tags */}
-        {task.tags && task.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-1.5 sm:mb-2">
-            {task.tags.map((tag, tagIndex) => {
-              const tagName =
-                typeof tag === "object" ? tag.name || tag.title || "Tag" : tag;
-              return (
-                <Badge
-                  key={tagIndex}
-                  variant="outline"
-                  className="text-xs font-normal text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-full px-2 py-0.5"
-                >
-                  {tagName}
-                </Badge>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Pied de carte */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-2 sm:pt-3">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {task.dueDate && (() => {
-              try {
-                const date = new Date(task.dueDate);
-                if (isNaN(date.getTime())) return null;
-                return (
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>
-                      {date.toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </span>
+        {/* Pied de carte - Organisé sur 2 lignes */}
+        <div className="mt-auto pt-2 sm:pt-3 space-y-1.5">
+          {/* Ligne 1: Icônes (description, checklist) */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {/* Icône description avec Popover */}
+            {task.description && (
+              <Popover open={showDescriptionPopover} onOpenChange={setShowDescriptionPopover}>
+                <PopoverTrigger asChild>
+                  <div
+                    className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDescriptionPopover(!showDescriptionPopover);
+                    }}
+                  >
+                    <AlignLeft className="h-4 w-4" />
                   </div>
-                );
-              } catch (error) {
-                console.error("Erreur formatage date:", error);
-                return null;
-              }
-            })()}
-          </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" side="top">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Description</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                      {task.description}
+                    </p>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Checklist */}
+            {checklistProgress.total > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-0.5">
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    <span>{checklistProgress.completed}/{checklistProgress.total}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  Checklist: {checklistProgress.completed}/{checklistProgress.total}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+          
+          {/* Ligne 2: Avatar + Date d'échéance + Priorité */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {assignedMembersInfo && assignedMembersInfo.length > 0 && (
               <AvatarGroup 
                 users={assignedMembersInfo} 
@@ -245,10 +218,46 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
               />
             )}
             
-            {task.updatedAt && (
-              <span className="text-gray-400">
-                {formatDateRelative(new Date(task.updatedAt))}
-              </span>
+            {task.dueDate && (() => {
+              try {
+                const date = new Date(task.dueDate);
+                if (isNaN(date.getTime())) return null;
+                return (
+                  <Badge
+                    variant="outline"
+                    className={`inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground`}
+                  >
+                    <Calendar className={`h-4 w-4`} />
+                    <span className="text-muted-foreground">
+                      {date.toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  </Badge>
+                );
+              } catch (error) {
+                console.error("Erreur formatage date:", error);
+                return null;
+              }
+            })()}
+            
+            {task.priority && task.priority !== "none" && (
+              <Badge
+                variant="outline"
+                className={`inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground`}
+              >
+                <Flag className={`h-4 w-4 ${
+                  task.priority.toLowerCase() === "high"
+                    ? "text-red-500 fill-red-500"
+                    : task.priority.toLowerCase() === "medium"
+                      ? "text-yellow-500 fill-yellow-500"
+                      : "text-green-500 fill-green-500"
+                }`} />
+                <span className="text-muted-foreground">
+                  {task.priority.toLowerCase() === "high" ? "Urgent" : task.priority.toLowerCase() === "medium" ? "Moyen" : "Faible"}
+                </span>
+              </Badge>
             )}
           </div>
         </div>

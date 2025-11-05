@@ -220,7 +220,7 @@ export function TaskModal({
                   onValueChange={(value) => setTaskForm({ ...taskForm, priority: value })}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Moyenne" />
+                    <SelectValue placeholder="Moyen" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="LOW">
@@ -232,13 +232,13 @@ export function TaskModal({
                     <SelectItem value="MEDIUM">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                        Moyenne
+                        Moyen
                       </div>
                     </SelectItem>
                     <SelectItem value="HIGH">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                        Élevée
+                        Urgent
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -527,13 +527,12 @@ export function TaskModal({
                 {/* Priorité et Colonne */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Priorité</Label>
                     <Select
                       value={getDisplayPriority(taskForm.priority)}
                       onValueChange={(value) => setTaskForm({ ...taskForm, priority: value })}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Moyenne" />
+                        <SelectValue placeholder="Sélectionner une priorité" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="LOW">
@@ -545,39 +544,28 @@ export function TaskModal({
                         <SelectItem value="MEDIUM">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                            Moyenne
+                            Moyen
                           </div>
                         </SelectItem>
                         <SelectItem value="HIGH">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                            Élevée
+                            Urgent
                           </div>
                         </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Colonne</Label>
                     <Select
                       value={taskForm.columnId}
                       onValueChange={(value) => setTaskForm({ ...taskForm, columnId: value })}
                     >
                       <SelectTrigger className="w-full">
-                        <div className="flex items-center gap-2">
-                          {taskForm.columnId && board?.columns?.find(c => c.id === taskForm.columnId) ? (
-                            <>
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: board.columns.find(c => c.id === taskForm.columnId)?.color || '#8b5cf6' }}></div>
-                              <span>{board.columns.find(c => c.id === taskForm.columnId)?.title}</span>
-                            </>
-                          ) : (
-                            <SelectValue placeholder="Sélectionner une colonne" />
-                          )}
-                        </div>
+                        <SelectValue placeholder="Sélectionner une colonne" />
                       </SelectTrigger>
                       <SelectContent>
-                        {board?.columns?.map((column) => (
+                        {board.columns.map((column) => (
                           <SelectItem key={column.id} value={column.id}>
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: column.color }}></div>

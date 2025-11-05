@@ -41,7 +41,7 @@ export function KanbanColumn({
 }) {
   return (
     <div
-      className={`bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex flex-col flex-shrink-0 transition-all duration-200 ${
+      className={`bg-muted/30 rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex flex-col flex-shrink-0 transition-all duration-200 ${
         isCollapsed ? "max-w-[80px] min-w-[80px]" : ""
       } ${isDragging ? "opacity-50" : ""}`}
     >

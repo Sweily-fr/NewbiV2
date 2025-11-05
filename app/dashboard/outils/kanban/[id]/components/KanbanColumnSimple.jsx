@@ -12,6 +12,27 @@ import {
 import { TaskCard } from "./TaskCard";
 import { TaskCardSkeleton } from "./TaskCardSkeleton";
 
+// Styles pour le scrollbar personnalisé
+const scrollbarStyles = `
+  .kanban-column-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .kanban-column-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .kanban-column-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 3px;
+  }
+  .kanban-column-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+  .kanban-column-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
+  }
+`;
+
 /**
  * Composant pour une colonne Kanban avec @hello-pangea/dnd
  */
@@ -30,29 +51,31 @@ export function KanbanColumnSimple({
   isDraggingAnyColumn,
 }) {
   return (
-    <Draggable draggableId={`column-${column.id}`} index={columnIndex}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          style={{
-            ...provided.draggableProps.style,
-            willChange: snapshot.isDragging ? 'auto' : 'auto',
-            zIndex: snapshot.isDragging ? 1000 : 'auto',
-            // Marges horizontales pour éviter que les colonnes se collent pendant le drag
-            marginLeft: '8px',
-            marginRight: '8px',
-            // Garder la même taille pendant le drag
-            ...(snapshot.isDragging ? { 
-              width: isCollapsed ? '80px' : '300px',
-              minWidth: isCollapsed ? '80px' : '300px',
-              maxWidth: isCollapsed ? '80px' : '300px',
-            } : {})
-          }}
-          className={`bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex flex-col flex-shrink-0 h-auto ${
-            isCollapsed ? "max-w-[80px] min-w-[80px]" : ""
-          } ${snapshot.isDragging ? "opacity-60 rotate-2" : ""}`}
-        >
+    <>
+      <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
+      <Draggable draggableId={`column-${column.id}`} index={columnIndex}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            style={{
+              ...provided.draggableProps.style,
+              willChange: snapshot.isDragging ? 'auto' : 'auto',
+              zIndex: snapshot.isDragging ? 1000 : 'auto',
+              // Marges horizontales pour éviter que les colonnes se collent pendant le drag
+              marginLeft: '8px',
+              marginRight: '8px',
+              // Garder la même taille pendant le drag
+              ...(snapshot.isDragging ? { 
+                width: isCollapsed ? '80px' : '300px',
+                minWidth: isCollapsed ? '80px' : '300px',
+                maxWidth: isCollapsed ? '80px' : '300px',
+              } : {})
+            }}
+            className={`bg-muted/30 rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex flex-col flex-shrink-0 h-auto ${
+              isCollapsed ? "max-w-[80px] min-w-[80px]" : ""
+            } ${snapshot.isDragging ? "opacity-60 rotate-2" : ""}`}
+          >
           {/* Header de la colonne - Draggable */}
           <div 
             {...provided.dragHandleProps}
@@ -134,12 +157,13 @@ export function KanbanColumnSimple({
                 <div
                   ref={providedDroppable.innerRef}
                   {...providedDroppable.droppableProps}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`kanban-column-scroll p-2 rounded-lg transition-colors overflow-y-auto ${
                     snapshotDroppable.isDraggingOver ? 'bg-accent/20 border-2 border-accent' : ''
                   }`}
                   style={{
                     minHeight: '100px',
-                    flex: '1 1 auto' // Permet à la colonne de grandir selon son contenu
+                    maxHeight: 'calc(100vh - 320px)', // Hauteur max basée sur la hauteur de l'écran (augmenté à 320px)
+                    overflowY: 'auto' // Scroll vertical
                   }}
                 >
                   <div className="space-y-2 sm:space-y-3">
@@ -210,8 +234,9 @@ export function KanbanColumnSimple({
               Ajouter une tâche
             </Button>
           )}
-        </div>
-      )}
-    </Draggable>
+          </div>
+        )}
+      </Draggable>
+    </>
   );
 }
