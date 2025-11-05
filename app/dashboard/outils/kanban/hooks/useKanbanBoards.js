@@ -32,7 +32,7 @@ export const useKanbanBoards = () => {
   }, [sessionLoading, session]);
 
   // GraphQL queries and mutations
-  const { data, loading: queryLoading, refetch } = useQuery(GET_BOARDS, {
+  const { data, loading: queryLoading } = useQuery(GET_BOARDS, {
     variables: { workspaceId },
     skip: !workspaceId,
     errorPolicy: "all",
@@ -42,31 +42,63 @@ export const useKanbanBoards = () => {
   useSubscription(BOARD_UPDATED_SUBSCRIPTION, {
     variables: { workspaceId },
     skip: !workspaceId || !isReady || sessionLoading,
-    onData: ({ data: subscriptionData }) => {
+    onData: ({ data: subscriptionData, client }) => {
       if (subscriptionData?.data?.boardUpdated) {
         const { type, board, boardId } = subscriptionData.data.boardUpdated;
         
         console.log("🔄 [Kanban] Mise à jour temps réel:", type, board || boardId);
         
         // Mettre à jour le cache Apollo automatiquement
-        if (type === 'CREATED' && board) {
-          // Ajouter le nouveau board au cache
-          refetch();
-          toast.success(`Nouveau tableau créé: ${board.title}`, {
-            description: "Mis à jour automatiquement"
-          });
-        } else if (type === 'UPDATED' && board) {
-          // Mettre à jour le board existant
-          refetch();
-          toast.info(`Tableau modifié: ${board.title}`, {
-            description: "Mis à jour automatiquement"
-          });
-        } else if (type === 'DELETED' && boardId) {
-          // Supprimer le board du cache
-          refetch();
-          toast.info("Tableau supprimé", {
-            description: "Mis à jour automatiquement"
-          });
+        const cache = client.cache;
+        const existingBoards = cache.readQuery({
+          query: GET_BOARDS,
+          variables: { workspaceId },
+        });
+
+        if (existingBoards) {
+          if (type === 'CREATED' && board) {
+            // Vérifier si le board n'existe pas déjà pour éviter les doublons
+            const boardExists = existingBoards.boards.some(b => b.id === board.id);
+            if (!boardExists) {
+              // Ajouter le nouveau board au cache
+              cache.writeQuery({
+                query: GET_BOARDS,
+                variables: { workspaceId },
+                data: {
+                  boards: [...existingBoards.boards, board],
+                },
+              });
+              toast.success(`Nouveau tableau créé: ${board.title}`, {
+                description: "Mis à jour automatiquement"
+              });
+            }
+          } else if (type === 'UPDATED' && board) {
+            // Mettre à jour le board existant
+            cache.writeQuery({
+              query: GET_BOARDS,
+              variables: { workspaceId },
+              data: {
+                boards: existingBoards.boards.map(b =>
+                  b.id === board.id ? { ...b, ...board } : b
+                ),
+              },
+            });
+            toast.info(`Tableau modifié: ${board.title}`, {
+              description: "Mis à jour automatiquement"
+            });
+          } else if (type === 'DELETED' && boardId) {
+            // Supprimer le board du cache
+            cache.writeQuery({
+              query: GET_BOARDS,
+              variables: { workspaceId },
+              data: {
+                boards: existingBoards.boards.filter(b => b.id !== boardId),
+              },
+            });
+            toast.info("Tableau supprimé", {
+              description: "Mis à jour automatiquement"
+            });
+          }
         }
       }
     },
@@ -82,10 +114,9 @@ export const useKanbanBoards = () => {
 
   const [createBoard, { loading: creating }] = useMutation(CREATE_BOARD, {
     onCompleted: () => {
-      toast.success("Tableau créé avec succès");
       setIsCreateDialogOpen(false);
       setFormData({ title: "", description: "" });
-      // Plus besoin de refetch() - la subscription s'en charge
+      // La subscription s'occupe de mettre à jour le cache et d'afficher le toast
     },
     onError: (error) => {
       toast.error("Erreur lors de la création du tableau");
@@ -99,7 +130,7 @@ export const useKanbanBoards = () => {
       setIsEditDialogOpen(false);
       setBoardToEdit(null);
       setFormData({ title: "", description: "" });
-      // Plus besoin de refetch() - la subscription s'en charge
+      // La subscription s'occupe de mettre à jour le cache
     },
     onError: (error) => {
       toast.error("Erreur lors de la modification du tableau");
@@ -111,15 +142,13 @@ export const useKanbanBoards = () => {
     onCompleted: () => {
       toast.success("Tableau supprimé avec succès");
       setBoardToDelete(null);
-      // Plus besoin de refetch() ou update cache - la subscription s'en charge
+      // La subscription s'occupe de mettre à jour le cache
     },
     onError: (error) => {
       toast.error(`Erreur lors de la suppression: ${error.message}`);
       console.error("Delete board error:", error);
       setBoardToDelete(null);
     },
-    // Plus besoin de refetchQueries, awaitRefetchQueries, ou update cache
-    // La subscription temps réel gère automatiquement les mises à jour
   });
 
   const boards = data?.boards || [];

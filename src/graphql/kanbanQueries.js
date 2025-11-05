@@ -123,6 +123,8 @@ export const CREATE_BOARD = gql`
       id
       title
       description
+      createdAt
+      updatedAt
     }
   }
 `;
@@ -133,6 +135,8 @@ export const UPDATE_BOARD = gql`
       id
       title
       description
+      createdAt
+      updatedAt
     }
   }
 `;
