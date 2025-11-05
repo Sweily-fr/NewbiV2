@@ -191,15 +191,6 @@ export default function ResetPasswordPage() {
                 : "Réinitialiser le mot de passe"}
             </SubmitButton>
           </form>
-
-          <p className="mt-4 text-sm text-muted-foreground text-center">
-            <Link
-              href="/auth/login"
-              className="font-medium text-primary hover:text-primary/90"
-            >
-              Retour à la connexion
-            </Link>
-          </p>
         </div>
       </div>
     </main>

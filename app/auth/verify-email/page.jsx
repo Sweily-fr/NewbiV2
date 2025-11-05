@@ -182,16 +182,9 @@ function VerifyEmailContent() {
             <div className="w-full space-y-2">
               <Button
                 asChild
-                variant="outline"
-                className="w-full h-10 rounded-lg"
-              >
-                <Link href="/auth/login">Retour à la connexion</Link>
-              </Button>
-              <Button
-                asChild
                 className="w-full bg-[#5a50ff] hover:bg-[#4a40ef] text-white h-10 rounded-lg"
               >
-                <Link href="/auth/signup">Créer un compte</Link>
+                <Link href="/auth/login">Se connecter</Link>
               </Button>
             </div>
           </div>

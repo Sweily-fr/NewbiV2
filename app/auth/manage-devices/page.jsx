@@ -147,7 +147,43 @@ function ManageDevicesContent() {
         console.log("✅ [MANAGE-DEVICES] Résultat:", result);
         toast.success("Appareil déconnecté avec succès");
 
-        // Rediriger vers le dashboard après 1 seconde
+        // Récupérer et activer l'organisation avant de rediriger
+        try {
+          console.log("🏢 [MANAGE-DEVICES] Récupération des organisations...");
+          
+          // Récupérer les organisations de l'utilisateur
+          const orgsResponse = await fetch("/api/auth/organization/list");
+          if (orgsResponse.ok) {
+            const organizations = await orgsResponse.json();
+            console.log("📋 [MANAGE-DEVICES] Organisations:", organizations);
+
+            if (organizations && organizations.length > 0) {
+              // Prendre la première organisation ou celle marquée comme active
+              const activeOrg = organizations.find(org => org.isActive) || organizations[0];
+              console.log("🎯 [MANAGE-DEVICES] Organisation sélectionnée:", activeOrg);
+
+              // Activer l'organisation
+              const setActiveResponse = await fetch("/api/auth/organization/set-active", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ organizationId: activeOrg.id }),
+              });
+
+              if (setActiveResponse.ok) {
+                console.log("✅ [MANAGE-DEVICES] Organisation activée avec succès");
+              } else {
+                console.warn("⚠️ [MANAGE-DEVICES] Échec activation organisation");
+              }
+            }
+          }
+        } catch (orgError) {
+          console.error("❌ [MANAGE-DEVICES] Erreur activation organisation:", orgError);
+          // Continuer quand même vers le dashboard
+        }
+
+        // Rediriger vers le dashboard après activation de l'organisation
         setTimeout(() => {
           router.push("/dashboard");
         }, 1000);

@@ -23,6 +23,7 @@ import {
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
+import { useSessionValidator } from "@/src/hooks/useSessionValidator";
 import { authClient } from "@/src/lib/auth-client";
 import { SubscriptionSuccessModal } from "@/src/components/subscription-success-modal";
 import { SettingsModal } from "@/src/components/settings-modal";
@@ -46,6 +47,9 @@ function DashboardContent({ children }) {
     isLoading: onboardingLoading,
     isInitialized: layoutInitialized,
   } = useOnboarding();
+
+  // Hook pour valider la session et détecter les révocations
+  useSessionValidator();
 
   // Hook pour gérer la déconnexion automatique après 15 minutes d'inactivité
   useInactivityTimer(15, true);
