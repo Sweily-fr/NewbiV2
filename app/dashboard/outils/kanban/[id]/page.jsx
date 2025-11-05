@@ -89,7 +89,7 @@ export default function KanbanBoardPage({ params }) {
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
   // Hooks
-  const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction, markMoveTaskAction, stopPolling, startPolling } =
+  const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction } =
     useKanbanBoard(id, isRedirecting);
   const { loading: workspaceLoading } = useWorkspace();
 
@@ -183,7 +183,6 @@ export default function KanbanBoardPage({ params }) {
     setLocalColumns,
     reorderColumnsMutation,
     markReorderAction,
-    markMoveTaskAction,
     selectedMemberId // Passer le filtre pour recalculer les positions correctement
   );
   
@@ -202,21 +201,16 @@ export default function KanbanBoardPage({ params }) {
     } catch (error) {
       console.error('❌ Erreur mutation:', error);
     }
-    
-    // Redémarrer le polling immédiatement (pas de setTimeout pour éviter de bloquer le thread)
-    // La protection contre les mises à jour se fait dans useKanbanBoard via lastMoveTaskTimeRef
-    startPolling(5000);
-  }, [dndHandleDragEnd, startPolling]);
+    // Plus de polling - les subscriptions WebSocket temps réel suffisent
+  }, [dndHandleDragEnd]);
 
   // Détecter le début du drag des colonnes
   const handleDragStart = React.useCallback((result) => {
     if (result.type === 'column') {
       setIsDraggingColumn(true);
     }
-    
-    // Arrêter le polling pendant le drag pour éviter les requêtes réseau
-    stopPolling();
-  }, [stopPolling]);
+    // Plus de polling - les subscriptions WebSocket temps réel suffisent
+  }, []);
 
   // Helper pour récupérer les tâches d'une colonne
   const getLocalTasksByColumn = React.useCallback((columnId) => {

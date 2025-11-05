@@ -11,7 +11,6 @@ export const useKanbanDnDSimple = (
   setLocalColumns,
   reorderColumns,
   markReorderAction,
-  markMoveTaskAction,
   selectedMemberId = null // Filtre par membre
 ) => {
   
@@ -112,8 +111,7 @@ export const useKanbanDnDSimple = (
             workspaceId
           }
         });
-        // Marquer APRÈS la mutation pour empêcher les updates pendant toute la durée
-        markMoveTaskAction();
+        // Plus besoin de markMoveTaskAction - la subscription gère maintenant le cache directement
       } catch (error) {
         console.error('❌ Erreur moveTask:', error);
       }
@@ -244,13 +242,12 @@ export const useKanbanDnDSimple = (
           }
         });
         console.log('✅ Tâche déplacée:', draggableId, 'vers colonne:', destColumnId, 'position:', finalPosition);
-        // Marquer APRÈS la mutation pour empêcher les updates pendant toute la durée
-        markMoveTaskAction();
+        // Plus besoin de markMoveTaskAction - la subscription gère maintenant le cache directement
       } catch (error) {
         console.error('❌ Erreur moveTask:', error);
       }
     }
-  }, [localColumns, setLocalColumns, moveTask, reorderColumns, workspaceId, markReorderAction, markMoveTaskAction, selectedMemberId]);
+  }, [localColumns, setLocalColumns, moveTask, reorderColumns, workspaceId, markReorderAction, selectedMemberId]);
 
   return {
     handleDragEnd
