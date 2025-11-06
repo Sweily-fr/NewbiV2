@@ -1,6 +1,6 @@
 import React from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { Plus, Edit, Trash2, MoreVertical, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
+import { Plus, Edit, Trash2, MoreVertical, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import {
@@ -62,9 +62,7 @@ export function KanbanColumnSimple({
               ...provided.draggableProps.style,
               willChange: snapshot.isDragging ? 'auto' : 'auto',
               zIndex: snapshot.isDragging ? 1000 : 'auto',
-              // Marges horizontales pour éviter que les colonnes se collent pendant le drag
-              marginLeft: '8px',
-              marginRight: '8px',
+              backgroundColor: `${column.color || "#94a3b8"}08`,
               // Garder la même taille pendant le drag
               ...(snapshot.isDragging ? { 
                 width: isCollapsed ? '80px' : '300px',
@@ -72,37 +70,41 @@ export function KanbanColumnSimple({
                 maxWidth: isCollapsed ? '80px' : '300px',
               } : {})
             }}
-            className={`bg-muted/30 rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex flex-col flex-shrink-0 h-auto ${
+            className={`rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] flex flex-col flex-shrink-0 h-auto ${
               isCollapsed ? "max-w-[80px] min-w-[80px]" : ""
             } ${snapshot.isDragging ? "opacity-60 rotate-2" : ""}`}
           >
           {/* Header de la colonne - Draggable */}
           <div 
             {...provided.dragHandleProps}
-            className="flex items-center justify-between mb-2 sm:mb-3 gap-2 cursor-grab active:cursor-grabbing"
+            className={`flex items-center justify-between gap-2 cursor-grab active:cursor-grabbing px-2 ${
+              isCollapsed ? '' : 'mb-2 sm:mb-3'
+            }`}
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {/* Icône de drag */}
-              <div className="text-muted-foreground hover:text-foreground transition-colors">
-                <GripVertical className="h-4 w-4" />
+              {/* Badge de couleur avec titre */}
+              <div
+                className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1"
+                style={{
+                  backgroundColor: `${column.color || "#94a3b8"}20`,
+                  borderColor: `${column.color || "#94a3b8"}20`,
+                  color: column.color || "#94a3b8"
+                }}
+              >
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: column.color || "#94a3b8" }}
+                />
+                <span className="truncate">{column.title}</span>
               </div>
 
-              {/* Point de couleur et nom - toujours affichés */}
-              <div
-                className="w-3 h-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: column.color || "#94a3b8" }}
-              />
-              <h3 className="font-semibold text-sm sm:text-base truncate">
-                {column.title}
-              </h3>
-
-              {/* Badge du nombre de tâches - toujours affiché */}
-              <Badge
-                variant="secondary"
-                className="ml-auto flex-shrink-0 text-xs"
+              {/* Nombre de tâches - toujours affiché */}
+              <span 
+                className="ml-auto flex-shrink-0 text-xs font-medium"
+                style={{ color: column.color || "#94a3b8" }}
               >
                 {tasks.length}
-              </Badge>
+              </span>
             </div>
 
             <div className="flex items-center gap-1" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
@@ -111,6 +113,7 @@ export function KanbanColumnSimple({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 sm:h-8 sm:w-8"
+                style={{ color: column.color || "#94a3b8" }}
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleCollapse(column.id);
@@ -129,6 +132,7 @@ export function KanbanColumnSimple({
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 sm:h-8 sm:w-8"
+                    style={{ color: column.color || "#94a3b8" }}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
@@ -178,7 +182,8 @@ export function KanbanColumnSimple({
                       !snapshotDroppable.isDraggingOver && (
                         <div 
                           {...provided.dragHandleProps}
-                          className="text-center text-muted-foreground py-8 text-sm cursor-grab active:cursor-grabbing"
+                          className="text-center py-8 text-sm cursor-grab active:cursor-grabbing"
+                          style={{ color: column.color || "#94a3b8" }}
                         >
                           Aucune tâche
                         </div>
@@ -227,7 +232,16 @@ export function KanbanColumnSimple({
             <Button
               variant="ghost"
               size="sm"
-              className="w-full mt-2 sm:mt-3 justify-start text-muted-foreground hover:text-foreground"
+              className="w-full mt-2 sm:mt-3 justify-start transition-colors"
+              style={{ 
+                color: column.color || "#94a3b8"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = `${column.color || "#94a3b8"}10`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
               onClick={() => onAddTask(column.id)}
             >
               <Plus className="mr-2 h-4 w-4" />

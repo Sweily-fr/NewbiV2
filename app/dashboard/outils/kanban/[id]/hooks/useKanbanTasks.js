@@ -324,7 +324,7 @@ export const useKanbanTasks = (boardId, board) => {
           workspaceId,
         },
       });
-    } catch (error) {
+    } catch {
       toast.error("Une erreur est survenue lors de la création de la tâche");
     }
   };
@@ -374,7 +374,7 @@ export const useKanbanTasks = (boardId, board) => {
   const handleDeleteTask = async (taskId) => {
     try {
       await deleteTask({ variables: { id: taskId, workspaceId } });
-    } catch (error) {
+    } catch {
       // Erreur silencieuse
     }
   };
@@ -419,8 +419,8 @@ export const useKanbanTasks = (boardId, board) => {
       columnId: task?.columnId || "",
       tags: Array.isArray(task?.tags) ? task.tags : [],
       checklist: Array.isArray(task?.checklist)
-        ? task.checklist.map((item) => ({
-            id: item?.id,
+        ? task.checklist.map((item, index) => ({
+            id: item?.id || `checklist-item-${index}-${Date.now()}`,
             text: item?.text || "",
             completed: Boolean(item?.completed),
           }))
