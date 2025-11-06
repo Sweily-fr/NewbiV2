@@ -64,6 +64,12 @@ const ChecklistItem = ({ item, onUpdate, onDelete }) => {
 export const Checklist = ({ items = [], onChange }) => {
   const [newItemText, setNewItemText] = useState('');
 
+  // Normalize items to ensure all have valid IDs
+  const normalizedItems = items.map((item, index) => ({
+    ...item,
+    id: item?.id || `checklist-item-${index}-${Date.now()}`
+  }));
+
   const handleAddItem = () => {
     if (!newItemText.trim()) return;
     
@@ -88,8 +94,8 @@ export const Checklist = ({ items = [], onChange }) => {
     onChange(items.filter(item => item.id !== itemId));
   };
 
-  const completedCount = items.filter(item => item.completed).length;
-  const totalCount = items.length;
+  const completedCount = normalizedItems.filter(item => item.completed).length;
+  const totalCount = normalizedItems.length;
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
@@ -113,7 +119,7 @@ export const Checklist = ({ items = [], onChange }) => {
       )}
       
       <div className="space-y-1">
-        {items.map(item => (
+        {normalizedItems.map(item => (
           <ChecklistItem
             key={item.id}
             item={item}

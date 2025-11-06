@@ -3,11 +3,12 @@
 import { use, useState, useEffect } from "react";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, LoaderCircle, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
 // UI Components
 import { Button } from "@/src/components/ui/button";
+import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import {
   Card,
   CardContent,
@@ -35,6 +36,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/src/components/ui/dropdown-menu";
 import {
   Select,
@@ -43,8 +48,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { LayoutGrid, List } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
 // Hooks
 import { useKanbanBoard } from "./hooks/useKanbanBoard";
@@ -164,6 +175,9 @@ export default function KanbanBoardPage({ params }) {
   
   // État pour les tâches sélectionnées
   const [selectedTaskIds, setSelectedTaskIds] = React.useState(new Set());
+
+  // État pour le popover de description du tableau
+  const [showBoardDescriptionPopover, setShowBoardDescriptionPopover] = React.useState(false);
 
   // Hook pour le filtrage par membre (AVANT useKanbanDnDSimple pour éviter l'erreur de hoisting)
   const {
@@ -288,15 +302,13 @@ export default function KanbanBoardPage({ params }) {
 
     return (
       <>
-        <div className="h-5 mb-4"></div>
-
         <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <Droppable droppableId="all-columns" direction="horizontal" type="column">
             {(provided, snapshot) => (
               <div 
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="flex flex-nowrap items-start"
+                className="flex flex-nowrap items-start gap-4"
               >
                 {localColumns.map((column, index) => {
                   const columnTasks = filterTasks(
@@ -400,55 +412,49 @@ export default function KanbanBoardPage({ params }) {
       style={{ pointerEvents: isBoard ? 'auto' : 'auto' }}
     >
       {/* Header */}
-      <div className="px-4 sm:px-6 py-2 sticky left-0 bg-background z-10 border-b">
-        <div className="flex items-center gap-2 mb-2">
+      <div className="sticky left-0 bg-background z-10">
+        <div className="flex items-center gap-2 pt-2 pb-2 border-b px-4 sm:px-6">
           <h1 className="text-base font-semibold">{board.title}</h1>
           {board.description && (
-            <span className="text-muted-foreground text-xs">
-              {board.description}
-            </span>
+            <Popover open={showBoardDescriptionPopover} onOpenChange={setShowBoardDescriptionPopover}>
+              <PopoverTrigger asChild>
+                <div
+                  className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowBoardDescriptionPopover(!showBoardDescriptionPopover);
+                  }}
+                >
+                  <AlignLeft className="h-4 w-4" />
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" side="top">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Description</h4>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                    {board.description}
+                  </p>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
         
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <ToggleGroup
-              type="single"
-              value={viewMode}
-              onValueChange={(value) => value && setViewMode(value)}
-              className="bg-muted/50 rounded-md p-0.5"
-            >
-              <ToggleGroupItem
-                value="board"
-                aria-label="Vue tableau"
-                className="data-[state=on]:bg-background data-[state=on]:shadow-sm gap-2 px-3 py-2 rounded-sm hidden md:flex"
-              >
+        <div className="flex items-center justify-between gap-3 py-3 border-b px-4 sm:px-6">
+          <Tabs value={viewMode} onValueChange={setViewMode} className="w-fit">
+            <TabsList className="w-fit grid grid-cols-2">
+              <TabsTrigger value="board" className="cursor-pointer hidden md:inline-flex gap-2">
                 <LayoutGrid className="h-4 w-4" />
-                <span className="text-sm font-medium">Board</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="list"
-                aria-label="Vue liste"
-                className="data-[state=on]:bg-background data-[state=on]:shadow-sm gap-2 px-3 py-2 rounded-sm"
-              >
+                <span>Board</span>
+              </TabsTrigger>
+              <TabsTrigger value="list" className="cursor-pointer gap-2">
                 <List className="h-4 w-4 md:inline hidden" />
-                <span className="text-sm font-medium">List</span>
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
+                <span>List</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
           
           <div className="flex items-center gap-2">
-            <div className="relative hidden sm:block">
-              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Rechercher des tâches..."
-                className="pl-8 w-56 border-muted-foreground/20"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
             {/* Bouton Supprimer si des tâches sont sélectionnées */}
             {selectedTaskIds.size > 0 && (
               <Button
@@ -474,38 +480,151 @@ export default function KanbanBoardPage({ params }) {
               </Button>
             )}
             
-            {/* Bouton de filtre par utilisateur */}
-            <MemberFilterButton
-              members={members}
-              selectedMemberId={selectedMemberId}
-              onMemberChange={setSelectedMemberId}
-              loading={membersLoading}
-            />
-            
-            {collapsedColumnsCount > 0 && isBoard && (
-              <Button
-                variant="outline"
-                onClick={expandAll}
-                className="whitespace-nowrap hidden sm:flex"
-              >
-                Déplier toutes ({collapsedColumnsCount})
-              </Button>
-            )}
             {isBoard && (
-              <Button
-                variant="default"
-                className="font-medium whitespace-nowrap"
-                onClick={openAddModal}
-              >
-                Ajouter une colonne
-              </Button>
+              <ButtonGroup>
+                <Button
+                  onClick={openAddModal}
+                  className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                >
+                  Ajouter une colonne
+                </Button>
+                <ButtonGroupSeparator />
+                <Button
+                  onClick={openAddModal}
+                  size="icon"
+                  className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </ButtonGroup>
             )}
           </div>
         </div>
       </div>
 
+      {/* Contrôles au même niveau - Lien Déplier, Recherche et Filtre */}
+      {isBoard && (
+        <div className="sticky left-0 px-4 sm:px-6 py-3 bg-white dark:bg-slate-950 z-10 flex items-center gap-4">
+          {/* Lien Déplier toutes */}
+          {collapsedColumnsCount > 0 && (
+            <button
+              onClick={expandAll}
+              className="text-sm text-muted-foreground hover:text-foreground cursor-pointer whitespace-nowrap transition-colors"
+            >
+              Déplier toutes ({collapsedColumnsCount})
+            </button>
+          )}
+
+          {/* ButtonGroup: Recherche + Filtres */}
+          <ButtonGroup>
+            {/* Barre de recherche */}
+            <div className="relative flex-1">
+              <Input
+                placeholder="Rechercher des tâches..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-[150px] lg:w-[250px] ps-9 rounded-r-none"
+              />
+              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
+                <Search size={16} aria-hidden="true" />
+              </div>
+            </div>
+
+            {/* Bouton Filtres avec dropdown utilisateur */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 gap-2 font-normal rounded-l-none"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span>Filtres</span>
+                  {selectedMemberId && (
+                    <Badge variant="secondary" className="ml-1">
+                      1
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[240px]">
+                {/* Effacer le filtre */}
+                <DropdownMenuItem
+                  onClick={() => setSelectedMemberId(null)}
+                  className="cursor-pointer"
+                >
+                  Effacer le filtre
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                {/* Sous-menu Filtre par utilisateur */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="whitespace-nowrap">
+                    <Users className="h-4 w-4 mr-2" />
+                    Par utilisateurs
+                    {selectedMemberId && (
+                      <Badge variant="secondary" className="ml-auto">
+                        1
+                      </Badge>
+                    )}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-[250px]">
+                    {membersLoading ? (
+                      <div className="text-xs text-muted-foreground px-2 py-4 text-center">
+                        Chargement...
+                      </div>
+                    ) : members && members.length > 0 ? (
+                      <div className="space-y-1 p-1">
+                        {members.map((member) => (
+                          <div
+                            key={member.id}
+                            className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                            onClick={() => setSelectedMemberId(selectedMemberId === member.id ? null : member.id)}
+                          >
+                            {/* Avatar */}
+                            {member.image ? (
+                              <img
+                                src={member.image}
+                                alt={member.name || member.email}
+                                className="w-6 h-6 rounded-full mr-2 object-cover"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center text-xs font-medium">
+                                {(member.name || member.email).charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            
+                            {/* Nom et checkbox */}
+                            <span className="flex-1">{member.name || member.email}</span>
+                            <div
+                              className={`w-4 h-4 rounded border flex items-center justify-center ${
+                                selectedMemberId === member.id
+                                  ? 'bg-primary border-primary'
+                                  : 'border-muted-foreground/50'
+                              }`}
+                            >
+                              {selectedMemberId === member.id && (
+                                <span className="text-white text-xs">✓</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-muted-foreground px-2 py-4 text-center">
+                        Aucun membre
+                      </div>
+                    )}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </ButtonGroup>
+        </div>
+      )}
+
       {/* Board Content */}
-      <div className="w-full px-4 sm:px-6">
+      <div className="w-full px-4 sm:px-6 mt-0">
         {isList && (
           <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
             <KanbanListView
