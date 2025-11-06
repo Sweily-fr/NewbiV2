@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Area,
   Bar,
@@ -51,6 +51,8 @@ export function TreasuryChart({
   className = "",
   initialBalance = 0,
 }) {
+  const [timeRange, setTimeRange] = useState("90d"); // 90d, 30d, 365d
+
   console.log("📊 [TREASURY] Props reçues:", {
     expensesCount: expenses.length,
     invoicesCount: invoices.length,
@@ -63,8 +65,16 @@ export function TreasuryChart({
     const chartData = [];
     let cumulativeTreasury = initialBalance;
 
-    // Générer les données pour les 90 derniers jours
-    for (let i = 89; i >= 0; i--) {
+    // Déterminer le nombre de jours en fonction du filtre
+    const daysMap = {
+      "30d": 30,
+      "90d": 90,
+      "365d": 365,
+    };
+    const days = daysMap[timeRange] || 90;
+
+    // Générer les données pour la période sélectionnée
+    for (let i = days - 1; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split("T")[0];
@@ -72,17 +82,17 @@ export function TreasuryChart({
       // Filtrer les factures pour ce jour
       const dayInvoices = invoices.filter((invoice) => {
         if (!invoice.issueDate || invoice.status !== "COMPLETED") return false;
-        
+
         let invoiceDate;
-        if (typeof invoice.issueDate === 'string') {
+        if (typeof invoice.issueDate === "string") {
           const timestamp = parseInt(invoice.issueDate);
           invoiceDate = new Date(timestamp);
-        } else if (typeof invoice.issueDate === 'number') {
+        } else if (typeof invoice.issueDate === "number") {
           invoiceDate = new Date(invoice.issueDate);
         } else {
           invoiceDate = new Date(invoice.issueDate);
         }
-        
+
         if (isNaN(invoiceDate.getTime())) return false;
         return invoiceDate.toISOString().split("T")[0] === dateStr;
       });
@@ -90,28 +100,34 @@ export function TreasuryChart({
       // Filtrer les dépenses pour ce jour
       const dayExpenses = expenses.filter((expense) => {
         if (!expense.date || expense.status !== "PAID") return false;
-        
+
         let expenseDate;
-        if (typeof expense.date === 'string') {
+        if (typeof expense.date === "string") {
           const timestamp = parseInt(expense.date);
           if (!isNaN(timestamp) && timestamp > 1000000000000) {
             expenseDate = new Date(timestamp);
           } else {
             expenseDate = new Date(expense.date);
           }
-        } else if (typeof expense.date === 'number') {
+        } else if (typeof expense.date === "number") {
           expenseDate = new Date(expense.date);
         } else {
           expenseDate = new Date(expense.date);
         }
-        
+
         if (isNaN(expenseDate.getTime())) return false;
         return expenseDate.toISOString().split("T")[0] === dateStr;
       });
 
       // Calculer les montants du jour
-      const dayIncome = dayInvoices.reduce((sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0);
-      const dayExpensesAmount = dayExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+      const dayIncome = dayInvoices.reduce(
+        (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
+        0
+      );
+      const dayExpensesAmount = dayExpenses.reduce(
+        (sum, expense) => sum + (expense.amount || 0),
+        0
+      );
 
       // Mettre à jour la trésorerie cumulée
       cumulativeTreasury += dayIncome - dayExpensesAmount;
@@ -128,14 +144,14 @@ export function TreasuryChart({
       totalDays: chartData.length,
       firstDay: chartData[0],
       lastDay: chartData[chartData.length - 1],
-      daysWithIncome: chartData.filter(d => d.income > 0).length,
-      daysWithExpenses: chartData.filter(d => d.expenses > 0).length,
+      daysWithIncome: chartData.filter((d) => d.income > 0).length,
+      daysWithExpenses: chartData.filter((d) => d.expenses > 0).length,
       totalIncome: chartData.reduce((sum, d) => sum + d.income, 0),
       totalExpenses: chartData.reduce((sum, d) => sum + d.expenses, 0),
     });
 
     return chartData;
-  }, [expenses, invoices, initialBalance]);
+  }, [expenses, invoices, initialBalance, timeRange]);
 
   // Calculer la consommation de trésorerie (différence entre début et fin)
   const treasuryConsumption = useMemo(() => {
@@ -169,22 +185,22 @@ export function TreasuryChart({
             </span>
           </CardDescription>
         </div>
-        <Select defaultValue="annual">
+        <Select value={timeRange} onValueChange={setTimeRange}>
           <SelectTrigger
             className="w-[140px] h-8 text-xs border-none shadow-none"
             aria-label="Sélectionner une période"
           >
-            <SelectValue placeholder="Cumul annuel" />
+            <SelectValue placeholder="Derniers 3 mois" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
-            <SelectItem value="annual" className="rounded-lg text-xs">
-              Cumul annuel
+            <SelectItem value="30d" className="rounded-lg text-xs">
+              Dernier mois
             </SelectItem>
-            <SelectItem value="monthly" className="rounded-lg text-xs">
-              Mensuel
+            <SelectItem value="90d" className="rounded-lg text-xs">
+              Derniers 3 mois
             </SelectItem>
-            <SelectItem value="quarterly" className="rounded-lg text-xs">
-              Trimestriel
+            <SelectItem value="365d" className="rounded-lg text-xs">
+              Dernière année
             </SelectItem>
           </SelectContent>
         </Select>
@@ -226,7 +242,10 @@ export function TreasuryChart({
               minTickGap={32}
               tickFormatter={(value) => {
                 const date = new Date(value);
-                return date.toLocaleDateString("fr-FR", { month: "short", day: "numeric" });
+                return date.toLocaleDateString("fr-FR", {
+                  month: "short",
+                  day: "numeric",
+                });
               }}
             />
             <YAxis
@@ -259,14 +278,14 @@ export function TreasuryChart({
               dataKey="income"
               fill="var(--color-income)"
               radius={[4, 4, 0, 0]}
-              maxBarSize={40}
+              barSize={26}
             />
             {/* Barres pour les sorties (rouge) */}
             <Bar
               dataKey="expenses"
               fill="var(--color-expenses)"
               radius={[4, 4, 0, 0]}
-              maxBarSize={40}
+              barSize={26}
             />
             {/* Courbe de trésorerie (zone remplie) */}
             <Area
