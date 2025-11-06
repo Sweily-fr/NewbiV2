@@ -46,7 +46,7 @@ function VerifyEmailContent() {
         if (response.ok) {
           setVerificationStatus("success");
           setMessage("Votre email a été vérifié avec succès !");
-          toast.success("Email vérifié avec succès !");
+          toast.success("Email vérifié avec succès ! Redirection vers votre espace...");
 
           // Animation de confettis personnalisée
           setTimeout(() => {
@@ -87,10 +87,10 @@ function VerifyEmailContent() {
             }, 250);
           }, 300);
 
-          // Redirection temporairement désactivée pour travailler sur l'UX/UI
+          // Redirection directe vers le dashboard après vérification
           setTimeout(() => {
-            router.push("/auth/login");
-          }, 5000);
+            router.push("/dashboard");
+          }, 3000);
         } else {
           setVerificationStatus("error");
           setMessage(data.error || "Erreur lors de la vérification");
@@ -147,7 +147,7 @@ function VerifyEmailContent() {
                 Email vérifié !
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Votre compte a été activé avec succès.
+                Redirection vers votre espace en cours...
               </p>
             </div>
             <Button
@@ -155,10 +155,10 @@ function VerifyEmailContent() {
               className="w-full bg-[#5a50ff] hover:bg-[#4a40ef] text-white font-normal h-10 rounded-lg"
             >
               <Link
-                href="/auth/login"
+                href="/dashboard"
                 className="flex items-center justify-center gap-2"
               >
-                Se connecter
+                Accéder au dashboard
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

@@ -19,7 +19,6 @@ import { cn } from "@/src/lib/utils";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import { RowActions } from "../components/RowActions";
 import { multiColumnFilterFn } from "../filters/multiColumnFilterFn";
-import { typeFilterFn } from "../filters/typeFilterFn";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "../../merchant-logo";
 import { getCategoryConfig } from "@/lib/category-icons-config";
@@ -80,7 +79,7 @@ export const columns = [
     accessorKey: "amount",
     cell: ({ row }) => {
       const amount = row.getValue("amount");
-      const type = row.getValue("type");
+      const type = row.original.type;
       return (
         <div className="font-normal text-left">
           {type === "INCOME" ? "+" : "-"}

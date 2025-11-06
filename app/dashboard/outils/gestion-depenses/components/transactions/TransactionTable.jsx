@@ -45,10 +45,8 @@ import { TablePagination } from "./components/TablePagination";
 
 export default function TransactionTable({
   expenses: expensesProp = [],
-  invoices: invoicesProp = [],
   loading: loadingProp = false,
   refetchExpenses: refetchExpensesProp,
-  refetchInvoices: refetchInvoicesProp,
 }) {
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
@@ -181,24 +179,13 @@ export default function TransactionTable({
     }
   }, [promoteResult]);
 
-  const invoices = invoicesProp;
-  const invoicesTotalCount = invoicesProp.length;
-  const invoicesLoading = loadingProp;
-  const invoicesError = null;
-  const refetchInvoices = refetchInvoicesProp;
-
-  const paidInvoices = useMemo(() => {
-    return invoices.filter((invoice) => invoice.status === "COMPLETED");
-  }, [invoices]);
-
-  const loading = expensesLoading || invoicesLoading;
-  const error = expensesError || invoicesError;
-  const totalCount = expensesTotalCount + paidInvoices.length;
+  const loading = expensesLoading;
+  const error = expensesError;
+  const totalCount = expensesTotalCount;
 
   const refetch = useCallback(() => {
     refetchExpenses();
-    refetchInvoices();
-  }, [refetchExpenses, refetchInvoices]);
+  }, [refetchExpenses]);
 
   const transactions = useMemo(() => {
     const expenseTransactions = expenses.map((expense) => {
@@ -247,38 +234,7 @@ export default function TransactionTable({
       };
     });
 
-    const invoiceTransactions = paidInvoices.map((invoice) => ({
-      id: `invoice-${invoice.id}`,
-      date:
-        typeof invoice.issueDate === "string"
-          ? invoice.issueDate
-          : new Date(invoice.issueDate).toISOString().split("T")[0],
-      type: "INCOME",
-      category: "SERVICES",
-      amount: invoice.finalTotalTTC,
-      currency: "EUR",
-      description: `Facture ${invoice.prefix}${invoice.number} - ${invoice.client.name}`,
-      paymentMethod: "BANK_TRANSFER",
-      vendor: invoice.client.name,
-      invoiceNumber: `${invoice.prefix}${invoice.number}`,
-      documentNumber: invoice.number,
-      vatAmount: invoice.totalVAT,
-      vatRate: null,
-      status: "PAID",
-      tags: [],
-      attachment: null,
-      files: [],
-      ocrMetadata: null,
-      createdAt: invoice.createdAt,
-      updatedAt: invoice.updatedAt,
-      source: "invoice",
-      client: invoice.client,
-      dueDate: invoice.dueDate,
-      totalHT: invoice.totalHT,
-      totalTTC: invoice.totalTTC,
-    }));
-
-    let allTransactions = [...expenseTransactions, ...invoiceTransactions];
+    let allTransactions = [...expenseTransactions];
 
     if (expenseTypeFilter || assignedMemberFilter) {
       allTransactions = allTransactions.filter((transaction) => {
@@ -312,7 +268,7 @@ export default function TransactionTable({
           : new Date(b.date).toISOString().split("T")[0];
       return dateB.localeCompare(dateA);
     });
-  }, [expenses, paidInvoices, expenseTypeFilter, assignedMemberFilter]);
+  }, [expenses, expenseTypeFilter, assignedMemberFilter]);
 
   const totalItems = totalCount;
 
@@ -708,44 +664,8 @@ export default function TransactionTable({
     },
   });
 
-  const uniqueTypeValues = useMemo(() => {
-    const typeColumn = table.getColumn("type");
-
-    if (!typeColumn) return [];
-
-    const values = Array.from(typeColumn.getFacetedUniqueValues().keys());
-
-    return values.sort();
-  }, [table.getColumn("type")?.getFacetedUniqueValues()]);
-
-  const typeCounts = useMemo(() => {
-    const typeColumn = table.getColumn("type");
-    if (!typeColumn) return new Map();
-    return typeColumn.getFacetedUniqueValues();
-  }, [table.getColumn("type")?.getFacetedUniqueValues()]);
-
-  const selectedTypes = useMemo(() => {
-    const filterValue = table.getColumn("type")?.getFilterValue();
-    return filterValue ?? [];
-  }, [table.getColumn("type")?.getFilterValue()]);
-
-  const handleTypeChange = (checked, value) => {
-    const filterValue = table.getColumn("type")?.getFilterValue();
-    const newFilterValue = filterValue ? [...filterValue] : [];
-
-    if (checked) {
-      newFilterValue.push(value);
-    } else {
-      const index = newFilterValue.indexOf(value);
-      if (index > -1) {
-        newFilterValue.splice(index, 1);
-      }
-    }
-
-    table
-      .getColumn("type")
-      ?.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
-  };
+  // Suppression du filtrage par type car la colonne "type" n'existe plus
+  // Les données ont toujours un champ "type" mais il n'est plus affiché comme colonne
 
   return (
     <div className="space-y-4">

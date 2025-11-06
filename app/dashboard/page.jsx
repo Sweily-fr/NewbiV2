@@ -48,6 +48,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import BankingConnectButton from "@/src/components/banking/BankingConnectButton";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
+import { TreasuryChart } from "@/src/components/treasury-chart";
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
@@ -298,6 +299,15 @@ function DashboardContent() {
           isLoading={isLoading}
         />
       </div>
+      {/* Graphique de trésorerie - Pleine largeur */}
+      <div className="w-full">
+        <TreasuryChart
+          expenses={paidExpenses}
+          invoices={paidInvoices}
+          className="shadow-xs"
+          initialBalance={0}
+        />
+      </div>
       <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
         <ChartAreaInteractive
           title="Entrées"
@@ -317,9 +327,6 @@ function DashboardContent() {
           data={expenseChartData}
           hideMobileCurve={true}
         />
-        {/* <ChartRadarGridCircle className="shadow-xs" />
-        <ChartBarMultiple className="shadow-xs" /> */}
-        {/* <ChartRadarGridCircle /> */}
       </div>
     </div>
   );

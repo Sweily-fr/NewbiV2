@@ -7,11 +7,8 @@ import { ExpenseCategoryChart } from "./components/expense-category-chart";
 import { useState, useMemo } from "react";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useExpenses } from "@/src/hooks/useExpenses";
-import { useInvoices } from "@/src/graphql/invoiceQueries";
 import {
-  processInvoicesForCharts,
   processExpensesForCharts,
-  getIncomeChartConfig,
   getExpenseChartConfig,
 } from "@/src/utils/chartDataProcessors";
 import { useApolloClient } from "@apollo/client";
@@ -22,7 +19,7 @@ function GestionDepensesContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const client = useApolloClient();
 
-  // Récupération des dépenses depuis l'API - sans paramètres pour éviter les problèmes
+  // Récupération des dépenses depuis l'API
   const {
     expenses,
     loading: expensesLoading,
@@ -30,21 +27,8 @@ function GestionDepensesContent() {
     refetch: refetchExpenses,
   } = useExpenses();
 
-  // Récupération des factures payées depuis l'API
-  const {
-    invoices,
-    loading: invoicesLoading,
-    error: invoicesError,
-    refetch: refetchInvoices,
-  } = useInvoices();
-
-  // Filtrer les factures payées
-  const paidInvoices = useMemo(() => {
-    return invoices.filter((invoice) => invoice.status === "COMPLETED");
-  }, [invoices]);
-
-  const loading = expensesLoading || invoicesLoading;
-  const error = expensesError || invoicesError;
+  const loading = expensesLoading;
+  const error = expensesError;
 
   // Local formatCurrency function
   const formatCurrency = (amount) => {
@@ -56,17 +40,11 @@ function GestionDepensesContent() {
 
   // Filtrer les dépenses payées (exclure les DRAFT) - MÉMORISÉ
   const paidExpenses = useMemo(() => {
+    if (!expenses || !Array.isArray(expenses)) return [];
     return expenses.filter((expense) => expense.status === "PAID");
   }, [expenses]);
 
-  // Calcul des statistiques réelles avec les utilitaires - MÉMORISÉ
-  const totalIncome = useMemo(() => {
-    return paidInvoices.reduce(
-      (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
-      0
-    );
-  }, [paidInvoices]);
-
+  // Calcul du total des dépenses - MÉMORISÉ
   const totalExpenses = useMemo(() => {
     return paidExpenses.reduce(
       (sum, expense) => sum + (expense.amount || 0),
@@ -75,10 +53,6 @@ function GestionDepensesContent() {
   }, [paidExpenses]);
 
   // Utiliser les fonctions utilitaires pour les données de graphique
-  const incomeChartData = useMemo(
-    () => processInvoicesForCharts(paidInvoices),
-    [paidInvoices]
-  );
   const expenseChartData = useMemo(
     () => processExpensesForCharts(paidExpenses),
     [paidExpenses]
@@ -101,8 +75,7 @@ function GestionDepensesContent() {
     }
   };
 
-  // Utiliser les configurations importées
-  const incomeChartConfig = getIncomeChartConfig();
+  // Utiliser la configuration importée
   const expenseChartConfig = getExpenseChartConfig();
 
   return (
@@ -152,10 +125,8 @@ function GestionDepensesContent() {
         <div className="mt-4">
           <TransactionTable
             expenses={expenses}
-            invoices={invoices}
             loading={loading}
             refetchExpenses={refetchExpenses}
-            refetchInvoices={refetchInvoices}
           />
         </div>
       </div>
@@ -176,10 +147,8 @@ function GestionDepensesContent() {
         {/* Table */}
         <TransactionTable
           expenses={expenses}
-          invoices={invoices}
           loading={loading}
           refetchExpenses={refetchExpenses}
-          refetchInvoices={refetchInvoices}
         />
       </div>
     </>

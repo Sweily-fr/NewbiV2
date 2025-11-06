@@ -299,11 +299,11 @@ export function ExpenseCategoryChart({ expenses = [] }) {
               return (
                 <div key={item.category} className="flex items-center gap-3">
                   <div
-                    className="h-3 w-3 rounded-full flex-shrink-0"
+                    className="h-2 w-2 rounded-full flex-shrink-0"
                     style={{ backgroundColor: item.fill }}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-normal text-foreground truncate">
+                    <p className="text-xs font-normal text-foreground truncate">
                       {item.label} ({percentage} %)
                     </p>
                   </div>
@@ -312,9 +312,9 @@ export function ExpenseCategoryChart({ expenses = [] }) {
             })}
             {chartData.length > 5 && (
               <div className="flex items-center gap-3">
-                <div className="h-3 w-3 rounded-full flex-shrink-0 bg-muted" />
+                <div className="h-2 w-2 rounded-full flex-shrink-0 bg-muted" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-normal text-muted-foreground">
+                  <p className="text-xs font-normal text-muted-foreground">
                     +{chartData.length - 5} autres catégories
                   </p>
                 </div>
