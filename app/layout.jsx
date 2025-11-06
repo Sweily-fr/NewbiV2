@@ -42,7 +42,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png',
+        url: '/images/op-newbi.png',
         width: 1200,
         height: 630,
         alt: 'Newbi - Solution complète pour freelances',
@@ -53,7 +53,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: "Newbi - Solution complète pour freelances et petites entreprises",
     description: "Simplifiez votre activité avec Newbi : devis, factures, signatures électroniques, transferts de fichiers et gestion de projets.",
-    images: ['https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_Texte_Purple.png'],
+    images: ['/images/op-newbi.png'],
   },
   robots: {
     index: true,
