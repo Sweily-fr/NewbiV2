@@ -131,24 +131,52 @@ export function AddTransactionDrawer({
       // Formater la date pour l'input date (format YYYY-MM-DD)
       let formattedDate = "";
       if (transaction.date) {
-        if (typeof transaction.date === "string") {
-          // Si c'est déjà une string, vérifier le format
+        console.log("🔄 [DRAWER EDIT] Date brute:", transaction.date, typeof transaction.date);
+        
+        // Cas 1: Objet MongoDB avec $date
+        if (typeof transaction.date === "object" && transaction.date.$date) {
+          const parsedDate = new Date(transaction.date.$date);
+          if (!isNaN(parsedDate.getTime())) {
+            formattedDate = parsedDate.toISOString().split("T")[0];
+          }
+        }
+        // Cas 2: String
+        else if (typeof transaction.date === "string") {
+          // Si c'est déjà une string au format YYYY-MM-DD
           if (transaction.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
             formattedDate = transaction.date;
           } else {
-            // Essayer de parser la date
-            const parsedDate = new Date(transaction.date);
-            if (!isNaN(parsedDate.getTime())) {
+            // Vérifier si c'est un timestamp en string
+            const timestamp = parseInt(transaction.date);
+            if (!isNaN(timestamp) && timestamp > 1000000000000) {
+              // C'est un timestamp en millisecondes
+              const parsedDate = new Date(timestamp);
               formattedDate = parsedDate.toISOString().split("T")[0];
+            } else {
+              // Essayer de parser comme une date normale (ISO string)
+              const parsedDate = new Date(transaction.date);
+              if (!isNaN(parsedDate.getTime())) {
+                formattedDate = parsedDate.toISOString().split("T")[0];
+              }
             }
           }
-        } else {
-          // Si c'est un objet Date
+        }
+        // Cas 3: Number (timestamp)
+        else if (typeof transaction.date === "number") {
           const dateObj = new Date(transaction.date);
           if (!isNaN(dateObj.getTime())) {
             formattedDate = dateObj.toISOString().split("T")[0];
           }
         }
+        // Cas 4: Objet Date
+        else {
+          const dateObj = new Date(transaction.date);
+          if (!isNaN(dateObj.getTime())) {
+            formattedDate = dateObj.toISOString().split("T")[0];
+          }
+        }
+        
+        console.log("🔄 [DRAWER EDIT] Date formatée:", formattedDate);
       }
 
       const newFormData = {

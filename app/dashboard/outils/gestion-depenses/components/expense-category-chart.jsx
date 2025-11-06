@@ -2,7 +2,7 @@
 
 import { TrendingUp } from "lucide-react";
 import { Label, Pie, PieChart, Sector } from "recharts";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import {
   Card,
@@ -18,6 +18,13 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/src/components/ui/chart";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 
 // Mapping des catégories avec leurs labels et couleurs
 const categoryLabels = {
@@ -115,12 +122,46 @@ const chartConfig = {
 };
 
 export function ExpenseCategoryChart({ expenses = [] }) {
+  const [timeRange, setTimeRange] = useState("90d"); // 30d, 90d, 365d
+
   // Calculer les données du graphique par catégorie
   const chartData = useMemo(() => {
-    // Filtrer les dépenses payées
-    const paidExpenses = expenses.filter(
-      (expense) => expense.status === "PAID"
-    );
+    // Déterminer la date de début en fonction du filtre
+    const now = new Date();
+    const daysMap = {
+      "30d": 30,
+      "90d": 90,
+      "365d": 365,
+    };
+    const days = daysMap[timeRange] || 90;
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+
+    // Filtrer les dépenses payées et dans la période sélectionnée
+    const paidExpenses = expenses.filter((expense) => {
+      if (expense.status !== "PAID") return false;
+      
+      // Vérifier la date
+      if (!expense.date) return false;
+      
+      let expenseDate;
+      if (typeof expense.date === "string") {
+        const timestamp = parseInt(expense.date);
+        if (!isNaN(timestamp) && timestamp > 1000000000000) {
+          expenseDate = new Date(timestamp);
+        } else {
+          expenseDate = new Date(expense.date);
+        }
+      } else if (typeof expense.date === "number") {
+        expenseDate = new Date(expense.date);
+      } else {
+        expenseDate = new Date(expense.date);
+      }
+      
+      if (isNaN(expenseDate.getTime())) return false;
+      
+      return expenseDate >= startDate;
+    });
 
     // Grouper par catégorie
     const categoryTotals = paidExpenses.reduce((acc, expense) => {
@@ -141,7 +182,7 @@ export function ExpenseCategoryChart({ expenses = [] }) {
         fill: chartConfig[category]?.color || "hsl(var(--chart-1))",
       }))
       .sort((a, b) => b.amount - a.amount); // Trier par montant décroissant
-  }, [expenses]);
+  }, [expenses, timeRange]);
 
   // Calculer le total et la catégorie principale
   const totalAmount = useMemo(() => {
@@ -156,6 +197,24 @@ export function ExpenseCategoryChart({ expenses = [] }) {
     if (!topCategory || totalAmount === 0) return 0;
     return ((topCategory.amount / totalAmount) * 100).toFixed(1);
   }, [topCategory, totalAmount]);
+
+  // Calculer les dates de début et fin de la période
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    const daysMap = {
+      "30d": 30,
+      "90d": 90,
+      "365d": 365,
+    };
+    const days = daysMap[timeRange] || 90;
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+    
+    return {
+      start: startDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }),
+      end: now.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }),
+    };
+  }, [timeRange]);
 
   // Formater le montant en euros
   const formatCurrency = (amount) => {
@@ -186,13 +245,34 @@ export function ExpenseCategoryChart({ expenses = [] }) {
 
   return (
     <Card className="flex flex-col shadow-xs">
-      <CardHeader className="pb-4">
-        <CardTitle className="font-normal text-base">
-          Répartition par catégorie
-        </CardTitle>
-        <CardDescription className="font-normal text-sm">
-          Total : {formatCurrency(totalAmount)}
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <div className="flex flex-col gap-1">
+          <CardTitle className="font-normal text-base">
+            Répartition par catégorie
+          </CardTitle>
+          <CardDescription className="font-normal text-sm">
+            Total : {formatCurrency(totalAmount)}
+          </CardDescription>
+        </div>
+        <Select value={timeRange} onValueChange={setTimeRange}>
+          <SelectTrigger
+            className="w-[140px] h-8 text-xs border-none shadow-none"
+            aria-label="Sélectionner une période"
+          >
+            <SelectValue placeholder="Derniers 3 mois" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="30d" className="rounded-lg text-xs">
+              Dernier mois
+            </SelectItem>
+            <SelectItem value="90d" className="rounded-lg text-xs">
+              Derniers 3 mois
+            </SelectItem>
+            <SelectItem value="365d" className="rounded-lg text-xs">
+              Dernière année
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent className="flex-1 pb-2 sm:pb-4">
         <div className="flex items-center gap-8">
@@ -263,24 +343,14 @@ export function ExpenseCategoryChart({ expenses = [] }) {
                               y={(viewBox.cy || 0) + 20}
                               className="fill-muted-foreground text-xs font-normal"
                             >
-                              Du{" "}
-                              {new Date().toLocaleDateString("fr-FR", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
+                              Du {dateRange.start}
                             </tspan>
                             <tspan
                               x={viewBox.cx}
                               y={(viewBox.cy || 0) + 38}
                               className="fill-muted-foreground text-xs font-normal"
                             >
-                              au{" "}
-                              {new Date().toLocaleDateString("fr-FR", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
+                              au {dateRange.end}
                             </tspan>
                           </text>
                         );
