@@ -94,16 +94,16 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
     <>
       <div
         onClick={handleClick}
-        className={`bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 mb-2 sm:mb-3 shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-grab active:cursor-grabbing transition-opacity ${
+        className={`bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-grab active:cursor-grabbing transition-opacity ${
           isDragging ? "opacity-50" : "opacity-100"
         }`}
       >
         {/* En-tête avec titre et menu 3 points */}
-        <div className="flex items-start justify-between mb-2 sm:mb-3">
+        <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <Tooltip>
               <TooltipTrigger asChild>
-                <h4 className="font-medium text-sm text-foreground truncate">
+                <h4 className="font-medium text-sm text-foreground line-clamp-2">
                   {task.title}
                 </h4>
               </TooltipTrigger>

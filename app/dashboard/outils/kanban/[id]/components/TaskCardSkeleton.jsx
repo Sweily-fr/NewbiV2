@@ -5,7 +5,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
  */
 export function TaskCardSkeleton() {
   return (
-    <div className="bg-card text-card-foreground rounded-lg border border-border p-2 sm:p-3 mb-2 sm:mb-3 shadow-xs min-h-[148px] flex flex-col gap-2">
+    <div className="bg-card text-card-foreground rounded-lg border border-border p-2 sm:p-3 shadow-xs min-h-[148px] flex flex-col gap-2">
       {/* En-tête avec titre et icônes */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">

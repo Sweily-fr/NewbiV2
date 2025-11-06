@@ -154,7 +154,7 @@ export function KanbanColumnSimple({
             </div>
           </div>
 
-          {/* Zone droppable pour les tâches */}
+          {/* Zone droppable pour les tâches - Affichée seulement s'il y a des tâches, si on charge, ou si on drag au-dessus */}
           {!isCollapsed && (
             <Droppable droppableId={column.id} type="task">
               {(providedDroppable, snapshotDroppable) => (
@@ -165,29 +165,18 @@ export function KanbanColumnSimple({
                     snapshotDroppable.isDraggingOver ? 'bg-accent/20 border-2 border-accent' : ''
                   }`}
                   style={{
-                    minHeight: '100px',
+                    minHeight: (isLoading || tasks.length > 0 || snapshotDroppable.isDraggingOver) ? '50px' : '0px',
                     maxHeight: 'calc(100vh - 320px)', // Hauteur max basée sur la hauteur de l'écran (augmenté à 320px)
                     overflowY: 'auto' // Scroll vertical
                   }}
                 >
-                  <div className="space-y-2 sm:space-y-3">
+                  <div className="flex flex-col gap-2 sm:gap-3">
                     {isLoading ? (
                       <>
                         <TaskCardSkeleton />
                         <TaskCardSkeleton />
                         <TaskCardSkeleton />
                       </>
-                    ) : tasks.length === 0 ? (
-                      // Ne pas afficher "Aucune tâche" si on drag au-dessus
-                      !snapshotDroppable.isDraggingOver && (
-                        <div 
-                          {...provided.dragHandleProps}
-                          className="text-center py-8 text-sm cursor-grab active:cursor-grabbing"
-                          style={{ color: column.color || "#94a3b8" }}
-                        >
-                          Aucune tâche
-                        </div>
-                      )
                     ) : (
                       tasks.map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
