@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   XIcon,
   Euro,
-  Calendar,
+  CalendarIcon,
   Building,
   Tag,
   CreditCard,
@@ -14,6 +14,15 @@ import {
   Trash2,
   LoaderCircle,
 } from "lucide-react";
+import { parseDate } from "@internationalized/date";
+import {
+  Button as RACButton,
+  DatePicker,
+  Dialog,
+  Group,
+  Label as RACLabel,
+  Popover,
+} from "react-aria-components";
 import { Button } from "@/src/components/ui/button";
 import {
   Drawer,
@@ -42,6 +51,8 @@ import {
 } from "@/src/components/ui/avatar";
 import { useDocumentUpload } from "@/src/hooks/useDocumentUpload";
 import CategorySearchSelect from "./category-search-select";
+import { Calendar } from "@/src/components/ui/calendar-rac";
+import { DateInput } from "@/src/components/ui/datefield-rac";
 
 export function AddTransactionDrawer({
   open,
@@ -118,7 +129,7 @@ export function AddTransactionDrawer({
       );
 
       // Formater la date pour l'input date (format YYYY-MM-DD)
-      let formattedDate = new Date().toISOString().split("T")[0]; // Défaut
+      let formattedDate = "";
       if (transaction.date) {
         if (typeof transaction.date === "string") {
           // Si c'est déjà une string, vérifier le format
@@ -164,6 +175,23 @@ export function AddTransactionDrawer({
       }
 
       setFormData(newFormData);
+    } else if (!transaction && open) {
+      // Mode création : réinitialiser le formulaire
+      setFormData({
+        type: "EXPENSE",
+        amount: "",
+        category: "",
+        date: new Date().toISOString().split("T")[0],
+        description: "",
+        paymentMethod: "CARD",
+        vendor: "",
+        expenseType: "ORGANIZATION",
+        assignedMember: null,
+        receiptImage: null,
+      });
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setUploadedFileUrl(null);
     }
   }, [transaction, open]);
 
@@ -195,6 +223,24 @@ export function AddTransactionDrawer({
     e.preventDefault();
 
     onSubmit(formData);
+    
+    // Réinitialiser le formulaire après soumission
+    setFormData({
+      type: "EXPENSE",
+      amount: "",
+      category: "",
+      date: new Date().toISOString().split("T")[0],
+      description: "",
+      paymentMethod: "CARD",
+      vendor: "",
+      expenseType: "ORGANIZATION",
+      assignedMember: null,
+      receiptImage: null,
+    });
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setUploadedFileUrl(null);
+    resetReceiptUpload();
   };
 
   const handleChange = (field) => (value) => {
@@ -437,15 +483,32 @@ export function AddTransactionDrawer({
                 <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
                   Date de transaction
                 </Label>
-                <Input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => {
-                    handleChange("date")(e.target.value);
+                <DatePicker
+                  value={formData.date ? parseDate(formData.date) : null}
+                  onChange={(date) => {
+                    if (date) {
+                      handleChange("date")(date.toString());
+                    }
                   }}
                   className="w-56"
-                  lang="fr-FR"
-                />
+                >
+                  <div className="flex">
+                    <Group className="w-full">
+                      <DateInput className="pe-9" />
+                    </Group>
+                    <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                      <CalendarIcon size={16} />
+                    </RACButton>
+                  </div>
+                  <Popover
+                    className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95 data-[placement=bottom]:slide-in-from-top-2 data-[placement=left]:slide-in-from-right-2 data-[placement=right]:slide-in-from-left-2 data-[placement=top]:slide-in-from-bottom-2"
+                    offset={4}
+                  >
+                    <Dialog className="max-h-[inherit] overflow-auto p-2">
+                      <Calendar />
+                    </Dialog>
+                  </Popover>
+                </DatePicker>
               </div>
             </div>
             <Separator />
