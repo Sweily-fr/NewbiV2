@@ -11,7 +11,7 @@ export default function SectionAvantages() {
           <div className="max-lg:rounded-t-4xl lg:col-span-3 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative w-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 flex-shrink-0">
               <img 
-                src="/images/lp-signatures/votre_image_style.jpg" 
+                src="/images/lp-signature-mail/personnalisation.jpg" 
                 alt="Votre image, votre style" 
                 className="w-full h-full object-contain"
               />
@@ -32,7 +32,7 @@ export default function SectionAvantages() {
           <div className="lg:col-span-3 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative w-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 flex-shrink-0">
               <img 
-                src="/images/lp-signatures/signature_professionnelle.jpg" 
+                src="/images/lp-signature-mail/Signature_professionnelle.jpg" 
                 alt="Signature professionnelle, rapide et facile" 
                 className="w-full h-full object-contain"
               />
@@ -55,7 +55,7 @@ export default function SectionAvantages() {
           <div className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative w-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 flex-shrink-0">
               <img 
-                src="/images/lp-signatures/signatures_illimitees.jpg" 
+                src="/images/lp-signature-mail/Signatures_illimitees.jpg" 
                 alt="Signatures illimitées pour les collaborateurs" 
                 className="w-full h-full object-contain"
               />
@@ -78,7 +78,7 @@ export default function SectionAvantages() {
           <div className="lg:col-span-2 group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative w-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 flex-shrink-0">
               <img 
-                src="/images/lp-signatures/refaite_signature.jpg" 
+                src="/images/lp-signature-mail/Refaite_signature.jpg" 
                 alt="Refaite votre signature à tout moment" 
                 className="w-full h-full object-contain"
               />
@@ -100,7 +100,7 @@ export default function SectionAvantages() {
           <div className="lg:col-span-2 pt-2 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg bg-white shadow-xs ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/15">
             <div className="relative w-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 flex-shrink-0">
               <img 
-                src="/images/lp-signatures/compatibilite_totale.jpg" 
+                src="/images/lp-signature-mail/Compatibilite_totale.jpg" 
                 alt="Compatibilité totale" 
                 className="w-full h-full object-contain"
               />
