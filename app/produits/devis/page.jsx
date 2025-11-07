@@ -5,9 +5,9 @@ import Footer7 from "@/src/components/footer7";
 import { HeroSection } from "./section/hero-section";
 import SectionAvantages from "./section/section-avantages";
 import { Poppins } from "next/font/google";
-import WorkflowIntegration from "./section/workflow-integration";
 import FAQ from "./section/faq";
 import TestimonialsSection from "./section/testimonial";
+import BusinessAgility from "@/app/(main)/section/business-agility";
 import SEOHead from "@/src/components/seo/seo-head";
 import { JsonLd } from "@/src/components/seo/seo-metadata";
 import { useProductSEO } from "@/src/hooks/use-seo";
@@ -33,7 +33,7 @@ export default function DevisPage() {
         {/* Hero Section */}
         <HeroSection />
         <SectionAvantages />
-        <WorkflowIntegration />
+        <BusinessAgility />
         <TestimonialsSection />
         <FAQ />
         {/* <section className="min-h-screen py-20 flex flex-col justify-between">

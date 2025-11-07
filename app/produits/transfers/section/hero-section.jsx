@@ -46,14 +46,14 @@ export function HeroSection() {
             />
             <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-0 shadow-lg shadow-zinc-950/15 ring-1">
               <img
-                className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
+                className="bg-background w-full h-auto relative hidden rounded-2xl dark:block"
                 src="/images/lp-transfert/Transfert.jpg"
                 alt="app screen"
                 width="2700"
                 height="1440"
               />
               <img
-                className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
+                className="z-2 border-border/25 w-full h-auto relative rounded-2xl border dark:hidden"
                 src="/images/lp-transfert/Transfert.jpg"
                 alt="app screen"
                 width="2700"

@@ -241,8 +241,10 @@ function DraggableTaskRow({ task, column, onEditTask, index, children }) {
           style={{
             ...provided.draggableProps.style,
             display: snapshot.isDragging ? provided.draggableProps.style?.display : undefined,
+            gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 80px',
+            gap: '2rem'
           }}
-          className={`grid grid-cols-12 gap-4 px-2 py-1.5 items-center hover:bg-accent/5 cursor-grab active:cursor-grabbing group relative overflow-hidden border-b border-border/60 ${
+          className={`grid px-2 py-1.5 items-center hover:bg-accent/5 cursor-grab active:cursor-grabbing group relative overflow-hidden border-b border-border/60 ${
             snapshot.isDragging ? 'opacity-90 shadow-2xl bg-background border border-primary/40 rounded-lg z-[9999]' : ''
           }`}
           onClick={(e) => {
@@ -540,8 +542,8 @@ export function KanbanListView({
               <div className="w-full overflow-x-auto scrollbar-hide">
                 <div className="w-max min-w-full">
                   {/* Header de section avec colonnes */}
-                  <div className="grid grid-cols-12 gap-4 px-2 py-2 text-xs font-normal text-muted-foreground/70 tracking-wide border-b border-border/60">
-                    <div className="col-span-5 flex items-center gap-2">
+                  <div className="grid px-2 py-2 text-xs font-normal text-muted-foreground/70 tracking-wide border-b border-border/60" style={{ gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 80px', gap: '2rem' }}>
+                    <div className="flex items-center gap-2">
                       <GripVertical className="h-4 w-4 opacity-0" />
                       <Checkbox
                         checked={tasks.length > 0 && tasks.every(t => selectedTaskIds.has(t.id)) ? true : tasks.length > 0 && tasks.some(t => selectedTaskIds.has(t.id)) ? "indeterminate" : false}
@@ -554,15 +556,16 @@ export function KanbanListView({
                           }
                           setSelectedTaskIds(newSelected);
                         }}
-                        className="flex-shrink-0 h-4 w-4 border-muted-foreground/30"
+                        className="flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4"
                         onClick={(e) => e.stopPropagation()}
                       />
                       Nom de la tâche
                     </div>
-                    <div className="col-span-2 flex items-center">Assigné à</div>
-                    <div className="col-span-2 flex items-center">Échéance</div>
-                    <div className="col-span-1 flex items-center">Priorité</div>
-                    <div className="col-span-2 flex items-center justify-center">Actions</div>
+                    <div className="flex items-center">Assigné à</div>
+                    <div className="flex items-center">Status</div>
+                    <div className="flex items-center">Échéance</div>
+                    <div className="flex items-center">Priorité</div>
+                    <div className="flex items-center justify-center">Actions</div>
                   </div>
 
                   {/* Liste des tâches */}
@@ -589,7 +592,7 @@ export function KanbanListView({
                                 index={taskIndex}
                               >
                               {/* Nom avec drag handle et checkbox */}
-                              <div className="col-span-4 min-w-0">
+                              <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   {/* Drag handle toujours visible */}
                                   <GripVertical className="h-4 w-4 text-muted-foreground/40 flex-shrink-0 cursor-grab" />
@@ -606,7 +609,7 @@ export function KanbanListView({
                                       }
                                       setSelectedTaskIds(newSelected);
                                     }}
-                                    className="flex-shrink-0 h-4 w-4 border-muted-foreground/30"
+                                    className="flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4"
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                   {/* Rond de couleur du status */}
@@ -655,39 +658,35 @@ export function KanbanListView({
                                       ))}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
-                                  <div className="flex-1 w-0">
+                                  <div className="flex-1 w-0 flex items-center gap-1 min-w-0">
                                     <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-foreground">{task.title}</p>
+                                    {task.description && (
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <button
+                                            className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors flex-shrink-0"
+                                            onClick={(e) => e.stopPropagation()}
+                                            title="Afficher la description"
+                                          >
+                                            <AlignLeft className="h-4 w-4" />
+                                          </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80" side="top">
+                                          <div className="space-y-2">
+                                            <h4 className="font-medium text-sm">Description</h4>
+                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                                              {task.description}
+                                            </p>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
+                                    )}
                                   </div>
                                 </div>
                               </div>
 
-                              {/* Description Icon */}
-                              <div className="col-span-0 flex items-center justify-center">
-                                {task.description && (
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <button
-                                        className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
-                                        onClick={(e) => e.stopPropagation()}
-                                        title="Afficher la description"
-                                      >
-                                        <AlignLeft className="h-4 w-4" />
-                                      </button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80" side="top">
-                                      <div className="space-y-2">
-                                        <h4 className="font-medium text-sm">Description</h4>
-                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
-                                          {task.description}
-                                        </p>
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
-                                )}
-                              </div>
-
                               {/* Assignée */}
-                              <div className="col-span-2 flex items-center gap-0.5 min-w-0">
+                              <div className="flex items-center gap-0.5 min-w-0">
                                 {task.assignedMembers && task.assignedMembers.length > 0 ? (
                                   <MembersPopover
                                     task={task}
@@ -709,8 +708,62 @@ export function KanbanListView({
                                 )}
                               </div>
 
+                              {/* Status */}
+                              <div className="flex items-center gap-1 min-w-0">
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button 
+                                      className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+                                      style={{
+                                        backgroundColor: `${column.color || "#94a3b8"}20`,
+                                        borderColor: `${column.color || "#94a3b8"}20`,
+                                        color: column.color || "#94a3b8"
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <div
+                                        className="w-2 h-2 rounded-full flex-shrink-0"
+                                        style={{ backgroundColor: column.color || "#94a3b8" }}
+                                      />
+                                      <span>{column.title}</span>
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-48 p-2" side="top" align="start">
+                                    <div className="space-y-1">
+                                      {columns.map((col) => (
+                                        <button
+                                          key={col.id}
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            try {
+                                              await moveTask({
+                                                variables: {
+                                                  id: task.id,
+                                                  columnId: col.id,
+                                                  position: 0,
+                                                  workspaceId
+                                                }
+                                              });
+                                            } catch (error) {
+                                              console.error('Erreur lors du déplacement de la tâche:', error);
+                                            }
+                                          }}
+                                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent text-sm cursor-pointer"
+                                        >
+                                          <div
+                                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                            style={{ backgroundColor: col.color || "#94a3b8" }}
+                                          />
+                                          <span>{col.title}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+
                               {/* Date d'échéance */}
-                              <div className="col-span-2 flex items-center gap-1.5 text-xs min-w-0">
+                              <div className="flex items-center gap-1.5 text-xs min-w-0">
                                 {task.dueDate ? (
                                   <Popover>
                                     <PopoverTrigger asChild>
@@ -816,7 +869,7 @@ export function KanbanListView({
                               </div>
 
                               {/* Priorité */}
-                              <div className="col-span-1 flex items-center gap-1 min-w-0">
+                              <div className="flex items-center gap-1 min-w-0">
                                 <Popover 
                                   open={priorityPopovers[task.id] || false} 
                                   onOpenChange={(open) => setPriorityPopovers(prev => ({ ...prev, [task.id]: open }))}
@@ -876,7 +929,7 @@ export function KanbanListView({
                               </div>
 
                               {/* Actions */}
-                              <div className="col-span-2 flex items-center justify-center gap-1">
+                              <div className="flex items-center justify-center gap-1">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button

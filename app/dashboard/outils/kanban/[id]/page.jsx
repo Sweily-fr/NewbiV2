@@ -442,13 +442,19 @@ export default function KanbanBoardPage({ params }) {
         </div>
         
         <div className="flex items-center justify-between gap-3 py-3 border-b px-4 sm:px-6">
-          <Tabs value={viewMode} onValueChange={setViewMode} className="w-fit">
-            <TabsList className="w-fit grid grid-cols-2">
-              <TabsTrigger value="board" className="cursor-pointer hidden md:inline-flex gap-2">
+          <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto items-center">
+            <TabsList className="h-auto rounded-none bg-transparent p-0">
+              <TabsTrigger
+                value="board"
+                className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hidden md:inline-flex hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+              >
                 <LayoutGrid className="h-4 w-4" />
                 <span>Board</span>
               </TabsTrigger>
-              <TabsTrigger value="list" className="cursor-pointer gap-2">
+              <TabsTrigger
+                value="list"
+                className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+              >
                 <List className="h-4 w-4 md:inline hidden" />
                 <span>List</span>
               </TabsTrigger>
@@ -577,10 +583,10 @@ export default function KanbanBoardPage({ params }) {
                     ) : members && members.length > 0 ? (
                       <div className="space-y-1 p-1">
                         {members.map((member) => (
-                          <div
+                          <DropdownMenuItem
                             key={member.id}
-                            className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
                             onClick={() => setSelectedMemberId(selectedMemberId === member.id ? null : member.id)}
+                            className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
                           >
                             {/* Avatar */}
                             {member.image ? (
@@ -608,7 +614,7 @@ export default function KanbanBoardPage({ params }) {
                                 <span className="text-white text-xs">✓</span>
                               )}
                             </div>
-                          </div>
+                          </DropdownMenuItem>
                         ))}
                       </div>
                     ) : (
@@ -698,10 +704,10 @@ export default function KanbanBoardPage({ params }) {
                     ) : members && members.length > 0 ? (
                       <div className="space-y-1 p-1">
                         {members.map((member) => (
-                          <div
+                          <DropdownMenuItem
                             key={member.id}
-                            className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
                             onClick={() => setSelectedMemberId(selectedMemberId === member.id ? null : member.id)}
+                            className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
                           >
                             {/* Avatar */}
                             {member.image ? (
@@ -729,7 +735,7 @@ export default function KanbanBoardPage({ params }) {
                                 <span className="text-white text-xs">✓</span>
                               )}
                             </div>
-                          </div>
+                          </DropdownMenuItem>
                         ))}
                       </div>
                     ) : (

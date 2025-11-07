@@ -3,7 +3,7 @@ import React from "react";
 
 export default function BusinessAgility() {
   return (
-    <div className="mx-2 mt-20 rounded-[15px] md:rounded-[20px] lg:rounded-[20px] bg-gray-900 py-32">
+    <div className="mx-2 mt-20 rounded-[15px] md:rounded-[20px] lg:rounded-[20px] bg-[#13131D] py-32">
       <div className="px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:max-w-7xl">
           <h2
@@ -21,7 +21,7 @@ export default function BusinessAgility() {
           <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-16 lg:grid-cols-6 lg:grid-rows-2">
             <div
               data-dark="true"
-              className="max-lg:rounded-t-4xl lg:col-span-4 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg ring-1 ring-blue-500/20 data-dark:ring-blue-400/30" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
+              className="max-lg:rounded-t-4xl lg:col-span-4 lg:rounded-tl-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
             >
               <div className="relative h-60 w-full overflow-hidden flex items-center justify-center flex-shrink-0">
                 <img 
@@ -48,7 +48,7 @@ export default function BusinessAgility() {
             </div>
             <div
               data-dark="true"
-              className="z-10 lg:col-span-2 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg ring-1 ring-blue-500/20 data-dark:ring-blue-400/30" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
+              className="z-10 lg:col-span-2 lg:rounded-tr-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
             >
               <div className="relative w-full overflow-hidden flex items-center justify-center flex-shrink-0">
                 <img 
@@ -75,10 +75,10 @@ export default function BusinessAgility() {
             </div>
             <div
               data-dark="true"
-              className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg ring-1 ring-blue-500/20 data-dark:ring-blue-400/30" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
+              className="lg:col-span-2 lg:rounded-bl-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
             >
               <div className="relative w-full overflow-hidden flex items-center justify-center flex-shrink-0 p-6">
-                <div className="w-full h-full border-5 border-white/5 rounded-lg flex items-center justify-center to-transparent backdrop-blur-sm">
+                <div className="w-full h-full rounded-lg flex items-center justify-center to-transparent backdrop-blur-sm">
                   <img 
                     src="/images/lp-home/Ecosysteme.png" 
                     alt="Écosystème" 
@@ -104,7 +104,7 @@ export default function BusinessAgility() {
             </div>
             <div
               data-dark="true"
-              className="lg:col-span-4 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg ring-1 ring-blue-500/20 data-dark:ring-blue-400/30" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
+              className="lg:col-span-4 lg:rounded-br-4xl group relative flex flex-col overflow-hidden rounded-lg shadow-lg" style={{background: 'radial-gradient(circle 400px at center top, #2A2B4F 0%, #1B1D2A 100%)'}}
             >
               <div className="relative w-full overflow-hidden flex items-center justify-center flex-shrink-0 px-7">
                 <img 
