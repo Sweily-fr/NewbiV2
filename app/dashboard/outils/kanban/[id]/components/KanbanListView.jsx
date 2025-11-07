@@ -244,7 +244,7 @@ function DraggableTaskRow({ task, column, onEditTask, index, children }) {
           }}
           className={`grid grid-cols-12 gap-4 px-2 py-1.5 items-center hover:bg-accent/5 cursor-grab active:cursor-grabbing group relative overflow-hidden border-b border-border/60 ${
             snapshot.isDragging ? 'opacity-90 shadow-2xl bg-background border border-primary/40 rounded-lg z-[9999]' : ''
-          } ${index > 0 ? 'border-t border-border/60' : ''}`}
+          }`}
           onClick={(e) => {
             // Ne pas ouvrir la modal si on est en train de drag
             if (!snapshot.isDragging) {
