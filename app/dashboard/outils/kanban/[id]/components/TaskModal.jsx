@@ -223,6 +223,12 @@ export function TaskModal({
                     <SelectValue placeholder="Moyen" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="NONE">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                        Aucune
+                      </div>
+                    </SelectItem>
                     <SelectItem value="LOW">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-green-500"></div>
@@ -535,6 +541,12 @@ export function TaskModal({
                         <SelectValue placeholder="Sélectionner une priorité" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="NONE">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                            Aucune
+                          </div>
+                        </SelectItem>
                         <SelectItem value="LOW">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full bg-green-500"></div>

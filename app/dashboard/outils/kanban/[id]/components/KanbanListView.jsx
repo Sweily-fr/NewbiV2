@@ -1,5 +1,5 @@
 import React, { useState, Fragment, useMemo, useCallback } from "react";
-import { MoreHorizontal, Calendar, ChevronDown, ChevronRight, Plus, Flag, MessageSquare, Paperclip, MoreVertical, GripVertical } from "lucide-react";
+import { MoreHorizontal, Calendar, ChevronDown, ChevronRight, Plus, Flag, MessageSquare, Paperclip, MoreVertical, GripVertical, AlignLeft, Clock, Users } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -10,8 +10,176 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { Checkbox } from "@/src/components/ui/checkbox";
+import { Input } from "@/src/components/ui/input";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/src/components/ui/calendar";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { MemberSelector } from "./MemberSelector";
+
+/**
+ * Composant pour sélectionner les membres assignés avec un bouton de mise à jour
+ */
+function MembersPopover({ task, membersInfo, members, updateTask, workspaceId, isTrigger }) {
+  const [selectedMembers, setSelectedMembers] = useState(new Set());
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Réinitialiser les membres sélectionnés quand le popover s'ouvre
+  const handleOpenChange = (open) => {
+    setIsOpen(open);
+    if (open) {
+      // Pré-sélectionner les membres actuels de la tâche
+      setSelectedMembers(new Set(task.assignedMembers || []));
+    }
+  };
+
+  const handleUpdateMembers = async () => {
+    setIsUpdating(true);
+    try {
+      await updateTask({
+        variables: {
+          input: {
+            id: task.id,
+            assignedMembers: Array.from(selectedMembers)
+          },
+          workspaceId
+        }
+      });
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des membres:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        {isTrigger ? (
+          <div 
+            className="flex -space-x-2 cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {task.assignedMembers.slice(0, 3).map((memberId, idx) => {
+              const memberInfo = membersInfo.find(m => m.id === memberId);
+              return (
+                <div key={memberId} className="relative group/avatar">
+                  <UserAvatar
+                    src={memberInfo?.image}
+                    name={memberInfo?.name || memberId}
+                    size="sm"
+                    className="border border-background ring-1 ring-border/10 hover:ring-primary/50 transition-all"
+                    style={{ zIndex: task.assignedMembers.length - idx }}
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newMembers = task.assignedMembers.filter(id => id !== memberId);
+                      updateTask({
+                        variables: {
+                          input: {
+                            id: task.id,
+                            assignedMembers: newMembers
+                          },
+                          workspaceId
+                        }
+                      });
+                    }}
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
+                    title="Supprimer l'assignation"
+                  >
+                    <span className="text-white text-xs font-bold">×</span>
+                  </button>
+                </div>
+              );
+            })}
+            {task.assignedMembers.length > 3 && (
+              <div className="w-6 h-6 rounded-full bg-muted/80 border border-background flex items-center justify-center text-[9px] font-semibold text-muted-foreground flex-shrink-0">
+                +{task.assignedMembers.length - 3}
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors bg-transparent border-0 p-0"
+            onClick={(e) => e.stopPropagation()}
+            title="Ajouter des membres"
+          >
+            <Users className="h-4 w-4" />
+          </button>
+        )}
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0" side="top" align="start">
+        <div className="p-2 space-y-1 max-h-[400px] overflow-y-auto">
+          {members.map((member) => (
+            <button
+              key={member.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                const newSelected = new Set(selectedMembers);
+                if (newSelected.has(member.id)) {
+                  newSelected.delete(member.id);
+                } else {
+                  newSelected.add(member.id);
+                }
+                setSelectedMembers(newSelected);
+              }}
+              className={`w-full flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer ${
+                selectedMembers.has(member.id) ? 'bg-accent' : ''
+              }`}
+            >
+              <UserAvatar 
+                src={member.image} 
+                name={member.name} 
+                size="sm"
+              />
+              <div className="flex-1 text-left">
+                <div className="text-sm font-medium">{member.name}</div>
+                <div className="text-xs text-muted-foreground">{member.email}</div>
+              </div>
+              <Checkbox
+                checked={selectedMembers.has(member.id)}
+                onCheckedChange={() => {
+                  const newSelected = new Set(selectedMembers);
+                  if (newSelected.has(member.id)) {
+                    newSelected.delete(member.id);
+                  } else {
+                    newSelected.add(member.id);
+                  }
+                  setSelectedMembers(newSelected);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="flex-shrink-0"
+              />
+            </button>
+          ))}
+        </div>
+
+        <div className="p-2 border-t">
+          <Button
+            size="sm"
+            className="w-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleUpdateMembers();
+            }}
+            disabled={isUpdating}
+          >
+            {isUpdating ? 'Mise à jour...' : 'Mettre à jour'}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 /**
  * Zone de drop pour les colonnes vides
@@ -74,9 +242,9 @@ function DraggableTaskRow({ task, column, onEditTask, index, children }) {
             ...provided.draggableProps.style,
             display: snapshot.isDragging ? provided.draggableProps.style?.display : undefined,
           }}
-          className={`grid grid-cols-12 gap-4 px-2 py-1.5 items-center hover:bg-accent/5 cursor-grab active:cursor-grabbing group relative overflow-hidden ${
+          className={`grid grid-cols-12 gap-4 px-2 py-1.5 items-center hover:bg-accent/5 cursor-grab active:cursor-grabbing group relative overflow-hidden border-b border-border/60 ${
             snapshot.isDragging ? 'opacity-90 shadow-2xl bg-background border border-primary/40 rounded-lg z-[9999]' : ''
-          } ${index > 0 ? 'border-t border-border/10' : ''}}`}
+          } ${index > 0 ? 'border-t border-border/60' : ''}`}
           onClick={(e) => {
             // Ne pas ouvrir la modal si on est en train de drag
             if (!snapshot.isDragging) {
@@ -104,8 +272,12 @@ export function KanbanListView({
   members = [],
   selectedTaskIds,
   setSelectedTaskIds,
+  moveTask,
+  updateTask,
+  workspaceId,
 }) {
   const [collapsedColumns, setCollapsedColumns] = useState(new Set());
+  const [priorityPopovers, setPriorityPopovers] = useState({});
   
   // Fonction wrapper pour récupérer les tâches filtrées
   const getFilteredTasksByColumn = useCallback((columnId) => {
@@ -164,24 +336,32 @@ export function KanbanListView({
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "short",
-    });
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
-  const getPriorityIcon = (priority) => {
-    const className = "h-3.5 w-3.5";
-    switch (priority?.toLowerCase()) {
-      case "high":
-        return <Flag className={`${className} text-red-500 fill-red-500`} />;
-      case "medium":
-        return <Flag className={`${className} text-yellow-500 fill-yellow-500`} />;
-      case "low":
-        return <Flag className={`${className} text-green-500 fill-green-500`} />;
-      default:
-        return null;
-    }
+  const getPriorityBadge = (priority) => {
+    if (!priority || priority.toLowerCase() === "none") return null;
+    
+    const isHigh = priority.toLowerCase() === "high";
+    const isMedium = priority.toLowerCase() === "medium";
+    const isLow = priority.toLowerCase() === "low";
+    
+    const label = isHigh ? "Urgent" : isMedium ? "Moyen" : "Faible";
+    const flagColor = isHigh ? "text-red-500 fill-red-500" : isMedium ? "text-yellow-500 fill-yellow-500" : "text-green-500 fill-green-500";
+    
+    return (
+      <Badge
+        variant="outline"
+        className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
+      >
+        <Flag className={`h-4 w-4 ${flagColor}`} />
+        <span className="text-muted-foreground">{label}</span>
+      </Badge>
+    );
   };
 
   const getPriorityLabel = (priority) => {
@@ -198,8 +378,7 @@ export function KanbanListView({
   };
 
   return (
-    <div className="w-max min-w-full">
-      <div className="space-y-4 bg-background">
+    <div className="space-y-4 bg-background">
       {columns.map((column, columnIndex) => {
         const tasks = getFilteredTasksByColumn(column.id);
         const isCollapsed = collapsedColumns.has(column.id) || (tasks.length === 0 && !collapsedColumns.has(column.id));
@@ -210,7 +389,7 @@ export function KanbanListView({
             {isCollapsed ? (
               <CollapsedColumnDropZone columnId={column.id} onOpen={openColumnOnDrag}>
                 <div 
-                  className="flex items-center gap-2 px-3 py-2 bg-muted/10 hover:bg-muted/20 cursor-pointer transition-colors group"
+                  className="flex items-center gap-2 py-2 bg-muted/10 hover:bg-muted/20 cursor-pointer transition-colors group"
                   onClick={() => toggleColumn(column.id)}
                 >
                   <Button
@@ -222,22 +401,104 @@ export function KanbanListView({
                   </Button>
                   <div className="flex items-center gap-2 flex-1">
                     <div
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: column.color || "#94a3b8" }}
-                    />
-                    <span className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: column.color }}>
-                      {column.title}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/60 font-medium bg-muted/40 px-1.5 py-0.5 rounded-full">
+                      className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1"
+                      style={{
+                        backgroundColor: `${column.color || "#94a3b8"}20`,
+                        borderColor: `${column.color || "#94a3b8"}20`,
+                        color: column.color || "#94a3b8"
+                      }}
+                    >
+                      <div
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: column.color || "#94a3b8" }}
+                      />
+                      <span>{column.title}</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground/60 font-medium" style={{ color: column.color || "#94a3b8" }}>
                       {tasks.length}
                     </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          // TODO: Ouvrir modal d'édition de colonne
+                        }}>
+                          Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // TODO: Supprimer la colonne
+                          }}
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                        >
+                          Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddTask(column.id);
+                      }}
+                      className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground font-medium"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Ajouter une tâche
+                    </Button>
                   </div>
+                </div>
+              </CollapsedColumnDropZone>
+            ) : (
+              <>
+              {/* En-tête de section cliquable */}
+              <div 
+                className="flex items-center gap-3 py-2 bg-muted/5 hover:bg-muted/10 cursor-pointer transition-all group"
+                onClick={() => toggleColumn(column.id)}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0 hover:bg-muted/50 rounded transition-colors"
+                >
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </Button>
+                <div className="flex items-center gap-2 flex-1">
+                  <div
+                    className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1"
+                    style={{
+                      backgroundColor: `${column.color || "#94a3b8"}20`,
+                      borderColor: `${column.color || "#94a3b8"}20`,
+                      color: column.color || "#94a3b8"
+                    }}
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: column.color || "#94a3b8" }}
+                    />
+                    <span>{column.title}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground/60 font-medium" style={{ color: column.color || "#94a3b8" }}>
+                    {tasks.length}
+                  </span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-all hover:bg-muted/50 rounded"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreHorizontal className="h-3.5 w-3.5" />
@@ -261,121 +522,78 @@ export function KanbanListView({
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </div>
-              </CollapsedColumnDropZone>
-            ) : (
-              <>
-              {/* En-tête de section cliquable */}
-              <div 
-                className="flex items-center gap-3 px-3 py-2 bg-muted/5 hover:bg-muted/10 cursor-pointer transition-all group border-b border-border/20"
-                onClick={() => toggleColumn(column.id)}
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-4 w-4 p-0 hover:bg-muted/50 rounded transition-colors"
-                >
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                </Button>
-                <div className="flex items-center gap-2 flex-1">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: column.color || "#94a3b8" }}
-                  />
-                  <span className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: column.color }}>
-                    {column.title}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground/60 font-medium bg-muted/40 px-1.5 py-0.5 rounded-full">
-                    {tasks.length}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddTask(column.id);
-                  }}
-                  className="h-6 px-2 text-[10px] gap-1 opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/10 hover:text-primary font-medium"
-                >
-                  <Plus className="h-3 w-3" />
-                  Nouvelle tâche
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-all hover:bg-muted/50 rounded"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreHorizontal className="h-3.5 w-3.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem onClick={(e) => {
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
                       e.stopPropagation();
-                      // TODO: Ouvrir modal d'édition de colonne
-                    }}>
-                      Modifier
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // TODO: Supprimer la colonne
-                      }}
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                    >
-                      Supprimer
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              {/* Header de section avec colonnes */}
-              <div className="grid grid-cols-12 gap-4 px-3 py-2 text-[10px] font-semibold text-muted-foreground/70 tracking-wide border-b border-border/20">
-                <div className="col-span-4 flex items-center gap-2">
-                  <GripVertical className="h-3 w-3 opacity-0" />
-                  Nom de la tâche
+                      onAddTask(column.id);
+                    }}
+                    className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground font-medium"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Ajouter une tâche
+                  </Button>
                 </div>
-                <div className="col-span-3 flex items-center">Description</div>
-                <div className="col-span-1 flex items-center">Assigné à</div>
-                <div className="col-span-2 flex items-center">Échéance</div>
-                <div className="col-span-1 flex items-center">Priorité</div>
-                <div className="col-span-1 flex items-center justify-center">Actions</div>
               </div>
-              </>
-            )}
+              {/* Conteneur avec scroll pour le tableau */}
+              <div className="w-full overflow-x-auto scrollbar-hide">
+                <div className="w-max min-w-full">
+                  {/* Header de section avec colonnes */}
+                  <div className="grid grid-cols-12 gap-4 px-2 py-2 text-xs font-normal text-muted-foreground/70 tracking-wide border-b border-border/60">
+                    <div className="col-span-5 flex items-center gap-2">
+                      <GripVertical className="h-4 w-4 opacity-0" />
+                      <Checkbox
+                        checked={tasks.length > 0 && tasks.every(t => selectedTaskIds.has(t.id)) ? true : tasks.length > 0 && tasks.some(t => selectedTaskIds.has(t.id)) ? "indeterminate" : false}
+                        onCheckedChange={(checked) => {
+                          const newSelected = new Set(selectedTaskIds);
+                          if (checked === true) {
+                            tasks.forEach(t => newSelected.add(t.id));
+                          } else {
+                            tasks.forEach(t => newSelected.delete(t.id));
+                          }
+                          setSelectedTaskIds(newSelected);
+                        }}
+                        className="flex-shrink-0 h-4 w-4 border-muted-foreground/30"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      Nom de la tâche
+                    </div>
+                    <div className="col-span-2 flex items-center">Assigné à</div>
+                    <div className="col-span-2 flex items-center">Échéance</div>
+                    <div className="col-span-1 flex items-center">Priorité</div>
+                    <div className="col-span-2 flex items-center justify-center">Actions</div>
+                  </div>
 
-            {/* Liste des tâches */}
-            {!isCollapsed && (
-              <>
-                <Droppable droppableId={column.id} type="task">
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`transition-all duration-200 ${snapshot.isDraggingOver ? 'bg-accent/10' : ''}`}
-                      style={{
-                        minHeight: tasks.length === 0 ? '80px' : 'auto'
-                      }}
-                    >
-                      {tasks.length === 0 ? (
-                        <EmptyColumnDropZone columnId={column.id} />
-                      ) : (
-                        tasks.map((task, taskIndex) => (
-                          <DraggableTaskRow 
-                            key={task.id} 
-                            task={task} 
-                            column={column} 
-                            onEditTask={onEditTask} 
-                            index={taskIndex}
-                          >
+                  {/* Liste des tâches */}
+                  <div>
+                    <Droppable droppableId={column.id} type="task">
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`transition-all duration-200 ${snapshot.isDraggingOver ? 'bg-accent/10' : ''}`}
+                          style={{
+                            minHeight: tasks.length === 0 ? '80px' : 'auto'
+                          }}
+                        >
+                          {tasks.length === 0 ? (
+                            <EmptyColumnDropZone columnId={column.id} />
+                          ) : (
+                            tasks.map((task, taskIndex) => (
+                              <DraggableTaskRow 
+                                key={task.id} 
+                                task={task} 
+                                column={column} 
+                                onEditTask={onEditTask} 
+                                index={taskIndex}
+                              >
                               {/* Nom avec drag handle et checkbox */}
                               <div className="col-span-4 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  {/* Drag handle visible au hover */}
-                                  <GripVertical className="h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 cursor-grab" />
-                                  {/* Checkbox visible au hover ou si sélectionné */}
+                                  {/* Drag handle toujours visible */}
+                                  <GripVertical className="h-4 w-4 text-muted-foreground/40 flex-shrink-0 cursor-grab" />
+                                  {/* Checkbox toujours visible */}
                                   <Checkbox
                                     checked={selectedTaskIds.has(task.id)}
                                     onCheckedChange={(checked) => {
@@ -388,83 +606,277 @@ export function KanbanListView({
                                       }
                                       setSelectedTaskIds(newSelected);
                                     }}
-                                    className={`flex-shrink-0 h-4 w-4 transition-opacity border-muted-foreground/30 ${
-                                      selectedTaskIds.has(task.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                                    }`}
+                                    className="flex-shrink-0 h-4 w-4 border-muted-foreground/30"
                                     onClick={(e) => e.stopPropagation()}
                                   />
+                                  {/* Rond de couleur du status */}
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        className="flex-shrink-0 w-3.5 h-3.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+                                        style={{ 
+                                          backgroundColor: column.color || "#94a3b8",
+                                          border: `2px solid ${column.color || "#94a3b8"}60`,
+                                          outline: `2px solid ${column.color || "#94a3b8"}30`,
+                                          outlineOffset: '2px'
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        title="Changer le status"
+                                      />
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="w-40">
+                                      {columns.map((col) => (
+                                        <DropdownMenuItem
+                                          key={col.id}
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            // Déplacer la tâche vers la colonne col.id
+                                            try {
+                                              await moveTask({
+                                                variables: {
+                                                  id: task.id,
+                                                  columnId: col.id,
+                                                  position: 0,
+                                                  workspaceId
+                                                }
+                                              });
+                                            } catch (error) {
+                                              console.error('Erreur lors du déplacement de la tâche:', error);
+                                            }
+                                          }}
+                                          className="flex items-center gap-2 cursor-pointer"
+                                        >
+                                          <div
+                                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                            style={{ backgroundColor: col.color || "#94a3b8" }}
+                                          />
+                                          <span>{col.title}</span>
+                                        </DropdownMenuItem>
+                                      ))}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                   <div className="flex-1 w-0">
-                                    <p className="text-[12px] truncate font-medium text-foreground/90 group-hover:text-foreground">{task.title}</p>
+                                    <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-foreground">{task.title}</p>
                                   </div>
                                 </div>
                               </div>
 
-                              {/* Description */}
-                              <div className="col-span-3 min-w-0">
-                                <div className="flex items-center gap-1">
-                                  <div className="flex-1 w-0">
-                                    {task.description ? (
-                                      <p className="text-[11px] text-muted-foreground/80 truncate">{task.description}</p>
-                                    ) : (
-                                      <p className="text-[11px] text-muted-foreground/30 italic">Aucune description</p>
-                                    )}
-                                  </div>
-                                </div>
+                              {/* Description Icon */}
+                              <div className="col-span-0 flex items-center justify-center">
+                                {task.description && (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button
+                                        className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
+                                        title="Afficher la description"
+                                      >
+                                        <AlignLeft className="h-4 w-4" />
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80" side="top">
+                                      <div className="space-y-2">
+                                        <h4 className="font-medium text-sm">Description</h4>
+                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                                          {task.description}
+                                        </p>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
                               </div>
 
                               {/* Assignée */}
-                              <div className="col-span-1 flex items-center gap-0.5 min-w-0">
+                              <div className="col-span-2 flex items-center gap-0.5 min-w-0">
                                 {task.assignedMembers && task.assignedMembers.length > 0 ? (
-                                  <div className="flex -space-x-2">
-                                    {task.assignedMembers.slice(0, 3).map((memberId, idx) => {
-                                      const memberInfo = membersInfo.find(m => m.id === memberId);
-                                      return (
-                                        <UserAvatar
-                                          key={memberId}
-                                          src={memberInfo?.image}
-                                          name={memberInfo?.name || memberId}
-                                          size="sm"
-                                          className="border border-background ring-1 ring-border/10 hover:ring-primary/50 transition-all"
-                                          style={{ zIndex: task.assignedMembers.length - idx }}
-                                        />
-                                      );
-                                    })}
-                                    {task.assignedMembers.length > 3 && (
-                                      <div className="w-6 h-6 rounded-full bg-muted/80 border border-background flex items-center justify-center text-[9px] font-semibold text-muted-foreground flex-shrink-0">
-                                        +{task.assignedMembers.length - 3}
-                                      </div>
-                                    )}
-                                  </div>
+                                  <MembersPopover
+                                    task={task}
+                                    membersInfo={membersInfo}
+                                    members={members}
+                                    updateTask={updateTask}
+                                    workspaceId={workspaceId}
+                                    isTrigger={true}
+                                  />
                                 ) : (
-                                  <div className="w-6 h-6 rounded-full border border-dashed border-muted-foreground/15 flex-shrink-0 opacity-30 group-hover:opacity-50 transition-opacity" />
+                                  <MembersPopover
+                                    task={task}
+                                    membersInfo={membersInfo}
+                                    members={members}
+                                    updateTask={updateTask}
+                                    workspaceId={workspaceId}
+                                    isTrigger={false}
+                                  />
                                 )}
                               </div>
 
                               {/* Date d'échéance */}
-                              <div className="col-span-2 flex items-center gap-1.5 text-[11px] min-w-0">
+                              <div className="col-span-2 flex items-center gap-1.5 text-xs min-w-0">
                                 {task.dueDate ? (
-                                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted/30 hover:bg-muted/50 transition-colors">
-                                    <Calendar className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
-                                    <span className="truncate font-medium text-foreground/70">{formatDate(task.dueDate)}</span>
-                                  </div>
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button 
+                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer bg-transparent border-0 p-0"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <span className="truncate font-normal text-foreground/70">{formatDate(task.dueDate)}</span>
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" side="top" align="start">
+                                      <div className="flex flex-col">
+                                        <div className="border-b p-4">
+                                          <CalendarComponent
+                                            mode="single"
+                                            selected={task.dueDate ? new Date(task.dueDate) : undefined}
+                                            onSelect={async (date) => {
+                                              if (date) {
+                                                try {
+                                                  const existingDate = new Date(task.dueDate);
+                                                  date.setHours(existingDate.getHours(), existingDate.getMinutes(), 0, 0);
+                                                  await updateTask({
+                                                    variables: {
+                                                      input: {
+                                                        id: task.id,
+                                                        dueDate: date.toISOString()
+                                                      },
+                                                      workspaceId
+                                                    }
+                                                  });
+                                                } catch (error) {
+                                                  console.error('Erreur lors de la mise à jour de la date:', error);
+                                                }
+                                              }
+                                            }}
+                                            initialFocus
+                                            locale={fr}
+                                            fromDate={new Date()}
+                                            className="border-0"
+                                          />
+                                        </div>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
                                 ) : (
-                                  <div className="w-5 h-5 rounded border border-dashed border-muted-foreground/10 flex-shrink-0 opacity-20 group-hover:opacity-40 transition-opacity" />
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button
+                                        className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
+                                        title="Ajouter une date d'échéance"
+                                      >
+                                        <Calendar className="h-4 w-4" />
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" side="top" align="start">
+                                      <div className="flex flex-col">
+                                        <div className="border-b p-4">
+                                          <CalendarComponent
+                                            mode="single"
+                                            selected={undefined}
+                                            onSelect={async (date) => {
+                                              if (date) {
+                                                try {
+                                                  date.setHours(18, 0, 0, 0);
+                                                  await updateTask({
+                                                    variables: {
+                                                      input: {
+                                                        id: task.id,
+                                                        dueDate: date.toISOString()
+                                                      },
+                                                      workspaceId
+                                                    }
+                                                  });
+                                                } catch (error) {
+                                                  console.error('Erreur lors de la mise à jour de la date:', error);
+                                                }
+                                              }
+                                            }}
+                                            initialFocus
+                                            locale={fr}
+                                            fromDate={new Date()}
+                                            className="border-0"
+                                          />
+                                        </div>
+                                        <div className="p-4 flex items-center gap-2">
+                                          <div className="relative flex-1">
+                                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                              <Clock className="h-4 w-4 text-gray-500" />
+                                            </div>
+                                            <Input
+                                              type="time"
+                                              defaultValue="18:00"
+                                              className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
+                                              step="300"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
                                 )}
                               </div>
 
                               {/* Priorité */}
                               <div className="col-span-1 flex items-center gap-1 min-w-0">
-                                {task.priority ? (
-                                  <div className="flex items-center gap-1.5">
-                                    {getPriorityIcon(task.priority)}
-                                  </div>
-                                ) : (
-                                  <div className="w-6 h-6 rounded border-2 border-dashed border-muted-foreground/15 flex-shrink-0 opacity-30 group-hover:opacity-50 transition-opacity" />
-                                )}
+                                <Popover 
+                                  open={priorityPopovers[task.id] || false} 
+                                  onOpenChange={(open) => setPriorityPopovers(prev => ({ ...prev, [task.id]: open }))}
+                                >
+                                  <PopoverTrigger asChild>
+                                    <button 
+                                      className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {task.priority ? (
+                                        getPriorityBadge(task.priority)
+                                      ) : (
+                                        <Badge
+                                          variant="outline"
+                                          className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
+                                        >
+                                          <Flag className="h-4 w-4 text-gray-400 fill-gray-400" />
+                                          <span className="text-muted-foreground">-</span>
+                                        </Badge>
+                                      )}
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-48 p-2" side="top" align="start">
+                                    <div className="space-y-1">
+                                      {[
+                                        { value: 'high', label: 'Urgent', color: 'text-red-500 fill-red-500' },
+                                        { value: 'medium', label: 'Moyen', color: 'text-yellow-500 fill-yellow-500' },
+                                        { value: 'low', label: 'Faible', color: 'text-green-500 fill-green-500' },
+                                        { value: '', label: 'Aucune', color: 'text-gray-400 fill-gray-400' }
+                                      ].map((priority) => (
+                                        <button
+                                          key={priority.value || 'none'}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateTask({
+                                              variables: {
+                                                input: {
+                                                  id: task.id,
+                                                  priority: priority.value
+                                                },
+                                                workspaceId
+                                              }
+                                            });
+                                            setPriorityPopovers(prev => ({ ...prev, [task.id]: false }));
+                                          }}
+                                          className={`w-full flex items-center gap-2 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer ${
+                                            (priority.value === '' && !task.priority) || task.priority?.toLowerCase() === priority.value ? 'bg-accent' : ''
+                                          }`}
+                                        >
+                                          <Flag className={`h-4 w-4 ${priority.color}`} />
+                                          <span className="text-sm">{priority.label}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               </div>
 
                               {/* Actions */}
-                              <div className="col-span-1 flex items-center justify-center gap-1">
+                              <div className="col-span-2 flex items-center justify-center gap-1">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button
@@ -498,32 +910,34 @@ export function KanbanListView({
                             </DraggableTaskRow>
                         ))
                       )}
-                      {/* Placeholder avec hauteur limitée */}
-                      <div style={{ maxHeight: '100px', overflow: 'hidden' }}>
-                        {provided.placeholder}
-                      </div>
-                    </div>
-                  )}
-                </Droppable>
-                  
-                  {/* Bouton "Ajouter une tâche" en bas de la section */}
-                  <div className="border-t border-border mt-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onAddTask(column.id)}
-                      className="w-full justify-start px-3 py-2 h-auto text-xs text-muted-foreground hover:text-foreground hover:bg-muted/20 rounded-none"
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-2" />
-                      Ajouter une tâche
-                    </Button>
+                          {/* Placeholder avec hauteur limitée */}
+                          <div style={{ maxHeight: '100px', overflow: 'hidden' }}>
+                            {provided.placeholder}
+                          </div>
+                        </div>
+                      )}
+                    </Droppable>
                   </div>
+                </div>
+              </div>
+              
+              {/* Bouton "Ajouter une tâche" en bas de la section - FIXE */}
+              <div className="mt-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onAddTask(column.id)}
+                  className="w-full justify-start px-3 py-2 h-auto text-xs text-muted-foreground hover:text-foreground hover:bg-muted/20 rounded-none"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-2" />
+                  Ajouter une tâche
+                </Button>
+              </div>
               </>
             )}
           </div>
         );
       })}
-      </div>
     </div>
   );
 }

@@ -159,6 +159,7 @@ export default function KanbanBoardPage({ params }) {
     toggleChecklistItem,
     removeChecklistItem,
     moveTask,
+    updateTask,
   } = useKanbanTasks(id, board);
 
   // Mutation pour réorganiser les colonnes
@@ -504,7 +505,128 @@ export default function KanbanBoardPage({ params }) {
 
       {/* Contrôles au même niveau - Lien Déplier, Recherche et Filtre */}
       {isBoard && (
-        <div className="sticky left-0 px-4 sm:px-6 py-3 bg-white dark:bg-slate-950 z-10 flex items-center gap-4">
+        <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
+          {/* Lien Déplier toutes */}
+          {collapsedColumnsCount > 0 && (
+            <button
+              onClick={expandAll}
+              className="text-sm text-muted-foreground hover:text-foreground cursor-pointer whitespace-nowrap transition-colors"
+            >
+              Déplier toutes ({collapsedColumnsCount})
+            </button>
+          )}
+
+          {/* ButtonGroup: Recherche + Filtres */}
+          <ButtonGroup>
+            {/* Barre de recherche */}
+            <div className="relative flex-1">
+              <Input
+                placeholder="Rechercher des tâches..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-[150px] lg:w-[250px] ps-9 rounded-r-none"
+              />
+              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
+                <Search size={16} aria-hidden="true" />
+              </div>
+            </div>
+
+            {/* Bouton Filtres avec dropdown utilisateur */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 gap-2 font-normal rounded-l-none"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span>Filtres</span>
+                  {selectedMemberId && (
+                    <Badge variant="secondary" className="ml-1">
+                      1
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[240px]">
+                {/* Effacer le filtre */}
+                <DropdownMenuItem
+                  onClick={() => setSelectedMemberId(null)}
+                  className="cursor-pointer"
+                >
+                  Effacer le filtre
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                {/* Sous-menu Filtre par utilisateur */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="whitespace-nowrap">
+                    <Users className="h-4 w-4 mr-2" />
+                    Par utilisateurs
+                    {selectedMemberId && (
+                      <Badge variant="secondary" className="ml-auto">
+                        1
+                      </Badge>
+                    )}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-[250px]">
+                    {membersLoading ? (
+                      <div className="text-xs text-muted-foreground px-2 py-4 text-center">
+                        Chargement...
+                      </div>
+                    ) : members && members.length > 0 ? (
+                      <div className="space-y-1 p-1">
+                        {members.map((member) => (
+                          <div
+                            key={member.id}
+                            className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                            onClick={() => setSelectedMemberId(selectedMemberId === member.id ? null : member.id)}
+                          >
+                            {/* Avatar */}
+                            {member.image ? (
+                              <img
+                                src={member.image}
+                                alt={member.name || member.email}
+                                className="w-6 h-6 rounded-full mr-2 object-cover"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center text-xs font-medium">
+                                {(member.name || member.email).charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            
+                            {/* Nom et checkbox */}
+                            <span className="flex-1">{member.name || member.email}</span>
+                            <div
+                              className={`w-4 h-4 rounded border flex items-center justify-center ${
+                                selectedMemberId === member.id
+                                  ? 'bg-primary border-primary'
+                                  : 'border-muted-foreground/50'
+                              }`}
+                            >
+                              {selectedMemberId === member.id && (
+                                <span className="text-white text-xs">✓</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-muted-foreground px-2 py-4 text-center">
+                        Aucun membre
+                      </div>
+                    )}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </ButtonGroup>
+        </div>
+      )}
+
+      {/* Contrôles pour la vue liste - Recherche et Filtre */}
+      {isList && (
+        <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
           {/* Lien Déplier toutes */}
           {collapsedColumnsCount > 0 && (
             <button
@@ -624,7 +746,7 @@ export default function KanbanBoardPage({ params }) {
       )}
 
       {/* Board Content */}
-      <div className="w-full px-4 sm:px-6 mt-0">
+      <div className="w-full px-4 sm:px-6 mt-4">
         {isList && (
           <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
             <KanbanListView
@@ -637,6 +759,9 @@ export default function KanbanBoardPage({ params }) {
               members={board?.members || []}
               selectedTaskIds={selectedTaskIds}
               setSelectedTaskIds={setSelectedTaskIds}
+              moveTask={moveTask}
+              updateTask={updateTask}
+              workspaceId={workspaceId}
             />
           </DragDropContext>
         )}

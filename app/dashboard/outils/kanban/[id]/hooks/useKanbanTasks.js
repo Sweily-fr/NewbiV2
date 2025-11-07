@@ -465,5 +465,6 @@ export const useKanbanTasks = (boardId, board) => {
     toggleChecklistItem,
     removeChecklistItem,
     moveTask,
+    updateTask,
   };
 };
