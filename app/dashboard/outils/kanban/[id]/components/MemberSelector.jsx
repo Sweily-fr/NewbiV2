@@ -119,16 +119,22 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
       {/* Bouton pour ajouter des membres */}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full justify-start text-muted-foreground"
+          <div
+            role="button"
+            tabIndex={0}
+            className="inline-flex items-center justify-start whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 w-full text-muted-foreground cursor-pointer"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setOpen(true);
+              }
+            }}
           >
             <Plus className="mr-2 h-4 w-4" />
             {selectedMembers.length === 0
               ? 'Ajouter des membres'
               : 'Ajouter d\'autres membres'}
-          </Button>
+          </div>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="start">
           <div className="p-3 border-b">
