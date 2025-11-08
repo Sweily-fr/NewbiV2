@@ -1058,11 +1058,14 @@ export function TaskModal({
                 {/* Priorité et Colonne */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label htmlFor="task-priority-mobile" className="text-sm font-normal">
+                      Priorité
+                    </Label>
                     <Select
                       value={getDisplayPriority(taskForm.priority)}
                       onValueChange={(value) => setTaskForm({ ...taskForm, priority: value })}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger id="task-priority-mobile" className="w-full">
                         <SelectValue placeholder="Sélectionner une priorité" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1094,11 +1097,14 @@ export function TaskModal({
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="task-column-mobile" className="text-sm font-normal">
+                      Status
+                    </Label>
                     <Select
                       value={taskForm.columnId}
                       onValueChange={(value) => setTaskForm({ ...taskForm, columnId: value })}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger id="task-column-mobile" className="w-full">
                         <SelectValue placeholder="Sélectionner une colonne" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1115,9 +1121,89 @@ export function TaskModal({
                   </div>
                 </div>
 
+                {/* Date de début */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-normal">Date de début</Label>
+                  
+                  <Popover modal={false}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !taskForm.startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {taskForm.startDate ? (
+                          <span>
+                            {formatDate(taskForm.startDate)} à {formatTimeDisplay(taskForm.startDate)}
+                          </span>
+                        ) : (
+                          <span>Choisir une date et une heure</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <div className="flex flex-col">
+                        <div className="border-b p-4">
+                          <Calendar
+                            mode="single"
+                            selected={taskForm.startDate ? new Date(taskForm.startDate) : undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                const [hours, minutes] = taskForm.startDate 
+                                  ? [new Date(taskForm.startDate).getHours(), new Date(taskForm.startDate).getMinutes()]
+                                  : [9, 0];
+                                date.setHours(hours, minutes, 0, 0);
+                                setTaskForm({ ...taskForm, startDate: date.toISOString() });
+                              }
+                            }}
+                            initialFocus
+                            locale={fr}
+                            fromDate={new Date()}
+                            className="border-0"
+                          />
+                        </div>
+                        <div className="p-4 flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                              <Clock className="h-4 w-4 text-gray-500" />
+                            </div>
+                            <Input
+                              type="time"
+                              value={taskForm.startDate ? formatTimeInput(taskForm.startDate) : '09:00'}
+                              onChange={(e) => {
+                                const time = e.target.value;
+                                if (!time || !taskForm.startDate) return;
+                                const [hours, minutes] = time.split(':').map(Number);
+                                const newDate = new Date(taskForm.startDate);
+                                newDate.setHours(hours, minutes, 0, 0);
+                                setTaskForm({ ...taskForm, startDate: newDate.toISOString() });
+                              }}
+                              className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
+                              step="300"
+                            />
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setTaskForm({ ...taskForm, startDate: '' })}
+                            disabled={!taskForm.startDate}
+                          >
+                            Effacer
+                          </Button>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
                 {/* Date d'échéance */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Date d'échéance</Label>
+                  <Label className="text-sm font-normal">Date de fin</Label>
                   
                   {/* Popover avec calendrier pour tous les appareils */}
                   <Popover modal={false}>
@@ -1148,7 +1234,11 @@ export function TaskModal({
                             selected={taskForm.dueDate ? new Date(taskForm.dueDate) : undefined}
                             onSelect={(date) => {
                               if (date) {
-                                handleDateChange(date);
+                                const [hours, minutes] = taskForm.dueDate 
+                                  ? [new Date(taskForm.dueDate).getHours(), new Date(taskForm.dueDate).getMinutes()]
+                                  : [18, 0];
+                                date.setHours(hours, minutes, 0, 0);
+                                setTaskForm({ ...taskForm, dueDate: date.toISOString() });
                               }
                             }}
                             initialFocus
@@ -1165,7 +1255,14 @@ export function TaskModal({
                             <Input
                               type="time"
                               value={taskForm.dueDate ? formatTimeInput(taskForm.dueDate) : '18:00'}
-                              onChange={handleTimeChange}
+                              onChange={(e) => {
+                                const time = e.target.value;
+                                if (!time || !taskForm.dueDate) return;
+                                const [hours, minutes] = time.split(':').map(Number);
+                                const newDate = new Date(taskForm.dueDate);
+                                newDate.setHours(hours, minutes, 0, 0);
+                                setTaskForm({ ...taskForm, dueDate: newDate.toISOString() });
+                              }}
                               className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
                               step="300"
                             />
