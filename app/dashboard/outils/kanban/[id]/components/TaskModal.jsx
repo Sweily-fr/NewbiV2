@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { LoaderCircle, Trash2, X, CalendarIcon, Clock, User, FileText, MessageSquare, ChevronDown, Flag, Users, UserPlus } from 'lucide-react';
+import { LoaderCircle, Trash2, X, CalendarIcon, Clock, User, FileText, MessageSquare, ChevronDown, Flag, Users, UserPlus, Columns, Tag } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/src/components/ui/dialog';
 import { Input } from '@/src/components/ui/input';
@@ -133,9 +133,38 @@ export function TaskModal({
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
   const [priorityPopoverOpen, setPriorityPopoverOpen] = useState(false);
   const [membersPopoverOpen, setMembersPopoverOpen] = useState(false);
+  const [showDescription, setShowDescription] = useState(!!taskForm.description);
+  const [tagsInputFocused, setTagsInputFocused] = useState(false);
   
   // Récupérer les infos des membres assignés
   const { members: membersInfo } = useAssignedMembersInfo(taskForm.assignedMembers || []);
+  
+  // Mettre à jour showDescription quand taskForm.description change
+  useEffect(() => {
+    setShowDescription(!!taskForm.description);
+  }, [taskForm.description]);
+  
+  // Générer une couleur pour un tag basée sur son nom
+  const getTagColor = (tagName) => {
+    const colors = [
+      { bg: '#3b82f620', border: '#3b82f640', text: '#3b82f6' }, // blue
+      { bg: '#10b98120', border: '#10b98140', text: '#10b981' }, // green
+      { bg: '#f59e0b20', border: '#f59e0b40', text: '#f59e0b' }, // amber
+      { bg: '#ef444420', border: '#ef444440', text: '#ef4444' }, // red
+      { bg: '#8b5cf620', border: '#8b5cf640', text: '#8b5cf6' }, // violet
+      { bg: '#ec489920', border: '#ec489940', text: '#ec4899' }, // pink
+      { bg: '#06b6d420', border: '#06b6d440', text: '#06b6d4' }, // cyan
+      { bg: '#f97316 20', border: '#f9731640', text: '#f97316' }, // orange
+    ];
+    
+    // Utiliser le hash du nom pour choisir une couleur de façon consistante
+    let hash = 0;
+    for (let i = 0; i < tagName.length; i++) {
+      hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
   
   // Formater la date pour l'affichage
   const formatDate = (dateString) => {
@@ -194,7 +223,7 @@ export function TaskModal({
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 h-0 min-h-0">
             {/* Titre */}
             <div className="space-y-2">
-              <Label htmlFor="task-title" className="text-sm font-medium">
+              <Label htmlFor="task-title" className="text-sm font-normal">
                 Titre <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -208,18 +237,31 @@ export function TaskModal({
             </div>
 
             {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="task-description" className="text-sm font-medium">
-                Description
-              </Label>
-              <Textarea
-                id="task-description"
-                value={taskForm.description}
-                onChange={handleDescriptionChange}
-                className="w-full min-h-[100px] resize-none bg-card text-foreground border-input focus:border-primary focus-visible:ring-1 focus-visible:ring-ring"
-                placeholder="Description de la tâche (optionnel)"
-                rows={4}
-              />
+            <div className="space-y-2 mb-12">
+              {!showDescription ? (
+                <button
+                  type="button"
+                  onClick={() => setShowDescription(true)}
+                  className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity bg-transparent border-0 p-0 cursor-pointer"
+                  style={{ color: '#5b50FF' }}
+                >
+                  + Ajouter une description
+                </button>
+              ) : (
+                <>
+                  <Label htmlFor="task-description" className="text-sm font-normal">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="task-description"
+                    value={taskForm.description}
+                    onChange={handleDescriptionChange}
+                    className="w-full min-h-[100px] resize-none bg-card text-foreground border-input focus:border-primary focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="Ajouter une description..."
+                    autoFocus
+                  />
+                </>
+              )}
             </div>
 
             {/* Grille 2 colonnes : Status à Tags */}
@@ -228,7 +270,10 @@ export function TaskModal({
               <div className="space-y-6">
                 {/* Status */}
                 <div className="flex items-center gap-4">
-                  <Label className="text-sm font-medium w-24 flex-shrink-0">Status</Label>
+                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
+                    <Columns className="h-4 w-4 text-muted-foreground" />
+                    Status
+                  </Label>
                   <div className="flex-1">
                     <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
                       <PopoverTrigger asChild>
@@ -278,39 +323,43 @@ export function TaskModal({
                   </div>
                 </div>
 
-                {/* Date d'échéance */}
-                <div className="flex items-start gap-4">
-                  <Label className="text-sm font-medium w-24 pt-2 flex-shrink-0">Date d'échéance</Label>
+                {/* Date de début */}
+                <div className="flex items-center gap-4">
+                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    Date de début
+                  </Label>
                   <div className="flex-1">
                     <Popover modal={false}>
                       <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
+                        <div
                           className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !taskForm.dueDate && "text-muted-foreground"
+                            "text-sm cursor-pointer hover:opacity-70 transition-opacity",
+                            !taskForm.startDate && "text-muted-foreground"
                           )}
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {taskForm.dueDate ? (
+                          {taskForm.startDate ? (
                             <span>
-                              {formatDate(taskForm.dueDate)} à {formatTimeDisplay(taskForm.dueDate)}
+                              {formatDate(taskForm.startDate)} à {formatTimeDisplay(taskForm.startDate)}
                             </span>
                           ) : (
                             <span>Choisir une date</span>
                           )}
-                        </Button>
+                        </div>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <div className="flex flex-col">
                           <div className="border-b p-4">
                             <Calendar
                               mode="single"
-                              selected={taskForm.dueDate ? new Date(taskForm.dueDate) : undefined}
+                              selected={taskForm.startDate ? new Date(taskForm.startDate) : undefined}
                               onSelect={(date) => {
                                 if (date) {
-                                  handleDateChange(date);
+                                  const [hours, minutes] = taskForm.startDate 
+                                    ? [new Date(taskForm.startDate).getHours(), new Date(taskForm.startDate).getMinutes()]
+                                    : [9, 0];
+                                  date.setHours(hours, minutes, 0, 0);
+                                  setTaskForm({ ...taskForm, startDate: date.toISOString() });
                                 }
                               }}
                               initialFocus
@@ -326,8 +375,15 @@ export function TaskModal({
                               </div>
                               <Input
                                 type="time"
-                                value={taskForm.dueDate ? formatTimeInput(taskForm.dueDate) : '18:00'}
-                                onChange={handleTimeChange}
+                                value={taskForm.startDate ? formatTimeInput(taskForm.startDate) : '09:00'}
+                                onChange={(e) => {
+                                  const time = e.target.value;
+                                  if (!time || !taskForm.startDate) return;
+                                  const [hours, minutes] = time.split(':').map(Number);
+                                  const newDate = new Date(taskForm.startDate);
+                                  newDate.setHours(hours, minutes, 0, 0);
+                                  setTaskForm({ ...taskForm, startDate: newDate.toISOString() });
+                                }}
                                 className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
                                 step="300"
                               />
@@ -336,8 +392,8 @@ export function TaskModal({
                               type="button" 
                               variant="outline"
                               size="sm"
-                              onClick={() => setTaskForm({ ...taskForm, dueDate: '' })}
-                              disabled={!taskForm.dueDate}
+                              onClick={() => setTaskForm({ ...taskForm, startDate: '' })}
+                              disabled={!taskForm.startDate}
                             >
                               Effacer
                             </Button>
@@ -353,7 +409,10 @@ export function TaskModal({
               <div className="space-y-6">
                 {/* Priorité */}
                 <div className="flex items-center gap-4">
-                  <Label className="text-sm font-medium w-24 flex-shrink-0">Priorité</Label>
+                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
+                    <Flag className="h-4 w-4 text-muted-foreground" />
+                    Priorité
+                  </Label>
                   <div className="flex-1">
                     <Popover open={priorityPopoverOpen} onOpenChange={setPriorityPopoverOpen}>
                       <PopoverTrigger asChild>
@@ -419,42 +478,42 @@ export function TaskModal({
                 </div>
 
                 {/* Date de fin */}
-                <div className="flex items-start gap-4">
-                  <Label className="text-sm font-medium w-24 pt-2 flex-shrink-0">Date de fin</Label>
+                <div className="flex items-center gap-4">
+                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    Date de fin
+                  </Label>
                   <div className="flex-1">
                     <Popover modal={false}>
                       <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
+                        <div
                           className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !taskForm.endDate && "text-muted-foreground"
+                            "text-sm cursor-pointer hover:opacity-70 transition-opacity",
+                            !taskForm.dueDate && "text-muted-foreground"
                           )}
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {taskForm.endDate ? (
+                          {taskForm.dueDate ? (
                             <span>
-                              {formatDate(taskForm.endDate)} à {formatTimeDisplay(taskForm.endDate)}
+                              {formatDate(taskForm.dueDate)} à {formatTimeDisplay(taskForm.dueDate)}
                             </span>
                           ) : (
                             <span>Choisir une date</span>
                           )}
-                        </Button>
+                        </div>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <div className="flex flex-col">
                           <div className="border-b p-4">
                             <Calendar
                               mode="single"
-                              selected={taskForm.endDate ? new Date(taskForm.endDate) : undefined}
+                              selected={taskForm.dueDate ? new Date(taskForm.dueDate) : undefined}
                               onSelect={(date) => {
                                 if (date) {
-                                  const [hours, minutes] = taskForm.endDate 
-                                    ? [new Date(taskForm.endDate).getHours(), new Date(taskForm.endDate).getMinutes()]
+                                  const [hours, minutes] = taskForm.dueDate 
+                                    ? [new Date(taskForm.dueDate).getHours(), new Date(taskForm.dueDate).getMinutes()]
                                     : [18, 0];
                                   date.setHours(hours, minutes, 0, 0);
-                                  setTaskForm({ ...taskForm, endDate: date.toISOString() });
+                                  setTaskForm({ ...taskForm, dueDate: date.toISOString() });
                                 }
                               }}
                               initialFocus
@@ -470,14 +529,14 @@ export function TaskModal({
                               </div>
                               <Input
                                 type="time"
-                                value={taskForm.endDate ? formatTimeInput(taskForm.endDate) : '18:00'}
+                                value={taskForm.dueDate ? formatTimeInput(taskForm.dueDate) : '18:00'}
                                 onChange={(e) => {
                                   const time = e.target.value;
-                                  if (!time || !taskForm.endDate) return;
+                                  if (!time || !taskForm.dueDate) return;
                                   const [hours, minutes] = time.split(':').map(Number);
-                                  const newDate = new Date(taskForm.endDate);
+                                  const newDate = new Date(taskForm.dueDate);
                                   newDate.setHours(hours, minutes, 0, 0);
-                                  setTaskForm({ ...taskForm, endDate: newDate.toISOString() });
+                                  setTaskForm({ ...taskForm, dueDate: newDate.toISOString() });
                                 }}
                                 className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
                                 step="300"
@@ -487,8 +546,8 @@ export function TaskModal({
                               type="button" 
                               variant="outline"
                               size="sm"
-                              onClick={() => setTaskForm({ ...taskForm, endDate: '' })}
-                              disabled={!taskForm.endDate}
+                              onClick={() => setTaskForm({ ...taskForm, dueDate: '' })}
+                              disabled={!taskForm.dueDate}
                             >
                               Effacer
                             </Button>
@@ -502,31 +561,98 @@ export function TaskModal({
             </div>
 
             {/* Tags et Membres sur une ligne */}
-            <div className="grid grid-cols-2 gap-x-6">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-6">
               {/* Tags */}
               <div className="flex items-start gap-4">
-                <Label className="text-sm font-medium w-24 pt-2 flex-shrink-0">Tags</Label>
-                <div className="flex-1">
-                  <MultipleSelector
-                    value={taskForm.tags.map(tag => ({ value: tag.name, label: tag.name }))}
-                    onChange={(options) => {
-                      setTaskForm({
-                        ...taskForm,
-                        tags: options.map(opt => ({ name: opt.value }))
-                      });
+                <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2 pt-1.5">
+                  <Tag className="h-4 w-4 text-muted-foreground" />
+                  Tags
+                </Label>
+                <div className="flex-1 relative">
+                  {taskForm.tags.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setTaskForm({ ...taskForm, tags: [] })}
+                      className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+                      title="Supprimer tous les tags"
+                    >
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  )}
+                  <div 
+                    className="h-10 rounded-md border border-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text overflow-y-auto"
+                    onClick={() => {
+                      if (!tagsInputFocused) {
+                        setTagsInputFocused(true);
+                      }
                     }}
-                    placeholder="Ajouter des tags..."
-                    creatable
-                    emptyIndicator={
-                      <p className="text-center text-sm text-muted-foreground">Aucun tag trouvé</p>
-                    }
-                  />
+                  >
+                    {taskForm.tags.length > 0 || tagsInputFocused ? (
+                      <div className="flex flex-wrap gap-2 items-center min-h-full">
+                        {taskForm.tags.map((tag, index) => {
+                          const color = getTagColor(tag.name);
+                          return (
+                            <div
+                              key={index}
+                              className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border"
+                              style={{
+                                backgroundColor: color.bg,
+                                borderColor: color.border,
+                                color: color.text
+                              }}
+                            >
+                              {tag.name}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newTags = taskForm.tags.filter((_, i) => i !== index);
+                                  setTaskForm({ ...taskForm, tags: newTags });
+                                }}
+                                className="ml-1.5 rounded-full outline-none hover:opacity-70 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                        {tagsInputFocused && (
+                          <Input
+                            autoFocus
+                            placeholder={taskForm.tags.length === 0 ? "Ajouter des tags..." : ""}
+                            className="flex-1 min-w-[120px] border-0 shadow-none focus-visible:ring-0 px-0 h-6"
+                            onFocus={() => setTagsInputFocused(true)}
+                            onBlur={() => setTagsInputFocused(false)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                e.preventDefault();
+                                const newTag = e.currentTarget.value.trim();
+                                if (!taskForm.tags.find(t => t.name === newTag)) {
+                                  setTaskForm({
+                                    ...taskForm,
+                                    tags: [...taskForm.tags, { name: newTag }]
+                                  });
+                                }
+                                e.currentTarget.value = '';
+                              }
+                            }}
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        Ajouter des tags...
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Membres assignés */}
               <div className="flex items-start gap-4">
-                <Label className="text-sm font-medium w-24 pt-1 flex-shrink-0">Membres</Label>
+                <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2 pt-1.5">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  Membres
+                </Label>
                 <div className="flex-1">
                   <Popover open={membersPopoverOpen} onOpenChange={setMembersPopoverOpen}>
                     <PopoverTrigger asChild>
@@ -607,7 +733,7 @@ export function TaskModal({
             </div>
 
             {/* Checklist */}
-            <div className="space-y-3">
+            <div className="space-y-3 mt-12">
               <Checklist 
                 items={taskForm.checklist}
                 onChange={handleChecklistChange}
@@ -649,7 +775,8 @@ export function TaskModal({
               <Button 
                 onClick={handleSubmit} 
                 disabled={isLoading || !taskForm.title.trim()}
-                className="px-6 bg-primary text-primary-foreground hover:bg-primary/90"
+                className="px-6 text-white hover:opacity-90"
+                style={{ backgroundColor: '#5b50FF' }}
               >
                 {isLoading ? (
                   <>
@@ -664,11 +791,11 @@ export function TaskModal({
 
           {/* Partie droite : Activité et commentaires */}
           {isEditing && (taskForm.id || taskForm._id) && (
-            <div className="w-[500px] flex flex-col bg-muted/20">
-              <div className="px-4 py-4 border-b border-border">
-                <h3 className="text-sm font-semibold">Activité</h3>
+            <div className="w-[500px] flex flex-col">
+              <div className="px-6 py-4 border-b border-border bg-background">
+                <h3 className="text-lg font-semibold">Activité</h3>
               </div>
-              <div className="flex-1 overflow-y-auto px-4">
+              <div className="flex-1 overflow-y-auto px-2 bg-muted/40">
                 <TaskActivity 
                   task={taskActivityData} 
                   workspaceId={workspaceId}
@@ -709,7 +836,7 @@ export function TaskModal({
                 {/* Contenu du formulaire (même que desktop) */}
                 {/* Titre */}
                 <div className="space-y-2">
-                  <Label htmlFor="task-title-mobile" className="text-sm font-medium">
+                  <Label htmlFor="task-title-mobile" className="text-sm font-normal">
                     Titre <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -724,7 +851,7 @@ export function TaskModal({
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="task-description-mobile" className="text-sm font-medium">
+                  <Label htmlFor="task-description-mobile" className="text-sm font-normal">
                     Description
                   </Label>
                   <Textarea
@@ -966,8 +1093,8 @@ export function TaskModal({
 
             {/* Onglet Activité (mobile) */}
             {isEditing && (taskForm.id || taskForm._id) && (
-              <TabsContent value="activity" className="flex-1 flex flex-col overflow-hidden m-0 data-[state=active]:flex">
-                <div className="flex-1 overflow-y-auto px-4 py-4">
+              <TabsContent value="activity" className="flex-1 flex flex-col overflow-hidden m-0 data-[state=active]:flex bg-muted/40">
+                <div className="flex-1 overflow-y-auto">
                   <TaskActivity 
                     task={taskActivityData} 
                     workspaceId={workspaceId}
