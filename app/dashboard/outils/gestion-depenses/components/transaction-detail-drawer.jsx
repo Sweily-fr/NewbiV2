@@ -14,31 +14,48 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import {
-  ArrowUpIcon,
-  ArrowDownIcon,
-  CreditCardIcon,
-  BanknoteIcon,
-  BuildingIcon,
-  FileTextIcon,
-  DownloadIcon,
-  EditIcon,
-  TrashIcon,
-  XIcon,
+  Calendar,
+  CreditCard,
+  Banknote,
+  Building2,
+  FileText,
+  Download,
+  Edit,
+  Trash2,
+  X,
+  User,
+  Tag,
+  Receipt,
+  ExternalLink,
 } from "lucide-react";
-import { formatDateToFrench, formatDateTimeToFrench } from "@/src/utils/dateFormatter";
+import {
+  formatDateToFrench,
+  formatDateTimeToFrench,
+} from "@/src/utils/dateFormatter";
+import { findMerchant } from "@/lib/merchants-config";
+import { getCategoryConfig } from "@/lib/category-icons-config";
 
 const paymentMethodIcons = {
-  CARD: CreditCardIcon,
-  CASH: BanknoteIcon,
-  TRANSFER: BuildingIcon,
-  CHECK: FileTextIcon,
+  CARD: CreditCard,
+  CREDIT_CARD: CreditCard,
+  CASH: Banknote,
+  TRANSFER: Building2,
+  CHECK: FileText,
 };
 
 const paymentMethodLabels = {
-  CARD: "Carte",
+  CARD: "Carte bancaire",
+  CREDIT_CARD: "Carte bancaire",
   CASH: "Espèces",
   TRANSFER: "Virement",
   CHECK: "Chèque",
+};
+
+const statusLabels = {
+  PAID: "Payée",
+  PENDING: "En attente",
+  DRAFT: "Brouillon",
+  CANCELLED: "Annulée",
 };
 
 export function TransactionDetailDrawer({
@@ -52,10 +69,26 @@ export function TransactionDetailDrawer({
 
   const isIncome = transaction.type === "INCOME";
   const PaymentIcon =
-    paymentMethodIcons[transaction.paymentMethod] || FileTextIcon;
+    paymentMethodIcons[transaction.paymentMethod] || CreditCard;
+
+  // Trouver le marchand
+  const merchant = findMerchant(
+    transaction.vendor || transaction.description || transaction.title
+  );
+
+  // Obtenir la config de la catégorie
+  const categoryConfig = getCategoryConfig(transaction.category);
+  const CategoryIcon = categoryConfig.icon;
 
   // Utiliser les fonctions utilitaires pour formater les dates
   const formatDate = (dateInput, includeTime = false) => {
+    if (!dateInput) return "Non spécifiée";
+
+    // Gérer le format MongoDB
+    if (typeof dateInput === "object" && dateInput.$date) {
+      dateInput = dateInput.$date;
+    }
+
     if (includeTime) {
       return formatDateTimeToFrench(dateInput);
     } else {
@@ -64,313 +97,386 @@ export function TransactionDetailDrawer({
   };
 
   const formatAmount = (amount) => {
-    const sign = isIncome ? "+" : "-";
-    return `${sign}${Math.abs(amount).toFixed(2)} €`;
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+    }).format(amount);
   };
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent
-        className="w-full h-full md:w-[620px] md:max-w-[620px] md:min-w-[620px] md:h-auto"
-        style={{ width: '100vw', height: '100vh' }}
+        className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
+        style={{ width: "100vw", height: "100vh" }}
       >
         {/* Header */}
-        <DrawerHeader className="flex flex-row items-center justify-between p-6 border-b space-y-0">
-          <DrawerTitle className="text-lg font-medium m-0 p-0 flex-shrink-0">
-            Détails de la transaction
+        <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
+          <DrawerTitle className="text-base font-medium">
+            Détails de la dépense
           </DrawerTitle>
-          <div className="flex-shrink-0">
-            <DrawerClose asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <XIcon className="h-4 w-4" />
-              </Button>
-            </DrawerClose>
-          </div>
+          <DrawerClose asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <X className="h-4 w-4" />
+            </Button>
+          </DrawerClose>
         </DrawerHeader>
 
         {/* Content */}
-        <div className="flex-1 p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-120px)]">
-          {/* Amount */}
-          <div className="mb-6">
-            <div className="text-3xl font-medium">
-              {formatAmount(transaction.amount)}
-            </div>
-          </div>
-
-          {/* Transaction Details */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">ID Client</span>
-              <span className="text-sm font-medium">{transaction.id}</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Facture</span>
-              <span className="text-sm font-medium">
-                #{Math.floor(Math.random() * 100000)}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Type de transaction</span>
-              <span className="text-sm font-medium">
-                {transaction.category}
-              </span>
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-6 space-y-6">
+            {/* Montant principal */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div
+                  className="h-10 w-10 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: `${categoryConfig.color}15` }}
+                >
+                  <CategoryIcon
+                    className="h-5 w-5"
+                    style={{ color: categoryConfig.color }}
+                  />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground font-normal">
+                    {categoryConfig.label}
+                  </p>
+                  <p className="text-2xl font-medium">
+                    {formatAmount(transaction.amount)}
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Statut</span>
-              <Badge
-                className={`${
-                  isIncome
-                    ? "bg-green-100 text-green-800 hover:bg-green-200"
-                    : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                }`}
-              >
-                {isIncome ? "Approuvé" : "Traité"}
-              </Badge>
+            <Separator />
+
+            {/* Fournisseur avec logo */}
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                Fournisseur
+              </p>
+              <div className="flex items-center gap-3">
+                {merchant?.logo ? (
+                  <div className="h-10 w-10 rounded-full overflow-hidden border bg-white flex-shrink-0">
+                    <img
+                      src={merchant.logo}
+                      alt={merchant.name}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        e.target.parentElement.innerHTML = `<div class="h-full w-full flex items-center justify-center bg-muted"><span class="text-xs font-medium text-muted-foreground">${merchant.name.charAt(0)}</span></div>`;
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {transaction.vendor ||
+                      merchant?.name ||
+                      transaction.title ||
+                      "Fournisseur non spécifié"}
+                  </p>
+                  {transaction.description && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {transaction.description}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Données du compte</span>
-              <div className="flex items-center space-x-2">
-                <PaymentIcon className="h-4 w-4 text-gray-400" />
-                <span className="text-sm font-medium">
-                  •••• {String(Math.abs(transaction.amount)).slice(-4)}
+            <Separator />
+
+            {/* Informations de transaction */}
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                Informations
+              </p>
+
+              {/* Date */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-normal text-muted-foreground">
+                    Date
+                  </span>
+                </div>
+                <span className="text-sm font-normal">
+                  {formatDate(transaction.date)}
                 </span>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Date</span>
-              <span className="text-sm font-medium">
-                {formatDate(transaction.date, true)}
-              </span>
-            </div>
-
-          </div>
-
-          {/* Fichiers épinglés */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium">Fichiers épinglés</h3>
-              <span className="text-xs">({transaction.files?.length || 0})</span>
-            </div>
-
-            {transaction.files && transaction.files.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3">
-                {transaction.files.map((file, index) => {
-                  // Déterminer le type de fichier et l'icône
-                  const isImage = file.mimetype?.startsWith('image/');
-                  const isPdf = file.mimetype === 'application/pdf';
-                  const fileExtension = file.filename?.split('.').pop()?.toLowerCase() || 'pdf';
-                  
-                  // Couleur et icône selon le type
-                  const iconBgColor = isPdf ? 'bg-red-100' : isImage ? 'bg-blue-100' : 'bg-gray-100';
-                  const iconColor = isPdf ? 'text-red-600' : isImage ? 'text-blue-600' : 'text-gray-600';
-                  
-                  // Fonction pour formater la taille du fichier
-                  const formatFileSize = (bytes) => {
-                    if (!bytes) return 'Taille inconnue';
-                    if (bytes < 1024) return `${bytes} B`;
-                    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-                    return `${Math.round(bytes / (1024 * 1024))} MB`;
-                  };
-                  
-                  // Fonction pour télécharger le fichier
-                  const handleDownload = () => {
-                    try {
-                      const link = document.createElement('a');
-                      link.href = file.url;
-                      link.download = file.originalFilename || file.filename || `fichier-${index + 1}.${fileExtension}`;
-                      link.target = '_blank';
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    } catch (error) {
-                      console.error('Erreur lors du téléchargement:', error);
-                    }
-                  };
-                  
-                  return (
-                    <div key={file.id || index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="flex-shrink-0">
-                        <div className={`w-10 h-10 ${iconBgColor} rounded flex items-center justify-center`}>
-                          <FileTextIcon className={`h-5 w-5 ${iconColor}`} />
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate" title={file.originalFilename || file.filename}>
-                          {file.originalFilename || file.filename || `Fichier ${index + 1}`}
-                        </p>
-                        <div className="flex items-center space-x-2 text-xs text-gray-500">
-                          <span>{formatFileSize(file.size)}</span>
-                          {file.ocrProcessed && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              OCR traité
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600"
-                        onClick={handleDownload}
-                        title="Télécharger le fichier"
-                      >
-                        <DownloadIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  );
-                })}
+              {/* Moyen de paiement */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <PaymentIcon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-normal text-muted-foreground">
+                    Paiement
+                  </span>
+                </div>
+                <span className="text-sm font-normal">
+                  {paymentMethodLabels[transaction.paymentMethod] ||
+                    "Non spécifié"}
+                </span>
               </div>
-            ) : (
-              <div className="text-center py-6 text-gray-500">
-                <FileTextIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                <p className="text-sm">Aucun fichier attaché</p>
+
+              {/* Statut */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-normal text-muted-foreground">
+                    Statut
+                  </span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="font-normal border-[#5A50FF]/20 bg-[#5A50FF]/5 text-[#5A50FF]"
+                >
+                  {statusLabels[transaction.status] || transaction.status}
+                </Badge>
               </div>
+
+              {/* Type de dépense */}
+              {transaction.expenseType && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Type
+                    </span>
+                  </div>
+                  <span className="text-sm font-normal">
+                    {transaction.expenseType === "ORGANIZATION"
+                      ? "Organisation"
+                      : "Personnel"}
+                  </span>
+                </div>
+              )}
+
+              {/* Utilisateur créateur */}
+              {transaction.createdBy && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Créé par
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium">
+                    {transaction.createdBy.name ||
+                      transaction.createdBy.email ||
+                      "Utilisateur"}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Fichiers joints */}
+            {transaction.files && transaction.files.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                      Fichiers joints
+                    </p>
+                    <span className="text-xs text-muted-foreground">
+                      {transaction.files.length}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {transaction.files.map((file, index) => {
+                      const isImage = file.mimetype?.startsWith("image/");
+                      const isPdf = file.mimetype === "application/pdf";
+
+                      const formatFileSize = (bytes) => {
+                        if (!bytes) return "";
+                        if (bytes < 1024) return `${bytes} B`;
+                        if (bytes < 1024 * 1024)
+                          return `${Math.round(bytes / 1024)} KB`;
+                        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+                      };
+
+                      const handleDownload = () => {
+                        const link = document.createElement("a");
+                        link.href = file.url;
+                        link.download =
+                          file.originalFilename ||
+                          file.filename ||
+                          `fichier-${index + 1}`;
+                        link.target = "_blank";
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      };
+
+                      return (
+                        <div
+                          key={file.id || index}
+                          className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group"
+                        >
+                          <div className="flex-shrink-0">
+                            <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
+                              <FileText className="h-5 w-5 text-gray-600" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-normal truncate">
+                              {file.originalFilename ||
+                                file.filename ||
+                                `Fichier ${index + 1}`}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {formatFileSize(file.size)}
+                              </span>
+                              {file.ocrProcessed && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs font-normal border-green-200 bg-green-50 text-green-700"
+                                >
+                                  OCR
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={handleDownload}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
             )}
+
+            {/* Métadonnées OCR */}
+            {transaction.ocrMetadata && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Données OCR
+                  </p>
+
+                  <div className="space-y-3 p-3 rounded-lg bg-muted/30">
+                    {transaction.ocrMetadata.invoiceNumber && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-normal text-muted-foreground">
+                          N° facture
+                        </span>
+                        <span className="text-xs font-medium">
+                          {transaction.ocrMetadata.invoiceNumber}
+                        </span>
+                      </div>
+                    )}
+
+                    {transaction.ocrMetadata.vendorAddress && (
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-xs font-normal text-muted-foreground">
+                          Adresse
+                        </span>
+                        <span className="text-xs font-medium text-right max-w-[200px]">
+                          {transaction.ocrMetadata.vendorAddress}
+                        </span>
+                      </div>
+                    )}
+
+                    {transaction.ocrMetadata.confidenceScore && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-normal text-muted-foreground">
+                          Confiance
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs font-normal ${
+                            transaction.ocrMetadata.confidenceScore > 0.8
+                              ? "border-green-200 bg-green-50 text-green-700"
+                              : transaction.ocrMetadata.confidenceScore > 0.6
+                                ? "border-yellow-200 bg-yellow-50 text-yellow-700"
+                                : "border-red-200 bg-red-50 text-red-700"
+                          }`}
+                        >
+                          {Math.round(
+                            transaction.ocrMetadata.confidenceScore * 100
+                          )}
+                          %
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Notes */}
+            {transaction.notes && transaction.notes !== "[EXPENSE]" && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Notes
+                  </p>
+                  <p className="text-sm font-normal text-foreground">
+                    {transaction.notes}
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* Dates de création/modification */}
+            <Separator />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-normal text-muted-foreground">
+                  Créée le
+                </span>
+                <span className="text-xs font-normal">
+                  {formatDate(transaction.createdAt, true)}
+                </span>
+              </div>
+              {transaction.updatedAt &&
+                transaction.updatedAt !== transaction.createdAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-normal text-muted-foreground">
+                      Modifiée le
+                    </span>
+                    <span className="text-xs font-normal">
+                      {formatDate(transaction.updatedAt, true)}
+                    </span>
+                  </div>
+                )}
+            </div>
           </div>
-
-          {/* Informations du fournisseur */}
-          {(transaction.vendor || transaction.ocrMetadata) && (
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-              <h3 className="text-sm font-medium">Informations du fournisseur</h3>
-
-              <div className="space-y-2">
-                {(transaction.vendor || transaction.ocrMetadata?.vendorName) && (
-                  <div className="flex justify-between">
-                    <span className="text-sm">Nom du fournisseur</span>
-                    <span className="text-sm font-medium">
-                      {transaction.vendor || transaction.ocrMetadata?.vendorName}
-                    </span>
-                  </div>
-                )}
-
-                {transaction.ocrMetadata?.vendorAddress && (
-                  <div className="flex justify-between">
-                    <span className="text-sm">Adresse</span>
-                    <span className="text-sm text-right max-w-48 truncate" title={transaction.ocrMetadata.vendorAddress}>
-                      {transaction.ocrMetadata.vendorAddress}
-                    </span>
-                  </div>
-                )}
-
-                {(transaction.vendorVatNumber || transaction.ocrMetadata?.vendorVatNumber) && (
-                  <div className="flex justify-between">
-                    <span className="text-sm">Numéro SIRET/TVA</span>
-                    <span className="text-sm font-medium">
-                      {transaction.vendorVatNumber || transaction.ocrMetadata?.vendorVatNumber}
-                    </span>
-                  </div>
-                )}
-
-                {(transaction.invoiceNumber || transaction.ocrMetadata?.invoiceNumber) && (
-                  <div className="flex justify-between">
-                    <span className="text-sm">Numéro de facture</span>
-                    <span className="text-sm font-medium">
-                      {transaction.invoiceNumber || transaction.ocrMetadata?.invoiceNumber}
-                    </span>
-                  </div>
-                )}
-
-                {transaction.ocrMetadata?.invoiceDate && (
-                  <div className="flex justify-between">
-                    <span className="text-sm">Date de facture</span>
-                    <span className="text-sm">
-                      {formatDate(transaction.ocrMetadata.invoiceDate, false)}
-                    </span>
-                  </div>
-                )}
-
-                {transaction.ocrMetadata?.confidenceScore && (
-                  <div className="flex justify-between">
-                    <span className="text-sm">Confiance OCR</span>
-                    <span className="text-sm">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        transaction.ocrMetadata.confidenceScore > 0.8 
-                          ? 'bg-green-100 text-green-800' 
-                          : transaction.ocrMetadata.confidenceScore > 0.6 
-                          ? 'bg-yellow-100 text-yellow-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {Math.round(transaction.ocrMetadata.confidenceScore * 100)}%
-                      </span>
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Shipping Information */}
-          {transaction.description && (
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-              <h3 className="text-sm font-medium">
-                Informations de transaction
-              </h3>
-
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">Description</span>
-                  <span className="text-sm text-right max-w-48 truncate">
-                    {transaction.description}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-sm">Catégorie</span>
-                  <span className="text-sm">{transaction.category}</span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-sm">Moyen de paiement</span>
-                  <span className="text-sm">
-                    {paymentMethodLabels[transaction.paymentMethod]}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-sm">Référence</span>
-                  <span className="text-sm font-mono">
-                    TXN-{transaction.id}
-                  </span>
-                </div>
-
-                {transaction.hasAttachment && (
-                  <div className="flex justify-between">
-                    <span className="text-sm">Pièce jointe</span>
-                    <Button
-                      variant="link"
-                      className="h-auto p-0 text-blue-600 hover:text-blue-700 text-sm"
-                    >
-                      Voir le reçu
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
-        <DrawerFooter>
+        {/* Footer */}
+        <DrawerFooter className="border-t px-6 py-4">
           <div className="flex gap-2">
             <Button
               variant="outline"
-              size="sm"
-              className="flex-1 cursor-pointer "
+              className="flex-1 font-normal"
               onClick={() => onEdit?.(transaction)}
             >
-              <EditIcon className="h-4 w-4 mr-2" />
+              <Edit className="h-4 w-4 mr-2" />
               Modifier
             </Button>
             <Button
-              size="sm"
-              className="flex-1 cursor-pointer"
+              variant="outline"
+              className="flex-1 font-normal text-red-600 hover:text-red-700 hover:bg-red-50"
               onClick={() => onDelete?.(transaction)}
             >
-              <TrashIcon className="h-4 w-4 mr-2" />
+              <Trash2 className="h-4 w-4 mr-2" />
               Supprimer
             </Button>
           </div>

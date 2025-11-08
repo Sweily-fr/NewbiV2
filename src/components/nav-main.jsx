@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { IconApps, IconCirclePlusFilled, IconMail } from "@tabler/icons-react";
+import { 
+  IconApps, 
+  IconCirclePlusFilled, 
+  IconReceipt,
+  IconFileText,
+  IconLayoutKanban,
+  IconMail,
+  IconFileUpload,
+  IconCreditCard,
+} from "@tabler/icons-react";
 import {
   Crown,
   LayoutPanelLeft,
   ChevronRight,
-  FileText,
-  FileSignature,
-  Mail,
-  Trello,
-  Upload,
-  Receipt,
 } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
@@ -53,23 +56,23 @@ export function NavMain({ items, onOpenNotifications, notificationCount = 0 }) {
 
   // Définir les sous-outils
   const allOutilsItems = [
-    { title: "Factures", url: "/dashboard/outils/factures", icon: FileText },
-    { title: "Devis", url: "/dashboard/outils/devis", icon: FileSignature },
+    { title: "Factures", url: "/dashboard/outils/factures", icon: IconReceipt },
+    { title: "Devis", url: "/dashboard/outils/devis", icon: IconFileText },
     {
       title: "Signature de mail",
       url: "/dashboard/outils/signatures-mail",
-      icon: Mail,
+      icon: IconMail,
     },
-    { title: "Kanban", url: "/dashboard/outils/kanban", icon: Trello },
+    { title: "Kanban", url: "/dashboard/outils/kanban", icon: IconLayoutKanban },
     {
       title: "Transfert de fichier",
       url: "/dashboard/outils/transferts-fichiers",
-      icon: Upload,
+      icon: IconFileUpload,
     },
     {
       title: "Dépenses",
       url: "/dashboard/outils/gestion-depenses",
-      icon: Receipt,
+      icon: IconCreditCard,
     },
   ];
 
@@ -93,17 +96,17 @@ export function NavMain({ items, onOpenNotifications, notificationCount = 0 }) {
           {
             title: "Factures",
             url: "/dashboard/outils/factures",
-            icon: FileText,
+            icon: IconReceipt,
           },
           {
             title: "Devis",
             url: "/dashboard/outils/devis",
-            icon: FileSignature,
+            icon: IconFileText,
           },
           {
             title: "Gestion des dépenses",
             url: "/dashboard/outils/gestion-depenses",
-            icon: Receipt,
+            icon: IconCreditCard,
           },
         ]
       : items;

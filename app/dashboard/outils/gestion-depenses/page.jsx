@@ -4,7 +4,7 @@ import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
 import TransactionTable from "./components/table";
 import { ExpenseCategoryChart } from "./components/expense-category-chart";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useExpenses } from "@/src/hooks/useExpenses";
 import {
@@ -14,10 +14,12 @@ import {
 import { useApolloClient } from "@apollo/client";
 import { Button } from "@/src/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 function GestionDepensesContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const client = useApolloClient();
+  const searchParams = useSearchParams();
 
   // Récupération des dépenses depuis l'API
   const {
@@ -127,6 +129,8 @@ function GestionDepensesContent() {
             expenses={expenses}
             loading={loading}
             refetchExpenses={refetchExpenses}
+            initialTransactionId={searchParams.get("transactionId")}
+            openOcr={searchParams.get("openOcr") === "true"}
           />
         </div>
       </div>
@@ -149,6 +153,8 @@ function GestionDepensesContent() {
           expenses={expenses}
           loading={loading}
           refetchExpenses={refetchExpenses}
+          initialTransactionId={searchParams.get("transactionId")}
+          openOcr={searchParams.get("openOcr") === "true"}
         />
       </div>
     </>

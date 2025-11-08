@@ -49,6 +49,8 @@ import BankingConnectButton from "@/src/components/banking/BankingConnectButton"
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
 import { TreasuryChart } from "@/src/components/treasury-chart";
+import { ExpenseCategoryChart } from "@/app/dashboard/outils/gestion-depenses/components/expense-category-chart";
+import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-chart";
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
@@ -202,79 +204,79 @@ function DashboardContent() {
           className="w-full h-11 flex items-center text-sm md:text-sm placeholder:text-sm md:placeholder:text-sm"
           placeholder="Rechercher des transactions ou lancer une action"
         />
-        {/* Conteneur avec scroll horizontal sur mobile, flex-wrap sur desktop */}
-        <div className="overflow-x-auto md:overflow-x-visible w-full scrollbar-hide">
-          <div className="flex gap-2 md:gap-3 md:flex-wrap w-max md:w-full">
+        {/* Conteneur avec scroll horizontal sur mobile, flex-wrap sur tablette et desktop */}
+        <div className="overflow-x-auto lg:overflow-x-visible w-full scrollbar-hide">
+          <div className="flex gap-2 lg:gap-3 lg:flex-wrap w-max lg:w-full">
             <Button
-              className="cursor-pointer normal whitespace-nowrap md:flex-1 md:min-w-0"
+              className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
               variant="outline"
               size="sm"
               asChild
             >
               <a
                 href="/dashboard/outils/gestion-depenses"
-                className="flex items-center gap-1 md:gap-2 justify-center"
+                className="flex items-center gap-1 lg:gap-2 justify-center"
               >
                 <CloudUpload className="w-4 h-4" />
-                <span className="text-xs md:text-xs">
+                <span className="text-xs lg:text-xs">
                   Créer une transaction
                 </span>
               </a>
             </Button>
             <Button
-              className="cursor-pointer normal whitespace-nowrap md:flex-1 md:min-w-0"
+              className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
               variant="outline"
               size="sm"
               asChild
             >
               <a
                 href="/dashboard/outils/factures/new"
-                className="flex items-center gap-1 md:gap-2 justify-center"
+                className="flex items-center gap-1 lg:gap-2 justify-center"
               >
                 <FileCheck2 className="w-4 h-4" />
-                <span className="text-xs md:text-xs">Créer une facture</span>
+                <span className="text-xs lg:text-xs">Créer une facture</span>
               </a>
             </Button>
             <Button
-              className="cursor-pointer normal whitespace-nowrap md:flex-1 md:min-w-0"
+              className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
               variant="outline"
               size="sm"
               asChild
             >
               <a
                 href="/dashboard/outils/gestion-depenses"
-                className="flex items-center gap-1 md:gap-2 justify-center"
+                className="flex items-center gap-1 lg:gap-2 justify-center"
               >
                 <Download className="w-4 h-4" />
-                <span className="text-xs md:text-xs">Importer des reçus</span>
+                <span className="text-xs lg:text-xs">Importer des reçus</span>
               </a>
             </Button>
             <Button
-              className="cursor-pointer normal whitespace-nowrap md:flex-1 md:min-w-0"
+              className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
               variant="outline"
               size="sm"
               asChild
             >
               <a
                 href="/dashboard/outils/devis/new"
-                className="flex items-center gap-1 md:gap-2 justify-center"
+                className="flex items-center gap-1 lg:gap-2 justify-center"
               >
                 <FileClock className="w-4 h-4" />
-                <span className="text-xs md:text-xs">Créer un devis</span>
+                <span className="text-xs lg:text-xs">Créer un devis</span>
               </a>
             </Button>
             <Button
-              className="cursor-pointer normal whitespace-nowrap md:flex-1 md:min-w-0"
+              className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
               variant="outline"
               size="sm"
               asChild
             >
               <a
                 href="/dashboard/outils/transferts-fichiers/new"
-                className="flex items-center gap-1 md:gap-2 justify-center"
+                className="flex items-center gap-1 lg:gap-2 justify-center"
               >
                 <Send className="w-4 h-4" />
-                <span className="text-xs md:text-xs">
+                <span className="text-xs lg:text-xs">
                   Transférer un fichier
                 </span>
               </a>
@@ -326,6 +328,18 @@ function DashboardContent() {
           config={expenseChartConfig}
           data={expenseChartData}
           hideMobileCurve={true}
+        />
+      </div>
+      
+      {/* Graphiques de répartition par catégorie */}
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
+        <IncomeCategoryChart
+          invoices={paidInvoices}
+          className="shadow-xs w-full md:w-1/2"
+        />
+        <ExpenseCategoryChart
+          expenses={paidExpenses}
+          className="shadow-xs w-full md:w-1/2"
         />
       </div>
     </div>

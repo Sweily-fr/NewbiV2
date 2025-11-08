@@ -77,7 +77,10 @@ export const columns = [
   {
     header: "Montant",
     accessorKey: "amount",
-    cell: ({ row }) => {
+    meta: {
+      label: "Montant",
+    },
+    cell: ({ row}) => {
       const amount = row.getValue("amount");
       const type = row.original.type;
       return (
@@ -103,6 +106,9 @@ export const columns = [
   {
     header: "Catégorie",
     accessorKey: "category",
+    meta: {
+      label: "Catégorie",
+    },
     cell: ({ row }) => {
       const category = row.getValue("category");
       const config = getCategoryConfig(category);
@@ -171,6 +177,9 @@ export const columns = [
   {
     header: "Justificatif",
     accessorKey: "attachment",
+    meta: {
+      label: "Justificatif",
+    },
     cell: ({ row }) => {
       const files = row.original.files || [];
       const attachmentCount = files.length;

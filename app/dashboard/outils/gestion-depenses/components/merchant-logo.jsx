@@ -8,17 +8,17 @@ import { cn } from "@/src/lib/utils";
  * Composant pour afficher le logo d'un marchand
  * Affiche le logo si disponible, sinon affiche les initiales ou une icône par défaut
  */
-export function MerchantLogo({ 
-  merchant, 
-  fallbackText, 
+export function MerchantLogo({
+  merchant,
+  fallbackText,
   size = "md",
-  className 
+  className,
 }) {
   const [imageError, setImageError] = useState(false);
 
   // Tailles prédéfinies
   const sizes = {
-    sm: "h-8 w-8",
+    sm: "h-7 w-7",
     md: "h-10 w-10",
     lg: "h-12 w-12",
   };
@@ -89,13 +89,13 @@ export function MerchantLogo({
 /**
  * Composant pour afficher le marchand avec son logo et son nom
  */
-export function MerchantDisplay({ 
-  merchant, 
-  description, 
+export function MerchantDisplay({
+  merchant,
+  description,
   category,
   size = "md",
   showCategory = true,
-  className 
+  className,
 }) {
   const displayName = merchant?.name || description || "Transaction";
 
@@ -107,13 +107,9 @@ export function MerchantDisplay({
         size={size}
       />
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate">
-          {displayName}
-        </p>
+        <p className="font-medium text-sm truncate">{displayName}</p>
         {showCategory && category && (
-          <p className="text-xs text-muted-foreground truncate">
-            {category}
-          </p>
+          <p className="text-xs text-muted-foreground truncate">{category}</p>
         )}
       </div>
     </div>

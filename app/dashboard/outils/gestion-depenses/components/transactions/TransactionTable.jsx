@@ -47,6 +47,8 @@ export default function TransactionTable({
   expenses: expensesProp = [],
   loading: loadingProp = false,
   refetchExpenses: refetchExpensesProp,
+  initialTransactionId = null,
+  openOcr = false,
 }) {
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
@@ -146,6 +148,24 @@ export default function TransactionTable({
       fetchMembers();
     }
   }, [activeOrg?.id]);
+
+  // Ouvrir automatiquement la sidebar si initialTransactionId est fourni
+  useEffect(() => {
+    if (initialTransactionId && expensesProp.length > 0) {
+      const transaction = expensesProp.find((exp) => exp.id === initialTransactionId);
+      if (transaction) {
+        if (openOcr) {
+          // Ouvrir la sidebar d'édition pour voir les données OCR
+          setEditingTransaction(transaction);
+          setIsEditModalOpen(true);
+        } else {
+          // Ouvrir la sidebar de détails
+          setSelectedTransaction(transaction);
+          setIsDetailDrawerOpen(true);
+        }
+      }
+    }
+  }, [initialTransactionId, openOcr, expensesProp]);
 
   const expenses = expensesProp;
   const expensesTotalCount = expensesProp.length;

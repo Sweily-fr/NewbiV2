@@ -83,6 +83,11 @@ const categories = [
   { value: "charges_sociales", label: "Charges sociales" },
   { value: "recrutement", label: "Recrutement" },
   
+  // Fiscalité
+  { value: "impots_taxes", label: "Impôts et taxes" },
+  { value: "tva", label: "TVA" },
+  { value: "avoirs_remboursement", label: "Avoirs / Remboursement" },
+  
   // Autres
   { value: "cadeaux", label: "Cadeaux clients" },
   { value: "representation", label: "Frais de représentation" },
