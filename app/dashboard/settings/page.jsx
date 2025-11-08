@@ -14,6 +14,7 @@ import CompanySection from "./components/CompanySection";
 import BankSection from "./components/BankSection";
 import LegalSection from "./components/LegalSection";
 import SecuritySection from "./components/SecuritySection";
+import { NotificationsSection } from "./components/NotificationsSection";
 
 // Configuration des onglets
 const TABS_CONFIG = {
@@ -28,6 +29,10 @@ const TABS_CONFIG = {
   legal: {
     title: "Informations légales",
     description: "Configurez les informations légales de votre entreprise",
+  },
+  notifications: {
+    title: "Notifications",
+    description: "Gérez vos préférences de rappels par email",
   },
   security: {
     title: "Sécurité",
@@ -264,6 +269,8 @@ export default function Settings() {
         return <BankSection {...commonProps} />;
       case "legal":
         return <LegalSection {...commonProps} />;
+      case "notifications":
+        return <NotificationsSection />;
       case "security":
         return <SecuritySection session={session} />;
       default:
@@ -290,7 +297,7 @@ export default function Settings() {
                 {currentTab.description}
               </p>
             </div>
-            {activeTab !== "security" && (
+            {activeTab !== "security" && activeTab !== "notifications" && (
               <Button
                 type="submit"
                 disabled={isSubmitting}

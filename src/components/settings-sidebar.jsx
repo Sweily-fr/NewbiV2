@@ -2,6 +2,7 @@ import {
   Building2,
   CreditCard,
   FileText,
+  Bell,
   Lock,
 } from "lucide-react";
 
@@ -20,6 +21,11 @@ const tabs = [
     id: "legal",
     label: "Informations légales",
     icon: <FileText className="h-4 w-4" />,
+  },
+  {
+    id: "notifications",
+    label: "Notifications",
+    icon: <Bell className="h-4 w-4" />,
   },
   {
     id: "security",
