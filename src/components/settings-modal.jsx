@@ -10,6 +10,7 @@ import {
   Settings,
   Settings2,
   Bell,
+  Mail,
   Users,
   Crown,
   User,
