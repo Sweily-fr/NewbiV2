@@ -59,7 +59,7 @@ export function HeroSection() {
                 width="2700"
                 height="1440"
               />
-            </div>
+            </div> 
           </div>
         </section>
         <TrustedCompaniesSection />
