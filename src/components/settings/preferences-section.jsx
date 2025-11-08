@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Switch } from "@/src/components/ui/switch";
 import { Button } from "@/src/components/ui/button";
-import { ChevronDown, Plus, X } from "lucide-react";
+import { ChevronDown, Plus, X, Mail, Clock, Send } from "lucide-react";
 import DarkModeComponent from "@/src/components/darkmode";
 import { Separator } from "@/src/components/ui/separator";
 import {
@@ -32,6 +32,10 @@ import { Crown } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useSession, updateUser } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
+import { useEmailPreferences } from "@/src/hooks/useEmailPreferences";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Checkbox } from "@/src/components/ui/checkbox";
 
 export function PreferencesSection() {
   const { isActive } = useSubscription();
@@ -48,6 +52,23 @@ export function PreferencesSection() {
   // État pour le dropdown des cookies
   const [cookieDropdownOpen, setCookieDropdownOpen] = useState(false);
 
+  // États pour les rappels email
+  const {
+    preferences,
+    loading: emailLoading,
+    updating,
+    sendingTest,
+    updatePreferences,
+    sendTestEmail,
+  } = useEmailPreferences();
+  const [emailDropdownOpen, setEmailDropdownOpen] = useState(false);
+  const [emailEnabled, setEmailEnabled] = useState(false);
+  const [emailTypes, setEmailTypes] = useState(["due", "anticipated"]);
+  const [doNotDisturb, setDoNotDisturb] = useState({
+    weekday: { start: "22:00", end: "08:00" },
+    weekend: { start: "22:00", end: "10:00" },
+  });
+
   // État pour la page de démarrage
   const [startupPage, setStartupPage] = useState(
     session?.user?.redirect_after_login || "dashboard"
@@ -58,7 +79,21 @@ export function PreferencesSection() {
     if (session?.user?.redirect_after_login) {
       setStartupPage(session.user.redirect_after_login);
     }
-  }, [session?.user?.redirect_after_login]);
+  }, [session]);
+
+  // Charger les préférences email
+  useEffect(() => {
+    if (preferences) {
+      setEmailEnabled(preferences.enabled || false);
+      setEmailTypes(preferences.types || ["due", "anticipated"]);
+      setDoNotDisturb(
+        preferences.doNotDisturb || {
+          weekday: { start: "22:00", end: "08:00" },
+          weekend: { start: "22:00", end: "10:00" },
+        }
+      );
+    }
+  }, [preferences]);
 
   // Charger les préférences de cookies depuis localStorage
   useEffect(() => {
@@ -202,6 +237,23 @@ export function PreferencesSection() {
 
   const handleRemoveApp = (appUrl) => {
     setFavoriteApps(favoriteApps.filter((app) => app.url !== appUrl));
+  };
+
+  // Fonctions pour les rappels email
+  const handleEmailSave = async () => {
+    await updatePreferences({
+      enabled: emailEnabled,
+      types: emailTypes,
+      doNotDisturb,
+    });
+  };
+
+  const handleEmailTypeChange = (type, checked) => {
+    if (checked) {
+      setEmailTypes([...emailTypes, type]);
+    } else {
+      setEmailTypes(emailTypes.filter((t) => t !== type));
+    }
   };
 
   // Fonction pour sauvegarder la page de démarrage
@@ -404,6 +456,239 @@ export function PreferencesSection() {
                 <SelectItem value="last-page">Dernière page visitée</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Section Rappels par email */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-medium mb-1">Rappels par email</h3>
+              <p className="text-xs text-gray-400">
+                Recevez des emails de rappel pour vos tâches importantes
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={emailEnabled}
+                onCheckedChange={setEmailEnabled}
+                className="scale-75 data-[state=checked]:!bg-[#5b4eff]"
+              />
+              {emailEnabled && (
+                <DropdownMenu
+                  open={emailDropdownOpen}
+                  onOpenChange={setEmailDropdownOpen}
+                >
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="ml-2 flex font-normal items-center gap-2"
+                    >
+                      Personnaliser
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-96 p-4 rounded-xl"
+                  >
+                    <div className="space-y-4">
+                      {/* Types de rappels */}
+                      <div>
+                        <h4 className="text-sm font-normal mb-3">
+                          Types de rappels
+                        </h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="type-due"
+                              checked={emailTypes.includes("due")}
+                              onCheckedChange={(checked) =>
+                                handleEmailTypeChange("due", checked)
+                              }
+                              className="h-4 w-4 data-[state=checked]:bg-[#5b4eff] data-[state=checked]:border-[#5b4eff]"
+                            />
+                            <Label
+                              htmlFor="type-due"
+                              className="text-xs font-normal cursor-pointer"
+                            >
+                              À l'échéance
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="type-anticipated"
+                              checked={emailTypes.includes("anticipated")}
+                              onCheckedChange={(checked) =>
+                                handleEmailTypeChange("anticipated", checked)
+                              }
+                              className="h-4 w-4 data-[state=checked]:bg-[#5b4eff] data-[state=checked]:border-[#5b4eff]"
+                            />
+                            <Label
+                              htmlFor="type-anticipated"
+                              className="text-xs font-normal cursor-pointer"
+                            >
+                              Rappels anticipés (1h, 3h, 1j, 3j avant)
+                            </Label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Ne pas déranger */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Clock className="h-4 w-4 text-gray-500" />
+                          <h4 className="text-sm font-normal">
+                            Ne pas déranger
+                          </h4>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-4">
+                          Les emails seront différés pendant ces périodes
+                        </p>
+
+                        {/* Semaine */}
+                        <div className="space-y-2 mb-4">
+                          <Label className="text-xs font-normal">
+                            Semaine (lundi-vendredi)
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <Label
+                                htmlFor="weekday-start"
+                                className="text-xs text-gray-500"
+                              >
+                                De
+                              </Label>
+                              <Input
+                                id="weekday-start"
+                                type="time"
+                                value={doNotDisturb.weekday.start}
+                                onChange={(e) =>
+                                  setDoNotDisturb({
+                                    ...doNotDisturb,
+                                    weekday: {
+                                      ...doNotDisturb.weekday,
+                                      start: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="mt-1 h-8 text-xs"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <Label
+                                htmlFor="weekday-end"
+                                className="text-xs text-gray-500"
+                              >
+                                À
+                              </Label>
+                              <Input
+                                id="weekday-end"
+                                type="time"
+                                value={doNotDisturb.weekday.end}
+                                onChange={(e) =>
+                                  setDoNotDisturb({
+                                    ...doNotDisturb,
+                                    weekday: {
+                                      ...doNotDisturb.weekday,
+                                      end: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="mt-1 h-8 text-xs"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Week-end */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-normal">
+                            Week-end (samedi-dimanche)
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <Label
+                                htmlFor="weekend-start"
+                                className="text-xs text-gray-500"
+                              >
+                                De
+                              </Label>
+                              <Input
+                                id="weekend-start"
+                                type="time"
+                                value={doNotDisturb.weekend.start}
+                                onChange={(e) =>
+                                  setDoNotDisturb({
+                                    ...doNotDisturb,
+                                    weekend: {
+                                      ...doNotDisturb.weekend,
+                                      start: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="mt-1 h-8 text-xs"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <Label
+                                htmlFor="weekend-end"
+                                className="text-xs text-gray-500"
+                              >
+                                À
+                              </Label>
+                              <Input
+                                id="weekend-end"
+                                type="time"
+                                value={doNotDisturb.weekend.end}
+                                onChange={(e) =>
+                                  setDoNotDisturb({
+                                    ...doNotDisturb,
+                                    weekend: {
+                                      ...doNotDisturb.weekend,
+                                      end: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="mt-1 h-8 text-xs"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Actions */}
+                      <div className="flex items-center justify-between">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={sendTestEmail}
+                          disabled={sendingTest}
+                          className="flex items-center gap-2 font-normal"
+                        >
+                          <Send className="h-3 w-3" />
+                          {sendingTest ? "Envoi..." : "Test"}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleEmailSave}
+                          disabled={updating}
+                          className="bg-[#5b4eff] hover:bg-[#5b4eff]/90 font-normal"
+                        >
+                          {updating ? "Sauvegarde..." : "Sauvegarder"}
+                        </Button>
+                      </div>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
 
           {/* Section Apps préférées */}

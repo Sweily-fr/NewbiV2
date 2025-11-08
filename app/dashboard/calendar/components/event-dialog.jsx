@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Textarea } from "@/src/components/ui/textarea";
+import { EmailReminderToggle } from "@/src/components/email-reminder-toggle";
 
 // Props interface converted to JSDoc for JavaScript
 /**
@@ -61,6 +62,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   const [allDay, setAllDay] = useState(false);
   const [location, setLocation] = useState("");
   const [color, setColor] = useState("sky");
+  const [emailReminder, setEmailReminder] = useState({ enabled: false, anticipation: null });
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [startDateOpen, setStartDateOpen] = useState(false);
@@ -81,6 +83,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       setAllDay(event.allDay || false);
       setLocation(event.location || "");
       setColor(event.color || "sky");
+      setEmailReminder(event.emailReminder || { enabled: false, anticipation: null });
       setError(null); // Reset error when opening dialog
     } else {
       resetForm();
@@ -97,6 +100,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     setAllDay(false);
     setLocation("");
     setColor("sky");
+    setEmailReminder({ enabled: false, anticipation: null });
     setError(null);
     setFieldErrors({});
   };
@@ -237,6 +241,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       allDay,
       location: sanitizeInput(locationValue),
       color,
+      emailReminder,
     });
   };
 
@@ -306,7 +311,9 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
         )}
         <div className="grid gap-4 py-4">
           <div className="*:not-first:mt-1.5">
-            <Label htmlFor="title">Titre</Label>
+            <Label htmlFor="title" className="font-normal">
+              Titre
+            </Label>
             <Input
               id="title"
               value={title}
@@ -326,7 +333,9 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
           </div>
 
           <div className="*:not-first:mt-1.5">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="font-normal">
+              Description
+            </Label>
             <Textarea
               id="description"
               value={description}
@@ -350,7 +359,9 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
 
           <div className="flex gap-4">
             <div className="flex-1 *:not-first:mt-1.5">
-              <Label htmlFor="start-date">Date de début</Label>
+              <Label htmlFor="start-date" className="font-normal">
+                Date de début
+              </Label>
               <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -402,7 +413,9 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
 
             {!allDay && (
               <div className="min-w-28 *:not-first:mt-1.5">
-                <Label htmlFor="start-time">Heure de début</Label>
+                <Label htmlFor="start-time" className="font-normal">
+                  Heure de début
+                </Label>
                 <Select value={startTime} onValueChange={setStartTime}>
                   <SelectTrigger id="start-time">
                     <SelectValue placeholder="Choisir l'heure" />
@@ -438,7 +451,9 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                         !endDate && "text-muted-foreground"
                       )}
                     >
-                      {endDate ? format(endDate, "PPP", { locale: fr }) : "Choisir une date"}
+                      {endDate
+                        ? format(endDate, "PPP", { locale: fr })
+                        : "Choisir une date"}
                     </span>
                     <RiCalendarLine
                       size={16}
@@ -515,6 +530,12 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
               </p>
             )}
           </div>
+
+          <EmailReminderToggle
+            value={emailReminder}
+            onChange={setEmailReminder}
+          />
+
           <fieldset className="space-y-4">
             <legend className="text-foreground text-sm leading-none font-medium">
               Etiquette
@@ -547,6 +568,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
               variant="outline"
               size="icon"
               onClick={handleDelete}
+              className="font-normal"
               aria-label="Delete event"
             >
               <RiDeleteBinLine size={16} aria-hidden="true" />
@@ -556,7 +578,12 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <Button variant="outline" onClick={onClose}>
               Annuler
             </Button>
-            <Button onClick={handleSave}>Enregistrer</Button>
+            <Button
+              className="bg-[#5a50ff] hover:bg-[#5a50ff]/90 font-normal"
+              onClick={handleSave}
+            >
+              Enregistrer
+            </Button>
           </div>
         </DialogFooter>
       </DialogContent>
