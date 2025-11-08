@@ -2,7 +2,7 @@ import { useState } from 'react';
 import * as React from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Textarea } from '@/src/components/ui/textarea';
-import { Send, Edit2, Trash2 } from 'lucide-react';
+import { Send, Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
 import { UserAvatar } from '@/src/components/ui/user-avatar';
 import {
@@ -27,6 +27,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
   const [commentToDelete, setCommentToDelete] = useState(null);
+  const [showAllActivities, setShowAllActivities] = useState(false);
   const { data: session } = useSession();
 
   // Récupérer les membres de l'organisation directement via GraphQL (même procédé que MemberSelector)
@@ -291,163 +292,198 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   return (
     <div className="flex flex-col h-full">
       <Tabs defaultValue="all" className="flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex-1 overflow-y-auto pl-2 px-4 py-4">
           <TabsContent value="all" className="space-y-3 mt-0">
             {allActivity.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Aucune activité
               </p>
             ) : (
-              allActivity.map((item, index) => {
+              <>
+                {allActivity.length > 3 && !showAllActivities && (
+                  <button
+                    onClick={() => setShowAllActivities(true)}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-start gap-1 py-2 transition-colors"
+                  >
+                    <ChevronDown className="h-3 w-3" />
+                    Voir plus ({allActivity.length - 3} activités)
+                  </button>
+                )}
+                {allActivity.length > 3 && showAllActivities && (
+                  <button
+                    onClick={() => setShowAllActivities(false)}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-start gap-1 py-2 transition-colors"
+                  >
+                    <ChevronUp className="h-3 w-3" />
+                    Voir moins
+                  </button>
+                )}
+                {(showAllActivities ? allActivity : allActivity.slice(-3)).map((item, index) => {
                 const display = item.type === 'activity' ? getActivityDisplay(item) : null;
                 return (
                   <div key={`${item.type}-${item.id || index}`} className="flex gap-3">
-                    <UserAvatar
-                      src={item.userImage}
-                      name={item.userName}
-                      size="sm"
-                      className="flex-shrink-0"
-                    />
-                    <div className="flex-1 space-y-2">
-                      {item.type === 'comment' ? (
-                        editingCommentId === item.id ? (
-                          <>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium">{item.userName}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {formatDate(item.createdAt)}
-                              </span>
-                            </div>
-                            <div className="space-y-2">
-                              <Textarea
-                                value={editingContent}
-                                onChange={(e) => setEditingContent(e.target.value)}
-                                className="text-sm"
-                                rows={3}
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleUpdateComment(item.id)}
-                                  disabled={updatingComment}
-                                >
-                                  Enregistrer
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setEditingCommentId(null);
-                                    setEditingContent('');
-                                  }}
-                                >
-                                  Annuler
-                                </Button>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium">{item.userName}</span>
-                              </div>
-                              {item.userId === currentUser?.id && (
-                                <div className="flex gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0"
-                                    onClick={() => {
-                                      setEditingCommentId(item.id);
-                                      setEditingContent(item.content);
-                                    }}
-                                  >
-                                    <Edit2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <AlertDialog open={commentToDelete === item.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
-                                    <AlertDialogTrigger asChild>
+                    {item.type === 'comment' ? (
+                      <div className="bg-background rounded-lg p-3 flex-1 border border-border">
+                        <div className="flex gap-3">
+                          <UserAvatar
+                            src={item.userImage}
+                            name={item.userName}
+                            size="sm"
+                            className="flex-shrink-0"
+                          />
+                          <div className="flex-1 space-y-2">
+                            {editingCommentId === item.id ? (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium">{item.userName}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDate(item.createdAt)}
+                                  </span>
+                                </div>
+                                <div className="space-y-2">
+                                  <Textarea
+                                    value={editingContent}
+                                    onChange={(e) => setEditingContent(e.target.value)}
+                                    className="text-sm"
+                                    rows={3}
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleUpdateComment(item.id)}
+                                      disabled={updatingComment}
+                                      className="text-white hover:opacity-90"
+                                      style={{ backgroundColor: '#5b50FF' }}
+                                    >
+                                      Enregistrer
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setEditingCommentId(null);
+                                        setEditingContent('');
+                                      }}
+                                    >
+                                      Annuler
+                                    </Button>
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium">{item.userName}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDate(item.createdAt)}
+                                    </span>
+                                  </div>
+                                  {item.userId === currentUser?.id && (
+                                    <div className="flex gap-1">
                                       <Button
                                         size="sm"
                                         variant="ghost"
-                                        className="h-7 w-7 p-0 text-slate-400 hover:text-destructive dark:text-slate-500 dark:hover:text-destructive"
-                                        onClick={() => setCommentToDelete(item.id)}
+                                        className="h-7 w-7 p-0 text-muted-foreground"
+                                        style={{ '--hover-color': '#5b50FF' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.color = '#5b50FF'}
+                                        onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                                        onClick={() => {
+                                          setEditingCommentId(item.id);
+                                          setEditingContent(item.content);
+                                        }}
                                       >
-                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <Edit2 className="h-3.5 w-3.5" />
                                       </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
-                                      </AlertDialogDescription>
-                                      <div className="flex gap-2 justify-end">
-                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => {
-                                            handleDeleteComment(item.id);
-                                            setCommentToDelete(null);
-                                          }}
-                                          disabled={deletingComment}
-                                          className="bg-destructive text-white hover:bg-destructive/90"
-                                        >
-                                          Supprimer
-                                        </AlertDialogAction>
-                                      </div>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
+                                      <AlertDialog open={commentToDelete === item.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+                                        <AlertDialogTrigger asChild>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                            onClick={() => setCommentToDelete(item.id)}
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
+                                          </AlertDialogDescription>
+                                          <div className="flex gap-2 justify-end">
+                                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                            <AlertDialogAction
+                                              onClick={() => {
+                                                handleDeleteComment(item.id);
+                                                setCommentToDelete(null);
+                                              }}
+                                              disabled={deletingComment}
+                                              className="bg-destructive text-white hover:bg-destructive/90"
+                                            >
+                                              Supprimer
+                                            </AlertDialogAction>
+                                          </div>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                            <div className="bg-muted/50 rounded-lg p-3">
-                              <p className="text-sm whitespace-pre-wrap">{item.content}</p>
-                            </div>
-                            <span className="text-xs text-muted-foreground block">
-                              {formatDate(item.createdAt)}
-                            </span>
-                          </>
-                        )
-                      ) : display ? (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{item.userName}</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            <span className="mr-1">{display.icon}</span>
-                            {display.text}
-                            {display.moveDetails && (
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="flex items-center gap-1.5">
-                                  <div 
-                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                    style={{ backgroundColor: display.moveDetails.from.color }}
-                                  />
-                                  <span className="text-xs text-foreground">
-                                    {display.moveDetails.from.title}
-                                  </span>
-                                </div>
-                                <span className="text-muted-foreground text-xs">→</span>
-                                <div className="flex items-center gap-1.5">
-                                  <div 
-                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                    style={{ backgroundColor: display.moveDetails.to.color }}
-                                  />
-                                  <span className="text-xs text-foreground">
-                                    {display.moveDetails.to.title}
-                                  </span>
-                                </div>
-                              </div>
+                                <p className="text-sm whitespace-pre-wrap">{item.content}</p>
+                              </>
                             )}
                           </div>
-                          <span className="text-xs text-muted-foreground mt-1 block">
-                            {formatDate(item.createdAt)}
-                          </span>
-                        </>
-                      ) : null}
-                    </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-8 flex items-start justify-center flex-shrink-0 pt-1.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          {display ? (
+                            <>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 flex-wrap flex-1">
+                                  <span className="text-xs font-normal">{item.userName}</span>
+                                  <span className="text-xs text-muted-foreground">{display.text}</span>
+                                  {display.moveDetails && (
+                                    <>
+                                      <div className="flex items-center gap-1">
+                                        <div 
+                                          className="w-2 h-2 rounded-full flex-shrink-0"
+                                          style={{ backgroundColor: display.moveDetails.from.color }}
+                                        />
+                                        <span className="text-xs text-foreground">
+                                          {display.moveDetails.from.title}
+                                        </span>
+                                      </div>
+                                      <span className="text-muted-foreground text-xs">→</span>
+                                      <div className="flex items-center gap-1">
+                                        <div 
+                                          className="w-2 h-2 rounded-full flex-shrink-0"
+                                          style={{ backgroundColor: display.moveDetails.to.color }}
+                                        />
+                                        <span className="text-xs text-foreground">
+                                          {display.moveDetails.to.title}
+                                        </span>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {formatDate(item.createdAt)}
+                                </span>
+                              </div>
+                            </>
+                          ) : null}
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
-              })
+              })}
+              </>
             )}
           </TabsContent>
 
@@ -458,111 +494,116 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
               </p>
             ) : (
               comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <UserAvatar
-                    src={comment.userImage}
-                    name={comment.userName}
-                    size="sm"
-                    className="flex-shrink-0"
-                  />
-                  <div className="flex-1 space-y-2">
-                    {editingCommentId === comment.id ? (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{comment.userName}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(comment.createdAt)}
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          <Textarea
-                            value={editingContent}
-                            onChange={(e) => setEditingContent(e.target.value)}
-                            className="text-sm"
-                            rows={3}
-                          />
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => handleUpdateComment(comment.id)}
-                              disabled={updatingComment}
-                            >
-                              Enregistrer
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setEditingCommentId(null);
-                                setEditingContent('');
-                              }}
-                            >
-                              Annuler
-                            </Button>
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center justify-between gap-2">
+                <div key={comment.id} className="bg-background rounded-lg p-3 border border-border">
+                  <div className="flex gap-3">
+                    <UserAvatar
+                      src={comment.userImage}
+                      name={comment.userName}
+                      size="sm"
+                      className="flex-shrink-0"
+                    />
+                    <div className="flex-1 space-y-2">
+                      {editingCommentId === comment.id ? (
+                        <>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{comment.userName}</span>
+                            <span className="text-xs font-medium">{comment.userName}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(comment.createdAt)}
+                            </span>
                           </div>
-                          {comment.userId === currentUser?.id && (
-                            <div className="flex gap-1">
+                          <div className="space-y-2">
+                            <Textarea
+                              value={editingContent}
+                              onChange={(e) => setEditingContent(e.target.value)}
+                              className="text-sm"
+                              rows={3}
+                            />
+                            <div className="flex gap-2">
                               <Button
                                 size="sm"
-                                variant="ghost"
-                                className="h-7 w-7 p-0"
+                                onClick={() => handleUpdateComment(comment.id)}
+                                disabled={updatingComment}
+                                className="text-white hover:opacity-90"
+                                style={{ backgroundColor: '#5b50FF' }}
+                              >
+                                Enregistrer
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => {
-                                  setEditingCommentId(comment.id);
-                                  setEditingContent(comment.content);
+                                  setEditingCommentId(null);
+                                  setEditingContent('');
                                 }}
                               >
-                                <Edit2 className="h-3.5 w-3.5" />
+                                Annuler
                               </Button>
-                              <AlertDialog open={commentToDelete === comment.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0 text-slate-400 hover:text-destructive dark:text-slate-500 dark:hover:text-destructive"
-                                    onClick={() => setCommentToDelete(comment.id)}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
-                                  </AlertDialogDescription>
-                                  <div className="flex gap-2 justify-end">
-                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => {
-                                        handleDeleteComment(comment.id);
-                                        setCommentToDelete(null);
-                                      }}
-                                      disabled={deletingComment}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Supprimer
-                                    </AlertDialogAction>
-                                  </div>
-                                </AlertDialogContent>
-                              </AlertDialog>
                             </div>
-                          )}
-                        </div>
-                        <div className="bg-muted/50 rounded-lg p-3">
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium">{comment.userName}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(comment.createdAt)}
+                              </span>
+                            </div>
+                            {comment.userId === currentUser?.id && (
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0 text-muted-foreground"
+                                  style={{ '--hover-color': '#5b50FF' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.color = '#5b50FF'}
+                                  onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                                  onClick={() => {
+                                    setEditingCommentId(comment.id);
+                                    setEditingContent(comment.content);
+                                  }}
+                                >
+                                  <Edit2 className="h-3.5 w-3.5" />
+                                </Button>
+                                <AlertDialog open={commentToDelete === comment.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                      onClick={() => setCommentToDelete(comment.id)}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
+                                    </AlertDialogDescription>
+                                    <div className="flex gap-2 justify-end">
+                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => {
+                                          handleDeleteComment(comment.id);
+                                          setCommentToDelete(null);
+                                        }}
+                                        disabled={deletingComment}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Supprimer
+                                      </AlertDialogAction>
+                                    </div>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            )}
+                          </div>
                           <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground block">
-                          {formatDate(comment.createdAt)}
-                        </span>
-                      </>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -575,67 +616,83 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                 Aucune activité
               </p>
             ) : (
-              activities.map((activity, index) => {
+              <>
+                {activities.length > 3 && !showAllActivities && (
+                  <button
+                    onClick={() => setShowAllActivities(true)}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-start gap-1 py-2 transition-colors"
+                  >
+                    <ChevronDown className="h-3 w-3" />
+                    Voir plus ({activities.length - 3} activités)
+                  </button>
+                )}
+                {activities.length > 3 && showAllActivities && (
+                  <button
+                    onClick={() => setShowAllActivities(false)}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-start gap-1 py-2 transition-colors"
+                  >
+                    <ChevronUp className="h-3 w-3" />
+                    Voir moins
+                  </button>
+                )}
+                {(showAllActivities ? activities : activities.slice(-3)).map((activity, index) => {
                 const display = getActivityDisplay(activity);
                 return (
                   <div key={activity.id || index} className="flex gap-3">
-                    <UserAvatar
-                      src={activity.userImage}
-                      name={activity.userName}
-                      size="sm"
-                      className="flex-shrink-0"
-                    />
+                    <div className="w-8 flex items-start justify-center flex-shrink-0 pt-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                    </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{activity.userName}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap flex-1">
+                          <span className="text-xs font-normal">{activity.userName}</span>
+                          <span className="text-xs text-muted-foreground">{display.text}</span>
+                          {display.moveDetails && (
+                            <>
+                              <div className="flex items-center gap-1">
+                                <div 
+                                  className="w-2 h-2 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: display.moveDetails.from.color }}
+                                />
+                                <span className="text-xs text-foreground">
+                                  {display.moveDetails.from.title}
+                                </span>
+                              </div>
+                              <span className="text-muted-foreground text-xs">→</span>
+                              <div className="flex items-center gap-1">
+                                <div 
+                                  className="w-2 h-2 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: display.moveDetails.to.color }}
+                                />
+                                <span className="text-xs text-foreground">
+                                  {display.moveDetails.to.title}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDate(activity.createdAt)}
+                        </span>
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        <span className="mr-1">{display.icon}</span>
-                        {display.text}
-                        {display.moveDetails && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <div className="flex items-center gap-1.5">
-                              <div 
-                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: display.moveDetails.from.color }}
-                              />
-                              <span className="text-xs text-foreground">
-                                {display.moveDetails.from.title}
-                              </span>
-                            </div>
-                            <span className="text-muted-foreground text-xs">→</span>
-                            <div className="flex items-center gap-1.5">
-                              <div 
-                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: display.moveDetails.to.color }}
-                              />
-                              <span className="text-xs text-foreground">
-                                {display.moveDetails.to.title}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground mt-1 block">
-                        {formatDate(activity.createdAt)}
-                      </span>
                     </div>
                   </div>
                 );
-              })
+              })}
+              </>
             )}
           </TabsContent>
         </div>
 
         {/* Tabs juste au-dessus du textarea */}
-        <TabsList className="grid w-full grid-cols-3 bg-transparent rounded-none h-auto p-0 border-t border-border">
-          <TabsTrigger value="all" className="text-xs rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent">
+        <TabsList className="grid w-full grid-cols-3 bg-transparent rounded-none h-auto px-3 pt-3 pb-0 border-t border-border">
+          <TabsTrigger value="all" className="text-xs rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent cursor-pointer">
             Tout ({allActivity.length})
           </TabsTrigger>
-          <TabsTrigger value="comments" className="text-xs rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent">
+          <TabsTrigger value="comments" className="text-xs rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent cursor-pointer">
             Commentaires ({comments.length})
           </TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent">
+          <TabsTrigger value="activity" className="text-xs rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent cursor-pointer">
             Activité ({activities.length})
           </TabsTrigger>
         </TabsList>
@@ -646,7 +703,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Ajouter un commentaire..."
-          className="min-h-[80px] text-sm bg-muted/50 border-border"
+          className="min-h-[80px] text-sm bg-background border-border"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();

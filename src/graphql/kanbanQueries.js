@@ -38,6 +38,7 @@ export const GET_BOARD = gql`
         description
         status
         priority
+        startDate
         dueDate
         columnId
         position
@@ -103,6 +104,7 @@ export const GET_TASKS = gql`
       description
       status
       priority
+      startDate
       dueDate
       position
       tags {
@@ -190,6 +192,7 @@ export const CREATE_TASK = gql`
       description
       status
       priority
+      startDate
       dueDate
       columnId
       position
@@ -217,6 +220,7 @@ export const UPDATE_TASK = gql`
       description
       status
       priority
+      startDate
       dueDate
       columnId
       position
@@ -261,6 +265,7 @@ export const TASK_FRAGMENT = gql`
     description
     status
     priority
+    startDate
     dueDate
     columnId
     position

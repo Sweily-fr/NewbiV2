@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Circle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
-import { Checkbox } from '@/src/components/ui/checkbox';
 import { v4 as uuidv4 } from 'uuid';
 
 const ChecklistItem = ({ item, onUpdate, onDelete }) => {
@@ -20,12 +19,19 @@ const ChecklistItem = ({ item, onUpdate, onDelete }) => {
 
   return (
     <div className="flex items-center gap-2 group py-1">
-      <Checkbox 
-        id={`checklist-${item.id}`} 
-        checked={item.completed}
-        onCheckedChange={(checked) => onUpdate({ ...item, completed: checked })}
-        className="h-4 w-4 rounded"
-      />
+      <button
+        type="button"
+        onClick={() => onUpdate({ ...item, completed: !item.completed })}
+        className="flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+      >
+        {item.completed ? (
+          <div className="flex items-center justify-center rounded-full" style={{ width: '20px', height: '20px', backgroundColor: '#5b50FF' }}>
+            <CheckCircle2 className="h-5 w-5 text-white" />
+          </div>
+        ) : (
+          <Circle className="h-5 w-5 text-muted-foreground" />
+        )}
+      </button>
       
       {isEditing ? (
         <div className="flex-1 flex gap-2">
@@ -33,19 +39,24 @@ const ChecklistItem = ({ item, onUpdate, onDelete }) => {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onBlur={handleSave}
-            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSave();
+              if (e.key === 'Escape') {
+                setText(item.text);
+                setIsEditing(false);
+              }
+            }}
             autoFocus
             className="h-8 px-2 py-1 text-sm"
           />
         </div>
       ) : (
-        <label 
-          htmlFor={`checklist-${item.id}`}
+        <span 
           className={`flex-1 text-sm ${item.completed ? 'line-through text-muted-foreground' : ''} cursor-pointer`}
-          onDoubleClick={() => setIsEditing(true)}
+          onClick={() => setIsEditing(true)}
         >
           {item.text}
-        </label>
+        </span>
       )}
       
       <Button
@@ -63,6 +74,7 @@ const ChecklistItem = ({ item, onUpdate, onDelete }) => {
 
 export const Checklist = ({ items = [], onChange }) => {
   const [newItemText, setNewItemText] = useState('');
+  const [isAddingNew, setIsAddingNew] = useState(false);
 
   // Normalize items to ensure all have valid IDs
   const normalizedItems = items.map((item, index) => ({
@@ -71,7 +83,10 @@ export const Checklist = ({ items = [], onChange }) => {
   }));
 
   const handleAddItem = () => {
-    if (!newItemText.trim()) return;
+    if (!newItemText.trim()) {
+      setIsAddingNew(false);
+      return;
+    }
     
     const newItem = {
       id: uuidv4(),
@@ -81,6 +96,7 @@ export const Checklist = ({ items = [], onChange }) => {
     
     onChange([...items, newItem]);
     setNewItemText('');
+    setIsAddingNew(false);
   };
 
   const handleUpdateItem = (updatedItem) => {
@@ -101,7 +117,7 @@ export const Checklist = ({ items = [], onChange }) => {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium">Checklist</h4>
+        <h4 className="text-base font-semibold">Checklist</h4>
         {totalCount > 0 && (
           <span className="text-xs text-muted-foreground">
             {completedCount} sur {totalCount} ({progress}%)
@@ -112,8 +128,8 @@ export const Checklist = ({ items = [], onChange }) => {
       {totalCount > 0 && (
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div 
-            className="h-full bg-primary transition-all duration-300" 
-            style={{ width: `${progress}%` }}
+            className="h-full transition-all duration-300" 
+            style={{ width: `${progress}%`, backgroundColor: '#5b50FF' }}
           />
         </div>
       )}
@@ -127,27 +143,39 @@ export const Checklist = ({ items = [], onChange }) => {
             onDelete={handleDeleteItem}
           />
         ))}
+        
+        {isAddingNew && (
+          <div className="flex items-center gap-2 group py-1">
+            <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <Input
+              placeholder="New checklist item"
+              value={newItemText}
+              onChange={(e) => setNewItemText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddItem();
+                if (e.key === 'Escape') {
+                  setIsAddingNew(false);
+                  setNewItemText('');
+                }
+              }}
+              onBlur={handleAddItem}
+              autoFocus
+              className="h-8 px-2 py-1 text-sm flex-1"
+            />
+          </div>
+        )}
       </div>
       
-      <div className="flex gap-2">
-        <Input
-          placeholder="Ajouter un élément"
-          value={newItemText}
-          onChange={(e) => setNewItemText(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
-          className="h-8 text-sm"
-        />
-        <Button 
-          type="button" 
-          size="sm" 
-          variant="outline"
-          onClick={handleAddItem}
-          disabled={!newItemText.trim()}
+      {!isAddingNew && (
+        <button
+          type="button"
+          onClick={() => setIsAddingNew(true)}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1 cursor-pointer"
         >
-          <Plus className="h-4 w-4 mr-1" />
-          Ajouter
-        </Button>
-      </div>
+          <Plus className="h-4 w-4" />
+          Ajouter un item
+        </button>
+      )}
     </div>
   );
 };
