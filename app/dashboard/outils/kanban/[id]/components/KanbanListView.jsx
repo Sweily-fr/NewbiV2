@@ -271,6 +271,8 @@ export function KanbanListView({
   onEditTask,
   onDeleteTask,
   onAddTask,
+  onEditColumn,
+  onDeleteColumn,
   members = [],
   selectedTaskIds,
   setSelectedTaskIds,
@@ -433,14 +435,14 @@ export function KanbanListView({
                       <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuItem onClick={(e) => {
                           e.stopPropagation();
-                          // TODO: Ouvrir modal d'édition de colonne
+                          onEditColumn?.(column);
                         }}>
                           Modifier
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={(e) => {
                             e.stopPropagation();
-                            // TODO: Supprimer la colonne
+                            onDeleteColumn?.(column);
                           }}
                           className="text-red-600 focus:text-red-600 focus:bg-red-50"
                         >
@@ -509,14 +511,14 @@ export function KanbanListView({
                     <DropdownMenuContent align="end" className="w-40">
                       <DropdownMenuItem onClick={(e) => {
                         e.stopPropagation();
-                        // TODO: Ouvrir modal d'édition de colonne
+                        onEditColumn?.(column);
                       }}>
                         Modifier
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={(e) => {
                           e.stopPropagation();
-                          // TODO: Supprimer la colonne
+                          onDeleteColumn?.(column);
                         }}
                         className="text-red-600 focus:text-red-600 focus:bg-red-50"
                       >
@@ -664,7 +666,7 @@ export function KanbanListView({
                                       <Popover>
                                         <PopoverTrigger asChild>
                                           <button
-                                            className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors flex-shrink-0"
+                                            className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors flex-shrink-0 ml-4"
                                             onClick={(e) => e.stopPropagation()}
                                             title="Afficher la description"
                                           >

@@ -158,6 +158,9 @@ export default function KanbanBoardPage({ params }) {
     addChecklistItem,
     toggleChecklistItem,
     removeChecklistItem,
+    addPendingComment,
+    removePendingComment,
+    updatePendingComment,
     moveTask,
     updateTask,
   } = useKanbanTasks(id, board);
@@ -487,24 +490,22 @@ export default function KanbanBoardPage({ params }) {
               </Button>
             )}
             
-            {isBoard && (
-              <ButtonGroup>
-                <Button
-                  onClick={openAddModal}
-                  className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                >
-                  Ajouter une colonne
-                </Button>
-                <ButtonGroupSeparator />
-                <Button
-                  onClick={openAddModal}
-                  size="icon"
-                  className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </ButtonGroup>
-            )}
+            <ButtonGroup>
+              <Button
+                onClick={openAddModal}
+                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                {isBoard ? "Ajouter une colonne" : "Nouveau status"}
+              </Button>
+              <ButtonGroupSeparator />
+              <Button
+                onClick={openAddModal}
+                size="icon"
+                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </ButtonGroup>
           </div>
         </div>
       </div>
@@ -762,6 +763,8 @@ export default function KanbanBoardPage({ params }) {
               onEditTask={openEditTaskModal}
               onDeleteTask={handleDeleteTask}
               onAddTask={openAddTaskModal}
+              onEditColumn={openEditModal}
+              onDeleteColumn={handleDeleteColumn}
               members={board?.members || []}
               selectedTaskIds={selectedTaskIds}
               setSelectedTaskIds={setSelectedTaskIds}
@@ -848,6 +851,9 @@ export default function KanbanBoardPage({ params }) {
         addChecklistItem={addChecklistItem}
         toggleChecklistItem={toggleChecklistItem}
         removeChecklistItem={removeChecklistItem}
+        addPendingComment={addPendingComment}
+        removePendingComment={removePendingComment}
+        updatePendingComment={updatePendingComment}
       />
 
       <TaskModal

@@ -6,6 +6,7 @@ import {
   UPDATE_TASK,
   DELETE_TASK,
   MOVE_TASK,
+  ADD_COMMENT,
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -23,6 +24,7 @@ export const useKanbanTasks = (boardId, board) => {
     assignedMembers: [],
     newTag: "",
     newChecklistItem: "",
+    pendingComments: [], // Commentaires en attente de création
   };
 
   const [taskForm, setTaskForm] = useState(initialTaskForm);
@@ -32,10 +34,30 @@ export const useKanbanTasks = (boardId, board) => {
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
 
   // Task mutations
+  const [addComment] = useMutation(ADD_COMMENT);
+
   const [createTask, { loading: createTaskLoading }] = useMutation(
     CREATE_TASK,
     {
-      onCompleted: () => {
+      onCompleted: async (data) => {
+        // Si des commentaires sont en attente, les créer maintenant
+        if (taskForm.pendingComments && taskForm.pendingComments.length > 0 && data?.createTask?.id) {
+          try {
+            for (const comment of taskForm.pendingComments) {
+              await addComment({
+                variables: {
+                  taskId: data.createTask.id,
+                  input: { content: comment.content },
+                  workspaceId
+                },
+              });
+            }
+          } catch (error) {
+            console.error("Erreur lors de l'ajout des commentaires:", error);
+            toast.error("Tâche créée mais erreur lors de l'ajout des commentaires");
+          }
+        }
+        
         // Plus de toast ici - la subscription temps réel s'en charge
         setTaskForm(initialTaskForm);
         setSelectedColumnId(null);
@@ -435,7 +457,41 @@ export const useKanbanTasks = (boardId, board) => {
       userId: task?.userId,
       createdAt: task?.createdAt,
       updatedAt: task?.updatedAt,
+      pendingComments: [], // Pas de commentaires en attente en mode édition
     });
+  };
+
+  // Gestion des commentaires en attente (pour la création de tâche)
+  const addPendingComment = (content) => {
+    if (!content.trim()) return;
+    
+    setTaskForm((prev) => ({
+      ...prev,
+      pendingComments: [
+        ...prev.pendingComments,
+        {
+          id: `pending-${Date.now()}-${Math.random()}`,
+          content: content.trim(),
+          createdAt: new Date().toISOString(),
+        }
+      ]
+    }));
+  };
+
+  const removePendingComment = (commentId) => {
+    setTaskForm((prev) => ({
+      ...prev,
+      pendingComments: prev.pendingComments.filter(c => c.id !== commentId)
+    }));
+  };
+
+  const updatePendingComment = (commentId, newContent) => {
+    setTaskForm((prev) => ({
+      ...prev,
+      pendingComments: prev.pendingComments.map(c => 
+        c.id === commentId ? { ...c, content: newContent } : c
+      )
+    }));
   };
 
   return {
@@ -468,6 +524,9 @@ export const useKanbanTasks = (boardId, board) => {
     addChecklistItem,
     toggleChecklistItem,
     removeChecklistItem,
+    addPendingComment,
+    removePendingComment,
+    updatePendingComment,
     moveTask,
     updateTask,
   };
