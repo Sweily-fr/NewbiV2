@@ -382,7 +382,7 @@ export function KanbanListView({
   };
 
   return (
-    <div className="space-y-4 bg-background pb-8 md:pb-12 lg:pb-16">
+    <div className="space-y-4 bg-background pb-24 md:pb-12 lg:pb-16">
       {columns.map((column, columnIndex) => {
         const tasks = getFilteredTasksByColumn(column.id);
         const isCollapsed = collapsedColumns.has(column.id) || (tasks.length === 0 && !collapsedColumns.has(column.id));
