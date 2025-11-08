@@ -19,13 +19,28 @@ import {
   ChartTooltipContent,
 } from "@/src/components/ui/chart";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import { Button } from "@/src/components/ui/button";
+import { Calendar as CalendarIcon, ChevronRight } from "lucide-react";
+import { Label } from "@/src/components/ui/label";
+import { parseDate } from "@internationalized/date";
+import {
+  Button as RACButton,
+  DatePicker,
+  Dialog,
+  Group,
+  Popover as RACPopover,
+} from "react-aria-components";
+import { Calendar } from "@/src/components/ui/calendar-rac";
+import { DateInput } from "@/src/components/ui/datefield-rac";
 
 export const description = "An interactive area chart";
 
@@ -159,6 +174,20 @@ export function ChartAreaInteractive({
   const chartId = React.useId();
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
+  const [customStartDate, setCustomStartDate] = React.useState("");
+  const [customEndDate, setCustomEndDate] = React.useState("");
+
+  // Obtenir le label de la période sélectionnée
+  const getTimeRangeLabel = () => {
+    switch (timeRange) {
+      case "7d": return "7 jours";
+      case "30d": return "30 jours";
+      case "90d": return "3 mois";
+      case "365d": return "1 an";
+      case "custom": return "Personnalisé";
+      default: return "3 mois";
+    }
+  };
 
   React.useEffect(() => {
     if (isMobile) {
@@ -168,13 +197,40 @@ export function ChartAreaInteractive({
 
   const filteredData = data.filter((item) => {
     const date = new Date(item.date);
-    const referenceDate = new Date(); // Utiliser la date actuelle
-    let daysToSubtract = 90;
-    if (timeRange === "30d") {
-      daysToSubtract = 30;
-    } else if (timeRange === "7d") {
-      daysToSubtract = 7;
+    
+    // Si période personnalisée
+    if (timeRange === "custom") {
+      if (!customStartDate && !customEndDate) return true;
+      
+      const start = customStartDate ? new Date(customStartDate) : null;
+      const end = customEndDate ? new Date(customEndDate) : null;
+      
+      if (start && end) {
+        return date >= start && date <= end;
+      } else if (start) {
+        return date >= start;
+      } else if (end) {
+        return date <= end;
+      }
+      return true;
     }
+    
+    // Périodes prédéfinies
+    const referenceDate = new Date();
+    let daysToSubtract = 90;
+    
+    if (timeRange === "7d") {
+      daysToSubtract = 7;
+    } else if (timeRange === "30d") {
+      daysToSubtract = 30;
+    } else if (timeRange === "90d") {
+      daysToSubtract = 90;
+    } else if (timeRange === "365d") {
+      daysToSubtract = 365;
+    } else if (timeRange === "730d") {
+      daysToSubtract = 730;
+    }
+    
     const startDate = new Date(referenceDate);
     startDate.setDate(startDate.getDate() - daysToSubtract);
     return date >= startDate;
@@ -196,37 +252,113 @@ export function ChartAreaInteractive({
         </CardDescription>
         {showTimeRange && (
           <CardAction>
-            <ToggleGroup
-              type="single"
-              value={timeRange}
-              onValueChange={setTimeRange}
-              variant="outline"
-              className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
-            >
-              <ToggleGroupItem value="90d">Derniers 3 mois</ToggleGroupItem>
-              <ToggleGroupItem value="30d">Derniers 30 jours</ToggleGroupItem>
-              <ToggleGroupItem value="7d">Derniers 7 jours</ToggleGroupItem>
-            </ToggleGroup>
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger
-                className="flex text-xs border-none shadow-none w-35 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
-                size="sm"
-                aria-label="Select a value"
-              >
-                <SelectValue placeholder="Derniers 3 mois" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="90d" className="rounded-lg">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 text-xs border-none shadow-none">
+                  {getTimeRangeLabel()}
+                  <ChevronRight className="-me-1 opacity-60 rotate-90" size={14} aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="rounded-xl">
+                <DropdownMenuItem 
+                  className="rounded-lg text-xs"
+                  onClick={() => setTimeRange("365d")}
+                >
+                  Dernière année
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="rounded-lg text-xs"
+                  onClick={() => setTimeRange("90d")}
+                >
                   Derniers 3 mois
-                </SelectItem>
-                <SelectItem value="30d" className="rounded-lg">
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="rounded-lg text-xs"
+                  onClick={() => setTimeRange("30d")}
+                >
                   Derniers 30 jours
-                </SelectItem>
-                <SelectItem value="7d" className="rounded-lg">
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="rounded-lg text-xs"
+                  onClick={() => setTimeRange("7d")}
+                >
                   Derniers 7 jours
-                </SelectItem>
-              </SelectContent>
-            </Select>
+                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="rounded-lg text-xs">
+                    Période personnalisée
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent className="w-64 p-4">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">
+                            Date de début
+                          </Label>
+                          <DatePicker
+                            value={customStartDate ? parseDate(customStartDate) : null}
+                            onChange={(date) => {
+                              if (date) {
+                                setCustomStartDate(date.toString());
+                                setTimeRange("custom");
+                              }
+                            }}
+                          >
+                            <div className="flex">
+                              <Group className="w-full">
+                                <DateInput className="pe-9" />
+                              </Group>
+                              <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                                <CalendarIcon size={16} />
+                              </RACButton>
+                            </div>
+                            <RACPopover
+                              className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
+                              offset={4}
+                            >
+                              <Dialog className="max-h-[inherit] overflow-auto p-2">
+                                <Calendar />
+                              </Dialog>
+                            </RACPopover>
+                          </DatePicker>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">
+                            Date de fin
+                          </Label>
+                          <DatePicker
+                            value={customEndDate ? parseDate(customEndDate) : null}
+                            onChange={(date) => {
+                              if (date) {
+                                setCustomEndDate(date.toString());
+                                setTimeRange("custom");
+                              }
+                            }}
+                          >
+                            <div className="flex">
+                              <Group className="w-full">
+                                <DateInput className="pe-9" />
+                              </Group>
+                              <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                                <CalendarIcon size={16} />
+                              </RACButton>
+                            </div>
+                            <RACPopover
+                              className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
+                              offset={4}
+                            >
+                              <Dialog className="max-h-[inherit] overflow-auto p-2">
+                                <Calendar />
+                              </Dialog>
+                            </RACPopover>
+                          </DatePicker>
+                        </div>
+                      </div>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardAction>
         )}
       </CardHeader>

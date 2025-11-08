@@ -22,13 +22,28 @@ import {
   ChartTooltipContent,
 } from "@/src/components/ui/chart";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import { Info } from "lucide-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import { Button } from "@/src/components/ui/button";
+import { Label } from "@/src/components/ui/label";
+import { Info, ChevronRight, CalendarIcon } from "lucide-react";
+import { parseDate } from "@internationalized/date";
+import {
+  Button as RACButton,
+  DatePicker,
+  Dialog,
+  Group,
+  Popover as RACPopover,
+} from "react-aria-components";
+import { Calendar } from "@/src/components/ui/calendar-rac";
+import { DateInput } from "@/src/components/ui/datefield-rac";
 
 const chartConfig = {
   treasury: {
@@ -51,7 +66,20 @@ export function TreasuryChart({
   className = "",
   initialBalance = 0,
 }) {
-  const [timeRange, setTimeRange] = useState("90d"); // 90d, 30d, 365d
+  const [timeRange, setTimeRange] = useState("90d"); // 90d, 30d, 365d, 730d, custom
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+
+  // Obtenir le label de la période sélectionnée
+  const getTimeRangeLabel = () => {
+    switch (timeRange) {
+      case "30d": return "Dernier mois";
+      case "90d": return "Derniers 3 mois";
+      case "365d": return "Dernière année";
+      case "custom": return "Période personnalisée";
+      default: return "Derniers 3 mois";
+    }
+  };
 
   console.log("📊 [TREASURY] Props reçues:", {
     expensesCount: expenses.length,
@@ -65,18 +93,34 @@ export function TreasuryChart({
     const chartData = [];
     let cumulativeTreasury = initialBalance;
 
-    // Déterminer le nombre de jours en fonction du filtre
-    const daysMap = {
-      "30d": 30,
-      "90d": 90,
-      "365d": 365,
-    };
-    const days = daysMap[timeRange] || 90;
+    // Déterminer la période
+    let startDate, endDate;
+    
+    if (timeRange === "custom") {
+      // Période personnalisée
+      startDate = customStartDate ? new Date(customStartDate) : new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      endDate = customEndDate ? new Date(customEndDate) : now;
+    } else {
+      // Périodes prédéfinies
+      const daysMap = {
+        "30d": 30,
+        "90d": 90,
+        "365d": 365,
+        "730d": 730,
+      };
+      const days = daysMap[timeRange] || 90;
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - days);
+      endDate = now;
+    }
+
+    // Calculer le nombre de jours entre les deux dates
+    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
 
     // Générer les données pour la période sélectionnée
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
+    for (let i = 0; i <= daysDiff; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
       const dateStr = date.toISOString().split("T")[0];
 
       // Filtrer les factures pour ce jour
@@ -151,7 +195,7 @@ export function TreasuryChart({
     });
 
     return chartData;
-  }, [expenses, invoices, initialBalance, timeRange]);
+  }, [expenses, invoices, initialBalance, timeRange, customStartDate, customEndDate]);
 
   // Calculer la consommation de trésorerie (différence entre début et fin)
   const treasuryConsumption = useMemo(() => {
@@ -185,25 +229,107 @@ export function TreasuryChart({
             </span>
           </CardDescription>
         </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger
-            className="w-[140px] h-8 text-xs border-none shadow-none"
-            aria-label="Sélectionner une période"
-          >
-            <SelectValue placeholder="Derniers 3 mois" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="30d" className="rounded-lg text-xs">
-              Dernier mois
-            </SelectItem>
-            <SelectItem value="90d" className="rounded-lg text-xs">
-              Derniers 3 mois
-            </SelectItem>
-            <SelectItem value="365d" className="rounded-lg text-xs">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 text-xs border-none shadow-none">
+              {getTimeRangeLabel()}
+              <ChevronRight className="-me-1 opacity-60 rotate-90" size={14} aria-hidden="true" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="rounded-xl">
+            <DropdownMenuItem 
+              className="rounded-lg text-xs"
+              onClick={() => setTimeRange("365d")}
+            >
               Dernière année
-            </SelectItem>
-          </SelectContent>
-        </Select>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="rounded-lg text-xs"
+              onClick={() => setTimeRange("90d")}
+            >
+              Derniers 3 mois
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="rounded-lg text-xs"
+              onClick={() => setTimeRange("30d")}
+            >
+              Dernier mois
+            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="rounded-lg text-xs">
+                Période personnalisée
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent className="w-64 p-4">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">
+                        Date de début
+                      </Label>
+                      <DatePicker
+                        value={customStartDate ? parseDate(customStartDate) : null}
+                        onChange={(date) => {
+                          if (date) {
+                            setCustomStartDate(date.toString());
+                            setTimeRange("custom");
+                          }
+                        }}
+                      >
+                        <div className="flex">
+                          <Group className="w-full">
+                            <DateInput className="pe-9" />
+                          </Group>
+                          <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                            <CalendarIcon size={16} />
+                          </RACButton>
+                        </div>
+                        <RACPopover
+                          className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
+                          offset={4}
+                        >
+                          <Dialog className="max-h-[inherit] overflow-auto p-2">
+                            <Calendar />
+                          </Dialog>
+                        </RACPopover>
+                      </DatePicker>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">
+                        Date de fin
+                      </Label>
+                      <DatePicker
+                        value={customEndDate ? parseDate(customEndDate) : null}
+                        onChange={(date) => {
+                          if (date) {
+                            setCustomEndDate(date.toString());
+                            setTimeRange("custom");
+                          }
+                        }}
+                      >
+                        <div className="flex">
+                          <Group className="w-full">
+                            <DateInput className="pe-9" />
+                          </Group>
+                          <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                            <CalendarIcon size={16} />
+                          </RACButton>
+                        </div>
+                        <RACPopover
+                          className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
+                          offset={4}
+                        >
+                          <Dialog className="max-h-[inherit] overflow-auto p-2">
+                            <Calendar />
+                          </Dialog>
+                        </RACPopover>
+                      </DatePicker>
+                    </div>
+                  </div>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
         <ChartContainer

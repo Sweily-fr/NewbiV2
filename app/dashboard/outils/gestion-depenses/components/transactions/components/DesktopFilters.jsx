@@ -130,9 +130,6 @@ export function DesktopFilters({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Toutes les dépenses</SelectItem>
-                      <SelectItem value="ORGANIZATION">
-                        Dépenses de l'organisation
-                      </SelectItem>
                       <SelectItem value="EXPENSE_REPORT">
                         Notes de frais
                       </SelectItem>
@@ -242,11 +239,13 @@ export function DesktopFilters({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
                 .map((column) => {
+                  // Utiliser le label meta ou le header de la colonne
+                  const label = column.columnDef.meta?.label || column.columnDef.header || column.id;
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
@@ -257,7 +256,7 @@ export function DesktopFilters({
                       }
                       onSelect={(event) => event.preventDefault()}
                     >
-                      {column.id}
+                      {label}
                     </DropdownMenuCheckboxItem>
                   );
                 })}

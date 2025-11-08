@@ -40,7 +40,23 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useState } from "react";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Building2,
+  FileText,
+  X,
+  Check,
+} from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/src/components/ui/table";
+import { Callout } from "@/src/components/ui/callout";
 
 // Textes explicatifs pour chaque outil
 const toolDescriptions = {
@@ -201,8 +217,13 @@ export function SectionCards({ className, activeFilter = "outline" }) {
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState(null);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
-  const [isMissingFieldsDialogOpen, setIsMissingFieldsDialogOpen] = useState(false);
-  const [missingFieldsInfo, setMissingFieldsInfo] = useState({ fields: [], tab: "generale" });
+  const [isMissingFieldsDialogOpen, setIsMissingFieldsDialogOpen] =
+    useState(false);
+  const [fieldsInfo, setFieldsInfo] = useState({
+    generalFields: [],
+    legalFields: [],
+    tab: "generale",
+  });
 
   // Fonction pour vérifier si les informations d'entreprise sont complètes
   const checkCompanyInfo = () => {
@@ -249,24 +270,23 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     setIsPricingModalOpen(true);
   };
 
-  // Fonction pour analyser les champs manquants
-  const getMissingFields = () => {
+  // Fonction pour analyser tous les champs avec leur statut
+  const getFieldsStatus = () => {
     if (!organization) return { general: [], legal: [] };
 
-    const general = [];
-    const legal = [];
+    const general = [
+      { name: "Nom de l'entreprise", completed: !!organization.companyName },
+      { name: "Email de contact", completed: !!organization.companyEmail },
+      { name: "Rue", completed: !!organization.addressStreet },
+      { name: "Ville", completed: !!organization.addressCity },
+      { name: "Code postal", completed: !!organization.addressZipCode },
+      { name: "Pays", completed: !!organization.addressCountry },
+    ];
 
-    // Vérifier les informations générales
-    if (!organization.companyName) general.push("Nom de l'entreprise");
-    if (!organization.companyEmail) general.push("Email de contact");
-    if (!organization.addressStreet) general.push("Rue");
-    if (!organization.addressCity) general.push("Ville");
-    if (!organization.addressZipCode) general.push("Code postal");
-    if (!organization.addressCountry) general.push("Pays");
-
-    // Vérifier les informations légales
-    if (!organization.siret) legal.push("SIRET");
-    if (!organization.legalForm) legal.push("Forme juridique");
+    const legal = [
+      { name: "SIRET", completed: !!organization.siret },
+      { name: "Forme juridique", completed: !!organization.legalForm },
+    ];
 
     return { general, legal };
   };
@@ -275,19 +295,18 @@ export function SectionCards({ className, activeFilter = "outline" }) {
   const handleCompanyInfoRequiredClick = (e, toolTitle) => {
     e.preventDefault();
 
-    // Analyser les champs manquants
-    const missing = getMissingFields();
-    const allMissingFields = [...missing.general, ...missing.legal];
-    
-    // Déterminer quel onglet ouvrir
-    const requiredTab = missing.general.length > 0 ? "generale" : "informations-legales";
+    // Analyser tous les champs avec leur statut
+    const fields = getFieldsStatus();
 
-    // Afficher le dialog avec les informations manquantes
-    setMissingFieldsInfo({
-      fields: allMissingFields,
-      generalFields: missing.general,
-      legalFields: missing.legal,
-      tab: requiredTab
+    // Déterminer quel onglet ouvrir
+    const hasGeneralMissing = fields.general.some((f) => !f.completed);
+    const requiredTab = hasGeneralMissing ? "generale" : "informations-legales";
+
+    // Afficher le dialog avec les informations
+    setFieldsInfo({
+      generalFields: fields.general,
+      legalFields: fields.legal,
+      tab: requiredTab,
     });
     setIsMissingFieldsDialogOpen(true);
   };
@@ -295,7 +314,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
   // Fonction pour ouvrir les paramètres après confirmation
   const handleOpenSettings = () => {
     setIsMissingFieldsDialogOpen(false);
-    openSettings(missingFieldsInfo.tab);
+    openSettings(fieldsInfo.tab);
   };
 
   // Fonction pour ouvrir la modal d'information d'un outil
@@ -491,81 +510,154 @@ export function SectionCards({ className, activeFilter = "outline" }) {
       </AlertDialog>
 
       {/* Modal des champs manquants */}
-      <AlertDialog open={isMissingFieldsDialogOpen} onOpenChange={setIsMissingFieldsDialogOpen}>
-        <AlertDialogContent className="max-w-lg w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto">
-          <AlertDialogHeader className="text-left">
-            <div className="flex items-start gap-3 mb-2">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center flex-shrink-0">
-                <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="flex-1">
-                <AlertDialogTitle className="text-base sm:text-lg text-left">
-                  Configuration requise
-                </AlertDialogTitle>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1 text-left">
-                  Informations d'entreprise incomplètes
-                </p>
-              </div>
-            </div>
-            <AlertDialogDescription className="text-xs sm:text-sm leading-relaxed space-y-3 sm:space-y-4">
-              <p className="text-left">
-                Pour utiliser les outils de <strong>Facturation</strong> et <strong>Devis</strong>, 
-                vous devez compléter les informations suivantes :
+      <AlertDialog
+        open={isMissingFieldsDialogOpen}
+        onOpenChange={setIsMissingFieldsDialogOpen}
+      >
+        <AlertDialogContent className="max-w-2xl w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto border-none shadow-2xl">
+          <AlertDialogHeader className="text-left space-y-4 pb-4">
+            {/* En-tête épuré */}
+            <div className="space-y-2">
+              <AlertDialogTitle className="text-xl font-normal text-foreground">
+                Configuration de votre entreprise
+              </AlertDialogTitle>
+              <p className="text-sm font-normal text-muted-foreground">
+                Quelques informations sont nécessaires pour continuer
               </p>
-
-              {missingFieldsInfo.generalFields?.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-foreground text-sm">
-                    Informations générales
-                  </h4>
-                  <ul className="space-y-1.5 ml-2 sm:ml-4">
-                    {missingFieldsInfo.generalFields.map((field, index) => (
-                      <li key={index} className="flex items-start gap-2 text-xs sm:text-sm">
-                        {/* <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 flex-shrink-0 mt-0.5" /> */}
-                        <span className="flex-1">{field}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {missingFieldsInfo.legalFields?.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-foreground text-sm">
-                    Informations légales
-                  </h4>
-                  <ul className="space-y-1.5 ml-2 sm:ml-4">
-                    {missingFieldsInfo.legalFields.map((field, index) => (
-                      <li key={index} className="flex items-start gap-2 text-xs sm:text-sm">
-                        {/* <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 flex-shrink-0 mt-0.5" /> */}
-                        <span className="flex-1">{field}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div className="bg-[#5b4eff]/10 dark:bg-[#5b4eff]/20 border border-[#5b4eff]/30 dark:border-[#5b4eff]/40 rounded-lg p-2.5 sm:p-3 mt-3 sm:mt-4">
-                <p className="text-xs sm:text-sm text-[#5b4eff] dark:text-[#8b7fff] text-left">
-                  <strong>Astuce :</strong> Ces informations seront automatiquement utilisées 
-                  pour générer vos factures et devis professionnels.
-                </p>
-              </div>
-            </AlertDialogDescription>
+            </div>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-2 flex-col sm:flex-row">
+
+          <div className="text-sm leading-relaxed space-y-6 text-muted-foreground">
+            {/* Callout d'information */}
+            <Callout type="info" noMargin>
+              <p className="text-sm font-normal">
+                Ces informations seront utilisées pour générer automatiquement
+                vos documents professionnels (factures, devis, etc.).
+              </p>
+            </Callout>
+
+            {/* Tableau des champs manquants */}
+            <div className="overflow-hidden">
+              <Table className="bg-background">
+                <TableHeader>
+                  <TableRow className="border-y-0 *:border-border hover:bg-transparent [&>:not(:last-child)]:border-r">
+                    <TableCell className="w-48"></TableCell>
+                    <TableHead
+                      className="border-b border-border text-center font-medium text-foreground"
+                      colSpan={fieldsInfo.generalFields?.length || 0}
+                    >
+                      Informations générales
+                    </TableHead>
+                    <TableHead
+                      className="border-b border-border text-center font-medium text-foreground"
+                      colSpan={fieldsInfo.legalFields?.length || 0}
+                    >
+                      Informations légales
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableHeader>
+                  <TableRow className="*:border-border hover:bg-transparent [&>:not(:last-child)]:border-r">
+                    <TableCell></TableCell>
+                    {fieldsInfo.generalFields?.map((field, index) => (
+                      <TableHead
+                        key={`general-header-${index}`}
+                        className="h-auto rotate-180 text-xs py-3 text-foreground [writing-mode:vertical-lr]"
+                      >
+                        {field.name}
+                      </TableHead>
+                    ))}
+                    {fieldsInfo.legalFields?.map((field, index) => (
+                      <TableHead
+                        key={`legal-header-${index}`}
+                        className="h-auto rotate-180 text-xs py-3 text-foreground [writing-mode:vertical-lr]"
+                      >
+                        {field.name}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow className="*:border-border [&>:not(:last-child)]:border-r">
+                    <TableHead className="font-medium text-foreground">
+                      Statut
+                    </TableHead>
+                    {fieldsInfo.generalFields?.map((field, index) => (
+                      <TableCell
+                        key={`general-status-${index}`}
+                        className="text-center"
+                      >
+                        {field.completed ? (
+                          <>
+                            <Check
+                              className="inline-flex stroke-emerald-500"
+                              size={16}
+                              strokeWidth={2}
+                              aria-hidden="true"
+                            />
+                            <span className="sr-only">Complété</span>
+                          </>
+                        ) : (
+                          <>
+                            <X
+                              className="inline-flex stroke-red-500"
+                              size={16}
+                              strokeWidth={2}
+                              aria-hidden="true"
+                            />
+                            <span className="sr-only">Manquant</span>
+                          </>
+                        )}
+                      </TableCell>
+                    ))}
+                    {fieldsInfo.legalFields?.map((field, index) => (
+                      <TableCell
+                        key={`legal-status-${index}`}
+                        className="text-center"
+                      >
+                        {field.completed ? (
+                          <>
+                            <Check
+                              className="inline-flex stroke-emerald-500"
+                              size={16}
+                              strokeWidth={2}
+                              aria-hidden="true"
+                            />
+                            <span className="sr-only">Complété</span>
+                          </>
+                        ) : (
+                          <>
+                            <X
+                              className="inline-flex stroke-red-500"
+                              size={16}
+                              strokeWidth={2}
+                              aria-hidden="true"
+                            />
+                            <span className="sr-only">Manquant</span>
+                          </>
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          <AlertDialogFooter className="gap-3 flex-col sm:flex-row pt-6 border-t">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() => setIsMissingFieldsDialogOpen(false)}
-              className="cursor-pointer w-full sm:w-auto order-2 sm:order-1"
+              className="cursor-pointer w-full sm:w-auto font-normal order-2 sm:order-1"
             >
               Annuler
             </Button>
             <Button
               onClick={handleOpenSettings}
-              className="bg-black hover:bg-black/90 text-white cursor-pointer w-full sm:w-auto order-1 sm:order-2"
+              className="bg-[#5a50ff] hover:bg-[#4a40ef] text-white cursor-pointer w-full sm:w-auto font-normal order-1 sm:order-2 shadow-sm"
             >
-              Compléter les informations
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Compléter maintenant
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

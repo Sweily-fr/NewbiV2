@@ -15,7 +15,9 @@ import {
   Euro,
   CreditCard,
   FileMinus2,
+  Paperclip,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useState, useEffect, useMemo } from "react";
 import { findMerchant } from "@/lib/merchants-config";
@@ -29,6 +31,7 @@ export default function UnifiedTransactions({
   isLoading = false,
 }) {
   const { workspaceId } = useWorkspace();
+  const router = useRouter();
   const [bankTransactions, setBankTransactions] = useState([]);
   const [bankLoading, setBankLoading] = useState(true);
   const [bankError, setBankError] = useState(null);
@@ -199,7 +202,7 @@ export default function UnifiedTransactions({
         <ArrowUpRight className="h-4 w-4 text-red-500" />
       );
     } else if (transaction.type === "expense") {
-      return <Euro className="h-3.5 w-3.5" />;
+      return <Euro className="h-3 w-3" />;
     } else if (transaction.type === "income") {
       return <ArrowDownLeft className="h-4 w-4" />;
     } else if (transaction.type === "invoice") {
@@ -210,7 +213,7 @@ export default function UnifiedTransactions({
 
   const getTransactionColor = (transaction) => {
     if (transaction.type === "expense") {
-      return "text-red-600";
+      return "text-black-600";
     } else if (
       transaction.type === "income" ||
       transaction.type === "invoice"
@@ -231,7 +234,7 @@ export default function UnifiedTransactions({
           <CardTitle className="text-sm font-normal">
             Transactions récentes
           </CardTitle>
-          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+          <Paperclip className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-3">
@@ -260,7 +263,7 @@ export default function UnifiedTransactions({
           <CardTitle className="text-sm font-normal">
             Transactions récentes
           </CardTitle>
-          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+          <Paperclip className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <p className="text-sm text-red-500">Erreur: {error}</p>
@@ -276,7 +279,7 @@ export default function UnifiedTransactions({
           <CardTitle className="font-normal text-sm">
             Transactions récentes
           </CardTitle>
-          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+          <Paperclip className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
@@ -287,26 +290,59 @@ export default function UnifiedTransactions({
     );
   }
 
+  const handleTransactionClick = (transaction) => {
+    // Naviguer vers la page de gestion des dépenses avec l'ID de la transaction
+    if (transaction.type === "expense" || transaction.type === "income") {
+      router.push(
+        `/dashboard/outils/gestion-depenses?transactionId=${transaction.id}`
+      );
+    }
+  };
+
+  const handleOcrClick = (e, transaction) => {
+    e.stopPropagation();
+    // Naviguer vers la page de gestion des dépenses avec l'ID de la transaction et le flag OCR
+    if (transaction.type === "expense" || transaction.type === "income") {
+      router.push(
+        `/dashboard/outils/gestion-depenses?transactionId=${transaction.id}&openOcr=true`
+      );
+    }
+  };
+
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-normal">
           Transactions récentes
         </CardTitle>
-        <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+        <Paperclip className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="flex flex-col gap-4">
           {allTransactions.slice(0, limit).map((transaction) => {
             // Trouver le marchand correspondant
             const merchant = findMerchant(transaction.description || "");
-            
+            const isClickable =
+              transaction.type === "expense" || transaction.type === "income";
+            const hasOcr = transaction.source === "OCR";
+
             return (
               <div
                 key={`${transaction.type}-${transaction.id}`}
-                className="flex items-center justify-between"
+                className={`flex items-center justify-between group relative ${
+                  isClickable
+                    ? "cursor-pointer hover:bg-muted/50 rounded-lg transition-colors px-2 py-1.5 -mx-2 -my-1.5"
+                    : ""
+                }`}
               >
-                <div className="flex items-center space-x-3">
+                {/* Zone cliquable pour la transaction */}
+                <div
+                  className="absolute inset-0 z-0"
+                  onClick={() =>
+                    isClickable && handleTransactionClick(transaction)
+                  }
+                />
+                <div className="flex items-center space-x-3 relative z-10">
                   {/* Afficher le logo du marchand si disponible, sinon l'icône par défaut */}
                   {merchant ? (
                     <MerchantLogo
@@ -315,34 +351,57 @@ export default function UnifiedTransactions({
                       size="sm"
                     />
                   ) : (
-                    <div className="w-8 h-8 bg-[#5b4fff]/15 dark:bg-[#5b4fff]/25 rounded-full flex items-center justify-center">
+                    <div className="w-7 h-7 bg-[#5b4fff]/15 dark:bg-[#5b4fff]/25 rounded-full flex items-center justify-center">
                       {getTransactionIcon(transaction)}
                     </div>
                   )}
                   <div>
                     <p className="text-sm font-normal truncate max-w-[170px]">
-                      {merchant?.name || transaction.description || "Transaction"}
+                      {merchant?.name ||
+                        transaction.description ||
+                        "Transaction"}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
                       {formatDate(transaction.date)}
                     </p>
                   </div>
                 </div>
-              <div className="flex items-center space-x-2">
-                <span
-                  className={`text-sm font-normal ${getTransactionColor(transaction)}`}
-                >
-                  {transaction.type === "income" ||
-                  transaction.type === "invoice" ||
-                  transaction.subtype === "credit"
-                    ? "+"
-                    : "-"}
-                  {formatCurrency(Math.abs(transaction.amount))}
-                </span>
-              </div>
+                <div className="flex items-center space-x-2 relative z-10">
+                  <span
+                    className={`text-sm font-normal ${getTransactionColor(transaction)}`}
+                  >
+                    {transaction.type === "income" ||
+                    transaction.type === "invoice" ||
+                    transaction.subtype === "credit"
+                      ? "+"
+                      : "-"}
+                    {formatCurrency(Math.abs(transaction.amount))}
+                  </span>
+                  {hasOcr && isClickable && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => handleOcrClick(e, transaction)}
+                    >
+                      <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                  )}
+                </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Bouton voir toutes les transactions */}
+        <div className="mt-4 pt-4 border-t">
+          <Button
+            variant="ghost"
+            className="w-full font-normal text-sm"
+            onClick={() => router.push("/dashboard/outils/gestion-depenses")}
+          >
+            Voir toutes les transactions
+          </Button>
         </div>
       </CardContent>
     </Card>
