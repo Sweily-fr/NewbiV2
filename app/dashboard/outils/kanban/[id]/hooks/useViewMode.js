@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Hook pour gérer le mode d'affichage du Kanban (Board/List)
+ * Hook pour gérer le mode d'affichage du Kanban (Board/List/Gantt)
  * Sauvegarde la préférence dans localStorage
  * Force la vue "List" sur mobile (< 768px)
  * @param {string} boardId - ID du tableau pour sauvegarder la préférence par board
- * @returns {Object} - { viewMode, setViewMode, isBoard, isList }
+ * @returns {Object} - { viewMode, setViewMode, isBoard, isList, isGantt }
  */
 export function useViewMode(boardId) {
   const [viewMode, setViewModeState] = useState('board');
@@ -33,7 +33,7 @@ export function useViewMode(boardId) {
       }
       
       const savedMode = localStorage.getItem(`kanban-view-mode-${boardId}`);
-      if (savedMode && ['board', 'list'].includes(savedMode)) {
+      if (savedMode && ['board', 'list', 'gantt'].includes(savedMode)) {
         setViewModeState(savedMode);
       }
     }
@@ -41,7 +41,7 @@ export function useViewMode(boardId) {
 
   // Fonction pour changer le mode et sauvegarder dans localStorage
   const setViewMode = (mode) => {
-    if (['board', 'list'].includes(mode)) {
+    if (['board', 'list', 'gantt'].includes(mode)) {
       setViewModeState(mode);
       if (typeof window !== 'undefined' && boardId) {
         localStorage.setItem(`kanban-view-mode-${boardId}`, mode);
@@ -54,5 +54,6 @@ export function useViewMode(boardId) {
     setViewMode,
     isBoard: viewMode === 'board',
     isList: viewMode === 'list',
+    isGantt: viewMode === 'gantt',
   };
 }

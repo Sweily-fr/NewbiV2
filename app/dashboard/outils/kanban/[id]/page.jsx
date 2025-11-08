@@ -53,7 +53,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List, GanttChart } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
@@ -76,6 +76,7 @@ import { TaskModal } from "./components/TaskModal";
 import { ColumnModal } from "./components/ColumnModal";
 import { DeleteConfirmation } from "./components/DeleteConfirmation";
 import { KanbanListView } from "./components/KanbanListView";
+import { KanbanGanttView } from "./components/KanbanGanttView";
 import { MemberFilterButton } from "./components/MemberFilterButton";
 import {
   GET_BOARD,
@@ -363,7 +364,7 @@ export default function KanbanBoardPage({ params }) {
     );
   }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, handleColumnAddTask, handleColumnEditTask, handleColumnDeleteTask, handleColumnEditColumn, handleColumnDeleteColumn, handleColumnToggleCollapse, loading, openAddModal]);
 
-  const { viewMode, setViewMode, isBoard, isList } = useViewMode(id);
+  const { viewMode, setViewMode, isBoard, isList, isGantt } = useViewMode(id);
 
   // Hook pour le drag-to-scroll horizontal
   const scrollRef = useDragToScroll({ enabled: isBoard, scrollSpeed: 1.5 });
@@ -460,6 +461,13 @@ export default function KanbanBoardPage({ params }) {
               >
                 <List className="h-4 w-4 md:inline hidden" />
                 <span>List</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="gantt"
+                className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+              >
+                <GanttChart className="h-4 w-4 md:inline hidden" />
+                <span>Gantt</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -773,6 +781,18 @@ export default function KanbanBoardPage({ params }) {
               workspaceId={workspaceId}
             />
           </DragDropContext>
+        )}
+
+        {isGantt && (
+          <KanbanGanttView
+            columns={localColumns}
+            getTasksByColumn={getLocalTasksByColumn}
+            filterTasks={filterTasks}
+            onEditTask={openEditTaskModal}
+            members={board?.members || []}
+            updateTask={updateTask}
+            workspaceId={workspaceId}
+          />
         )}
 
         {isBoard && (
