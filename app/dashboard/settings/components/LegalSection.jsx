@@ -66,9 +66,37 @@ export default function LegalSection({ register, errors, watch, setValue }) {
   const selectedLegalForm = watch("legal.legalForm");
   const selectedRegime = watch("legal.regime");
   const selectedCategory = watch("legal.category");
+  const vatNumber = watch("legal.vatNumber");
+  const savedIsVatSubject = watch("legal.isVatSubject");
+  const savedHasCommercialActivity = watch("legal.hasCommercialActivity");
 
   // Surveiller les changements de forme juridique
   const legalForm = watch("legal.legalForm") || "";
+
+  // Synchroniser les états locaux avec les données du formulaire au chargement
+  useEffect(() => {
+    // Charger l'état sauvegardé ou détecter depuis le numéro de TVA
+    if (savedIsVatSubject !== undefined) {
+      setIsVatSubject(savedIsVatSubject);
+    } else if (vatNumber && vatNumber.trim() !== "") {
+      setIsVatSubject(true);
+      setValue("legal.isVatSubject", true);
+    }
+  }, [savedIsVatSubject, vatNumber, setValue]);
+
+  // Charger l'état de l'activité commerciale
+  useEffect(() => {
+    if (savedHasCommercialActivity !== undefined) {
+      setHasCommercialActivity(savedHasCommercialActivity);
+    } else {
+      // Détecter automatiquement selon la forme juridique
+      const commercialForms = ["SARL", "SAS", "SASU", "SA", "SNC"];
+      if (commercialForms.includes(legalForm)) {
+        setHasCommercialActivity(true);
+        setValue("legal.hasCommercialActivity", true);
+      }
+    }
+  }, [savedHasCommercialActivity, legalForm, setValue]);
 
   // Calculer les champs requis et visibles en fonction de la forme juridique
   const requiredFields = getRequiredFields(
@@ -145,7 +173,10 @@ export default function LegalSection({ register, errors, watch, setValue }) {
                 <Checkbox
                   id="hasCommercialActivity"
                   checked={hasCommercialActivity}
-                  onCheckedChange={setHasCommercialActivity}
+                  onCheckedChange={(checked) => {
+                    setHasCommercialActivity(checked);
+                    setValue("legal.hasCommercialActivity", checked);
+                  }}
                 />
                 <Label
                   htmlFor="hasCommercialActivity"
@@ -162,7 +193,10 @@ export default function LegalSection({ register, errors, watch, setValue }) {
               <Checkbox
                 id="isVatSubject"
                 checked={isVatSubject}
-                onCheckedChange={setIsVatSubject}
+                onCheckedChange={(checked) => {
+                  setIsVatSubject(checked);
+                  setValue("legal.isVatSubject", checked);
+                }}
                 className="bg-white border-gray-300 data-[state=checked]:bg-white data-[state=checked]:text-[#5B4FFF] data-[state=checked]:border-[#5B4FFF]"
               />
               <Label htmlFor="isVatSubject" className="text-sm font-normal">

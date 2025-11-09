@@ -42,6 +42,7 @@ const TABS_CONFIG = {
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("entreprise");
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
   const { data: session, isPending, error, refetch } = useSession();
   const {
     organization,
@@ -201,6 +202,8 @@ export default function Settings() {
       await updateOrganization(transformedData, {
         onSuccess: () => {
           toast.success("Informations mises à jour avec succès");
+          // Réinitialiser le flag pour permettre le rechargement des nouvelles données
+          setIsFormInitialized(false);
           // Ne pas refetch immédiatement pour éviter de remettre les anciennes valeurs
           // Le useEffect se chargera de la synchronisation quand les nouvelles données arriveront
         },
@@ -214,8 +217,9 @@ export default function Settings() {
   };
 
   // Charger les données de l'organisation et du user dans le formulaire
+  // UNIQUEMENT au premier chargement pour éviter d'écraser les modifications en cours
   useEffect(() => {
-    if (organization && session?.user) {
+    if (organization && session?.user && !isFormInitialized) {
       reset({
         name: organization.companyName || "",
         email: organization.companyEmail || "",
@@ -247,8 +251,9 @@ export default function Settings() {
           hasCommercialActivity: organization.hasCommercialActivity || false,
         },
       });
+      setIsFormInitialized(true);
     }
-  }, [organization, session, reset]);
+  }, [organization, session, reset, isFormInitialized]);
 
   // Fonction pour rendre la section active
   const renderActiveSection = () => {
