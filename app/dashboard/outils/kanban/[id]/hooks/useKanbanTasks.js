@@ -330,7 +330,6 @@ export const useKanbanTasks = (boardId, board) => {
           input: {
             title: taskForm.title,
             description: taskForm.description,
-            status: taskForm.status,
             priority: taskForm.priority.toLowerCase(),
             startDate: taskForm.startDate || null,
             dueDate: taskForm.dueDate || null,
@@ -371,7 +370,6 @@ export const useKanbanTasks = (boardId, board) => {
         id: editingTask.id,
         title: taskForm.title,
         description: taskForm.description,
-        status: taskForm.status,
         priority: taskForm.priority.toLowerCase(),
         startDate: taskForm.startDate || null,
         dueDate: taskForm.dueDate || null,
