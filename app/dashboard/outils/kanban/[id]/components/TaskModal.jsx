@@ -1069,11 +1069,11 @@ export function TaskModal({
                   )}
                 </div>
 
-                {/* Status et Priorité - Comme sur desktop */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Status et Priorité - Une seule colonne */}
+                <div className="space-y-4">
                   {/* Status */}
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm font-normal flex-shrink-0 flex items-center gap-2">
+                  <div className="flex items-center gap-4">
+                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
                       <Columns className="h-4 w-4 text-muted-foreground" />
                       Status
                     </Label>
@@ -1127,8 +1127,8 @@ export function TaskModal({
                   </div>
 
                   {/* Priorité */}
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm font-normal flex-shrink-0 flex items-center gap-2">
+                  <div className="flex items-center gap-4">
+                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
                       <Flag className="h-4 w-4 text-muted-foreground" />
                       Priorité
                     </Label>
@@ -1198,29 +1198,29 @@ export function TaskModal({
                 </div>
 
                 {/* Date de début */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-normal">Date de début</Label>
-                  
-                  <Popover modal={false}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !taskForm.startDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {taskForm.startDate ? (
-                          <span>
-                            {formatDate(taskForm.startDate)} à {formatTimeDisplay(taskForm.startDate)}
-                          </span>
-                        ) : (
-                          <span>Choisir une date et une heure</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
+                <div className="flex items-center gap-4">
+                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    Date de début
+                  </Label>
+                  <div className="flex-1">
+                    <Popover modal={false}>
+                      <PopoverTrigger asChild>
+                        <div
+                          className={cn(
+                            "text-sm cursor-pointer hover:opacity-70 transition-opacity",
+                            !taskForm.startDate && "text-muted-foreground"
+                          )}
+                        >
+                          {taskForm.startDate ? (
+                            <span>
+                              {formatDate(taskForm.startDate)} à {formatTimeDisplay(taskForm.startDate)}
+                            </span>
+                          ) : (
+                            <span>Choisir une date</span>
+                          )}
+                        </div>
+                      </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <div className="flex flex-col">
                         <div className="border-b p-4">
@@ -1274,34 +1274,34 @@ export function TaskModal({
                         </div>
                       </div>
                     </PopoverContent>
-                  </Popover>
+                    </Popover>
+                  </div>
                 </div>
 
-                {/* Date d'échéance */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-normal">Date de fin</Label>
-                  
-                  {/* Popover avec calendrier pour tous les appareils */}
-                  <Popover modal={false}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !taskForm.dueDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {taskForm.dueDate ? (
-                          <span>
-                            {formatDate(taskForm.dueDate)} à {formatTimeDisplay(taskForm.dueDate)}
-                          </span>
-                        ) : (
-                          <span>Choisir une date et une heure</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
+                {/* Date de fin */}
+                <div className="flex items-center gap-4">
+                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    Date de fin
+                  </Label>
+                  <div className="flex-1">
+                    <Popover modal={false}>
+                      <PopoverTrigger asChild>
+                        <div
+                          className={cn(
+                            "text-sm cursor-pointer hover:opacity-70 transition-opacity",
+                            !taskForm.dueDate && "text-muted-foreground"
+                          )}
+                        >
+                          {taskForm.dueDate ? (
+                            <span>
+                              {formatDate(taskForm.dueDate)} à {formatTimeDisplay(taskForm.dueDate)}
+                            </span>
+                          ) : (
+                            <span>Choisir une date</span>
+                          )}
+                        </div>
+                      </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <div className="flex flex-col">
                         <div className="border-b p-4">
@@ -1355,14 +1355,15 @@ export function TaskModal({
                         </div>
                       </div>
                     </PopoverContent>
-                  </Popover>
+                    </Popover>
+                  </div>
                 </div>
 
-                {/* Tags et Membres - Comme sur desktop */}
-                <div className="grid grid-cols-1 gap-4">
+                {/* Tags et Membres - Une seule colonne */}
+                <div className="space-y-4">
                   {/* Tags */}
-                  <div className="flex items-start gap-3">
-                    <Label className="text-sm font-normal flex-shrink-0 flex items-center gap-2 pt-1.5">
+                  <div className="flex items-start gap-4">
+                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2 pt-1.5">
                       <Tag className="h-4 w-4 text-muted-foreground" />
                       Tags
                     </Label>
@@ -1446,8 +1447,8 @@ export function TaskModal({
                   </div>
 
                   {/* Membres assignés */}
-                  <div className="flex items-start gap-3">
-                    <Label className="text-sm font-normal flex-shrink-0 flex items-center gap-2 pt-1.5">
+                  <div className="flex items-start gap-4">
+                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2 pt-1.5">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       Membres
                     </Label>
@@ -1455,8 +1456,9 @@ export function TaskModal({
                       <Popover open={membersPopoverOpen} onOpenChange={setMembersPopoverOpen}>
                         <PopoverTrigger asChild>
                           {taskForm.assignedMembers && taskForm.assignedMembers.length > 0 ? (
-                            <div 
-                              className="flex -space-x-2 cursor-pointer"
+                            <button
+                              type="button"
+                              className="flex -space-x-2 cursor-pointer bg-transparent border-0 p-0"
                               onClick={(e) => e.stopPropagation()}
                             >
                               {taskForm.assignedMembers.slice(0, 3).map((memberId, idx) => {
@@ -1478,9 +1480,10 @@ export function TaskModal({
                                   +{taskForm.assignedMembers.length - 3}
                                 </div>
                               )}
-                            </div>
+                            </button>
                           ) : (
                             <button
+                              type="button"
                               className="w-7 h-7 rounded-full border border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/10 flex items-center justify-center cursor-pointer transition-colors bg-transparent p-0"
                               onClick={(e) => e.stopPropagation()}
                               title="Ajouter des membres"
