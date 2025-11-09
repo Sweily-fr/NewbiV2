@@ -1362,12 +1362,12 @@ export function TaskModal({
                 {/* Tags et Membres - Une seule colonne */}
                 <div className="space-y-4">
                   {/* Tags */}
-                  <div className="flex items-start gap-4">
-                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2 pt-1.5">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-normal flex items-center gap-2">
                       <Tag className="h-4 w-4 text-muted-foreground" />
                       Tags
                     </Label>
-                    <div className="flex-1 relative">
+                    <div className="relative">
                       {taskForm.tags.length > 0 && (
                         <button
                           type="button"
@@ -1447,19 +1447,17 @@ export function TaskModal({
                   </div>
 
                   {/* Membres assignés */}
-                  <div className="flex items-start gap-4">
-                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2 pt-1.5">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-normal flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       Membres
                     </Label>
-                    <div className="flex-1">
+                    <div>
                       <Popover open={membersPopoverOpen} onOpenChange={setMembersPopoverOpen}>
                         <PopoverTrigger asChild>
                           {taskForm.assignedMembers && taskForm.assignedMembers.length > 0 ? (
-                            <button
-                              type="button"
-                              className="flex -space-x-2 cursor-pointer bg-transparent border-0 p-0"
-                              onClick={(e) => e.stopPropagation()}
+                            <div 
+                              className="flex -space-x-2 cursor-pointer"
                             >
                               {taskForm.assignedMembers.slice(0, 3).map((memberId, idx) => {
                                 const memberInfo = membersInfo.find(m => m.id === memberId);
@@ -1480,7 +1478,7 @@ export function TaskModal({
                                   +{taskForm.assignedMembers.length - 3}
                                 </div>
                               )}
-                            </button>
+                            </div>
                           ) : (
                             <button
                               type="button"
