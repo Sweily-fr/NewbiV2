@@ -16,39 +16,49 @@ function VerifyEmailContent() {
   const confettiRef = useRef(null);
 
   useEffect(() => {
-    const verifyEmail = async () => {
+    const handleVerification = async () => {
       const token = searchParams.get("token");
       const error = searchParams.get("error");
+      const verified = searchParams.get("verified");
 
-      if (error === "missing-token") {
+      console.log("🔍 [VERIFY PAGE] Params:", { token: !!token, error, verified });
+
+      if (error) {
         setVerificationStatus("error");
-        setMessage("Token de vérification manquant dans le lien");
+        setMessage("Erreur lors de la vérification");
+        toast.error("Lien de vérification invalide ou expiré");
         return;
       }
 
       if (!token) {
         setVerificationStatus("error");
-        setMessage("Token de vérification manquant");
+        setMessage("Token manquant");
+        toast.error("Lien de vérification invalide");
         return;
       }
 
-      try {
-        const response = await fetch("/api/auth/verify-email", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token }),
-        });
+      // ✅ Si verified=true, la vérification a déjà été faite par notre route
+      if (verified === "true") {
+        console.log("✅ [VERIFY PAGE] Vérification déjà effectuée, vérification session...");
+        
+        try {
+          // Vérifier que l'utilisateur est bien connecté
+          const sessionResponse = await fetch("/api/auth/get-session", {
+            credentials: "include",
+          });
 
-        const data = await response.json();
+          if (sessionResponse.ok) {
+            const sessionData = await sessionResponse.json();
+            console.log("📊 [VERIFY PAGE] Session:", sessionData ? "✅" : "❌");
+            
+            if (sessionData && sessionData.user) {
+              // ✅ Utilisateur connecté après vérification
+              setVerificationStatus("success");
+              setMessage("Votre email a été vérifié avec succès !");
+              toast.success(
+                "Email vérifié avec succès ! Redirection vers votre espace..."
+              );
 
-        if (response.ok) {
-          setVerificationStatus("success");
-          setMessage("Votre email a été vérifié avec succès !");
-          toast.success("Email vérifié avec succès ! Redirection vers votre espace...");
-
-          // Animation de confettis personnalisée
           setTimeout(() => {
             const duration = 3000;
             const animationEnd = Date.now() + duration;
@@ -71,14 +81,12 @@ function VerifyEmailContent() {
 
               const particleCount = 50 * (timeLeft / duration);
 
-              // Confettis depuis la gauche
               confettiRef.current?.fire({
                 ...defaults,
                 particleCount,
                 origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
               });
 
-              // Confettis depuis la droite
               confettiRef.current?.fire({
                 ...defaults,
                 particleCount,
@@ -87,24 +95,40 @@ function VerifyEmailContent() {
             }, 250);
           }, 300);
 
-          // Redirection directe vers le dashboard après vérification
-          setTimeout(() => {
-            router.push("/dashboard");
-          }, 3000);
+            // Redirection vers le dashboard
+            setTimeout(() => {
+              window.location.href = "/dashboard";
+            }, 3000);
+          } else {
+            // ❌ Pas de session = autoSignInAfterVerification n'a pas fonctionné
+            setVerificationStatus("error");
+            setMessage("Email vérifié, veuillez vous connecter");
+            toast.info("Email vérifié ! Connectez-vous pour continuer.");
+            setTimeout(() => {
+              router.push("/auth/login?verified=true");
+            }, 2000);
+          }
         } else {
           setVerificationStatus("error");
-          setMessage(data.error || "Erreur lors de la vérification");
+          setMessage("Erreur lors de la vérification");
           toast.error("Erreur lors de la vérification");
         }
-      } catch (error) {
-        console.error("❌ Erreur lors de la vérification:", error);
+        } catch (error) {
+          console.error("❌ [VERIFY PAGE] Erreur vérification session:", error);
+          setVerificationStatus("error");
+          setMessage("Erreur lors de la vérification");
+          toast.error("Erreur lors de la vérification");
+        }
+      } else {
+        // ❌ verified n'est pas true, ne devrait pas arriver
+        console.error("❌ [VERIFY PAGE] Paramètre verified manquant");
         setVerificationStatus("error");
-        setMessage("Erreur lors de la vérification");
+        setMessage("Erreur de vérification");
         toast.error("Erreur lors de la vérification");
       }
     };
 
-    verifyEmail();
+    handleVerification();
   }, [searchParams, router]);
 
   return (

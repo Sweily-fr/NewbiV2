@@ -717,12 +717,12 @@ const LoginForm = () => {
         Se connecter
       </SubmitButton>
 
-      {/* Modal de vérification 2FA */}
-      <TwoFactorModal
+      {/* Modal de vérification 2FA - DÉSACTIVÉ : La vérification se fait sur /auth/verify-2fa */}
+      {/* <TwoFactorModal
         isOpen={show2FA}
         onClose={() => setShow2FA(false)}
         onVerify={handleVerify2FA}
-      />
+      /> */}
 
       {/* Modal de vérification d'email */}
       <EmailVerificationDialog

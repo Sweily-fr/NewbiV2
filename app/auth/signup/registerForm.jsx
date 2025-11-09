@@ -11,7 +11,6 @@ import { registerUser, verifyEmail } from "../../../src/lib/auth/api";
 import { signUp } from "../../../src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAutoOrganization } from "@/src/hooks/useAutoOrganization";
 
 const RegisterFormContent = () => {
   const {
@@ -25,7 +24,6 @@ const RegisterFormContent = () => {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { createAutoOrganization } = useAutoOrganization();
 
   // Récupérer les paramètres d'invitation
   const invitationId = searchParams.get("invitation");

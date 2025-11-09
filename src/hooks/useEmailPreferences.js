@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_EMAIL_PREFERENCES } from '@/src/graphql/queries/emailReminder';
 import { UPDATE_EMAIL_PREFERENCES, SEND_TEST_EMAIL } from '@/src/graphql/mutations/emailReminder';
-import { toast } from 'sonner';
+import { toast } from "@/src/components/ui/sonner";
 
 /**
  * Hook pour gérer les préférences email de l'utilisateur

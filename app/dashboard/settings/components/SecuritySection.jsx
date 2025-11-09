@@ -32,9 +32,16 @@ import {
   AlertCircle,
   Landmark,
   Trash2,
+  QrCode,
 } from "lucide-react";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import {
+  Enable2FADialog,
+  Disable2FADialog,
+  Show2FAQRCodeDialog,
+  GenerateBackupCodesDialog,
+} from "./TwoFactorDialogs";
 
 import { toast } from "@/src/components/ui/sonner";
 
@@ -44,6 +51,12 @@ export default function SecuritySection({ session }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [isDeletingBridgeUser, setIsDeletingBridgeUser] = useState(false);
+  
+  // États pour les dialogs 2FA
+  const [isEnable2FAOpen, setIsEnable2FAOpen] = useState(false);
+  const [isDisable2FAOpen, setIsDisable2FAOpen] = useState(false);
+  const [isShowQROpen, setIsShowQROpen] = useState(false);
+  const [isGenerateBackupCodesOpen, setIsGenerateBackupCodesOpen] = useState(false);
 
   // Hook workspace
   const { workspaceId } = useWorkspace();
@@ -162,9 +175,35 @@ export default function SecuritySection({ session }) {
     }
   };
 
+  // Rafraîchir la session après activation/désactivation 2FA
+  const handle2FASuccess = () => {
+    // Recharger la page pour mettre à jour la session
+    window.location.reload();
+  };
+
   return (
     <div className="space-y-6">
-      {/* Mot de passe */}
+      {/* Dialogs 2FA */}
+      <Enable2FADialog
+        open={isEnable2FAOpen}
+        onOpenChange={setIsEnable2FAOpen}
+        onSuccess={handle2FASuccess}
+      />
+      <Disable2FADialog
+        open={isDisable2FAOpen}
+        onOpenChange={setIsDisable2FAOpen}
+        onSuccess={handle2FASuccess}
+      />
+      <Show2FAQRCodeDialog
+        open={isShowQROpen}
+        onOpenChange={setIsShowQROpen}
+      />
+      <GenerateBackupCodesDialog
+        open={isGenerateBackupCodesOpen}
+        onOpenChange={setIsGenerateBackupCodesOpen}
+      />
+
+      {/* Mot de passe et 2FA */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-0 shadow-sm backdrop-blur-sm">
           <CardHeader className="pb-4">
@@ -193,7 +232,104 @@ export default function SecuritySection({ session }) {
             </div>
           </CardContent>
         </Card>
-        {/* Stripe Connect */}
+
+        {/* Authentification à deux facteurs (2FA) */}
+        <Card className="border-0 shadow-sm backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-lg font-medium">
+              <div className="p-2 bg-green-50 rounded-lg">
+                <Shield className="h-5 w-5 text-green-600" />
+              </div>
+              Authentification à deux facteurs
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-normal text-gray-900 dark:text-gray-100">
+                      {session?.user?.twoFactorEnabled ? "Activé" : "Désactivé"}
+                    </p>
+                    {session?.user?.twoFactorEnabled && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-green-600 font-normal">
+                          Actif
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {session?.user?.twoFactorEnabled
+                      ? "Votre compte est protégé par une authentification à deux facteurs"
+                      : "Renforcez la sécurité de votre compte avec le 2FA"}
+                  </p>
+                </div>
+                {session?.user?.twoFactorEnabled ? (
+                  <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Actif
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">
+                    <XCircle className="h-3 w-3 mr-1" />
+                    Inactif
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              {session?.user?.twoFactorEnabled ? (
+                <>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsShowQROpen(true)}
+                      className="flex-1"
+                    >
+                      <QrCode className="h-4 w-4 mr-2" />
+                      Voir QR Code
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsGenerateBackupCodesOpen(true)}
+                      className="flex-1"
+                    >
+                      <Key className="h-4 w-4 mr-2" />
+                      Codes de secours
+                    </Button>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setIsDisable2FAOpen(true)}
+                    className="w-full"
+                  >
+                    Désactiver le 2FA
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setIsEnable2FAOpen(true)}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Activer le 2FA
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Stripe Connect */}
+      <div className="grid grid-cols-1 gap-6">
         <Card className="border-0 shadow-sm backdrop-blur-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-lg font-medium">

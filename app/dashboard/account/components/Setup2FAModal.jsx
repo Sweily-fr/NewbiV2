@@ -16,6 +16,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { Smartphone, Key, Mail } from "lucide-react";
 import { authClient } from "@/src/lib/auth-client";
 import { OtpInput } from "@/src/components/otp-input";
+import QRCodeReact from "react-qr-code";
 
 export function Setup2FAModal({ isOpen, onClose }) {
   const [selectedMethod, setSelectedMethod] = useState(null);
@@ -24,14 +25,12 @@ export function Setup2FAModal({ isOpen, onClose }) {
   const [verificationCode, setVerificationCode] = useState("");
   const [step, setStep] = useState(1); // 1: choose method, 2: setup, 3: verify
   const [isLoading, setIsLoading] = useState(false);
+  const [totpUri, setTotpUri] = useState(""); // Pour le QR code TOTP
+  const [backupCodes, setBackupCodes] = useState([]); // Codes de secours
+
+  console.log("🔥 [Setup2FAModal] Composant monté, step:", step);
 
   const methods = [
-    {
-      id: "sms",
-      name: "SMS",
-      description: "Recevoir un code par SMS",
-      icon: Smartphone,
-    },
     {
       id: "authenticator",
       name: "Application d'authentification",
@@ -101,21 +100,39 @@ export function Setup2FAModal({ isOpen, onClose }) {
         toast.success("Code de vérification envoyé par e-mail");
       } else {
         // Pour l'authenticator TOTP
+        console.log("🔐 [2FA] Activation TOTP...");
         const { data, error } = await authClient.twoFactor.enable({
           password: password,
           issuer: "Newbi",
         });
 
+        console.log("🔐 [2FA] Réponse:", { data, error });
+
         if (error) {
+          console.error("❌ [2FA] Erreur:", error);
           toast.error(error.message || "Erreur lors de l'activation de la 2FA");
           return;
         }
 
-        toast.success(
-          "QR code généré pour votre application d'authentification"
-        );
+        if (data && data.totpURI) {
+          console.log("✅ [2FA] TOTP URI reçu");
+          setTotpUri(data.totpURI);
+          setBackupCodes(data.backupCodes || []);
+          toast.success("QR code généré ! Scannez-le avec votre application");
+
+          // NE PAS passer à l'étape 3, rester à l'étape 2 pour afficher le QR code
+          // L'utilisateur cliquera sur un bouton pour passer à l'étape 3
+          console.log("✅ [2FA] QR code affiché à l'étape 2");
+          return; // Important : ne pas continuer
+        } else {
+          console.error("❌ [2FA] Pas de totpURI dans la réponse");
+          toast.error("Erreur: Impossible de générer le QR code");
+          return;
+        }
       }
 
+      // Pour SMS et Email, passer à l'étape 3
+      console.log("✅ [2FA] Passage à l'étape 3");
       setStep(3);
     } catch (error) {
       toast.error("Erreur lors de la configuration");
@@ -130,10 +147,11 @@ export function Setup2FAModal({ isOpen, onClose }) {
     setIsLoading(true);
 
     try {
-      // Vérifier le code OTP pour finaliser l'activation 2FA
-      const { data, error } = await authClient.twoFactor.verifyOtp({
-        code: code,
-      });
+      // Utiliser verifyTotp pour TOTP (authenticator), verifyOtp pour SMS/Email
+      const isTotp = selectedMethod?.id === "authenticator";
+      const { data, error } = isTotp
+        ? await authClient.twoFactor.verifyTotp({ code: code })
+        : await authClient.twoFactor.verifyOtp({ code: code });
 
       if (error) {
         toast.error(error.message || "Code de vérification incorrect");
@@ -160,10 +178,11 @@ export function Setup2FAModal({ isOpen, onClose }) {
     setIsLoading(true);
 
     try {
-      // Vérifier le code OTP pour finaliser l'activation 2FA
-      const { data, error } = await authClient.twoFactor.verifyOtp({
-        code: verificationCode,
-      });
+      // Utiliser verifyTotp pour TOTP (authenticator), verifyOtp pour SMS/Email
+      const isTotp = selectedMethod?.id === "authenticator";
+      const { data, error } = isTotp
+        ? await authClient.twoFactor.verifyTotp({ code: verificationCode })
+        : await authClient.twoFactor.verifyOtp({ code: verificationCode });
 
       if (error) {
         toast.error(error.message || "Code de vérification incorrect");
@@ -193,7 +212,9 @@ export function Setup2FAModal({ isOpen, onClose }) {
   const renderStep1 = () => (
     <>
       <DialogHeader>
-        <DialogTitle>Ajouter une méthode de vérification</DialogTitle>
+        <DialogTitle className="font-medium">
+          Ajouter une méthode de vérification
+        </DialogTitle>
         <DialogDescription>
           Choisissez comment vous souhaitez recevoir vos codes de vérification.
         </DialogDescription>
@@ -211,8 +232,8 @@ export function Setup2FAModal({ isOpen, onClose }) {
             >
               <Icon className="h-5 w-5 mr-3" />
               <div className="text-left">
-                <div className="font-medium">{method.name}</div>
-                <div className="text-sm text-muted-foreground">
+                <div className="font-normal">{method.name}</div>
+                <div className="text-xs font-normal text-muted-foreground">
                   {method.description}
                 </div>
               </div>
@@ -232,7 +253,9 @@ export function Setup2FAModal({ isOpen, onClose }) {
   const renderStep2 = () => (
     <>
       <DialogHeader>
-        <DialogTitle>Configuration - {selectedMethod?.name}</DialogTitle>
+        <DialogTitle className="font-medium">
+          Configuration - {selectedMethod?.name}
+        </DialogTitle>
         <DialogDescription>
           {selectedMethod?.id === "sms" &&
             "Saisissez votre numéro de téléphone pour recevoir les codes par SMS."}
@@ -277,9 +300,17 @@ export function Setup2FAModal({ isOpen, onClose }) {
 
         {selectedMethod?.id === "authenticator" && (
           <div className="text-center">
-            <div className="w-48 h-48 bg-gray-100 mx-auto mb-4 flex items-center justify-center rounded-lg">
-              <div className="text-sm text-muted-foreground">QR Code</div>
-            </div>
+            {totpUri ? (
+              <div className="bg-white p-4 rounded-lg border mx-auto inline-block mb-4">
+                <QRCodeReact value={totpUri} size={200} />
+              </div>
+            ) : (
+              <div className="w-48 h-48 bg-gray-100 mx-auto mb-4 px-2 flex items-center justify-center rounded-lg">
+                <div className="text-xs text-muted-foreground">
+                  Le QR code apparaîtra après validation
+                </div>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
               Scannez ce code avec Google Authenticator, Authy ou une autre
               application compatible.
@@ -301,9 +332,23 @@ export function Setup2FAModal({ isOpen, onClose }) {
         <Button type="button" variant="outline" onClick={() => setStep(1)}>
           Retour
         </Button>
-        <Button onClick={handleSetup} disabled={isLoading}>
-          {isLoading ? "Configuration..." : "Continuer"}
-        </Button>
+        {/* Si le QR code est affiché (TOTP), bouton pour passer à la vérification */}
+        {selectedMethod?.id === "authenticator" && totpUri ? (
+          <Button
+            className="bg-[#5a50ff] hover:bg-[#5a50ff]/90"
+            onClick={() => setStep(3)}
+          >
+            J'ai scanné le QR code
+          </Button>
+        ) : (
+          <Button
+            className="bg-[#5a50ff] hover:bg-[#5a50ff]/90"
+            onClick={handleSetup}
+            disabled={isLoading}
+          >
+            {isLoading ? "Configuration..." : "Continuer"}
+          </Button>
+        )}
       </DialogFooter>
     </>
   );

@@ -23,7 +23,12 @@ export const authClient = createAuthClient({
       },
     }),
     phoneNumberClient(),
-    twoFactorClient(),
+    twoFactorClient({
+      // Redirection automatique vers la page de vérification 2FA
+      onTwoFactorRedirect() {
+        window.location.href = "/auth/verify-2fa";
+      }
+    }),
     multiSessionClient(),
     organizationClient({
       schema: inferOrgAdditionalFields({
