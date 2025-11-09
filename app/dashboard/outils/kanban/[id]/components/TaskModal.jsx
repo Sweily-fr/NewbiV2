@@ -1455,40 +1455,41 @@ export function TaskModal({
                     <div>
                       <Popover open={membersPopoverOpen} onOpenChange={setMembersPopoverOpen}>
                         <PopoverTrigger asChild>
-                          {taskForm.assignedMembers && taskForm.assignedMembers.length > 0 ? (
-                            <div 
-                              className="flex -space-x-2 cursor-pointer"
-                            >
-                              {taskForm.assignedMembers.slice(0, 3).map((memberId, idx) => {
-                                const memberInfo = membersInfo.find(m => m.id === memberId);
-                                return (
-                                  <div key={memberId} className="relative group/avatar">
-                                    <UserAvatar
-                                      src={memberInfo?.image}
-                                      name={memberInfo?.name || memberId}
-                                      size="sm"
-                                      className="border border-background ring-1 ring-border/10 hover:ring-primary/50 transition-all"
-                                      style={{ zIndex: taskForm.assignedMembers.length - idx }}
-                                    />
+                          <div className="inline-block">
+                            {taskForm.assignedMembers && taskForm.assignedMembers.length > 0 ? (
+                              <div 
+                                className="flex -space-x-2 cursor-pointer"
+                              >
+                                {taskForm.assignedMembers.slice(0, 3).map((memberId, idx) => {
+                                  const memberInfo = membersInfo.find(m => m.id === memberId);
+                                  return (
+                                    <div key={memberId} className="relative group/avatar">
+                                      <UserAvatar
+                                        src={memberInfo?.image}
+                                        name={memberInfo?.name || memberId}
+                                        size="sm"
+                                        className="border border-background ring-1 ring-border/10 hover:ring-primary/50 transition-all"
+                                        style={{ zIndex: taskForm.assignedMembers.length - idx }}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                                {taskForm.assignedMembers.length > 3 && (
+                                  <div className="w-6 h-6 rounded-full bg-muted/80 border border-background flex items-center justify-center text-[9px] font-semibold text-muted-foreground flex-shrink-0">
+                                    +{taskForm.assignedMembers.length - 3}
                                   </div>
-                                );
-                              })}
-                              {taskForm.assignedMembers.length > 3 && (
-                                <div className="w-6 h-6 rounded-full bg-muted/80 border border-background flex items-center justify-center text-[9px] font-semibold text-muted-foreground flex-shrink-0">
-                                  +{taskForm.assignedMembers.length - 3}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              className="w-7 h-7 rounded-full border border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/10 flex items-center justify-center cursor-pointer transition-colors bg-transparent p-0"
-                              onClick={(e) => e.stopPropagation()}
-                              title="Ajouter des membres"
-                            >
-                              <UserPlus className="h-4 w-4 text-muted-foreground" />
-                            </button>
-                          )}
+                                )}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="w-7 h-7 rounded-full border border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/10 flex items-center justify-center cursor-pointer transition-colors bg-transparent p-0"
+                                title="Ajouter des membres"
+                              >
+                                <UserPlus className="h-4 w-4 text-muted-foreground" />
+                              </button>
+                            )}
+                          </div>
                         </PopoverTrigger>
                         <PopoverContent className="w-72 p-0" align="start">
                           <div className="p-2 space-y-1 max-h-[400px] overflow-y-auto">
