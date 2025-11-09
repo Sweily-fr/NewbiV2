@@ -505,9 +505,9 @@ export function KanbanGanttView({
 
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] bg-background">
+    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-12rem)] bg-background">
       {/* Header avec contrôles - Plus compact */}
-      <div className="flex items-center justify-between px-6 py-2 bg-background/95 backdrop-blur-sm sticky top-0 z-20">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-6 py-2 gap-2 sm:gap-0 bg-background/95 backdrop-blur-sm sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
             <Button
@@ -561,7 +561,7 @@ export function KanbanGanttView({
         {/* Headers fixes */}
         <div className="flex border-b border-border">
           {/* Header gauche - hauteur étendue pour couvrir l'espace vide */}
-          <div className="w-72 border-r border-border bg-background px-4 flex items-start pt-2 flex-shrink-0" style={{ height: '74px' }}>
+          <div className="w-32 sm:w-48 md:w-72 border-r border-border bg-background px-2 sm:px-3 md:px-4 flex items-start pt-2 flex-shrink-0" style={{ height: '74px' }}>
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Tâches · {allTasks.length}
             </div>
@@ -618,7 +618,7 @@ export function KanbanGanttView({
         </div>
 
         {/* Conteneur de scroll partagé - scroll vertical uniquement */}
-        <div className="grid grid-cols-[288px_1fr] h-[calc(100%-74px)] overflow-y-auto" ref={leftColumnRef}>
+        <div className="grid grid-cols-[128px_1fr] sm:grid-cols-[192px_1fr] md:grid-cols-[288px_1fr] h-[calc(100%-74px)] overflow-y-auto" ref={leftColumnRef}>
           {/* Colonne des tâches */}
           <div className="border-r border-border bg-muted/20" style={{ minHeight: `${Math.max(allTasks.length, 20) * 45}px` }}>
             {/* Liste des tâches */}
@@ -644,12 +644,12 @@ export function KanbanGanttView({
                       msOverflowStyle: 'none'
                     }}
                   >
-                    <div className="flex items-center gap-2 px-3 h-full min-w-max">
+                    <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 h-full min-w-max">
                       <div
-                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full flex-shrink-0"
                         style={{ backgroundColor: task.column.color }}
                       />
-                      <div className="text-xs font-medium whitespace-nowrap group-hover:text-primary transition-colors">
+                      <div className="text-[10px] sm:text-xs font-medium whitespace-nowrap group-hover:text-primary transition-colors truncate max-w-[80px] sm:max-w-none">
                         {task.title}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -713,10 +713,10 @@ export function KanbanGanttView({
                 })}
               </div>
 
-              {/* Cercle qui suit le curseur */}
+              {/* Cercle qui suit le curseur - masqué sur mobile/tablette */}
               {cursorPosition.visible && !isOverTask && (
                 <div
-                  className="fixed pointer-events-none"
+                  className="fixed pointer-events-none hidden md:block"
                   style={{
                     left: `${cursorPosition.x}px`,
                     top: `${cursorPosition.y}px`,

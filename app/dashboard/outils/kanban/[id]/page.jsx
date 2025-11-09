@@ -464,9 +464,9 @@ export default function KanbanBoardPage({ params }) {
               </TabsTrigger>
               <TabsTrigger
                 value="gantt"
-                className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+                className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hidden md:inline-flex hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
               >
-                <GanttChart className="h-4 w-4 md:inline hidden" />
+                <GanttChart className="h-4 w-4" />
                 <span>Gantt</span>
               </TabsTrigger>
             </TabsList>
