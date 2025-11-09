@@ -66,6 +66,7 @@ import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboar
 import { useUser } from "@/src/lib/auth/hooks";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { Callout } from "@/src/components/ui/callout";
+import { Setup2FAModal } from "@/app/dashboard/account/components/Setup2FAModal";
 
 export function SecuritySection({
   organization: orgProp,
@@ -113,10 +114,11 @@ export function SecuritySection({
     maxSessions: 1, // Limité à 1 session
   });
 
-  // États pour le 2FA
+  // États pour le 2FA - Utiliser Setup2FAModal
   const [show2FAModal, setShow2FAModal] = useState(false);
-  const [passwordFor2FA, setPasswordFor2FA] = useState("");
-  const [is2FALoading, setIs2FALoading] = useState(false);
+  const [showDisable2FADialog, setShowDisable2FADialog] = useState(false);
+  const [disable2FAPassword, setDisable2FAPassword] = useState("");
+  const [isDisabling2FA, setIsDisabling2FA] = useState(false);
 
   // États pour la gestion des sessions
   const [isSessionLoading, setIsSessionLoading] = useState(false);
@@ -393,80 +395,52 @@ export function SecuritySection({
     toast.success("Toutes les sessions ont été révoquées");
   };
 
-  // Fonction pour activer/désactiver le 2FA
+  // Fonction pour gérer le toggle 2FA
   const handle2FAToggle = async (enabled) => {
     if (enabled) {
-      // Activer le 2FA - demander le mot de passe
+      // Activer le 2FA - ouvrir le modal Setup2FA
       setShow2FAModal(true);
     } else {
-      // Désactiver le 2FA - demander le mot de passe
-      if (!passwordFor2FA) {
-        toast.error(
-          "Veuillez saisir votre mot de passe pour désactiver le 2FA"
-        );
-        return;
-      }
-
-      setIs2FALoading(true);
-      try {
-        const { data, error } = await twoFactor.disable({
-          password: passwordFor2FA,
-        });
-
-        if (error) {
-          toast.error(
-            "Erreur lors de la désactivation du 2FA: " + error.message
-          );
-          return;
-        }
-
-        // Recharger la session pour obtenir l'état 2FA mis à jour
-        await refetchSession();
-        toast.success("Authentification à deux facteurs désactivée");
-        setPasswordFor2FA("");
-      } catch (error) {
-        console.error("Erreur 2FA:", error);
-        toast.error("Erreur lors de la désactivation du 2FA");
-      } finally {
-        setIs2FALoading(false);
-      }
+      // Désactiver le 2FA - ouvrir le dialog de confirmation
+      setShowDisable2FADialog(true);
     }
   };
 
-  // Fonction pour activer le 2FA avec mot de passe
-  const enable2FA = async () => {
-    if (!passwordFor2FA) {
+  // Fonction pour désactiver le 2FA
+  const handleDisable2FA = async () => {
+    if (!disable2FAPassword) {
       toast.error("Veuillez saisir votre mot de passe");
       return;
     }
 
-    setIs2FALoading(true);
+    setIsDisabling2FA(true);
     try {
-      const { data, error } = await twoFactor.enable({
-        password: passwordFor2FA,
-        issuer: organization?.name || "Newbi",
+      const { data, error } = await twoFactor.disable({
+        password: disable2FAPassword,
       });
 
       if (error) {
-        toast.error("Erreur lors de l'activation du 2FA: " + error.message);
+        toast.error("Mot de passe incorrect");
         return;
       }
 
-      // Recharger la session pour obtenir l'état 2FA mis à jour
+      toast.success("Authentification à deux facteurs désactivée");
+      setShowDisable2FADialog(false);
+      setDisable2FAPassword("");
       await refetchSession();
-
-      // Note: twoFactorEnabled ne sera true qu'après vérification du code TOTP
-      toast.success(
-        "2FA activé - Configurez votre application d'authentification"
-      );
-      setShow2FAModal(false);
-      setPasswordFor2FA("");
     } catch (error) {
-      console.error("Erreur 2FA:", error);
-      toast.error("Erreur lors de l'activation du 2FA");
+      console.error("Erreur désactivation 2FA:", error);
+      toast.error("Erreur lors de la désactivation du 2FA");
     } finally {
-      setIs2FALoading(false);
+      setIsDisabling2FA(false);
     }
+  };
+
+  // Fonction pour gérer la fermeture du modal 2FA
+  const handle2FAModalClose = async () => {
+    setShow2FAModal(false);
+    // Rafraîchir la session pour mettre à jour l'état 2FA
+    await refetchSession();
   };
 
   // Fonction pour sauvegarder les paramètres de session
@@ -762,7 +736,6 @@ export function SecuritySection({
             <Switch
               checked={!!session?.user?.twoFactorEnabled}
               onCheckedChange={handle2FAToggle}
-              disabled={is2FALoading}
               className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
             />
           </div>
@@ -1010,47 +983,59 @@ export function SecuritySection({
         </div>
       </div>
 
-      {/* Modal pour activer le 2FA */}
-      <Dialog open={show2FAModal} onOpenChange={setShow2FAModal}>
-        <DialogContent>
+      {/* Modal Setup 2FA - Composant complet avec QR code */}
+      <Setup2FAModal 
+        isOpen={show2FAModal} 
+        onClose={handle2FAModalClose}
+      />
+
+      {/* Dialog de désactivation 2FA */}
+      <Dialog open={showDisable2FADialog} onOpenChange={setShowDisable2FADialog}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              Activer l'authentification à deux facteurs
-            </DialogTitle>
+            <DialogTitle>Désactiver l'authentification à deux facteurs</DialogTitle>
             <DialogDescription>
-              Saisissez votre mot de passe pour activer l'authentification à
-              deux facteurs
+              Entrez votre mot de passe pour confirmer la désactivation du 2FA
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="password2FA">Mot de passe</Label>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="disable-password">Mot de passe</Label>
               <Input
-                id="password2FA"
+                id="disable-password"
                 type="password"
-                value={passwordFor2FA}
-                onChange={(e) => setPasswordFor2FA(e.target.value)}
+                value={disable2FAPassword}
+                onChange={(e) => setDisable2FAPassword(e.target.value)}
                 placeholder="Votre mot de passe"
-                disabled={is2FALoading}
+                disabled={isDisabling2FA}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && disable2FAPassword) {
+                    handleDisable2FA();
+                  }
+                }}
               />
+            </div>
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800">
+              ⚠️ Votre compte sera moins sécurisé sans l'authentification à deux facteurs
             </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
-                setShow2FAModal(false);
-                setPasswordFor2FA("");
+                setShowDisable2FADialog(false);
+                setDisable2FAPassword("");
               }}
-              disabled={is2FALoading}
+              disabled={isDisabling2FA}
             >
               Annuler
             </Button>
             <Button
-              onClick={enable2FA}
-              disabled={is2FALoading || !passwordFor2FA}
+              variant="destructive"
+              onClick={handleDisable2FA}
+              disabled={!disable2FAPassword || isDisabling2FA}
             >
-              {is2FALoading ? "Activation..." : "Activer le 2FA"}
+              {isDisabling2FA ? "Désactivation..." : "Désactiver le 2FA"}
             </Button>
           </DialogFooter>
         </DialogContent>

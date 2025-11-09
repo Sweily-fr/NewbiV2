@@ -301,7 +301,7 @@ export function PreferencesSection() {
         <div className="space-y-10 mt-8">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h3 className="text-sm font-medium mb-1">
+              <h3 className="text-sm font-normal mb-1">
                 Paramètres des cookies
               </h3>
               <p className="text-xs text-gray-400">
@@ -423,7 +423,7 @@ export function PreferencesSection() {
           {/* Section Ouverture au démarrage */}
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-sm font-medium mb-1">Page de démarrage</h3>
+              <h3 className="text-sm font-normal mb-1">Page de démarrage</h3>
               <p className="text-xs text-gray-400">
                 Choisissez ce qui doit être affiché lorsque Newbi démarre
               </p>
@@ -461,7 +461,7 @@ export function PreferencesSection() {
           {/* Section Rappels par email */}
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h3 className="text-sm font-medium mb-1">Rappels par email</h3>
+              <h3 className="text-sm font-normal mb-1">Rappels par email</h3>
               <p className="text-xs text-gray-400">
                 Recevez des emails de rappel pour vos tâches importantes
               </p>
@@ -695,7 +695,7 @@ export function PreferencesSection() {
           <div className="space-y-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="text-sm font-medium mb-1">
+                <h3 className="text-sm font-normal mb-1">
                   Apps préférées dans la sidebar
                 </h3>
                 <p className="text-xs text-gray-400">
@@ -719,7 +719,7 @@ export function PreferencesSection() {
                   >
                     <div className="flex items-center gap-3">
                       <app.icon className="h-4 w-4" />
-                      <span className="text-sm font-medium">{app.name}</span>
+                      <span className="text-sm font-normal">{app.name}</span>
                       {!hasAccess && (
                         <Crown className="w-3 h-3 text-[#5b4fff]" />
                       )}
@@ -729,9 +729,9 @@ export function PreferencesSection() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveApp(app.url)}
-                      className="h-8 w-8 p-0"
+                      className="h-7 w-7 p-0"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-2 w-2" />
                     </Button>
                   </div>
                 );
@@ -744,7 +744,7 @@ export function PreferencesSection() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full justify-start gap-2 h-12 border-dashed cursor-pointer"
+                      className="w-full font-normal justify-start gap-2 h-12 border-dashed cursor-pointer"
                     >
                       <Plus className="h-4 w-4" />
                       Ajouter une application ({favoriteApps.length}/3)
@@ -787,7 +787,7 @@ export function PreferencesSection() {
           {/* Afficher l'historique de mes vues */}
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-sm font-medium mb-1">
+              <h3 className="text-sm font-normal mb-1">
                 Afficher l'historique de mes vues
               </h3>
               <p className="text-xs text-gray-400">

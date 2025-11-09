@@ -2,34 +2,49 @@
 
 import { useState, useEffect } from "react";
 import { Bell, Mail, Clock, Send } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import { Label } from "@/src/components/ui/label";
+import { Switch } from "@/src/components/ui/switch";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import { useEmailPreferences } from "@/src/hooks/useEmailPreferences";
 import { toast } from "sonner";
 
 export function NotificationsSection() {
-  const { preferences, loading, updating, sendingTest, updatePreferences, sendTestEmail } = useEmailPreferences();
-  
+  const {
+    preferences,
+    loading,
+    updating,
+    sendingTest,
+    updatePreferences,
+    sendTestEmail,
+  } = useEmailPreferences();
+
   const [enabled, setEnabled] = useState(false);
-  const [types, setTypes] = useState(['due', 'anticipated']);
+  const [types, setTypes] = useState(["due", "anticipated"]);
   const [doNotDisturb, setDoNotDisturb] = useState({
-    weekday: { start: '22:00', end: '08:00' },
-    weekend: { start: '22:00', end: '10:00' }
+    weekday: { start: "22:00", end: "08:00" },
+    weekend: { start: "22:00", end: "10:00" },
   });
 
   // Charger les préférences existantes
   useEffect(() => {
     if (preferences) {
       setEnabled(preferences.enabled || false);
-      setTypes(preferences.types || ['due', 'anticipated']);
-      setDoNotDisturb(preferences.doNotDisturb || {
-        weekday: { start: '22:00', end: '08:00' },
-        weekend: { start: '22:00', end: '10:00' }
-      });
+      setTypes(preferences.types || ["due", "anticipated"]);
+      setDoNotDisturb(
+        preferences.doNotDisturb || {
+          weekday: { start: "22:00", end: "08:00" },
+          weekend: { start: "22:00", end: "10:00" },
+        }
+      );
     }
   }, [preferences]);
 
@@ -38,7 +53,7 @@ export function NotificationsSection() {
     await updatePreferences({
       enabled,
       types,
-      doNotDisturb
+      doNotDisturb,
     });
   };
 
@@ -47,7 +62,7 @@ export function NotificationsSection() {
     if (checked) {
       setTypes([...types, type]);
     } else {
-      setTypes(types.filter(t => t !== type));
+      setTypes(types.filter((t) => t !== type));
     }
   };
 
@@ -109,8 +124,10 @@ export function NotificationsSection() {
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="type-due"
-                      checked={types.includes('due')}
-                      onCheckedChange={(checked) => handleTypeChange('due', checked)}
+                      checked={types.includes("due")}
+                      onCheckedChange={(checked) =>
+                        handleTypeChange("due", checked)
+                      }
                     />
                     <Label
                       htmlFor="type-due"
@@ -122,8 +139,10 @@ export function NotificationsSection() {
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="type-anticipated"
-                      checked={types.includes('anticipated')}
-                      onCheckedChange={(checked) => handleTypeChange('anticipated', checked)}
+                      checked={types.includes("anticipated")}
+                      onCheckedChange={(checked) =>
+                        handleTypeChange("anticipated", checked)
+                      }
                     />
                     <Label
                       htmlFor="type-anticipated"
@@ -151,32 +170,48 @@ export function NotificationsSection() {
                 <Label className="text-sm">Semaine (lundi-vendredi)</Label>
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
-                    <Label htmlFor="weekday-start" className="text-xs text-muted-foreground">
+                    <Label
+                      htmlFor="weekday-start"
+                      className="text-xs text-muted-foreground"
+                    >
                       De
                     </Label>
                     <Input
                       id="weekday-start"
                       type="time"
                       value={doNotDisturb.weekday.start}
-                      onChange={(e) => setDoNotDisturb({
-                        ...doNotDisturb,
-                        weekday: { ...doNotDisturb.weekday, start: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setDoNotDisturb({
+                          ...doNotDisturb,
+                          weekday: {
+                            ...doNotDisturb.weekday,
+                            start: e.target.value,
+                          },
+                        })
+                      }
                       className="mt-1"
                     />
                   </div>
                   <div className="flex-1">
-                    <Label htmlFor="weekday-end" className="text-xs text-muted-foreground">
+                    <Label
+                      htmlFor="weekday-end"
+                      className="text-xs text-muted-foreground"
+                    >
                       À
                     </Label>
                     <Input
                       id="weekday-end"
                       type="time"
                       value={doNotDisturb.weekday.end}
-                      onChange={(e) => setDoNotDisturb({
-                        ...doNotDisturb,
-                        weekday: { ...doNotDisturb.weekday, end: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setDoNotDisturb({
+                          ...doNotDisturb,
+                          weekday: {
+                            ...doNotDisturb.weekday,
+                            end: e.target.value,
+                          },
+                        })
+                      }
                       className="mt-1"
                     />
                   </div>
@@ -188,32 +223,48 @@ export function NotificationsSection() {
                 <Label className="text-sm">Week-end (samedi-dimanche)</Label>
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
-                    <Label htmlFor="weekend-start" className="text-xs text-muted-foreground">
+                    <Label
+                      htmlFor="weekend-start"
+                      className="text-xs text-muted-foreground"
+                    >
                       De
                     </Label>
                     <Input
                       id="weekend-start"
                       type="time"
                       value={doNotDisturb.weekend.start}
-                      onChange={(e) => setDoNotDisturb({
-                        ...doNotDisturb,
-                        weekend: { ...doNotDisturb.weekend, start: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setDoNotDisturb({
+                          ...doNotDisturb,
+                          weekend: {
+                            ...doNotDisturb.weekend,
+                            start: e.target.value,
+                          },
+                        })
+                      }
                       className="mt-1"
                     />
                   </div>
                   <div className="flex-1">
-                    <Label htmlFor="weekend-end" className="text-xs text-muted-foreground">
+                    <Label
+                      htmlFor="weekend-end"
+                      className="text-xs text-muted-foreground"
+                    >
                       À
                     </Label>
                     <Input
                       id="weekend-end"
                       type="time"
                       value={doNotDisturb.weekend.end}
-                      onChange={(e) => setDoNotDisturb({
-                        ...doNotDisturb,
-                        weekend: { ...doNotDisturb.weekend, end: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setDoNotDisturb({
+                          ...doNotDisturb,
+                          weekend: {
+                            ...doNotDisturb.weekend,
+                            end: e.target.value,
+                          },
+                        })
+                      }
                       className="mt-1"
                     />
                   </div>
@@ -248,10 +299,7 @@ export function NotificationsSection() {
 
         {/* Boutons d'action */}
         <div className="flex justify-end gap-3 pt-4">
-          <Button
-            onClick={handleSave}
-            disabled={updating}
-          >
+          <Button onClick={handleSave} disabled={updating}>
             {updating ? "Enregistrement..." : "Enregistrer"}
           </Button>
         </div>

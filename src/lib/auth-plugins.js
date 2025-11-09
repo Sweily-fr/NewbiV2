@@ -41,6 +41,26 @@ export const phoneNumberPlugin = phoneNumber({
 
 // Configuration du plugin Two Factor
 export const twoFactorPlugin = twoFactor({
+  // Nom de l'application affiché dans les apps d'authentification (Google Authenticator, etc.)
+  issuer: "Newbi",
+  
+  // Configuration TOTP (Time-based One-Time Password)
+  totp: {
+    period: 30, // Période de validité du code en secondes (standard: 30s)
+    digits: 6,  // Nombre de chiffres du code (standard: 6)
+  },
+  
+  // Configuration des codes de secours
+  backupCodes: {
+    amount: 10, // Nombre de codes de secours générés
+    length: 10, // Longueur de chaque code de secours
+  },
+  
+  // Skip verification lors de l'activation (utile pour dev/test)
+  // En production, laisser à false pour forcer la vérification du premier code
+  skipVerificationOnEnable: false,
+  
+  // Configuration OTP (One-Time Password) par email/SMS
   otpOptions: {
     async sendOTP({ user, otp, type }, request) {
       // Better Auth ne passe pas automatiquement type="sms"
@@ -49,7 +69,6 @@ export const twoFactorPlugin = twoFactor({
 
       if (shouldUseSMS) {
         // Envoi par SMS
-
         sendSMSInDevelopment(user.phoneNumber, otp, "2FA SMS");
       } else {
         // Envoi par email via Resend

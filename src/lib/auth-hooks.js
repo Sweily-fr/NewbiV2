@@ -44,7 +44,9 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
   }
 });
 
-// Hook après connexion OAuth pour créer automatiquement une organisation
+// Hook après connexion OAuth - SIMPLIFIÉ
+// ✅ La création d'organisation est gérée par databaseHooks.user.create.after
+// Ce hook sert uniquement à logger et vérifier
 export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
   // Filtrer uniquement les callbacks OAuth
   if (!ctx.path?.includes("/callback/")) {
@@ -58,7 +60,11 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
     const user = newSession.user;
     const userId = newSession.session.userId;
 
-    // ⚠️ IMPORTANT: Vérifier si l'utilisateur a déjà une organisation
+    console.log(
+      `✅ [OAuth] Connexion OAuth réussie pour ${user.email} (${userId})`
+    );
+
+    // ✅ Vérification uniquement (la création est gérée par user.create.after)
     try {
       const existingMemberships = await ctx.context.adapter.findMany({
         model: "member",
@@ -70,124 +76,20 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
         ],
       });
 
-      // Si l'utilisateur a déjà au moins une organisation, ne rien faire
       if (existingMemberships && existingMemberships.length > 0) {
         console.log(
-          `✅ [OAuth] Utilisateur ${userId} a déjà ${existingMemberships.length} organisation(s)`
+          `✅ [OAuth] Utilisateur ${userId} a ${existingMemberships.length} organisation(s)`
         );
-        return;
+      } else {
+        console.log(
+          `⚠️ [OAuth] Aucune organisation trouvée pour ${userId} - devrait être créée par user.create.after`
+        );
       }
-
-      console.log(
-        `🆕 [OAuth] Création d'une organisation pour l'utilisateur ${userId}`
-      );
     } catch (checkError) {
       console.error(
         "❌ [OAuth] Erreur vérification organisations:",
         checkError
       );
-      // En cas d'erreur de vérification, on continue pour ne pas bloquer l'utilisateur
-    }
-
-    // Créer une organisation automatiquement comme pour l'inscription normale
-    try {
-      // Générer le nom et le slug comme dans useAutoOrganization
-      const organizationName =
-        user.name || `Workspace ${user.email.split("@")[0]}'s`;
-      const organizationSlug = `org-${user.id.slice(-8)}`;
-
-      // Calculer les dates de trial (14 jours)
-      const now = new Date();
-      const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-
-      console.log(`🔄 [OAuth] Création organisation pour ${user.email}...`);
-
-      // Créer l'organisation via l'API interne Better Auth
-      const organizationData = {
-        name: organizationName,
-        slug: organizationSlug,
-        metadata: {
-          autoCreated: true,
-          createdAt: new Date().toISOString(),
-          createdVia: "oauth",
-        },
-        // ⚠️ IMPORTANT: Ajouter les champs trial directement
-        trialStartDate: now,
-        trialEndDate: trialEnd,
-        isTrialActive: true,
-        hasUsedTrial: true,
-      };
-
-      const organization = await ctx.context.internalAdapter.createOrganization(
-        {
-          ...organizationData,
-          creatorId: userId,
-        }
-      );
-
-      console.log(
-        `✅ [OAuth] Organisation créée avec trial pour ${user.email}:`,
-        organization
-      );
-    } catch (error) {
-      console.error("❌ [OAuth] Erreur avec internalAdapter:", error);
-
-      // Fallback: essayer avec l'adapter normal
-      try {
-        // Calculer les dates de trial (14 jours)
-        const now = new Date();
-        const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-
-        const organizationData = {
-          name: user.name
-            ? `Organisation de ${user.name}`
-            : `Organisation de ${user.email}`,
-          slug: `org-${user.id.slice(-8)}`,
-          createdAt: now,
-          metadata: JSON.stringify({
-            autoCreated: true,
-            createdAt: now.toISOString(),
-            createdVia: "oauth",
-          }),
-          // ✅ Ajouter les champs trial
-          trialStartDate: now.toISOString(),
-          trialEndDate: trialEnd.toISOString(),
-          isTrialActive: true,
-          hasUsedTrial: true,
-        };
-
-        console.log(
-          "🔄 [OAuth Fallback] Création organisation avec adapter normal..."
-        );
-
-        const organization = await ctx.context.adapter.create({
-          model: "organization",
-          data: organizationData,
-        });
-
-        // Import ObjectId pour la conversion
-        const { ObjectId } = await import("mongodb");
-
-        const member = await ctx.context.adapter.create({
-          model: "member",
-          data: {
-            userId: new ObjectId(userId),
-            organizationId: new ObjectId(organization.id),
-            role: "owner",
-            createdAt: now,
-          },
-        });
-
-        console.log(
-          "✅ [OAuth Fallback] Organisation créée avec trial:",
-          organization.id
-        );
-      } catch (fallbackError) {
-        console.error(
-          "❌ [OAuth Fallback] Erreur même avec le fallback:",
-          fallbackError
-        );
-      }
     }
   }
 });

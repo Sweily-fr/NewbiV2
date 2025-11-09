@@ -60,7 +60,8 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // Après la création d'un utilisateur, créer automatiquement une organisation
+          // ✅ POINT UNIQUE DE CRÉATION D'ORGANISATION
+          // S'exécute pour inscription normale ET OAuth
           try {
             const { mongoDb } = await import("./mongodb.js");
             const { ObjectId } = await import("mongodb");
@@ -68,6 +69,18 @@ export const auth = betterAuth({
             console.log(
               `🔄 [USER CREATE] Création organisation pour ${user.email}...`
             );
+
+            // Vérifier si l'utilisateur a déjà une organisation (cas OAuth avec retry)
+            const existingMember = await mongoDb
+              .collection("member")
+              .findOne({ userId: new ObjectId(user.id) });
+
+            if (existingMember) {
+              console.log(
+                `✅ [USER CREATE] Organisation déjà existante pour ${user.email}, skip création`
+              );
+              return user;
+            }
 
             // Générer le nom et le slug de l'organisation
             const organizationName =
@@ -88,6 +101,7 @@ export const auth = betterAuth({
                 metadata: {
                   autoCreated: true,
                   createdAt: now.toISOString(),
+                  createdVia: user.accounts?.[0]?.providerId || "email",
                 },
                 trialStartDate: now,
                 trialEndDate: trialEnd,
@@ -96,15 +110,15 @@ export const auth = betterAuth({
                 createdAt: now,
               });
 
-            const organizationId = orgResult.insertedId; // insertedId est déjà un ObjectId
+            const organizationId = orgResult.insertedId;
             console.log(
               `✅ [USER CREATE] Organisation créée: ${organizationId}`
             );
 
-            // Créer le membre owner avec ObjectId
+            // Créer le membre owner
             await mongoDb.collection("member").insertOne({
-              organizationId: organizationId, // ✅ Déjà ObjectId depuis insertedId
-              userId: new ObjectId(user.id), // ✅ Conversion explicite en ObjectId
+              organizationId: organizationId,
+              userId: new ObjectId(user.id),
               email: user.email,
               role: "owner",
               createdAt: now,
@@ -114,102 +128,94 @@ export const auth = betterAuth({
               `✅ [USER CREATE] Membre owner créé pour ${user.email}`
             );
           } catch (error) {
+            // ⚠️ IMPORTANT : Ne pas bloquer l'inscription si erreur
             console.error(
               "❌ [USER CREATE] Erreur création organisation:",
               error
             );
+            console.error(
+              "⚠️ [USER CREATE] Inscription continue malgré l'erreur"
+            );
+            // TODO: Envoyer notification admin pour investigation
           }
 
+          // ✅ Toujours retourner l'utilisateur pour ne pas bloquer l'inscription
           return user;
         },
       },
     },
     session: {
       create: {
-        after: async (session) => {
-          // Après la création d'une session, définir l'organisation active selon la priorité
+        // ✅ CORRECTION CRITIQUE : Utiliser before au lieu de after
+        // Better Auth lit activeOrganizationId AVANT que after ne s'exécute
+        // Documentation : https://www.better-auth.com/docs/plugins/organization#active-organization
+        before: async (session) => {
           try {
             const { mongoDb } = await import("./mongodb.js");
             const { ObjectId } = await import("mongodb");
 
             console.log(
-              `🔍 [SESSION CREATE] Recherche organisation pour userId: ${session.userId}`
+              `🔍 [SESSION CREATE BEFORE] Recherche organisation pour userId: ${session.userId}`
             );
 
-            // Récupérer TOUTES les organisations de l'utilisateur
-            const members = await mongoDb
-              .collection("member")
-              .find({
-                userId: new ObjectId(session.userId),
-              })
-              .toArray();
+            // ✅ Chercher directement une organisation owner
+            const ownerMember = await mongoDb.collection("member").findOne({
+              userId: new ObjectId(session.userId),
+              role: "owner",
+            });
 
-            if (!members || members.length === 0) {
-              console.warn(
-                "⚠️ [SESSION CREATE] Aucune organisation trouvée pour cet utilisateur"
+            if (ownerMember) {
+              console.log(
+                `✅ [SESSION CREATE BEFORE] Organisation owner trouvée: ${ownerMember.organizationId}`
               );
-              return session;
+              
+              // ✅ Retourner la session AVEC activeOrganizationId
+              return {
+                data: {
+                  ...session,
+                  activeOrganizationId: ownerMember.organizationId.toString(),
+                },
+              };
             }
 
+            // Fallback : chercher n'importe quelle organisation
             console.log(
-              `📊 [SESSION CREATE] ${members.length} organisation(s) trouvée(s)`
+              "⚠️ [SESSION CREATE BEFORE] Pas d'organisation owner, recherche fallback..."
             );
 
-            // Stratégie de sélection par priorité :
-            // 1. Organisation où l'utilisateur est owner
-            // 2. Organisation où l'utilisateur est admin
-            // 3. Première organisation (par ordre de création)
+            const anyMember = await mongoDb.collection("member").findOne({
+              userId: new ObjectId(session.userId),
+            });
 
-            let selectedMember = null;
-
-            // Priorité 1 : Chercher une organisation où l'utilisateur est owner
-            selectedMember = members.find((m) => m.role === "owner");
-
-            if (selectedMember) {
+            if (anyMember) {
               console.log(
-                `✅ [SESSION CREATE] Organisation owner trouvée: ${selectedMember.organizationId}`
+                `✅ [SESSION CREATE BEFORE] Organisation trouvée (fallback): ${anyMember.organizationId} (role: ${anyMember.role})`
               );
-            } else {
-              // Priorité 2 : Chercher une organisation où l'utilisateur est admin
-              selectedMember = members.find((m) => m.role === "admin");
-
-              if (selectedMember) {
-                console.log(
-                  `✅ [SESSION CREATE] Organisation admin trouvée: ${selectedMember.organizationId}`
-                );
-              } else {
-                // Priorité 3 : Prendre la première organisation
-                selectedMember = members[0];
-                console.log(
-                  `✅ [SESSION CREATE] Première organisation sélectionnée (${selectedMember.role}): ${selectedMember.organizationId}`
-                );
-              }
+              
+              // ✅ Retourner la session AVEC activeOrganizationId
+              return {
+                data: {
+                  ...session,
+                  activeOrganizationId: anyMember.organizationId.toString(),
+                },
+              };
             }
 
-            if (selectedMember && selectedMember.organizationId) {
-              // Mettre à jour la session avec l'organisation active
-              await mongoDb.collection("session").updateOne(
-                { _id: new ObjectId(session.id) },
-                {
-                  $set: {
-                    activeOrganizationId:
-                      selectedMember.organizationId.toString(),
-                  },
-                }
-              );
-
-              console.log(
-                `✅ [SESSION CREATE] Organisation active définie: ${selectedMember.organizationId.toString()} (role: ${selectedMember.role})`
-              );
-            }
+            // Aucune organisation trouvée
+            console.warn("⚠️ [SESSION CREATE BEFORE] Aucune organisation trouvée");
+            return { data: session };
+            
           } catch (error) {
+            // ⚠️ Ne pas bloquer la connexion si erreur
             console.error(
-              "❌ [SESSION CREATE] Erreur définition organisation active:",
+              "❌ [SESSION CREATE BEFORE] Erreur:",
               error
             );
+            console.warn(
+              "⚠️ [SESSION CREATE BEFORE] Connexion continue malgré l'erreur"
+            );
+            return { data: session };
           }
-
-          return session;
         },
       },
     },
@@ -264,8 +270,73 @@ export const auth = betterAuth({
       await sendVerificationEmail(user, url);
     },
     sendOnSignUp: true,
+    // ✅ PRIORITÉ 2 : Connexion automatique après vérification d'email
     autoSignInAfterVerification: true,
-    expiresIn: 3600,
+    expiresIn: 3600, // 1 heure pour vérifier l'email
+    
+    // ✅ Callback après vérification réussie
+    // S'exécute APRÈS que autoSignInAfterVerification ait créé la session
+    async afterEmailVerification(user, request) {
+      console.log(`✅ [EMAIL VERIFICATION] Email vérifié pour ${user.email}`);
+      
+      try {
+        const { mongoDb } = await import("./mongodb.js");
+        const { ObjectId } = await import("mongodb");
+        
+        // 1. Vérifier que l'utilisateur a une organisation
+        const member = await mongoDb.collection("member").findOne({
+          userId: new ObjectId(user.id),
+          role: "owner", // Priorité à l'organisation owner
+        });
+        
+        if (!member) {
+          console.warn(`⚠️ [EMAIL VERIFICATION] Aucune organisation owner pour ${user.email}`);
+          
+          // Fallback : chercher n'importe quelle organisation
+          const anyMember = await mongoDb.collection("member").findOne({
+            userId: new ObjectId(user.id),
+          });
+          
+          if (!anyMember) {
+            console.error(`❌ [EMAIL VERIFICATION] Aucune organisation trouvée pour ${user.email}`);
+            return;
+          }
+          
+          console.log(`✅ [EMAIL VERIFICATION] Organisation trouvée (fallback): ${anyMember.organizationId}`);
+        } else {
+          console.log(`✅ [EMAIL VERIFICATION] Organisation owner trouvée: ${member.organizationId}`);
+        }
+        
+        // 2. S'assurer que la session a l'organisation active définie
+        // Note : Le hook session.create.after devrait déjà l'avoir fait
+        // Mais on vérifie au cas où
+        const sessions = await mongoDb.collection("session")
+          .find({ userId: new ObjectId(user.id) })
+          .sort({ createdAt: -1 })
+          .limit(1)
+          .toArray();
+        
+        if (sessions.length > 0) {
+          const session = sessions[0];
+          if (!session.activeOrganizationId) {
+            console.warn(`⚠️ [EMAIL VERIFICATION] Session sans organisation active, correction...`);
+            
+            const orgToSet = member || anyMember;
+            await mongoDb.collection("session").updateOne(
+              { _id: session._id },
+              { $set: { activeOrganizationId: orgToSet.organizationId.toString() } }
+            );
+            
+            console.log(`✅ [EMAIL VERIFICATION] Organisation active définie: ${orgToSet.organizationId}`);
+          } else {
+            console.log(`✅ [EMAIL VERIFICATION] Organisation active déjà définie: ${session.activeOrganizationId}`);
+          }
+        }
+        
+      } catch (error) {
+        console.error("❌ [EMAIL VERIFICATION] Erreur:", error);
+      }
+    },
   },
 
   user: {
