@@ -7,6 +7,7 @@ import { Label } from '@/src/components/ui/label';
 import { Textarea } from '@/src/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/src/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/src/components/ui/popover';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem } from '@/src/components/ui/dropdown-menu';
 import { Badge } from '@/src/components/ui/badge';
 import { Calendar } from '@/src/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
@@ -460,8 +461,8 @@ export function TaskModal({
                     Status
                   </Label>
                   <div className="flex-1">
-                    <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen} modal={false}>
-                      <PopoverTrigger asChild>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <button 
                           className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
                           style={{
@@ -469,7 +470,6 @@ export function TaskModal({
                             borderColor: `${board?.columns?.find(c => c.id === taskForm.columnId)?.color || "#94a3b8"}20`,
                             color: board?.columns?.find(c => c.id === taskForm.columnId)?.color || "#94a3b8"
                           }}
-                          onClick={(e) => e.stopPropagation()}
                         >
                           <div
                             className="w-2 h-2 rounded-full flex-shrink-0"
@@ -477,34 +477,26 @@ export function TaskModal({
                           />
                           <span>{board?.columns?.find(c => c.id === taskForm.columnId)?.title || 'Sélectionner un status'}</span>
                         </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-48 p-2" align="start">
-                        <div className="space-y-1">
-                          {board?.columns?.map((column) => (
-                            <button
-                              key={column.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setTaskForm({ ...taskForm, columnId: column.id });
-                                setStatusPopoverOpen(false);
-                              }}
-                              className={cn(
-                                "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
-                                taskForm.columnId === column.id
-                                  ? "bg-accent"
-                                  : "hover:bg-accent/50"
-                              )}
-                            >
-                              <div 
-                                className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
-                                style={{ backgroundColor: column.color }}
-                              />
-                              <span className="font-medium">{column.title}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
+                        {board?.columns?.map((column) => (
+                          <DropdownMenuItem
+                            key={column.id}
+                            onClick={() => setTaskForm({ ...taskForm, columnId: column.id })}
+                            className={cn(
+                              "flex items-center gap-2 cursor-pointer",
+                              taskForm.columnId === column.id && "bg-accent"
+                            )}
+                          >
+                            <div 
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                              style={{ backgroundColor: column.color }}
+                            />
+                            <span>{column.title}</span>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
@@ -532,7 +524,7 @@ export function TaskModal({
                           )}
                         </div>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0" side="bottom" align="start">
                         <div className="flex flex-col">
                           <div className="border-b p-4">
                             <Calendar
@@ -599,11 +591,10 @@ export function TaskModal({
                     Priorité
                   </Label>
                   <div className="flex-1">
-                    <Popover open={priorityPopoverOpen} onOpenChange={setPriorityPopoverOpen} modal={false}>
-                      <PopoverTrigger asChild>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <button 
                           className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={(e) => e.stopPropagation()}
                         >
                           {taskForm.priority && taskForm.priority.toLowerCase() !== 'none' ? (
                             <Badge
@@ -631,34 +622,28 @@ export function TaskModal({
                             </Badge>
                           )}
                         </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-48 p-2" align="start">
-                        <div className="space-y-1">
-                          {[
-                            { value: 'HIGH', label: 'Urgent', color: 'text-red-500 fill-red-500' },
-                            { value: 'MEDIUM', label: 'Moyen', color: 'text-yellow-500 fill-yellow-500' },
-                            { value: 'LOW', label: 'Faible', color: 'text-green-500 fill-green-500' },
-                            { value: 'NONE', label: 'Aucune', color: 'text-gray-400 fill-gray-400' }
-                          ].map((priority) => (
-                            <button
-                              key={priority.value}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setTaskForm({ ...taskForm, priority: priority.value });
-                                setPriorityPopoverOpen(false);
-                              }}
-                              className={cn(
-                                "w-full flex items-center gap-2 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer",
-                                taskForm.priority?.toUpperCase() === priority.value ? 'bg-accent' : ''
-                              )}
-                            >
-                              <Flag className={`h-4 w-4 ${priority.color}`} />
-                              <span className="text-sm">{priority.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
+                        {[
+                          { value: 'HIGH', label: 'Urgent', color: 'text-red-500 fill-red-500' },
+                          { value: 'MEDIUM', label: 'Moyen', color: 'text-yellow-500 fill-yellow-500' },
+                          { value: 'LOW', label: 'Faible', color: 'text-green-500 fill-green-500' },
+                          { value: 'NONE', label: 'Aucune', color: 'text-gray-400 fill-gray-400' }
+                        ].map((priority) => (
+                          <DropdownMenuItem
+                            key={priority.value}
+                            onClick={() => setTaskForm({ ...taskForm, priority: priority.value })}
+                            className={cn(
+                              "flex items-center gap-2 cursor-pointer",
+                              taskForm.priority?.toUpperCase() === priority.value && "bg-accent"
+                            )}
+                          >
+                            <Flag className={`h-4 w-4 ${priority.color}`} />
+                            <span>{priority.label}</span>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
@@ -686,7 +671,7 @@ export function TaskModal({
                           )}
                         </div>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0" side="bottom" align="start">
                         <div className="flex flex-col">
                           <div className="border-b p-4">
                             <Calendar
@@ -839,12 +824,11 @@ export function TaskModal({
                   Membres
                 </Label>
                 <div className="flex-1">
-                  <Popover open={membersPopoverOpen} onOpenChange={setMembersPopoverOpen} modal={false}>
-                    <PopoverTrigger asChild>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                       {taskForm.assignedMembers && taskForm.assignedMembers.length > 0 ? (
                         <div 
                           className="flex -space-x-2 cursor-pointer"
-                          onClick={(e) => e.stopPropagation()}
                         >
                           {taskForm.assignedMembers.slice(0, 3).map((memberId, idx) => {
                             const memberInfo = membersInfo.find(m => m.id === memberId);
@@ -869,51 +853,39 @@ export function TaskModal({
                       ) : (
                         <button
                           className="w-7 h-7 rounded-full border border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/10 flex items-center justify-center cursor-pointer transition-colors bg-transparent p-0"
-                          onClick={(e) => e.stopPropagation()}
                           title="Ajouter des membres"
                         >
                           <UserPlus className="h-4 w-4 text-muted-foreground" />
                         </button>
                       )}
-                    </PopoverTrigger>
-                    <PopoverContent className="w-72 p-0" align="start">
-                      <div className="p-2 space-y-1 max-h-[400px] overflow-y-auto">
-                        {board?.members?.map((member) => (
-                          <button
-                            key={member.id}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const currentMembers = taskForm.assignedMembers || [];
-                              const newMembers = currentMembers.includes(member.id)
-                                ? currentMembers.filter(id => id !== member.id)
-                                : [...currentMembers, member.id];
-                              setTaskForm({ ...taskForm, assignedMembers: newMembers });
-                            }}
-                            className={`w-full flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer bg-transparent border-0 text-left ${
-                              (taskForm.assignedMembers || []).includes(member.id) ? 'bg-accent' : ''
-                            }`}
-                          >
-                            <UserAvatar 
-                              src={member.image} 
-                              name={member.name} 
-                              size="sm"
-                            />
-                            <div className="flex-1 text-left">
-                              <div className="text-sm font-medium">{member.name}</div>
-                              <div className="text-xs text-muted-foreground">{member.email}</div>
-                            </div>
-                            <Checkbox
-                              checked={(taskForm.assignedMembers || []).includes(member.id)}
-                              onCheckedChange={() => {}}
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex-shrink-0"
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-72 max-h-[400px] overflow-y-auto" onCloseAutoFocus={(e) => e.preventDefault()}>
+                      {board?.members?.map((member) => (
+                        <DropdownMenuCheckboxItem
+                          key={member.id}
+                          checked={(taskForm.assignedMembers || []).includes(member.id)}
+                          onCheckedChange={() => {
+                            const currentMembers = taskForm.assignedMembers || [];
+                            const newMembers = currentMembers.includes(member.id)
+                              ? currentMembers.filter(id => id !== member.id)
+                              : [...currentMembers, member.id];
+                            setTaskForm({ ...taskForm, assignedMembers: newMembers });
+                          }}
+                          className="flex items-center gap-3 cursor-pointer"
+                        >
+                          <UserAvatar 
+                            src={member.image} 
+                            name={member.name} 
+                            size="sm"
+                          />
+                          <div className="flex-1 text-left">
+                            <div className="text-sm font-medium">{member.name}</div>
+                            <div className="text-xs text-muted-foreground">{member.email}</div>
+                          </div>
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>
@@ -1079,8 +1051,8 @@ export function TaskModal({
                       Status
                     </Label>
                     <div className="flex-1">
-                      <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
-                        <PopoverTrigger asChild>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <button 
                             className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
                             style={{
@@ -1088,7 +1060,6 @@ export function TaskModal({
                               borderColor: `${board?.columns?.find(c => c.id === taskForm.columnId)?.color || "#94a3b8"}20`,
                               color: board?.columns?.find(c => c.id === taskForm.columnId)?.color || "#94a3b8"
                             }}
-                            onClick={(e) => e.stopPropagation()}
                           >
                             <div
                               className="w-2 h-2 rounded-full flex-shrink-0"
@@ -1096,34 +1067,26 @@ export function TaskModal({
                             />
                             <span className="truncate">{board?.columns?.find(c => c.id === taskForm.columnId)?.title || 'Status'}</span>
                           </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-48 p-2" align="start">
-                          <div className="space-y-1">
-                            {board?.columns?.map((column) => (
-                              <button
-                                key={column.id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setTaskForm({ ...taskForm, columnId: column.id });
-                                  setStatusPopoverOpen(false);
-                                }}
-                                className={cn(
-                                  "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
-                                  taskForm.columnId === column.id
-                                    ? "bg-accent"
-                                    : "hover:bg-accent/50"
-                                )}
-                              >
-                                <div 
-                                  className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
-                                  style={{ backgroundColor: column.color }}
-                                />
-                                <span className="font-medium">{column.title}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
+                          {board?.columns?.map((column) => (
+                            <DropdownMenuItem
+                              key={column.id}
+                              onClick={() => setTaskForm({ ...taskForm, columnId: column.id })}
+                              className={cn(
+                                "flex items-center gap-2 cursor-pointer",
+                                taskForm.columnId === column.id && "bg-accent"
+                              )}
+                            >
+                              <div 
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                                style={{ backgroundColor: column.color }}
+                              />
+                              <span>{column.title}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
 
@@ -1134,11 +1097,10 @@ export function TaskModal({
                       Priorité
                     </Label>
                     <div className="flex-1">
-                      <Popover open={priorityPopoverOpen} onOpenChange={setPriorityPopoverOpen}>
-                        <PopoverTrigger asChild>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <button 
                             className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
                           >
                             {taskForm.priority && taskForm.priority.toLowerCase() !== 'none' ? (
                               <Badge
@@ -1166,34 +1128,28 @@ export function TaskModal({
                               </Badge>
                             )}
                           </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-48 p-2" align="start">
-                          <div className="space-y-1">
-                            {[
-                              { value: 'HIGH', label: 'Urgent', color: 'text-red-500 fill-red-500' },
-                              { value: 'MEDIUM', label: 'Moyen', color: 'text-yellow-500 fill-yellow-500' },
-                              { value: 'LOW', label: 'Faible', color: 'text-green-500 fill-green-500' },
-                              { value: 'NONE', label: 'Aucune', color: 'text-gray-400 fill-gray-400' }
-                            ].map((priority) => (
-                              <button
-                                key={priority.value}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setTaskForm({ ...taskForm, priority: priority.value });
-                                  setPriorityPopoverOpen(false);
-                                }}
-                                className={cn(
-                                  "w-full flex items-center gap-2 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer",
-                                  taskForm.priority?.toUpperCase() === priority.value ? 'bg-accent' : ''
-                                )}
-                              >
-                                <Flag className={`h-4 w-4 ${priority.color}`} />
-                                <span className="text-sm">{priority.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
+                          {[
+                            { value: 'HIGH', label: 'Urgent', color: 'text-red-500 fill-red-500' },
+                            { value: 'MEDIUM', label: 'Moyen', color: 'text-yellow-500 fill-yellow-500' },
+                            { value: 'LOW', label: 'Faible', color: 'text-green-500 fill-green-500' },
+                            { value: 'NONE', label: 'Aucune', color: 'text-gray-400 fill-gray-400' }
+                          ].map((priority) => (
+                            <DropdownMenuItem
+                              key={priority.value}
+                              onClick={() => setTaskForm({ ...taskForm, priority: priority.value })}
+                              className={cn(
+                                "flex items-center gap-2 cursor-pointer",
+                                taskForm.priority?.toUpperCase() === priority.value && "bg-accent"
+                              )}
+                            >
+                              <Flag className={`h-4 w-4 ${priority.color}`} />
+                              <span>{priority.label}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </div>
@@ -1222,7 +1178,7 @@ export function TaskModal({
                           )}
                         </div>
                       </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" side="bottom" align="start">
                       <div className="flex flex-col">
                         <div className="border-b p-4">
                           <Calendar
@@ -1303,7 +1259,7 @@ export function TaskModal({
                           )}
                         </div>
                       </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" side="bottom" align="start">
                       <div className="flex flex-col">
                         <div className="border-b p-4">
                           <Calendar
@@ -1454,8 +1410,8 @@ export function TaskModal({
                       Membres
                     </Label>
                     <div>
-                      <Popover open={membersPopoverOpen} onOpenChange={setMembersPopoverOpen}>
-                        <PopoverTrigger asChild>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           {taskForm.assignedMembers && taskForm.assignedMembers.length > 0 ? (
                             <div 
                               className="flex -space-x-2 cursor-pointer"
@@ -1484,50 +1440,39 @@ export function TaskModal({
                             <button
                               type="button"
                               className="w-7 h-7 rounded-full border border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/10 flex items-center justify-center cursor-pointer transition-colors bg-transparent p-0"
-                              onClick={(e) => e.stopPropagation()}
                               title="Ajouter des membres"
                             >
                               <UserPlus className="h-4 w-4 text-muted-foreground" />
                             </button>
                           )}
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 p-0" align="start">
-                          <div className="p-2 space-y-1 max-h-[400px] overflow-y-auto">
-                            {board?.members?.map((member) => (
-                              <div
-                                key={member.id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const currentMembers = taskForm.assignedMembers || [];
-                                  const newMembers = currentMembers.includes(member.id)
-                                    ? currentMembers.filter(id => id !== member.id)
-                                    : [...currentMembers, member.id];
-                                  setTaskForm({ ...taskForm, assignedMembers: newMembers });
-                                }}
-                                className={`w-full flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer ${
-                                  (taskForm.assignedMembers || []).includes(member.id) ? 'bg-accent' : ''
-                                }`}
-                              >
-                                <UserAvatar 
-                                  src={member.image} 
-                                  name={member.name} 
-                                  size="sm"
-                                />
-                                <div className="flex-1 text-left">
-                                  <div className="text-sm font-medium">{member.name}</div>
-                                  <div className="text-xs text-muted-foreground">{member.email}</div>
-                                </div>
-                                <Checkbox
-                                  checked={(taskForm.assignedMembers || []).includes(member.id)}
-                                  onCheckedChange={() => {}}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="flex-shrink-0"
-                                />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-72 max-h-[400px] overflow-y-auto" onCloseAutoFocus={(e) => e.preventDefault()}>
+                          {board?.members?.map((member) => (
+                            <DropdownMenuCheckboxItem
+                              key={member.id}
+                              checked={(taskForm.assignedMembers || []).includes(member.id)}
+                              onCheckedChange={() => {
+                                const currentMembers = taskForm.assignedMembers || [];
+                                const newMembers = currentMembers.includes(member.id)
+                                  ? currentMembers.filter(id => id !== member.id)
+                                  : [...currentMembers, member.id];
+                                setTaskForm({ ...taskForm, assignedMembers: newMembers });
+                              }}
+                              className="flex items-center gap-3 cursor-pointer"
+                            >
+                              <UserAvatar 
+                                src={member.image} 
+                                name={member.name} 
+                                size="sm"
+                              />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium">{member.name}</div>
+                                <div className="text-xs text-muted-foreground">{member.email}</div>
                               </div>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                            </DropdownMenuCheckboxItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </div>
