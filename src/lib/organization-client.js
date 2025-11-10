@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { authClient } from "./auth-client";
 
 /**
@@ -107,17 +107,23 @@ export function useActiveOrganization() {
   const { data: betterAuthOrg, isPending: betterAuthLoading, refetch: betterAuthRefetch } = 
     authClient.useActiveOrganization();
   
-  const [organization, setOrganization] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [forceUpdateCounter, setForceUpdateCounter] = useState(0);
 
-  // Synchroniser avec le hook Better Auth
+  // Stabiliser l'objet organization avec useMemo pour éviter les re-renders inutiles
+  // On change l'objet si l'ID change OU si forceUpdateCounter change (après un update)
+  const organization = useMemo(() => {
+    if (!betterAuthOrg) return null;
+    return betterAuthOrg;
+  }, [betterAuthOrg?.id, forceUpdateCounter]); // ✅ Change si ID ou forceUpdate change
+
+  // Synchroniser le loading
   useEffect(() => {
     if (!betterAuthLoading) {
-      setOrganization(betterAuthOrg);
       setLoading(false);
     }
-  }, [betterAuthOrg, betterAuthLoading]);
+  }, [betterAuthLoading]);
 
   const fetchOrganization = async () => {
     try {
@@ -143,6 +149,10 @@ export function useActiveOrganization() {
 
       // Forcer un refetch depuis Better Auth après la mise à jour
       await betterAuthRefetch();
+      
+      // Incrémenter le compteur pour forcer la mise à jour du useMemo
+      setForceUpdateCounter(prev => prev + 1);
+      
       console.log("✅ Organisation mise à jour et refetch depuis Better Auth");
 
       return result;

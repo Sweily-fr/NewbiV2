@@ -3,6 +3,7 @@
 import { TrendingUp, ChevronRight, CalendarIcon } from "lucide-react";
 import { Label, Pie, PieChart, Sector } from "recharts";
 import { useMemo, useState } from "react";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 
 import {
   Card,
@@ -137,6 +138,7 @@ const chartConfig = {
 };
 
 export function ExpenseCategoryChart({ expenses = [], className }) {
+  const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = useState("90d"); // 30d, 90d, 365d, custom
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
@@ -506,35 +508,37 @@ export function ExpenseCategoryChart({ expenses = [], className }) {
             </ChartContainer>
           </div>
 
-          {/* Légende à droite */}
-          <div className="flex-1 space-y-3">
-            {chartData.slice(0, 5).map((item, index) => {
-              const percentage = ((item.amount / totalAmount) * 100).toFixed(1);
-              return (
-                <div key={item.category} className="flex items-center gap-3">
-                  <div
-                    className="h-2 w-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: item.fill }}
-                  />
+          {/* Légende à droite - Masquée sur mobile */}
+          {!isMobile && (
+            <div className="flex-1 space-y-3">
+              {chartData.slice(0, 5).map((item, index) => {
+                const percentage = ((item.amount / totalAmount) * 100).toFixed(1);
+                return (
+                  <div key={item.category} className="flex items-center gap-3">
+                    <div
+                      className="h-2 w-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: item.fill }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-normal text-foreground truncate">
+                        {item.label} ({percentage} %)
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              {chartData.length > 5 && (
+                <div className="flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full flex-shrink-0 bg-muted" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-normal text-foreground truncate">
-                      {item.label} ({percentage} %)
+                    <p className="text-xs font-normal text-muted-foreground">
+                      +{chartData.length - 5} autres catégories
                     </p>
                   </div>
                 </div>
-              );
-            })}
-            {chartData.length > 5 && (
-              <div className="flex items-center gap-3">
-                <div className="h-2 w-2 rounded-full flex-shrink-0 bg-muted" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-normal text-muted-foreground">
-                    +{chartData.length - 5} autres catégories
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
       {/* <CardFooter className="flex-col gap-2 text-sm pt-0 border-t">

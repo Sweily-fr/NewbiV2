@@ -1,18 +1,18 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { authClient } from '@/src/lib/auth-client';
+import { useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "@/src/components/ui/sonner";
+import { authClient } from "@/src/lib/auth-client";
 
 // Événements à surveiller pour détecter l'activité (déclaré à l'extérieur pour éviter les dépendances)
 const ACTIVITY_EVENTS = [
-  'mousedown',
-  'mousemove', 
-  'keypress',
-  'scroll',
-  'touchstart',
-  'click',
-  'focus',
-  'blur'
+  "mousedown",
+  "mousemove",
+  "keypress",
+  "scroll",
+  "touchstart",
+  "click",
+  "focus",
+  "blur",
 ];
 
 /**
@@ -24,7 +24,7 @@ export function useInactivityTimer(timeoutMinutes = 15, enabled = true) {
   const router = useRouter();
   const timeoutRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
-  
+
   // Durée en millisecondes
   const timeoutMs = timeoutMinutes * 60 * 1000;
 
@@ -34,7 +34,7 @@ export function useInactivityTimer(timeoutMinutes = 15, enabled = true) {
       // Afficher la notification de déconnexion
       toast.error("Vous avez été déconnecté pour cause d'inactivité", {
         duration: 5000,
-        position: 'top-center',
+        position: "top-center",
       });
 
       // Déconnexion via Better Auth
@@ -42,19 +42,19 @@ export function useInactivityTimer(timeoutMinutes = 15, enabled = true) {
         fetchOptions: {
           onSuccess: () => {
             // Redirection vers la page de connexion
-            router.push('/auth/login');
+            router.push("/auth/login");
           },
           onError: (ctx) => {
-            console.error('Erreur lors de la déconnexion:', ctx.error);
+            console.error("Erreur lors de la déconnexion:", ctx.error);
             // Redirection même en cas d'erreur
-            router.push('/auth/login');
-          }
-        }
+            router.push("/auth/login");
+          },
+        },
       });
     } catch (error) {
-      console.error('Erreur lors de la déconnexion automatique:', error);
+      console.error("Erreur lors de la déconnexion automatique:", error);
       // Redirection de secours
-      router.push('/auth/login');
+      router.push("/auth/login");
     }
   }, [router]);
 
@@ -73,7 +73,7 @@ export function useInactivityTimer(timeoutMinutes = 15, enabled = true) {
     // Créer un nouveau timer
     timeoutRef.current = setTimeout(() => {
       const timeSinceLastActivity = Date.now() - lastActivityRef.current;
-      
+
       // Vérifier si vraiment inactif (double vérification)
       if (timeSinceLastActivity >= timeoutMs) {
         handleLogout();
@@ -85,19 +85,21 @@ export function useInactivityTimer(timeoutMinutes = 15, enabled = true) {
     }, timeoutMs);
   }, [enabled, timeoutMs, handleLogout]);
 
-
   // Gestionnaire d'événements d'activité
-  const handleActivity = useCallback((event) => {
-    // Ignorer les mouvements de souris trop fréquents
-    if (event.type === 'mousemove') {
-      const now = Date.now();
-      if (now - lastActivityRef.current < 1000) {
-        return; // Ignorer si moins d'1 seconde depuis la dernière activité
+  const handleActivity = useCallback(
+    (event) => {
+      // Ignorer les mouvements de souris trop fréquents
+      if (event.type === "mousemove") {
+        const now = Date.now();
+        if (now - lastActivityRef.current < 1000) {
+          return; // Ignorer si moins d'1 seconde depuis la dernière activité
+        }
       }
-    }
-    
-    resetTimer();
-  }, [resetTimer]);
+
+      resetTimer();
+    },
+    [resetTimer]
+  );
 
   useEffect(() => {
     if (!enabled) {
@@ -113,43 +115,43 @@ export function useInactivityTimer(timeoutMinutes = 15, enabled = true) {
     resetTimer();
 
     // Ajouter les écouteurs d'événements
-    ACTIVITY_EVENTS.forEach(event => {
+    ACTIVITY_EVENTS.forEach((event) => {
       document.addEventListener(event, handleActivity, true);
     });
 
     // Surveiller les changements de visibilité de la page
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         resetTimer();
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     // Nettoyage
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      
-      ACTIVITY_EVENTS.forEach(event => {
+
+      ACTIVITY_EVENTS.forEach((event) => {
         document.removeEventListener(event, handleActivity, true);
       });
-      
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [enabled, handleActivity, resetTimer]);
 
   // Fonction pour obtenir le temps restant avant déconnexion
   const getTimeRemaining = useCallback(() => {
     if (!enabled || !timeoutRef.current) return null;
-    
+
     const timeSinceLastActivity = Date.now() - lastActivityRef.current;
     const remaining = Math.max(0, timeoutMs - timeSinceLastActivity);
-    
+
     return {
       minutes: Math.floor(remaining / (1000 * 60)),
       seconds: Math.floor((remaining % (1000 * 60)) / 1000),
-      totalMs: remaining
+      totalMs: remaining,
     };
   }, [enabled, timeoutMs]);
 
@@ -161,7 +163,7 @@ export function useInactivityTimer(timeoutMinutes = 15, enabled = true) {
   return {
     resetTimer: resetInactivityTimer,
     getTimeRemaining,
-    isEnabled: enabled
+    isEnabled: enabled,
   };
 }
 

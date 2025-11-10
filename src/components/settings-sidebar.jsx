@@ -1,10 +1,4 @@
-import {
-  Building2,
-  CreditCard,
-  FileText,
-  Bell,
-  Lock,
-} from "lucide-react";
+import { Building2, CreditCard, FileText, Bell, Lock } from "lucide-react";
 
 const tabs = [
   {

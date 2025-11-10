@@ -16,6 +16,7 @@ import { SubscriptionSection } from "../subscription-section";
 import { SecuritySection } from "../security-section";
 import PersonnesSection from "../personnes-section";
 import UserInfoSection from "../user-info-section";
+import { NotificationsSection } from "../notifications-section";
 
 export function MobileSettingsModal({
   open,
@@ -48,9 +49,10 @@ export function MobileSettingsModal({
       icon: "FileText",
     },
     { id: "espaces", label: "Espaces", icon: "Settings" },
-    { id: "personnes", label: "Personnes", icon: "Users" },
+    { id: "personnes", label: "Accès", icon: "Users", disabled: true },
     { id: "facturation", label: "Facturation", icon: "CreditCard" },
     { id: "preferences", label: "Préférences", icon: "Settings2" },
+    { id: "notifications", label: "Notifications", icon: "Bell" },
     { id: "security", label: "Sécurité", icon: "Shield" },
     { id: "subscription", label: "Abonnement", icon: "Crown" },
   ];
@@ -146,6 +148,8 @@ export function MobileSettingsModal({
             refetchOrganization={refetchOrganization}
           />
         );
+      case "notifications":
+        return <NotificationsSection />;
       case "security":
         return (
           <SecuritySection
@@ -190,7 +194,7 @@ export function MobileSettingsModal({
               >
                 <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                 </Button>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h1 className="text-xl font-medium text-gray-900 dark:text-white">
                 {currentTab?.label}
               </h1>
             </div>

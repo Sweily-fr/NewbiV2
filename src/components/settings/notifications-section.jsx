@@ -227,28 +227,42 @@ export function NotificationsSection() {
 
       {/* Tabs pour les différents types de notifications */}
       <Tabs defaultValue="invitations" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="invitations" className="gap-2 font-normal">
-            <Mail className="w-4 h-4" />
-            Invitations
-            {pendingInvitations.length > 0 && (
-              <span className="ml-1 bg-[#5b4fff]/70 text-white text-xs rounded-md px-2 py-0.5">
-                {pendingInvitations.length}
-              </span>
-            )}
+        <TabsList className="grid w-full grid-cols-3 h-auto">
+          <TabsTrigger value="invitations" className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm">
+            <div className="flex items-center gap-1 relative">
+              <Mail className="w-4 h-4" />
+              <span className="hidden sm:inline">Invitations</span>
+              {/* Point violet sur mobile, badge sur desktop */}
+              {pendingInvitations.length > 0 && (
+                <>
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#5b4fff] rounded-full sm:hidden"></span>
+                  <span className="hidden sm:inline bg-[#5b4fff]/70 text-white text-xs rounded-md px-1.5 py-0.5 ml-1">
+                    {pendingInvitations.length}
+                  </span>
+                </>
+              )}
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="activity" className="gap-2 font-normal">
-            <Bell className="w-4 h-4" />
-            Activité
-            {pendingSentInvitations.length > 0 && (
-              <span className="ml-1 bg-[#5b4eff] text-white text-xs rounded-md px-2 py-0.5">
-                {pendingSentInvitations.length}
-              </span>
-            )}
+          <TabsTrigger value="activity" className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm">
+            <div className="flex items-center gap-1 relative">
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">Activité</span>
+              {/* Point violet sur mobile, badge sur desktop */}
+              {pendingSentInvitations.length > 0 && (
+                <>
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#5b4fff] rounded-full sm:hidden"></span>
+                  <span className="hidden sm:inline bg-[#5b4eff] text-white text-xs rounded-md px-1.5 py-0.5 ml-1">
+                    {pendingSentInvitations.length}
+                  </span>
+                </>
+              )}
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="system" className="gap-2 font-normal">
-            <Settings className="w-4 h-4" />
-            Système
+          <TabsTrigger value="system" className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm">
+            <div className="flex items-center gap-1">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Système</span>
+            </div>
           </TabsTrigger>
         </TabsList>
 

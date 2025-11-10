@@ -570,8 +570,9 @@ export function SecuritySection({
           <div className="mt-4">
             <Callout type="warning" noMargin>
               <p>
-                Vous n'avez pas la permission de modifier les paramètres de l'organisation. 
-                Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent effectuer ces modifications.
+                Vous n'avez pas la permission de modifier les paramètres de
+                l'organisation. Seuls les <strong>owners</strong> et{" "}
+                <strong>admins</strong> peuvent effectuer ces modifications.
               </p>
             </Callout>
           </div>
@@ -603,7 +604,11 @@ export function SecuritySection({
                     <button
                       className="text-gray-400 underline hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={orgLoading || !canManageOrgSettings}
-                      title={!canManageOrgSettings ? "Seuls les owners et admins peuvent modifier" : ""}
+                      title={
+                        !canManageOrgSettings
+                          ? "Seuls les owners et admins peuvent modifier"
+                          : ""
+                      }
                     >
                       Modifier
                     </button>
@@ -690,7 +695,11 @@ export function SecuritySection({
                     onClick={() => setShowStripeOnboarding(true)}
                     disabled={!canManageOrgSettings}
                     className="text-xs h-7 border-[#5b4fff]/20 text-[#5b4fff] hover:bg-[#5b4fff]/5 cursor-pointer"
-                    title={!canManageOrgSettings ? "Seuls les owners et admins peuvent gérer Stripe" : ""}
+                    title={
+                      !canManageOrgSettings
+                        ? "Seuls les owners et admins peuvent gérer Stripe"
+                        : ""
+                    }
                   >
                     <ExternalLink className="h-3 w-3 mr-1" />
                     {canReceivePayments ? "Tableau de bord" : "Finaliser"}
@@ -703,7 +712,11 @@ export function SecuritySection({
                   onClick={() => setShowStripeOnboarding(true)}
                   disabled={stripeLoading || !canManageOrgSettings}
                   className="text-xs cursor-pointer h-7 bg-[#5b4fff] border-[#5b4fff]/20 text-[#fff] hover:text-[#fff] hover:bg-[#5b4fff]/90"
-                  title={!canManageOrgSettings ? "Seuls les owners et admins peuvent connecter Stripe" : ""}
+                  title={
+                    !canManageOrgSettings
+                      ? "Seuls les owners et admins peuvent connecter Stripe"
+                      : ""
+                  }
                 >
                   <CreditCard className="h-3 w-3 mr-1" />
                   {stripeLoading ? "Chargement..." : "Connecter Stripe"}
@@ -984,17 +997,19 @@ export function SecuritySection({
       </div>
 
       {/* Modal Setup 2FA - Composant complet avec QR code */}
-      <Setup2FAModal 
-        isOpen={show2FAModal} 
-        onClose={handle2FAModalClose}
-      />
+      <Setup2FAModal isOpen={show2FAModal} onClose={handle2FAModalClose} />
 
       {/* Dialog de désactivation 2FA */}
-      <Dialog open={showDisable2FADialog} onOpenChange={setShowDisable2FADialog}>
+      <Dialog
+        open={showDisable2FADialog}
+        onOpenChange={setShowDisable2FADialog}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Désactiver l'authentification à deux facteurs</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-medium">
+              Désactiver l'authentification à deux facteurs
+            </DialogTitle>
+            <DialogDescription className="text-xs">
               Entrez votre mot de passe pour confirmer la désactivation du 2FA
             </DialogDescription>
           </DialogHeader>
@@ -1016,7 +1031,8 @@ export function SecuritySection({
               />
             </div>
             <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800">
-              ⚠️ Votre compte sera moins sécurisé sans l'authentification à deux facteurs
+              Votre compte sera moins sécurisé sans l'authentification à deux
+              facteurs
             </div>
           </div>
           <DialogFooter>

@@ -15,7 +15,7 @@ import { ChangePhoneModal } from "../../../app/dashboard/account/components/Chan
 import { DeactivateAccountModal } from "../../../app/dashboard/account/components/DeactivateAccountModal";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import Link from "next/link";
-import { TriangleAlert } from "lucide-react";
+import { Callout } from "@/src/components/ui/callout";
 
 export default function UserInfoSection({ onTabChange }) {
   const { data: session, isPending, error, refetch } = useSession();
@@ -216,29 +216,24 @@ export default function UserInfoSection({ onTabChange }) {
 
           {/* Avertissement pour les utilisateurs premium */}
           {isPremium() && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start gap-3">
-                <TriangleAlert className="text-red-800" />
-                <div>
-                  <h4 className="text-sm font-medium text-red-800 mb-2">
-                    Abonnement actif détecté
-                  </h4>
-                  <p className="text-xs text-red-700 mb-3">
-                    Vous avez un abonnement premium actif. Avant de désactiver
-                    votre compte, vous devez d'abord annuler votre abonnement
-                    pour éviter des frais futurs.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onTabChange && onTabChange("subscription")}
-                    className="text-red-700 bg-transparent border-red-300 hover:text-red-700 hover:border-red-300 hover:bg-red-100 cursor-pointer"
-                  >
-                    Gérer mon abonnement
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <Callout type="danger" noMargin>
+              <h4 className="text-sm font-medium mb-2">
+                Abonnement actif détecté
+              </h4>
+              <p className="text-xs mb-3">
+                Vous avez un abonnement premium actif. Avant de désactiver
+                votre compte, vous devez d'abord annuler votre abonnement
+                pour éviter des frais futurs.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onTabChange && onTabChange("subscription")}
+                className="text-red-700 bg-transparent border-red-300 hover:text-red-700 hover:border-red-300 hover:bg-red-100 cursor-pointer"
+              >
+                Gérer mon abonnement
+              </Button>
+            </Callout>
           )}
 
           {/* Désactiver mon compte */}

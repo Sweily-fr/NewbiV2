@@ -262,22 +262,18 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium">Gestion des espaces</h3>
-          <p className="text-sm text-muted-foreground">
-            Gérez vos organisations et leurs membres.
-          </p>
-        </div>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-lg font-medium">Gestion des espaces</h3>
+        <Separator className="hidden md:block" />
       </div>
-      
-      <Separator className="hidden md:block" />
+
       {!canManageOrgSettings && (
         <div className="mt-4">
           <Callout type="warning" noMargin>
             <p>
-              Vous n'avez pas la permission de modifier les paramètres de l'organisation. 
-              Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent effectuer ces modifications.
+              Vous n'avez pas la permission de modifier les paramètres de
+              l'organisation. Seuls les <strong>owners</strong> et{" "}
+              <strong>admins</strong> peuvent effectuer ces modifications.
             </p>
           </Callout>
         </div>
@@ -354,11 +350,10 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
       {/* Modal des membres de l'organisation */}
       <Dialog open={!!selectedOrg} onOpenChange={() => setSelectedOrg(null)}>
         <DialogContent
-          className="flex flex-col !max-w-[45vw] !w-[45vw] max-h-[85vh] sm:!max-w-[1000px] p-0 gap-0"
-          style={{ maxWidth: "45vw", width: "45vw", minHeight: "60vh" }}
+          className="flex flex-col w-[95vw] max-w-[95vw] md:!max-w-[45vw] md:!w-[45vw] max-h-[85vh] p-0 gap-0"
         >
           {/* Header fixe */}
-          <div className="px-6 py-5 border-b bg-white dark:bg-[#0A0A0A]">
+          <div className="px-4 md:px-6 py-4 md:py-5 border-b bg-white dark:bg-[#0A0A0A]">
             <div className="flex items-center gap-2.5">
               <div className="h-7 w-7 rounded-md bg-[#5b4fff]/10 flex items-center justify-center">
                 <Building2 className="h-3 w-3 text-[#5b4fff]" />
@@ -376,9 +371,9 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
           </div>
 
           {/* Contenu scrollable */}
-          <div className="px-6 py-4 space-y-4 bg-white dark:bg-[#0A0A0A]">
+          <div className="px-4 md:px-6 py-4 space-y-4 bg-white dark:bg-[#0A0A0A]">
             {/* Search et bouton */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -392,21 +387,26 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                 type="button"
                 onClick={() => setInviteDialogOpen(true)}
                 disabled={!canManageOrgSettings}
-                className="flex items-center gap-1.5 font-normal cursor-pointer bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white px-3 h-9"
-                title={!canManageOrgSettings ? "Seuls les owners et admins peuvent ajouter des membres" : ""}
+                className="flex items-center justify-center gap-1.5 font-normal cursor-pointer bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white px-3 h-9 whitespace-nowrap"
+                title={
+                  !canManageOrgSettings
+                    ? "Seuls les owners et admins peuvent ajouter des membres"
+                    : ""
+                }
               >
                 <UserRoundPlusIcon size={14} />
-                Ajouter des membres
+                <span className="hidden sm:inline">Ajouter des membres</span>
+                <span className="sm:hidden">Ajouter</span>
               </Button>
             </div>
 
             {/* Members Table */}
-            <div className="max-h-[400px] overflow-y-auto">
+            <div className="max-h-[400px] overflow-y-auto overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead className="text-right">Rôle</TableHead>
+                    <TableHead className="min-w-[200px]">Nom</TableHead>
+                    <TableHead className="text-right min-w-[150px]">Rôle</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -462,7 +462,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                               );
                             }}
                           >
-                            <SelectTrigger className="w-[240px] border-none shadow-none cursor-pointer hover:bg-[#F0EFED]/90 ml-auto transition-colors">
+                            <SelectTrigger className="w-full md:w-[240px] border-none shadow-none cursor-pointer hover:bg-[#F0EFED]/90 ml-auto transition-colors">
                               <SelectValue>
                                 <div className="flex flex-col items-start">
                                   <span className="font-normal text-sm">

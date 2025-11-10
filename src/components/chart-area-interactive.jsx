@@ -450,7 +450,7 @@ export function ChartAreaInteractive({
                       });
                     }}
                     indicator="none"
-                    className="min-w-[200px]"
+                    className={isMobile ? "hidden" : "min-w-[200px]"}
                   />
                 }
               />

@@ -376,6 +376,7 @@ export function SettingsModal({
       ],
     },
     {
+      title: "Gestion",
       items: [
         {
           id: "personnes",
@@ -392,6 +393,7 @@ export function SettingsModal({
       ],
     },
     {
+      title: "Préférences",
       items: [
         { id: "subscription", label: "Abonnement", icon: Crown },
         { id: "facturation", label: "Facturation", icon: CreditCard },

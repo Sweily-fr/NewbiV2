@@ -4,6 +4,16 @@ import { useForm } from "react-hook-form";
 import { SettingsSidebar } from "@/src/components/settings-sidebar";
 import { Separator } from "@/src/components/ui/separator";
 import { Button } from "@/src/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { useSession } from "@/src/lib/auth-client";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { toast } from "@/src/components/ui/sonner";
@@ -43,6 +53,8 @@ const TABS_CONFIG = {
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("entreprise");
   const [isFormInitialized, setIsFormInitialized] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [pendingTab, setPendingTab] = useState(null);
   const { data: session, isPending, error, refetch } = useSession();
   const {
     organization,
@@ -55,7 +67,7 @@ export default function Settings() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
     reset,
     watch,
     setValue,
@@ -97,6 +109,41 @@ export default function Settings() {
       },
     },
   });
+
+  // Fonction pour gérer le changement d'onglet
+  const handleTabChange = (newTab) => {
+    // Vérifier si on est sur un onglet avec formulaire et s'il y a des modifications
+    const isFormTab = ["entreprise", "bank", "legal"].includes(activeTab);
+
+    console.log("🔄 handleTabChange:", {
+      activeTab,
+      newTab,
+      isDirty,
+      isFormTab,
+    });
+
+    if (isFormTab && isDirty) {
+      setPendingTab(newTab);
+      setShowUnsavedWarning(true);
+    } else {
+      setActiveTab(newTab);
+    }
+  };
+
+  // Forcer le changement d'onglet sans sauvegarder
+  const handleForceTabChange = () => {
+    if (pendingTab) {
+      setActiveTab(pendingTab);
+      setPendingTab(null);
+    }
+    setShowUnsavedWarning(false);
+  };
+
+  // Annuler le changement d'onglet
+  const handleCancelTabChange = () => {
+    setPendingTab(null);
+    setShowUnsavedWarning(false);
+  };
 
   // Fonction pour mettre à jour les informations de l'organisation
   const onSubmit = async (formData) => {
@@ -200,12 +247,17 @@ export default function Settings() {
       };
 
       await updateOrganization(transformedData, {
-        onSuccess: () => {
+        onSuccess: async () => {
           toast.success("Informations mises à jour avec succès");
-          // Réinitialiser le flag pour permettre le rechargement des nouvelles données
+
+          // ✅ Refetch l'organisation pour obtenir les nouvelles données
+          await refetchOrg();
+
+          // Le useEffect va se déclencher avec les nouvelles données
+          // et va reset le formulaire, ce qui mettra isDirty à false
           setIsFormInitialized(false);
-          // Ne pas refetch immédiatement pour éviter de remettre les anciennes valeurs
-          // Le useEffect se chargera de la synchronisation quand les nouvelles données arriveront
+
+          console.log("✅ Organization refetched after save");
         },
         onError: (error) => {
           toast.error("Erreur lors de la mise à jour");
@@ -286,36 +338,68 @@ export default function Settings() {
   const currentTab = TABS_CONFIG[activeTab] || TABS_CONFIG.entreprise;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex gap-6 px-6">
-      <div className="w-64 pt-6">
-        <SettingsSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
-      <Separator orientation="vertical" className="h-full w-px bg-border" />
-      <div className="flex-1 pt-6 px-2">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-medium mb-2 text-gray-900 dark:text-gray-100">
-                {currentTab.title}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {currentTab.description}
-              </p>
-            </div>
-            {activeTab !== "security" && activeTab !== "notifications" && (
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="py-2 font-normal shadow-sm"
-              >
-                {isSubmitting ? "Mise à jour..." : "Sauvegarder"}
-              </Button>
-            )}
-          </div>
-          <Separator className="mt-6" />
+    <>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex gap-6 px-6">
+        <div className="w-64 pt-6">
+          <SettingsSidebar
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
         </div>
-        <div className="pb-12">{renderActiveSection()}</div>
-      </div>
-    </form>
+        <Separator orientation="vertical" className="h-full w-px bg-border" />
+        <div className="flex-1 pt-6 px-2">
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-medium mb-2 text-gray-900 dark:text-gray-100">
+                  {currentTab.title}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {currentTab.description}
+                </p>
+              </div>
+              {activeTab !== "security" && activeTab !== "notifications" && (
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="py-2 font-normal shadow-sm"
+                >
+                  {isSubmitting ? "Mise à jour..." : "Sauvegarder"}
+                </Button>
+              )}
+            </div>
+            <Separator className="mt-6" />
+          </div>
+          <div className="pb-12">{renderActiveSection()}</div>
+        </div>
+      </form>
+
+      {/* Modal d'avertissement pour les modifications non sauvegardées */}
+      <AlertDialog
+        open={showUnsavedWarning}
+        onOpenChange={setShowUnsavedWarning}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Modifications non sauvegardées</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous avez des modifications non sauvegardées. Souhaitez-vous
+              continuer à modifier ou changer d'onglet sans sauvegarder ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelTabChange}>
+              Continuer la modification
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleForceTabChange}
+              className="bg-red-600 hover:bg-red-700 dark:text-white"
+            >
+              Changer d'onglet sans sauvegarder
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -119,10 +119,11 @@ export default function MobileSettingsNavigation({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => onTabSelect(tab.id)}
+                  onClick={() => !tab.disabled && onTabSelect(tab.id)}
+                  disabled={tab.disabled}
                   className={`
                     w-full flex items-center justify-between p-4 text-left transition-colors
-                    hover:bg-gray-50 dark:hover:bg-[#0A0A0A] active:bg-gray-100 dark:active:bg-[#0A0A0A]
+                    ${tab.disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-50 dark:hover:bg-[#0A0A0A] active:bg-gray-100 dark:active:bg-[#0A0A0A]"}
                     ${!isLast ? "border-b border-gray-100 dark:border-gray-700" : ""}
                   `}
                 >
@@ -133,9 +134,9 @@ export default function MobileSettingsNavigation({
                     <span className="text-gray-900 dark:text-white font-normal text-sm">
                       {tab.label}
                     </span>
-                    {tab.id === "personnes" && (
-                      <span className="px-2 py-0.5 text-xs font-normal bg-[#5b4eff]/60 text-white rounded-full">
-                        À venir
+                    {tab.disabled && (
+                      <span className="px-2 py-0.5 text-[10px] font-normal bg-[#5a50ff]/10 border border-[#5a50ff]/30 text-[#5a50ff] rounded-md">
+                        à venir
                       </span>
                     )}
                   </div>
