@@ -318,8 +318,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
               id="title"
               value={title}
               onChange={(e) => {
-                const sanitized = sanitizeInput(e.target.value);
-                setTitle(sanitized);
+                setTitle(e.target.value);
                 // Effacer l'erreur du champ quand l'utilisateur tape
                 if (fieldErrors.title) {
                   setFieldErrors((prev) => ({ ...prev, title: null }));
@@ -340,8 +339,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
               id="description"
               value={description}
               onChange={(e) => {
-                const sanitized = sanitizeInput(e.target.value);
-                setDescription(sanitized);
+                setDescription(e.target.value);
                 // Effacer l'erreur du champ quand l'utilisateur tape
                 if (fieldErrors.description) {
                   setFieldErrors((prev) => ({ ...prev, description: null }));
@@ -515,8 +513,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
               id="location"
               value={location}
               onChange={(e) => {
-                const sanitized = sanitizeInput(e.target.value);
-                setLocation(sanitized);
+                setLocation(e.target.value);
                 // Effacer l'erreur du champ quand l'utilisateur tape
                 if (fieldErrors.location) {
                   setFieldErrors((prev) => ({ ...prev, location: null }));
