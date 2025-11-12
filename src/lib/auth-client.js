@@ -8,7 +8,13 @@ import {
   multiSessionClient,
 } from "better-auth/client/plugins";
 import { stripeClient } from "@better-auth/stripe/client";
-import { ac, admin as adminRole, member, viewer, accountant } from "./permissions";
+import {
+  ac,
+  admin as adminRole,
+  member,
+  viewer,
+  accountant,
+} from "./permissions";
 
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
@@ -27,7 +33,7 @@ export const authClient = createAuthClient({
       // Redirection automatique vers la page de vérification 2FA
       onTwoFactorRedirect() {
         window.location.href = "/auth/verify-2fa";
-      }
+      },
     }),
     multiSessionClient(),
     organizationClient({

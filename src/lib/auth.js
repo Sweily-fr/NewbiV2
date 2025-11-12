@@ -36,6 +36,7 @@ export const auth = betterAuth({
     "https://newbi-v2.vercel.app",
     "http://localhost:3000",
     "https://newbi-v2-git-develop-sofianemtimet6-2653s-projects.vercel.app",
+    "newbi://", // App mobile Expo
   ],
 
   // Configuration de la session

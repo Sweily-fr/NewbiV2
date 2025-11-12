@@ -52,8 +52,9 @@ const calloutStyles = {
  * @param {"info"|"warning"|"success"|"tip"|"danger"|"neutral"} props.type - Type de callout
  * @param {React.ReactNode} props.children - Contenu du callout
  * @param {boolean} props.noMargin - Supprimer les marges par défaut
+ * @param {boolean} props.noIcon - Masquer l'icône
  */
-export function Callout({ type = "info", children, noMargin = false }) {
+export function Callout({ type = "info", children, noMargin = false, noIcon = false }) {
   const styles = calloutStyles[type];
   const Icon = styles.Icon;
 
@@ -63,7 +64,7 @@ export function Callout({ type = "info", children, noMargin = false }) {
         noMargin ? "" : "my-6"
       } ${styles.container}`}
     >
-      <Icon className={`mt-1 h-4 w-4 flex-none ${styles.icon}`} />
+      {!noIcon && <Icon className={`mt-1 h-4 w-4 flex-none ${styles.icon}`} />}
       <div className="[&>:first-child]:mt-0 [&>:last-child]:mb-0">
         {children}
       </div>

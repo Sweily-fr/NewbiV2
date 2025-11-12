@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronRight, ChevronLeft, Lightbulb } from "lucide-react";
+import { ChevronRight, ChevronLeft, Lightbulb, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/src/components/ui/button";
@@ -10,12 +10,22 @@ import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import MultipleSelector from "@/src/components/ui/multiselect";
 import { getAssetUrl } from "@/src/lib/image-utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { Callout } from "@/src/components/ui/callout";
 
 export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [workspaceType, setWorkspaceType] = useState("");
   const [workspaceName, setWorkspaceName] = useState("");
   const [invitedEmails, setInvitedEmails] = useState([]);
+  const [membersWithRoles, setMembersWithRoles] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
 
   // Récupérer la session utilisateur
@@ -30,8 +40,66 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
       setWorkspaceType("");
       setWorkspaceName("");
       setInvitedEmails([]);
+      setMembersWithRoles([]);
     }
     onOpenChange(isOpen);
+  };
+
+  // Quand on ajoute des emails, les ajouter à la liste avec un rôle par défaut
+  const handleEmailsChange = (emails) => {
+    setInvitedEmails(emails);
+
+    // Ajouter les nouveaux emails à la liste avec rôle par défaut
+    const newMembers = emails.map((email) => {
+      const existingMember = membersWithRoles.find(
+        (m) => m.email === (email.value || email.label)
+      );
+      return (
+        existingMember || {
+          email: email.value || email.label,
+          role: "member",
+        }
+      );
+    });
+
+    setMembersWithRoles(newMembers);
+  };
+
+  // Changer le rôle d'un membre
+  const handleRoleChange = (email, newRole) => {
+    setMembersWithRoles((prev) =>
+      prev.map((member) =>
+        member.email === email ? { ...member, role: newRole } : member
+      )
+    );
+  };
+
+  // Supprimer un membre
+  const handleRemoveMember = (emailToRemove) => {
+    setInvitedEmails((prev) =>
+      prev.filter((e) => (e.value || e.label) !== emailToRemove)
+    );
+    setMembersWithRoles((prev) =>
+      prev.filter((m) => m.email !== emailToRemove)
+    );
+  };
+
+  // Fonction pour obtenir le label du rôle
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case "admin":
+        return "Administrateur";
+      case "member":
+        return "Membre";
+      case "guest":
+        return "Invité";
+      case "accountant":
+        return "Comptable";
+      case "owner":
+        return "Propriétaire";
+      default:
+        return role;
+    }
   };
 
   // Passer à l'étape suivante
@@ -65,14 +133,17 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
         return;
       }
 
-      // Préparer les données de l'organisation
-      const invitedEmailsList = invitedEmails.map((e) => e.value || e.label);
+      // Préparer les données de l'organisation avec les rôles
+      const invitedMembersWithRoles = membersWithRoles.map((member) => ({
+        email: member.email,
+        role: member.role,
+      }));
 
       // Stocker les données dans sessionStorage pour les récupérer après paiement
       const orgData = {
         name: workspaceName,
         type: workspaceType,
-        invitedEmails: invitedEmailsList,
+        invitedMembers: invitedMembersWithRoles, // Utiliser invitedMembers au lieu de invitedEmails
         userId: session.user.id,
       };
 
@@ -185,10 +256,10 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
                 </div>
                 <div className="flex items-baseline justify-center gap-2">
                   <span className="text-3xl sm:text-4xl font-semibold text-gray-900 dark:text-white">
-                    11,24€
+                    10,79€
                   </span>
                   <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                    HT/mois
+                    TTC/mois
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 px-4">
@@ -250,7 +321,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
               <div className="space-y-3">
                 <MultipleSelector
                   value={invitedEmails}
-                  onChange={setInvitedEmails}
+                  onChange={handleEmailsChange}
                   placeholder="Entrez des adresses email"
                   creatable
                   hidePlaceholderWhenSelected
@@ -262,6 +333,114 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
                   className="w-full"
                 />
               </div>
+
+              {/* Callout pour la facturation */}
+              {membersWithRoles.length > 0 && (
+                <Callout type="neutral" noMargin>
+                  <p className="text-xs">
+                    <span className="font-medium">Facturation :</span> L'ajout
+                    d'un membre (admin, membre ou invité) est facturé{" "}
+                    <span className="font-medium">7,49€/mois</span> en plus de
+                    votre abonnement. Un seul{" "}
+                    <span className="font-medium">comptable gratuit</span> par
+                    organisation est autorisé.
+                  </p>
+                </Callout>
+              )}
+
+              {/* Liste des membres ajoutés avec sélection de rôle */}
+              {membersWithRoles.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Membres à inviter ({membersWithRoles.length})
+                  </p>
+                  <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto dark:border-gray-700">
+                    {membersWithRoles.map((member) => (
+                      <div
+                        key={member.email}
+                        className="flex items-center justify-between p-3 hover:bg-muted/50 dark:hover:bg-gray-800/50"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-[#5b4fff]/10 text-[#5b4fff] text-xs">
+                              {member.email[0].toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm dark:text-gray-200">
+                            {member.email}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={member.role}
+                            onValueChange={(newRole) =>
+                              handleRoleChange(member.email, newRole)
+                            }
+                          >
+                            <SelectTrigger className="w-[180px] h-8 text-xs border-none shadow-none hover:bg-muted dark:hover:bg-gray-800">
+                              <SelectValue>
+                                {getRoleLabel(member.role)}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">
+                                <div className="flex flex-col">
+                                  <span className="font-normal text-sm">
+                                    Administrateur
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Gestion complète
+                                  </span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="member">
+                                <div className="flex flex-col">
+                                  <span className="font-normal text-sm">
+                                    Membre
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Accès standard
+                                  </span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="guest">
+                                <div className="flex flex-col">
+                                  <span className="font-normal text-sm">
+                                    Invité
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Accès limité
+                                  </span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="accountant">
+                                <div className="flex flex-col">
+                                  <span className="font-normal text-sm">
+                                    Comptable
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Accès comptabilité
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveMember(member.email)}
+                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-start gap-2 text-xs sm:text-sm text-muted-foreground dark:text-gray-400">
                 <Lightbulb className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-600 dark:text-green-500" />

@@ -16,20 +16,20 @@ import { Callout } from "@/src/components/ui/callout";
 // Fonction de formatage de l'IBAN avec espaces (pour l'affichage)
 const formatIban = (iban) => {
   if (!iban) return "";
-  
+
   // Supprimer tous les espaces existants et convertir en majuscules
-  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
-  
+  const cleanIban = iban.replace(/\s/g, "").toUpperCase();
+
   // Ajouter un espace tous les 4 caractères
-  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+  return cleanIban.replace(/(.{4})/g, "$1 ").trim();
 };
 
 // Fonction pour nettoyer l'IBAN (pour l'enregistrement en BDD)
 const cleanIban = (iban) => {
   if (!iban) return "";
-  
+
   // Supprimer tous les espaces et convertir en majuscules
-  return iban.replace(/\s/g, '').toUpperCase();
+  return iban.replace(/\s/g, "").toUpperCase();
 };
 
 export function CoordonneesBancairesSection({
@@ -83,14 +83,14 @@ export function CoordonneesBancairesSection({
     const sanitized = sanitizeInput(inputValue, "alphanumeric");
     const formattedForDisplay = formatIban(sanitized);
     const cleanedForStorage = cleanIban(sanitized);
-    
+
     // Mettre à jour l'affichage local
     setDisplayIban(formattedForDisplay);
-    
+
     // Enregistrer la version nettoyée dans le formulaire (pour la BDD)
-    setValue("bankDetails.iban", cleanedForStorage, { 
+    setValue("bankDetails.iban", cleanedForStorage, {
       shouldDirty: true,
-      shouldValidate: true 
+      shouldValidate: true,
     });
   };
 
@@ -104,8 +104,9 @@ export function CoordonneesBancairesSection({
           <div className="mt-4">
             <Callout type="warning" noMargin>
               <p>
-                Vous n'avez pas la permission de modifier les paramètres de l'organisation. 
-                Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent effectuer ces modifications.
+                Vous n'avez pas la permission de modifier les paramètres de
+                l'organisation. Seuls les <strong>owners</strong> et{" "}
+                <strong>admins</strong> peuvent effectuer ces modifications.
               </p>
             </Callout>
           </div>
@@ -115,7 +116,9 @@ export function CoordonneesBancairesSection({
         <div className="mb-8 mt-12">
           <Callout type="neutral" noMargin>
             <p>
-              <strong>Coordonnées bancaires optionnelles</strong>
+              <span className="font-medium">
+                Coordonnées bancaires optionnelles
+              </span>
               <br />
               Vous pouvez laisser tous les champs vides. Si vous renseignez une
               information bancaire, les trois champs (IBAN, BIC et nom de
@@ -149,9 +152,9 @@ export function CoordonneesBancairesSection({
               onPaste={(e) => {
                 // Empêcher le comportement par défaut du paste
                 e.preventDefault();
-                
+
                 // Récupérer le texte collé et le traiter
-                const pastedText = e.clipboardData.getData('text');
+                const pastedText = e.clipboardData.getData("text");
                 handleIbanInput(pastedText);
               }}
             />
@@ -277,7 +280,9 @@ export function CoordonneesBancairesSection({
           {/* Information de sécurité */}
           <Callout type="neutral" noMargin>
             <p>
-              <strong>Sécurité des données bancaires</strong>
+              <span className="font-medium">
+                Sécurité des données bancaires
+              </span>
               <br />
               Vos informations bancaires sont chiffrées et stockées de manière
               sécurisée. Elles ne seront utilisées que pour les virements et

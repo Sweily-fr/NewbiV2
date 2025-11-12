@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 import { Switch } from "../../components/ui/switch";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 import { CREATE_COMMUNITY_SUGGESTION } from "../../graphql/mutations/communitySuggestion";
 import {
   GET_COMMUNITY_SUGGESTIONS,

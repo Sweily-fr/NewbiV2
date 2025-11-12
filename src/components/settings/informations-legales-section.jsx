@@ -131,8 +131,9 @@ export function InformationsLegalesSection({
           <div className="mt-4">
             <Callout type="warning" noMargin>
               <p>
-                Vous n'avez pas la permission de modifier les paramètres de l'organisation. 
-                Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent effectuer ces modifications.
+                Vous n'avez pas la permission de modifier les paramètres de
+                l'organisation. Seuls les <strong>owners</strong> et{" "}
+                <strong>admins</strong> peuvent effectuer ces modifications.
               </p>
             </Callout>
           </div>
@@ -374,7 +375,11 @@ export function InformationsLegalesSection({
             >
               Régime fiscal
             </RequiredLabel>
-            <Select value={selectedRegime} onValueChange={handleRegimeChange} disabled={!canManageOrgSettings}>
+            <Select
+              value={selectedRegime}
+              onValueChange={handleRegimeChange}
+              disabled={!canManageOrgSettings}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionnez le régime fiscal" />
               </SelectTrigger>
@@ -437,7 +442,7 @@ export function InformationsLegalesSection({
           <div className="mb-8 mt-2">
             <Callout type="neutral" noMargin>
               <p>
-                <strong>Informations légales</strong>
+                <span className="font-medium">Informations légales</span>
                 <br />
                 Ces informations sont utilisées pour la génération automatique
                 de vos mentions légales et documents officiels. Assurez-vous

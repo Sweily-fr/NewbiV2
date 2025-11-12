@@ -110,23 +110,25 @@ export function GeneraleSection({
 
         {/* Logo de l'entreprise */}
         <div className="mb-8 mt-12">
-          <div className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-[#2c2c2c] rounded-xl">
-            <CompanyLogoUpload
-              currentImageUrl={logoUrl}
-              onImageChange={handleLogoChange}
-              onOrganizationUpdate={handleOrganizationUpdate}
-              showDescription={false}
-            />
-            <div className="flex-1">
-              <Label className="text-sm font-normal text-gray-900 dark:text-gray-100">
-                Logo de l'entreprise
-              </Label>
-              <p className="text-xs w-[80%] text-gray-600 dark:text-gray-400 mt-1">
-                Glissez une image ou cliquez pour uploader le logo de votre
-                entreprise. Formats acceptés : JPG, PNG, GIF (max 5MB)
-              </p>
+          <Callout type="neutral" noMargin noIcon>
+            <div className="flex items-start gap-4">
+              <CompanyLogoUpload
+                currentImageUrl={logoUrl}
+                onImageChange={handleLogoChange}
+                onOrganizationUpdate={handleOrganizationUpdate}
+                showDescription={false}
+              />
+              <div className="flex-1">
+                <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Logo de l'entreprise
+                </Label>
+                <p className="text-xs w-[80%] text-gray-600 dark:text-gray-400 mt-1">
+                  Glissez une image ou cliquez pour uploader le logo de votre
+                  entreprise. Formats acceptés : JPG, PNG, GIF (max 5MB)
+                </p>
+              </div>
             </div>
-          </div>
+          </Callout>
         </div>
 
         <Separator />
