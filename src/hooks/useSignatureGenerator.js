@@ -53,21 +53,21 @@ export function useSignatureGenerator() {
               </tr>
               ${personalInfo.position ? `
                 <tr>
-                  <td style="padding-bottom: 4px; color: ${appearance.secondaryColor};">
+                  <td style="padding-bottom: 8px; color: ${appearance.secondaryColor};">
                     ${personalInfo.position}
                   </td>
                 </tr>
               ` : ''}
               ${personalInfo.phone ? `
                 <tr>
-                  <td style="padding-bottom: 2px;">
+                  <td style="padding-bottom: 8px;">
                     📞 <a href="tel:${personalInfo.phone}" style="color: #333; text-decoration: none;">${personalInfo.phone}</a>
                   </td>
                 </tr>
               ` : ''}
               ${personalInfo.email ? `
                 <tr>
-                  <td style="padding-bottom: 2px;">
+                  <td style="padding-bottom: 8px;">
                     ✉️ <a href="mailto:${personalInfo.email}" style="color: ${appearance.primaryColor}; text-decoration: none;">${personalInfo.email}</a>
                   </td>
                 </tr>

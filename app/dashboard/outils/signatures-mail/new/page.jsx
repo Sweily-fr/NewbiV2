@@ -19,12 +19,7 @@ import { useImageUpload } from "../hooks/useImageUpload";
 import "@/src/styles/signature-text-selection.css";
 import HorizontalSignature from "../components/HorizontalSignature";
 import VerticalSignature from "../components/VerticalSignature";
-import TemplateObama from "../components/templates/TemplateObama";
-import TemplateRangan from "../components/templates/TemplateRangan";
-import TemplateShah from "../components/templates/TemplateShah";
-import TemplateCustom from "../components/templates/TemplateCustom";
-import TemplateSelector from "../components/TemplateSelector";
-// CustomSignatureBuilder supprimé - édition maintenant dans le panneau de droite
+import { generateSignatureHTML } from "../utils/standalone-signature-generator";
 
 // Aperçu de l'email avec édition inline
 const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
@@ -246,7 +241,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   ) => {
     // Ensure facebookImageUrl is properly handled
     const facebookImgUrl = facebookImageUrl || "";
-    const imageSize = signatureData.imageSize || 80;
+    const imageSize = signatureData.imageSize || 70;
     const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
     const separatorVerticalWidth =
       signatureData.separators?.vertical?.width ||
@@ -502,7 +497,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   ) => {
     // Ensure facebookImageUrl is properly handled
     const facebookImgUrl = facebookImageUrl || "";
-    const imageSize = signatureData.imageSize || 80;
+    const imageSize = signatureData.imageSize || 70;
     const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
     const separatorHorizontalWidth =
       signatureData.separators?.horizontal?.width || 1;
@@ -1188,9 +1183,8 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
     setIsCopying(true);
 
     try {
-      // Générer le HTML directement avec les données actuelles
+      // Générer le HTML optimisé pour Gmail (même générateur que la preview)
       const html = generateSignatureHTMLFromHook();
-      console.log("📋 HTML généré pour copie:", html.substring(0, 200));
       
       // Copier dans le presse-papiers
       await navigator.clipboard.write([
@@ -1209,7 +1203,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
       console.error("❌ Erreur copie signature:", error);
       // Fallback pour les navigateurs qui ne supportent pas ClipboardItem
       try {
-        const html = generateHTML();
+        const html = generateSignatureHTML(signatureData);
         await navigator.clipboard.writeText(html);
         toast.success("Signature copiée (texte brut)");
         setIsCopied(true);

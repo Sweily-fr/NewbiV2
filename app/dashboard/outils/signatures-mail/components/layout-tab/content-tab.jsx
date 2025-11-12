@@ -877,14 +877,3 @@ export default function ContentTab() {
 //         </div>
 //       </div>
 
-//       {/* Bouton de sauvegarde */}
-//       <Separator />
-//       <div className="flex flex-col gap-3">
-//         <h2 className="text-sm font-medium">Sauvegarde</h2>
-//         <div className="flex justify-center">
-//           <SignatureSave />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }

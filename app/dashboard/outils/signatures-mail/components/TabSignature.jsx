@@ -1,11 +1,8 @@
 import {
-  ScanEye,
   LayoutDashboard,
   Palette,
-  Columns3Cog,
   Save,
   LoaderCircleIcon,
-  Check,
   AlertCircle,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
@@ -31,9 +28,7 @@ import { useQuery } from "@apollo/client";
 // Import du composant LayoutTab pour l'onglet 1
 import LayoutTab from "./layout-tab/layout-tab";
 import LayoutTabTypography from "./tab-typography/layout-tab";
-import LayoutTabImg from "./layout-img/layout-tab";
-import SignatureManager from "./SignatureManager";
-import CancelConfirmationModal from "./CancelConfirmationModal";
+import CancelConfirmationModal from "./modals/CancelConfirmationModal";
 // Mutation GraphQL pour créer une signature
 const CREATE_EMAIL_SIGNATURE = gql`
   mutation CreateEmailSignature($input: EmailSignatureInput!) {
@@ -349,7 +344,7 @@ export function TabSignature({ existingSignatureId = null }) {
       photoKey: signatureData.photoKey || null,
       logo: signatureData.logo || null,
       logoKey: signatureData.logoKey || null,
-      imageSize: signatureData.imageSize || 80,
+      imageSize: signatureData.imageSize || 70,
       imageShape: signatureData.imageShape || "round",
       logoSize: signatureData.logoSize || 60,
       // Séparateurs
@@ -363,11 +358,11 @@ export function TabSignature({ existingSignatureId = null }) {
         nameBottom: signatureData.spacings?.nameBottom || 8,
         positionBottom: signatureData.spacings?.positionBottom || 8,
         companyBottom: signatureData.spacings?.companyBottom || 12,
-        contactBottom: signatureData.spacings?.contactBottom || 6,
-        phoneToMobile: signatureData.spacings?.phoneToMobile || 4,
-        mobileToEmail: signatureData.spacings?.mobileToEmail || 4,
-        emailToWebsite: signatureData.spacings?.emailToWebsite || 4,
-        websiteToAddress: signatureData.spacings?.websiteToAddress || 4,
+        contactBottom: signatureData.spacings?.contactBottom || 12,
+        phoneToMobile: signatureData.spacings?.phoneToMobile || 8,
+        mobileToEmail: signatureData.spacings?.mobileToEmail || 8,
+        emailToWebsite: signatureData.spacings?.emailToWebsite || 8,
+        websiteToAddress: signatureData.spacings?.websiteToAddress || 8,
         separatorTop: signatureData.spacings?.separatorTop || 12,
         separatorBottom: signatureData.spacings?.separatorBottom || 12,
       },
@@ -576,12 +571,6 @@ export function TabSignature({ existingSignatureId = null }) {
               <TabsTrigger value="tab-2" className="group flex-1">
                 <Palette size={16} aria-hidden="true" />
               </TabsTrigger>
-              {/* <TabsTrigger value="tab-3" className="group flex-1">
-                <ScanEye size={16} aria-hidden="true" />
-              </TabsTrigger> */}
-              {/* <TabsTrigger value="tab-4" className="group">
-                <Columns3Cog size={16} aria-hidden="true" />
-              </TabsTrigger> */}
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -594,12 +583,6 @@ export function TabSignature({ existingSignatureId = null }) {
           </TabsContent>
           <TabsContent value="tab-2" className="w-full mt-0">
             <LayoutTabTypography />
-          </TabsContent>
-          <TabsContent value="tab-3" className="w-full mt-0">
-            <LayoutTabImg />
-          </TabsContent>
-          <TabsContent value="tab-4" className="w-full mt-0">
-            <SignatureManager />
           </TabsContent>
         </div>
       </Tabs>

@@ -312,47 +312,27 @@ export default function SignaturePreviewModal({
   // Fonction de copie indépendante pour le modal
   const copySignatureToClipboard = async (data) => {
     try {
-      // Copier le HTML directement depuis le DOM rendu (plus précis que la génération)
-      if (previewRef.current) {
-        let signatureHTML = previewRef.current.innerHTML;
-        console.log("📋 HTML copié depuis le DOM:", signatureHTML.substring(0, 200));
-        
-        // Convertir les divs avec background-image en img pour Gmail
-        // Regex pour trouver les divs avec background-image: url(...)
-        signatureHTML = signatureHTML.replace(
-          /<div[^>]*style="[^"]*background-image:\s*url\(&quot;([^&]*?)&quot;\)[^"]*"[^>]*><\/div>/g,
-          (match, imageUrl) => {
-            // Décoder les entités HTML
-            const decodedUrl = imageUrl.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
-            return `<img src="${decodedUrl}" alt="Photo" style="width: 110px; height: 110px; border-radius: 50%; display: block;" />`;
-          }
-        );
-        
-        // Aussi gérer le cas avec les guillemets simples
-        signatureHTML = signatureHTML.replace(
-          /background-image:\s*url\('([^']*)'\)/g,
-          (match, imageUrl) => {
-            return `background-image: url('${imageUrl}')`;
-          }
-        );
-        
-        // Copier dans le presse-papiers
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            "text/html": new Blob([signatureHTML], { type: "text/html" }),
-            "text/plain": new Blob([signatureHTML.replace(/<[^>]*>/g, "")], {
-              type: "text/plain",
-            }),
+      console.log("📋 Orientation lors de la copie:", data.orientation);
+      console.log("📋 SignatureData complet:", data);
+      
+      // Générer le HTML pur optimisé pour Gmail (pas de code React)
+      const signatureHTML = generateSignatureHTML(data);
+      console.log("📋 HTML généré pour Gmail:", signatureHTML.substring(0, 200));
+      
+      // Copier dans le presse-papiers avec formatage HTML
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([signatureHTML], { type: "text/html" }),
+          "text/plain": new Blob([signatureHTML.replace(/<[^>]*>/g, "")], {
+            type: "text/plain",
           }),
-        ]);
+        }),
+      ]);
 
-        toast.success("Signature copiée avec succès !");
-      } else {
-        throw new Error("Impossible de copier la signature");
-      }
+      toast.success("Signature copiée avec succès !");
     } catch (error) {
       console.error("❌ Erreur copie signature:", error);
-      // Fallback : générer le HTML
+      // Fallback : copier en texte brut
       try {
         const signatureHTML = generateSignatureHTML(data);
         await navigator.clipboard.writeText(signatureHTML);
@@ -461,34 +441,13 @@ export default function SignaturePreviewModal({
                   </div>
 
                   <div className="border-t pt-4 mt-4">
-                    {/* Rendu de la signature avec les composants complets */}
+                    {/* Rendu du HTML brut pour un aperçu réaliste comme Gmail */}
                     <div 
                       ref={previewRef}
-                      className="flex justify-start"
+                      className="flex justify-start bg-white p-4 rounded border"
                       style={{ pointerEvents: 'none', userSelect: 'none' }}
-                    >
-                      {signatureData.orientation === "horizontal" ? (
-                        <HorizontalSignature
-                          signatureData={signatureData}
-                          handleFieldChange={() => {}}
-                          handleImageChange={() => {}}
-                          validatePhone={() => true}
-                          validateEmail={() => true}
-                          validateUrl={() => true}
-                          logoSrc={signatureData.logo}
-                        />
-                      ) : (
-                        <VerticalSignature
-                          signatureData={signatureData}
-                          handleFieldChange={() => {}}
-                          handleImageChange={() => {}}
-                          validatePhone={() => true}
-                          validateEmail={() => true}
-                          validateUrl={() => true}
-                          logoSrc={signatureData.logo}
-                        />
-                      )}
-                    </div>
+                      dangerouslySetInnerHTML={{ __html: generateSignatureHTML(signatureData) }}
+                    />
                   </div>
                 </div>
               </div>

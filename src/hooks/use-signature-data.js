@@ -256,7 +256,7 @@ function SignatureProviderContent({ children }) {
       logo: null, // URL du logo d'entreprise
       logoKey: null, // Clé Cloudflare du logo d'entreprise
       // Taille de l'image de profil (en pixels)
-      imageSize: 80, // Taille par défaut de l'image de profil
+      imageSize: 70, // Taille par défaut de l'image de profil
       // Forme de l'image de profil (round ou square)
       imageShape: "round", // Forme par défaut : ronde
       // Configuration des séparateurs

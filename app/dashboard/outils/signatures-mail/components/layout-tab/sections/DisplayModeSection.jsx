@@ -26,7 +26,10 @@ export default function DisplayModeSection({
     [updateSignatureData]
   );
 
-  return (
+  // Section désactivée - Une seule orientation disponible
+  return null;
+  
+  /* return (
     <div className="flex flex-col gap-3">
       <h2 className="text-sm font-medium">Mode d'affichage</h2>
       <div className="space-y-2 ml-4">
@@ -44,7 +47,7 @@ export default function DisplayModeSection({
           />
         </div>
 
-        {/* <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Alignement nom</Label>
           <AlignmentSelector
             items={[
@@ -57,8 +60,8 @@ export default function DisplayModeSection({
             value={signatureData.nameAlignment}
             onValueChange={(value) => updateSignatureData('nameAlignment', value)}
           />
-        </div> */}
+        </div>
       </div>
     </div>
-  );
+  ); */
 }

@@ -115,7 +115,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 style={{ width: `${Math.max(48, (signatureData.spacings?.global?.toString().length || 2) * 8 + 16)}px` }}
                 type="text"
                 inputMode="decimal"
-                value={signatureData.spacings?.global ?? 12}
+                value={signatureData.spacings?.global ?? 8}
                 onChange={(e) => handleGlobalSpacingChange(e.target.value)}
                 onBlur={(e) => handleGlobalSpacingChange(e.target.value)}
                 onKeyDown={(e) => {
@@ -124,11 +124,11 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   }
                 }}
                 aria-label="Espacement global"
-                placeholder="12"
+                placeholder="8"
               />
               <Slider
                 className="grow h-4"
-                value={[signatureData.spacings?.global || 12]}
+                value={[signatureData.spacings?.global || 8]}
                 onValueChange={(value) => handleGlobalSpacingChange(value[0])}
                 min={0}
                 max={30}

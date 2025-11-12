@@ -27,7 +27,9 @@ const SVG_TEMPLATES = {
  * Génère une clé unique pour le cache basée sur le logo et la couleur
  */
 const generateCacheKey = (logoType, color, size) => {
-  return `${logoType}-${color.replace("#", "")}-${size}`;
+  // Si color est null (URL personnalisée), utiliser "custom" comme clé
+  const colorKey = color ? color.replace("#", "") : "custom";
+  return `${logoType}-${colorKey}-${size}`;
 };
 
 /**
