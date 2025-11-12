@@ -79,22 +79,70 @@ export function useSignatureGenerator() {
       ? `<img src="${signatureData.logo}" alt="Logo entreprise" style="max-width: ${signatureData.logoSize || 60}px; height: auto; display: block; margin: 0;" />`
       : "";
 
-    // Générer les icônes sociales avec la couleur globale
-    const generateSocialIconsHTML = () => {
-      // URLs des icônes par défaut depuis Cloudflare (avec couleurs de fond)
-      const defaultIconUrls = {
-        linkedin: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/linkedin/linkedin.png",
-        facebook: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/facebook/facebook.png",
-        instagram: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram.png",
-        x: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/twitter/twitter.png",
-        youtube: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/youtube/youtube.png",
-        github: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/github/github.png",
+    // Fonction pour convertir une couleur hex ou nom en nom Cloudflare
+    const getColorName = (colorInput) => {
+      if (!colorInput) return null;
+      
+      const color = colorInput.toLowerCase().trim();
+      
+      // Si c'est déjà un nom de couleur, le retourner directement
+      const validColorNames = ["blue", "pink", "purple", "black", "red", "green", "yellow", "orange"];
+      if (validColorNames.includes(color)) {
+        return color;
+      }
+      
+      // Sinon, convertir le hex en nom
+      const hexColor = color.replace("#", "");
+      
+      const colorMap = {
+        "0077b5": "blue",
+        "1877f2": "blue",
+        "e4405f": "pink",
+        "833ab4": "purple",
+        "000000": "black",
+        "1da1f2": "blue",
+        "ff0000": "red",
+        "333333": "black",
+        "00ff00": "green",
+        "ff00ff": "purple",
+        "ffff00": "yellow",
+        "ff6600": "orange",
       };
+      
+      return colorMap[hexColor] || null;
+    };
 
-      // Fonction pour obtenir l'URL de l'icône
+    // Générer les icônes sociales depuis Cloudflare
+    const generateSocialIconsHTML = () => {
+      // Fonction pour obtenir l'URL de l'icône depuis Cloudflare
       const getSocialIconUrl = (platform) => {
-        // Utiliser l'URL par défaut depuis Cloudflare (qui a les couleurs de fond)
-        return defaultIconUrls[platform] || null;
+        // Utiliser l'icône personnalisée si disponible
+        if (signatureData.customSocialIcons?.[platform]) {
+          return signatureData.customSocialIcons[platform];
+        }
+
+        // Récupérer la couleur pour ce réseau (priorité: couleur spécifique > couleur globale)
+        const color = signatureData.socialColors?.[platform] || signatureData.socialGlobalColor;
+        
+        // Construire l'URL Cloudflare avec la couleur si disponible
+        if (color) {
+          const colorName = getColorName(color);
+          if (colorName) {
+            // Utiliser le même nom de couleur pour tous les réseaux
+            return `https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/${platform}/${platform}-${colorName}.png`;
+          }
+        }
+
+        // Fallback vers l'icône par défaut
+        const defaultIconUrls = {
+          linkedin: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/linkedin/linkedin.png",
+          facebook: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/facebook/facebook.png",
+          instagram: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram.png",
+          x: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/twitter/twitter.png",
+          youtube: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/youtube/youtube.png",
+          github: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/github/github.png",
+        };
+        return defaultIconUrls[platform];
       };
 
       // Réseaux sociaux disponibles
