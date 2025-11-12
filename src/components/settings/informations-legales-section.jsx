@@ -82,23 +82,23 @@ export function InformationsLegalesSection({
   const selectedCategory = watchedValues.legal?.category || "";
 
   const handleVatSubjectChange = (checked) => {
-    setValue("legal.isVatSubject", checked, { shouldDirty: false });
+    setValue("legal.isVatSubject", checked, { shouldDirty: true });
   };
 
   const handleCommercialActivityChange = (checked) => {
-    setValue("legal.hasCommercialActivity", checked, { shouldDirty: false });
+    setValue("legal.hasCommercialActivity", checked, { shouldDirty: true });
   };
 
   const handleLegalFormChange = (value) => {
-    setValue("legal.legalForm", value, { shouldDirty: false });
+    setValue("legal.legalForm", value, { shouldDirty: true });
   };
 
   const handleRegimeChange = (value) => {
-    setValue("legal.regime", value, { shouldDirty: false });
+    setValue("legal.regime", value, { shouldDirty: true });
   };
 
   const handleCategoryChange = (value) => {
-    setValue("legal.category", value, { shouldDirty: false });
+    setValue("legal.category", value, { shouldDirty: true });
   };
 
   // Calculer les champs requis et visibles en fonction de la forme juridique
