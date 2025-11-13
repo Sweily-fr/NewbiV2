@@ -102,9 +102,9 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
             </Label>
             <div className="flex items-center gap-2 w-48">
               <button
-                onClick={() => handleGlobalSpacingChange(12)}
+                onClick={() => handleGlobalSpacingChange(8)}
                 className="h-8 w-8 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md flex-shrink-0"
-                title="Réinitialiser à 12"
+                title="Réinitialiser à 8"
               >
                 <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

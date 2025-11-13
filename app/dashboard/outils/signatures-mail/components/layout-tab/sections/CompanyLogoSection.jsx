@@ -95,9 +95,9 @@ export default function CompanyLogoSection({
           <Label className="text-xs text-muted-foreground">Taille</Label>
           <div className="flex items-center gap-2 w-48">
             <button
-              onClick={() => handleLogoSizeChange(80)}
+              onClick={() => handleLogoSizeChange(60)}
               className="h-8 w-8 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md flex-shrink-0"
-              title="Réinitialiser à 80"
+              title="Réinitialiser à 60"
             >
               <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -108,7 +108,7 @@ export default function CompanyLogoSection({
               style={{ width: `${Math.max(48, (signatureData.logoSize?.toString().length || 2) * 8 + 16)}px` }}
               type="text"
               inputMode="decimal"
-              value={signatureData.logoSize ?? 80}
+              value={signatureData.logoSize ?? 60}
               onChange={(e) => {
                 if (e.target.value === "") {
                   handleLogoSizeChange("");
@@ -142,11 +142,11 @@ export default function CompanyLogoSection({
                 }
               }}
               aria-label="Taille du logo entreprise"
-              placeholder="80"
+              placeholder="60"
             />
             <Slider
               className="grow"
-              value={[signatureData.logoSize || 80]}
+              value={[signatureData.logoSize || 60]}
               onValueChange={(value) => handleLogoSizeChange(value[0])}
               min={1}
               max={120}
