@@ -85,9 +85,12 @@ export function Setup2FAModal({ isOpen, onClose }) {
         toast.success("Code de vérification envoyé par SMS");
       } else if (selectedMethod.id === "email") {
         // Activer la 2FA par email avec mot de passe requis
+        // ✅ Spécifier explicitement qu'on veut OTP par email
         const { data, error } = await authClient.twoFactor.enable({
           password: password,
           issuer: "Newbi",
+          // Forcer l'envoi d'OTP par email (pas TOTP)
+          type: "otp",
         });
 
         if (error) {
@@ -101,9 +104,12 @@ export function Setup2FAModal({ isOpen, onClose }) {
       } else {
         // Pour l'authenticator TOTP
         console.log("🔐 [2FA] Activation TOTP...");
+        // ✅ Spécifier explicitement qu'on veut TOTP (QR code)
         const { data, error } = await authClient.twoFactor.enable({
           password: password,
           issuer: "Newbi",
+          // Forcer TOTP (pas d'envoi d'email)
+          type: "totp",
         });
 
         console.log("🔐 [2FA] Réponse:", { data, error });

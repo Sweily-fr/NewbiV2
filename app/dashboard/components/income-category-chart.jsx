@@ -1,13 +1,15 @@
 "use client";
 
 import { TrendingUp, ChevronRight, CalendarIcon } from "lucide-react";
-import { Label, Pie, PieChart } from "recharts";
+import { Label, Pie, PieChart, Sector } from "recharts";
 import { useMemo, useState } from "react";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
@@ -39,38 +41,90 @@ import {
 import { Calendar } from "@/src/components/ui/calendar-rac";
 import { DateInput } from "@/src/components/ui/datefield-rac";
 
-// Configuration des couleurs pour les catégories de revenus
+// Mapping des catégories de factures avec leurs labels et couleurs
+const categoryLabels = {
+  SERVICES: "Services",
+  PRODUCTS: "Produits",
+  CONSULTING: "Conseil",
+  DEVELOPMENT: "Développement",
+  DESIGN: "Design",
+  MARKETING: "Marketing",
+  TRAINING: "Formation",
+  MAINTENANCE: "Maintenance",
+  SUBSCRIPTION: "Abonnement",
+  LICENSE: "Licence",
+  OTHER: "Autre",
+};
+
 const chartConfig = {
   amount: {
     label: "Montant",
   },
-  INVOICE: {
-    label: "Factures",
-    color: "#10b981",
+  SERVICES: {
+    label: "Services",
+    color: "#5A50FF", // Emerald-500
   },
-  BANK_TRANSFER: {
-    label: "Virements",
-    color: "#3b82f6",
+  PRODUCTS: {
+    label: "Produits",
+    color: "#3b82f6", // Blue-500
+  },
+  CONSULTING: {
+    label: "Conseil",
+    color: "#10b981", // Violet-500
+  },
+  DEVELOPMENT: {
+    label: "Développement",
+    color: "#06b6d4", // Cyan-500
+  },
+  DESIGN: {
+    label: "Design",
+    color: "#ec4899", // Pink-500
+  },
+  MARKETING: {
+    label: "Marketing",
+    color: "#f59e0b", // Amber-500
+  },
+  TRAINING: {
+    label: "Formation",
+    color: "#14b8a6", // Teal-500
+  },
+  MAINTENANCE: {
+    label: "Maintenance",
+    color: "#84cc16", // Lime-500
+  },
+  SUBSCRIPTION: {
+    label: "Abonnement",
+    color: "#0ea5e9", // Sky-500
+  },
+  LICENSE: {
+    label: "Licence",
+    color: "#6366f1", // Indigo-500
   },
   OTHER: {
-    label: "Autres",
-    color: "#8b5cf6",
+    label: "Autre",
+    color: "#9ca3af", // Gray-400
   },
 };
 
 export function IncomeCategoryChart({ invoices = [], className }) {
-  const [timeRange, setTimeRange] = useState("30d");
+  const isMobile = useIsMobile();
+  const [timeRange, setTimeRange] = useState("90d"); // 30d, 90d, 365d, custom
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
 
   // Obtenir le label de la période sélectionnée
   const getTimeRangeLabel = () => {
     switch (timeRange) {
-      case "30d": return "Dernier mois";
-      case "90d": return "Derniers 3 mois";
-      case "365d": return "Dernière année";
-      case "custom": return "Période personnalisée";
-      default: return "Dernier mois";
+      case "30d":
+        return "Dernier mois";
+      case "90d":
+        return "Derniers 3 mois";
+      case "365d":
+        return "Dernière année";
+      case "custom":
+        return "Période personnalisée";
+      default:
+        return "Derniers 3 mois";
     }
   };
 
@@ -152,17 +206,111 @@ export function IncomeCategoryChart({ invoices = [], className }) {
     });
   }, [invoices, timeRange, customStartDate, customEndDate]);
 
-  // Calculer les données du graphique
+  // Calculer les données du graphique par catégorie
   const chartData = useMemo(() => {
-    // Pour l'instant, retourner un tableau vide car pas de données
-    // Plus tard, on pourra ajouter les factures et virements bancaires
-    return [];
-  }, [filteredInvoices]);
+    console.log("📊 [IncomeCategoryChart] Calcul des données");
+    console.log(
+      "📊 [IncomeCategoryChart] Nombre de factures reçues:",
+      invoices?.length || 0
+    );
+    console.log("📊 [IncomeCategoryChart] Factures:", invoices);
 
-  // Calculer le total
+    // Déterminer la période
+    const now = new Date();
+    let startDate, endDate;
+
+    if (timeRange === "custom") {
+      startDate = customStartDate
+        ? new Date(customStartDate)
+        : new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      endDate = customEndDate ? new Date(customEndDate) : now;
+    } else {
+      const daysMap = {
+        "30d": 30,
+        "90d": 90,
+        "365d": 365,
+      };
+      const days = daysMap[timeRange] || 90;
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - days);
+      endDate = now;
+    }
+
+    // Filtrer les factures payées (COMPLETED) et dans la période sélectionnée
+    const paidInvoices = invoices.filter((invoice) => {
+      if (invoice.status !== "COMPLETED") return false;
+
+      // Vérifier la date
+      const invoiceDate = invoice.issueDate || invoice.createdAt;
+      if (!invoiceDate) return false;
+
+      let parsedDate;
+      if (typeof invoiceDate === "string") {
+        const timestamp = parseInt(invoiceDate);
+        if (!isNaN(timestamp) && timestamp > 1000000000000) {
+          parsedDate = new Date(timestamp);
+        } else {
+          parsedDate = new Date(invoiceDate);
+        }
+      } else if (typeof invoiceDate === "number") {
+        parsedDate = new Date(invoiceDate);
+      } else {
+        parsedDate = new Date(invoiceDate);
+      }
+
+      if (isNaN(parsedDate.getTime())) return false;
+
+      return parsedDate >= startDate && parsedDate <= endDate;
+    });
+
+    console.log(
+      "📊 [IncomeCategoryChart] Factures COMPLETED filtrées:",
+      paidInvoices.length
+    );
+    console.log("📊 [IncomeCategoryChart] Période:", { startDate, endDate });
+    console.log("📊 [IncomeCategoryChart] Factures filtrées:", paidInvoices);
+
+    // Grouper par catégorie
+    // ⚠️ IMPORTANT : Les factures n'ont pas de champ "category" dans le schéma
+    // Pour l'instant, on groupe toutes les factures dans "SERVICES"
+    // TODO: Ajouter un champ "category" au modèle Invoice
+    const categoryTotals = paidInvoices.reduce((acc, invoice) => {
+      const category = invoice.category || "SERVICES"; // Par défaut SERVICES
+      if (!acc[category]) {
+        acc[category] = 0;
+      }
+      // Utiliser finalTotalTTC au lieu de totalAmount
+      acc[category] += invoice.finalTotalTTC || invoice.totalTTC || 0;
+      return acc;
+    }, {});
+
+    // Convertir en format pour le graphique
+    const result = Object.entries(categoryTotals)
+      .map(([category, amount]) => ({
+        category,
+        amount: Math.round(amount * 100) / 100, // Arrondir à 2 décimales
+        label: categoryLabels[category] || category,
+        fill: chartConfig[category]?.color || "hsl(var(--chart-1))",
+      }))
+      .sort((a, b) => b.amount - a.amount); // Trier par montant décroissant
+
+    console.log("📊 [IncomeCategoryChart] Données du graphique:", result);
+    return result;
+  }, [invoices, timeRange, customStartDate, customEndDate]);
+
+  // Calculer le total et la catégorie principale
   const totalAmount = useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.amount, 0);
+    return chartData.reduce((sum, item) => sum + item.amount, 0);
   }, [chartData]);
+
+  const topCategory = useMemo(() => {
+    return chartData.length > 0 ? chartData[0] : null;
+  }, [chartData]);
+
+  const topCategoryPercentage = useMemo(() => {
+    if (!topCategory || totalAmount === 0) return 0;
+    return ((topCategory.amount / totalAmount) * 100).toFixed(1);
+  }, [topCategory, totalAmount]);
 
   // Formater le montant en euros
   const formatCurrency = (amount) => {
@@ -172,131 +320,267 @@ export function IncomeCategoryChart({ invoices = [], className }) {
     }).format(amount);
   };
 
-  // Afficher un message si pas de données
+  // Composant DropdownMenu réutilisable
+  const TimeRangeSelect = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 text-xs border-none shadow-none">
+          {getTimeRangeLabel()}
+          <ChevronRight className="-me-1 opacity-60 rotate-90" size={14} aria-hidden="true" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="rounded-xl">
+        <DropdownMenuItem 
+          className="rounded-lg text-xs"
+          onClick={() => setTimeRange("30d")}
+        >
+          Dernier mois
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          className="rounded-lg text-xs"
+          onClick={() => setTimeRange("90d")}
+        >
+          Derniers 3 mois
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          className="rounded-lg text-xs"
+          onClick={() => setTimeRange("365d")}
+        >
+          Dernière année
+        </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="rounded-lg text-xs">
+            Période personnalisée
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent className="w-64 p-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <FormLabel className="text-xs font-medium">
+                    Date de début
+                  </FormLabel>
+                  <DatePicker
+                    value={customStartDate ? parseDate(customStartDate) : null}
+                    onChange={(date) => {
+                      if (date) {
+                        setCustomStartDate(date.toString());
+                        setTimeRange("custom");
+                      }
+                    }}
+                  >
+                    <div className="flex">
+                      <Group className="w-full">
+                        <DateInput className="pe-9" />
+                      </Group>
+                      <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                        <CalendarIcon size={16} />
+                      </RACButton>
+                    </div>
+                    <RACPopover
+                      className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
+                      offset={4}
+                    >
+                      <Dialog className="max-h-[inherit] overflow-auto p-2">
+                        <Calendar />
+                      </Dialog>
+                    </RACPopover>
+                  </DatePicker>
+                </div>
+                <div className="space-y-2">
+                  <FormLabel className="text-xs font-medium">
+                    Date de fin
+                  </FormLabel>
+                  <DatePicker
+                    value={customEndDate ? parseDate(customEndDate) : null}
+                    onChange={(date) => {
+                      if (date) {
+                        setCustomEndDate(date.toString());
+                        setTimeRange("custom");
+                      }
+                    }}
+                  >
+                    <div className="flex">
+                      <Group className="w-full">
+                        <DateInput className="pe-9" />
+                      </Group>
+                      <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                        <CalendarIcon size={16} />
+                      </RACButton>
+                    </div>
+                    <RACPopover
+                      className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
+                      offset={4}
+                    >
+                      <Dialog className="max-h-[inherit] overflow-auto p-2">
+                        <Calendar />
+                      </Dialog>
+                    </RACPopover>
+                  </DatePicker>
+                </div>
+              </div>
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  // Si pas de données, afficher un message avec le filtre
+  if (chartData.length === 0) {
+    return (
+      <Card className={`@container/card flex flex-col ${className || ''}`}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="font-normal text-base">
+              Entrées par catégorie
+            </CardTitle>
+            <CardDescription className="font-normal text-sm">
+              Aucune facture à afficher
+            </CardDescription>
+          </div>
+          <TimeRangeSelect />
+        </CardHeader>
+        <CardContent className="flex-1 pb-0 flex items-center justify-center min-h-[250px]">
+          <p className="text-sm text-muted-foreground">
+            Aucune facture payée pour cette période
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className={`@container/card flex flex-col ${className}`}>
+    <Card className={`@container/card flex flex-col ${className || ''}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <div className="flex flex-col gap-1">
           <CardTitle className="font-normal text-base">
             Entrées par catégorie
           </CardTitle>
-          <CardDescription className="text-xs">
-            {dateRange.start} - {dateRange.end}
+          <CardDescription className="font-normal text-sm">
+            Total : {formatCurrency(totalAmount)}
           </CardDescription>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 text-xs border-none shadow-none">
-              {getTimeRangeLabel()}
-              <ChevronRight className="-me-1 opacity-60 rotate-90" size={14} aria-hidden="true" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="rounded-xl">
-            <DropdownMenuItem 
-              className="rounded-lg text-xs"
-              onClick={() => setTimeRange("30d")}
+        <TimeRangeSelect />
+      </CardHeader>
+      <CardContent className="flex-1 pb-2 sm:pb-4">
+        <div className="flex items-center gap-8">
+          {/* Graphique à gauche */}
+          <div className="flex-shrink-0">
+            <ChartContainer
+              config={chartConfig}
+              className="aspect-square h-[240px] w-[240px]"
             >
-              Dernier mois
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="rounded-lg text-xs"
-              onClick={() => setTimeRange("90d")}
-            >
-              Derniers 3 mois
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="rounded-lg text-xs"
-              onClick={() => setTimeRange("365d")}
-            >
-              Dernière année
-            </DropdownMenuItem>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="rounded-lg text-xs">
-                Période personnalisée
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent className="w-64 p-4">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <FormLabel className="text-xs font-medium">
-                        Date de début
-                      </FormLabel>
-                      <DatePicker
-                        value={customStartDate ? parseDate(customStartDate) : null}
-                        onChange={(date) => {
-                          if (date) {
-                            setCustomStartDate(date.toString());
-                            setTimeRange("custom");
-                          }
-                        }}
-                      >
-                        <div className="flex">
-                          <Group className="w-full">
-                            <DateInput className="pe-9" />
-                          </Group>
-                          <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
-                            <CalendarIcon size={16} />
-                          </RACButton>
+              <PieChart>
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      hideLabel
+                      formatter={(value, name, item) => (
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                            style={{
+                              backgroundColor: item.payload.fill,
+                            }}
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-normal">
+                              {item.payload.label}
+                            </span>
+                            <span className="text-muted-foreground font-normal">
+                              {formatCurrency(value)}
+                            </span>
+                          </div>
                         </div>
-                        <RACPopover
-                          className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
-                          offset={4}
-                        >
-                          <Dialog className="max-h-[inherit] overflow-auto p-2">
-                            <Calendar />
-                          </Dialog>
-                        </RACPopover>
-                      </DatePicker>
-                    </div>
-                    <div className="space-y-2">
-                      <FormLabel className="text-xs font-medium">
-                        Date de fin
-                      </FormLabel>
-                      <DatePicker
-                        value={customEndDate ? parseDate(customEndDate) : null}
-                        onChange={(date) => {
-                          if (date) {
-                            setCustomEndDate(date.toString());
-                            setTimeRange("custom");
-                          }
-                        }}
-                      >
-                        <div className="flex">
-                          <Group className="w-full">
-                            <DateInput className="pe-9" />
-                          </Group>
-                          <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
-                            <CalendarIcon size={16} />
-                          </RACButton>
-                        </div>
-                        <RACPopover
-                          className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
-                          offset={4}
-                        >
-                          <Dialog className="max-h-[inherit] overflow-auto p-2">
-                            <Calendar />
-                          </Dialog>
-                        </RACPopover>
-                      </DatePicker>
+                      )}
+                    />
+                  }
+                />
+                <Pie
+                  data={chartData}
+                  dataKey="amount"
+                  nameKey="label"
+                  innerRadius={80}
+                  outerRadius={110}
+                  strokeWidth={0}
+                  activeIndex={0}
+                  activeShape={({ outerRadius = 0, ...props }) => (
+                    <Sector {...props} outerRadius={outerRadius + 8} />
+                  )}
+                >
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) - 10}
+                              className="fill-foreground text-2xl font-normal"
+                            >
+                              {formatCurrency(totalAmount).replace(/\s/g, " ")}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 20}
+                              className="fill-muted-foreground text-xs font-normal"
+                            >
+                              Du {dateRange.start}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 38}
+                              className="fill-muted-foreground text-xs font-normal"
+                            >
+                              au {dateRange.end}
+                            </tspan>
+                          </text>
+                        );
+                      }
+                    }}
+                  />
+                </Pie>
+              </PieChart>
+            </ChartContainer>
+          </div>
+
+          {/* Légende à droite - Masquée sur mobile */}
+          {!isMobile && (
+            <div className="flex-1 space-y-3">
+              {chartData.slice(0, 5).map((item, index) => {
+                const percentage = ((item.amount / totalAmount) * 100).toFixed(1);
+                return (
+                  <div key={item.category} className="flex items-center gap-3">
+                    <div
+                      className="h-2 w-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: item.fill }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-normal text-foreground truncate">
+                        {item.label} ({percentage} %)
+                      </p>
                     </div>
                   </div>
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardHeader>
-      <CardContent className="flex-1 pb-0 flex items-center justify-center min-h-[250px]">
-        <div className="flex flex-col items-center justify-center gap-2">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <p className="text-sm text-muted-foreground text-center">
-            Aucune donnée disponible
-          </p>
-          <p className="text-xs text-muted-foreground text-center max-w-[250px]">
-            Les entrées d'argent seront affichées après la connexion bancaire
-          </p>
+                );
+              })}
+              {chartData.length > 5 && (
+                <div className="flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full flex-shrink-0 bg-muted" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-normal text-muted-foreground">
+                      +{chartData.length - 5} autres catégories
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -192,11 +192,13 @@ const LoginForm = () => {
         // Vérifier si l'utilisateur doit passer par la 2FA
         if (ctx.data.twoFactorRedirect) {
           console.log("🔒 [LOGIN] Redirection 2FA détectée");
+          console.log("🔒 [LOGIN] Better Auth va rediriger vers /auth/verify-2fa");
+          // ✅ Better Auth gère automatiquement la redirection via onTwoFactorRedirect
+          // Pas besoin d'envoyer d'OTP ici car :
+          // - Pour TOTP (authenticator app) : pas besoin d'OTP, l'utilisateur utilise son app
+          // - Pour OTP (email/SMS) : Better Auth envoie automatiquement l'OTP lors de la connexion
           setTwoFactorData(ctx.data);
           setShow2FA(true);
-
-          // Envoyer automatiquement l'OTP
-          handleSend2FA();
           return;
         }
 
