@@ -265,6 +265,7 @@ export default function EnhancedInvoiceForm({
   validationErrors = {},
   currentStep: externalCurrentStep,
   onStepChange,
+  onEditClient,
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeField, setActiveField] = useState(null);
@@ -498,6 +499,7 @@ export default function EnhancedInvoiceForm({
                   }
                   clientPositionRight={data.clientPositionRight || false}
                   onClientPositionChange={(checked) => updateField("clientPositionRight", checked)}
+                  onEditClient={onEditClient}
                 />
               </Card>
             </>

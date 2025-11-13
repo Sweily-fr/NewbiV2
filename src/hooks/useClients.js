@@ -76,7 +76,10 @@ export const useCreateClient = () => {
   });
 
   return {
-    createClient: (input) => createClient({ variables: { workspaceId, input } }),
+    createClient: async (input) => {
+      const result = await createClient({ variables: { workspaceId, input } });
+      return result?.data?.createClient;
+    },
     loading,
     error,
   };
@@ -131,7 +134,10 @@ export const useUpdateClient = () => {
   });
 
   return {
-    updateClient: (id, input) => updateClient({ variables: { workspaceId, id, input } }),
+    updateClient: async (id, input) => {
+      const result = await updateClient({ variables: { workspaceId, id, input } });
+      return result?.data?.updateClient;
+    },
     loading,
     error,
   };

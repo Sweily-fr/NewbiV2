@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useId } from "react";
 import {
   Search,
-  User,
+  Pencil,
   Plus,
   Building,
   Mail,
@@ -15,6 +15,7 @@ import {
   ExternalLink,
   AlignLeft,
   AlignRight,
+  User,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -71,6 +72,7 @@ export default function ClientSelector({
   validationErrors = {},
   clientPositionRight = false,
   onClientPositionChange,
+  onEditClient,
 }) {
   // Helper pour vérifier si le client a une erreur
   const hasClientError = validationErrors?.client;
@@ -581,8 +583,8 @@ export default function ClientSelector({
                   {selectedClient && (
                     <div className="space-y-3">
                       <div className="p-4 border rounded-lg bg-muted/50">
-                        <div className="flex items-start sm:items-center justify-between">
-                          <div className="flex items-start sm:items-center space-x-3 flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-start space-x-3 flex-1 min-w-0">
                             <div className="p-2 bg-primary/10 rounded flex-shrink-0">
                               {React.createElement(
                                 getClientIcon(selectedClient.type),
@@ -592,40 +594,50 @@ export default function ClientSelector({
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
+                              <div className="mb-2">
+                                <Badge variant="outline" className="text-xs font-normal">
+                                  {CLIENT_TYPE_LABELS[selectedClient.type]}
+                                </Badge>
+                              </div>
                               <div className="font-normal">
                                 {selectedClient.name}
                               </div>
                               <div className="text-sm">
                                 {selectedClient.email}
                               </div>
-                              <div className="mt-2 sm:hidden">
-                                <Badge variant="outline" className="text-xs font-normal">
-                                  {CLIENT_TYPE_LABELS[selectedClient.type]}
-                                </Badge>
-                              </div>
-                            </div>
-                            <div className="hidden sm:block">
-                              <Badge variant="outline" className="text-xs font-normal">
-                                {CLIENT_TYPE_LABELS[selectedClient.type]}
-                              </Badge>
                             </div>
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              onSelect?.(null);
-                              setSelectedValue("");
-                              setQuery("");
-                            }}
-                            className="flex-shrink-0 ml-2"
-                          >
-                            <X className="h-4 w-4" />
-                            <span className="sr-only">
-                              Supprimer la sélection
-                            </span>
-                          </Button>
+                          <div className="flex gap-2 flex-shrink-0 ml-2">
+                            {onEditClient && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onEditClient(selectedClient)}
+                                disabled={disabled}
+                                className="gap-2"
+                                title="Modifier le client"
+                              >
+                                <Pencil className="h-4 w-4" />
+                                <span className="hidden sm:inline">Modifier</span>
+                              </Button>
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                onSelect?.(null);
+                                setSelectedValue("");
+                                setQuery("");
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                              <span className="sr-only">
+                                Supprimer la sélection
+                              </span>
+                            </Button>
+                          </div>
                         </div>
                       </div>
                       

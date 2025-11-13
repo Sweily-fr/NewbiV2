@@ -12,6 +12,7 @@ import {
   AlertCircle,
   ChevronUp,
   ChevronDown,
+  LoaderCircle,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -28,6 +29,7 @@ import {
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { ErrorAlert } from "@/src/components/invoice/error-alert";
+import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -36,8 +38,11 @@ export default function ModernQuoteEditor({
 }) {
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
+  const [showEditClient, setShowEditClient] = useState(false);
   const [errorsExpanded, setErrorsExpanded] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
+  const [debouncedFormData, setDebouncedFormData] = useState(null);
+
   const {
     form,
     formData,
@@ -61,6 +66,15 @@ export default function ModernQuoteEditor({
     quoteId,
     initialData,
   });
+
+  // Debounce pour la preview (évite les saccades)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFormData(formData);
+    }, 300); // Attendre 300ms après la dernière modification
+
+    return () => clearTimeout(timer);
+  }, [formData]);
 
   // Détecter les changements d'organisation pour les modes edit/view
   useOrganizationChange({
@@ -104,6 +118,11 @@ export default function ModernQuoteEditor({
       // Sinon, fermer directement
       setShowSettings(false);
     }
+  };
+
+  const handleClientUpdated = (updatedClient) => {
+    setFormData((prev) => ({ ...prev, client: updatedClient }));
+    // Notification déjà affichée par le modal
   };
 
   return (
@@ -339,6 +358,7 @@ export default function ModernQuoteEditor({
                     validationErrors={validationErrors}
                     currentStep={currentStep}
                     onStepChange={setCurrentStep}
+                    onEditClient={() => setShowEditClient(true)}
                   />
                 )}
               </FormProvider>
@@ -349,11 +369,27 @@ export default function ModernQuoteEditor({
 
         {/* Right Panel - Preview */}
         <div className="border-l flex-col h-full overflow-hidden hidden lg:flex">
-          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full">
-            <UniversalPreviewPDF data={formData} type="quote" />
+          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full relative">
+            {loading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
+                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : debouncedFormData ? (
+              <UniversalPreviewPDF data={debouncedFormData} type="quote" />
+            ) : null}
           </div>
         </div>
       </div>
+      
+      {/* Modal d'édition du client */}
+      {formData.client && (
+        <ClientsModal
+          open={showEditClient}
+          onOpenChange={setShowEditClient}
+          client={formData.client}
+          onSave={handleClientUpdated}
+        />
+      )}
     </div>
   );
 }

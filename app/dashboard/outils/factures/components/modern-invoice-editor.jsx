@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  LoaderCircle,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -25,7 +26,7 @@ import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
-import { QuickEditClientModal } from "@/src/components/invoice/quick-edit-client-modal";
+import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 import { QuickEditCompanyModal } from "@/src/components/invoice/quick-edit-company-modal";
 import { ErrorAlert } from "@/src/components/invoice/error-alert";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
@@ -43,6 +44,7 @@ export default function ModernInvoiceEditor({
   const [showEditCompany, setShowEditCompany] = useState(false);
   const [errorsExpanded, setErrorsExpanded] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
+  const [debouncedFormData, setDebouncedFormData] = useState(null);
 
   // Récupérer l'organisation au chargement
   useEffect(() => {
@@ -79,6 +81,15 @@ export default function ModernInvoiceEditor({
     initialData,
     organization,
   });
+
+  // Debounce pour la preview (évite les saccades)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFormData(formData);
+    }, 300); // Attendre 300ms après la dernière modification
+
+    return () => clearTimeout(timer);
+  }, [formData]);
 
   // Détecter les changements d'organisation pour les modes edit/view
   useOrganizationChange({
@@ -125,7 +136,7 @@ export default function ModernInvoiceEditor({
   };
 
   const handleClientUpdated = (updatedClient) => {
-    setFormData({ client: updatedClient });
+    setFormData((prev) => ({ ...prev, client: updatedClient }));
     // Notification déjà affichée par le modal
   };
 
@@ -368,6 +379,7 @@ export default function ModernInvoiceEditor({
                       validationErrors={validationErrors}
                       currentStep={currentStep}
                       onStepChange={setCurrentStep}
+                      onEditClient={() => setShowEditClient(true)}
                     />
                   )}
                 </FormProvider>
@@ -384,19 +396,25 @@ export default function ModernInvoiceEditor({
             </div>
           </div> */}
 
-          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full">
-            <UniversalPreviewPDF data={formData} type="invoice" />
+          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full relative">
+            {loading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
+                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : debouncedFormData ? (
+              <UniversalPreviewPDF data={debouncedFormData} type="invoice" />
+            ) : null}
           </div>
         </div>
       </div>
       
-      {/* Modals d'édition rapide */}
+      {/* Modal d'édition du client */}
       {formData.client && (
-        <QuickEditClientModal
+        <ClientsModal
           open={showEditClient}
           onOpenChange={setShowEditClient}
           client={formData.client}
-          onClientUpdated={handleClientUpdated}
+          onSave={handleClientUpdated}
         />
       )}
       

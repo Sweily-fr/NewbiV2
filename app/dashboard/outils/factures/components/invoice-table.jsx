@@ -280,6 +280,23 @@ export default function InvoiceTable({ handleNewInvoice }) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    // Ne pas ouvrir la sidebar si on clique sur la checkbox ou les actions
+                    if (
+                      e.target.closest('[role="checkbox"]') ||
+                      e.target.closest('[data-actions-cell]') ||
+                      e.target.closest('button[role="combobox"]') ||
+                      e.target.closest('[role="menu"]')
+                    ) {
+                      return;
+                    }
+                    // Déclencher l'ouverture de la sidebar via le bouton d'actions
+                    const actionsButton = e.currentTarget.querySelector('[data-view-invoice]');
+                    if (actionsButton) {
+                      actionsButton.click();
+                    }
+                  }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

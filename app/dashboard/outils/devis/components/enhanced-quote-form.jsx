@@ -264,6 +264,7 @@ export default function EnhancedQuoteForm({
   validationErrors = {},
   currentStep: externalCurrentStep,
   onStepChange,
+  onEditClient,
 }) {
   const { watch, setValue, getValues, control } = useFormContext();
   const data = watch();
@@ -399,6 +400,7 @@ export default function EnhancedQuoteForm({
                     selectedClient={data.client}
                     onSelect={(client) => updateField("client", client)}
                     disabled={!canEdit}
+                    onEditClient={onEditClient}
                     validationErrors={validationErrors}
                     clientPositionRight={data.clientPositionRight || false}
                     onClientPositionChange={(checked) => updateField("clientPositionRight", checked)}
