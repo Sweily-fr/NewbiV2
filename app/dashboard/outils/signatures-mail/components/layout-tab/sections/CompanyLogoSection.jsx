@@ -56,14 +56,18 @@ export default function CompanyLogoSection({
           <Label className="text-xs text-muted-foreground">Afficher</Label>
           <div className="relative inline-flex items-center">
             <Switch
-              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
               checked={signatureData.logo !== null && signatureData.logo !== undefined}
               onCheckedChange={(checked) => {
-                if (!checked) {
+                if (checked) {
+                  // Si on active, récupérer le logo de l'organisation
+                  if (organization?.logo) {
+                    updateSignatureData("logo", organization.logo);
+                  }
+                } else {
                   // Si on désactive, supprimer le logo
                   updateSignatureData("logo", null);
                 }
-                // Si on active, le logo reste (récupéré automatiquement de l'organisation)
               }}
             />
           </div>

@@ -42,9 +42,9 @@ export default function ProfileImageSection({
         <h2 className="text-sm font-medium">Photo de profil</h2>
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">Afficher</Label>
-          <div className="relative inline-flex items-center">
+          <div className="relative inline-flex items-center cursor-pointer">
             <Switch
-              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
               checked={signatureData.photo !== null && signatureData.photo !== undefined}
               onCheckedChange={(checked) => {
                 if (checked && !signatureData.photo) {
