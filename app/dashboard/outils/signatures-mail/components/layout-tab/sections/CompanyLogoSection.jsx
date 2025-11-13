@@ -60,9 +60,24 @@ export default function CompanyLogoSection({
               checked={signatureData.logo !== null && signatureData.logo !== undefined}
               onCheckedChange={(checked) => {
                 if (checked) {
-                  // Si on active, récupérer le logo de l'organisation
+                  // Si on active, récupérer le logo de l'organisation ou ouvrir le sélecteur
                   if (organization?.logo) {
                     updateSignatureData("logo", organization.logo);
+                  } else {
+                    // Si pas de logo d'organisation, ouvrir le sélecteur de fichier
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = "image/*";
+                    input.onchange = (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) =>
+                          updateSignatureData("logo", e.target.result);
+                        reader.readAsDataURL(file);
+                      }
+                    };
+                    input.click();
                   }
                 } else {
                   // Si on désactive, supprimer le logo
