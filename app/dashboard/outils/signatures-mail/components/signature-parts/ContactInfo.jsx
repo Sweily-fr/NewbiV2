@@ -10,6 +10,9 @@ import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { getTypographyStyles } from "../../utils/typography-styles";
 import { getSpacing } from "../../utils/spacing-helper";
 
+// Constante pour l'espacement entre icône et texte
+const ICON_TEXT_SPACING = 8;
+
 const ContactInfo = ({
   phone,
   mobile,
@@ -63,7 +66,7 @@ const ContactInfo = ({
                 {showIcons[field] && (
                   <td
                     style={{
-                      paddingRight: "8px",
+                      paddingRight: `${ICON_TEXT_SPACING}px`,
                       verticalAlign: field === "address" ? "top" : "middle",
                     }}
                   >

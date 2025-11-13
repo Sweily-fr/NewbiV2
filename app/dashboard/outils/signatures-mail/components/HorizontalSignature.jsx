@@ -76,7 +76,7 @@ const HorizontalSignature = ({
             <td
               style={{
                 verticalAlign: signatureData.contactAlignment || "top",
-                paddingLeft: `${spacings.nameSpacing ?? 12}px`,
+                paddingLeft: `${getSpacing(signatureData, spacings.nameSpacing, 12)}px`,
               }}
             >
               <table
@@ -145,8 +145,8 @@ const HorizontalSignature = ({
             enabled={signatureData.separatorHorizontalEnabled}
             color={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
             width={signatureData.separatorHorizontalWidth || 1}
-            topSpacing={spacings.separatorTop ?? 8}
-            bottomSpacing={spacings.separatorBottom ?? 8}
+            topSpacing={getSpacing(signatureData, spacings.separatorTop, 8)}
+            bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, 8)}
             radius={0}
           />
 
@@ -155,7 +155,7 @@ const HorizontalSignature = ({
             <CompanyLogo
               logoSrc={logoSrc}
               size={signatureData.logoSize || 60}
-              spacing={spacings.separatorBottom ?? 8}
+              spacing={getSpacing(signatureData, spacings.logoBottom, 8)}
               alignment="left"
             />
           )}
@@ -167,7 +167,7 @@ const HorizontalSignature = ({
             size={signatureData.socialSize || 24}
             globalColor={signatureData.socialGlobalColor}
             socialColors={signatureData.socialColors || {}}
-            spacing={spacings.logoToSocial ?? 15}
+            spacing={getSpacing(signatureData, spacings.logoToSocial, 15)}
             iconSpacing={8}
             colSpan={colSpan}
           />

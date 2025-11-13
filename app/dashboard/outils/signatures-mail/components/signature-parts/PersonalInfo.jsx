@@ -78,7 +78,6 @@ const PersonalInfo = ({
                 fontSize: fontSize.position || 14,
                 color: colors.position || "#666666",
               }),
-              paddingTop: "2px",
               paddingBottom: `${getSpacing(signatureData, spacings.positionBottom, 8)}px`,
               whiteSpace: "nowrap",
             }}

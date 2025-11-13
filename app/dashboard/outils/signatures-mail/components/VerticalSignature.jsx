@@ -54,7 +54,7 @@ const VerticalSignature = ({
             <td
               style={{
                 verticalAlign: "top",
-                paddingRight: `${spacings.global ?? 12}px`,
+                paddingRight: `${getSpacing(signatureData, spacings.global, 12)}px`,
               }}
             >
               <table
@@ -70,7 +70,7 @@ const VerticalSignature = ({
                   {/* Photo de profil */}
                   {signatureData.photo && (
                     <tr>
-                      <td style={{ paddingBottom: `${spacings.photoBottom || 12}px` }}>
+                      <td style={{ paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, 12)}px` }}>
                         <ProfileImage
                           photoSrc={signatureData.photo}
                           size={signatureData.imageSize || 70}
@@ -108,8 +108,8 @@ const VerticalSignature = ({
             <VerticalSeparator
               enabled={signatureData.separatorVerticalEnabled}
               color={signatureData.colors?.separatorVertical || "#e0e0e0"}
-              leftSpacing={spacings.global ?? 12}
-              rightSpacing={spacings.global ?? 12}
+              leftSpacing={getSpacing(signatureData, spacings.global, 12)}
+              rightSpacing={getSpacing(signatureData, spacings.global, 12)}
               minHeight="200px"
             />
 
@@ -117,7 +117,7 @@ const VerticalSignature = ({
             <td
               style={{
                 verticalAlign: signatureData.contactAlignment || "top",
-                paddingLeft: `${spacings.global ?? 12}px`,
+                paddingLeft: `${getSpacing(signatureData, spacings.global, 12)}px`,
               }}
             >
               <table
@@ -181,7 +181,7 @@ const VerticalSignature = ({
               <td
                 colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
                 style={{
-                  paddingTop: `${spacings.separatorBottom ?? 12}px`,
+                  paddingTop: `${getSpacing(signatureData, spacings.logoBottom, 12)}px`,
                   textAlign: "left",
                 }}
               >
@@ -206,7 +206,7 @@ const VerticalSignature = ({
             size={signatureData.socialSize || 24}
             globalColor={signatureData.socialGlobalColor}
             socialColors={signatureData.socialColors || {}}
-            spacing={spacings.logoToSocial ?? 15}
+            spacing={getSpacing(signatureData, spacings.logoToSocial, 15)}
             iconSpacing={8}
             colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
           />
