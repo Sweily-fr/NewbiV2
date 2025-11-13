@@ -54,44 +54,42 @@ export default function CompanyLogoSection({
         <h2 className="text-sm font-medium">Logo entreprise</h2>
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">Afficher</Label>
-          <div className="relative inline-flex items-center cursor-pointer">
-            <Switch
-              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
-              checked={signatureData.logoVisible !== false && signatureData.logo !== null && signatureData.logo !== undefined}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  // Si on active, récupérer le logo de l'organisation ou ouvrir le sélecteur
-                  if (signatureData.logo) {
-                    // Si le logo existe déjà, juste le rendre visible
-                    updateSignatureData("logoVisible", true);
-                  } else if (organization?.logo) {
-                    updateSignatureData("logo", organization.logo);
-                    updateSignatureData("logoVisible", true);
-                  } else {
-                    // Si pas de logo d'organisation, ouvrir le sélecteur de fichier
-                    const input = document.createElement("input");
-                    input.type = "file";
-                    input.accept = "image/*";
-                    input.onchange = (e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                          updateSignatureData("logo", e.target.result);
-                          updateSignatureData("logoVisible", true);
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    };
-                    input.click();
-                  }
+          <Switch
+            className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+            checked={signatureData.logoVisible !== false && signatureData.logo !== null && signatureData.logo !== undefined}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                // Si on active, récupérer le logo de l'organisation ou ouvrir le sélecteur
+                if (signatureData.logo) {
+                  // Si le logo existe déjà, juste le rendre visible
+                  updateSignatureData("logoVisible", true);
+                } else if (organization?.logo) {
+                  updateSignatureData("logo", organization.logo);
+                  updateSignatureData("logoVisible", true);
                 } else {
-                  // Si on désactive, masquer le logo (mais ne pas le supprimer)
-                  updateSignatureData("logoVisible", false);
+                  // Si pas de logo d'organisation, ouvrir le sélecteur de fichier
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "image/*";
+                  input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        updateSignatureData("logo", e.target.result);
+                        updateSignatureData("logoVisible", true);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  };
+                  input.click();
                 }
-              }}
-            />
-          </div>
+              } else {
+                // Si on désactive, masquer le logo (mais ne pas le supprimer)
+                updateSignatureData("logoVisible", false);
+              }
+            }}
+          />
         </div>
       </div>
       <div className="flex flex-col gap-3 ml-4">

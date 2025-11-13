@@ -197,15 +197,13 @@ export default function SocialNetworksSection({
               <Label className="text-xs text-muted-foreground">
                 {socialNetworkLabels[network]}
               </Label>
-              <div className="cursor-pointer">
-                <Switch
-                  checked={signatureData.socialNetworks?.hasOwnProperty(network)}
-                  className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
-                  onCheckedChange={(checked) =>
-                    handleSocialToggle(network, checked)
-                  }
-                />
-              </div>
+              <Switch
+                checked={signatureData.socialNetworks?.hasOwnProperty(network)}
+                className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+                onCheckedChange={(checked) =>
+                  handleSocialToggle(network, checked)
+                }
+              />
             </div>
             {signatureData.socialNetworks?.hasOwnProperty(network) && (
               <div className="flex flex-col gap-2 ml-4">

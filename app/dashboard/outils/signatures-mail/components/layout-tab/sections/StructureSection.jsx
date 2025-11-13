@@ -40,15 +40,13 @@ export default function StructureSection({
           <Label className="text-xs text-muted-foreground">
             Séparateur vertical
           </Label>
-          <div className="flex items-center gap-3 cursor-pointer">
-            <Switch
-              checked={signatureData.separatorVerticalEnabled || false}
-              onCheckedChange={(checked) =>
-                updateSignatureData("separatorVerticalEnabled", checked)
-              }
-              className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
-            />
-          </div>
+          <Switch
+            checked={signatureData.separatorVerticalEnabled || false}
+            onCheckedChange={(checked) =>
+              updateSignatureData("separatorVerticalEnabled", checked)
+            }
+            className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+          />
         </div>
 
         {/* Contrôles du séparateur vertical si activé */}
@@ -168,15 +166,13 @@ export default function StructureSection({
           <Label className="text-xs text-muted-foreground">
             Séparateur horizontal
           </Label>
-          <div className="flex items-center gap-3 cursor-pointer">
-            <Switch
-              checked={signatureData.separatorHorizontalEnabled || false}
-              onCheckedChange={(checked) =>
-                updateSignatureData("separatorHorizontalEnabled", checked)
-              }
-              className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
-            />
-          </div>
+          <Switch
+            checked={signatureData.separatorHorizontalEnabled || false}
+            onCheckedChange={(checked) =>
+              updateSignatureData("separatorHorizontalEnabled", checked)
+            }
+            className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+          />
         </div>
 
         {/* Contrôles du séparateur horizontal si activé */}

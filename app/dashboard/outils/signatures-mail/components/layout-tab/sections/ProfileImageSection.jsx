@@ -42,38 +42,36 @@ export default function ProfileImageSection({
         <h2 className="text-sm font-medium">Photo de profil</h2>
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">Afficher</Label>
-          <div className="relative inline-flex items-center cursor-pointer">
-            <Switch
-              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
-              checked={signatureData.photoVisible !== false && signatureData.photo !== null && signatureData.photo !== undefined}
-              onCheckedChange={(checked) => {
-                if (checked && !signatureData.photo) {
-                  // Si on active mais pas de photo, ouvrir le sélecteur
-                  const input = document.createElement("input");
-                  input.type = "file";
-                  input.accept = "image/*";
-                  input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (e) => {
-                        updateSignatureData("photo", e.target.result);
-                        updateSignatureData("photoVisible", true);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  };
-                  input.click();
-                } else if (checked && signatureData.photo) {
-                  // Si on active et qu'il y a déjà une photo, juste la rendre visible
-                  updateSignatureData("photoVisible", true);
-                } else if (!checked) {
-                  // Si on désactive, masquer la photo (mais ne pas la supprimer)
-                  updateSignatureData("photoVisible", false);
-                }
-              }}
-            />
-          </div>
+          <Switch
+            className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+            checked={signatureData.photoVisible !== false && signatureData.photo !== null && signatureData.photo !== undefined}
+            onCheckedChange={(checked) => {
+              if (checked && !signatureData.photo) {
+                // Si on active mais pas de photo, ouvrir le sélecteur
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/*";
+                input.onchange = (e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                      updateSignatureData("photo", e.target.result);
+                      updateSignatureData("photoVisible", true);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                };
+                input.click();
+              } else if (checked && signatureData.photo) {
+                // Si on active et qu'il y a déjà une photo, juste la rendre visible
+                updateSignatureData("photoVisible", true);
+              } else if (!checked) {
+                // Si on désactive, masquer la photo (mais ne pas la supprimer)
+                updateSignatureData("photoVisible", false);
+              }
+            }}
+          />
         </div>
       </div>
       <div className="flex flex-col gap-3 ml-4">
