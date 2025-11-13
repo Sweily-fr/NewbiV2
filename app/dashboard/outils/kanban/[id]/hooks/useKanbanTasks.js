@@ -403,13 +403,15 @@ export const useKanbanTasks = (boardId, board) => {
   };
 
   // Task modal handlers
-  const openAddTaskModal = (columnId) => {
+  const openAddTaskModal = (columnId, options = {}) => {
     setSelectedColumnId(columnId);
     setTaskForm({
       ...initialTaskForm,
       status: "TODO",
       priority: "medium",
       columnId: columnId, // Initialiser columnId avec la colonne sélectionnée
+      startDate: options.startDate || "",
+      dueDate: options.dueDate || "",
     });
     setIsAddTaskOpen(true);
   };
@@ -431,16 +433,21 @@ export const useKanbanTasks = (boardId, board) => {
 
     setEditingTask(task);
     setIsEditTaskOpen(true);
-    setTaskForm({
+    
+    // Déterminer si c'est une création ou une édition
+    const taskId = task?.id || task?._id;
+    const isCreating = !taskId || taskId === null;
+    
+    // Ne pas inclure le champ id si c'est une création
+    const formData = {
       ...initialTaskForm,
-      id: task?.id || task?._id,
       title: task?.title || "",
       description: task?.description || "",
       status: task?.status || "TODO",
       priority: task?.priority ? task.priority.toLowerCase() : "medium",
       startDate: task?.startDate || "",
       dueDate: task?.dueDate || "", // Garder l'heure complète au format ISO
-      columnId: task?.columnId || "",
+      columnId: task?.columnId || task?.column?.id || "",
       tags: Array.isArray(task?.tags) ? task.tags : [],
       checklist: Array.isArray(task?.checklist)
         ? task.checklist.map((item, index) => ({
@@ -456,7 +463,14 @@ export const useKanbanTasks = (boardId, board) => {
       createdAt: task?.createdAt,
       updatedAt: task?.updatedAt,
       pendingComments: [], // Pas de commentaires en attente en mode édition
-    });
+    };
+    
+    // Ajouter l'id seulement si c'est une édition
+    if (!isCreating) {
+      formData.id = taskId;
+    }
+    
+    setTaskForm(formData);
   };
 
   // Gestion des commentaires en attente (pour la création de tâche)

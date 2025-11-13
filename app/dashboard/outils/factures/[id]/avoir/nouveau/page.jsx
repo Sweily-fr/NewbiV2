@@ -6,7 +6,8 @@ import ModernCreditNoteEditor from "../../../components/modern-credit-note-edito
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
 
 function NewCreditNoteContent() {
   const params = useParams();
@@ -16,20 +17,21 @@ function NewCreditNoteContent() {
   const [hasPermission, setHasPermission] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const checkPermission = async () => {
       const allowed = await canCreate("creditNotes");
-      setHasPermission(allowed);
-
-      if (!allowed) {
-        // Rediriger après 2 secondes
-        setTimeout(() => {
-          router.push("/dashboard/outils/factures");
-        }, 2000);
+      if (isMounted) {
+        setHasPermission(allowed);
       }
     };
 
     checkPermission();
-  }, [canCreate, router]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [canCreate]);
 
   // Chargement
   if (hasPermission === null) {
@@ -40,16 +42,23 @@ function NewCreditNoteContent() {
     );
   }
 
-  // Pas de permission
+  // Pas de permission - Afficher un message sans redirection automatique
   if (!hasPermission) {
     return (
       <div className="flex items-center justify-center min-h-screen p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Vous n'avez pas la permission de créer des avoirs. Redirection...
-          </AlertDescription>
-        </Alert>
+        <div className="text-center max-w-md">
+          <div className="mb-4">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
+          </div>
+          <h2 className="text-xl font-semibold mb-2">Permission refusée</h2>
+          <p className="text-muted-foreground mb-6">
+            Vous n'avez pas la permission de créer des avoirs.
+          </p>
+          <Button onClick={() => router.push("/dashboard/outils/factures")} variant="default">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour aux factures
+          </Button>
+        </div>
       </div>
     );
   }

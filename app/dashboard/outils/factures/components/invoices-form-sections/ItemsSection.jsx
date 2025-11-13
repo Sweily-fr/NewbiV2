@@ -24,6 +24,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/src/components/ui/accordion";
+import PercentageSliderInput from "@/src/components/percentage-slider-input";
 // Utilisation du composant ProductSearchCombobox défini dans enhanced-invoice-form.jsx
 
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
@@ -123,7 +124,7 @@ export default function ItemsSection({
   };
 
   return (
-    <Card className="shadow-none p-2 border-none bg-transparent mb-0">
+    <Card className="shadow-none border-none bg-transparent mb-0 p-0">
       <CardHeader className="p-0">
         <CardTitle className="flex items-center gap-2 font-normal text-lg">
           Articles et produits
@@ -644,14 +645,9 @@ export default function ItemsSection({
                             </button>
                           </div>
                         ) : (
-                          <div className="space-y-2">
+                          <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                              <Label
-                                htmlFor={`item-progress-${index}`}
-                                className="text-sm font-normal"
-                              >
-                                Facturer partiellement (%)
-                              </Label>
+                              <span className="text-sm font-normal">Facturation partielle</span>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -672,59 +668,44 @@ export default function ItemsSection({
                                 Retirer
                               </button>
                             </div>
-                            <div className="space-y-1">
-                              <Input
-                                id={`item-progress-${index}`}
-                                type="number"
-                                {...register(`items.${index}.progressPercentage`, {
-                                    valueAsNumber: true,
-                                    min: {
-                                      value: 0,
-                                      message: "L'avancement doit être entre 0 et 100",
-                                    },
-                                    max: {
-                                      value: 100,
-                                      message: "L'avancement doit être entre 0 et 100",
-                                    },
-                                    onChange: (e) => {
-                                      const progressPercentage =
-                                        parseFloat(e.target.value) || 100;
-                                      const quantity =
-                                        watch(`items.${index}.quantity`) || 1;
-                                      const unitPrice =
-                                        watch(`items.${index}.unitPrice`) || 0;
-                                      const discount =
-                                        watch(`items.${index}.discount`) || 0;
-                                      const discountType =
-                                        watch(`items.${index}.discountType`) ||
-                                        "percentage";
-
-                                      const total = calculateItemTotal(
-                                        quantity,
-                                        unitPrice,
-                                        discount,
-                                        discountType,
-                                        progressPercentage
-                                      );
-                                      setValue(`items.${index}.total`, total, {
-                                        shouldDirty: true,
-                                      });
-                                    },
-                                  })}
-                                  step="1"
-                                  min="0"
-                                  max="100"
-                                  placeholder="100"
-                                  disabled={!canEdit}
-                                  className="h-10 rounded-lg text-sm w-full"
-                                />
-                                {errors?.items?.[index]?.progressPercentage && (
-                                  <p className="text-xs text-destructive">
-                                    {errors.items[index].progressPercentage.message}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
+                            <PercentageSliderInput
+                              label="Facturation partielle"
+                              value={watch(`items.${index}.progressPercentage`) || 100}
+                              showLabelInValue={false}
+                              onChange={(value) => {
+                                setValue(`items.${index}.progressPercentage`, value, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                });
+                                // Recalculer le total
+                                const quantity = watch(`items.${index}.quantity`) || 1;
+                                const unitPrice = watch(`items.${index}.unitPrice`) || 0;
+                                const discount = watch(`items.${index}.discount`) || 0;
+                                const discountType = watch(`items.${index}.discountType`) || "percentage";
+                                const total = calculateItemTotal(
+                                  quantity,
+                                  unitPrice,
+                                  discount,
+                                  discountType,
+                                  value
+                                );
+                                setValue(`items.${index}.total`, total, {
+                                  shouldDirty: true,
+                                });
+                              }}
+                              disabled={!canEdit}
+                              minValue={0}
+                              maxValue={100}
+                              step={1}
+                              gaugeColor="#5b50FF"
+                              id={`item-progress-${index}`}
+                            />
+                            {errors?.items?.[index]?.progressPercentage && (
+                              <p className="text-xs text-destructive mt-2">
+                                {errors.items[index].progressPercentage.message}
+                              </p>
+                            )}
+                          </div>
                         )}
 
                         {/* Remise sur l'article - Affichage conditionnel */}

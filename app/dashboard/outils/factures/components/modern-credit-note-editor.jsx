@@ -113,6 +113,27 @@ export default function ModernCreditNoteEditor({
     );
   }
 
+  // Vérifier si la facture originale existe en mode création
+  if (mode === "create" && invoiceId && !originalInvoice && !loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="mb-4">
+            <X className="h-12 w-12 text-destructive mx-auto" />
+          </div>
+          <h2 className="text-xl font-semibold mb-2">Facture introuvable</h2>
+          <p className="text-muted-foreground mb-6">
+            La facture originale n'existe pas ou a été supprimée. Impossible de créer un avoir.
+          </p>
+          <Button onClick={handleBack} variant="default">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour aux factures
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full">

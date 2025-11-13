@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation } from '@apollo/client';
-import { ThumbsUp, ThumbsDown, CheckCircle2, AlertCircle, Lightbulb, Bug, CheckIcon } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, CheckCircle2, AlertCircle, Lightbulb, Bug, CheckIcon, FileText } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -21,6 +21,20 @@ const severityConfig = {
   medium: { label: 'Priorité moyenne', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', dotColor: 'bg-yellow-500' },
   high: { label: 'Priorité élevée', color: 'bg-orange-50 text-orange-700 border-orange-200', dotColor: 'bg-orange-500' },
   critical: { label: 'Priorité critique', color: 'bg-red-50 text-red-700 border-red-200', dotColor: 'bg-red-500' }
+};
+
+// Mapping des pages
+const pageLabels = {
+  dashboard: 'Tableau de bord',
+  factures: 'Factures',
+  devis: 'Devis',
+  depenses: 'Dépenses',
+  signatures: 'Signatures de mail',
+  kanban: 'Gestion de projet',
+  transferts: 'Transferts de fichiers',
+  clients: 'Clients',
+  parametres: 'Paramètres',
+  autre: 'Autre'
 };
 
 export function SuggestionCard({ suggestion, onUpdate, isValidated = false }) {
@@ -85,7 +99,7 @@ export function SuggestionCard({ suggestion, onUpdate, isValidated = false }) {
               <h3 className="font-medium text-base leading-tight">
                 {suggestion.title}
               </h3>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                 <span>
                   {formatDistanceToNow(new Date(suggestion.createdAt), {
                     addSuffix: true,
@@ -98,6 +112,15 @@ export function SuggestionCard({ suggestion, onUpdate, isValidated = false }) {
                     <span className="font-medium text-foreground">
                       {suggestion.createdByUser.name}
                     </span>
+                  </>
+                )}
+                {suggestion.page && (
+                  <>
+                    <span>•</span>
+                    <Badge variant="secondary" className="text-xs font-normal px-2 py-0">
+                      <FileText className="h-3 w-3 mr-1" />
+                      {pageLabels[suggestion.page] || suggestion.page}
+                    </Badge>
                   </>
                 )}
               </div>

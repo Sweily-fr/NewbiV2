@@ -7,6 +7,7 @@ export const GET_COMMUNITY_SUGGESTIONS = gql`
       type
       title
       description
+      page
       status
       severity
       stepsToReproduce
@@ -35,6 +36,7 @@ export const GET_COMMUNITY_SUGGESTION = gql`
       type
       title
       description
+      page
       status
       severity
       stepsToReproduce

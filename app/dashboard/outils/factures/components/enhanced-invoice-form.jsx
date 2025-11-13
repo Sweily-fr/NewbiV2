@@ -25,6 +25,16 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 import { Button } from "@/src/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
+import {
   Timeline,
   TimelineHeader,
   TimelineItem,
@@ -253,11 +263,18 @@ export default function EnhancedInvoiceForm({
   readOnly,
   errors,
   validationErrors = {},
+  currentStep: externalCurrentStep,
+  onStepChange,
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeField, setActiveField] = useState(null);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [internalCurrentStep, setInternalCurrentStep] = useState(1);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const canEdit = !readOnly && !loading;
+
+  // Utiliser l'état externe si fourni, sinon utiliser l'état interne
+  const currentStep = externalCurrentStep !== undefined ? externalCurrentStep : internalCurrentStep;
+  const setCurrentStep = onStepChange || setInternalCurrentStep;
 
   // Utiliser react-hook-form context
   const {
@@ -461,7 +478,6 @@ export default function EnhancedInvoiceForm({
             <>
               {/* Section 1: Informations de la facture */}
               <InvoiceInfoSection canEdit={canEdit} />
-              <Separator />
 
               {/* Section 2: Sélection d'un client */}
               <Card className="gap-0 shadow-none border-none pt-2 pb-6 pr-2 pl-2 bg-transparent">
@@ -480,6 +496,8 @@ export default function EnhancedInvoiceForm({
                       ? (validationErrors.client.message || validationErrors.client)
                       : null
                   }
+                  clientPositionRight={data.clientPositionRight || false}
+                  onClientPositionChange={(checked) => updateField("clientPositionRight", checked)}
                 />
               </Card>
             </>
@@ -513,7 +531,7 @@ export default function EnhancedInvoiceForm({
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => window.history.back()}
+                onClick={() => setShowCancelDialog(true)}
                 disabled={loading || saving}
                 className="text-sm font-normal hidden md:flex"
               >
@@ -547,11 +565,11 @@ export default function EnhancedInvoiceForm({
                   <Button
                     className="text-sm font-normal"
                     variant="outline"
+                    size="icon"
                     onClick={handlePreviousStep}
                     disabled={!canEdit}
                   >
-                    <ChevronLeft className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Précédent</span>
+                    <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <Button
                     onClick={handleCreateInvoice}
@@ -566,6 +584,23 @@ export default function EnhancedInvoiceForm({
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Quitter l'éditeur ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir quitter ? Les modifications non enregistrées seront perdues.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Rester</AlertDialogCancel>
+            <AlertDialogAction onClick={() => window.history.back()}>
+              Quitter
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1197,6 +1197,9 @@ function getInitialFormData(mode, initialData, session) {
       headerBgColor: "#5b50FF",
     },
 
+    // Position du client dans le PDF
+    clientPositionRight: false,
+
     // Paramètres d'organisation (pour les valeurs par défaut)
     organizationSettings: null,
   };
@@ -1449,6 +1452,8 @@ function transformQuoteToFormData(quote) {
 
     discount: quote.discount || 0,
     discountType: quote.discountType || "PERCENTAGE",
+    retenueGarantie: quote.retenueGarantie || 0,
+    escompte: quote.escompte || 0,
 
     headerNotes: quote.headerNotes || "",
     footerNotes: quote.footerNotes || "",
@@ -1498,6 +1503,9 @@ function transformQuoteToFormData(quote) {
           headerTextColor: "#ffffff",
           headerBgColor: "#5b50FF",
         },
+    
+    // Position du client dans le PDF
+    clientPositionRight: quote.clientPositionRight || false,
   };
 }
 
@@ -1851,6 +1859,8 @@ function transformFormDataToInput(
       }) || [],
     discount: parseFloat(formData.discount) || 0,
     discountType: (formData.discountType || "PERCENTAGE").toUpperCase(),
+    retenueGarantie: parseFloat(formData.retenueGarantie) || 0,
+    escompte: parseFloat(formData.escompte) || 0,
     headerNotes: formData.headerNotes || "",
     footerNotes: formData.footerNotes || "",
     termsAndConditions: formData.terms || formData.termsAndConditions || "",
@@ -1884,6 +1894,7 @@ function transformFormDataToInput(
         }
       : null,
     isReverseCharge: formData.isReverseCharge || false,
+    clientPositionRight: formData.clientPositionRight || false,
   };
 }
 

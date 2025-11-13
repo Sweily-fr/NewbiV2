@@ -42,6 +42,7 @@ export default function ModernInvoiceEditor({
   const [showEditClient, setShowEditClient] = useState(false);
   const [showEditCompany, setShowEditCompany] = useState(false);
   const [errorsExpanded, setErrorsExpanded] = useState(true);
+  const [currentStep, setCurrentStep] = useState(1);
 
   // Récupérer l'organisation au chargement
   useEffect(() => {
@@ -206,13 +207,26 @@ export default function ModernInvoiceEditor({
                       <X className="h-4 w-4 text-muted-foreground" />
                     </Button>
 
+                    {/* Bouton Retour sur desktop - visible uniquement à l'étape 2 */}
+                    {currentStep === 2 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentStep(1)}
+                        className="hidden md:flex gap-2 h-8 px-3"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="text-sm">Retour</span>
+                      </Button>
+                    )}
+
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={handleSettingsClick}
                       className="h-8 w-8 p-0"
                     >
-                      <Settings className="h-4 w-4 text-muted-foreground" />
+                      <Settings className="w-4 h-4" style={{ color: '#5b50FF' }} />
                     </Button>
                   </>
                 )}
@@ -352,6 +366,8 @@ export default function ModernInvoiceEditor({
                       canEdit={!isReadOnly}
                       mode={mode}
                       validationErrors={validationErrors}
+                      currentStep={currentStep}
+                      onStepChange={setCurrentStep}
                     />
                   )}
                 </FormProvider>

@@ -29,6 +29,16 @@ import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 import { Button } from "@/src/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
@@ -267,6 +277,7 @@ export default function EnhancedCreditNoteForm({
   saving,
 }) {
   const [currentStep, setCurrentStep] = useState(1);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const {
     register,
@@ -488,7 +499,7 @@ export default function EnhancedCreditNoteForm({
           <div className="flex justify-between items-center">
             <Button
               variant="outline"
-              onClick={() => window.history.back()}
+              onClick={() => setShowCancelDialog(true)}
               disabled={loading || saving}
               className="text-sm font-normal"
             >
@@ -529,6 +540,23 @@ export default function EnhancedCreditNoteForm({
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Quitter l'éditeur ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir quitter ? Les modifications non enregistrées seront perdues.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Rester</AlertDialogCancel>
+            <AlertDialogAction onClick={() => window.history.back()}>
+              Quitter
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

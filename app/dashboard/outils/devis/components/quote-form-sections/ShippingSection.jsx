@@ -99,23 +99,21 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
 
     if (!checked) {
       clearShippingFields();
-    } else if (client?.shippingAddress) {
-      // Auto-remplir avec les informations du client si disponibles
-      fillFromClientShipping();
+    } else {
+      // Réinitialiser la position du client au centre quand on facture la livraison
+      setValue("clientPositionRight", false, { shouldDirty: true });
+      
+      if (client?.shippingAddress) {
+        // Auto-remplir avec les informations du client si disponibles
+        fillFromClientShipping();
+      }
     }
   };
 
   return (
     <Card className="border-0 shadow-none bg-transparent mb-0 p-0">
       <CardContent className="space-y-6 p-0">
-        <div className="flex items-center gap-2 my-8">
-          <Separator className="flex-1" />
-          <div className="flex items-center gap-2 px-3 text-sm font-normal text-muted-foreground">
-            <Truck className="h-4 w-4" />
-            Facturer la livraison
-          </div>
-          <Separator className="flex-1" />
-        </div>
+        <h3 className="text-lg font-normal text-foreground mb-6 mt-8">Facturer la livraison</h3>
 
         {/* Case à cocher pour activer la facturation de livraison */}
         <div className="flex items-center space-x-2">
