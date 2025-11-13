@@ -86,8 +86,8 @@ const PersonalInfo = ({
               value={position}
               onChange={(value) => onFieldChange("position", value)}
               placeholder="Votre poste"
-              displayClassName="text-sm border-0 shadow-none p-0 h-auto"
-              inputClassName="text-sm border-0 shadow-none p-0 h-auto"
+              displayClassName="border-0 shadow-none p-0 h-auto"
+              inputClassName="border-0 shadow-none p-0 h-auto"
               style={{
                 color: typography.position?.color || colors.position || "#666666",
                 fontSize: `${typography.position?.fontSize || fontSize.position || 14}px`,
