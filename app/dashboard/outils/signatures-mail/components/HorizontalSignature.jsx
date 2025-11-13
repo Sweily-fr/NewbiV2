@@ -52,7 +52,7 @@ const HorizontalSignature = ({
         <tbody>
           <tr>
             {/* Photo de profil */}
-            {signatureData.photo && (
+            {signatureData.photo && signatureData.photoVisible !== false && (
               <ProfileImage
                 photoSrc={signatureData.photo}
                 size={signatureData.imageSize || 70}
@@ -151,7 +151,7 @@ const HorizontalSignature = ({
           />
 
           {/* Logo entreprise */}
-          {logoSrc && (
+          {logoSrc && signatureData.logoVisible !== false && (
             <CompanyLogo
               logoSrc={logoSrc}
               size={signatureData.logoSize || 60}

@@ -40,12 +40,17 @@ export default function ProfileImageSection({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium">Photo de profil</h2>
-        <div className="flex items-center gap-2 cursor-pointer">
-          <Label className="text-xs text-muted-foreground">Afficher</Label>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={(e) => {
+          // Permettre au switch de capturer le click
+          if (e.target.closest('[role="switch"]')) {
+            return;
+          }
+        }}>
+          <Label className="text-xs text-muted-foreground pointer-events-none">Afficher</Label>
           <div className="relative inline-flex items-center">
             <Switch
               className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
-              checked={signatureData.photo !== null && signatureData.photo !== undefined}
+              checked={signatureData.photoVisible !== false && signatureData.photo !== null && signatureData.photo !== undefined}
               onCheckedChange={(checked) => {
                 if (checked && !signatureData.photo) {
                   // Si on active mais pas de photo, ouvrir le sélecteur
@@ -56,15 +61,20 @@ export default function ProfileImageSection({
                     const file = e.target.files[0];
                     if (file) {
                       const reader = new FileReader();
-                      reader.onload = (e) =>
+                      reader.onload = (e) => {
                         updateSignatureData("photo", e.target.result);
+                        updateSignatureData("photoVisible", true);
+                      };
                       reader.readAsDataURL(file);
                     }
                   };
                   input.click();
+                } else if (checked && signatureData.photo) {
+                  // Si on active et qu'il y a déjà une photo, juste la rendre visible
+                  updateSignatureData("photoVisible", true);
                 } else if (!checked) {
-                  // Si on désactive, supprimer la photo
-                  updateSignatureData("photo", null);
+                  // Si on désactive, masquer la photo (mais ne pas la supprimer)
+                  updateSignatureData("photoVisible", false);
                 }
               }}
             />
@@ -92,9 +102,9 @@ export default function ProfileImageSection({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => updateSignatureData("photo", null)}
+                      onClick={() => updateSignatureData("photoVisible", false)}
                       className="absolute -top-1 -right-1 h-5 w-5 p-0 bg-white cursor-pointer dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800"
-                      title="Supprimer la photo"
+                      title="Masquer la photo"
                     >
                       <X
                         className="w-1 h-1 text-gray-500 hover:text-red-500 transition-colors"

@@ -68,7 +68,7 @@ const VerticalSignature = ({
               >
                 <tbody>
                   {/* Photo de profil */}
-                  {signatureData.photo && (
+                  {signatureData.photo && signatureData.photoVisible !== false && (
                     <tr>
                       <td style={{ paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, 12)}px` }}>
                         <ProfileImage
@@ -176,7 +176,7 @@ const VerticalSignature = ({
           />
 
           {/* Logo entreprise (en bas, sur toute la largeur) */}
-          {logoSrc && (
+          {logoSrc && signatureData.logoVisible !== false && (
             <tr>
               <td
                 colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
