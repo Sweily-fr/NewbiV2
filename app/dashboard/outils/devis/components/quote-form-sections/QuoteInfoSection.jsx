@@ -207,7 +207,7 @@ export default function QuoteInfoSection({
       </CardHeader>
       <CardContent className="space-y-6 p-0">
         {/* Préfixe et numéro de devis */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label htmlFor="quote-prefix" className="text-sm font-normal">
@@ -271,7 +271,7 @@ export default function QuoteInfoSection({
               )}
             </div>
           </div>
-          <div className="md:col-span-2 space-y-2">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label htmlFor="quote-number" className="text-sm font-normal">
                 Numéro de devis

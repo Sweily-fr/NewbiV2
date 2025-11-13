@@ -101,7 +101,7 @@ export default function ItemsSection({
   };
 
   return (
-    <Card className="shadow-none p-2 border-none bg-transparent mb-0">
+    <Card className="shadow-none border-none bg-transparent mb-0 p-0">
       <CardHeader className="p-0">
         <CardTitle className="flex items-center gap-2 font-normal text-lg">
           Articles et produits

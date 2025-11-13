@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Separator } from "@/src/components/ui/separator";
+import PercentageSliderInput from "@/src/components/percentage-slider-input";
 
 // Fonction de validation pour la valeur de remise
 const validateDiscount = (value, { discountType }) => {
@@ -49,14 +50,7 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
   return (
     <Card className="border-0 shadow-none bg-transparent mb-0 p-0">
       <CardContent className="space-y-6 p-0">
-        <div className="flex items-center gap-2 my-8">
-          <Separator className="flex-1" />
-          <div className="flex items-center gap-2 px-3 text-sm font-normal text-muted-foreground">
-            <Percent className="h-4 w-4" />
-            Remises et totaux
-          </div>
-          <Separator className="flex-1" />
-        </div>
+        <h3 className="text-lg font-normal text-foreground mb-6 mt-12">Remises et totaux</h3>
         {/* Configuration de la remise */}
         <div className="flex gap-4">
           {/* Type de remise - 50% de la largeur */}
@@ -150,13 +144,62 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
           </div>
         </div>
 
-        <Separator />
+        {/* Retenue de garantie et Escompte */}
+        <div className="flex gap-4">
+          {/* Retenue de garantie - 50% de la largeur */}
+          <div className="w-1/2">
+            <PercentageSliderInput
+              label="Retenue de garantie"
+              value={data.retenueGarantie || 0}
+              onChange={(value) => {
+                setValue("retenueGarantie", value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+              disabled={!canEdit}
+              minValue={0}
+              maxValue={100}
+              step={1}
+              gaugeColor="#5b50FF"
+              id="retenue-garantie"
+            />
+            {errors?.retenueGarantie && (
+              <p className="text-xs text-destructive mt-2">
+                {errors.retenueGarantie.message}
+              </p>
+            )}
+          </div>
+
+          {/* Escompte - 50% de la largeur */}
+          <div className="w-1/2">
+            <PercentageSliderInput
+              label="Escompte"
+              value={data.escompte || 0}
+              onChange={(value) => {
+                setValue("escompte", value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+              disabled={!canEdit}
+              minValue={0}
+              maxValue={100}
+              step={1}
+              gaugeColor="#5b50FF"
+              id="escompte"
+            />
+            {errors?.escompte && (
+              <p className="text-xs text-destructive mt-2">
+                {errors.escompte.message}
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Champs personnalisés */}
         <div className="space-y-4 mb-6">
-          <div className="mb-2">
-            <Label className="text-sm font-normal">Champs personnalisés</Label>
-          </div>
+          <h3 className="text-lg font-normal text-foreground mb-6 mt-12">Champs personnalisés</h3>
           {data.customFields && data.customFields.length > 0 ? (
             <div className="space-y-3">
               {data.customFields.map((field, index) => {

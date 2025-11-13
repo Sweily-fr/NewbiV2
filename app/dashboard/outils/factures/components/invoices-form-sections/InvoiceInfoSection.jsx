@@ -222,7 +222,7 @@ export default function InvoiceInfoSection({ canEdit }) {
         </div>
 
         {/* Préfixe et numéro de facture */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label htmlFor="invoice-prefix" className="text-sm font-light">
@@ -261,7 +261,7 @@ export default function InvoiceInfoSection({ canEdit }) {
               )}
             </div>
           </div>
-          <div className="md:col-span-2 space-y-2">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label htmlFor="invoice-number" className="text-sm font-light">
                 Numéro de facture

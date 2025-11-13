@@ -37,6 +37,7 @@ export default function ModernQuoteEditor({
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
   const [errorsExpanded, setErrorsExpanded] = useState(true);
+  const [currentStep, setCurrentStep] = useState(1);
   const {
     form,
     formData,
@@ -156,7 +157,21 @@ export default function ModernQuoteEditor({
                     >
                       <X className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                    
+
+                    {/* Bouton Retour sur desktop - visible uniquement à l'étape 2 */}
+                    {currentStep === 2 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentStep(1)}
+                        className="hidden md:flex gap-2 h-8 px-3"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="text-sm">Retour</span>
+                      </Button>
+                    )}
+
+                    {/* Bouton Paramètres */}
                     {!isReadOnly && (
                       <Button
                         variant="ghost"
@@ -164,7 +179,7 @@ export default function ModernQuoteEditor({
                         onClick={handleSettingsClick}
                         className="h-8 w-8 p-0"
                       >
-                        <Settings className="h-4 w-4 text-muted-foreground" />
+                        <Settings size={20} style={{ color: '#5b50FF' }} />
                       </Button>
                     )}
                   </>
@@ -322,6 +337,8 @@ export default function ModernQuoteEditor({
                     validateQuoteNumber={validateQuoteNumber}
                     hasExistingQuotes={hasExistingQuotes}
                     validationErrors={validationErrors}
+                    currentStep={currentStep}
+                    onStepChange={setCurrentStep}
                   />
                 )}
               </FormProvider>

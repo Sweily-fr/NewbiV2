@@ -20,6 +20,8 @@ export const INVOICE_FRAGMENT = gql`
     termsAndConditionsLink
     discount
     discountType
+    retenueGarantie
+    escompte
     totalHT
     totalTTC
     totalVAT
@@ -29,7 +31,7 @@ export const INVOICE_FRAGMENT = gql`
     discountAmount
     stripeInvoiceId
     showBankDetails
-    # isReverseCharge
+    isReverseCharge
     createdAt
     updatedAt
     client {
@@ -138,6 +140,8 @@ export const INVOICE_LIST_FRAGMENT = gql`
     dueDate
     discount
     discountType
+    retenueGarantie
+    escompte
     discountAmount
     totalHT
     totalVAT
@@ -146,7 +150,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
     finalTotalVAT
     finalTotalTTC
     stripeInvoiceId
-    # isReverseCharge
+    isReverseCharge
     items {
       description
       quantity

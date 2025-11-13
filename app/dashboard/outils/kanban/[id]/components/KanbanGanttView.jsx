@@ -36,6 +36,7 @@ export function KanbanGanttView({
   getTasksByColumn,
   filterTasks,
   onEditTask,
+  onAddTask,
   members = [],
   updateTask,
   workspaceId,
@@ -482,13 +483,22 @@ export function KanbanGanttView({
         const clickedDate = daysToDisplay[dayIndex];
         
         // Créer une nouvelle tâche avec la date de début
-        onEditTask({
-          id: null, // Nouvelle tâche
-          title: '',
-          startDate: clickedDate.toISOString(),
-          dueDate: null,
-          column: columns[0] // Première colonne par défaut
-        });
+        // Utiliser onAddTask si disponible, sinon fallback sur onEditTask
+        if (onAddTask && columns.length > 0) {
+          onAddTask(columns[0].id, {
+            startDate: clickedDate.toISOString(),
+            dueDate: null
+          });
+        } else if (onEditTask) {
+          // Fallback pour compatibilité arrière
+          onEditTask({
+            id: null,
+            title: '',
+            startDate: clickedDate.toISOString(),
+            dueDate: null,
+            column: columns[0]
+          });
+        }
       }
     };
 

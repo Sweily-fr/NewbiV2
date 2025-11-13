@@ -1191,6 +1191,7 @@ function getInitialFormData(mode, initialData, session, organization) {
       headerTextColor: "#ffffff",
       headerBgColor: "#5b50FF",
     },
+    clientPositionRight: false, // Position du client dans le PDF (false = centre, true = droite)
   };
 
   // Utiliser les paramètres par défaut de l'organisation si disponibles
@@ -1342,6 +1343,8 @@ function transformInvoiceToFormData(invoice) {
     })) || [],
     discount: invoice.discount || 0,
     discountType: invoice.discountType || "PERCENTAGE",
+    retenueGarantie: invoice.retenueGarantie || 0,
+    escompte: invoice.escompte || 0,
     headerNotes: invoice.headerNotes || "",
     footerNotes: invoice.footerNotes || "",
     termsAndConditions: invoice.termsAndConditions || "",
@@ -1377,6 +1380,7 @@ function transformInvoiceToFormData(invoice) {
       headerTextColor: invoice.appearance?.headerTextColor || "#ffffff",
       headerBgColor: invoice.appearance?.headerBgColor || "#5b50FF",
     },
+    clientPositionRight: invoice.clientPositionRight || false,
   };
 
   return transformedData;
@@ -1558,6 +1562,8 @@ function transformFormDataToInput(formData, previousStatus = null) {
       }) || [],
     discount: parseFloat(formData.discount) || 0,
     discountType: (formData.discountType || "PERCENTAGE").toUpperCase(),
+    retenueGarantie: parseFloat(formData.retenueGarantie) || 0,
+    escompte: parseFloat(formData.escompte) || 0,
     headerNotes: formData.headerNotes || "",
     footerNotes: formData.footerNotes || "",
     termsAndConditions: formData.termsAndConditions || "",
@@ -1592,6 +1598,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
         }
       : null,
     isReverseCharge: formData.isReverseCharge || false,
+    clientPositionRight: formData.clientPositionRight || false,
   };
 }
 

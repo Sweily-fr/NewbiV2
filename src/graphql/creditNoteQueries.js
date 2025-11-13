@@ -23,6 +23,8 @@ export const CREDIT_NOTE_FRAGMENT = gql`
     termsAndConditionsLink
     discount
     discountType
+    retenueGarantie
+    escompte
     totalHT
     totalTTC
     totalVAT

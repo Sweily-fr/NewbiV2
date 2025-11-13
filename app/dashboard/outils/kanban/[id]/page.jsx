@@ -789,6 +789,7 @@ export default function KanbanBoardPage({ params }) {
             getTasksByColumn={getLocalTasksByColumn}
             filterTasks={filterTasks}
             onEditTask={openEditTaskModal}
+            onAddTask={openAddTaskModal}
             members={board?.members || []}
             updateTask={updateTask}
             workspaceId={workspaceId}

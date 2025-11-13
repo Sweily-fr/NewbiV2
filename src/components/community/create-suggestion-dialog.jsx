@@ -22,6 +22,21 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 import { Switch } from "../../components/ui/switch";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../../components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../../components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/src/lib/utils";
 import { toast } from "@/src/components/ui/sonner";
 import { CREATE_COMMUNITY_SUGGESTION } from "../../graphql/mutations/communitySuggestion";
 import {
@@ -30,14 +45,30 @@ import {
 } from "../../graphql/queries/communitySuggestion";
 import { validateSuggestionForm } from "../../utils/suggestionValidation";
 
+// Liste des pages disponibles
+const pages = [
+  { value: "dashboard", label: "Tableau de bord" },
+  { value: "factures", label: "Factures" },
+  { value: "devis", label: "Devis" },
+  { value: "depenses", label: "Dépenses" },
+  { value: "signatures", label: "Signatures de mail" },
+  { value: "kanban", label: "Gestion de projet" },
+  { value: "transferts", label: "Transferts de fichiers" },
+  { value: "clients", label: "Clients" },
+  { value: "parametres", label: "Paramètres" },
+  { value: "autre", label: "Autre" },
+];
+
 export function CreateSuggestionDialog({ open, onOpenChange, type = "idea" }) {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    page: "",
     severity: "medium",
     stepsToReproduce: "",
     isAnonymous: true,
   });
+  const [pageOpen, setPageOpen] = useState(false);
 
   const [errors, setErrors] = useState({});
 
@@ -76,6 +107,7 @@ export function CreateSuggestionDialog({ open, onOpenChange, type = "idea" }) {
             type,
             title: formData.title.trim(),
             description: formData.description.trim(),
+            page: formData.page || undefined,
             severity: type === "bug" ? formData.severity : undefined,
             stepsToReproduce:
               type === "bug" && formData.stepsToReproduce.trim()
@@ -96,6 +128,7 @@ export function CreateSuggestionDialog({ open, onOpenChange, type = "idea" }) {
       setFormData({
         title: "",
         description: "",
+        page: "",
         severity: "medium",
         stepsToReproduce: "",
         isAnonymous: true,
@@ -158,6 +191,61 @@ export function CreateSuggestionDialog({ open, onOpenChange, type = "idea" }) {
             )}
             <p className="text-xs text-muted-foreground">
               {formData.title.length}/100 caractères
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="page">Page concernée</Label>
+            <Popover open={pageOpen} onOpenChange={setPageOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={pageOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {formData.page
+                    ? pages.find((page) => page.value === formData.page)?.label
+                    : "Sélectionner une page..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput placeholder="Rechercher une page..." />
+                  <CommandList>
+                    <CommandEmpty>Aucune page trouvée.</CommandEmpty>
+                    <CommandGroup>
+                      {pages.map((page) => (
+                        <CommandItem
+                          key={page.value}
+                          value={page.value}
+                          onSelect={(currentValue) => {
+                            handleChange(
+                              "page",
+                              currentValue === formData.page ? "" : currentValue
+                            );
+                            setPageOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.page === page.value
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {page.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">
+              Optionnel - Aide à mieux contextualiser votre {type === "idea" ? "idée" : "problème"}
             </p>
           </div>
 

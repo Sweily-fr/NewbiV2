@@ -60,22 +60,22 @@ import { Callout } from "@/src/components/ui/callout";
 
 // Textes explicatifs pour chaque outil
 const toolDescriptions = {
-  "Créer une Facture": {
+  "Factures": {
     title: "Outil de Facturation",
     description:
       "Créez des factures professionnelles en quelques clics. Gérez vos clients, ajoutez vos produits/services, calculez automatiquement les taxes et suivez les paiements. Exportez vos factures en PDF et envoyez-les directement par email à vos clients.",
   },
-  "Créer un Devis": {
+  "Devis": {
     title: "Générateur de Devis",
     description:
       "Élaborez des devis détaillés et attractifs pour vos prospects. Personnalisez vos offres, ajustez les prix, incluez des conditions spéciales et convertissez facilement vos devis acceptés en factures.",
   },
-  "Créer une Dépense": {
+  "Gérer mes dépenses": {
     title: "Gestion des Dépenses",
     description:
       "Enregistrez et catégorisez toutes vos dépenses professionnelles. Uploadez vos reçus, suivez vos frais déductibles et générez des rapports pour votre comptabilité et déclarations fiscales.",
   },
-  "Mes Signatures de Mail": {
+  "Signatures de mail": {
     title: "Signatures Email Professionnelles",
     description:
       "Créez des signatures email élégantes et cohérentes pour votre entreprise. Ajoutez votre logo, vos coordonnées, liens vers vos réseaux sociaux et respectez votre charte graphique.",
@@ -120,7 +120,7 @@ function getIconColor(title) {
 
 const cards = [
   {
-    title: "Créer une Facture",
+    title: "Factures",
     subtitle: "Créez et gérez facilement toutes vos factures professionnelles.",
     icon: <IconFileInvoice size={15} />,
     href: "/dashboard/outils/factures",
@@ -131,7 +131,7 @@ const cards = [
     category: "financier",
   },
   {
-    title: "Créer un Devis",
+    title: "Devis",
     subtitle: "Créez et suivez efficacement tous vos devis clients.",
     icon: <IconFileDescription size={15} />,
     href: "/dashboard/outils/devis",
@@ -142,7 +142,7 @@ const cards = [
     category: "financier",
   },
   {
-    title: "Créer une Dépense",
+    title: "Gérer mes dépenses",
     subtitle: "Créez et gérez simplement toutes vos dépenses d'entreprise.",
     icon: <IconReceipt size={15} />,
     href: "/dashboard/outils/gestion-depenses",
@@ -153,7 +153,7 @@ const cards = [
     category: "financier",
   },
   {
-    title: "Mes Signatures de Mail",
+    title: "Signatures de mail",
     subtitle: "Créez et gérez professionnellement vos signatures d'email.",
     icon: <IconMailForward size={15} />,
     href: "/dashboard/outils/signatures-mail",

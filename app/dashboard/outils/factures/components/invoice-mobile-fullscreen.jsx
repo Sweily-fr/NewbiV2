@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import {
   X,
   CheckCircle,
@@ -22,6 +23,7 @@ import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
 import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
+import { usePermissions } from "@/src/hooks/usePermissions";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 
@@ -32,8 +34,19 @@ export default function InvoiceMobileFullscreen({
   onRefetch,
 }) {
   const router = useRouter();
+  const { canCreate } = usePermissions();
+  const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
+
+  // Vérifier les permissions pour créer un avoir
+  useEffect(() => {
+    const checkPermission = async () => {
+      const allowed = await canCreate("creditNotes");
+      setCanCreateCreditNote(allowed);
+    };
+    checkPermission();
+  }, [canCreate]);
 
   // Fetch credit notes for this invoice
   const {
@@ -271,7 +284,7 @@ export default function InvoiceMobileFullscreen({
                 )}
                 Marquer comme payée
               </Button>
-              {!creditNoteLimitReached && (
+              {!creditNoteLimitReached && canCreateCreditNote && (
                 <Button
                   onClick={handleCreateCreditNote}
                   variant="outline"
@@ -293,7 +306,7 @@ export default function InvoiceMobileFullscreen({
             </>
           )}
 
-          {invoice.status === INVOICE_STATUS.COMPLETED && !creditNoteLimitReached && (
+          {invoice.status === INVOICE_STATUS.COMPLETED && !creditNoteLimitReached && canCreateCreditNote && (
             <Button
               onClick={handleCreateCreditNote}
               variant="outline"
@@ -304,7 +317,7 @@ export default function InvoiceMobileFullscreen({
             </Button>
           )}
 
-          {invoice.status === INVOICE_STATUS.CANCELED && !creditNoteLimitReached && (
+          {invoice.status === INVOICE_STATUS.CANCELED && !creditNoteLimitReached && canCreateCreditNote && (
             <Button
               onClick={handleCreateCreditNote}
               variant="outline"

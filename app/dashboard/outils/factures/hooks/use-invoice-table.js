@@ -449,9 +449,49 @@ export function useInvoiceTable({ data = [], onRefetch }) {
           label: "Montant TTC",
         },
         cell: ({ row }) => {
-          const amount = row.getValue("finalTotalTTC");
-          // Afficher 0€ si le montant est 0, et "-" seulement si undefined/null
+          const invoice = row.original;
+          const escompteValue = parseFloat(invoice.escompte) || 0;
+          
+          // Utiliser finalTotalTTC comme base (après remise mais avant escompte)
+          let amount = invoice.finalTotalTTC;
+          
+          // Afficher "-" si undefined/null
           if (amount === undefined || amount === null || isNaN(amount)) return "-";
+          
+          // Appliquer uniquement l'escompte pour afficher le Total TTC
+          if (escompteValue > 0) {
+            // Utiliser finalTotalHT et finalTotalVAT (après remise)
+            const totalHT = invoice.finalTotalHT !== undefined && invoice.finalTotalHT !== null 
+              ? invoice.finalTotalHT 
+              : (invoice.totalHT || 0);
+            const totalVAT = invoice.finalTotalVAT !== undefined && invoice.finalTotalVAT !== null
+              ? invoice.finalTotalVAT
+              : (invoice.totalVAT || 0);
+            
+            console.log('Invoice Table - Escompte calculation:', {
+              invoiceId: invoice.id,
+              finalTotalTTC: invoice.finalTotalTTC,
+              finalTotalHT: invoice.finalTotalHT,
+              finalTotalVAT: invoice.finalTotalVAT,
+              totalHT,
+              totalVAT,
+              escompteValue
+            });
+            
+            // Appliquer l'escompte sur HT
+            const escompteAmount = (totalHT * escompteValue) / 100;
+            const htAfterEscompte = totalHT - escompteAmount;
+            const tvaAfterEscompte = invoice.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+            amount = htAfterEscompte + tvaAfterEscompte;
+            
+            console.log('Invoice Table - Result:', {
+              escompteAmount,
+              htAfterEscompte,
+              tvaAfterEscompte,
+              finalAmount: amount
+            });
+          }
+          
           return (
             <div className="font-normal">
               {new Intl.NumberFormat("fr-FR", {

@@ -84,7 +84,7 @@ export function useCreditNoteEditor({
 
   // Initialize form data when original invoice loads (create mode)
   useEffect(() => {
-    if (originalInvoice && mode === "create") {
+    if (mode === "create" && originalInvoice) {
       const nextNumber = nextCreditNoteNumber
         ? String(nextCreditNoteNumber).padStart(6, "0")
         : "";
@@ -405,6 +405,7 @@ function getInitialFormData(
       headerTextColor: "#ffffff",
       headerBgColor: "#3b82f6",
     },
+    clientPositionRight: false,
     ...initialData,
   };
 }
@@ -454,6 +455,7 @@ function transformInvoiceToCreditNoteFormData(
       headerTextColor: "#ffffff",
       headerBgColor: "#3b82f6",
     },
+    clientPositionRight: invoice.clientPositionRight || false,
   };
 }
 
@@ -502,6 +504,7 @@ function transformCreditNoteToFormData(creditNote) {
       headerTextColor: "#ffffff",
       headerBgColor: "#3b82f6",
     },
+    clientPositionRight: creditNote.clientPositionRight || false,
   };
 }
 
@@ -603,12 +606,15 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     termsAndConditionsLink: cleanedData.termsAndConditionsLink,
     discount: cleanedData.discount,
     discountType: cleanedData.discountType,
+    retenueGarantie: parseFloat(cleanedData.retenueGarantie) || 0,
+    escompte: parseFloat(cleanedData.escompte) || 0,
     customFields: cleanedData.customFields || [],
     number: cleanedData.number,
     prefix: cleanedData.prefix,
     showBankDetails: cleanedData.showBankDetails,
     bankDetails: cleanedData.bankDetails,
     appearance: cleanedData.appearance,
+    clientPositionRight: cleanedData.clientPositionRight || false,
     // Exclude calculated fields - these are computed on the backend
     // totalHT, totalVAT, finalTotalHT, finalTotalTTC, discountAmount
   };

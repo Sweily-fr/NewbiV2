@@ -17,6 +17,8 @@ export const QUOTE_FRAGMENT = gql`
     termsAndConditionsLink
     discount
     discountType
+    retenueGarantie
+    escompte
     totalHT
     totalTTC
     totalVAT
@@ -140,7 +142,15 @@ export const QUOTE_LIST_FRAGMENT = gql`
     status
     issueDate
     validUntil
+    retenueGarantie
+    escompte
+    totalHT
+    totalVAT
+    totalTTC
+    finalTotalHT
+    finalTotalVAT
     finalTotalTTC
+    isReverseCharge
     client {
       id
       name

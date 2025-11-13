@@ -431,18 +431,150 @@ export default function InvoiceSidebar({
                   )}
                 </span>
               </div>
+              
+              {/* Escompte (avant Total TTC) */}
+              {(() => {
+                const escompteValue = parseFloat(invoice.escompte) || 0;
+                if (escompteValue <= 0) return null;
+                
+                const totalTTC = invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
+                  ? invoice.finalTotalTTC
+                  : invoice.totalTTC !== undefined && invoice.totalTTC !== null
+                    ? invoice.totalTTC
+                    : 0;
+                const totalHT = totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
+                const escompteAmount = (totalHT * escompteValue) / 100;
+                
+                return (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Escompte sur HT ({escompteValue}%)</span>
+                    <span>-{formatCurrency(escompteAmount)}</span>
+                  </div>
+                );
+              })()}
+              
+              {/* TVA après escompte */}
+              {(() => {
+                const escompteValue = parseFloat(invoice.escompte) || 0;
+                if (escompteValue <= 0 || invoice.isReverseCharge) return null;
+                
+                const totalTTC = invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
+                  ? invoice.finalTotalTTC
+                  : invoice.totalTTC !== undefined && invoice.totalTTC !== null
+                    ? invoice.totalTTC
+                    : 0;
+                const totalHT = totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
+                const totalVAT = invoice.finalTotalVAT || invoice.totalVAT || 0;
+                const escompteAmount = (totalHT * escompteValue) / 100;
+                const htAfterEscompte = totalHT - escompteAmount;
+                const tvaAfterEscompte = (htAfterEscompte / totalHT) * totalVAT;
+                
+                return (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">TVA après escompte</span>
+                    <span>{formatCurrency(tvaAfterEscompte)}</span>
+                  </div>
+                );
+              })()}
+              
               <div className="flex justify-between font-medium">
                 <span>Total TTC</span>
                 <span>
-                  {formatCurrency(
-                    invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
+                  {(() => {
+                    const escompteValue = parseFloat(invoice.escompte) || 0;
+                    const totalTTC = invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
                       ? invoice.finalTotalTTC
                       : invoice.totalTTC !== undefined && invoice.totalTTC !== null
                         ? invoice.totalTTC
-                        : 0
-                  )}
+                        : 0;
+                    
+                    // Si escompte, afficher le TTC après escompte
+                    if (escompteValue > 0) {
+                      const totalHT = totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
+                      const totalVAT = invoice.finalTotalVAT || invoice.totalVAT || 0;
+                      const escompteAmount = (totalHT * escompteValue) / 100;
+                      const htAfterEscompte = totalHT - escompteAmount;
+                      const tvaAfterEscompte = invoice.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+                      return formatCurrency(htAfterEscompte + tvaAfterEscompte);
+                    }
+                    
+                    return formatCurrency(totalTTC);
+                  })()}
                 </span>
               </div>
+              
+              {/* Retenue de garantie (après Total TTC) */}
+              {(() => {
+                const retenueValue = parseFloat(invoice.retenueGarantie) || 0;
+                if (retenueValue <= 0) return null;
+                
+                const escompteValue = parseFloat(invoice.escompte) || 0;
+                const totalTTC = invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
+                  ? invoice.finalTotalTTC
+                  : invoice.totalTTC !== undefined && invoice.totalTTC !== null
+                    ? invoice.totalTTC
+                    : 0;
+                
+                // Calculer la base pour la retenue (TTC ou TTC après escompte)
+                let baseAmount = totalTTC;
+                if (escompteValue > 0) {
+                  const totalHT = totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
+                  const totalVAT = invoice.finalTotalVAT || invoice.totalVAT || 0;
+                  const escompteAmount = (totalHT * escompteValue) / 100;
+                  const htAfterEscompte = totalHT - escompteAmount;
+                  const tvaAfterEscompte = invoice.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+                  baseAmount = htAfterEscompte + tvaAfterEscompte;
+                }
+                
+                const retenueAmount = (baseAmount * retenueValue) / 100;
+                
+                return (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Retenue de garantie ({retenueValue}%)</span>
+                    <span>-{formatCurrency(retenueAmount)}</span>
+                  </div>
+                );
+              })()}
+              
+              {/* Net à payer */}
+              {(() => {
+                const retenueValue = parseFloat(invoice.retenueGarantie) || 0;
+                const escompteValue = parseFloat(invoice.escompte) || 0;
+                
+                if (retenueValue <= 0 && escompteValue <= 0) return null;
+                
+                const totalTTC = invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
+                  ? invoice.finalTotalTTC
+                  : invoice.totalTTC !== undefined && invoice.totalTTC !== null
+                    ? invoice.totalTTC
+                    : 0;
+                
+                // Calculer le net à payer
+                let finalAmount = totalTTC;
+                
+                // Appliquer l'escompte sur HT
+                if (escompteValue > 0) {
+                  const totalHT = totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
+                  const totalVAT = invoice.finalTotalVAT || invoice.totalVAT || 0;
+                  const escompteAmount = (totalHT * escompteValue) / 100;
+                  const htAfterEscompte = totalHT - escompteAmount;
+                  const tvaAfterEscompte = invoice.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+                  finalAmount = htAfterEscompte + tvaAfterEscompte;
+                }
+                
+                // Appliquer la retenue sur TTC
+                if (retenueValue > 0) {
+                  const retenueAmount = (finalAmount * retenueValue) / 100;
+                  finalAmount = finalAmount - retenueAmount;
+                }
+                
+                return (
+                  <div className="flex justify-between font-bold text-base pt-2 border-t">
+                    <span>Net à payer</span>
+                    <span>{formatCurrency(finalAmount)}</span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

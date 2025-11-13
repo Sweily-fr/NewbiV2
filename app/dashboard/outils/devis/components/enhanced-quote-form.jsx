@@ -25,6 +25,16 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 import { Button } from "@/src/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
+import {
   Timeline,
   TimelineHeader,
   TimelineItem,
@@ -252,10 +262,17 @@ export default function EnhancedQuoteForm({
   validateQuoteNumber,
   hasExistingQuotes,
   validationErrors = {},
+  currentStep: externalCurrentStep,
+  onStepChange,
 }) {
   const { watch, setValue, getValues, control } = useFormContext();
   const data = watch();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [internalCurrentStep, setInternalCurrentStep] = useState(1);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  // Utiliser l'état externe si fourni, sinon utiliser l'état interne
+  const currentStep = externalCurrentStep !== undefined ? externalCurrentStep : internalCurrentStep;
+  const setCurrentStep = onStepChange || setInternalCurrentStep;
 
   const canEdit = !readOnly;
 
@@ -369,7 +386,6 @@ export default function EnhancedQuoteForm({
                 hasExistingQuotes={hasExistingQuotes}
                 validationErrors={validationErrors}
               />
-              <Separator />
 
               {/* Section 2: Sélection d'un client */}
               <Card className="shadow-none gap-0 border-none p-2 bg-transparent">
@@ -384,6 +400,8 @@ export default function EnhancedQuoteForm({
                     onSelect={(client) => updateField("client", client)}
                     disabled={!canEdit}
                     validationErrors={validationErrors}
+                    clientPositionRight={data.clientPositionRight || false}
+                    onClientPositionChange={(checked) => updateField("clientPositionRight", checked)}
                   />
                 </CardContent>
               </Card>
@@ -418,7 +436,7 @@ export default function EnhancedQuoteForm({
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => window.history.back()}
+                onClick={() => setShowCancelDialog(true)}
                 disabled={loading || saving}
                 className="text-sm font-normal hidden md:flex"
               >
@@ -452,11 +470,11 @@ export default function EnhancedQuoteForm({
                   <Button
                     className="text-sm font-normal"
                     variant="outline"
+                    size="icon"
                     onClick={handlePreviousStep}
                     disabled={!canEdit}
                   >
-                    <ChevronLeft className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Précédent</span>
+                    <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <Button
                     onClick={handleCreateQuote}
@@ -471,6 +489,23 @@ export default function EnhancedQuoteForm({
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Quitter l'éditeur ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir quitter ? Les modifications non enregistrées seront perdues.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Rester</AlertDialogCancel>
+            <AlertDialogAction onClick={() => window.history.back()}>
+              Quitter
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

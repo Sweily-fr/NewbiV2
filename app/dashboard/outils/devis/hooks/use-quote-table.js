@@ -462,9 +462,28 @@ export function useQuoteTable({ data = [], onRefetch }) {
           label: "Montant TTC",
         },
         cell: ({ row }) => {
-          const amount = row.getValue("finalTotalTTC");
-          // Afficher 0€ si le montant est 0, et "-" seulement si undefined/null
+          const quote = row.original;
+          const escompteValue = parseFloat(quote.escompte) || 0;
+          
+          // Utiliser finalTotalTTC comme base (après remise mais avant escompte)
+          let amount = quote.finalTotalTTC;
+          
+          // Afficher "-" si undefined/null
           if (amount === undefined || amount === null || isNaN(amount)) return "-";
+          
+          // Appliquer uniquement l'escompte pour afficher le Total TTC
+          if (escompteValue > 0) {
+            // Utiliser finalTotalHT et finalTotalVAT (après remise)
+            const totalHT = quote.finalTotalHT || (quote.totalHT || 0);
+            const totalVAT = quote.finalTotalVAT || (quote.totalVAT || 0);
+            
+            // Appliquer l'escompte sur HT
+            const escompteAmount = (totalHT * escompteValue) / 100;
+            const htAfterEscompte = totalHT - escompteAmount;
+            const tvaAfterEscompte = quote.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+            amount = htAfterEscompte + tvaAfterEscompte;
+          }
+          
           return (
             <div className="font-normal">
               {new Intl.NumberFormat("fr-FR", {

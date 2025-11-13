@@ -13,6 +13,8 @@ import {
   X,
   CheckIcon,
   ExternalLink,
+  AlignLeft,
+  AlignRight,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -67,6 +69,8 @@ export default function ClientSelector({
   className,
   disabled = false,
   validationErrors = {},
+  clientPositionRight = false,
+  onClientPositionChange,
 }) {
   // Helper pour vérifier si le client a une erreur
   const hasClientError = validationErrors?.client;
@@ -575,53 +579,128 @@ export default function ClientSelector({
                   </div>
 
                   {selectedClient && (
-                    <div className="p-4 border rounded-lg bg-muted/50">
-                      <div className="flex items-start sm:items-center justify-between">
-                        <div className="flex items-start sm:items-center space-x-3 flex-1 min-w-0">
-                          <div className="p-2 bg-primary/10 rounded flex-shrink-0">
-                            {React.createElement(
-                              getClientIcon(selectedClient.type),
-                              {
-                                className: "h-4 w-4 text-primary",
-                              }
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-normal">
-                              {selectedClient.name}
+                    <div className="space-y-3">
+                      <div className="p-4 border rounded-lg bg-muted/50">
+                        <div className="flex items-start sm:items-center justify-between">
+                          <div className="flex items-start sm:items-center space-x-3 flex-1 min-w-0">
+                            <div className="p-2 bg-primary/10 rounded flex-shrink-0">
+                              {React.createElement(
+                                getClientIcon(selectedClient.type),
+                                {
+                                  className: "h-4 w-4 text-primary",
+                                }
+                              )}
                             </div>
-                            <div className="text-sm">
-                              {selectedClient.email}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-normal">
+                                {selectedClient.name}
+                              </div>
+                              <div className="text-sm">
+                                {selectedClient.email}
+                              </div>
+                              <div className="mt-2 sm:hidden">
+                                <Badge variant="outline" className="text-xs font-normal">
+                                  {CLIENT_TYPE_LABELS[selectedClient.type]}
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="mt-2 sm:hidden">
+                            <div className="hidden sm:block">
                               <Badge variant="outline" className="text-xs font-normal">
                                 {CLIENT_TYPE_LABELS[selectedClient.type]}
                               </Badge>
                             </div>
                           </div>
-                          <div className="hidden sm:block">
-                            <Badge variant="outline" className="text-xs font-normal">
-                              {CLIENT_TYPE_LABELS[selectedClient.type]}
-                            </Badge>
-                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              onSelect?.(null);
+                              setSelectedValue("");
+                              setQuery("");
+                            }}
+                            className="flex-shrink-0 ml-2"
+                          >
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">
+                              Supprimer la sélection
+                            </span>
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            onSelect?.(null);
-                            setSelectedValue("");
-                            setQuery("");
-                          }}
-                          className="flex-shrink-0 ml-2"
-                        >
-                          <X className="h-4 w-4" />
-                          <span className="sr-only">
-                            Supprimer la sélection
-                          </span>
-                        </Button>
                       </div>
+                      
+                      {/* Sélecteur de position du client dans le PDF */}
+                      <div className="p-4 border rounded-lg bg-muted/20">
+                      <div className="mb-3">
+                        <Label className="text-sm font-medium">
+                          Position des informations client dans le PDF
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Choisissez où afficher les informations du client
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Option Centre */}
+                        <button
+                          type="button"
+                          onClick={() => onClientPositionChange?.(false)}
+                          disabled={disabled}
+                          className={`
+                            relative flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all
+                            ${!clientPositionRight 
+                              ? 'border-primary bg-primary/5 shadow-sm' 
+                              : 'border-border bg-background hover:border-primary/50'
+                            }
+                            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                          `}
+                        >
+                          <AlignLeft className={`h-5 w-5 ${!clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
+                          <div className="text-center">
+                            <div className={`text-sm font-medium ${!clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
+                              Au centre
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              Position standard
+                            </div>
+                          </div>
+                          {!clientPositionRight && (
+                            <div className="absolute top-2 right-2">
+                              <CheckIcon className="h-4 w-4 text-primary" />
+                            </div>
+                          )}
+                        </button>
+
+                        {/* Option Droite */}
+                        <button
+                          type="button"
+                          onClick={() => onClientPositionChange?.(true)}
+                          disabled={disabled}
+                          className={`
+                            relative flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all
+                            ${clientPositionRight 
+                              ? 'border-primary bg-primary/5 shadow-sm' 
+                              : 'border-border bg-background hover:border-primary/50'
+                            }
+                            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                          `}
+                        >
+                          <AlignRight className={`h-5 w-5 ${clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
+                          <div className="text-center">
+                            <div className={`text-sm font-medium ${clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
+                              À droite
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              Aligné à droite
+                            </div>
+                          </div>
+                          {clientPositionRight && (
+                            <div className="absolute top-2 right-2">
+                              <CheckIcon className="h-4 w-4 text-primary" />
+                            </div>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                     </div>
                   )}
                 </div>

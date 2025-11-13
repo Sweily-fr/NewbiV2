@@ -160,10 +160,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
     let totalAfterDiscount = subtotalAfterItemDiscounts;
 
     if (data.discount && data.discount > 0) {
-      if (
-        data.discountType === "PERCENTAGE" ||
-        data.discountType === "percentage"
-      ) {
+      if (data.discountType?.toUpperCase() === "PERCENTAGE") {
         // La remise en pourcentage s'applique sur le montant après remises sur les articles
         globalDiscountAmount =
           (subtotalAfterItemDiscounts * data.discount) / 100;
@@ -197,10 +194,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
       const itemDiscountType = item.discountType;
 
       if (itemDiscount > 0) {
-        if (
-          itemDiscountType === "PERCENTAGE" ||
-          itemDiscountType === "percentage"
-        ) {
+        if (itemDiscountType?.toUpperCase() === "PERCENTAGE") {
           // Application de la remise en pourcentage sur l'article
           itemSubtotal = itemSubtotal * (1 - Math.min(itemDiscount, 100) / 100);
         } else {
@@ -644,8 +638,10 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
             </div>
           </div>
 
-          {/* Informations client - Afficher seulement si des données client existent */}
-          {(data.client?.name ||
+          {/* Informations client - Position dynamique selon clientPositionRight */}
+          {/* Si clientPositionRight est false (par défaut), le client est au centre (colonne 2) */}
+          {/* Si clientPositionRight est true, on ajoute une div vide au centre et le client va à droite (colonne 3) */}
+          {!data.clientPositionRight && (data.client?.name ||
             data.client?.firstName ||
             data.client?.lastName ||
             data.client?.address ||
@@ -654,6 +650,57 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
             data.client?.siret ||
             data.client?.vatNumber) && (
             <div>
+              <div
+                className="font-medium mb-2 dark:text-[#0A0A0A]"
+                style={{ fontSize: "10px" }}
+              >
+                {data.client?.name ||
+                  `${data.client?.firstName || ""} ${data.client?.lastName || ""}`.trim() ||
+                  "Client"}
+              </div>
+              <div className="font-normal" style={{ fontSize: "10px" }}>
+                {data.client?.address && (
+                  <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                    {formatAddress(data.client.address) || ""}
+                  </div>
+                )}
+                {data.client?.email && (
+                  <div className="dark:text-[#0A0A0A]">
+                    {data.client.email}
+                  </div>
+                )}
+                {data.client?.phone && (
+                  <div className="dark:text-[#0A0A0A]">
+                    {data.client.phone}
+                  </div>
+                )}
+                {data.client?.siret && (
+                  <div className="dark:text-[#0A0A0A]">
+                    SIRET: {data.client.siret}
+                  </div>
+                )}
+                {data.client?.vatNumber && (
+                  <div className="dark:text-[#0A0A0A]">
+                    N° TVA: {data.client.vatNumber}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Div vide pour pousser le client à droite si clientPositionRight est true */}
+          {data.clientPositionRight && <div></div>}
+          
+          {/* Informations client à droite si clientPositionRight est true */}
+          {data.clientPositionRight && (data.client?.name ||
+            data.client?.firstName ||
+            data.client?.lastName ||
+            data.client?.address ||
+            data.client?.email ||
+            data.client?.phone ||
+            data.client?.siret ||
+            data.client?.vatNumber) && (
+            <div className="text-right">
               <div
                 className="font-medium mb-2 dark:text-[#0A0A0A]"
                 style={{ fontSize: "10px" }}
@@ -796,10 +843,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
             // Appliquer la remise sur l'article si elle existe
             const itemDiscount = parseFloat(item.discount) || 0;
             if (itemDiscount > 0) {
-              if (
-                item.discountType === "PERCENTAGE" ||
-                item.discountType === "percentage"
-              ) {
+              if (item.discountType?.toUpperCase() === "PERCENTAGE") {
                 itemTotal = itemTotal * (1 - Math.min(itemDiscount, 100) / 100);
               } else {
                 itemTotal = Math.max(0, itemTotal - itemDiscount);
@@ -906,7 +950,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                       {item.discount > 0 && (
                         <div className="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5">
                           Remise:{" "}
-                          {item.discountType === "percentage"
+                          {item.discountType?.toUpperCase() === "PERCENTAGE"
                             ? `${parseFloat(item.discount).toFixed(2)}%`
                             : formatCurrency(parseFloat(item.discount))}
                         </div>
@@ -1213,20 +1257,166 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
               </div>
             )}
 
-            {/* 6. Total TTC */}
-            <div 
-              className="flex justify-between py-2 px-6 font-medium text-sm mt-2"
-              style={{
-                backgroundColor: applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)
-              }}
-            >
-              <span className="-ml-3 text-[10px] font-medium dark:text-[#0A0A0A]">
-                Total TTC
-              </span>
-              <span className="-mr-3 text-[10px] dark:text-[#0A0A0A] font-medium">
-                {formatCurrency(total)}
-              </span>
-            </div>
+            {/* 5.1 Escompte (appliqué sur HT avant TVA) */}
+            {(() => {
+              const escompteValue = parseFloat(data.escompte) || 0;
+              if (escompteValue <= 0) return null;
+              
+              // Calculer le HT total (total - TVA)
+              const totalHT = total - totalTax;
+              const escompteAmount = (totalHT * escompteValue) / 100;
+              
+              return (
+                <div className="flex justify-between py-1 px-3">
+                  <span className="text-[10px] dark:text-[#0A0A0A]">
+                    Escompte sur HT ({escompteValue}%)
+                  </span>
+                  <span className="dark:text-[#0A0A0A] text-[10px]">
+                    -{formatCurrency(escompteAmount)}
+                  </span>
+                </div>
+              );
+            })()}
+
+            {/* 5.2 Recalcul TVA après escompte */}
+            {(() => {
+              const escompteValue = parseFloat(data.escompte) || 0;
+              if (escompteValue <= 0 || data.isReverseCharge || totalTax === 0) return null;
+              
+              const totalHT = total - totalTax;
+              const escompteAmount = (totalHT * escompteValue) / 100;
+              const htAfterEscompte = totalHT - escompteAmount;
+              const tvaAfterEscompte = (htAfterEscompte / totalHT) * totalTax;
+              
+              return (
+                <div className="flex justify-between py-1 px-3">
+                  <span className="text-[10px] dark:text-[#0A0A0A]">
+                    TVA après escompte
+                  </span>
+                  <span className="dark:text-[#0A0A0A] text-[10px]">
+                    {formatCurrency(tvaAfterEscompte)}
+                  </span>
+                </div>
+              );
+            })()}
+
+            {/* 6. Total TTC (ou Total TTC après escompte si escompte appliqué) */}
+            {(() => {
+              const escompteValue = parseFloat(data.escompte) || 0;
+              
+              if (escompteValue > 0) {
+                // Afficher Total TTC après escompte
+                const totalHT = total - totalTax;
+                const escompteAmount = (totalHT * escompteValue) / 100;
+                const htAfterEscompte = totalHT - escompteAmount;
+                const tvaAfterEscompte = data.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalTax;
+                const ttcAfterEscompte = htAfterEscompte + tvaAfterEscompte;
+                
+                return (
+                  <div 
+                    className="flex justify-between py-2 px-6 font-medium text-sm mt-2"
+                    style={{
+                      backgroundColor: applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)
+                    }}
+                  >
+                    <span className="-ml-3 text-[10px] font-medium dark:text-[#0A0A0A]">
+                      Total TTC
+                    </span>
+                    <span className="-mr-3 text-[10px] dark:text-[#0A0A0A] font-medium">
+                      {formatCurrency(ttcAfterEscompte)}
+                    </span>
+                  </div>
+                );
+              } else {
+                // Afficher Total TTC normal
+                return (
+                  <div 
+                    className="flex justify-between py-2 px-6 font-medium text-sm mt-2"
+                    style={{
+                      backgroundColor: applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)
+                    }}
+                  >
+                    <span className="-ml-3 text-[10px] font-medium dark:text-[#0A0A0A]">
+                      Total TTC
+                    </span>
+                    <span className="-mr-3 text-[10px] dark:text-[#0A0A0A] font-medium">
+                      {formatCurrency(total)}
+                    </span>
+                  </div>
+                );
+              }
+            })()}
+
+            {/* 6.4 Retenue de garantie (appliquée sur TTC) */}
+            {(() => {
+              const retenueValue = parseFloat(data.retenueGarantie) || 0;
+              const escompteValue = parseFloat(data.escompte) || 0;
+              if (retenueValue <= 0) return null;
+              
+              // Si escompte, calculer sur le TTC après escompte, sinon sur le TTC normal
+              let baseAmount = total;
+              if (escompteValue > 0) {
+                const totalHT = total - totalTax;
+                const escompteAmount = (totalHT * escompteValue) / 100;
+                const htAfterEscompte = totalHT - escompteAmount;
+                const tvaAfterEscompte = data.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalTax;
+                baseAmount = htAfterEscompte + tvaAfterEscompte;
+              }
+              
+              const retenueAmount = (baseAmount * retenueValue) / 100;
+              
+              return (
+                <div className="flex justify-between py-1 px-3">
+                  <span className="text-[10px] dark:text-[#0A0A0A]">
+                    Retenue de garantie ({retenueValue}%)
+                  </span>
+                  <span className="dark:text-[#0A0A0A] text-[10px]">
+                    -{formatCurrency(retenueAmount)}
+                  </span>
+                </div>
+              );
+            })()}
+
+            {/* 6.5 Net à payer (si retenue ou escompte) */}
+            {(() => {
+              const retenueValue = parseFloat(data.retenueGarantie) || 0;
+              const escompteValue = parseFloat(data.escompte) || 0;
+              if (retenueValue <= 0 && escompteValue <= 0) return null;
+              
+              // Calculer le montant final
+              let finalAmount = total;
+              
+              // Appliquer l'escompte sur HT
+              if (escompteValue > 0) {
+                const totalHT = total - totalTax;
+                const escompteAmount = (totalHT * escompteValue) / 100;
+                const htAfterEscompte = totalHT - escompteAmount;
+                const tvaAfterEscompte = data.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalTax;
+                finalAmount = htAfterEscompte + tvaAfterEscompte;
+              }
+              
+              // Appliquer la retenue sur TTC
+              if (retenueValue > 0) {
+                const retenueAmount = (finalAmount * retenueValue) / 100;
+                finalAmount = finalAmount - retenueAmount;
+              }
+              
+              return (
+                <div 
+                  className="flex justify-between py-2 px-6 font-bold text-sm mt-1"
+                  style={{
+                    backgroundColor: applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.15)
+                  }}
+                >
+                  <span className="-ml-3 text-[10px] font-bold dark:text-[#0A0A0A]">
+                    Net à payer
+                  </span>
+                  <span className="-mr-3 text-[10px] dark:text-[#0A0A0A] font-bold">
+                    {formatCurrency(finalAmount)}
+                  </span>
+                </div>
+              );
+            })()}
 
             {/* 7. Champs personnalisés */}
             {data.customFields &&
