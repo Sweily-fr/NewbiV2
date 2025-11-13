@@ -33,18 +33,22 @@ const ProfileImage = ({
       }}
     />
   ) : isEditable ? (
-    <div
-      className="cursor-pointer hover:opacity-80 transition-opacity"
+    <img
+      src={photoSrc}
+      alt="Photo de profil"
       style={{
         width: `${size}px`,
         height: `${size}px`,
         borderRadius: borderRadius,
-        backgroundImage: `url("${photoSrc}")`,
-        backgroundSize: "cover",
-        backgroundPosition: "center center",
-        backgroundRepeat: "no-repeat",
+        objectFit: "cover",
         display: "block",
+        border: "0",
+        cursor: "pointer",
+        opacity: 1,
+        transition: "opacity 0.2s ease-in-out",
       }}
+      onMouseEnter={(e) => (e.target.style.opacity = "0.8")}
+      onMouseLeave={(e) => (e.target.style.opacity = "1")}
       onClick={() => {
         const input = document.createElement("input");
         input.type = "file";

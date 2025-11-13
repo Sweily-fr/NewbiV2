@@ -40,6 +40,14 @@ const SocialNetworks = ({
   console.log("🔍 SocialNetworks - globalColor:", globalColor);
   console.log("🔍 SocialNetworks - socialColors:", socialColors);
 
+  // Fonction pour mapper le nom du platform vers le nom Cloudflare
+  const getPlatformName = (platform) => {
+    const platformMap = {
+      x: "twitter",
+    };
+    return platformMap[platform] || platform;
+  };
+
   // Fonction pour obtenir l'URL de l'icône (personnalisée ou depuis Cloudflare)
   const getSocialIconUrl = (platform) => {
     // Utiliser l'icône personnalisée si disponible
@@ -58,8 +66,9 @@ const SocialNetworks = ({
       const colorName = getColorName(color);
       console.log(`🎨 ${platform} - colorName:`, colorName);
       if (colorName) {
-        // Utiliser le même nom de couleur pour tous les réseaux
-        const url = `${CLOUDFLARE_URLS.social}/${platform}/${platform}-${colorName}.png`;
+        // Utiliser le nom Cloudflare du platform (x -> twitter)
+        const cloudflareplatform = getPlatformName(platform);
+        const url = `${CLOUDFLARE_URLS.social}/${cloudflareplatform}/${cloudflareplatform}-${colorName}.png`;
         console.log(`✅ ${platform} URL:`, url);
         return url;
       }
@@ -77,7 +86,7 @@ const SocialNetworks = ({
     const color = colorInput.toLowerCase().trim();
     
     // Si c'est déjà un nom de couleur, le retourner directement
-    const validColorNames = ["blue", "pink", "purple", "black", "red", "green", "yellow", "orange"];
+    const validColorNames = ["blue", "pink", "purple", "black", "red", "green", "yellow", "orange", "indigo", "sky"];
     if (validColorNames.includes(color)) {
       return color;
     }

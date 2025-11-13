@@ -3,7 +3,7 @@
  * Affiche le logo avec taille personnalisable
  */
 
-const CompanyLogo = ({ logoSrc, size = 60, spacing = 12, alignment = "left" }) => {
+const CompanyLogo = ({ logoSrc, size = 60, spacing = 8, alignment = "left" }) => {
   if (!logoSrc) return null;
 
   return (

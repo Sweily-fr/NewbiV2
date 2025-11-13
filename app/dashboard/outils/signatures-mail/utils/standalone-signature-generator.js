@@ -9,10 +9,13 @@ export function generateSignatureHTML(signatureData) {
   // Fonction helper pour obtenir l'espacement approprié
   const getSpacing = (specificSpacing, fallbackSpacing = 8) => {
     let result;
-    if (signatureData.detailedSpacing && specificSpacing !== undefined) {
+    // Priorité: valeur spécifique > espacement global > fallback
+    if (specificSpacing !== undefined) {
       result = specificSpacing;
+    } else if (signatureData.spacings?.global !== undefined) {
+      result = signatureData.spacings?.global;
     } else {
-      result = signatureData.spacings?.global || fallbackSpacing;
+      result = fallbackSpacing;
     }
     return result;
   };
@@ -57,12 +60,25 @@ export function generateSignatureHTML(signatureData) {
   };
 
   const profileImageHTML = signatureData.photo
-    ? `<img src="${signatureData.photo}" alt="Photo" style="width: ${signatureData.imageSize || 80}px; height: ${signatureData.imageSize || 80}px; border-radius: ${signatureData.imageShape === "square" ? "8px" : "50%"}; display: block; object-fit: cover;" />`
+    ? (() => {
+        const size = signatureData.imageSize || 70;
+        const mask = signatureData.imageShape === "square" ? "square" : "circle";
+        const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(signatureData.photo)}&w=${size}&h=${size}&fit=cover&mask=${mask}`;
+        return `<img src="${weservUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0; margin: 0; padding: 0;" />`;
+      })()
     : "";
 
   const logoHTML = signatureData.logo
     ? `<img src="${signatureData.logo}" alt="Logo entreprise" style="max-width: ${signatureData.logoSize || 60}px; height: auto; display: block; margin: 0;" />`
     : "";
+
+  // Fonction pour mapper le nom du platform vers le nom Cloudflare
+  const getPlatformName = (platform) => {
+    const platformMap = {
+      x: "twitter",
+    };
+    return platformMap[platform] || platform;
+  };
 
   // Fonction pour convertir une couleur hex ou nom en nom Cloudflare
   const getColorName = (colorInput) => {
@@ -71,7 +87,7 @@ export function generateSignatureHTML(signatureData) {
     const color = colorInput.toLowerCase().trim();
     
     // Si c'est déjà un nom de couleur, le retourner directement
-    const validColorNames = ["blue", "pink", "purple", "black", "red", "green", "yellow", "orange"];
+    const validColorNames = ["blue", "pink", "purple", "black", "red", "green", "yellow", "orange", "indigo", "sky"];
     if (validColorNames.includes(color)) {
       return color;
     }
@@ -113,8 +129,9 @@ export function generateSignatureHTML(signatureData) {
       if (color) {
         const colorName = getColorName(color);
         if (colorName) {
-          // Utiliser le même nom de couleur pour tous les réseaux
-          return `https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/${platform}/${platform}-${colorName}.png`;
+          // Utiliser le nom Cloudflare du platform (x -> twitter)
+          const cloudflareplatform = getPlatformName(platform);
+          return `https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/${cloudflareplatform}/${cloudflareplatform}-${colorName}.png`;
         }
       }
 
@@ -170,13 +187,13 @@ export function generateSignatureHTML(signatureData) {
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: ${signatureData.fontFamily || "Arial, sans-serif"}; width: 100%;">
 <tbody>
 <tr>
-<td style="width: ${signatureData.photo ? (signatureData.imageSize || 80) + 16 : 120}px; padding-right: 15px; vertical-align: top;">
+<td style="width: ${signatureData.photo ? (signatureData.imageSize || 80) + 16 : 120}px; padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: top;">
 ${signatureData.photo ? profileImageHTML : ""}
 </td>
-<td style="width: ${1}px; background-color: ${signatureData.colors?.separatorVertical || "#e0e0e0"}; padding: 0; font-size: 1px; line-height: 1px;">
+<td style="border-left: 1px solid ${signatureData.colors?.separatorVertical || "#e0e0e0"}; padding: 0; margin: 0; font-size: 1px; line-height: 1px;">
 &nbsp;
 </td>
-<td style="padding-left: 15px; vertical-align: top;">
+<td style="padding-left: ${getSpacing(signatureData.spacings?.global, 8)}px;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
 <tbody>
 <tr>
@@ -188,7 +205,7 @@ ${signatureData.fullName || `${signatureData.firstName || ""} ${signatureData.la
 </tr>
 ${signatureData.position ? `
 <tr>
-<td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.positionBottom, 12)}px; text-align: ${signatureData.nameAlignment || "left"};">
+<td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.positionBottom, 8)}px; text-align: ${signatureData.nameAlignment || "left"};">
 <div style="font-size: ${getTypography("position", "fontSize", 14)}px; color: ${getTypography("position", "color", "rgb(102,102,102)")}; font-family: ${getTypography("position", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("position", "fontWeight", "normal")}; font-style: ${getTypography("position", "fontStyle", "normal")}; text-decoration: ${getTypography("position", "textDecoration", "none")}; white-space: nowrap;">
 ${signatureData.position}
 </div>
@@ -201,7 +218,7 @@ ${signatureData.phone ? `
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
-<td style="padding-right: 8px; vertical-align: middle; width: 16px;">
+<td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: middle; width: 16px;">
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png" alt="Téléphone" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
 </td>
 <td style="font-size: ${getTypography("phone", "fontSize", 12)}px; color: ${getTypography("phone", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("phone", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("phone", "fontFamily", "Arial, sans-serif")};">
@@ -219,7 +236,7 @@ ${signatureData.mobile ? `
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
-<td style="padding-right: 8px; vertical-align: middle; width: 16px;">
+<td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: middle; width: 16px;">
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png" alt="Mobile" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
 </td>
 <td style="font-size: ${getTypography("mobile", "fontSize", 12)}px; color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("mobile", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("mobile", "fontFamily", "Arial, sans-serif")};">
@@ -237,7 +254,7 @@ ${signatureData.email ? `
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
-<td style="padding-right: 8px; vertical-align: middle; width: 16px;">
+<td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: middle; width: 16px;">
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/mail.png" alt="Email" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
 </td>
 <td style="font-size: ${getTypography("email", "fontSize", 12)}px; color: ${getTypography("email", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("email", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("email", "fontFamily", "Arial, sans-serif")};">
@@ -255,7 +272,7 @@ ${signatureData.website ? `
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
-<td style="padding-right: 8px; vertical-align: middle; width: 16px;">
+<td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: middle; width: 16px;">
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/globe.png" alt="Site web" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
 </td>
 <td style="font-size: ${getTypography("website", "fontSize", 12)}px; color: ${getTypography("website", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("website", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("website", "fontFamily", "Arial, sans-serif")};">
@@ -269,11 +286,11 @@ ${signatureData.website ? `
 ` : ""}
 ${signatureData.address ? `
 <tr>
-<td style="padding-bottom: 12px;">
+<td style="padding-bottom: ${getSpacing(signatureData.spacings?.addressBottom, 8)}px;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
-<td style="padding-right: 8px; vertical-align: top; width: 16px;">
+<td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: top; width: 16px;">
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/map-pin.png" alt="Adresse" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block; margin-top: 1px;" />
 </td>
 <td style="font-size: ${getTypography("address", "fontSize", 12)}px; color: ${getTypography("address", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("address", "fontWeight", "normal")}; vertical-align: top; font-family: ${getTypography("address", "fontFamily", "Arial, sans-serif")};">
@@ -290,11 +307,11 @@ ${signatureData.address}
 </td>
 </tr>
 <tr>
-<td colspan="3" style="padding-top: ${getSpacing(signatureData.spacings?.separatorTop, 12)}px; padding-bottom: ${getSpacing(signatureData.spacings?.separatorBottom, 12)}px;">
+<td colspan="3" style="padding-top: ${getSpacing(signatureData.spacings?.separatorTop, 8)}px; padding-bottom: ${getSpacing(signatureData.spacings?.separatorBottom, 8)}px; padding-left: 0; padding-right: 0;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
 <tbody>
 <tr>
-<td style="border-top: ${signatureData.separatorHorizontalWidth || 1}px solid ${signatureData.colors?.separatorHorizontal || "#e0e0e0"}; line-height: 1px; font-size: 1px;">&nbsp;</td>
+<td style="border-top: ${signatureData.separatorHorizontalWidth || 1}px solid ${signatureData.colors?.separatorHorizontal || "#e0e0e0"}; line-height: 1px; font-size: 1px; padding: 0; margin: 0;">&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -302,7 +319,7 @@ ${signatureData.address}
 </tr>
 ${logoHTML ? `
 <tr>
-<td style="padding-top: ${getSpacing(signatureData.spacings?.logoBottom, 15)}px; text-align: left;" colspan="1">
+<td style="padding-top: ${getSpacing(signatureData.spacings?.logoBottom, 8)}px; text-align: left;" colspan="1">
 ${logoHTML}
 </td>
 <td colspan="2"></td>
@@ -310,7 +327,7 @@ ${logoHTML}
 ` : ""}
 ${socialIconsHTML ? `
 <tr>
-<td style="padding-top: ${getSpacing(signatureData.spacings?.logoToSocial, 12)}px; text-align: left;" colspan="1">
+<td style="padding-top: ${getSpacing(signatureData.spacings?.logoToSocial, 8)}px; text-align: left;" colspan="1">
 ${socialIconsHTML}
 </td>
 <td colspan="2"></td>

@@ -271,7 +271,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
                     photoSrc
                       ? `
                  <tr>
-                  <td style="padding-bottom: ${spacings.photoBottom || 12}px; text-align: left;">
+                  <td style="padding-bottom: ${spacings.photoBottom || 8}px; text-align: left;">
                     <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center / cover no-repeat; display: inline-block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
                   </td>
                 </tr>
@@ -304,7 +304,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
                     signatureData.companyName
                       ? `
                     <tr>
-                      <td style="padding-bottom: ${spacings.companyBottom || 12}px; text-align: left;">
+                      <td style="padding-bottom: ${spacings.companyBottom || 8}px; text-align: left;">
                         <div style="font-size: 14px; font-weight: bold; color: ${primaryColor}; font-family: ${signatureData.fontFamily || "Arial, sans-serif"};">
                           ${signatureData.companyName}
                         </div>
@@ -424,7 +424,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
                     signatureData.address
                       ? `
                     <tr>
-                      <td style="padding-bottom: 12px;">
+                      <td style="padding-bottom: 8px;">
                         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
                           <tbody>
                             <tr>
@@ -448,7 +448,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
                     signatureData.separators?.horizontal?.enabled
                       ? `
                   <tr>
-                    <td style="padding-top: ${spacings.separatorTop || 12}px; padding-bottom: ${spacings.separatorBottom || 12}px;">
+                    <td style="padding-top: ${spacings.separatorTop || 8}px; padding-bottom: ${spacings.separatorBottom || 8}px;">
                       <hr style="border: none; border-top: ${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || "#e0e0e0"}; border-radius: ${signatureData.separators?.horizontal?.radius || 0}px; margin: 0; width: 100%;" />
                     </td>
                   </tr>
@@ -461,7 +461,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
                     logoSrc
                       ? `
                     <tr>
-                      <td style="padding-top: ${spacings.separatorBottom || 12}px; text-align: left;">
+                      <td style="padding-top: ${spacings.separatorBottom || 8}px; text-align: left;">
                         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
                           <tbody>
                             <tr>
