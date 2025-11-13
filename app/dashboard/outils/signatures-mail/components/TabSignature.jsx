@@ -342,6 +342,7 @@ export function TabSignature({ existingSignatureId = null }) {
       // Images
       photo: signatureData.photo || null,
       photoKey: signatureData.photoKey || null,
+      photoVisible: signatureData.photoVisible !== false, // Par défaut visible
       logo: signatureData.logo || null,
       logoKey: signatureData.logoKey || null,
       imageSize: signatureData.imageSize || 70,

@@ -14,12 +14,15 @@ import {
 } from "@/src/components/ui/tooltip";
 import { X, Upload, Building, Info } from "lucide-react";
 import { useActiveOrganization } from "@/src/lib/organization-client";
+import { useImageUpload } from "../../../hooks/useImageUpload";
+import { toast } from "@/src/components/ui/sonner";
 
 export default function CompanyLogoSection({
   signatureData,
   updateSignatureData,
 }) {
   const { organization } = useActiveOrganization();
+  const { deleteImageFile } = useImageUpload();
 
   // Récupérer automatiquement le logo de l'entreprise au chargement
   useEffect(() => {
@@ -48,6 +51,25 @@ export default function CompanyLogoSection({
     }
   };
 
+  // Suppression du logo avec suppression Cloudflare
+  const handleDeleteLogo = async (e) => {
+    e.stopPropagation();
+    try {
+      // Supprimer de Cloudflare si la clé existe
+      if (signatureData.logoKey) {
+        await deleteImageFile(signatureData.logoKey);
+      }
+      // Supprimer les données locales
+      updateSignatureData("logo", null);
+      updateSignatureData("logoVisible", false);
+      updateSignatureData("logoKey", null);
+      toast.success("Logo supprimé avec succès");
+    } catch (error) {
+      console.error("❌ Erreur suppression logo:", error);
+      toast.error("Erreur lors de la suppression: " + error.message);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -55,7 +77,7 @@ export default function CompanyLogoSection({
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">Afficher</Label>
           <Switch
-            className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+            className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
             checked={signatureData.logoVisible !== false && signatureData.logo !== null && signatureData.logo !== undefined}
             onCheckedChange={(checked) => {
               if (checked) {
@@ -117,13 +139,26 @@ export default function CompanyLogoSection({
           </div>
           <div className="flex items-center gap-2">
             {signatureData.logo ? (
-              <>
+              <div className="relative group">
                 <img
                   src={signatureData.logo}
                   alt="Logo entreprise"
                   className="w-14 h-14 object-contain"
                 />
-              </>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDeleteLogo}
+                  className="absolute -top-1 -right-1 h-5 w-5 p-0 bg-white cursor-pointer dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800 pointer-events-auto z-10"
+                  title="Supprimer le logo"
+                >
+                  <X
+                    className="w-1 h-1 text-gray-500 hover:text-red-500 transition-colors"
+                    width={2}
+                    height={2}
+                  />
+                </Button>
+              </div>
             ) : (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Building className="w-3 h-3" />

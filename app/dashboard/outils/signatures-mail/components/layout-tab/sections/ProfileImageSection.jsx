@@ -8,11 +8,18 @@ import { Button } from "@/src/components/ui/button";
 import { Switch } from "@/src/components/ui/switch";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
 import { Square, X, Upload, Circle, Trash2 } from "lucide-react";
+import { useImageUpload } from "../../../hooks/useImageUpload";
+import { useSignatureData } from "@/src/hooks/use-signature-data";
+import { toast } from "@/src/components/ui/sonner";
+import { optimizeImage } from "../../../utils/imageOptimizer";
 
 export default function ProfileImageSection({
   signatureData,
   updateSignatureData,
 }) {
+  const { deleteImageFile, uploadImageFile } = useImageUpload();
+  const { editingSignatureId } = useSignatureData();
+
   // Gestion de l'espacement entre prénom et nom
   const handleNameSpacingChange = (value) => {
     const numValue = parseInt(value) || 0;
@@ -36,6 +43,91 @@ export default function ProfileImageSection({
     updateSignatureData("imageShape", shape);
   };
 
+  // Suppression de la photo avec suppression Cloudflare
+  const handleDeletePhoto = async (e) => {
+    e.stopPropagation();
+    try {
+      // Supprimer de Cloudflare si la clé existe
+      if (signatureData.photoKey) {
+        await deleteImageFile(signatureData.photoKey);
+      }
+      // Supprimer les données locales
+      updateSignatureData("photo", null);
+      updateSignatureData("photoVisible", false);
+      updateSignatureData("photoKey", null);
+      toast.success("Photo supprimée avec succès");
+    } catch (error) {
+      console.error("❌ Erreur suppression photo:", error);
+      toast.error("Erreur lors de la suppression: " + error.message);
+    }
+  };
+
+  // Upload de la photo vers Cloudflare avec optimisation
+  const handlePhotoUpload = async (file) => {
+    if (!file) return;
+    
+    try {
+      toast.info("Optimisation de l'image...");
+      
+      // 🔥 ÉTAPE 1: Optimiser l'image côté client
+      const optimizedBlob = await optimizeImage(file, 'profile');
+      console.log("✅ Image optimisée:", {
+        original: `${(file.size / 1024).toFixed(2)} KB`,
+        optimized: `${(optimizedBlob.size / 1024).toFixed(2)} KB`
+      });
+      
+      // Créer un fichier à partir du blob optimisé
+      const optimizedFile = new File(
+        [optimizedBlob], 
+        `profile-${Date.now()}.jpg`, 
+        { type: 'image/jpeg' }
+      );
+      
+      // Afficher preview immédiat avec l'image optimisée
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const dataUrl = e.target.result;
+        console.log("📸 Preview data URL longueur:", dataUrl.length);
+        updateSignatureData("photo", dataUrl);
+        updateSignatureData("photoVisible", true);
+        
+        // 🔥 ÉTAPE 2: Upload vers Cloudflare en arrière-plan
+        if (editingSignatureId) {
+          console.log("🚀 Début upload vers Cloudflare, ID:", editingSignatureId);
+          try {
+            const result = await uploadImageFile(
+              optimizedFile,  // Upload du fichier optimisé
+              "imgProfil",
+              editingSignatureId,
+              (url, key) => {
+                // Stocker l'URL Cloudflare réelle et la clé
+                console.log("✅ Callback upload réussi - URL:", url, "Key:", key);
+                updateSignatureData("photo", url);
+                updateSignatureData("photoKey", key);
+                console.log("💾 Photo mise à jour avec URL Cloudflare:", url);
+                toast.success("Photo uploadée avec succès");
+              }
+            );
+            console.log("📤 Résultat upload complet:", result);
+            if (result && result.url) {
+              console.log("🔗 URL finale Cloudflare:", result.url);
+            }
+          } catch (uploadError) {
+            console.error("❌ Erreur upload Cloudflare:", uploadError);
+            toast.error("Erreur lors de l'upload: " + uploadError.message);
+          }
+        } else {
+          console.warn("⚠️ Pas de editingSignatureId, upload non possible");
+          console.warn("💡 Vous devez sauvegarder la signature d'abord");
+        }
+      };
+      reader.readAsDataURL(optimizedBlob);
+    } catch (error) {
+      console.error("❌ Erreur traitement photo:", error);
+      toast.error("Erreur lors du traitement de la photo");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -43,7 +135,7 @@ export default function ProfileImageSection({
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">Afficher</Label>
           <Switch
-            className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+            className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
             checked={signatureData.photoVisible !== false && signatureData.photo !== null && signatureData.photo !== undefined}
             onCheckedChange={(checked) => {
               if (checked && !signatureData.photo) {
@@ -54,12 +146,7 @@ export default function ProfileImageSection({
                 input.onchange = (e) => {
                   const file = e.target.files[0];
                   if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                      updateSignatureData("photo", e.target.result);
-                      updateSignatureData("photoVisible", true);
-                    };
-                    reader.readAsDataURL(file);
+                    handlePhotoUpload(file);
                   }
                 };
                 input.click();
@@ -95,9 +182,9 @@ export default function ProfileImageSection({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => updateSignatureData("photoVisible", false)}
-                      className="absolute -top-1 -right-1 h-5 w-5 p-0 bg-white cursor-pointer dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800"
-                      title="Masquer la photo"
+                      onClick={handleDeletePhoto}
+                      className="absolute -top-1 -right-1 h-5 w-5 p-0 bg-white cursor-pointer dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800 pointer-events-auto z-10"
+                      title="Supprimer la photo"
                     >
                       <X
                         className="w-1 h-1 text-gray-500 hover:text-red-500 transition-colors"
@@ -115,10 +202,7 @@ export default function ProfileImageSection({
                       input.onchange = (e) => {
                         const file = e.target.files[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (e) =>
-                            updateSignatureData("photo", e.target.result);
-                          reader.readAsDataURL(file);
+                          handlePhotoUpload(file);
                         }
                       };
                       input.click();

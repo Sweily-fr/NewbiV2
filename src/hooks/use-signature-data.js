@@ -51,6 +51,7 @@ const GET_EMAIL_SIGNATURE = gql`
       }
       photo
       photoKey
+      photoVisible
       logo
       logoKey
       imageSize

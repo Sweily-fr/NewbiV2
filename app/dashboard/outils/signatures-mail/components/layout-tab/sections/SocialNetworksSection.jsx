@@ -199,7 +199,7 @@ export default function SocialNetworksSection({
               </Label>
               <Switch
                 checked={signatureData.socialNetworks?.hasOwnProperty(network)}
-                className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+                className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
                 onCheckedChange={(checked) =>
                   handleSocialToggle(network, checked)
                 }

@@ -22,11 +22,13 @@ export function generateSignatureHTML(signatureData) {
 
   // Fonction helper pour obtenir les valeurs de typographie
   const getTypography = (field, property, fallback) => {
+    // Priorité absolue à la nouvelle structure détaillée
     const detailedValue = signatureData.typography?.[field]?.[property];
-    if (detailedValue !== undefined) {
+    if (detailedValue !== undefined && detailedValue !== null && detailedValue !== "") {
       return detailedValue;
     }
 
+    // Fallback vers l'ancienne structure ou valeur par défaut
     if (property === "fontSize") {
       const fieldMapping = {
         fullName: "name",
@@ -54,22 +56,38 @@ export function generateSignatureHTML(signatureData) {
       return signatureData.fontFamily || fallback;
     } else if (property === "fontWeight") {
       return fallback;
+    } else if (property === "fontStyle") {
+      return fallback;
+    } else if (property === "textDecoration") {
+      return fallback;
     }
 
     return fallback;
   };
 
-  const profileImageHTML = signatureData.photo
+  const profileImageHTML = signatureData.photo && signatureData.photoVisible !== false
     ? (() => {
         const size = signatureData.imageSize || 70;
         const mask = signatureData.imageShape === "square" ? "square" : "circle";
-        const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(signatureData.photo)}&w=${size}&h=${size}&fit=cover&mask=${mask}`;
-        return `<img src="${weservUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0; margin: 0; padding: 0;" />`;
+        
+        let imageUrl = signatureData.photo;
+        
+        // Si c'est une data URL, ne pas l'utiliser (elle ne fonctionne pas bien dans Gmail)
+        if (imageUrl && imageUrl.startsWith('data:')) {
+          return ''; // Ne pas inclure les data URLs dans le HTML copié
+        }
+        
+        // ✅ Utiliser l'URL Cloudflare directement (image déjà optimisée et recadrée en carré côté client)
+        return `<img src="${imageUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0; margin: 0; padding: 0; border-radius: ${mask === 'circle' ? '50%' : '8px'};" />`;
       })()
     : "";
 
   const logoHTML = signatureData.logo
-    ? `<img src="${signatureData.logo}" alt="Logo entreprise" style="max-width: ${signatureData.logoSize || 60}px; height: auto; display: block; margin: 0;" />`
+    ? (() => {
+        const logoSize = signatureData.logoSize || 60;
+        const optimizedLogoUrl = `https://wsrv.nl/?url=${encodeURIComponent(signatureData.logo)}&w=${logoSize * 2}&h=${logoSize * 2}&fit=contain&sharp=2&q=90`;
+        return `<img src="${optimizedLogoUrl}" alt="Logo entreprise" style="max-width: ${logoSize}px; height: auto; display: block; margin: 0;" />`;
+      })()
     : "";
 
   // Fonction pour mapper le nom du platform vers le nom Cloudflare
@@ -111,6 +129,11 @@ export function generateSignatureHTML(signatureData) {
     };
     
     return colorMap[hexColor] || null;
+  };
+
+  // 🔥 Fonction helper pour optimiser les icônes
+  const getOptimizedIconUrl = (baseUrl, size = 16) => {
+    return `https://wsrv.nl/?url=${encodeURIComponent(baseUrl)}&w=${size * 2}&h=${size * 2}&fit=cover&sharp=2&q=90`;
   };
 
   // Générer les icônes sociales depuis Cloudflare
@@ -168,9 +191,12 @@ export function generateSignatureHTML(signatureData) {
     const iconsHTML = activeNetworks
       .map((social, index) => {
         const iconUrl = getSocialIconUrl(social.key);
+        const iconSize = signatureData.socialSize || 24;
+        // 🔥 OPTIMISATION: Utiliser wsrv.nl pour les icônes
+        const optimizedIconUrl = `https://wsrv.nl/?url=${encodeURIComponent(iconUrl)}&w=${iconSize * 2}&h=${iconSize * 2}&fit=cover&sharp=2&q=90`;
         return `
         <a href="${signatureData.socialNetworks[social.key]}" style="text-decoration: none; margin-right: ${index < activeNetworks.length - 1 ? "8px" : "0"}; display: inline-block;">
-          <img src="${iconUrl}" alt="${social.label}" style="width: ${signatureData.socialSize || 24}px; height: ${signatureData.socialSize || 24}px; display: block;" />
+          <img src="${optimizedIconUrl}" alt="${social.label}" style="width: ${iconSize}px; height: ${iconSize}px; display: block;" />
         </a>`;
       })
       .join("");
@@ -219,9 +245,9 @@ ${signatureData.phone ? `
 <tbody>
 <tr>
 <td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: middle; width: 16px;">
-<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png" alt="Téléphone" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
+<img src="${getOptimizedIconUrl('https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png', 16)}" alt="Téléphone" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
 </td>
-<td style="font-size: ${getTypography("phone", "fontSize", 12)}px; color: ${getTypography("phone", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("phone", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("phone", "fontFamily", "Arial, sans-serif")};">
+<td style="font-size: ${getTypography("phone", "fontSize", 12)}px; color: ${getTypography("phone", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("phone", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("phone", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("phone", "fontStyle", "normal")}; text-decoration: ${getTypography("phone", "textDecoration", "none")};">
 <a href="tel:${signatureData.phone}" style="color: ${getTypography("phone", "color", "rgb(102,102,102)")}; text-decoration: none;">${signatureData.phone}</a>
 </td>
 </tr>
@@ -237,9 +263,9 @@ ${signatureData.mobile ? `
 <tbody>
 <tr>
 <td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: middle; width: 16px;">
-<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png" alt="Mobile" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
+<img src="${getOptimizedIconUrl('https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png', 16)}" alt="Mobile" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
 </td>
-<td style="font-size: ${getTypography("mobile", "fontSize", 12)}px; color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("mobile", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("mobile", "fontFamily", "Arial, sans-serif")};">
+<td style="font-size: ${getTypography("mobile", "fontSize", 12)}px; color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("mobile", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("mobile", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("mobile", "fontStyle", "normal")}; text-decoration: ${getTypography("mobile", "textDecoration", "none")};">
 <a href="tel:${signatureData.mobile}" style="color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; text-decoration: none;">${signatureData.mobile}</a>
 </td>
 </tr>
@@ -255,9 +281,9 @@ ${signatureData.email ? `
 <tbody>
 <tr>
 <td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: middle; width: 16px;">
-<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/mail.png" alt="Email" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
+<img src="${getOptimizedIconUrl('https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/mail.png', 16)}" alt="Email" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
 </td>
-<td style="font-size: ${getTypography("email", "fontSize", 12)}px; color: ${getTypography("email", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("email", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("email", "fontFamily", "Arial, sans-serif")};">
+<td style="font-size: ${getTypography("email", "fontSize", 12)}px; color: ${getTypography("email", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("email", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("email", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("email", "fontStyle", "normal")}; text-decoration: ${getTypography("email", "textDecoration", "none")};">
 <a href="mailto:${signatureData.email}" style="color: ${getTypography("email", "color", "rgb(102,102,102)")}; text-decoration: none;">${signatureData.email}</a>
 </td>
 </tr>
@@ -273,9 +299,9 @@ ${signatureData.website ? `
 <tbody>
 <tr>
 <td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: middle; width: 16px;">
-<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/globe.png" alt="Site web" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
+<img src="${getOptimizedIconUrl('https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/globe.png', 16)}" alt="Site web" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block;" />
 </td>
-<td style="font-size: ${getTypography("website", "fontSize", 12)}px; color: ${getTypography("website", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("website", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("website", "fontFamily", "Arial, sans-serif")};">
+<td style="font-size: ${getTypography("website", "fontSize", 12)}px; color: ${getTypography("website", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("website", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("website", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("website", "fontStyle", "normal")}; text-decoration: ${getTypography("website", "textDecoration", "none")};">
 <a href="${signatureData.website}" style="color: ${getTypography("website", "color", "rgb(102,102,102)")}; text-decoration: none;">${signatureData.website}</a>
 </td>
 </tr>
@@ -291,9 +317,9 @@ ${signatureData.address ? `
 <tbody>
 <tr>
 <td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: top; width: 16px;">
-<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/map-pin.png" alt="Adresse" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block; margin-top: 1px;" />
+<img src="${getOptimizedIconUrl('https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/map-pin.png', 16)}" alt="Adresse" width="16" height="16" style="width: 16px !important; height: 16px !important; display: block; margin-top: 1px;" />
 </td>
-<td style="font-size: ${getTypography("address", "fontSize", 12)}px; color: ${getTypography("address", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("address", "fontWeight", "normal")}; vertical-align: top; font-family: ${getTypography("address", "fontFamily", "Arial, sans-serif")};">
+<td style="font-size: ${getTypography("address", "fontSize", 12)}px; color: ${getTypography("address", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("address", "fontWeight", "normal")}; vertical-align: top; font-family: ${getTypography("address", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("address", "fontStyle", "normal")}; text-decoration: ${getTypography("address", "textDecoration", "none")};">
 ${signatureData.address}
 </td>
 </tr>

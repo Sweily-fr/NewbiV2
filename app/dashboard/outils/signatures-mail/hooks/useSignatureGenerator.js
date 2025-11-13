@@ -70,12 +70,20 @@ export function useSignatureGenerator() {
       return fallback;
     };
 
-    const profileImageHTML = signatureData.photo
+    const profileImageHTML = signatureData.photo && signatureData.photoVisible !== false
       ? (() => {
           const size = signatureData.imageSize || 70;
           const mask = signatureData.imageShape === 'square' ? 'square' : 'circle';
-          const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(signatureData.photo)}&w=${size}&h=${size}&fit=cover&mask=${mask}`;
-          return `<img src="${weservUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0; margin: 0; padding: 0;" />`;
+          
+          let imageUrl = signatureData.photo;
+          
+          // Si c'est une data URL, ne pas l'utiliser (elle ne fonctionne pas bien dans Gmail)
+          if (imageUrl && imageUrl.startsWith('data:')) {
+            return ''; // Ne pas inclure les data URLs dans le HTML copié
+          }
+          
+          // ✅ Utiliser l'URL Cloudflare directement (image déjà optimisée et recadrée en carré côté client)
+          return `<img src="${imageUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0; margin: 0; padding: 0; border-radius: ${mask === 'circle' ? '50%' : '8px'};" />`;
         })()
       : "";
 
@@ -409,12 +417,20 @@ ${socialIconsHTML}
       return row;
     };
 
-    const profileImageHTML = signatureData.photo
+    const profileImageHTML = signatureData.photo && signatureData.photoVisible !== false
       ? (() => {
           const size = signatureData.imageSize || 70;
           const mask = signatureData.imageShape === 'square' ? 'square' : 'circle';
-          const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(signatureData.photo)}&w=${size}&h=${size}&fit=cover&mask=${mask}`;
-          return `<img src="${weservUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0; margin: 0; padding: 0;" />`;
+          
+          let imageUrl = signatureData.photo;
+          
+          // Si c'est une data URL, ne pas l'utiliser (elle ne fonctionne pas bien dans Gmail)
+          if (imageUrl && imageUrl.startsWith('data:')) {
+            return ''; // Ne pas inclure les data URLs dans le HTML copié
+          }
+          
+          // ✅ Utiliser l'URL Cloudflare directement (image déjà optimisée et recadrée en carré côté client)
+          return `<img src="${imageUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0; margin: 0; padding: 0; border-radius: ${mask === 'circle' ? '50%' : '8px'};" />`;
         })()
       : "";
 

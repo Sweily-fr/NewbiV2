@@ -45,7 +45,7 @@ export default function StructureSection({
             onCheckedChange={(checked) =>
               updateSignatureData("separatorVerticalEnabled", checked)
             }
-            className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+            className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
           />
         </div>
 
@@ -171,7 +171,7 @@ export default function StructureSection({
             onCheckedChange={(checked) =>
               updateSignatureData("separatorHorizontalEnabled", checked)
             }
-            className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+            className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
           />
         </div>
 
