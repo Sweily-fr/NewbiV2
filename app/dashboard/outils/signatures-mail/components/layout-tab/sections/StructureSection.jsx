@@ -36,7 +36,7 @@ export default function StructureSection({
       <h2 className="text-sm font-medium">Structure</h2>
       <div className="flex flex-col gap-3 ml-4">
         {/* Séparateur vertical */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between cursor-pointer">
           <Label className="text-xs text-muted-foreground">
             Séparateur vertical
           </Label>
@@ -46,7 +46,7 @@ export default function StructureSection({
               onCheckedChange={(checked) =>
                 updateSignatureData("separatorVerticalEnabled", checked)
               }
-              className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
+              className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
             />
           </div>
         </div>
@@ -164,7 +164,7 @@ export default function StructureSection({
         )}
 
         {/* Séparateur horizontal */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between cursor-pointer">
           <Label className="text-xs text-muted-foreground">
             Séparateur horizontal
           </Label>
@@ -174,7 +174,7 @@ export default function StructureSection({
               onCheckedChange={(checked) =>
                 updateSignatureData("separatorHorizontalEnabled", checked)
               }
-              className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
+              className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
             />
           </div>
         </div>

@@ -52,11 +52,11 @@ export default function CompanyLogoSection({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium">Logo entreprise</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer">
           <Label className="text-xs text-muted-foreground">Afficher</Label>
           <div className="relative inline-flex items-center">
             <Switch
-              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
+              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
               checked={signatureData.logo !== null && signatureData.logo !== undefined}
               onCheckedChange={(checked) => {
                 if (checked) {

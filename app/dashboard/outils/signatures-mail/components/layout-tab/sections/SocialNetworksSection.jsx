@@ -193,13 +193,13 @@ export default function SocialNetworksSection({
         {/* Génération dynamique des switches pour chaque réseau autorisé */}
         {ALLOWED_SOCIAL_NETWORKS.map((network) => (
           <div key={network} className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between cursor-pointer">
               <Label className="text-xs text-muted-foreground">
                 {socialNetworkLabels[network]}
               </Label>
               <Switch
                 checked={signatureData.socialNetworks?.hasOwnProperty(network)}
-                className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
+                className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
                 onCheckedChange={(checked) =>
                   handleSocialToggle(network, checked)
                 }
