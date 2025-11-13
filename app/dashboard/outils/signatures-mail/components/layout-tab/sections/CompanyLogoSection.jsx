@@ -5,6 +5,7 @@ import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
+import { Switch } from "@/src/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -49,9 +50,28 @@ export default function CompanyLogoSection({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-sm font-medium">Logo entreprise</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium">Logo entreprise</h2>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Afficher</Label>
+          <div className="relative inline-flex items-center">
+            <Switch
+              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+              checked={signatureData.logo !== null && signatureData.logo !== undefined}
+              onCheckedChange={(checked) => {
+                if (!checked) {
+                  // Si on désactive, supprimer le logo
+                  updateSignatureData("logo", null);
+                }
+                // Si on active, le logo reste (récupéré automatiquement de l'organisation)
+              }}
+            />
+          </div>
+        </div>
+      </div>
       <div className="flex flex-col gap-3 ml-4">
         {/* Logo entreprise automatique */}
+        {(signatureData.logo !== null && signatureData.logo !== undefined) && (
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <Label className="text-xs text-muted-foreground mr-2">
@@ -89,8 +109,10 @@ export default function CompanyLogoSection({
             )}
           </div>
         </div>
+        )}
 
         {/* Taille du logo */}
+        {(signatureData.logo !== null && signatureData.logo !== undefined) && (
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Taille</Label>
           <div className="flex items-center gap-2 w-48">
@@ -156,6 +178,7 @@ export default function CompanyLogoSection({
             <span className="text-xs text-muted-foreground">px</span>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
+import { Switch } from "@/src/components/ui/switch";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
 import { Square, X, Upload, Circle, Trash2 } from "lucide-react";
 
@@ -37,9 +38,42 @@ export default function ProfileImageSection({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-sm font-medium">Photo de profil</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium">Photo de profil</h2>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Afficher</Label>
+          <div className="relative inline-flex items-center">
+            <Switch
+              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+              checked={signatureData.photo !== null && signatureData.photo !== undefined}
+              onCheckedChange={(checked) => {
+                if (checked && !signatureData.photo) {
+                  // Si on active mais pas de photo, ouvrir le sélecteur
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "image/*";
+                  input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) =>
+                        updateSignatureData("photo", e.target.result);
+                      reader.readAsDataURL(file);
+                    }
+                  };
+                  input.click();
+                } else if (!checked) {
+                  // Si on désactive, supprimer la photo
+                  updateSignatureData("photo", null);
+                }
+              }}
+            />
+          </div>
+        </div>
+      </div>
       <div className="flex flex-col gap-3 ml-4">
         {/* Upload de la photo de profil */}
+        {(signatureData.photo !== null && signatureData.photo !== undefined) && (
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Image</Label>
           <div className="flex items-center gap-3">
@@ -152,6 +186,7 @@ export default function ProfileImageSection({
             onValueChange={handleImageShapeChange}
           />
         </div>
+        )}
       </div>
     </div>
   );
