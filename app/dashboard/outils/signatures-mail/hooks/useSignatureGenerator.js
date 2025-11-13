@@ -13,17 +13,16 @@ export function useSignatureGenerator() {
     // Fonction helper pour obtenir l'espacement approprié
     const getSpacing = (specificSpacing, fallbackSpacing = 8) => {
       let result;
-      // Priorité: valeur spécifique > espacement global > fallback
-      if (specificSpacing !== undefined) {
+      // Si le mode détaillé est activé, utiliser l'espacement spécifique
+      if (signatureData.detailedSpacing && specificSpacing !== undefined) {
         result = specificSpacing;
-      } else if (signatureData.spacings?.global !== undefined) {
-        result = signatureData.spacings?.global;
       } else {
-        result = fallbackSpacing;
+        // Sinon, utiliser l'espacement global ou le fallback
+        result = signatureData.spacings?.global || fallbackSpacing;
       }
 
       console.log(
-        `🔍 getSpacing - specific: ${specificSpacing}, fallback: ${fallbackSpacing}, global: ${signatureData.spacings?.global}, result: ${result}`
+        `🔍 getSpacing - specific: ${specificSpacing}, fallback: ${fallbackSpacing}, detailedMode: ${signatureData.detailedSpacing}, global: ${signatureData.spacings?.global}, result: ${result}`
       );
       return result;
     };
