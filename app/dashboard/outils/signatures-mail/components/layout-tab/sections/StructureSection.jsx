@@ -36,11 +36,11 @@ export default function StructureSection({
       <h2 className="text-sm font-medium">Structure</h2>
       <div className="flex flex-col gap-3 ml-4">
         {/* Séparateur vertical */}
-        <div className="flex items-center justify-between cursor-pointer">
+        <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">
             Séparateur vertical
           </Label>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer">
             <Switch
               checked={signatureData.separatorVerticalEnabled || false}
               onCheckedChange={(checked) =>
@@ -164,11 +164,11 @@ export default function StructureSection({
         )}
 
         {/* Séparateur horizontal */}
-        <div className="flex items-center justify-between cursor-pointer">
+        <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">
             Séparateur horizontal
           </Label>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer">
             <Switch
               checked={signatureData.separatorHorizontalEnabled || false}
               onCheckedChange={(checked) =>
