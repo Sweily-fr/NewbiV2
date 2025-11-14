@@ -11,7 +11,7 @@ export function useSignatureGenerator() {
   // Générer le HTML de la signature
   const generateHTML = () => {
     // Fonction helper pour obtenir l'espacement approprié
-    const getSpacing = (specificSpacing, fallbackSpacing = 8) => {
+    const getSpacing = (specificSpacing, fallbackSpacing = 12) => {
       let result;
       // Si le mode détaillé est activé, utiliser l'espacement spécifique
       if (signatureData.detailedSpacing && specificSpacing !== undefined) {
@@ -82,8 +82,22 @@ export function useSignatureGenerator() {
             return ''; // Ne pas inclure les data URLs dans le HTML copié
           }
           
-          // ✅ Utiliser l'URL Cloudflare directement (image déjà optimisée et recadrée en carré côté client)
-          return `<img src="${imageUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0; margin: 0; padding: 0; border-radius: ${mask === 'circle' ? '50%' : '8px'};" />`;
+          // ✅ Utiliser VML pour Outlook + fallback img pour Gmail (compatible tous clients mail)
+          const borderRadius = mask === 'circle' ? '50%' : '0';
+          return `<table cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;">
+  <tr>
+    <td width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius:${borderRadius};overflow:hidden;display:block;">
+      <!--[if gte mso 9]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" style="width:${size}px;height:${size}px;arcsize:50%;mso-position-horizontal:center;">
+        <v:fill type="frame" src="${imageUrl}" />
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !gte mso 9]><!-->
+      <img src="${imageUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width:${size}px;height:${size}px;min-width:${size}px;min-height:${size}px;display:block;border:0;margin:0;padding:0;border-radius:${borderRadius};" />
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>`;
         })()
       : "";
 
@@ -217,10 +231,10 @@ export function useSignatureGenerator() {
 
     // Structure unique horizontale (identique à standalone-signature-generator.js)
     return `
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: ${signatureData.fontFamily || "Arial, sans-serif"}; width: 100%;">
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: ${signatureData.fontFamily || "Arial, sans-serif"}; width: auto;">
 <tbody>
 <tr>
-<td style="padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: ${signatureData.contactAlignment || "top"};">  
+<td style="width: auto; padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: ${signatureData.contactAlignment || "top"};">  
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
@@ -229,7 +243,7 @@ ${signatureData.photo ? profileImageHTML : ""}
 </td>
 </tr>
 <tr>
-<td style="padding-bottom: ${getSpacing(signatureData.spacings?.nameBottom, 8)}px; text-align: ${signatureData.nameAlignment || "left"}; font-size: ${getTypography("fullName", "fontSize", 16)}px; font-weight: ${getTypography("fullName", "fontWeight", "bold")}; color: ${getTypography("fullName", "color", signatureData.primaryColor || "#2563eb")}; line-height: 1.2; font-family: ${getTypography("fullName", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("fullName", "fontStyle", "normal")}; text-decoration: ${getTypography("fullName", "textDecoration", "none")}; white-space: nowrap;">
+<td style="padding-bottom: ${getSpacing(signatureData, undefined, 8)}px; text-align: ${signatureData.nameAlignment || "left"}; font-size: ${getTypography("fullName", "fontSize", 16)}px; font-weight: ${getTypography("fullName", "fontWeight", "bold")}; color: ${getTypography("fullName", "color", signatureData.primaryColor || "#2563eb")}; line-height: 1.2; font-family: ${getTypography("fullName", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("fullName", "fontStyle", "normal")}; text-decoration: ${getTypography("fullName", "textDecoration", "none")}; white-space: nowrap;">
 ${signatureData.fullName || `${signatureData.firstName || ""} ${signatureData.lastName || ""}`.trim()}
 </td>
 </tr>
@@ -246,8 +260,8 @@ ${signatureData.position}
 <td style="border-left: 1px solid ${signatureData.colors?.separatorVertical || "#e0e0e0"}; padding: 0; margin: 0; font-size: 1px; line-height: 1px;">
 &nbsp;
 </td>
-<td style="padding-left: ${getSpacing(signatureData.spacings?.global, 8)}px;">
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
+<td style="width: auto; padding-left: ${getSpacing(signatureData.spacings?.nameSpacing, 8)}px;">
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: auto;">
 <tbody>
 ${signatureData.phone ? `
 <tr>
@@ -429,8 +443,22 @@ ${socialIconsHTML}
             return ''; // Ne pas inclure les data URLs dans le HTML copié
           }
           
-          // ✅ Utiliser l'URL Cloudflare directement (image déjà optimisée et recadrée en carré côté client)
-          return `<img src="${imageUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0; margin: 0; padding: 0; border-radius: ${mask === 'circle' ? '50%' : '8px'};" />`;
+          // ✅ Utiliser VML pour Outlook + fallback img pour Gmail (compatible tous clients mail)
+          const borderRadius = mask === 'circle' ? '50%' : '0';
+          return `<table cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;">
+  <tr>
+    <td width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius:${borderRadius};overflow:hidden;display:block;">
+      <!--[if gte mso 9]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" style="width:${size}px;height:${size}px;arcsize:50%;mso-position-horizontal:center;">
+        <v:fill type="frame" src="${imageUrl}" />
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !gte mso 9]><!-->
+      <img src="${imageUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width:${size}px;height:${size}px;min-width:${size}px;min-height:${size}px;display:block;border:0;margin:0;padding:0;border-radius:${borderRadius};" />
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>`;
         })()
       : "";
 

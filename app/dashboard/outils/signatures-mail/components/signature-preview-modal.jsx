@@ -267,7 +267,7 @@ function transformSignatureData(signature) {
 
     // Espacements
     spacings: signature.spacings || {
-      global: 8,
+      global: 12,
       photoBottom: 16,
       nameBottom: 8,
       positionBottom: 8,

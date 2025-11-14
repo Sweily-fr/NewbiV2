@@ -32,7 +32,8 @@ const PersonalInfo = ({
           colSpan="2"
           style={{
             textAlign: nameAlignment,
-            paddingBottom: `${getSpacing(signatureData, spacings.nameBottom, 8)}px`,
+            // Espacement sous le nom : utiliser l'espacement global
+            paddingBottom: `${getSpacing(signatureData, undefined, 8)}px`,
           }}
         >
           <div
@@ -55,8 +56,8 @@ const PersonalInfo = ({
               style={{
                 width: "auto",
                 minWidth: "0",
-                height: "1em",
-                lineHeight: "1em",
+                height: "auto",
+                lineHeight: "1.2",
                 fontSize: `${typography.fullName?.fontSize || fontSize.name || 16}px`,
                 color: typography.fullName?.color || primaryColor,
                 fontFamily: typography.fullName?.fontFamily || fontFamily,
@@ -89,6 +90,10 @@ const PersonalInfo = ({
               displayClassName="border-0 shadow-none p-0 h-auto"
               inputClassName="border-0 shadow-none p-0 h-auto"
               style={{
+                width: "auto",
+                minWidth: "0",
+                height: "auto",
+                lineHeight: "1.2",
                 color: typography.position?.color || colors.position || "#666666",
                 fontSize: `${typography.position?.fontSize || fontSize.position || 14}px`,
                 fontFamily: typography.position?.fontFamily || fontFamily,

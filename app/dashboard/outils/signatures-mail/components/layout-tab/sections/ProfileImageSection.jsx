@@ -83,45 +83,34 @@ export default function ProfileImageSection({
         { type: 'image/jpeg' }
       );
       
-      // Afficher preview immédiat avec l'image optimisée
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const dataUrl = e.target.result;
-        console.log("📸 Preview data URL longueur:", dataUrl.length);
-        updateSignatureData("photo", dataUrl);
-        updateSignatureData("photoVisible", true);
-        
-        // 🔥 ÉTAPE 2: Upload vers Cloudflare en arrière-plan
-        if (editingSignatureId) {
-          console.log("🚀 Début upload vers Cloudflare, ID:", editingSignatureId);
-          try {
-            const result = await uploadImageFile(
-              optimizedFile,  // Upload du fichier optimisé
-              "imgProfil",
-              editingSignatureId,
-              (url, key) => {
-                // Stocker l'URL Cloudflare réelle et la clé
-                console.log("✅ Callback upload réussi - URL:", url, "Key:", key);
-                updateSignatureData("photo", url);
-                updateSignatureData("photoKey", key);
-                console.log("💾 Photo mise à jour avec URL Cloudflare:", url);
-                toast.success("Photo uploadée avec succès");
-              }
-            );
-            console.log("📤 Résultat upload complet:", result);
-            if (result && result.url) {
-              console.log("🔗 URL finale Cloudflare:", result.url);
-            }
-          } catch (uploadError) {
-            console.error("❌ Erreur upload Cloudflare:", uploadError);
-            toast.error("Erreur lors de l'upload: " + uploadError.message);
+      // 🔥 ÉTAPE 2: Upload vers Cloudflare avec signatureId (temporaire ou réel)
+      // Générer un signatureId temporaire si on crée une nouvelle signature
+      const signatureId = editingSignatureId || `temp-${Date.now()}`;
+      console.log("🚀 Début upload vers Cloudflare, ID:", signatureId);
+      
+      try {
+        const result = await uploadImageFile(
+          optimizedFile,  // Upload du fichier optimisé
+          "imgProfil",
+          signatureId,
+          (url, key) => {
+            // Stocker l'URL Cloudflare réelle et la clé
+            console.log("✅ Callback upload réussi - URL:", url, "Key:", key);
+            updateSignatureData("photo", url);
+            updateSignatureData("photoKey", key);
+            updateSignatureData("photoVisible", true);
+            console.log("💾 Photo mise à jour avec URL Cloudflare:", url);
+            toast.success("Photo uploadée avec succès");
           }
-        } else {
-          console.warn("⚠️ Pas de editingSignatureId, upload non possible");
-          console.warn("💡 Vous devez sauvegarder la signature d'abord");
+        );
+        console.log("📤 Résultat upload complet:", result);
+        if (result && result.url) {
+          console.log("🔗 URL finale Cloudflare:", result.url);
         }
-      };
-      reader.readAsDataURL(optimizedBlob);
+      } catch (uploadError) {
+        console.error("❌ Erreur upload Cloudflare:", uploadError);
+        toast.error("Erreur lors de l'upload: " + uploadError.message);
+      }
     } catch (error) {
       console.error("❌ Erreur traitement photo:", error);
       toast.error("Erreur lors du traitement de la photo");

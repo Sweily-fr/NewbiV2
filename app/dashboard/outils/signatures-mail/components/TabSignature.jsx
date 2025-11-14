@@ -353,7 +353,7 @@ export function TabSignature({ existingSignatureId = null }) {
       separatorHorizontalWidth: signatureData.separatorHorizontalWidth || 1,
       // Espacements
       spacings: {
-        global: signatureData.spacings?.global || 8,
+        global: signatureData.spacings?.global || 12,
         photoBottom: signatureData.spacings?.photoBottom || 12,
         logoBottom: signatureData.spacings?.logoBottom || 12,
         nameBottom: signatureData.spacings?.nameBottom || 8,

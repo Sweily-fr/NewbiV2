@@ -150,7 +150,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.nameSpacing ?? 12}
+                  value={signatureData.spacings?.nameSpacing ?? 8}
                   onChange={(e) =>
                     handleSpacingChange("nameSpacing", e.target.value)
                   }
@@ -165,11 +165,11 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   min={0}
                   max={30}
                   aria-label="Espacement photo vers informations"
-                  placeholder="12"
+                  placeholder="8"
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.nameSpacing ?? 12]}
+                  value={[signatureData.spacings?.nameSpacing ?? 8]}
                   onValueChange={(value) =>
                     handleSpacingChange("nameSpacing", value[0])
                   }
@@ -192,7 +192,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                     className="h-8 w-16 px-2 py-1"
                     type="text"
                     inputMode="decimal"
-                    value={signatureData.spacings?.logoBottom ?? 12}
+                    value={signatureData.spacings?.logoBottom ?? 8}
                     onChange={(e) =>
                       handleSpacingChange("logoBottom", e.target.value)
                     }
@@ -207,11 +207,11 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                     min={0}
                     max={30}
                     aria-label="Espacement logo"
-                    placeholder="12"
+                    placeholder="8"
                   />
                   <Slider
                     className="grow h-4"
-                    value={[signatureData.spacings?.logoBottom ?? 12]}
+                    value={[signatureData.spacings?.logoBottom ?? 8]}
                     onValueChange={(value) =>
                       handleSpacingChange("logoBottom", value[0])
                     }
@@ -484,7 +484,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.separatorTop ?? 12}
+                  value={signatureData.spacings?.separatorTop ?? 8}
                   onChange={(e) =>
                     handleSpacingChange("separatorTop", e.target.value)
                   }
@@ -499,11 +499,11 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   min={0}
                   max={30}
                   aria-label="Espacement avant le séparateur"
-                  placeholder="12"
+                  placeholder="8"
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.separatorTop ?? 12]}
+                  value={[signatureData.spacings?.separatorTop ?? 8]}
                   onValueChange={(value) =>
                     handleSpacingChange("separatorTop", value[0])
                   }
@@ -525,7 +525,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.separatorBottom ?? 12}
+                  value={signatureData.spacings?.separatorBottom ?? 8}
                   onChange={(e) =>
                     handleSpacingChange("separatorBottom", e.target.value)
                   }
@@ -540,11 +540,11 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   min={0}
                   max={30}
                   aria-label="Espacement après séparateur"
-                  placeholder="12"
+                  placeholder="8"
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.separatorBottom ?? 12]}
+                  value={[signatureData.spacings?.separatorBottom ?? 8]}
                   onValueChange={(value) =>
                     handleSpacingChange("separatorBottom", value[0])
                   }
@@ -566,7 +566,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   className="h-8 w-16 px-2 py-1"
                   type="text"
                   inputMode="decimal"
-                  value={signatureData.spacings?.logoToSocial ?? 12}
+                  value={signatureData.spacings?.logoToSocial ?? 8}
                   onChange={(e) =>
                     handleSpacingChange("logoToSocial", e.target.value)
                   }
@@ -581,11 +581,11 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                   min={0}
                   max={30}
                   aria-label="Espacement horizontal logo vers réseaux sociaux"
-                  placeholder="12"
+                  placeholder="8"
                 />
                 <Slider
                   className="grow h-4"
-                  value={[signatureData.spacings?.logoToSocial ?? 12]}
+                  value={[signatureData.spacings?.logoToSocial ?? 8]}
                   onValueChange={(value) =>
                     handleSpacingChange("logoToSocial", value[0])
                   }

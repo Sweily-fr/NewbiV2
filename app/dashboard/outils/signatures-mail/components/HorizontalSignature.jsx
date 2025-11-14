@@ -34,7 +34,7 @@ const HorizontalSignature = ({
       className="signature-preview-container"
       style={{
         fontFamily: signatureData.fontFamily || "Arial, sans-serif",
-        width: "100%",
+        width: "auto",
         maxWidth: "600px",
       }}
     >
@@ -44,7 +44,7 @@ const HorizontalSignature = ({
         border="0"
         style={{
           borderCollapse: "collapse",
-          width: "100%",
+          width: "auto",
           maxWidth: "600px",
           tableLayout: "auto",
         }}

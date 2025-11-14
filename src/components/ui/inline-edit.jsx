@@ -216,11 +216,10 @@ export function InlineEdit({
       `}
       style={{
         margin: "0",
-        padding: "2px 4px",
+        padding: "0",
         border: "none",
         outline: "none",
         background: "transparent",
-        borderRadius: "4px",
         transition: "all 0.15s ease-in-out",
         ...style,
       }}

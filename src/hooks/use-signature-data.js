@@ -254,6 +254,7 @@ function SignatureProviderContent({ children }) {
       // Images Cloudflare
       photo: null, // URL de la photo de profil
       photoKey: null, // Clé Cloudflare de la photo de profil
+      photoVisible: true, // Visibilité de la photo (par défaut visible)
       logo: null, // URL du logo d'entreprise
       logoKey: null, // Clé Cloudflare du logo d'entreprise
       // Taille de l'image de profil (en pixels)
@@ -398,6 +399,8 @@ function SignatureProviderContent({ children }) {
       const mergedData = {
         ...defaultSignatureData,
         ...fetchedSignature,
+        // S'assurer que photoVisible a toujours une valeur booléenne
+        photoVisible: fetchedSignature.photoVisible !== undefined ? fetchedSignature.photoVisible : defaultSignatureData.photoVisible,
         orientation: fetchedSignature.orientation || defaultSignatureData.orientation,
         colors: {
           ...defaultSignatureData.colors,

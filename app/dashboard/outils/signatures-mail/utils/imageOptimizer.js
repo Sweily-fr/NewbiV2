@@ -9,14 +9,13 @@
 function applySharpenFilter(ctx, width, height) {
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
-  
-  // Matrice de convolution pour sharpen
+
   const weights = [
     0, -1,  0,
    -1,  5, -1,
     0, -1,  0
   ];
-  
+
   const side = Math.round(Math.sqrt(weights.length));
   const halfSide = Math.floor(side / 2);
   const output = ctx.createImageData(width, height);
@@ -33,17 +32,17 @@ function applySharpenFilter(ctx, width, height) {
           const scx = Math.min(width - 1, Math.max(0, x + cx - halfSide));
           const srcOff = (scy * width + scx) * 4;
           const wt = weights[cy * side + cx];
-          
+
           r += data[srcOff] * wt;
           g += data[srcOff + 1] * wt;
           b += data[srcOff + 2] * wt;
         }
       }
 
-      dst[dstOff] = r;
-      dst[dstOff + 1] = g;
-      dst[dstOff + 2] = b;
-      dst[dstOff + 3] = data[dstOff + 3]; // Alpha
+      dst[dstOff] = Math.max(0, Math.min(255, r));
+      dst[dstOff + 1] = Math.max(0, Math.min(255, g));
+      dst[dstOff + 2] = Math.max(0, Math.min(255, b));
+      dst[dstOff + 3] = data[dstOff + 3];
     }
   }
 
@@ -52,18 +51,15 @@ function applySharpenFilter(ctx, width, height) {
 
 /**
  * Traite et optimise une image avant upload
- * @param {File} file - Fichier image à traiter
- * @param {Object} options - Options de traitement
- * @returns {Promise<Blob>} - Image optimisée en blob
  */
 export async function processImageBeforeUpload(file, options = {}) {
   const {
-    maxWidth = 210,      // 70px × 3 pour Retina
+    maxWidth = 210,
     maxHeight = 210,
     quality = 0.95,
-    format = 'jpeg',     // ou 'png' pour transparence
-    circular = false,
-    sharpen = true
+    format = 'jpeg',
+    sharpen = true,
+    fit = 'cover'  // 'cover' ou 'contain'
   } = options;
 
   return new Promise((resolve, reject) => {
@@ -72,45 +68,71 @@ export async function processImageBeforeUpload(file, options = {}) {
     const ctx = canvas.getContext('2d');
 
     img.onload = () => {
-      // 🔥 RECADRAGE EN CARRÉ pour éviter object-fit: cover
-      const sourceSize = Math.min(img.width, img.height);
-      const sourceX = (img.width - sourceSize) / 2;
-      const sourceY = (img.height - sourceSize) / 2;
+      let sourceX = 0;
+      let sourceY = 0;
+      let sourceWidth = img.width;
+      let sourceHeight = img.height;
+      let destWidth = maxWidth;
+      let destHeight = maxHeight;
 
-      // Calculer la taille finale (carré)
-      let finalSize = Math.min(maxWidth, maxHeight);
-      
-      // Si l'image source est plus petite, ne pas l'agrandir
-      if (sourceSize < finalSize) {
-        finalSize = sourceSize;
+      if (fit === 'cover') {
+        // MODE COVER : Recadrage CARRÉ pour remplir tout l'espace
+        // Prendre la plus petite dimension et centrer
+        const minDimension = Math.min(img.width, img.height);
+        sourceWidth = minDimension;
+        sourceHeight = minDimension;
+        sourceX = (img.width - minDimension) / 2;
+        sourceY = (img.height - minDimension) / 2;
+        
+        console.log("🔥 MODE COVER - Recadrage carré:", {
+          original: { width: img.width, height: img.height },
+          source: { x: sourceX, y: sourceY, width: sourceWidth, height: sourceHeight },
+          destination: { width: maxWidth, height: maxHeight }
+        });
+      } else if (fit === 'contain') {
+        // MODE CONTAIN : Contenir toute l'image
+        const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+        destWidth = img.width * ratio;
+        destHeight = img.height * ratio;
       }
 
-      canvas.width = finalSize;
-      canvas.height = finalSize;
+      // Définir les dimensions du canvas
+      canvas.width = maxWidth;
+      canvas.height = maxHeight;
 
-      // Activer l'anti-aliasing pour une meilleure qualité
+      // Fond blanc pour les JPEGs (évite le fond noir)
+      if (format === 'jpeg') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, maxWidth, maxHeight);
+      }
+
+      // Activer l'anti-aliasing
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
-      // Appliquer un masque circulaire si nécessaire
-      if (circular) {
-        ctx.beginPath();
-        ctx.arc(finalSize / 2, finalSize / 2, finalSize / 2, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-      }
+      // Centrer l'image si contain
+      const offsetX = fit === 'contain' ? (maxWidth - destWidth) / 2 : 0;
+      const offsetY = fit === 'contain' ? (maxHeight - destHeight) / 2 : 0;
 
-      // Dessiner l'image recadrée en carré
+      // Dessiner l'image
       ctx.drawImage(
         img,
-        sourceX, sourceY, sourceSize, sourceSize,  // Source (carré centré)
-        0, 0, finalSize, finalSize                  // Destination
+        sourceX, sourceY, sourceWidth, sourceHeight,
+        offsetX, offsetY, destWidth, destHeight
       );
 
-      // Appliquer un sharpen filter
+      // Appliquer le sharpen
       if (sharpen) {
-        applySharpenFilter(ctx, finalSize, finalSize);
+        applySharpenFilter(ctx, canvas.width, canvas.height);
       }
+
+      console.log("🎨 Image optimisée:", {
+        original: { width: img.width, height: img.height },
+        source: { x: sourceX, y: sourceY, width: sourceWidth, height: sourceHeight },
+        canvas: { width: canvas.width, height: canvas.height },
+        destination: { x: offsetX, y: offsetY, width: destWidth, height: destHeight },
+        fit: fit
+      });
 
       // Convertir en blob
       canvas.toBlob(
@@ -132,40 +154,100 @@ export async function processImageBeforeUpload(file, options = {}) {
 }
 
 /**
- * Préconfigurations pour différents types d'images
+ * Préconfigurations optimales
  */
 export const IMAGE_PRESETS = {
   profile: {
-    maxWidth: 400,    // Beaucoup plus grand pour éviter le flou
-    maxHeight: 400,
-    quality: 0.98,    // Qualité maximale
+    maxWidth: 210,     // 70px × 3
+    maxHeight: 210,
+    quality: 0.95,
     format: 'jpeg',
-    circular: false,  // On garde carré, le CSS fera le cercle
-    sharpen: true
+    sharpen: true,
+    fit: 'cover'       // Recadrage automatique
+  },
+  profileHD: {
+    maxWidth: 280,     // 70px × 4 pour @4x (très haute résolution)
+    maxHeight: 280,
+    quality: 0.98,
+    format: 'jpeg',
+    sharpen: true,
+    fit: 'cover'
   },
   logo: {
-    maxWidth: 180,    // 60px × 3
+    maxWidth: 180,     // 60px × 3
     maxHeight: 180,
     quality: 0.95,
-    format: 'png',    // PNG pour transparence
-    sharpen: true
+    format: 'png',
+    sharpen: true,
+    fit: 'contain'     // Contenir le logo sans recadrage
   },
   icon: {
-    maxWidth: 48,     // 16px × 3
+    maxWidth: 48,      // 16px × 3
     maxHeight: 48,
     quality: 0.90,
     format: 'png',
-    sharpen: true
+    sharpen: true,
+    fit: 'contain'
   }
 };
 
 /**
- * Fonction helper pour traiter une image selon un preset
- * @param {File} file - Fichier image
- * @param {string} presetName - Nom du preset ('profile', 'logo', 'icon')
- * @returns {Promise<Blob>} - Image optimisée
+ * Helper pour optimiser selon un preset
  */
 export async function optimizeImage(file, presetName = 'profile') {
   const preset = IMAGE_PRESETS[presetName] || IMAGE_PRESETS.profile;
   return processImageBeforeUpload(file, preset);
+}
+
+/**
+ * Génère plusieurs versions d'une image (standard + Retina)
+ */
+export async function generateImageVersions(file, type = 'profile') {
+  const versions = {};
+
+  switch (type) {
+    case 'profile':
+      // Version @2x (140×140)
+      versions.standard = await processImageBeforeUpload(file, {
+        maxWidth: 140,
+        maxHeight: 140,
+        quality: 0.92,
+        format: 'jpeg',
+        sharpen: true,
+        fit: 'cover'
+      });
+
+      // Version @3x (210×210)
+      versions.retina = await processImageBeforeUpload(file, {
+        maxWidth: 210,
+        maxHeight: 210,
+        quality: 0.95,
+        format: 'jpeg',
+        sharpen: true,
+        fit: 'cover'
+      });
+      break;
+
+    case 'logo':
+      versions.standard = await processImageBeforeUpload(file, {
+        maxWidth: 120,
+        maxHeight: 120,
+        quality: 0.90,
+        format: 'png',
+        sharpen: true,
+        fit: 'contain'
+      });
+
+      versions.retina = await processImageBeforeUpload(file, {
+        maxWidth: 180,
+        maxHeight: 180,
+        quality: 0.95,
+        format: 'png',
+        sharpen: true,
+        fit: 'contain'
+      });
+      break;
+  }
+
+  return versions;
 }

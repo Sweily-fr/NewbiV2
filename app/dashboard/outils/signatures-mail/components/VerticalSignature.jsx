@@ -33,7 +33,7 @@ const VerticalSignature = ({
       className="signature-preview-container"
       style={{
         fontFamily: signatureData.fontFamily || "Arial, sans-serif",
-        width: "100%",
+        width: "auto",
         maxWidth: "600px",
       }}
     >
@@ -43,7 +43,7 @@ const VerticalSignature = ({
         border="0"
         style={{
           borderCollapse: "collapse",
-          width: "100%",
+          width: "auto",
           maxWidth: "600px",
           tableLayout: "auto",
         }}
@@ -63,7 +63,7 @@ const VerticalSignature = ({
                 border="0"
                 style={{
                   borderCollapse: "collapse",
-                  width: "100%",
+                  width: "auto",
                 }}
               >
                 <tbody>
@@ -126,7 +126,7 @@ const VerticalSignature = ({
                 border="0"
                 style={{
                   borderCollapse: "collapse",
-                  width: "100%",
+                  width: "auto",
                 }}
               >
                 <tbody>

@@ -77,8 +77,22 @@ export function generateSignatureHTML(signatureData) {
           return ''; // Ne pas inclure les data URLs dans le HTML copié
         }
         
-        // ✅ Utiliser l'URL Cloudflare directement (image déjà optimisée et recadrée en carré côté client)
-        return `<img src="${imageUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0; margin: 0; padding: 0; border-radius: ${mask === 'circle' ? '50%' : '8px'};" />`;
+        // ✅ Utiliser VML pour Outlook + fallback img pour Gmail (compatible tous clients mail)
+        const borderRadius = mask === 'circle' ? '50%' : '0';
+        return `<table cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;">
+  <tr>
+    <td width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius:${borderRadius};overflow:hidden;display:block;">
+      <!--[if gte mso 9]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" style="width:${size}px;height:${size}px;arcsize:50%;mso-position-horizontal:center;">
+        <v:fill type="frame" src="${imageUrl}" />
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !gte mso 9]><!-->
+      <img src="${imageUrl}" alt="Photo de profil" width="${size}" height="${size}" style="width:${size}px;height:${size}px;min-width:${size}px;min-height:${size}px;display:block;border:0;margin:0;padding:0;border-radius:${borderRadius};" />
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>`;
       })()
     : "";
 
@@ -210,20 +224,20 @@ export function generateSignatureHTML(signatureData) {
   
   // Structure unique horizontale
   const htmlResult = `
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: ${signatureData.fontFamily || "Arial, sans-serif"}; width: 100%;">
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: ${signatureData.fontFamily || "Arial, sans-serif"}; width: auto;">
 <tbody>
 <tr>
-<td style="width: ${signatureData.photo ? (signatureData.imageSize || 80) + 16 : 120}px; padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: top;">
+<td style="width: auto; padding-right: ${getSpacing(signatureData.spacings?.global, 8)}px; vertical-align: top;">
 ${signatureData.photo ? profileImageHTML : ""}
 </td>
 <td style="border-left: 1px solid ${signatureData.colors?.separatorVertical || "#e0e0e0"}; padding: 0; margin: 0; font-size: 1px; line-height: 1px;">
 &nbsp;
 </td>
-<td style="padding-left: ${getSpacing(signatureData.spacings?.global, 8)}px;">
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
+<td style="width: auto; padding-left: ${getSpacing(signatureData.spacings?.nameSpacing, 8)}px;">
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: auto;">
 <tbody>
 <tr>
-<td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.nameBottom, 8)}px; text-align: ${signatureData.nameAlignment || "left"};">
+<td colspan="2" style="padding-bottom: ${getSpacing(signatureData, undefined, 8)}px; text-align: ${signatureData.nameAlignment || "left"};">
 <div style="font-size: ${getTypography("fullName", "fontSize", 16)}px; font-weight: ${getTypography("fullName", "fontWeight", "bold")}; color: ${getTypography("fullName", "color", signatureData.primaryColor || "#2563eb")}; line-height: 1.2; font-family: ${getTypography("fullName", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("fullName", "fontStyle", "normal")}; text-decoration: ${getTypography("fullName", "textDecoration", "none")};">
 ${signatureData.fullName || `${signatureData.firstName || ""} ${signatureData.lastName || ""}`.trim()}
 </div>
