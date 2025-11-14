@@ -71,10 +71,6 @@ export default function ProfileImageSection({
       
       // 🔥 ÉTAPE 1: Optimiser l'image côté client
       const optimizedBlob = await optimizeImage(file, 'profile');
-      console.log("✅ Image optimisée:", {
-        original: `${(file.size / 1024).toFixed(2)} KB`,
-        optimized: `${(optimizedBlob.size / 1024).toFixed(2)} KB`
-      });
       
       // Créer un fichier à partir du blob optimisé
       const optimizedFile = new File(
@@ -86,7 +82,6 @@ export default function ProfileImageSection({
       // 🔥 ÉTAPE 2: Upload vers Cloudflare avec signatureId (temporaire ou réel)
       // Générer un signatureId temporaire si on crée une nouvelle signature
       const signatureId = editingSignatureId || `temp-${Date.now()}`;
-      console.log("🚀 Début upload vers Cloudflare, ID:", signatureId);
       
       try {
         const result = await uploadImageFile(
@@ -95,18 +90,12 @@ export default function ProfileImageSection({
           signatureId,
           (url, key) => {
             // Stocker l'URL Cloudflare réelle et la clé
-            console.log("✅ Callback upload réussi - URL:", url, "Key:", key);
             updateSignatureData("photo", url);
             updateSignatureData("photoKey", key);
             updateSignatureData("photoVisible", true);
-            console.log("💾 Photo mise à jour avec URL Cloudflare:", url);
             toast.success("Photo uploadée avec succès");
           }
         );
-        console.log("📤 Résultat upload complet:", result);
-        if (result && result.url) {
-          console.log("🔗 URL finale Cloudflare:", result.url);
-        }
       } catch (uploadError) {
         console.error("❌ Erreur upload Cloudflare:", uploadError);
         toast.error("Erreur lors de l'upload: " + uploadError.message);

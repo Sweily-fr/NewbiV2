@@ -4,8 +4,6 @@
  */
 
 export function generateSignatureHTML(signatureData) {
-  console.log("🔧 generateSignatureHTML appelée avec:", signatureData);
-  
   // Fonction helper pour obtenir l'espacement approprié
   const getSpacing = (specificSpacing, fallbackSpacing = 8) => {
     let result;
@@ -220,8 +218,6 @@ export function generateSignatureHTML(signatureData) {
 
   const socialIconsHTML = generateSocialIconsHTML();
   
-  console.log("🔧 Avant return, socialIconsHTML:", socialIconsHTML);
-  
   // Structure unique horizontale
   const htmlResult = `
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: ${signatureData.fontFamily || "Arial, sans-serif"}; width: auto;">
@@ -377,6 +373,5 @@ ${socialIconsHTML}
 </table>
 `;
   
-  console.log("🔧 HTML généré, longueur:", htmlResult.length);
   return htmlResult;
 }

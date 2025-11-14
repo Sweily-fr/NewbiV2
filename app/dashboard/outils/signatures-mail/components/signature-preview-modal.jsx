@@ -312,12 +312,8 @@ export default function SignaturePreviewModal({
   // Fonction de copie indépendante pour le modal
   const copySignatureToClipboard = async (data) => {
     try {
-      console.log("📋 Orientation lors de la copie:", data.orientation);
-      console.log("📋 SignatureData complet:", data);
-      
       // Générer le HTML pur optimisé pour Gmail (pas de code React)
       const signatureHTML = generateSignatureHTML(data);
-      console.log("📋 HTML généré pour Gmail:", signatureHTML.substring(0, 200));
       
       // Copier dans le presse-papiers avec formatage HTML
       await navigator.clipboard.write([

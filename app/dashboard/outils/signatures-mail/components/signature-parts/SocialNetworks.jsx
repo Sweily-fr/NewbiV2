@@ -36,10 +36,6 @@ const SocialNetworks = ({
   // Ne rien afficher si aucun réseau configuré
   if (configuredNetworks.length === 0) return null;
 
-  // Debug logs
-  console.log("🔍 SocialNetworks - globalColor:", globalColor);
-  console.log("🔍 SocialNetworks - socialColors:", socialColors);
-
   // Fonction pour mapper le nom du platform vers le nom Cloudflare
   const getPlatformName = (platform) => {
     const platformMap = {
@@ -52,30 +48,25 @@ const SocialNetworks = ({
   const getSocialIconUrl = (platform) => {
     // Utiliser l'icône personnalisée si disponible
     if (customSocialIcons?.[platform]) {
-      console.log(`✅ Icône personnalisée pour ${platform}`);
       return customSocialIcons[platform];
     }
 
     // Récupérer la couleur pour ce réseau (priorité: couleur spécifique > couleur globale)
     const color = socialColors?.[platform] || globalColor;
-    console.log(`🎨 ${platform} - color:`, color);
     
     // Construire l'URL Cloudflare avec la couleur si disponible
     if (color) {
       // Convertir la couleur hex en nom (ex: #0077b5 -> blue, #25D366 -> green)
       const colorName = getColorName(color);
-      console.log(`🎨 ${platform} - colorName:`, colorName);
       if (colorName) {
         // Utiliser le nom Cloudflare du platform (x -> twitter)
         const cloudflareplatform = getPlatformName(platform);
         const url = `${CLOUDFLARE_URLS.social}/${cloudflareplatform}/${cloudflareplatform}-${colorName}.png`;
-        console.log(`✅ ${platform} URL:`, url);
         return url;
       }
     }
 
     // Fallback vers l'icône par défaut
-    console.log(`⚠️ ${platform} - fallback`);
     return CLOUDFLARE_URLS.socialIcons[platform];
   };
 

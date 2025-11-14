@@ -21,9 +21,6 @@ export function useSignatureGenerator() {
         result = signatureData.spacings?.global || fallbackSpacing;
       }
 
-      console.log(
-        `🔍 getSpacing - specific: ${specificSpacing}, fallback: ${fallbackSpacing}, detailedMode: ${signatureData.detailedSpacing}, global: ${signatureData.spacings?.global}, result: ${result}`
-      );
       return result;
     };
 
