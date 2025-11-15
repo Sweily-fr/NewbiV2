@@ -5,7 +5,13 @@ import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Package, Plus, Trash2, Percent } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { SelectNative } from "@/src/components/ui/select-native";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import {
   Card,
   CardContent,
@@ -103,13 +109,17 @@ export default function ItemsSection({
     const unitPrice = productData.unitPrice || 0;
     const discount = productData.discount || 0;
     const discountType = (productData.discountType === "percentage" ? "PERCENTAGE" : productData.discountType) || "PERCENTAGE";
+    
+    // Si auto-liquidation est activée, forcer la TVA à 0%
+    const isReverseCharge = watch("isReverseCharge");
+    const defaultVatRate = isReverseCharge ? 0 : 20;
 
     append({
       description: productData.description || "",
       details: productData.details || "",
       quantity: quantity,
       unitPrice: unitPrice,
-      vatRate: productData.vatRate !== undefined ? productData.vatRate : 20,
+      vatRate: productData.vatRate !== undefined ? (isReverseCharge ? 0 : productData.vatRate) : defaultVatRate,
       unit: productData.unit !== undefined ? productData.unit : "",
       discount: discount,
       discountType: discountType === "percentage" ? "PERCENTAGE" : discountType,
@@ -140,7 +150,20 @@ export default function ItemsSection({
                 <Checkbox
                   id="isReverseCharge"
                   checked={field.value || false}
-                  onCheckedChange={field.onChange}
+                  onCheckedChange={(checked) => {
+                    field.onChange(checked);
+                    
+                    // Si auto-liquidation activée, mettre tous les taux de TVA à 0%
+                    if (checked) {
+                      const currentItems = watch("items") || [];
+                      currentItems.forEach((_, index) => {
+                        setValue(`items.${index}.vatRate`, 0, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      });
+                    }
+                  }}
                   disabled={!canEdit}
                 />
               )}
@@ -328,6 +351,10 @@ export default function ItemsSection({
                                   message:
                                     "La description ne doit pas dépasser 255 caractères",
                                 },
+                                pattern: {
+                                  value: /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\.,;:!?@#$%&*()\[\]\-_+='"/\\]+$/,
+                                  message: "La description contient des caractères non autorisés"
+                                },
                               })}
                               placeholder="Décrivez votre produit ou service"
                               disabled={!canEdit}
@@ -335,7 +362,7 @@ export default function ItemsSection({
                               onBlur={() => unmarkFieldAsEditing?.(index, "description")}
                               className={`h-10 rounded-lg text-sm w-full ${
                                 errors?.items?.[index]?.description || hasFieldError(index, "description")
-                                  ? "border-destructive focus-visible:ring-destructive"
+                                  ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
                                   : ""
                               }`}
                             />
@@ -360,12 +387,28 @@ export default function ItemsSection({
                           </div>
                           <Textarea
                             id={`item-details-${index}`}
-                            {...register(`items.${index}.details`)}
+                            {...register(`items.${index}.details`, {
+                              maxLength: {
+                                value: 500,
+                                message: "Les détails ne doivent pas dépasser 500 caractères",
+                              },
+                            })}
                             placeholder="Informations complémentaires sur l'article"
                             disabled={!canEdit}
                             rows={2}
-                            className="rounded-lg text-sm w-full"
+                            onFocus={() => markFieldAsEditing?.(index, "details")}
+                            onBlur={() => unmarkFieldAsEditing?.(index, "details")}
+                            className={`rounded-lg text-sm w-full ${
+                              errors?.items?.[index]?.details || hasFieldError(index, "details")
+                                ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                : ""
+                            }`}
                           />
+                          {errors?.items?.[index]?.details && (
+                            <p className="text-xs text-red-500">
+                              {errors.items[index].details.message}
+                            </p>
+                          )}
                         </div>
 
                         {/* Quantité et Unité */}
@@ -421,9 +464,11 @@ export default function ItemsSection({
                                   },
                                 })}
                                 disabled={!canEdit}
+                                onFocus={() => markFieldAsEditing?.(index, "quantity")}
+                                onBlur={() => unmarkFieldAsEditing?.(index, "quantity")}
                                 className={`h-10 text-sm w-full ${
                                   errors?.items?.[index]?.quantity || hasFieldError(index, "quantity")
-                                    ? "border-destructive focus-visible:ring-destructive"
+                                    ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
                                     : ""
                                 }`}
                               />
@@ -445,27 +490,31 @@ export default function ItemsSection({
                             <div className="space-y-1">
                               <Controller
                                 name={`items.${index}.unit`}
-                                defaultValue=""
+                                defaultValue="none"
                                 render={({ field }) => (
-                                  <SelectNative
-                                    value={field.value ?? ""}
-                                    onChange={(e) => field.onChange(e.target.value)}
+                                  <Select
+                                    value={field.value || "none"}
+                                    onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
                                     disabled={!canEdit}
-                                    className="w-full text-sm"
                                   >
-                                    <option value="">Aucune unité</option>
-                                    <option value="unité">Unité</option>
-                                    <option value="pièce">Pièce</option>
-                                    <option value="heure">Heure</option>
-                                    <option value="jour">Jour</option>
-                                    <option value="mois">Mois</option>
-                                    <option value="kg">Kilogramme</option>
-                                    <option value="m">Mètre</option>
-                                    <option value="m²">Mètre carré</option>
-                                    <option value="m³">Mètre cube</option>
-                                    <option value="litre">Litre</option>
-                                    <option value="forfait">Forfait</option>
-                                  </SelectNative>
+                                    <SelectTrigger className="w-full text-sm">
+                                      <SelectValue placeholder="Aucune unité" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">Aucune unité</SelectItem>
+                                      <SelectItem value="unité">Unité</SelectItem>
+                                      <SelectItem value="pièce">Pièce</SelectItem>
+                                      <SelectItem value="heure">Heure</SelectItem>
+                                      <SelectItem value="jour">Jour</SelectItem>
+                                      <SelectItem value="mois">Mois</SelectItem>
+                                      <SelectItem value="kg">Kilogramme</SelectItem>
+                                      <SelectItem value="m">Mètre</SelectItem>
+                                      <SelectItem value="m²">Mètre carré</SelectItem>
+                                      <SelectItem value="m³">Mètre cube</SelectItem>
+                                      <SelectItem value="litre">Litre</SelectItem>
+                                      <SelectItem value="forfait">Forfait</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 )}
                               />
                             </div>
@@ -518,9 +567,11 @@ export default function ItemsSection({
                                   },
                                 })}
                                 disabled={!canEdit}
+                                onFocus={() => markFieldAsEditing?.(index, "unitPrice")}
+                                onBlur={() => unmarkFieldAsEditing?.(index, "unitPrice")}
                                 className={`h-10 text-sm w-full ${
                                   errors?.items?.[index]?.unitPrice || hasFieldError(index, "unitPrice")
-                                    ? "border-destructive focus-visible:ring-destructive"
+                                    ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
                                     : ""
                                 }`}
                               />
@@ -546,27 +597,29 @@ export default function ItemsSection({
                                 name={`items.${index}.vatRate`}
                                 defaultValue={20}
                                 render={({ field }) => (
-                                  <SelectNative
+                                  <Select
                                     value={field.value?.toString() || "20"}
-                                    onChange={(e) =>
-                                      field.onChange(parseFloat(e.target.value))
-                                    }
+                                    onValueChange={(value) => field.onChange(parseFloat(value))}
                                     disabled={!canEdit}
-                                    className="w-full text-sm"
                                   >
-                                    <option value="0">
-                                      0% - Exonéré
-                                    </option>
-                                    <option value="5.5">
-                                      5,5% - Taux réduit
-                                    </option>
-                                    <option value="10">
-                                      10% - Taux intermédiaire
-                                    </option>
-                                    <option value="20">
-                                      20% - Taux normal
-                                    </option>
-                                  </SelectNative>
+                                    <SelectTrigger className="w-full text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="0">
+                                        0% - Exonéré
+                                      </SelectItem>
+                                      <SelectItem value="5.5">
+                                        5,5% - Taux réduit
+                                      </SelectItem>
+                                      <SelectItem value="10">
+                                        10% - Taux intermédiaire
+                                      </SelectItem>
+                                      <SelectItem value="20">
+                                        20% - Taux normal
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 )}
                               />
                             </div>
@@ -589,34 +642,38 @@ export default function ItemsSection({
                               <Controller
                                 name={`items.${index}.vatExemptionText`}
                                 render={({ field }) => (
-                                  <SelectNative
+                                  <Select
                                     value={field.value || "none"}
-                                    onChange={(e) => field.onChange(e.target.value)}
+                                    onValueChange={field.onChange}
                                     disabled={!canEdit}
-                                    className={`w-full text-sm ${
-                                      hasFieldError(index, "vatExemptionText")
-                                        ? "border-destructive focus-visible:ring-destructive"
-                                        : ""
-                                    }`}
                                   >
-                                      <option value="none">Sélectionner une mention</option>
-                                      <option value="Article 259-1 du CGI">Article 259-1 du CGI</option>
-                                      <option value="Article 259 B du CGI">Article 259 B du CGI</option>
-                                      <option value="Article 261 du CGI">Article 261 du CGI</option>
-                                      <option value="Article 261 D du CGI">Article 261 D du CGI</option>
-                                      <option value="Article 261 D-4° du CGI">Article 261 D-4° du CGI</option>
-                                      <option value="Article 261 2-4° du CGI">Article 261 2-4° du CGI</option>
-                                      <option value="Article 261-4 du CGI">Article 261-4 du CGI</option>
-                                      <option value="Article 261 4-4° du CGI">Article 261 4-4° du CGI</option>
-                                      <option value="Article 262 du CGI">Article 262 du CGI</option>
-                                      <option value="Article 262 ter-I du CGI">Article 262 ter-I du CGI</option>
-                                      <option value="Article 275 du CGI">Article 275 du CGI</option>
-                                      <option value="Article 283 du CGI">Article 283 du CGI</option>
-                                      <option value="Article 283-2 du CGI">Article 283-2 du CGI</option>
-                                      <option value="Article 293 B du CGI">Article 293 B du CGI</option>
-                                      <option value="Article 298 sexies du CGI">Article 298 sexies du CGI</option>
-                                      <option value="Article 44 de la Directive 2006/112/CE">Article 44 de la Directive 2006/112/CE</option>
-                                    </SelectNative>
+                                    <SelectTrigger className={`w-full text-sm ${
+                                      hasFieldError(index, "vatExemptionText")
+                                        ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                        : ""
+                                    }`}>
+                                      <SelectValue placeholder="Sélectionner une mention" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">Sélectionner une mention</SelectItem>
+                                      <SelectItem value="Article 259-1 du CGI">Article 259-1 du CGI</SelectItem>
+                                      <SelectItem value="Article 259 B du CGI">Article 259 B du CGI</SelectItem>
+                                      <SelectItem value="Article 261 du CGI">Article 261 du CGI</SelectItem>
+                                      <SelectItem value="Article 261 D du CGI">Article 261 D du CGI</SelectItem>
+                                      <SelectItem value="Article 261 D-4° du CGI">Article 261 D-4° du CGI</SelectItem>
+                                      <SelectItem value="Article 261 2-4° du CGI">Article 261 2-4° du CGI</SelectItem>
+                                      <SelectItem value="Article 261-4 du CGI">Article 261-4 du CGI</SelectItem>
+                                      <SelectItem value="Article 261 4-4° du CGI">Article 261 4-4° du CGI</SelectItem>
+                                      <SelectItem value="Article 262 du CGI">Article 262 du CGI</SelectItem>
+                                      <SelectItem value="Article 262 ter-I du CGI">Article 262 ter-I du CGI</SelectItem>
+                                      <SelectItem value="Article 275 du CGI">Article 275 du CGI</SelectItem>
+                                      <SelectItem value="Article 283 du CGI">Article 283 du CGI</SelectItem>
+                                      <SelectItem value="Article 283-2 du CGI">Article 283-2 du CGI</SelectItem>
+                                      <SelectItem value="Article 293 B du CGI">Article 293 B du CGI</SelectItem>
+                                      <SelectItem value="Article 298 sexies du CGI">Article 298 sexies du CGI</SelectItem>
+                                      <SelectItem value="Article 44 de la Directive 2006/112/CE">Article 44 de la Directive 2006/112/CE</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 )}
                               />
                               {hasFieldError(index, "vatExemptionText") && (
@@ -763,10 +820,9 @@ export default function ItemsSection({
                                 name={`items.${index}.discountType`}
                                 defaultValue="PERCENTAGE"
                                 render={({ field }) => (
-                                  <SelectNative
+                                  <Select
                                     value={field.value || "PERCENTAGE"}
-                                    onChange={(e) => {
-                                      const value = e.target.value;
+                                    onValueChange={(value) => {
                                       field.onChange(value);
 
                                       // Mettre à jour le type de remise immédiatement
@@ -810,11 +866,15 @@ export default function ItemsSection({
                                       });
                                     }}
                                     disabled={!canEdit}
-                                    className="w-full text-sm"
                                   >
-                                    <option value="PERCENTAGE">Pourcentage (%)</option>
-                                    <option value="FIXED">Montant fixe (€)</option>
-                                  </SelectNative>
+                                    <SelectTrigger className="w-full text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="PERCENTAGE">Pourcentage (%)</SelectItem>
+                                      <SelectItem value="FIXED">Montant fixe (€)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 )}
                               />
                               </div>

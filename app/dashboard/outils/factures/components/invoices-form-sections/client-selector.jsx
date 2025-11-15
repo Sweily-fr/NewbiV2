@@ -71,6 +71,7 @@ export default function ClientSelector({
   clientPositionRight = false,
   onClientPositionChange,
   onEditClient,
+  setValidationErrors,
 }) {
   const id = useId();
   const [activeTab, setActiveTab] = useState("existing");
@@ -224,6 +225,42 @@ export default function ClientSelector({
     return type === "COMPANY" ? Building : User;
   };
 
+  // Validation automatique avec debounce quand le formulaire change
+  useEffect(() => {
+    // Ne valider que si le formulaire manuel est affiché
+    if (!showManualForm) return;
+    
+    // Ne pas valider si le formulaire est vide (état initial)
+    const isFormEmpty = !newClientForm.name && !newClientForm.email && 
+                        !newClientForm.firstName && !newClientForm.lastName &&
+                        !newClientForm.address.street && !newClientForm.address.city;
+    if (isFormEmpty) return;
+    
+    // Debounce de 500ms
+    const timeoutId = setTimeout(() => {
+      validateForm();
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [newClientForm, showManualForm]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Nettoyer les erreurs quand on quitte le formulaire de nouveau client
+  useEffect(() => {
+    // Si on n'est pas sur l'onglet "new" ou si le formulaire manuel n'est pas affiché
+    if (activeTab !== "new" || !showManualForm) {
+      // Supprimer les erreurs de validation globales
+      if (setValidationErrors) {
+        setValidationErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.newClient;
+          return newErrors;
+        });
+      }
+      // Nettoyer aussi les erreurs locales
+      setFormErrors({});
+    }
+  }, [activeTab, showManualForm, setValidationErrors]);
+
   const validateForm = () => {
     const errors = {};
 
@@ -365,6 +402,26 @@ export default function ClientSelector({
     }
 
     setFormErrors(errors);
+    
+    // Afficher aussi dans la bannière globale si setValidationErrors est disponible
+    if (setValidationErrors && Object.keys(errors).length > 0) {
+      const errorMessages = Object.values(errors);
+      setValidationErrors((prev) => ({
+        ...prev,
+        newClient: {
+          message: `Erreurs dans le formulaire de nouveau client:\n${errorMessages.join("\n")}`,
+          canEdit: true
+        }
+      }));
+    } else if (setValidationErrors && Object.keys(errors).length === 0) {
+      // Supprimer l'erreur si le formulaire est valide
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.newClient;
+        return newErrors;
+      });
+    }
+    
     return Object.keys(errors).length === 0;
   };
 
@@ -1725,7 +1782,20 @@ export default function ClientSelector({
                       type="button"
                       variant="outline"
                       onClick={() => {
+                        // Nettoyer les erreurs locales et globales d'abord
+                        setFormErrors({});
+                        if (setValidationErrors) {
+                          setValidationErrors((prev) => {
+                            const newErrors = { ...prev };
+                            delete newErrors.newClient;
+                            return newErrors;
+                          });
+                        }
+                        // Puis réinitialiser le formulaire
                         resetNewClientForm();
+                        // Masquer le formulaire manuel
+                        setShowManualForm(false);
+                        // Retourner à l'onglet clients existants
                         setActiveTab("existing");
                       }}
                       disabled={disabled}

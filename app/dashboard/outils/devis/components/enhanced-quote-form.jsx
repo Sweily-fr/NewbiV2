@@ -194,20 +194,21 @@ function ProductSearchCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="p-0 w-[var(--radix-popover-trigger-width)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)]" 
+        className="p-0 w-[var(--radix-popover-trigger-width)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)] bg-popover text-popover-foreground" 
         align="start" 
         side="bottom"
         sideOffset={4}
         avoidCollisions={false}
         sticky="always"
       >
-        <Command shouldFilter={false}>
+        <Command shouldFilter={false} className="bg-popover text-popover-foreground">
           <CommandInput
             placeholder="Rechercher un produit..."
             value={searchTerm}
             onValueChange={handleSearchChange}
+            className="bg-transparent"
           />
-          <CommandList>
+          <CommandList className="bg-popover">
             {loading && <CommandEmpty>Recherche en cours...</CommandEmpty>}
             {!loading && !debouncedSearchTerm && (
               <CommandEmpty>Tapez pour rechercher un produit...</CommandEmpty>
@@ -262,6 +263,7 @@ export default function EnhancedQuoteForm({
   validateQuoteNumber,
   hasExistingQuotes,
   validationErrors = {},
+  setValidationErrors,
   currentStep: externalCurrentStep,
   onStepChange,
   onEditClient,
@@ -400,6 +402,7 @@ export default function EnhancedQuoteForm({
                     selectedClient={data.client}
                     onSelect={(client) => updateField("client", client)}
                     disabled={!canEdit}
+                    setValidationErrors={setValidationErrors}
                     onEditClient={onEditClient}
                     validationErrors={validationErrors}
                     clientPositionRight={data.clientPositionRight || false}

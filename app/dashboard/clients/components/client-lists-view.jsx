@@ -84,11 +84,11 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
           )}
         </div>
         <ButtonGroup>
-          <Button onClick={() => setShowCreateDialog(true)} variant="secondary" className="h-9 cursor-pointer whitespace-nowrap font-normal">
+          <Button onClick={() => setShowCreateDialog(true)} variant="secondary" className="h-9 cursor-pointer whitespace-nowrap font-normal dark:bg-white dark:text-black dark:hover:bg-white/90">
             Nouvelle liste
           </Button>
           <ButtonGroupSeparator />
-          <Button onClick={() => setShowCreateDialog(true)} variant="secondary" size="icon" className="h-9 w-9 cursor-pointer">
+          <Button onClick={() => setShowCreateDialog(true)} variant="secondary" size="icon" className="h-9 w-9 cursor-pointer dark:bg-white dark:text-black dark:hover:bg-white/90">
             <Plus className="w-4 h-4" />
           </Button>
         </ButtonGroup>

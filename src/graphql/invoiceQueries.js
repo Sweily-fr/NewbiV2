@@ -11,7 +11,6 @@ export const INVOICE_FRAGMENT = gql`
     isDeposit
     status
     issueDate
-    executionDate
     dueDate
     headerNotes
     footerNotes
@@ -136,7 +135,6 @@ export const INVOICE_LIST_FRAGMENT = gql`
     isDeposit
     status
     issueDate
-    executionDate
     dueDate
     discount
     discountType
@@ -376,6 +374,17 @@ export const CREATE_LINKED_INVOICE = gql`
 export const DELETE_LINKED_INVOICE = gql`
   mutation DeleteLinkedInvoice($id: ID!) {
     deleteLinkedInvoice(id: $id)
+  }
+`;
+
+export const CHECK_INVOICE_NUMBER = gql`
+  query CheckInvoiceNumber($workspaceId: ID!) {
+    invoices(workspaceId: $workspaceId, limit: 10000) {
+      invoices {
+        id
+        number
+      }
+    }
   }
 `;
 
@@ -1084,4 +1093,57 @@ export const INVOICE_STATUS_COLORS = {
   [INVOICE_STATUS.PENDING]: "bg-orange-100 text-orange-800 border-orange-200",
   [INVOICE_STATUS.COMPLETED]: "bg-green-100 text-green-800 border-green-200",
   [INVOICE_STATUS.CANCELED]: "bg-red-100 text-red-800 border-red-200",
+};
+
+// Hook pour vérifier si un numéro de facture existe déjà
+export const useCheckInvoiceNumber = () => {
+  const { workspaceId } = useRequiredWorkspace();
+  const client = useApolloClient();
+
+  const checkInvoiceNumber = useCallback(
+    async (invoiceNumber, excludeId = null) => {
+      if (!invoiceNumber || !workspaceId) {
+        return { exists: false, invoice: null };
+      }
+
+      try {
+        const { data } = await client.query({
+          query: CHECK_INVOICE_NUMBER,
+          variables: { workspaceId },
+          fetchPolicy: "network-only", // Toujours vérifier avec le serveur
+        });
+
+        console.log('[checkInvoiceNumber] Toutes les factures:', data?.invoices?.invoices?.map(inv => inv.number));
+        console.log('[checkInvoiceNumber] Recherche du numéro:', invoiceNumber);
+        console.log('[checkInvoiceNumber] ExcludeId:', excludeId);
+
+        if (data?.invoices?.invoices) {
+          // Chercher une facture avec le même numéro exact (en excluant l'ID actuel si fourni)
+          const existingInvoice = data.invoices.invoices.find(
+            (invoice) => {
+              const matches = invoice.number === invoiceNumber;
+              const notExcluded = !excludeId || invoice.id !== excludeId;
+              console.log(`[checkInvoiceNumber] Comparaison: "${invoice.number}" === "${invoiceNumber}" ? ${matches}, notExcluded: ${notExcluded}`);
+              return matches && notExcluded;
+            }
+          );
+
+          console.log('[checkInvoiceNumber] Facture trouvée:', existingInvoice);
+
+          return {
+            exists: !!existingInvoice,
+            invoice: existingInvoice || null,
+          };
+        }
+
+        return { exists: false, invoice: null };
+      } catch (error) {
+        console.error("Erreur lors de la vérification du numéro de facture:", error);
+        return { exists: false, invoice: null };
+      }
+    },
+    [workspaceId, client]
+  );
+
+  return { checkInvoiceNumber };
 };

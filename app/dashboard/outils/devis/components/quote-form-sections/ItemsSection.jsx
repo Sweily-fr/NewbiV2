@@ -74,6 +74,10 @@ export default function ItemsSection({
     const unitPrice = productData.unitPrice || 0;
     const discount = productData.discount || 0;
     const discountType = (productData.discountType === "percentage" ? "PERCENTAGE" : productData.discountType) || "PERCENTAGE";
+    
+    // Si auto-liquidation est activée, forcer la TVA à 0%
+    const isReverseCharge = watch("isReverseCharge");
+    const defaultVatRate = isReverseCharge ? 0 : 20;
 
     const total = calculateItemTotal(
       quantity,
@@ -88,7 +92,7 @@ export default function ItemsSection({
       quantity: quantity,
       unitPrice: unitPrice,
       unit: productData.unit !== undefined ? productData.unit : "",
-      vatRate: productData.vatRate !== undefined ? productData.vatRate : 20,
+      vatRate: productData.vatRate !== undefined ? (isReverseCharge ? 0 : productData.vatRate) : defaultVatRate,
       discount: discount,
       discountType: discountType === "percentage" ? "PERCENTAGE" : discountType,
       vatExemptionText: productData.vatExemptionText || "",
@@ -116,7 +120,20 @@ export default function ItemsSection({
               <Checkbox
                 id="isReverseCharge"
                 checked={field.value || false}
-                onCheckedChange={field.onChange}
+                onCheckedChange={(checked) => {
+                  field.onChange(checked);
+                  
+                  // Si auto-liquidation activée, mettre tous les taux de TVA à 0%
+                  if (checked) {
+                    const currentItems = watch("items") || [];
+                    currentItems.forEach((_, index) => {
+                      setValue(`items.${index}.vatRate`, 0, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    });
+                  }
+                }}
                 disabled={!canEdit}
               />
             )}

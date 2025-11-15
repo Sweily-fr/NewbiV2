@@ -1,18 +1,20 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
+import { InvoiceSettingsModal } from "./components/invoice-settings-modal";
 import { useRouter } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 
 function InvoicesContent() {
   const router = useRouter();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const handleNewInvoice = () => {
     router.push("/dashboard/outils/factures/new");
@@ -23,11 +25,22 @@ function InvoicesContent() {
       {/* Desktop Layout */}
       <div className="hidden md:block space-y-6 p-4 sm:p-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-medium mb-2">Factures</h1>
-          <p className="text-muted-foreground text-sm">
-            Gérez vos factures et suivez vos paiements
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-medium mb-2">Factures</h1>
+            <p className="text-muted-foreground text-sm">
+              Gérez vos factures et suivez vos paiements
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsSettingsOpen(true)}
+            className="gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Paramètres
+          </Button>
         </div>
 
         {/* Table */}
@@ -40,11 +53,21 @@ function InvoicesContent() {
       <div className="md:hidden">
         {/* Header - Style Notion sur mobile */}
         <div className="px-4 py-6">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Factures</h1>
-            <p className="text-muted-foreground text-sm">
-              Gérez vos factures et suivez vos paiements
-            </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-medium mb-2">Factures</h1>
+              <p className="text-muted-foreground text-sm">
+                Gérez vos factures et suivez vos paiements
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSettingsOpen(true)}
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
@@ -66,6 +89,12 @@ function InvoicesContent() {
           <Plus className="h-6 w-6" />
         </PermissionButton>
       </div>
+
+      {/* Modal des paramètres */}
+      <InvoiceSettingsModal
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+      />
     </>
   );
 }

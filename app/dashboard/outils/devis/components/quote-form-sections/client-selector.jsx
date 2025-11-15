@@ -70,6 +70,7 @@ export default function ClientSelector({
   className,
   disabled = false,
   validationErrors = {},
+  setValidationErrors,
   clientPositionRight = false,
   onClientPositionChange,
   onEditClient,
@@ -78,6 +79,9 @@ export default function ClientSelector({
   const hasClientError = validationErrors?.client;
   const id = useId();
   const [activeTab, setActiveTab] = useState("existing");
+  
+  // État pour suivre les erreurs de validation
+  const [formErrors, setFormErrors] = useState({});
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -223,6 +227,168 @@ export default function ClientSelector({
 
   const getClientIcon = (type) => {
     return type === "COMPANY" ? Building : User;
+  };
+
+  // Validation automatique avec debounce quand le formulaire change
+  useEffect(() => {
+    // Ne valider que si le formulaire manuel est affiché
+    if (!showManualForm) return;
+    
+    // Ne pas valider si le formulaire est vide (état initial)
+    const isFormEmpty = !newClientForm.name && !newClientForm.email && 
+                        !newClientForm.firstName && !newClientForm.lastName &&
+                        !newClientForm.address.street && !newClientForm.address.city;
+    if (isFormEmpty) return;
+    
+    // Debounce de 500ms
+    const timeoutId = setTimeout(() => {
+      validateForm();
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [newClientForm, showManualForm]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Nettoyer les erreurs quand on quitte le formulaire de nouveau client
+  useEffect(() => {
+    // Si on n'est pas sur l'onglet "new" ou si le formulaire manuel n'est pas affiché
+    if (activeTab !== "new" || !showManualForm) {
+      // Supprimer les erreurs de validation globales
+      if (setValidationErrors) {
+        setValidationErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.newClient;
+          return newErrors;
+        });
+      }
+      // Nettoyer aussi les erreurs locales
+      setFormErrors({});
+    }
+  }, [activeTab, showManualForm, setValidationErrors]);
+
+  const validateForm = () => {
+    const errors = {};
+
+    // Validation du nom selon le type de client
+    if (newClientForm.type === "COMPANY") {
+      // Pour les entreprises, vérifier le champ name
+      if (!newClientForm.name || newClientForm.name.trim() === "") {
+        errors.name = "Le nom de l'entreprise est obligatoire";
+      }
+    } else {
+      // Pour les particuliers, vérifier firstName ET lastName, ou name
+      const hasName = newClientForm.name && newClientForm.name.trim() !== "";
+      const hasFirstOrLastName = 
+        (newClientForm.firstName && newClientForm.firstName.trim() !== "") || 
+        (newClientForm.lastName && newClientForm.lastName.trim() !== "");
+      
+      if (!hasName && !hasFirstOrLastName) {
+        errors.name = "Le nom ou prénom est obligatoire";
+      }
+    }
+
+    // Validation de l'email
+    if (!newClientForm.email || newClientForm.email.trim() === "") {
+      errors.email = "L'email est obligatoire";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newClientForm.email.trim())) {
+        errors.email = "L'email n'est pas valide (ex: nom@exemple.com)";
+      }
+    }
+
+    // Validation de l'adresse
+    if (!newClientForm.address.street || newClientForm.address.street.trim() === "") {
+      errors["address.street"] = "L'adresse (rue) est obligatoire";
+    }
+    
+    if (!newClientForm.address.city || newClientForm.address.city.trim() === "") {
+      errors["address.city"] = "La ville est obligatoire";
+    }
+    
+    // Validation du code postal
+    if (!newClientForm.address.postalCode || newClientForm.address.postalCode.trim() === "") {
+      errors["address.postalCode"] = "Le code postal est obligatoire";
+    } else {
+      const postalCodeRegex = /^\d{5}$/;
+      if (!postalCodeRegex.test(newClientForm.address.postalCode.trim())) {
+        errors["address.postalCode"] = "Le code postal doit contenir exactement 5 chiffres";
+      }
+    }
+    
+    // Validation du pays
+    if (!newClientForm.address.country || newClientForm.address.country.trim() === "") {
+      errors["address.country"] = "Le pays est obligatoire";
+    }
+
+    // Validations spécifiques aux entreprises
+    if (newClientForm.type === "COMPANY") {
+      // Validation du SIRET
+      if (!newClientForm.siret || newClientForm.siret.trim() === "") {
+        errors.siret = "Le numéro de SIRET est obligatoire pour les entreprises";
+      } else {
+        const siretRegex = /^\d{14}$/;
+        if (!siretRegex.test(newClientForm.siret.trim())) {
+          errors.siret = "Le SIRET doit contenir exactement 14 chiffres";
+        }
+      }
+      
+      // Validation du numéro de TVA
+      if (!newClientForm.vatNumber || newClientForm.vatNumber.trim() === "") {
+        errors.vatNumber = "Le numéro de TVA est obligatoire pour les entreprises";
+      }
+    }
+
+    // Validation de l'adresse de livraison si elle est activée
+    if (newClientForm.hasDifferentShippingAddress) {
+      if (!newClientForm.shippingAddress?.fullName || newClientForm.shippingAddress.fullName.trim() === "") {
+        errors["shippingAddress.fullName"] = "Le nom complet de livraison est obligatoire";
+      }
+      
+      if (!newClientForm.shippingAddress?.street || newClientForm.shippingAddress.street.trim() === "") {
+        errors["shippingAddress.street"] = "L'adresse de livraison (rue) est obligatoire";
+      }
+      
+      if (!newClientForm.shippingAddress?.city || newClientForm.shippingAddress.city.trim() === "") {
+        errors["shippingAddress.city"] = "La ville de livraison est obligatoire";
+      }
+      
+      // Validation du code postal de livraison
+      if (!newClientForm.shippingAddress?.postalCode || newClientForm.shippingAddress.postalCode.trim() === "") {
+        errors["shippingAddress.postalCode"] = "Le code postal de livraison est obligatoire";
+      } else {
+        const postalCodeRegex = /^\d{5}$/;
+        if (!postalCodeRegex.test(newClientForm.shippingAddress.postalCode.trim())) {
+          errors["shippingAddress.postalCode"] = "Le code postal de livraison doit contenir exactement 5 chiffres";
+        }
+      }
+      
+      if (!newClientForm.shippingAddress?.country || newClientForm.shippingAddress.country.trim() === "") {
+        errors["shippingAddress.country"] = "Le pays de livraison est obligatoire";
+      }
+    }
+
+    setFormErrors(errors);
+    
+    // Afficher aussi dans la bannière globale si setValidationErrors est disponible
+    if (setValidationErrors && Object.keys(errors).length > 0) {
+      const errorMessages = Object.values(errors);
+      setValidationErrors((prev) => ({
+        ...prev,
+        newClient: {
+          message: `Erreurs dans le formulaire de nouveau client:\n${errorMessages.join("\n")}`,
+          canEdit: true
+        }
+      }));
+    } else if (setValidationErrors && Object.keys(errors).length === 0) {
+      // Supprimer l'erreur si le formulaire est valide
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.newClient;
+        return newErrors;
+      });
+    }
+    
+    return Object.keys(errors).length === 0;
   };
 
   const handleNewClientSubmit = async (e) => {
@@ -1287,6 +1453,11 @@ export default function ClientSelector({
                               placeholder="Nom complet du destinataire"
                               className="h-10 rounded-lg text-sm w-full"
                             />
+                            {formErrors["shippingAddress.fullName"] && (
+                              <p className="text-xs text-red-500">
+                                {formErrors["shippingAddress.fullName"]}
+                              </p>
+                            )}
                           </div>
 
                           {/* Rue */}
@@ -1314,6 +1485,11 @@ export default function ClientSelector({
                               placeholder="123 Rue de la Paix"
                               className="h-10 rounded-lg text-sm w-full"
                             />
+                            {formErrors["shippingAddress.street"] && (
+                              <p className="text-xs text-red-500">
+                                {formErrors["shippingAddress.street"]}
+                              </p>
+                            )}
                           </div>
 
                           {/* Code postal et Ville */}
@@ -1343,6 +1519,11 @@ export default function ClientSelector({
                                 placeholder="75001"
                                 className="h-10 rounded-lg text-sm w-full"
                               />
+                              {formErrors["shippingAddress.postalCode"] && (
+                                <p className="text-xs text-red-500">
+                                  {formErrors["shippingAddress.postalCode"]}
+                                </p>
+                              )}
                             </div>
                             <div className="space-y-2">
                               <Label
@@ -1368,6 +1549,11 @@ export default function ClientSelector({
                                 placeholder="Paris"
                                 className="h-10 rounded-lg text-sm w-full"
                               />
+                              {formErrors["shippingAddress.city"] && (
+                                <p className="text-xs text-red-500">
+                                  {formErrors["shippingAddress.city"]}
+                                </p>
+                              )}
                             </div>
                           </div>
 
@@ -1397,6 +1583,11 @@ export default function ClientSelector({
                               placeholder="France"
                               className="h-10 rounded-lg text-sm w-full"
                             />
+                            {formErrors["shippingAddress.country"] && (
+                              <p className="text-xs text-red-500">
+                                {formErrors["shippingAddress.country"]}
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1434,7 +1625,20 @@ export default function ClientSelector({
                       type="button"
                       variant="outline"
                       onClick={() => {
+                        // Nettoyer les erreurs locales et globales d'abord
+                        setFormErrors({});
+                        if (setValidationErrors) {
+                          setValidationErrors((prev) => {
+                            const newErrors = { ...prev };
+                            delete newErrors.newClient;
+                            return newErrors;
+                          });
+                        }
+                        // Puis réinitialiser le formulaire
                         resetNewClientForm();
+                        // Masquer le formulaire manuel
+                        setShowManualForm(false);
+                        // Retourner à l'onglet clients existants
                         setActiveTab("existing");
                       }}
                       disabled={disabled}

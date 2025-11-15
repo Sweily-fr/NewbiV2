@@ -133,7 +133,7 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
                 placeholder={
                   data.discountType === "PERCENTAGE" ? "Ex: 10" : "Ex: 100"
                 }
-                className={hasDiscountError ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={hasDiscountError ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive" : ""}
               />
               {(errors?.discount || hasDiscountError) && (
                 <p className="text-xs text-destructive">
@@ -230,7 +230,7 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
                         placeholder="Ex: Référence projet"
                         disabled={!canEdit}
                         className={`text-sm ${
-                          hasNameError ? "border-destructive focus-visible:ring-destructive" : ""
+                          hasNameError ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive" : ""
                         }`}
                       />
                       {hasNameError && (
@@ -269,7 +269,7 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
                           disabled={!canEdit}
                           className={`text-sm ${
                             errors?.customFields?.[index]?.value || hasValueError
-                              ? "border-destructive focus-visible:ring-destructive"
+                              ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
                               : ""
                           }`}
                         />

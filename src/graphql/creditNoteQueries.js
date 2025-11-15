@@ -14,7 +14,6 @@ export const CREDIT_NOTE_FRAGMENT = gql`
     reason
     status
     issueDate
-    executionDate
     refundMethod
     headerNotes
     footerNotes

@@ -146,32 +146,52 @@ export function NavSecondary({ items, onCommunityClick, ...props }) {
         </SidebarMenu>
         {/* /// */}
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a
-                  href={item.url}
-                  onClick={(e) => {
-                    if (item.title === "Recherche") {
-                      e.preventDefault();
-                      // Déclencher l'événement personnalisé pour ouvrir la recherche
-                      window.dispatchEvent(new Event("open-search-command"));
-                    } else if (item.title === "Communauté") {
-                      e.preventDefault();
-                      // Ouvrir la sidebar communautaire
-                      if (onCommunityClick) {
-                        onCommunityClick();
-                      }
-                    }
-                    handleLinkClick();
-                  }}
+          {items.map((item) => {
+            // Vérifier si c'est l'item Communauté et si l'utilisateur a un plan Pro
+            const isCommunity = item.title === "Communauté";
+            const hasAccess = !isCommunity || isActive();
+            
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton 
+                  asChild={hasAccess}
+                  disabled={!hasAccess}
+                  className={cn(!hasAccess && "opacity-60 cursor-not-allowed")}
                 >
-                  <item.icon />
-                  <span className="">{item.title}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+                  {hasAccess ? (
+                    <a
+                      href={item.url}
+                      onClick={(e) => {
+                        if (item.title === "Recherche") {
+                          e.preventDefault();
+                          // Déclencher l'événement personnalisé pour ouvrir la recherche
+                          window.dispatchEvent(new Event("open-search-command"));
+                        } else if (item.title === "Communauté") {
+                          e.preventDefault();
+                          // Ouvrir la sidebar communautaire
+                          if (onCommunityClick) {
+                            onCommunityClick();
+                          }
+                        }
+                        handleLinkClick();
+                      }}
+                    >
+                      <item.icon />
+                      <span className="">{item.title}</span>
+                    </a>
+                  ) : (
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <item.icon />
+                        <span className="">{item.title}</span>
+                      </div>
+                      <Crown className="w-3 h-3 text-[#5b4fff]" />
+                    </div>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

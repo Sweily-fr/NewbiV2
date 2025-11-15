@@ -48,6 +48,9 @@ function DashboardContent({ children }) {
     isInitialized: layoutInitialized,
   } = useOnboarding();
 
+  // Hook pour vérifier le statut de l'abonnement
+  const { isActive } = useDashboardLayoutContext();
+
   // Hook pour valider la session et détecter les révocations
   useSessionValidator();
 
@@ -114,7 +117,12 @@ function DashboardContent({ children }) {
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <AppSidebar
         variant="inset"
-        onCommunityClick={() => setIsCommunitySidebarOpen(true)}
+        onCommunityClick={() => {
+          // Ouvrir la sidebar communautaire uniquement si l'utilisateur a un plan Pro
+          if (isActive()) {
+            setIsCommunitySidebarOpen(true);
+          }
+        }}
         onOpenNotifications={() => {
           setSettingsInitialTab("notifications");
           setSettingsModalOpen(true);

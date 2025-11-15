@@ -160,11 +160,6 @@ export default function InvoicePreview({ data = {}, className = "", status }) {
                 {formatDate(data.dueDate) ||
                   formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}
               </p>
-              {data.executionDate && (
-                <p style={{ margin: "2px 0" }}>
-                  Date d'exécution: {formatDate(data.executionDate)}
-                </p>
-              )}
               {data.purchaseOrderNumber && (
                 <p style={{ margin: "2px 0" }}>
                   Référence devis: {data.purchaseOrderNumber}

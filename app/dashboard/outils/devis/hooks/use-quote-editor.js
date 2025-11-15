@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
@@ -14,6 +14,7 @@ import {
   useCreateQuote,
   useUpdateQuote,
   useQuote,
+  useCheckQuoteNumber,
 } from "@/src/graphql/quoteQueries";
 import { useQuoteNumber } from "./use-quote-number";
 
@@ -43,6 +44,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   const { createQuote, loading: creating } = useCreateQuote();
   const { updateQuote, loading: updating } = useUpdateQuote();
+  const { checkQuoteNumber } = useCheckQuoteNumber();
 
   // Form state avec react-hook-form
   const form = useForm({
@@ -94,25 +96,240 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // Watch all form data for auto-save
   const formData = watch();
   
-  // Watch items array to detect deep changes
-  const watchedItems = watch("items");
+  // Watch items array to detect deep changes in real-time
+  const watchedItems = useWatch({ control: form.control, name: "items" });
+  const watchedShipping = useWatch({ control: form.control, name: "shipping" });
+  const watchedDiscount = useWatch({ control: form.control, name: "discount" });
+  const watchedDiscountType = useWatch({ control: form.control, name: "discountType" });
+  const watchedCustomFields = useWatch({ control: form.control, name: "customFields" });
+  const watchedClient = useWatch({ control: form.control, name: "client" });
+  const watchedPrefix = useWatch({ control: form.control, name: "prefix" });
+  const watchedNumber = useWatch({ control: form.control, name: "number" });
+  const watchedIssueDate = useWatch({ control: form.control, name: "issueDate" });
+  const watchedValidUntil = useWatch({ control: form.control, name: "validUntil" });
   
   // Créer une valeur stable pour détecter les changements dans les items
   const itemsData = useMemo(() => JSON.stringify(watchedItems || []), [watchedItems]);
   
-  // Re-valider quand le client change
+  // Re-valider quand le client change (avec debounce)
   useEffect(() => {
-    setValidationErrors((prevErrors) => {
-      if (prevErrors.client) {
-        if (formData.client && formData.client.id) {
+    // Debounce de 500ms
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        if (watchedClient?.id) {
+          // Vérifier si le client est valide
+          const client = watchedClient;
+          const clientErrors = [];
+          
+          // Vérifier le nom selon le type de client
+          if (client.type === "COMPANY") {
+            // Pour les entreprises, vérifier le champ name
+            if (!client.name || client.name.trim() === "") {
+              clientErrors.push("nom de l'entreprise manquant");
+            }
+          } else {
+            // Pour les particuliers, vérifier firstName ET lastName, ou name
+            const hasName = client.name && client.name.trim() !== "";
+            const hasFirstAndLastName = 
+              (client.firstName && client.firstName.trim() !== "") || 
+              (client.lastName && client.lastName.trim() !== "");
+            
+            if (!hasName && !hasFirstAndLastName) {
+              clientErrors.push("nom manquant");
+            }
+          }
+          
+          // Validation de l'email
+          if (!client.email || client.email.trim() === "") {
+            clientErrors.push("email manquant");
+          } else {
+            // Vérifier le format de l'email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(client.email.trim())) {
+              clientErrors.push("email invalide (format attendu: nom@exemple.com)");
+            }
+          }
+          
+          // Validation de l'adresse
+          if (!client.address?.street || client.address.street.trim() === "") clientErrors.push("adresse (rue) manquante");
+          if (!client.address?.city || client.address.city.trim() === "") clientErrors.push("ville manquante");
+          
+          // Validation du code postal
+          if (!client.address?.postalCode || client.address.postalCode.trim() === "") {
+            clientErrors.push("code postal manquant");
+          } else {
+            // Vérifier le format du code postal (5 chiffres pour la France)
+            const postalCodeRegex = /^\d{5}$/;
+            if (!postalCodeRegex.test(client.address.postalCode.trim())) {
+              clientErrors.push("code postal invalide (5 chiffres attendus)");
+            }
+          }
+          
+          if (!client.address?.country || client.address.country.trim() === "") clientErrors.push("pays manquant");
+          
+          // Validations spécifiques aux entreprises
+          if (client.type === "COMPANY") {
+            // Validation du SIRET
+            if (!client.siret || client.siret.trim() === "") {
+              clientErrors.push("numéro de SIRET manquant (obligatoire pour les entreprises)");
+            } else {
+              // Vérifier le format du SIRET (14 chiffres)
+              const siretRegex = /^\d{14}$/;
+              if (!siretRegex.test(client.siret.trim())) {
+                clientErrors.push("numéro de SIRET invalide (14 chiffres attendus)");
+              }
+            }
+            
+            // Validation du numéro de TVA
+            if (!client.vatNumber || client.vatNumber.trim() === "") {
+              clientErrors.push("numéro de TVA manquant (obligatoire pour les entreprises)");
+            }
+          }
+          
+          // Construire le nom d'affichage du client
+          const displayName = client.name || 
+            (client.firstName || client.lastName 
+              ? `${client.firstName || ''} ${client.lastName || ''}`.trim() 
+              : 'Sans nom');
+          
+          // Si le client est valide, supprimer l'erreur
+          if (clientErrors.length === 0) {
+            if (prevErrors.client) {
+              const newErrors = { ...prevErrors };
+              delete newErrors.client;
+              return newErrors;
+            }
+          } else {
+            // Il y a des erreurs, les afficher
+            return {
+              ...prevErrors,
+              client: {
+                message: `Le client "${displayName}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
+                canEdit: true
+              }
+            };
+          }
+        } else {
+          // Pas de client sélectionné, supprimer l'erreur si elle existe
+          if (prevErrors.client) {
+            const newErrors = { ...prevErrors };
+            delete newErrors.client;
+            return newErrors;
+          }
+        }
+        
+        return prevErrors;
+      });
+    }, 500); // Attendre 500ms après avoir arrêté de taper
+    
+    // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
+    return () => clearTimeout(timeoutId);
+  }, [watchedClient]);
+
+  // Re-valider quand le préfixe change (avec debounce)
+  useEffect(() => {
+    // Debounce de 500ms
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        const prefix = watchedPrefix || "";
+
+        // Préfixe optionnel : si vide, aucune erreur
+        if (!prefix) {
+          if (prevErrors.prefix) {
+            const newErrors = { ...prevErrors };
+            delete newErrors.prefix;
+            return newErrors;
+          }
+          return prevErrors;
+        }
+
+        const isValid = /^[A-Za-z0-9-]*$/.test(prefix);
+
+        if (!isValid) {
+          return {
+            ...prevErrors,
+            prefix: {
+              message:
+                "Le préfixe ne doit contenir que des lettres, chiffres et tirets (sans espaces ni caractères spéciaux)",
+              canEdit: true,
+            },
+          };
+        }
+
+        if (prevErrors.prefix) {
           const newErrors = { ...prevErrors };
-          delete newErrors.client;
+          delete newErrors.prefix;
           return newErrors;
         }
+
+        return prevErrors;
+      });
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedPrefix]);
+
+  // Re-valider quand le numéro de devis change (avec debounce)
+  useEffect(() => {
+    // Debounce de 500ms
+    const timeoutId = setTimeout(async () => {
+      const number = watchedNumber || "";
+
+      // Si le numéro est vide, supprimer l'erreur
+      if (!number || number.trim() === "") {
+        setValidationErrors((prevErrors) => {
+          if (prevErrors.quoteNumber) {
+            const newErrors = { ...prevErrors };
+            delete newErrors.quoteNumber;
+            return newErrors;
+          }
+          return prevErrors;
+        });
+        return;
       }
-      return prevErrors;
-    });
-  }, [formData.client]);
+
+      // Vérifier si le numéro est "000000" (interdit)
+      if (number === "000000") {
+        setValidationErrors((prevErrors) => ({
+          ...prevErrors,
+          quoteNumber: {
+            message: 'Le numéro de devis ne peut pas être "000000"',
+            canEdit: true,
+          },
+        }));
+        return;
+      }
+
+      try {
+        // Vérifier si le numéro existe déjà (sans tenir compte du prefix)
+        const { exists } = await checkQuoteNumber(number, quoteId);
+
+        if (exists) {
+          setValidationErrors((prevErrors) => ({
+            ...prevErrors,
+            quoteNumber: {
+              message: `Le numéro de devis "${number}" existe déjà`,
+              canEdit: true,
+            },
+          }));
+        } else {
+          // Numéro valide, supprimer l'erreur
+          setValidationErrors((prevErrors) => {
+            if (prevErrors.quoteNumber) {
+              const newErrors = { ...prevErrors };
+              delete newErrors.quoteNumber;
+              return newErrors;
+            }
+            return prevErrors;
+          });
+        }
+      } catch (error) {
+        console.error("Erreur lors de la validation du numéro de devis:", error);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedNumber, checkQuoteNumber, quoteId]);
 
   // Re-valider quand les informations entreprise changent
   useEffect(() => {
@@ -128,44 +345,91 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     });
   }, [formData.companyInfo]);
 
-  // Re-valider quand les dates changent
+  // Re-valider quand la date d'émission change (avec debounce)
   useEffect(() => {
-    setValidationErrors((prevErrors) => {
-      if (prevErrors.quoteInfo) {
-        const quoteInfoErrors = [];
+    // Debounce de 500ms
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        let hasError = false;
+        let errorMessage = "";
         
-        if (!formData.issueDate) {
-          quoteInfoErrors.push("date d'émission manquante");
+        if (!watchedIssueDate) {
+          hasError = true;
+          errorMessage = "La date d'émission est obligatoire";
         } else {
-          const issueDate = new Date(formData.issueDate);
+          const issueDate = new Date(watchedIssueDate);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           
           if (issueDate < today) {
-            quoteInfoErrors.push("la date d'émission ne peut pas être antérieure à aujourd'hui");
-          }
-          
-          if (formData.validUntil) {
-            const validUntilDate = new Date(formData.validUntil);
-            if (validUntilDate < issueDate) {
-              quoteInfoErrors.push("la date de validité ne peut pas être antérieure à la date d'émission");
-            }
+            hasError = true;
+            errorMessage = "La date d'émission ne peut pas être antérieure à aujourd'hui";
           }
         }
         
-        if (quoteInfoErrors.length === 0) {
+        if (hasError) {
+          return {
+            ...prevErrors,
+            issueDate: {
+              message: errorMessage,
+              canEdit: true
+            }
+          };
+        } else {
+          if (prevErrors.issueDate) {
+            const newErrors = { ...prevErrors };
+            delete newErrors.issueDate;
+            return newErrors;
+          }
+        }
+        
+        return prevErrors;
+      });
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [watchedIssueDate]);
+
+  // Re-valider quand la date de validité change (avec debounce)
+  useEffect(() => {
+    // Debounce de 500ms
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        if (watchedValidUntil && watchedIssueDate) {
+          const issueDate = new Date(watchedIssueDate);
+          const validUntilDate = new Date(watchedValidUntil);
+          
+          if (validUntilDate < issueDate) {
+            return {
+              ...prevErrors,
+              validUntil: {
+                message: "La date de validité ne peut pas être antérieure à la date d'émission",
+                canEdit: true
+              }
+            };
+          }
+        }
+        
+        // Pas d'erreur, supprimer si elle existe
+        if (prevErrors.validUntil) {
           const newErrors = { ...prevErrors };
-          delete newErrors.quoteInfo;
+          delete newErrors.validUntil;
           return newErrors;
         }
-      }
-      return prevErrors;
-    });
-  }, [formData.issueDate, formData.validUntil]);
+        
+        return prevErrors;
+      });
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [watchedValidUntil, watchedIssueDate]);
 
-  // Re-valider quand les articles changent
+  // Re-valider quand les articles changent (avec debounce)
   useEffect(() => {
-    setValidationErrors((prevErrors) => {
+    // Debounce de 500ms - la validation se déclenche 500ms après avoir arrêté de taper
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+      // Valider les articles si on a des articles
       if (watchedItems && watchedItems.length > 0) {
         const invalidItems = [];
         const itemsWithErrors = [];
@@ -187,9 +451,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             fields.push("unitPrice");
           }
           
-          // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+          // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
           const vatRate = parseFloat(item.vatRate) || 0;
-          if (vatRate === 0) {
+          if (vatRate === 0 && !formData.isReverseCharge) {
             const vatExemptionText = item.vatExemptionText;
             if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
               itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
@@ -203,55 +467,89 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           }
         });
         
-        // Si on a déjà une erreur items, mettre à jour ou supprimer
-        if (prevErrors.items) {
-          if (invalidItems.length === 0) {
-            // Tous les articles sont valides, supprimer l'erreur
+        // Si tous les articles sont valides, supprimer l'erreur
+        if (invalidItems.length === 0) {
+          if (prevErrors.items) {
             const newErrors = { ...prevErrors };
             delete newErrors.items;
             return newErrors;
-          } else {
-            // Mettre à jour le message d'erreur
+          }
+        } else {
+          // Il y a des erreurs, les afficher
+          return {
+            ...prevErrors,
+            items: {
+              message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+              canEdit: false,
+              details: itemsWithErrors
+            }
+          };
+        }
+      } else {
+        // Pas d'articles, supprimer l'erreur si elle existe
+        if (prevErrors.items) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.items;
+          return newErrors;
+        }
+      }
+      
+      return prevErrors;
+      });
+    }, 500); // Attendre 500ms après avoir arrêté de taper
+    
+    // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
+    return () => clearTimeout(timeoutId);
+  }, [watchedItems, formData.isReverseCharge]);
+
+  // Re-valider quand la remise change (avec debounce)
+  useEffect(() => {
+    // Debounce de 500ms
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        // Valider la remise en pourcentage
+        if (watchedDiscountType === "PERCENTAGE") {
+          if (watchedDiscount > 100) {
             return {
               ...prevErrors,
-              items: {
-                message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
-                canEdit: false,
-                details: itemsWithErrors
+              discount: {
+                message: "La remise ne peut pas dépasser 100%",
+                canEdit: true
+              }
+            };
+          } else if (watchedDiscount < 0) {
+            return {
+              ...prevErrors,
+              discount: {
+                message: "La remise ne peut pas être négative",
+                canEdit: true
               }
             };
           }
         }
-      }
-      return prevErrors;
-    });
-  }, [itemsData, watchedItems]);
-
-  // Re-valider quand la remise change
-  useEffect(() => {
-    setValidationErrors((prevErrors) => {
-      if (prevErrors.discount) {
-        if (formData.discountType !== "PERCENTAGE" || formData.discount <= 100) {
+        
+        // Supprimer l'erreur si la remise est valide
+        if (prevErrors.discount) {
           const newErrors = { ...prevErrors };
           delete newErrors.discount;
           return newErrors;
         }
-      }
-      return prevErrors;
-    });
-  }, [formData.discount, formData.discountType]);
+        
+        return prevErrors;
+      });
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [watchedDiscount, watchedDiscountType]);
 
-  // Re-valider quand la livraison change
+  // Re-valider quand la livraison change (avec debounce)
   useEffect(() => {
-    setValidationErrors((prevErrors) => {
-      if (prevErrors.shipping) {
-        if (!formData.shipping?.billShipping) {
-          const newErrors = { ...prevErrors };
-          delete newErrors.shipping;
-          return newErrors;
-        } else {
+    // Debounce de 500ms
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        if (watchedShipping?.billShipping) {
           const shippingErrors = [];
-          const shippingAddr = formData.shipping?.shippingAddress || {};
+          const shippingAddr = watchedShipping?.shippingAddress || {};
           
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
@@ -281,63 +579,98 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             shippingErrors.push("pays manquant");
           }
           
-          const shippingCost = formData.shipping?.shippingAmountHT;
+          const shippingCost = watchedShipping?.shippingAmountHT;
           if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
             shippingErrors.push("coût de livraison invalide");
           }
           
           if (shippingErrors.length === 0) {
+            if (prevErrors.shipping) {
+              const newErrors = { ...prevErrors };
+              delete newErrors.shipping;
+              return newErrors;
+            }
+          } else {
+            return {
+              ...prevErrors,
+              shipping: {
+                message: `Informations de livraison incomplètes:\n${shippingErrors.join(", ")}`,
+                canEdit: true
+              }
+            };
+          }
+        } else {
+          // Pas de facturation de livraison, supprimer l'erreur
+          if (prevErrors.shipping) {
             const newErrors = { ...prevErrors };
             delete newErrors.shipping;
             return newErrors;
           }
         }
-      }
-      return prevErrors;
-    });
-  }, [formData.shipping]);
+        
+        return prevErrors;
+      });
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [watchedShipping]);
 
-  // Re-valider quand les champs personnalisés changent
+  // Re-valider quand les champs personnalisés changent (avec debounce)
   useEffect(() => {
-    setValidationErrors((prevErrors) => {
-      if (prevErrors.customFields && formData.customFields && formData.customFields.length > 0) {
-        const invalidCustomFields = [];
-        const customFieldsWithErrors = [];
-        
-        formData.customFields.forEach((field, index) => {
-          const fieldErrors = [];
+    // Debounce de 500ms
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        if (watchedCustomFields && watchedCustomFields.length > 0) {
+          const invalidCustomFields = [];
+          const customFieldsWithErrors = [];
           
-          if (!field.name || field.name.trim() === "") {
-            fieldErrors.push("nom du champ manquant");
-          }
-          if (!field.value || field.value.trim() === "") {
-            fieldErrors.push("valeur manquante");
-          }
-          
-          if (fieldErrors.length > 0) {
-            invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
-            customFieldsWithErrors.push({ index, errors: fieldErrors });
-          }
-        });
-        
-        if (invalidCustomFields.length === 0) {
-          const newErrors = { ...prevErrors };
-          delete newErrors.customFields;
-          return newErrors;
-        } else {
-          return {
-            ...prevErrors,
-            customFields: {
-              message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
-              canEdit: false,
-              details: customFieldsWithErrors
+          watchedCustomFields.forEach((field, index) => {
+            const fieldErrors = [];
+            
+            if (!field.name || field.name.trim() === "") {
+              fieldErrors.push("nom du champ manquant");
             }
-          };
+            if (!field.value || field.value.trim() === "") {
+              fieldErrors.push("valeur manquante");
+            }
+            
+            if (fieldErrors.length > 0) {
+              invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+              customFieldsWithErrors.push({ index, errors: fieldErrors });
+            }
+          });
+          
+          if (invalidCustomFields.length === 0) {
+            if (prevErrors.customFields) {
+              const newErrors = { ...prevErrors };
+              delete newErrors.customFields;
+              return newErrors;
+            }
+          } else {
+            return {
+              ...prevErrors,
+              customFields: {
+                message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
+                canEdit: false,
+                details: customFieldsWithErrors
+              }
+            };
+          }
+        } else {
+          // Pas de champs personnalisés, supprimer l'erreur
+          if (prevErrors.customFields) {
+            const newErrors = { ...prevErrors };
+            delete newErrors.customFields;
+            return newErrors;
+          }
         }
-      }
-      return prevErrors;
-    });
-  }, [formData.customFields]);
+        
+        return prevErrors;
+      });
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [watchedCustomFields]);
 
   // Initialize form data when quote loads
   useEffect(() => {
@@ -602,9 +935,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               fields.push("unitPrice");
             }
             
-            // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+            // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
             const vatRate = parseFloat(item.vatRate) || 0;
-            if (vatRate === 0) {
+            if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
               if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
                 itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
@@ -875,9 +1208,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               fields.push("unitPrice");
             }
             
-            // Vérifier le texte d'exonération de TVA si la TVA est à 0%
+            // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
             const vatRate = parseFloat(item.vatRate) || 0;
-            if (vatRate === 0) {
+            if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
               if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
                 itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
@@ -1102,6 +1435,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     validateStep1,
     validateStep2,
     validationErrors,
+    setValidationErrors,
 
     // Actions
     onSave: (formData) => {
@@ -1821,9 +2155,33 @@ function transformFormDataToInput(
     finalValidUntil = formatFinalDate(adjustedDate) || defaultIssueDate;
   }
 
+  // Gérer la numérotation automatique lors de la transition DRAFT -> PENDING
+  let numberToSend = formData.number || "";
+  let prefixToSend = formData.prefix || "";
+
+  console.log('[transformFormDataToInput] Prefix from form:', formData.prefix);
+  console.log('[transformFormDataToInput] Prefix to send:', prefixToSend);
+  console.log('[transformFormDataToInput] previousStatus:', previousStatus);
+  console.log('[transformFormDataToInput] formData.status:', formData.status);
+
+  // Si on passe de DRAFT à PENDING, ne pas envoyer le numéro pour permettre la génération automatique
+  // IMPORTANT: Seulement si previousStatus existe ET est différent du statut actuel (vrai changement de statut)
+  const isStatusTransition = previousStatus && previousStatus !== formData.status;
+  if (isStatusTransition && previousStatus === "DRAFT" && formData.status === "PENDING") {
+    console.log('[transformFormDataToInput] ⚠️ DRAFT->PENDING transition detected, clearing number and prefix');
+    numberToSend = undefined; // Ne pas envoyer le numéro
+    prefixToSend = undefined; // Ne pas envoyer le préfixe
+  }
+
+  // Ne pas envoyer le prefix s'il est vide (pour laisser le backend utiliser le dernier)
+  // Mais l'envoyer s'il a une valeur (même si c'est une modification)
+  const shouldSendPrefix = prefixToSend !== undefined && prefixToSend !== "";
+  
+  console.log('[transformFormDataToInput] Should send prefix:', shouldSendPrefix, 'Value:', prefixToSend);
+
   return {
-    prefix: formData.prefix || "",
-    number: formData.number || "",
+    ...(shouldSendPrefix && { prefix: prefixToSend }),
+    ...(numberToSend !== undefined && { number: numberToSend }),
     // Utiliser les dates formatées avec des valeurs par défaut sécurisées
     issueDate: finalIssueDate,
     validUntil: finalValidUntil,

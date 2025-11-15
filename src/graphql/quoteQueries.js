@@ -688,6 +688,59 @@ export const useConvertQuoteToInvoice = () => {
   return { convertToInvoice, loading };
 };
 
+// Hook pour vérifier si un numéro de devis existe déjà
+export const useCheckQuoteNumber = () => {
+  const { workspaceId } = useRequiredWorkspace();
+  const client = useApolloClient();
+
+  const checkQuoteNumber = useCallback(
+    async (quoteNumber, excludeId = null) => {
+      if (!quoteNumber || !workspaceId) {
+        return { exists: false, quote: null };
+      }
+
+      try {
+        const { data } = await client.query({
+          query: GET_QUOTES,
+          variables: { workspaceId, limit: 1000 },
+          fetchPolicy: "network-only", // Toujours vérifier avec le serveur
+        });
+
+        console.log('[checkQuoteNumber] Tous les devis:', data?.quotes?.quotes?.map(q => q.number));
+        console.log('[checkQuoteNumber] Recherche du numéro:', quoteNumber);
+        console.log('[checkQuoteNumber] ExcludeId:', excludeId);
+
+        if (data?.quotes?.quotes) {
+          // Chercher un devis avec le même numéro exact (en excluant l'ID actuel si fourni)
+          const existingQuote = data.quotes.quotes.find(
+            (quote) => {
+              const matches = quote.number === quoteNumber;
+              const notExcluded = !excludeId || quote.id !== excludeId;
+              console.log(`[checkQuoteNumber] Comparaison: "${quote.number}" === "${quoteNumber}" ? ${matches}, notExcluded: ${notExcluded}`);
+              return matches && notExcluded;
+            }
+          );
+
+          console.log('[checkQuoteNumber] Devis trouvé:', existingQuote);
+
+          return {
+            exists: !!existingQuote,
+            quote: existingQuote || null,
+          };
+        }
+
+        return { exists: false, quote: null };
+      } catch (error) {
+        console.error("Erreur lors de la vérification du numéro de devis:", error);
+        return { exists: false, quote: null };
+      }
+    },
+    [workspaceId, client]
+  );
+
+  return { checkQuoteNumber };
+};
+
 // ==================== CONSTANTES ====================
 
 export const QUOTE_STATUS = {

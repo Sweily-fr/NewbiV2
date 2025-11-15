@@ -381,7 +381,6 @@ function getInitialFormData(
     reason: "",
     status: "CREATED",
     issueDate: new Date().toISOString().split("T")[0],
-    executionDate: new Date().toISOString().split("T")[0],
     refundMethod: REFUND_METHOD.NEXT_INVOICE,
     headerNotes: "",
     footerNotes: "",
@@ -423,7 +422,6 @@ function transformInvoiceToCreditNoteFormData(
     reason: "",
     status: "CREATED",
     issueDate: new Date().toISOString().split("T")[0],
-    executionDate: new Date().toISOString().split("T")[0],
     refundMethod: REFUND_METHOD.NEXT_INVOICE,
     headerNotes: invoice.headerNotes || "",
     footerNotes: invoice.footerNotes || "",
@@ -469,14 +467,6 @@ function transformCreditNoteToFormData(creditNote) {
     issueDate: (() => {
       if (!creditNote.issueDate) return new Date().toISOString().split("T")[0];
       const date = new Date(creditNote.issueDate);
-      return isNaN(date.getTime())
-        ? new Date().toISOString().split("T")[0]
-        : date.toISOString().split("T")[0];
-    })(),
-    executionDate: (() => {
-      if (!creditNote.executionDate)
-        return new Date().toISOString().split("T")[0];
-      const date = new Date(creditNote.executionDate);
       return isNaN(date.getTime())
         ? new Date().toISOString().split("T")[0]
         : date.toISOString().split("T")[0];
@@ -597,7 +587,6 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     items: items,
     status: "CREATED", // Use CREATED status as per CreditNoteStatus enum
     issueDate: cleanedData.issueDate,
-    executionDate: cleanedData.executionDate,
     refundMethod: cleanedData.refundMethod,
     headerNotes: cleanedData.headerNotes,
     footerNotes: cleanedData.footerNotes,
