@@ -278,57 +278,61 @@ export default function InvoiceMobileFullscreen({
         </div>
 
         {/* Footer avec actions */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex flex-col gap-2" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t px-4 py-3 flex flex-col gap-1.5" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
           {invoice.status === INVOICE_STATUS.DRAFT && (
-            <>
-              <Button
-                onClick={handleCreateInvoice}
-                disabled={isLoading}
-                className="w-full font-normal"
-              >
-                {changingStatus ? (
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <FileText className="mr-2 h-4 w-4" />
-                )}
-                Créer la facture
-              </Button>
-            </>
+            <Button
+              onClick={handleCreateInvoice}
+              disabled={isLoading}
+              size="sm"
+              className="w-full font-normal"
+            >
+              {changingStatus ? (
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileText className="mr-2 h-4 w-4" />
+              )}
+              Créer la facture
+            </Button>
           )}
 
           {invoice.status === INVOICE_STATUS.PENDING && (
             <>
-              <Button
-                onClick={handleMarkAsPaid}
-                disabled={isLoading}
-                className="w-full font-normal"
-              >
-                {markingAsPaid ? (
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                )}
-                Marquer comme payée
-              </Button>
+              <div className="grid grid-cols-2 gap-1.5">
+                <Button
+                  onClick={handleMarkAsPaid}
+                  disabled={isLoading}
+                  size="sm"
+                  className="font-normal"
+                >
+                  {markingAsPaid ? (
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                  )}
+                  Payée
+                </Button>
+                <Button
+                  onClick={handleCancel}
+                  variant="destructive"
+                  size="sm"
+                  className="font-normal"
+                  disabled={isLoading}
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Annuler
+                </Button>
+              </div>
               {!creditNoteLimitReached && canCreateCreditNote && (
                 <Button
                   onClick={handleCreateCreditNote}
                   variant="outline"
+                  size="sm"
                   className="w-full font-normal"
                 >
                   <Receipt className="mr-2 h-4 w-4" />
                   Créer un avoir
                 </Button>
               )}
-              <Button
-                onClick={handleCancel}
-                variant="destructive"
-                className="w-full font-normal"
-                disabled={isLoading}
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                Annuler
-              </Button>
             </>
           )}
 
@@ -336,6 +340,7 @@ export default function InvoiceMobileFullscreen({
             <Button
               onClick={handleCreateCreditNote}
               variant="outline"
+              size="sm"
               className="w-full font-normal"
             >
               <Receipt className="mr-2 h-4 w-4" />
@@ -347,6 +352,7 @@ export default function InvoiceMobileFullscreen({
             <Button
               onClick={handleCreateCreditNote}
               variant="outline"
+              size="sm"
               className="w-full font-normal"
             >
               <Receipt className="mr-2 h-4 w-4" />
@@ -360,6 +366,7 @@ export default function InvoiceMobileFullscreen({
               type="invoice"
               enableFacturX={true}
               variant="outline"
+              size="sm"
               className="w-full flex items-center justify-center"
             >
               Télécharger PDF
