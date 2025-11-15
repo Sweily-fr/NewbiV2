@@ -4,6 +4,7 @@
 
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { generateSignatureHTML } from "../utils/standalone-signature-generator";
+import { rebuildSignatureHTML } from "../utils/signature-html-rebuilder";
 
 export function useSignatureGenerator() {
   const { signatureData } = useSignatureData();
@@ -226,7 +227,27 @@ export function useSignatureGenerator() {
 
     const socialIconsHTML = generateSocialIconsHTML();
 
-    // Structure unique horizontale (identique à standalone-signature-generator.js)
+    // Si sectionsOrder existe, utiliser le rebuilder pour la signature horizontale
+    try {
+      if (Array.isArray(signatureData.sectionsOrder) && signatureData.sectionsOrder.length > 0) {
+        const rebuilt = rebuildSignatureHTML(
+          signatureData,
+          getSpacing,
+          getTypography,
+          profileImageHTML,
+          logoHTML,
+          socialIconsHTML
+        );
+
+        if (typeof rebuilt === "string" && rebuilt.trim().length > 0) {
+          return rebuilt;
+        }
+      }
+    } catch (error) {
+      console.error("❌ [GENERATOR] Erreur rebuildSignatureHTML, fallback sur l'horizontale par défaut:", error);
+    }
+
+    // Fallback : HTML horizontal actuel
     return `
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: ${signatureData.fontFamily || "Arial, sans-serif"}; width: auto;">
 <tbody>

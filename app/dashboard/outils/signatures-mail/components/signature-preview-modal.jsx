@@ -14,7 +14,6 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { LoaderCircleIcon } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import HorizontalSignature from "./HorizontalSignature";
-import VerticalSignature from "./VerticalSignature";
 import { generateSignatureHTML } from "../utils/standalone-signature-generator";
 
 // Query pour récupérer une signature complète avec tous les champs nécessaires

@@ -18,7 +18,6 @@ import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
 import { useImageUpload } from "../hooks/useImageUpload";
 import "@/src/styles/signature-text-selection.css";
 import HorizontalSignature from "../components/HorizontalSignature";
-import VerticalSignature from "../components/VerticalSignature";
 import { generateSignatureHTML } from "../utils/standalone-signature-generator";
 
 // Aperçu de l'email avec édition inline
@@ -191,6 +190,8 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
       return null;
     }
   };
+
+  // plus de gestion d'ordre dynamique des contacts ici
 
   // Fonction pour générer le HTML de la signature
   const generateSignatureHTML = async (facebookImageUrl = null) => {
@@ -1330,7 +1331,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
         </div>
 
         <div className="border-t pt-4 mt-4 flex justify-start">
-          {/* Signature avec rendu conditionnel selon le template */}
+          {/* Signature horizontale statique */}
           {(() => {
             const templateProps = {
               signatureData,
@@ -1342,11 +1343,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
               logoSrc: signatureData.logo,
             };
 
-            if (signatureData.orientation === "horizontal") {
-              return <HorizontalSignature {...templateProps} />;
-            } else {
-              return <VerticalSignature {...templateProps} />;
-            }
+            return <HorizontalSignature {...templateProps} />;
           })()}
         </div>
       </div>

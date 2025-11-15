@@ -2,35 +2,13 @@
 
 import React from "react";
 import { Label } from "@/src/components/ui/label";
-import { Slider } from "@/src/components/ui/slider";
-import { Input } from "@/src/components/ui/input";
-import AlignmentSelector from "@/src/components/ui/alignment-selector";
 import { Switch } from "@/src/components/ui/switch";
 import { ColorPicker } from "@/src/components/ui/color-picker";
-import { CircleOff, Minus, Dot, Slash } from "lucide-react";
 
 export default function StructureSection({
   signatureData,
   updateSignatureData,
 }) {
-  // Gestion de l'épaisseur du séparateur vertical - DEPRECATED
-  const handleSeparatorVerticalWidthChange = (value) => {
-    const numValue = parseInt(value) || 1;
-    updateSignatureData(
-      "separatorVerticalWidth",
-      Math.max(1, Math.min(5, numValue))
-    ); // Entre 1 et 5px
-  };
-
-  // Gestion de l'épaisseur du séparateur horizontal - DEPRECATED
-  const handleSeparatorHorizontalWidthChange = (value) => {
-    const numValue = parseInt(value) || 1;
-    updateSignatureData(
-      "separatorHorizontalWidth",
-      Math.max(1, Math.min(5, numValue))
-    ); // Entre 1 et 5px
-  };
-
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-sm font-medium">Structure</h2>

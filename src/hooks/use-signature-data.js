@@ -222,6 +222,7 @@ function SignatureProviderContent({ children }) {
       companyName: "",
       website: "https://www.newbi.fr",
       address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
+      contactElementsOrder: [],
       // Réseaux sociaux
       socialNetworks: {
         facebook: "",
@@ -399,6 +400,9 @@ function SignatureProviderContent({ children }) {
       const mergedData = {
         ...defaultSignatureData,
         ...fetchedSignature,
+        contactElementsOrder:
+          fetchedSignature.contactElementsOrder ||
+          defaultSignatureData.contactElementsOrder,
         // S'assurer que photoVisible a toujours une valeur booléenne
         photoVisible: fetchedSignature.photoVisible !== undefined ? fetchedSignature.photoVisible : defaultSignatureData.photoVisible,
         orientation: fetchedSignature.orientation || defaultSignatureData.orientation,
@@ -511,6 +515,8 @@ function SignatureProviderContent({ children }) {
           const mergedData = {
             ...defaultSignatureData,
             ...parsedData,
+            contactElementsOrder:
+              parsedData.contactElementsOrder || defaultSignatureData.contactElementsOrder,
             // S'assurer que les objets imbriqués sont bien mergés
             colors: {
               ...defaultSignatureData.colors,
@@ -770,6 +776,8 @@ function SignatureProviderContent({ children }) {
     const mergedData = {
       ...defaultSignatureData,
       ...editData,
+      contactElementsOrder:
+        editData.contactElementsOrder || defaultSignatureData.contactElementsOrder,
       colors: {
         ...defaultSignatureData.colors,
         ...(editData.colors || {}),
