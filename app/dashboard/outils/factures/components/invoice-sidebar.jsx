@@ -260,7 +260,8 @@ export default function InvoiceSidebar({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 // Sur mobile, fermer d'abord les détails, puis la sidebar
                 if (window.innerWidth < 768 && showMobileDetails) {
                   setShowMobileDetails(false);
@@ -269,7 +270,7 @@ export default function InvoiceSidebar({
                   onClose();
                 }
               }}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 relative z-50"
             >
               <X className="h-4 w-4" />
             </Button>

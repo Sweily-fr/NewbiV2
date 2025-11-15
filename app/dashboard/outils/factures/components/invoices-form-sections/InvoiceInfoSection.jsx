@@ -51,7 +51,7 @@ const PAYMENT_TERMS_SUGGESTIONS = [
   { value: 60, label: "60 jours" },
 ];
 
-export default function InvoiceInfoSection({ canEdit }) {
+export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: validateInvoiceNumberExists }) {
   const {
     watch,
     setValue,
@@ -184,17 +184,6 @@ export default function InvoiceInfoSection({ canEdit }) {
       "La date d'échéance doit être postérieure à la date d'émission"
     );
   };
-
-  // Fonction pour valider la date d'exécution
-  const validateExecutionDate = (value) => {
-    if (!value) return true; // Optionnel
-    const executionDate = new Date(value);
-    const issueDate = new Date(data.issueDate);
-    return (
-      executionDate >= issueDate ||
-      "La date d'exécution doit être postérieure ou égale à la date d'émission"
-    );
-  };
   return (
     <Card className="shadow-none p-2 border-none bg-transparent">
       <CardHeader className="p-0">
@@ -249,6 +238,11 @@ export default function InvoiceInfoSection({ canEdit }) {
                     maxLength: {
                       value: 20,
                       message: "Le préfixe ne doit pas dépasser 20 caractères",
+                    },
+                    pattern: {
+                      value: /^[A-Za-z0-9-]*$/,
+                      message:
+                        "Le préfixe ne doit contenir que des lettres, chiffres et tirets (sans espaces ni caractères spéciaux)",
                     },
                   })}
                   onChange={handlePrefixChange}
@@ -323,15 +317,21 @@ export default function InvoiceInfoSection({ canEdit }) {
                     : "000001"
                 }
                 disabled={!canEdit || isLoadingInvoiceNumber}
-                onBlur={(e) => {
+                onBlur={async (e) => {
                   // Format with leading zeros when leaving the field
+                  let finalNumber;
                   if (e.target.value) {
-                    const num = e.target.value.padStart(6, "0");
-                    setValue("number", num, { shouldValidate: true });
+                    finalNumber = e.target.value.padStart(6, "0");
+                    setValue("number", finalNumber, { shouldValidate: true });
                   } else if (nextInvoiceNumber) {
                     // If field is empty, set to next invoice number
-                    const num = String(nextInvoiceNumber).padStart(6, "0");
-                    setValue("number", num, { shouldValidate: true });
+                    finalNumber = String(nextInvoiceNumber).padStart(6, "0");
+                    setValue("number", finalNumber, { shouldValidate: true });
+                  }
+                  
+                  // Vérifier si le numéro existe déjà (sans préfixe, juste le numéro)
+                  if (finalNumber && validateInvoiceNumberExists) {
+                    await validateInvoiceNumberExists(finalNumber);
                   }
                 }}
                 className={`${errors?.number ? "border-red-500" : ""}`}
@@ -388,119 +388,52 @@ export default function InvoiceInfoSection({ canEdit }) {
 
         {/* Dates */}
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-light">
-                  Date d'émission <span className="text-red-500">*</span>
-                </Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
-                    <p>
-                      Date à laquelle la facture est créée et envoyée au client.
-                      Cette date est automatiquement définie lors de la création et
-                      sert de référence pour calculer la date d'échéance.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <input
-                type="hidden"
-                {...register("issueDate", {
-                  required: false, // On ne veut plus de message d'erreur
-                })}
-              />
-              <div className="relative">
-                <Input
-                  value={(() => {
-                    if (!data.issueDate) return "";
-                    try {
-                      const date = new Date(data.issueDate);
-                      if (isNaN(date.getTime())) return "";
-                      return format(date, "PPP", { locale: fr });
-                    } catch (error) {
-                      return "";
-                    }
-                  })()}
-                  disabled={true}
-                  placeholder="Date automatique"
-                />
-                <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              </div>
-              {errors?.issueDate && (
-                <p className="text-xs text-red-500">
-                  {errors.issueDate.message}
-                </p>
-              )}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-light">
+                Date d'émission <span className="text-red-500">*</span>
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>
+                    Date à laquelle la facture est créée et envoyée au client.
+                    Cette date est automatiquement définie lors de la création et
+                    sert de référence pour calculer la date d'échéance.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-light">Date d'exécution</Label>
-                <span className="h-4 w-4" aria-hidden="true"></span>
-              </div>
-              <input
-                type="hidden"
-                {...register("executionDate", {
-                  validate: validateExecutionDate,
-                })}
+            <input
+              type="hidden"
+              {...register("issueDate", {
+                required: false, // On ne veut plus de message d'erreur
+              })}
+            />
+            <div className="relative">
+              <Input
+                value={(() => {
+                  if (!data.issueDate) return "";
+                  try {
+                    const date = new Date(data.issueDate);
+                    if (isNaN(date.getTime())) return "";
+                    return format(date, "PPP", { locale: fr });
+                  } catch (error) {
+                    return "";
+                  }
+                })()}
+                disabled={true}
+                placeholder="Date automatique"
               />
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={!canEdit}
-                    className={cn(
-                      "w-full font-normal justify-start",
-                      !data.executionDate && "text-muted-foreground",
-                      errors?.executionDate && "border-red-500"
-                    )}
-                    type="button"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {data.executionDate ? (
-                      (() => {
-                        try {
-                          const date = new Date(data.executionDate);
-                          if (isNaN(date.getTime()))
-                            return <span>Date invalide</span>;
-                          return format(date, "PPP", { locale: fr });
-                        } catch (error) {
-                          return <span>Date invalide</span>;
-                        }
-                      })()
-                    ) : (
-                      <span>Choisir une date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={
-                      data.executionDate
-                        ? new Date(data.executionDate)
-                        : undefined
-                    }
-                    onSelect={(date) => {
-                      setValue("executionDate", format(date, "yyyy-MM-dd"), {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      });
-                    }}
-                    initialFocus
-                    locale={fr}
-                  />
-                </PopoverContent>
-              </Popover>
-              {errors?.executionDate && (
-                <p className="text-xs text-red-500">
-                  {errors.executionDate.message}
-                </p>
-              )}
+              <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
+            {errors?.issueDate && (
+              <p className="text-xs text-red-500">
+                {errors.issueDate.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

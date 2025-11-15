@@ -46,25 +46,29 @@ export const useCreateClient = () => {
   
   const [createClient, { loading, error }] = useMutation(CREATE_CLIENT, {
     update: (cache, { data: { createClient: newClient } }) => {
-      // Lire la query existante
-      const existingClients = cache.readQuery({
-        query: GET_CLIENTS,
-        variables: { workspaceId, page: 1, limit: 10, search: '' }
-      });
-
-      if (existingClients) {
-        // Ajouter le nouveau client au début de la liste
-        cache.writeQuery({
+      try {
+        // Lire la query existante
+        const existingClients = cache.readQuery({
           query: GET_CLIENTS,
-          variables: { workspaceId, page: 1, limit: 10, search: '' },
-          data: {
-            clients: {
-              ...existingClients.clients,
-              items: [newClient, ...existingClients.clients.items],
-              totalItems: existingClients.clients.totalItems + 1
-            }
-          }
+          variables: { workspaceId, page: 1, limit: 10, search: '' }
         });
+
+        if (existingClients) {
+          // Ajouter le nouveau client au début de la liste
+          cache.writeQuery({
+            query: GET_CLIENTS,
+            variables: { workspaceId, page: 1, limit: 10, search: '' },
+            data: {
+              clients: {
+                ...existingClients.clients,
+                items: [newClient, ...existingClients.clients.items],
+                totalItems: existingClients.clients.totalItems + 1
+              }
+            }
+          });
+        }
+      } catch {
+        // Si la query n'existe pas dans le cache, on l'ignore
       }
     },
     onCompleted: () => {
@@ -76,7 +80,10 @@ export const useCreateClient = () => {
   });
 
   return {
-    createClient: (input) => createClient({ variables: { workspaceId, input } }),
+    createClient: async (input) => {
+      const result = await createClient({ variables: { workspaceId, input } });
+      return result?.data?.createClient;
+    },
     loading,
     error,
   };
@@ -131,7 +138,10 @@ export const useUpdateClient = () => {
   });
 
   return {
-    updateClient: (id, input) => updateClient({ variables: { workspaceId, id, input } }),
+    updateClient: async (id, input) => {
+      const result = await updateClient({ variables: { workspaceId, id, input } });
+      return result?.data?.updateClient;
+    },
     loading,
     error,
   };

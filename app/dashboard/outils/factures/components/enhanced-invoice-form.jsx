@@ -93,6 +93,7 @@ import { cn } from "@/src/lib/utils";
 import ClientSelector from "./invoices-form-sections/client-selector";
 import CompanyImport, { QuickCompanyImport } from "./company-import";
 import { toast } from "@/src/components/ui/sonner";
+import { ValidationCallout } from "./validation-callout";
 
 // Composant de recherche de produits basé sur Origin UI
 function ProductSearchCombobox({
@@ -198,20 +199,21 @@ function ProductSearchCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="p-0 w-[var(--radix-popover-trigger-width)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)]" 
+        className="p-0 w-[var(--radix-popover-trigger-width)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)] bg-popover text-popover-foreground" 
         align="start" 
         side="bottom"
         sideOffset={4}
         avoidCollisions={false}
         sticky="always"
       >
-        <Command shouldFilter={false}>
+        <Command shouldFilter={false} className="bg-popover text-popover-foreground">
           <CommandInput
             placeholder="Rechercher un produit..."
             value={searchTerm}
             onValueChange={handleSearchChange}
+            className="bg-transparent"
           />
-          <CommandList>
+          <CommandList className="bg-popover">
             {loading && <CommandEmpty>Recherche en cours...</CommandEmpty>}
             {!loading && !debouncedSearchTerm && (
               <CommandEmpty>Tapez pour rechercher un produit...</CommandEmpty>
@@ -263,8 +265,13 @@ export default function EnhancedInvoiceForm({
   readOnly,
   errors,
   validationErrors = {},
+  setValidationErrors,
+  validateInvoiceNumber,
   currentStep: externalCurrentStep,
   onStepChange,
+  onEditClient,
+  markFieldAsEditing,
+  unmarkFieldAsEditing,
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeField, setActiveField] = useState(null);
@@ -453,23 +460,58 @@ export default function EnhancedInvoiceForm({
   };
 
   const isStep1Valid = () => {
-    // Déblocage du bouton pour permettre l'accès à l'étape 2 sans validation
-    return true;
-    // Ancienne validation : return data.client?.name && data.companyInfo?.name && data.issueDate;
+    // Vérifier qu'il n'y a pas d'erreurs de validation pour l'étape 1
+    const hasClientError = validationErrors?.client;
+    const hasCompanyError = validationErrors?.companyInfo;
+    const hasIssueDateError = validationErrors?.issueDate;
+    const hasDueDateError = validationErrors?.dueDate;
+    const hasInvoiceNumberError = validationErrors?.invoiceNumber;
+    const hasPrefixError = validationErrors?.prefix;
+    const hasPurchaseOrderError = validationErrors?.purchaseOrderNumber;
+    
+    // Vérifier que les champs requis sont remplis
+    const hasClient = data.client?.id;
+    const hasCompanyName = data.companyInfo?.name;
+    const hasIssueDate = data.issueDate;
+    
+    return (
+      hasClient &&
+      hasCompanyName &&
+      hasIssueDate &&
+      !hasClientError &&
+      !hasCompanyError &&
+      !hasIssueDateError &&
+      !hasDueDateError &&
+      !hasInvoiceNumberError &&
+      !hasPrefixError &&
+      !hasPurchaseOrderError
+    );
   };
 
   const isStep2Valid = () => {
-    return (
-      data.items &&
-      data.items.length > 0 &&
-      data.items.every(
-        (item) => item.description && item.quantity && item.unitPrice
-      )
+    // Vérifier qu'il n'y a pas d'erreurs de validation pour l'étape 2
+    const hasItemsError = validationErrors?.items;
+    const hasShippingError = validationErrors?.shipping;
+    const hasDiscountError = validationErrors?.discount;
+    
+    // Vérifier que les articles sont valides
+    const hasItems = data.items && data.items.length > 0;
+    const itemsAreValid = hasItems && data.items.every(
+      (item) => item.description && item.quantity && item.unitPrice
     );
+    
+    return itemsAreValid && !hasItemsError && !hasShippingError && !hasDiscountError;
   };
 
   return (
     <div className="flex flex-col h-full w-full">
+      {/* Validation Callout - Fixe en haut */}
+      {Object.keys(validationErrors).length > 0 && (
+        <div className="sticky top-0 z-10 mb-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <ValidationCallout errors={validationErrors} />
+        </div>
+      )}
+      
       {/* Form Content */}
       <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0 pb-20 lg:pb-0">
         <div className="space-y-6">
@@ -477,7 +519,10 @@ export default function EnhancedInvoiceForm({
           {currentStep === 1 && (
             <>
               {/* Section 1: Informations de la facture */}
-              <InvoiceInfoSection canEdit={canEdit} />
+              <InvoiceInfoSection 
+                canEdit={canEdit} 
+                validateInvoiceNumber={validateInvoiceNumber}
+              />
 
               {/* Section 2: Sélection d'un client */}
               <Card className="gap-0 shadow-none border-none pt-2 pb-6 pr-2 pl-2 bg-transparent">
@@ -496,8 +541,10 @@ export default function EnhancedInvoiceForm({
                       ? (validationErrors.client.message || validationErrors.client)
                       : null
                   }
+                  setValidationErrors={setValidationErrors}
                   clientPositionRight={data.clientPositionRight || false}
                   onClientPositionChange={(checked) => updateField("clientPositionRight", checked)}
+                  onEditClient={onEditClient}
                 />
               </Card>
             </>
@@ -512,6 +559,8 @@ export default function EnhancedInvoiceForm({
                 canEdit={canEdit}
                 ProductSearchCombobox={ProductSearchCombobox}
                 validationErrors={validationErrors?.items?.details || []}
+                markFieldAsEditing={markFieldAsEditing}
+                unmarkFieldAsEditing={unmarkFieldAsEditing}
               />
 
               {/* Section 2: Facturation de livraison */}

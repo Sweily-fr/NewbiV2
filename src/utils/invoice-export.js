@@ -131,7 +131,6 @@ function convertToDate(dateValue) {
 function formatInvoiceForExport(invoice) {
   const issueDate = convertToDate(invoice.issueDate);
   const dueDate = convertToDate(invoice.dueDate);
-  const executionDate = convertToDate(invoice.executionDate);
   const createdAt = convertToDate(invoice.createdAt);
   
   return {
@@ -151,9 +150,6 @@ function formatInvoiceForExport(invoice) {
     // Dates
     "Date d'émission": issueDate 
       ? format(issueDate, "dd/MM/yyyy", { locale: fr })
-      : "",
-    "Date d'exécution": executionDate 
-      ? format(executionDate, "dd/MM/yyyy", { locale: fr })
       : "",
     "Date d'échéance": dueDate 
       ? format(dueDate, "dd/MM/yyyy", { locale: fr })

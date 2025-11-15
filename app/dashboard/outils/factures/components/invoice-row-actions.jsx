@@ -137,7 +137,14 @@ export default function InvoiceRowActions({ row, onRefetch }) {
 
   return (
     <>
-      <div className="flex items-center justify-end gap-1">
+      <div className="flex items-center justify-end gap-1" data-actions-cell>
+        {/* Bouton invisible pour déclencher l'ouverture via le clic sur la ligne */}
+        <button
+          data-view-invoice
+          onClick={handleView}
+          className="hidden"
+          aria-hidden="true"
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

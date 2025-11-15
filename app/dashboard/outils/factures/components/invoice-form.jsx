@@ -203,19 +203,6 @@ export default function InvoiceForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="executionDate">Date d'exécution</Label>
-              <Input
-                id="executionDate"
-                type="date"
-                value={data.executionDate || ""}
-                onChange={(e) =>
-                  updateField("executionDate", e.target.value || null)
-                }
-                disabled={!canEdit}
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="dueDate">Date d'échéance</Label>
               <Input
                 id="dueDate"

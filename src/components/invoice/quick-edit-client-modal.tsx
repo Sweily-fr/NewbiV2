@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import {
   Dialog,
@@ -52,6 +52,23 @@ export function QuickEditClientModal({
       addressCountry: client?.address?.country || "",
     },
   })
+
+  // Mettre à jour le formulaire quand le client change
+  useEffect(() => {
+    if (client) {
+      reset({
+        name: client.name || "",
+        email: client.email || "",
+        phone: client.phone || "",
+        siret: client.siret || "",
+        vatNumber: client.vatNumber || "",
+        addressStreet: client.address?.street || "",
+        addressCity: client.address?.city || "",
+        addressPostalCode: client.address?.postalCode || "",
+        addressCountry: client.address?.country || "",
+      })
+    }
+  }, [client, reset])
 
   const onSubmit = async (data: any) => {
     try {

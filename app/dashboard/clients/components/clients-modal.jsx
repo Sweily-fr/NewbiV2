@@ -302,40 +302,45 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
         }
       }
 
+      // Fermer le modal d'abord
+      onOpenChange(false);
+      
+      // Appeler le callback avec le résultat
       if (onSave) {
         await onSave(result);
       }
 
       // La notification est déjà gérée par le hook useUpdateClient/useCreateClient
-      // Réinitialiser complètement le formulaire avec les valeurs par défaut
-      reset({
-        type: "INDIVIDUAL",
-        name: "",
-        firstName: "",
-        lastName: "",
-        email: "",
-        address: {
-          street: "",
-          city: "",
-          postalCode: "",
-          country: "",
-        },
-        shippingAddress: {
-          fullName: "",
-          street: "",
-          city: "",
-          postalCode: "",
-          country: "",
-        },
-        siret: "",
-        vatNumber: "",
-      });
+      // Réinitialiser complètement le formulaire avec les valeurs par défaut (seulement pour la création)
+      if (!isEditing) {
+        reset({
+          type: "INDIVIDUAL",
+          name: "",
+          firstName: "",
+          lastName: "",
+          email: "",
+          address: {
+            street: "",
+            city: "",
+            postalCode: "",
+            country: "",
+          },
+          shippingAddress: {
+            fullName: "",
+            street: "",
+            city: "",
+            postalCode: "",
+            country: "",
+          },
+          siret: "",
+          vatNumber: "",
+        });
+      }
       setCustomErrors({});
       setHasDifferentShipping(false);
       setShowCompanySearch(false);
       setCompanyQuery("");
       setCompanies([]);
-      onOpenChange(false);
     } catch (error) {
       // La notification d'erreur est déjà gérée par le hook useCreateClient/useUpdateClient
       // Ne pas afficher de notification supplémentaire ici

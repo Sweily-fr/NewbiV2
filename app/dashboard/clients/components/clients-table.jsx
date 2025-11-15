@@ -67,7 +67,7 @@ function CommonListsDisplay({ workspaceId, selectedClientIds, onRemoveFromList, 
         <Badge
           key={list.id}
           variant="outline"
-          className="flex items-center rounded-md gap-2 px-2 sm:px-3 py-1.5 cursor-default bg-white text-xs sm:text-sm"
+          className="flex items-center rounded-md gap-2 px-2 sm:px-3 py-1.5 cursor-default bg-background text-xs sm:text-sm"
         >
           <div
             className="w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -77,7 +77,7 @@ function CommonListsDisplay({ workspaceId, selectedClientIds, onRemoveFromList, 
           <button
             onClick={() => onRemoveFromList(list.id)}
             disabled={isRemoving}
-            className="ml-1 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 cursor-pointer"
+            className="ml-1 text-muted-foreground hover:text-red-500 transition-colors disabled:opacity-50 cursor-pointer"
             title="Retirer de cette liste"
           >
             <X className="w-3.5 h-3.5" />

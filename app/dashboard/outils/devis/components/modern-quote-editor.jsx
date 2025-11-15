@@ -12,6 +12,7 @@ import {
   AlertCircle,
   ChevronUp,
   ChevronDown,
+  LoaderCircle,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -27,7 +28,8 @@ import {
 } from "@/src/lib/organization-client";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
-import { ErrorAlert } from "@/src/components/invoice/error-alert";
+import { ValidationCallout } from "@/app/dashboard/outils/factures/components/validation-callout";
+import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -36,8 +38,10 @@ export default function ModernQuoteEditor({
 }) {
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
-  const [errorsExpanded, setErrorsExpanded] = useState(true);
+  const [showEditClient, setShowEditClient] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [debouncedFormData, setDebouncedFormData] = useState(null);
+
   const {
     form,
     formData,
@@ -56,11 +60,21 @@ export default function ModernQuoteEditor({
     quote: loadedQuote,
     error: quoteError,
     validationErrors,
+    setValidationErrors,
   } = useQuoteEditor({
     mode,
     quoteId,
     initialData,
   });
+
+  // Debounce pour la preview (évite les saccades)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFormData(formData);
+    }, 300); // Attendre 300ms après la dernière modification
+
+    return () => clearTimeout(timer);
+  }, [formData]);
 
   // Détecter les changements d'organisation pour les modes edit/view
   useOrganizationChange({
@@ -104,6 +118,11 @@ export default function ModernQuoteEditor({
       // Sinon, fermer directement
       setShowSettings(false);
     }
+  };
+
+  const handleClientUpdated = (updatedClient) => {
+    setFormData((prev) => ({ ...prev, client: updatedClient }));
+    // Notification déjà affichée par le modal
   };
 
   return (
@@ -209,92 +228,10 @@ export default function ModernQuoteEditor({
 
             {/* Enhanced Form or Settings */}
             <div className="flex-1 min-h-0 flex flex-col">
-              {/* Alertes d'erreur intelligentes - Panneau rétractable */}
-              {(validationErrors?.client || validationErrors?.companyInfo || validationErrors?.quoteInfo || validationErrors?.items || validationErrors?.shipping || validationErrors?.discount || validationErrors?.customFields) && (
-                <div className="flex-shrink-0 mb-4 border border-destructive/20 rounded-md overflow-hidden">
-                  {/* Header rétractable avec compteur */}
-                  <button
-                    onClick={() => setErrorsExpanded(!errorsExpanded)}
-                    className="w-full flex items-center justify-between p-3 bg-destructive/10 hover:bg-destructive/15 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-destructive" />
-                      <span className="text-sm font-medium text-destructive">
-                        Erreurs de validation
-                      </span>
-                      <Badge variant="destructive" className="ml-2">
-                        {Object.keys(validationErrors || {}).length}
-                      </Badge>
-                    </div>
-                    {errorsExpanded ? (
-                      <ChevronUp className="h-4 w-4 text-destructive" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-destructive" />
-                    )}
-                  </button>
-                  
-                  {/* Contenu des erreurs */}
-                  {errorsExpanded && (
-                    <div className="space-y-2 p-3 bg-background border-t border-destructive/20">
-                      {/* Afficher toutes les erreurs client */}
-                      {validationErrors?.client && (
-                        <ErrorAlert
-                          title="Erreur client"
-                          message={validationErrors.client.message || validationErrors.client}
-                          onEdit={undefined}
-                          editLabel=""
-                        />
-                      )}
-                      {validationErrors?.companyInfo && (
-                        <ErrorAlert
-                          title="Erreur informations entreprise"
-                          message={validationErrors.companyInfo.message || validationErrors.companyInfo}
-                          onEdit={undefined}
-                          editLabel=""
-                        />
-                      )}
-                      {validationErrors?.quoteInfo && (
-                        <ErrorAlert
-                          title="Erreur informations du devis"
-                          message={validationErrors.quoteInfo.message || validationErrors.quoteInfo}
-                          onEdit={undefined}
-                          editLabel=""
-                        />
-                      )}
-                      {validationErrors?.items && (
-                        <ErrorAlert
-                          title="Erreur articles"
-                          message={validationErrors.items.message || validationErrors.items}
-                          onEdit={undefined}
-                          editLabel=""
-                        />
-                      )}
-                      {validationErrors?.shipping && (
-                        <ErrorAlert
-                          title="Erreur livraison"
-                          message={validationErrors.shipping.message || validationErrors.shipping}
-                          onEdit={undefined}
-                          editLabel=""
-                        />
-                      )}
-                      {validationErrors?.discount && (
-                        <ErrorAlert
-                          title="Erreur remise"
-                          message={validationErrors.discount.message || validationErrors.discount}
-                          onEdit={undefined}
-                          editLabel=""
-                        />
-                      )}
-                      {validationErrors?.customFields && (
-                        <ErrorAlert
-                          title="Erreur champs personnalisés"
-                          message={validationErrors.customFields.message || validationErrors.customFields}
-                          onEdit={undefined}
-                          editLabel=""
-                        />
-                      )}
-                    </div>
-                  )}
+              {/* Bannière de validation globale */}
+              {Object.keys(validationErrors || {}).length > 0 && (
+                <div className="flex-shrink-0 mb-4">
+                  <ValidationCallout errors={validationErrors} />
                 </div>
               )}
               
@@ -337,8 +274,10 @@ export default function ModernQuoteEditor({
                     validateQuoteNumber={validateQuoteNumber}
                     hasExistingQuotes={hasExistingQuotes}
                     validationErrors={validationErrors}
+                    setValidationErrors={setValidationErrors}
                     currentStep={currentStep}
                     onStepChange={setCurrentStep}
+                    onEditClient={() => setShowEditClient(true)}
                   />
                 )}
               </FormProvider>
@@ -349,11 +288,27 @@ export default function ModernQuoteEditor({
 
         {/* Right Panel - Preview */}
         <div className="border-l flex-col h-full overflow-hidden hidden lg:flex">
-          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full">
-            <UniversalPreviewPDF data={formData} type="quote" />
+          <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full relative">
+            {loading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
+                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : debouncedFormData ? (
+              <UniversalPreviewPDF data={debouncedFormData} type="quote" />
+            ) : null}
           </div>
         </div>
       </div>
+      
+      {/* Modal d'édition du client */}
+      {formData.client && (
+        <ClientsModal
+          open={showEditClient}
+          onOpenChange={setShowEditClient}
+          client={formData.client}
+          onSave={handleClientUpdated}
+        />
+      )}
     </div>
   );
 }
