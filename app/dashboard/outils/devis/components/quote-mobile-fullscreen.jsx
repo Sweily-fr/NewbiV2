@@ -333,10 +333,7 @@ export default function QuoteMobileFullscreen({
               type="quote"
               variant="outline"
               size="sm"
-              className="w-full flex items-center justify-center"
-            >
-              Télécharger PDF
-            </UniversalPDFDownloader>
+            />
           )}
         </div>
       </div>

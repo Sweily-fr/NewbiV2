@@ -367,10 +367,7 @@ export default function InvoiceMobileFullscreen({
               enableFacturX={true}
               variant="outline"
               size="sm"
-              className="w-full flex items-center justify-center"
-            >
-              Télécharger PDF
-            </UniversalPDFDownloaderWithFacturX>
+            />
           )}
         </div>
       </div>
