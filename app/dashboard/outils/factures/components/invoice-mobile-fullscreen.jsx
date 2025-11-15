@@ -148,7 +148,7 @@ export default function InvoiceMobileFullscreen({
       <div className="fixed inset-0 z-[60] bg-background md:hidden overflow-hidden">
         {/* Header avec croix */}
         <div className="sticky top-0 z-10 bg-background border-b">
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-start justify-between p-4">
             <div className="flex flex-col gap-2">
               <h2 className="text-lg font-normal">Facture {invoice.number}</h2>
               <span
