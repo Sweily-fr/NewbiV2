@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
-import SignaturePreviewModal from "./signature-preview-modal";
+import SignaturePreviewModal from "../preview/signature-preview-modal";
 
 export default function SignatureRowActions({
   signature,

@@ -87,7 +87,7 @@ import {
 import {
   useSignatures,
   useSignatureActions,
-} from "../hooks/use-signature-table";
+} from "../../hooks/use-signature-table";
 import SignatureRowActions from "./signature-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
 

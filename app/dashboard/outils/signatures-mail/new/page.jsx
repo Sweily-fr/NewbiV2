@@ -17,7 +17,7 @@ import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
 import { useImageUpload } from "../hooks/useImageUpload";
 import "@/src/styles/signature-text-selection.css";
-import HorizontalSignature from "../components/HorizontalSignature";
+import HorizontalSignature from "../components/preview/HorizontalSignature";
 import { generateSignatureHTML } from "../utils/standalone-signature-generator";
 
 // Aperçu de l'email avec édition inline

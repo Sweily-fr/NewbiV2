@@ -8,10 +8,10 @@ import { Button } from "@/src/components/ui/button";
 import { Switch } from "@/src/components/ui/switch";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
 import { Square, X, Upload, Circle, Trash2 } from "lucide-react";
-import { useImageUpload } from "../../../hooks/useImageUpload";
+import { useImageUpload } from "../../../../hooks/useImageUpload";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { toast } from "@/src/components/ui/sonner";
-import { optimizeImage } from "../../../utils/imageOptimizer";
+import { optimizeImage } from "../../../../utils/imageOptimizer";
 
 export default function ProfileImageSection({
   signatureData,

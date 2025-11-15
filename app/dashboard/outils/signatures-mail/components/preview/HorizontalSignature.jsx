@@ -6,14 +6,14 @@
 "use client";
 
 import React from "react";
-import ProfileImage from "./signature-parts/ProfileImage";
-import PersonalInfo from "./signature-parts/PersonalInfo";
-import ContactInfo from "./signature-parts/ContactInfo";
-import VerticalSeparator from "./signature-parts/VerticalSeparator";
-import HorizontalSeparator from "./signature-parts/HorizontalSeparator";
-import CompanyLogo from "./signature-parts/CompanyLogo";
-import SocialNetworks from "./signature-parts/SocialNetworks";
-import { getSpacing } from "../utils/spacing-helper";
+import ProfileImage from "../signature-parts/ProfileImage";
+import PersonalInfo from "../signature-parts/PersonalInfo";
+import ContactInfo from "../signature-parts/ContactInfo";
+import VerticalSeparator from "../signature-parts/VerticalSeparator";
+import HorizontalSeparator from "../signature-parts/HorizontalSeparator";
+import CompanyLogo from "../signature-parts/CompanyLogo";
+import SocialNetworks from "../signature-parts/SocialNetworks";
+import { getSpacing } from "../../utils/spacing-helper";
 import "@/src/styles/signature-text-selection.css";
 import "./signature-preview.css";
 

@@ -25,10 +25,10 @@ import { Switch } from "@/src/components/ui/switch";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { useQuery } from "@apollo/client";
 
-// Import du composant LayoutTab pour l'onglet 1
-import LayoutTab from "./layout-tab/layout-tab";
-import LayoutTabTypography from "./tab-typography/layout-tab";
-import CancelConfirmationModal from "./modals/CancelConfirmationModal";
+// Import des composants d'édition
+import LayoutContent from "../editor/layout/LayoutContent";
+import TypographyContent from "../editor/typography/TypographyContent";
+import CancelConfirmationModal from "../modals/CancelConfirmationModal";
 // Mutation GraphQL pour créer une signature
 const CREATE_EMAIL_SIGNATURE = gql`
   mutation CreateEmailSignature($input: EmailSignatureInput!) {
@@ -580,10 +580,14 @@ export function TabSignature({ existingSignatureId = null }) {
         {/* Contenu scrollable */}
         <div className="flex-1 overflow-y-auto px-5 max-h-[calc(100vh-9.5rem)]">
           <TabsContent value="tab-1" className="w-full mt-0">
-            <LayoutTab />
+            <div className="w-full space-y-6 mt-4">
+              <LayoutContent />
+            </div>
           </TabsContent>
           <TabsContent value="tab-2" className="w-full mt-0">
-            <LayoutTabTypography />
+            <div className="w-full space-y-6 mt-4">
+              <TypographyContent />
+            </div>
           </TabsContent>
         </div>
       </Tabs>

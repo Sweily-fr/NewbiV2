@@ -15,7 +15,7 @@ import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Textarea } from "@/src/components/ui/textarea";
 import { User, Building2, Palette, Share2, Settings } from "lucide-react";
-import { TabSignature } from "../../app/dashboard/outils/signatures-mail/components/TabSignature";
+import { TabSignature } from "@/app/dashboard/outils/signatures-mail/components/preview/TabSignature";
 
 const ConfigSection = ({ title, icon: Icon, children, isActive = false }) => (
   <div

@@ -14,7 +14,7 @@ import {
 } from "@/src/components/ui/tooltip";
 import { X, Upload, Building, Info } from "lucide-react";
 import { useActiveOrganization } from "@/src/lib/organization-client";
-import { useImageUpload } from "../../../hooks/useImageUpload";
+import { useImageUpload } from "../../../../hooks/useImageUpload";
 import { toast } from "@/src/components/ui/sonner";
 
 export default function CompanyLogoSection({

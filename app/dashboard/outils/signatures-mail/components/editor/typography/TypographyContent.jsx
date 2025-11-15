@@ -5,10 +5,10 @@ import { Separator } from "@/src/components/ui/separator";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 
 // Import section components
-import ProfileImageSection from "../layout-tab/sections/ProfileImageSection";
-import CompanyLogoSection from "../layout-tab/sections/CompanyLogoSection";
-import SocialNetworksSection from "../layout-tab/sections/SocialNetworksSection";
-import TypographySection from "../layout-tab/sections/TypographySection";
+import ProfileImageSection from "../layout/sections/ProfileImageSection";
+import CompanyLogoSection from "../layout/sections/CompanyLogoSection";
+import SocialNetworksSection from "../layout/sections/SocialNetworksSection";
+import TypographySection from "./sections/TypographySection";
 
 export default function ContentTab() {
   const { signatureData, updateSignatureData } = useSignatureData();
