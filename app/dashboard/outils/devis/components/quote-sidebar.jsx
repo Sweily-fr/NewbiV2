@@ -218,32 +218,34 @@ export default function QuoteSidebar({
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-lg">
-                  Devis {quote.number || "Brouillon"}
-                </h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge
-                    variant={QUOTE_STATUS_COLORS[quote.status] || "secondary"}
-                    className="text-xs"
-                  >
-                    {QUOTE_STATUS_LABELS[quote.status] || quote.status}
-                  </Badge>
-                  {isValidUntilExpired() && (
-                    <Badge variant="destructive" className="text-xs">
-                      Expiré
-                    </Badge>
-                  )}
-                </div>
+          <div className="flex items-start justify-between p-6 border-b gap-4">
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              <h2 className="font-normal text-lg">
+                Devis {quote.number || "Brouillon"}
+              </h2>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    quote.status === 'DRAFT'
+                      ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                      : quote.status === 'PENDING'
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
+                      : quote.status === 'COMPLETED'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                  }`}
+                >
+                  {QUOTE_STATUS_LABELS[quote.status] || quote.status}
+                </span>
+                {isValidUntilExpired() && (
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+                    Expiré
+                  </span>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Bouton PDF - masqué pour les brouillons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Bouton PDF - visible sur mobile et desktop, masqué pour les brouillons */}
               {quote.status !== QUOTE_STATUS.DRAFT && (
                 <UniversalPDFDownloader data={quote} type="quote" />
               )}
@@ -262,15 +264,12 @@ export default function QuoteSidebar({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-8">
             {/* Client Info */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Building className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-medium">Client</h3>
-              </div>
+            <div className="space-y-2.5">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</h3>
               {quote.client ? (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div>
                     <p className="font-medium">{quote.client.name}</p>
                     {quote.client.email && (
@@ -309,15 +308,10 @@ export default function QuoteSidebar({
               )}
             </div>
 
-            <Separator />
-
             {/* Dates */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-medium">Dates</h3>
-              </div>
-              <div className="space-y-2">
+            <div className="space-y-2.5">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dates</h3>
+              <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Date d'émission</span>
                   <span>{formatDate(quote.issueDate)}</span>
@@ -338,15 +332,10 @@ export default function QuoteSidebar({
               </div>
             </div>
 
-            <Separator />
-
             {/* Articles */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-medium">Articles</h3>
-              </div>
-              <div className="space-y-2">
+            <div className="space-y-2.5">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Articles</h3>
+              <div className="space-y-1.5">
                 {quote.items && quote.items.length > 0 ? (
                   quote.items.map((item, index) => (
                     <div key={index} className="text-sm">
@@ -365,15 +354,10 @@ export default function QuoteSidebar({
               </div>
             </div>
 
-            <Separator />
-
             {/* Totals */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Percent className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-medium">Totaux</h3>
-              </div>
-              <div className="space-y-2">
+            <div className="space-y-2.5">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Totaux</h3>
+              <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Sous-total HT</span>
                   <span>{formatCurrency(quote.totalHT || 0)}</span>

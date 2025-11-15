@@ -229,27 +229,31 @@ export default function InvoiceSidebar({
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-lg">
-                Facture {invoice.number || "Brouillon"}
-              </h2>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge
-                  variant={INVOICE_STATUS_COLORS[invoice.status] || "secondary"}
-                  className="text-xs"
-                >
-                  {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
-                </Badge>
-              </div>
+        <div className="flex items-start justify-between p-6 border-b gap-4">
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
+            <h2 className="font-normal text-lg">
+              Facture {invoice.number || "Brouillon"}
+            </h2>
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  invoice.status === 'DRAFT'
+                    ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                    : invoice.status === 'PENDING'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
+                    : invoice.status === 'PAID'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                    : invoice.status === 'OVERDUE'
+                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                }`}
+              >
+                {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Bouton PDF - masqué pour les brouillons */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Bouton PDF - visible sur mobile et desktop, masqué pour les brouillons */}
             {invoice.status !== INVOICE_STATUS.DRAFT && (
               <UniversalPDFDownloaderWithFacturX 
                 data={invoice} 
@@ -278,15 +282,12 @@ export default function InvoiceSidebar({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
           {/* Client Info */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Building className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-medium">Client</h3>
-            </div>
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</h3>
             {invoice.client ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div>
                   <p className="font-medium">
                     {invoice.client.type === "COMPANY"
@@ -330,15 +331,10 @@ export default function InvoiceSidebar({
             )}
           </div>
 
-          <Separator />
-
           {/* Dates */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-medium">Dates</h3>
-            </div>
-            <div className="space-y-2">
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dates</h3>
+            <div className="space-y-1.5">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Date d'émission</span>
                 <span>{formatDate(invoice.issueDate)}</span>
@@ -356,15 +352,10 @@ export default function InvoiceSidebar({
             </div>
           </div>
 
-          <Separator />
-
           {/* Articles */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-medium">Articles</h3>
-            </div>
-            <div className="space-y-2">
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Articles</h3>
+            <div className="space-y-1.5">
               {invoice.items && invoice.items.length > 0 ? (
                 invoice.items.map((item, index) => (
                   <div key={index} className="text-sm">
@@ -383,15 +374,10 @@ export default function InvoiceSidebar({
             </div>
           </div>
 
-          <Separator />
-
           {/* Totals */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Percent className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-medium">Totaux</h3>
-            </div>
-            <div className="space-y-2">
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Totaux</h3>
+            <div className="space-y-1.5">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Sous-total HT</span>
                 <span>{formatCurrency(invoice.totalHT || 0)}</span>
