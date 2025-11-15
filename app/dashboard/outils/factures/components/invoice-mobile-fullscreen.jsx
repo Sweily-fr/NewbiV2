@@ -149,18 +149,44 @@ export default function InvoiceMobileFullscreen({
         {/* Header avec croix */}
         <div className="sticky top-0 z-10 bg-background border-b">
           <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-medium">Facture {invoice.number}</h2>
-              <Badge variant={statusColor}>{statusLabel}</Badge>
+            <div className="flex flex-col gap-2">
+              <h2 className="text-lg font-normal">Facture {invoice.number}</h2>
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium w-fit ${
+                  invoice.status === 'DRAFT'
+                    ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                    : invoice.status === 'PENDING'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
+                    : invoice.status === 'PAID'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                    : invoice.status === 'OVERDUE'
+                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                }`}
+              >
+                {statusLabel}
+              </span>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {invoice.status !== INVOICE_STATUS.DRAFT && (
+                <UniversalPDFDownloaderWithFacturX
+                  data={invoice}
+                  type="invoice"
+                  enableFacturX={true}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                />
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -328,15 +354,17 @@ export default function InvoiceMobileFullscreen({
             </Button>
           )}
 
-          <UniversalPDFDownloaderWithFacturX
-            data={invoice}
-            type="invoice"
-            enableFacturX={true}
-            variant="outline"
-            className="w-full flex items-center justify-center"
-          >
-            Télécharger PDF
-          </UniversalPDFDownloaderWithFacturX>
+          {invoice.status === INVOICE_STATUS.DRAFT && (
+            <UniversalPDFDownloaderWithFacturX
+              data={invoice}
+              type="invoice"
+              enableFacturX={true}
+              variant="outline"
+              className="w-full flex items-center justify-center"
+            >
+              Télécharger PDF
+            </UniversalPDFDownloaderWithFacturX>
+          )}
         </div>
       </div>
 

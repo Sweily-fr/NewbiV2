@@ -144,18 +144,48 @@ export default function QuoteMobileFullscreen({
         {/* Header avec croix */}
         <div className="sticky top-0 z-10 bg-background border-b">
           <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-medium">Devis {quote.number}</h2>
-              <Badge variant={statusColor}>{statusLabel}</Badge>
+            <div className="flex flex-col gap-2">
+              <h2 className="text-lg font-normal">Devis {quote.number}</h2>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    quote.status === 'DRAFT'
+                      ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                      : quote.status === 'PENDING'
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
+                      : quote.status === 'COMPLETED'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                  }`}
+                >
+                  {statusLabel}
+                </span>
+                {isValidUntilExpired() && (
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+                    Expiré
+                  </span>
+                )}
+              </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {quote.status !== QUOTE_STATUS.DRAFT && (
+                <UniversalPDFDownloader
+                  data={quote}
+                  type="quote"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                />
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -293,14 +323,16 @@ export default function QuoteMobileFullscreen({
               </Button>
             )}
 
-          <UniversalPDFDownloader
-            data={quote}
-            type="quote"
-            variant="outline"
-            className="w-full flex items-center justify-center"
-          >
-            Télécharger PDF
-          </UniversalPDFDownloader>
+          {quote.status === QUOTE_STATUS.DRAFT && (
+            <UniversalPDFDownloader
+              data={quote}
+              type="quote"
+              variant="outline"
+              className="w-full flex items-center justify-center"
+            >
+              Télécharger PDF
+            </UniversalPDFDownloader>
+          )}
         </div>
       </div>
 

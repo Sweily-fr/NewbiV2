@@ -218,8 +218,8 @@ export default function QuoteSidebar({
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-start justify-between p-6 border-b gap-4">
-            <div className="flex flex-col gap-2 flex-1 min-w-0">
+          <div className="flex items-center justify-between p-6 border-b">
+            <div className="flex flex-col gap-2">
               <h2 className="font-normal text-lg">
                 Devis {quote.number || "Brouillon"}
               </h2>
@@ -244,8 +244,8 @@ export default function QuoteSidebar({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Bouton PDF - visible sur mobile et desktop, masqué pour les brouillons */}
+            <div className="flex items-center gap-2">
+              {/* Bouton PDF - masqué pour les brouillons */}
               {quote.status !== QUOTE_STATUS.DRAFT && (
                 <UniversalPDFDownloader data={quote} type="quote" />
               )}
