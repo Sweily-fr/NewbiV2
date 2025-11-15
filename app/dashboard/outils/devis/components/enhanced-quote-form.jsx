@@ -73,6 +73,12 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -358,9 +364,19 @@ export default function EnhancedQuoteForm({
   };
 
   const isStep1Valid = () => {
-    // Déblocage du bouton pour permettre l'accès à l'étape 2 sans validation
-    return true;
-    // Ancienne validation : return data.client?.name && data.companyInfo?.name && data.issueDate;
+    // Bloquer si des erreurs de validation sont présentes
+    const hasValidationErrors = validationErrors && Object.keys(validationErrors).length > 0;
+    if (hasValidationErrors) return false;
+    
+    // Vérifier que les champs obligatoires sont remplis
+    const hasClient = data.client && data.client.id;
+    const hasIssueDate = data.issueDate;
+    const hasValidUntil = data.validUntil;
+    const hasNumber = data.number && data.number.trim() !== "";
+    const hasPrefix = data.prefix !== undefined; // Le préfixe peut être vide mais doit exister
+    
+    // Tous les champs obligatoires doivent être remplis
+    return hasClient && hasIssueDate && hasValidUntil && hasNumber && hasPrefix;
   };
 
   const isStep2Valid = () => {
@@ -460,14 +476,31 @@ export default function EnhancedQuoteForm({
 
             <div className="flex gap-3">
               {currentStep === 1 && (
-                <Button
-                  onClick={handleNextStep}
-                  disabled={!isStep1Valid() || !canEdit}
-                  className="px-6 text-sm font-normal"
-                >
-                  <span className="hidden sm:inline">Suivant</span>
-                  <ChevronRight className="h-4 w-4 sm:ml-2" />
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          onClick={handleNextStep}
+                          disabled={!isStep1Valid() || !canEdit}
+                          className="px-6 text-sm font-normal"
+                        >
+                          <span className="hidden sm:inline">Suivant</span>
+                          <ChevronRight className="h-4 w-4 sm:ml-2" />
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!isStep1Valid() && (
+                      <TooltipContent>
+                        <p className="text-xs">
+                          {validationErrors && Object.keys(validationErrors).length > 0
+                            ? "Corrigez les erreurs avant de continuer"
+                            : "Remplissez tous les champs obligatoires"}
+                        </p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               {currentStep === 2 && (
