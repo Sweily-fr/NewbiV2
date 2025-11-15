@@ -175,7 +175,9 @@ export default function QuoteMobileFullscreen({
                   variant="ghost"
                   size="sm"
                   className="h-8"
-                />
+                >
+                  Télécharger
+                </UniversalPDFDownloader>
               )}
               <Button
                 variant="ghost"
@@ -333,7 +335,9 @@ export default function QuoteMobileFullscreen({
               type="quote"
               variant="outline"
               size="sm"
-            />
+            >
+              Télécharger
+            </UniversalPDFDownloader>
           )}
         </div>
       </div>

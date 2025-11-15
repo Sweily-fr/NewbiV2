@@ -176,7 +176,9 @@ export default function InvoiceMobileFullscreen({
                   variant="ghost"
                   size="sm"
                   className="h-8"
-                />
+                >
+                  Télécharger
+                </UniversalPDFDownloaderWithFacturX>
               )}
               <Button
                 variant="ghost"
@@ -367,7 +369,9 @@ export default function InvoiceMobileFullscreen({
               enableFacturX={true}
               variant="outline"
               size="sm"
-            />
+            >
+              Télécharger
+            </UniversalPDFDownloaderWithFacturX>
           )}
         </div>
       </div>
