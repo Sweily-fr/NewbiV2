@@ -218,210 +218,521 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   };
 
   // Fonction pour générer le HTML du layout horizontal
+  // const generateHorizontalHTML = (
+  //   signatureData,
+  //   primaryColor,
+  //   facebookImageUrl = null,
+  //   photoSrc,
+  //   logoSrc
+  // ) => {
+  //   // Ensure facebookImageUrl is properly handled
+  //   const facebookImgUrl = facebookImageUrl || "";
+  //   const imageSize = signatureData.imageSize || 70;
+  //   const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
+  //   const separatorHorizontalWidth =
+  //     signatureData.separators?.horizontal?.width || 1;
+  //   const spacings = signatureData.spacings || {};
+  //   const logoSize = signatureData.logoSize || 60;
+  //   return `
+  //   <!DOCTYPE html>
+  //   <html>
+  //   <head>
+  //     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  //     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  //     <title>Signature Email</title>
+  //   </head>
+  //   <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
+  //     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px !important;">
+  //       <tr>
+  //         <!-- Photo de profil à gauche -->
+  //         ${
+  //           photoSrc
+  //             ? `
+  //           <td style="width: ${signatureData.columnWidths?.photo || 25}%; padding-right: ${spacings.photoBottom || 16}px; vertical-align: top;">
+  //             <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center/cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;"></div>
+  //           </td>
+  //         `
+  //             : ""
+  //         }
+          
+  //         <!-- Informations empilées verticalement à droite -->
+  //         <td style="width: ${signatureData.columnWidths?.content || 75}%; vertical-align: top;">
+  //           <!-- Nom et prénom -->
+  //           <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 16}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || "bold"}; font-style: ${signatureData.typography?.fullName?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || "none"}; color: ${signatureData.typography?.fullName?.color || primaryColor}; line-height: 1.2; margin-bottom: 2px; font-family: ${signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif"};">
+  //             ${signatureData.fullName || ""}
+  //           </div>
+            
+  //           <!-- Profession -->
+  //           ${
+  //             signatureData.position
+  //               ? `
+  //             <div style="font-size: ${signatureData.typography?.position?.fontSize || 14}px; font-weight: ${signatureData.typography?.position?.fontWeight || "normal"}; font-style: ${signatureData.typography?.position?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.position?.textDecoration || "none"}; color: ${signatureData.typography?.position?.color || "rgb(102,102,102)"}; margin-bottom: 4px; font-family: ${signatureData.typography?.position?.fontFamily || "Arial, sans-serif"};">
+  //               ${signatureData.position}
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           <!-- Contacts -->
+  //           ${
+  //             signatureData.phone
+  //               ? `
+  //             <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.phone?.fontSize || 12}px; font-weight: ${signatureData.typography?.phone?.fontWeight || "normal"}; font-style: ${signatureData.typography?.phone?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.phone?.textDecoration || "none"}; color: ${signatureData.typography?.phone?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.phone?.fontFamily || "Arial, sans-serif"};">
+  //               <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+  //               ${signatureData.phone}
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           ${
+  //             signatureData.mobile
+  //               ? `
+  //             <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.mobile?.fontSize || 12}px; font-weight: ${signatureData.typography?.mobile?.fontWeight || "normal"}; font-style: ${signatureData.typography?.mobile?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.mobile?.textDecoration || "none"}; color: ${signatureData.typography?.mobile?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.mobile?.fontFamily || "Arial, sans-serif"};">
+  //               <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+  //               ${signatureData.mobile}
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           ${
+  //             signatureData.email
+  //               ? `
+  //             <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.email?.fontSize || 12}px; font-weight: ${signatureData.typography?.email?.fontWeight || "normal"}; font-style: ${signatureData.typography?.email?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.email?.textDecoration || "none"}; color: ${signatureData.typography?.email?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.email?.fontFamily || "Arial, sans-serif"};">
+  //               <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+  //               <a href="mailto:${signatureData.email}" style="color: ${primaryColor}; text-decoration: none;">${signatureData.email}</a>
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           ${
+  //             signatureData.website
+  //               ? `
+  //             <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.website?.fontSize || 12}px; font-weight: ${signatureData.typography?.website?.fontWeight || "normal"}; font-style: ${signatureData.typography?.website?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.website?.textDecoration || "none"}; color: ${signatureData.typography?.website?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.website?.fontFamily || "Arial, sans-serif"};">
+  //               <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+  //               <a href="${signatureData.website.startsWith("http") ? signatureData.website : "https://" + signatureData.website}" target="_blank" style="color: ${primaryColor}; text-decoration: none;">${signatureData.website.replace(/^https?:\/\//, "")}</a>
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           ${
+  //             signatureData.address
+  //               ? `
+  //             <div style="display: flex; align-items: flex-start; font-size: ${signatureData.typography?.address?.fontSize || 12}px; font-weight: ${signatureData.typography?.address?.fontWeight || "normal"}; font-style: ${signatureData.typography?.address?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.address?.textDecoration || "none"}; color: ${signatureData.typography?.address?.color || "rgb(102,102,102)"}; margin-bottom: 4px; font-family: ${signatureData.typography?.address?.fontFamily || "Arial, sans-serif"};">
+  //               <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
+  //               ${signatureData.address.replace(/\n/g, "<br>")}
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           <!-- Logo/Nom entreprise -->
+  //           ${signatureData.companyName || logoSrc ? "" : ""}
+  //         </td>
+  //       </tr>
+        
+  //       <!-- Séparateur horizontal -->
+  //       ${
+  //         signatureData.separators?.horizontal?.enabled
+  //           ? `
+  //       <tr>
+  //         <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
+  //           <hr style="border: none; border-top: ${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || "#e0e0e0"}; border-radius: ${signatureData.separators?.horizontal?.radius || 0}px; margin: 0; width: 100%;" />
+  //         </td>
+  //       </tr>
+  //       `
+  //           : ""
+  //       }
+        
+  //       <!-- Logo entreprise après le séparateur -->
+  //       ${
+  //         logoSrc
+  //           ? `
+  //       <tr>
+  //         <td colspan="2" style="text-align: left;">
+  //           <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
+  //         </td>
+  //       </tr>
+  //       `
+  //           : ""
+  //       }
+        
+  //       <!-- Logos sociaux -->
+  //       ${
+  //         signatureData.socialLinks?.linkedin ||
+  //         signatureData.socialLinks?.facebook ||
+  //         signatureData.socialLinks?.twitter ||
+  //         signatureData.socialLinks?.instagram
+  //           ? `
+  //       <tr>
+  //         <td colspan="2" style="padding: ${spacings.separatorBottom || 15}px 0 0 0; text-align: left;">
+  //           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+  //             <tr>
+  //               ${
+  //                 signatureData.socialLinks?.linkedin
+  //                   ? `
+  //               <td style="padding-right: 8px;">
+  //                 <a href="${signatureData.socialLinks.linkedin}" target="_blank" rel="noopener noreferrer">
+  //                   ${
+  //                     signatureData.socialBackground?.enabled
+  //                       ? `
+  //                   <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
+  //                     <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   </div>
+  //                   `
+  //                       : `
+  //                   <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   `
+  //                   }
+  //                 </a>
+  //               </td>
+  //               `
+  //                   : ""
+  //               }
+  //               ${
+  //                 signatureData.socialLinks?.facebook
+  //                   ? `
+  //               <td style="padding-right: 8px;">
+  //                 <a href="${signatureData.socialLinks.facebook}" target="_blank" rel="noopener noreferrer">
+  //                   ${
+  //                     signatureData.socialBackground?.enabled
+  //                       ? `
+  //                   <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
+  //                     ${
+  //                       facebookImgUrl
+  //                         ? `
+  //                     <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                     `
+  //                         : `
+  //                     <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                     `
+  //                     }
+  //                   </div>
+  //                   `
+  //                       : `
+  //                   ${
+  //                     facebookImgUrl
+  //                       ? `
+  //                   <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   `
+  //                       : `
+  //                   <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   `
+  //                   }
+  //                   `
+  //                   }
+  //                 </a>
+  //               </td>
+  //               `
+  //                   : ""
+  //               }
+  //               ${
+  //                 signatureData.socialLinks?.twitter
+  //                   ? `
+  //               <td style="padding-right: 8px;">
+  //                 <a href="${signatureData.socialLinks.twitter}" target="_blank" rel="noopener noreferrer">
+  //                   ${
+  //                     signatureData.socialBackground?.enabled
+  //                       ? `
+  //                   <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
+  //                     <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png" alt="X (Twitter)" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   </div>
+  //                   `
+  //                       : `
+  //                   <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png" alt="X (Twitter)" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   `
+  //                   }
+  //                 </a>
+  //               </td>
+  //               `
+  //                   : ""
+  //               }
+  //               ${
+  //                 signatureData.socialLinks?.instagram
+  //                   ? `
+  //               <td>
+  //                 <a href="${signatureData.socialLinks.instagram}" target="_blank" rel="noopener noreferrer">
+  //                   ${
+  //                     signatureData.socialBackground?.enabled
+  //                       ? `
+  //                   <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
+  //                     <img src="https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   </div>
+  //                   `
+  //                       : `
+  //                   <img src="https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   `
+  //                   }
+  //                 </a>
+  //               </td>
+  //               `
+  //                   : ""
+  //               }
+  //             </tr>
+  //           </table>
+  //         </td>
+  //       </tr>
+  //       `
+  //           : ""
+  //       }
+  //     </table>
+  //   </body>
+  //   </html>
+  // `;
+  // };
+
   const generateHorizontalHTML = (
-    signatureData,
-    primaryColor,
-    facebookImageUrl = null,
-    photoSrc,
-    logoSrc
-  ) => {
-    // Ensure facebookImageUrl is properly handled
-    const facebookImgUrl = facebookImageUrl || "";
-    const imageSize = signatureData.imageSize || 70;
-    const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
-    const separatorHorizontalWidth =
-      signatureData.separators?.horizontal?.width || 1;
-    const spacings = signatureData.spacings || {};
-    const logoSize = signatureData.logoSize || 60;
+  signatureData,
+  primaryColor,
+  facebookImageUrl = null,
+  photoSrc,
+  logoSrc
+) => {
+  const facebookImgUrl = facebookImageUrl || "";
+  const imageSize = signatureData.imageSize || 70;
+  const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
+  const separatorHorizontalWidth =
+    signatureData.separators?.horizontal?.width || 1;
+  const separatorHorizontalColor =
+    signatureData.separators?.horizontal?.color || "#e0e0e0";
+  const spacings = signatureData.spacings || {};
+  const logoSize = signatureData.logoSize || 60;
+
+  const mainFontFamily =
+    signatureData.typography?.baseFontFamily || "Arial, sans-serif";
+
+  // Petit helper pour une ligne "icône + texte" compatible email
+  const renderIconRow = (iconUrl, alt, text, style = "") => {
+    if (!text) return "";
     return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Signature Email</title>
-    </head>
-    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
-      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px !important;">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin:0; padding:0;">
         <tr>
-          <!-- Photo de profil à gauche -->
+          <td style="padding:0; padding-right:8px; vertical-align:middle;">
+            <img src="${iconUrl}" alt="${alt}" width="12" height="12" style="display:block; border:0;" />
+          </td>
+          <td style="padding:0; vertical-align:middle; font-size:12px; color:#666666; font-family:${mainFontFamily}; ${style}">
+            ${text}
+          </td>
+        </tr>
+      </table>
+    `;
+  };
+
+  // Typo helpers
+  const fullNameStyle = `
+    font-size:${signatureData.typography?.fullName?.fontSize || 16}px;
+    font-weight:${signatureData.typography?.fullName?.fontWeight || "bold"};
+    font-style:${signatureData.typography?.fullName?.fontStyle || "normal"};
+    text-decoration:${signatureData.typography?.fullName?.textDecoration || "none"};
+    color:${signatureData.typography?.fullName?.color || primaryColor};
+    line-height:1.2;
+    font-family:${signatureData.typography?.fullName?.fontFamily || mainFontFamily};
+  `;
+
+  const positionStyle = `
+    font-size:${signatureData.typography?.position?.fontSize || 14}px;
+    font-weight:${signatureData.typography?.position?.fontWeight || "normal"};
+    font-style:${signatureData.typography?.position?.fontStyle || "normal"};
+    text-decoration:${signatureData.typography?.position?.textDecoration || "none"};
+    color:${signatureData.typography?.position?.color || "rgb(102,102,102)"};
+    font-family:${signatureData.typography?.position?.fontFamily || mainFontFamily};
+  `;
+
+  const contactBaseStyle = (key) => `
+    font-size:${signatureData.typography?.[key]?.fontSize || 12}px;
+    font-weight:${signatureData.typography?.[key]?.fontWeight || "normal"};
+    font-style:${signatureData.typography?.[key]?.fontStyle || "normal"};
+    text-decoration:${signatureData.typography?.[key]?.textDecoration || "none"};
+    color:${signatureData.typography?.[key]?.color || "rgb(102,102,102)"};
+    font-family:${signatureData.typography?.[key]?.fontFamily || mainFontFamily};
+  `;
+
+  return `
+<table cellpadding="0" cellspacing="0" border="0" width="500" style="border-collapse:collapse; max-width:500px;">
+  <tr>
+    ${
+      photoSrc
+        ? `
+    <!-- Colonne photo -->
+    <td style="width:${signatureData.columnWidths?.photo || 25}%; padding-right:${spacings.photoRight || 16}px; vertical-align:top;">
+      <img src="${photoSrc}"
+           alt="${signatureData.fullName || "Photo"}"
+           width="${imageSize}"
+           height="${imageSize}"
+           style="display:block; border-radius:${borderRadius}; border:0;" />
+    </td>
+    `
+        : ""
+    }
+
+    <!-- Colonne contenu -->
+    <td style="width:${signatureData.columnWidths?.content || 75}%; vertical-align:top;">
+
+      <!-- Nom -->
+      ${
+        signatureData.fullName
+          ? `
+      <div style="${fullNameStyle} margin:0; padding:0; margin-bottom:2px;">
+        ${signatureData.fullName}
+      </div>
+      `
+          : ""
+      }
+
+      <!-- Poste -->
+      ${
+        signatureData.position
+          ? `
+      <div style="${positionStyle} margin:0; padding:0; margin-bottom:4px;">
+        ${signatureData.position}
+      </div>
+      `
+          : ""
+      }
+
+      <!-- Coordonnées -->
+      <div style="margin:0; padding:0;">
+
+        ${
+          signatureData.phone
+            ? renderIconRow(
+                "https://cdn-icons-png.flaticon.com/512/126/126509.png",
+                "Téléphone",
+                signatureData.phone,
+                contactBaseStyle("phone")
+              )
+            : ""
+        }
+
+        ${
+          signatureData.mobile
+            ? renderIconRow(
+                "https://cdn-icons-png.flaticon.com/512/597/597177.png",
+                "Mobile",
+                signatureData.mobile,
+                contactBaseStyle("mobile")
+              )
+            : ""
+        }
+
+        ${
+          signatureData.email
+            ? renderIconRow(
+                "https://cdn-icons-png.flaticon.com/512/561/561127.png",
+                "Email",
+                `<a href="mailto:${signatureData.email}" style="color:inherit; text-decoration:none;">${signatureData.email}</a>`,
+                contactBaseStyle("email")
+              )
+            : ""
+        }
+
+        ${
+          signatureData.website
+            ? renderIconRow(
+                "https://cdn-icons-png.flaticon.com/512/535/535193.png",
+                "Site web",
+                `<a href="${signatureData.website}" style="color:${primaryColor}; text-decoration:none;" target="_blank" rel="noopener noreferrer">${signatureData.website}</a>`,
+                contactBaseStyle("website")
+              )
+            : ""
+        }
+
+        ${
+          signatureData.address
+            ? renderIconRow(
+                "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+                "Adresse",
+                signatureData.address,
+                contactBaseStyle("address")
+              )
+            : ""
+        }
+
+      </div>
+
+      <!-- Séparateur horizontal -->
+      ${
+        signatureData.separators?.horizontal?.enabled !== false
+          ? `
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse; margin-top:${spacings.separatorTop || 8}px; margin-bottom:${spacings.separatorBottom || 8}px;">
+        <tr>
+          <td style="border-top:${separatorHorizontalWidth}px solid ${separatorHorizontalColor}; font-size:0; line-height:0;">
+            &nbsp;
+          </td>
+        </tr>
+      </table>
+      `
+          : ""
+      }
+
+      <!-- Logo + réseaux sociaux -->
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+        <tr>
           ${
-            photoSrc
+            logoSrc
               ? `
-            <td style="width: ${signatureData.columnWidths?.photo || 25}%; padding-right: ${spacings.photoBottom || 16}px; vertical-align: top;">
-              <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center/cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;"></div>
-            </td>
+          <td style="padding:0; padding-right:${spacings.logoRight || 12}px; vertical-align:middle;">
+            <img src="${logoSrc}" alt="Logo" width="${logoSize}" style="display:block; border:0; height:auto;" />
+          </td>
           `
               : ""
           }
-          
-          <!-- Informations empilées verticalement à droite -->
-          <td style="width: ${signatureData.columnWidths?.content || 75}%; vertical-align: top;">
-            <!-- Nom et prénom -->
-            <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 16}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || "bold"}; font-style: ${signatureData.typography?.fullName?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || "none"}; color: ${signatureData.typography?.fullName?.color || primaryColor}; line-height: 1.2; margin-bottom: 2px; font-family: ${signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif"};">
-              ${signatureData.fullName || ""}
-            </div>
-            
-            <!-- Profession -->
-            ${
-              signatureData.position
-                ? `
-              <div style="font-size: ${signatureData.typography?.position?.fontSize || 14}px; font-weight: ${signatureData.typography?.position?.fontWeight || "normal"}; font-style: ${signatureData.typography?.position?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.position?.textDecoration || "none"}; color: ${signatureData.typography?.position?.color || "rgb(102,102,102)"}; margin-bottom: 4px; font-family: ${signatureData.typography?.position?.fontFamily || "Arial, sans-serif"};">
-                ${signatureData.position}
-              </div>
-            `
-                : ""
-            }
-            
-            <!-- Contacts -->
-            ${
-              signatureData.phone
-                ? `
-              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.phone?.fontSize || 12}px; font-weight: ${signatureData.typography?.phone?.fontWeight || "normal"}; font-style: ${signatureData.typography?.phone?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.phone?.textDecoration || "none"}; color: ${signatureData.typography?.phone?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.phone?.fontFamily || "Arial, sans-serif"};">
-                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                ${signatureData.phone}
-              </div>
-            `
-                : ""
-            }
-            
-            ${
-              signatureData.mobile
-                ? `
-              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.mobile?.fontSize || 12}px; font-weight: ${signatureData.typography?.mobile?.fontWeight || "normal"}; font-style: ${signatureData.typography?.mobile?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.mobile?.textDecoration || "none"}; color: ${signatureData.typography?.mobile?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.mobile?.fontFamily || "Arial, sans-serif"};">
-                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                ${signatureData.mobile}
-              </div>
-            `
-                : ""
-            }
-            
-            ${
-              signatureData.email
-                ? `
-              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.email?.fontSize || 12}px; font-weight: ${signatureData.typography?.email?.fontWeight || "normal"}; font-style: ${signatureData.typography?.email?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.email?.textDecoration || "none"}; color: ${signatureData.typography?.email?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.email?.fontFamily || "Arial, sans-serif"};">
-                <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                <a href="mailto:${signatureData.email}" style="color: ${primaryColor}; text-decoration: none;">${signatureData.email}</a>
-              </div>
-            `
-                : ""
-            }
-            
-            ${
-              signatureData.website
-                ? `
-              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.website?.fontSize || 12}px; font-weight: ${signatureData.typography?.website?.fontWeight || "normal"}; font-style: ${signatureData.typography?.website?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.website?.textDecoration || "none"}; color: ${signatureData.typography?.website?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.website?.fontFamily || "Arial, sans-serif"};">
-                <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                <a href="${signatureData.website.startsWith("http") ? signatureData.website : "https://" + signatureData.website}" target="_blank" style="color: ${primaryColor}; text-decoration: none;">${signatureData.website.replace(/^https?:\/\//, "")}</a>
-              </div>
-            `
-                : ""
-            }
-            
-            ${
-              signatureData.address
-                ? `
-              <div style="display: flex; align-items: flex-start; font-size: ${signatureData.typography?.address?.fontSize || 12}px; font-weight: ${signatureData.typography?.address?.fontWeight || "normal"}; font-style: ${signatureData.typography?.address?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.address?.textDecoration || "none"}; color: ${signatureData.typography?.address?.color || "rgb(102,102,102)"}; margin-bottom: 4px; font-family: ${signatureData.typography?.address?.fontFamily || "Arial, sans-serif"};">
-                <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
-                ${signatureData.address.replace(/\n/g, "<br>")}
-              </div>
-            `
-                : ""
-            }
-            
-            <!-- Logo/Nom entreprise -->
-            ${signatureData.companyName || logoSrc ? "" : ""}
-          </td>
-        </tr>
-        
-        <!-- Séparateur horizontal -->
-        ${
-          signatureData.separators?.horizontal?.enabled
-            ? `
-        <tr>
-          <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
-            <hr style="border: none; border-top: ${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || "#e0e0e0"}; border-radius: ${signatureData.separators?.horizontal?.radius || 0}px; margin: 0; width: 100%;" />
-          </td>
-        </tr>
-        `
-            : ""
-        }
-        
-        <!-- Logo entreprise après le séparateur -->
-        ${
-          logoSrc
-            ? `
-        <tr>
-          <td colspan="2" style="text-align: left;">
-            <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
-          </td>
-        </tr>
-        `
-            : ""
-        }
-        
-        <!-- Logos sociaux -->
-        ${
-          signatureData.socialLinks?.linkedin ||
-          signatureData.socialLinks?.facebook ||
-          signatureData.socialLinks?.twitter ||
-          signatureData.socialLinks?.instagram
-            ? `
-        <tr>
-          <td colspan="2" style="padding: ${spacings.separatorBottom || 15}px 0 0 0; text-align: left;">
-            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+
+          ${
+            signatureData.socialLinks
+              ? `
+          <td style="padding:0; vertical-align:middle;">
+            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
               <tr>
                 ${
-                  signatureData.socialLinks?.linkedin
+                  signatureData.socialLinks.facebook
                     ? `
-                <td style="padding-right: 8px;">
-                  <a href="${signatureData.socialLinks.linkedin}" target="_blank" rel="noopener noreferrer">
-                    ${
-                      signatureData.socialBackground?.enabled
-                        ? `
-                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
-                      <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    </div>
-                    `
-                        : `
-                    <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    `
-                    }
-                  </a>
-                </td>
-                `
-                    : ""
-                }
-                ${
-                  signatureData.socialLinks?.facebook
-                    ? `
-                <td style="padding-right: 8px;">
+                <td style="padding:0; padding-right:8px;">
                   <a href="${signatureData.socialLinks.facebook}" target="_blank" rel="noopener noreferrer">
                     ${
                       signatureData.socialBackground?.enabled
                         ? `
-                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
-                      ${
-                        facebookImgUrl
-                          ? `
-                      <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                      `
-                          : `
-                      <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                      `
-                      }
-                    </div>
+                    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td style="background-color:${
+                          signatureData.socialBackground?.color || "#f3f4f6"
+                        }; border-radius:${
+                            signatureData.socialBackground?.shape === "round"
+                              ? "50%"
+                              : "4px"
+                          }; padding:6px;">
+                          <img src="${
+                            facebookImgUrl ||
+                            `https://img.icons8.com/color/${
+                              signatureData.socialSize || 24
+                            }/facebook.png`
+                          }"
+                               alt="Facebook"
+                               width="${
+                                 signatureData.socialSize || 24
+                               }"
+                               height="${
+                                 signatureData.socialSize || 24
+                               }"
+                               style="display:block; border:0;" />
+                        </td>
+                      </tr>
+                    </table>
                     `
                         : `
-                    ${
-                      facebookImgUrl
-                        ? `
-                    <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    `
-                        : `
-                    <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    `
-                    }
+                    <img src="${
+                      facebookImgUrl ||
+                      `https://img.icons8.com/color/${
+                        signatureData.socialSize || 24
+                      }/facebook.png`
+                    }"
+                         alt="Facebook"
+                         width="${signatureData.socialSize || 24}"
+                         height="${signatureData.socialSize || 24}"
+                         style="display:block; border:0;" />
                     `
                     }
                   </a>
@@ -429,20 +740,47 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
                 `
                     : ""
                 }
+
                 ${
-                  signatureData.socialLinks?.twitter
+                  signatureData.socialLinks.twitter
                     ? `
-                <td style="padding-right: 8px;">
+                <td style="padding:0; padding-right:8px;">
                   <a href="${signatureData.socialLinks.twitter}" target="_blank" rel="noopener noreferrer">
                     ${
                       signatureData.socialBackground?.enabled
                         ? `
-                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
-                      <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png" alt="X (Twitter)" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    </div>
+                    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td style="background-color:${
+                          signatureData.socialBackground?.color || "#f3f4f6"
+                        }; border-radius:${
+                            signatureData.socialBackground?.shape === "round"
+                              ? "50%"
+                              : "4px"
+                          }; padding:6px;">
+                          <img src="https://img.icons8.com/color/${
+                            signatureData.socialSize || 24
+                          }/x.png"
+                               alt="X (Twitter)"
+                               width="${
+                                 signatureData.socialSize || 24
+                               }"
+                               height="${
+                                 signatureData.socialSize || 24
+                               }"
+                               style="display:block; border:0;" />
+                        </td>
+                      </tr>
+                    </table>
                     `
                         : `
-                    <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png" alt="X (Twitter)" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                    <img src="https://img.icons8.com/color/${
+                      signatureData.socialSize || 24
+                    }/x.png"
+                         alt="X (Twitter)"
+                         width="${signatureData.socialSize || 24}"
+                         height="${signatureData.socialSize || 24}"
+                         style="display:block; border:0;" />
                     `
                     }
                   </a>
@@ -450,20 +788,47 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
                 `
                     : ""
                 }
+
                 ${
-                  signatureData.socialLinks?.instagram
+                  signatureData.socialLinks.instagram
                     ? `
-                <td>
+                <td style="padding:0;">
                   <a href="${signatureData.socialLinks.instagram}" target="_blank" rel="noopener noreferrer">
                     ${
                       signatureData.socialBackground?.enabled
                         ? `
-                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
-                      <img src="https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    </div>
+                    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td style="background-color:${
+                          signatureData.socialBackground?.color || "#f3f4f6"
+                        }; border-radius:${
+                            signatureData.socialBackground?.shape === "round"
+                              ? "50%"
+                              : "4px"
+                          }; padding:6px;">
+                          <img src="https://img.icons8.com/fluency/${
+                            signatureData.socialSize || 24
+                          }/instagram-new.png"
+                               alt="Instagram"
+                               width="${
+                                 signatureData.socialSize || 24
+                               }"
+                               height="${
+                                 signatureData.socialSize || 24
+                               }"
+                               style="display:block; border:0;" />
+                        </td>
+                      </tr>
+                    </table>
                     `
                         : `
-                    <img src="https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+                    <img src="https://img.icons8.com/fluency/${
+                      signatureData.socialSize || 24
+                    }/instagram-new.png"
+                         alt="Instagram"
+                         width="${signatureData.socialSize || 24}"
+                         height="${signatureData.socialSize || 24}"
+                         style="display:block; border:0;" />
                     `
                     }
                   </a>
@@ -474,15 +839,18 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
               </tr>
             </table>
           </td>
+          `
+              : ""
+          }
         </tr>
-        `
-            : ""
-        }
       </table>
-    </body>
-    </html>
+
+    </td>
+  </tr>
+</table>
   `;
-  };
+};
+
 
   // Fonction pour copier la signature dans le presse-papier
   const handleCopySignature = async () => {
