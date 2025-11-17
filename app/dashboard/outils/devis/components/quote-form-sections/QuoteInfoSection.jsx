@@ -81,6 +81,14 @@ export default function QuoteInfoSection({
 
   // Simple state for selected period without complex calculations
   const [selectedPeriod, setSelectedPeriod] = useState(null);
+  
+  // Flag pour éviter la validation au premier montage
+  const isInitialMount = React.useRef(true);
+
+  // Marquer que le montage initial est terminé après le premier rendu
+  React.useEffect(() => {
+    isInitialMount.current = false;
+  }, []);
 
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {
@@ -320,6 +328,11 @@ export default function QuoteInfoSection({
                 disabled={!canEdit}
                 readOnly={data.number && data.number.startsWith("DRAFT-")}
                 onBlur={(e) => {
+                  // Ne pas valider au montage initial pour éviter l'affichage de la bannière
+                  if (isInitialMount.current) {
+                    return;
+                  }
+                  
                   // Don't format DRAFT- numbers
                   if (e.target.value && e.target.value.startsWith("DRAFT-")) {
                     return;

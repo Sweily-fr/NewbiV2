@@ -75,6 +75,13 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
   
   // Flag pour savoir si le préfixe a déjà été initialisé
   const prefixInitialized = React.useRef(false);
+  // Flag pour éviter la validation au premier montage
+  const isInitialMount = React.useRef(true);
+
+  // Marquer que le montage initial est terminé après le premier rendu
+  React.useEffect(() => {
+    isInitialMount.current = false;
+  }, []);
 
   // Set default invoice number when nextInvoiceNumber is available
   React.useEffect(() => {
@@ -318,6 +325,11 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 }
                 disabled={!canEdit || isLoadingInvoiceNumber}
                 onBlur={async (e) => {
+                  // Ne pas valider au montage initial pour éviter l'affichage de la bannière
+                  if (isInitialMount.current) {
+                    return;
+                  }
+                  
                   // Format with leading zeros when leaving the field
                   let finalNumber;
                   if (e.target.value) {
