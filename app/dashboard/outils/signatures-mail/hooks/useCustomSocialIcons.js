@@ -167,12 +167,14 @@ export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
       return signatureData.customSocialIcons[platform];
     }
     
-    // URLs par défaut de Cloudflare
+    // URLs par défaut de Cloudflare R2 (social icons)
     const defaultUrls = {
-      facebook: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/facebook.svg',
-      instagram: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/instagram.svg',
-      linkedin: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/linkedin.svg',
-      x: 'https://pub-4ab56834c87d44b9a4fee1c84196b095.r2.dev/x.svg',
+      linkedin: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/linkedin/linkedin.png",
+      facebook: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/facebook/facebook.png",
+      instagram: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram.png",
+      x: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/twitter/twitter.png",
+      youtube: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/youtube/youtube.png",
+      github: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/github/github.png",
     };
     
     return defaultUrls[platform] || '';

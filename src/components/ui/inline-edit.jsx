@@ -21,6 +21,7 @@ export function InlineEdit({
   disabled = false,
   maxLength,
   validation,
+  style = {},
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
@@ -179,15 +180,17 @@ export function InlineEdit({
           style={{
             width: inputWidth,
             minWidth: "60px",
-            fontSize: "inherit",
-            fontFamily: "inherit",
-            fontWeight: "inherit",
-            color: "inherit",
+            fontSize: style.fontSize || "inherit",
+            fontFamily: style.fontFamily || "inherit",
+            fontWeight: style.fontWeight || "inherit",
+            color: style.color || "inherit",
             lineHeight: "inherit",
             verticalAlign: "baseline",
             display: "inline-block",
             outline: "none",
             border: "1px solid",
+            fontStyle: style.fontStyle || "inherit",
+            textDecoration: style.textDecoration || "inherit",
           }}
           maxLength={maxLength}
           rows={multiline ? 3 : undefined}
@@ -213,12 +216,12 @@ export function InlineEdit({
       `}
       style={{
         margin: "0",
-        padding: "2px 4px",
+        padding: "0",
         border: "none",
         outline: "none",
         background: "transparent",
-        borderRadius: "4px",
         transition: "all 0.15s ease-in-out",
+        ...style,
       }}
       onMouseEnter={(e) => {
         if (!disabled && !isEditing) {

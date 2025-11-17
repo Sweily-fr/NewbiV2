@@ -6,7 +6,7 @@ import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Card, CardContent } from "@/src/components/ui/card";
-import SignatureTable from "./components/signature-table";
+import SignatureTable from "./components/table/signature-table";
 import { useRouter } from "next/navigation";
 import { gql } from "@apollo/client";
 

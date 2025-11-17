@@ -312,11 +312,8 @@ export const useSignatures = () => {
   // Subscription pour les mises à jour temps réel
   useSubscription(SIGNATURE_UPDATED_SUBSCRIPTION, {
     onData: ({ data: subscriptionData }) => {
-      console.log('📨 [Subscription] Événement reçu:', subscriptionData?.data?.signatureUpdated);
-      
       if (subscriptionData?.data?.signatureUpdated) {
         const { type, signature, signatureId } = subscriptionData.data.signatureUpdated;
-        console.log(`🔔 [Subscription] Type: ${type}, SignatureId: ${signatureId}`);
 
         try {
           const cacheData = apolloClient.cache.readQuery({
@@ -331,19 +328,16 @@ export const useSignatures = () => {
               newSignatures = cacheData.getMyEmailSignatures.filter(
                 (sig) => sig.id !== signatureId
               );
-              console.log(`✅ [Subscription] Signature ${signatureId} supprimée du cache`);
               toast.info('Signature supprimée');
             } else if (type === 'CREATED' && signature) {
               // Ajouter la nouvelle signature au cache
               newSignatures = [signature, ...cacheData.getMyEmailSignatures];
-              console.log(`✅ [Subscription] Nouvelle signature ajoutée au cache`);
               toast.info('Nouvelle signature créée');
             } else if (type === 'UPDATED' && signature) {
               // Mettre à jour la signature dans le cache
               newSignatures = cacheData.getMyEmailSignatures.map((sig) =>
                 sig.id === signature.id ? signature : sig
               );
-              console.log(`✅ [Subscription] Signature ${signature.id} mise à jour`);
               toast.info('Signature mise à jour');
             } else {
               return;

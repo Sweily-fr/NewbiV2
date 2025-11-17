@@ -147,7 +147,7 @@ function DashboardContent({ children }) {
           </div>
         </div>
       </SidebarInset>
-      {isSignaturePage && signatureContextData && (
+      {isSignaturePage && signatureContextData && signatureContextData.isEditMode && (
         <SignatureSidebar
           signatureData={signatureContextData.signatureData}
           updateSignatureData={signatureContextData.updateSignatureData}

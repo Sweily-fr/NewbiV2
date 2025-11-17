@@ -45,12 +45,14 @@ const GET_EMAIL_SIGNATURE = gql`
       nameSpacing
       nameAlignment
       layout
+      orientation
       columnWidths {
         photo
         content
       }
       photo
       photoKey
+      photoVisible
       logo
       logoKey
       imageSize
@@ -221,6 +223,7 @@ function SignatureProviderContent({ children }) {
       companyName: "",
       website: "https://www.newbi.fr",
       address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
+      contactElementsOrder: [],
       // Réseaux sociaux
       socialNetworks: {
         facebook: "",
@@ -253,10 +256,11 @@ function SignatureProviderContent({ children }) {
       // Images Cloudflare
       photo: null, // URL de la photo de profil
       photoKey: null, // Clé Cloudflare de la photo de profil
+      photoVisible: true, // Visibilité de la photo (par défaut visible)
       logo: null, // URL du logo d'entreprise
       logoKey: null, // Clé Cloudflare du logo d'entreprise
       // Taille de l'image de profil (en pixels)
-      imageSize: 80, // Taille par défaut de l'image de profil
+      imageSize: 70, // Taille par défaut de l'image de profil
       // Forme de l'image de profil (round ou square)
       imageShape: "round", // Forme par défaut : ronde
       // Configuration des séparateurs
@@ -397,6 +401,11 @@ function SignatureProviderContent({ children }) {
       const mergedData = {
         ...defaultSignatureData,
         ...fetchedSignature,
+        contactElementsOrder:
+          fetchedSignature.contactElementsOrder ||
+          defaultSignatureData.contactElementsOrder,
+        // S'assurer que photoVisible a toujours une valeur booléenne
+        photoVisible: fetchedSignature.photoVisible !== undefined ? fetchedSignature.photoVisible : defaultSignatureData.photoVisible,
         orientation: fetchedSignature.orientation || defaultSignatureData.orientation,
         colors: {
           ...defaultSignatureData.colors,
@@ -507,6 +516,8 @@ function SignatureProviderContent({ children }) {
           const mergedData = {
             ...defaultSignatureData,
             ...parsedData,
+            contactElementsOrder:
+              parsedData.contactElementsOrder || defaultSignatureData.contactElementsOrder,
             // S'assurer que les objets imbriqués sont bien mergés
             colors: {
               ...defaultSignatureData.colors,
@@ -766,6 +777,8 @@ function SignatureProviderContent({ children }) {
     const mergedData = {
       ...defaultSignatureData,
       ...editData,
+      contactElementsOrder:
+        editData.contactElementsOrder || defaultSignatureData.contactElementsOrder,
       colors: {
         ...defaultSignatureData.colors,
         ...(editData.colors || {}),

@@ -13,38 +13,20 @@ import { toast } from "@/src/components/ui/sonner";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { useSignatureGenerator } from "../hooks/useSignatureGenerator";
 import { useCustomSocialIcons } from "../hooks/useCustomSocialIcons";
-import { InlineEdit } from "@/src/components/ui/inline-edit";
-import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
 import { useImageUpload } from "../hooks/useImageUpload";
 import "@/src/styles/signature-text-selection.css";
-import HorizontalSignature from "../components/HorizontalSignature";
-import VerticalSignature from "../components/VerticalSignature";
-import TemplateObama from "../components/templates/TemplateObama";
-import TemplateRangan from "../components/templates/TemplateRangan";
-import TemplateShah from "../components/templates/TemplateShah";
-import TemplateCustom from "../components/templates/TemplateCustom";
-import TemplateSelector from "../components/TemplateSelector";
-// CustomSignatureBuilder supprimé - édition maintenant dans le panneau de droite
+import HorizontalSignature from "../components/preview/HorizontalSignature";
+import VerticalSignature from "../components/preview/VerticalSignature";
+import OrientationSelector from "../components/OrientationSelector";
+import { SignatureSidebar } from "@/src/components/signature-sidebar";
 
 // Aperçu de l'email avec édition inline
 const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   const { updateSignatureData } = useSignatureData();
   const { generateHTML: generateSignatureHTMLFromHook } = useSignatureGenerator();
-  const { regenerateWithPermanentId } = useCustomSocialIcons(
-    signatureData,
-    updateSignatureData
-  );
-  const { uploadImageFile, getImageUrl, isUploading, error } = useImageUpload();
+  const { uploadImageFile } = useImageUpload();
   const [isCopying, setIsCopying] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  const [imageStatus, setImageStatus] = useState({
-    photo: "idle",
-    logo: "idle",
-  });
-  const [convertedImages, setConvertedImages] = useState({
-    photo: null,
-    logo: null,
-  });
 
   // Cache pour éviter les conversions répétées
   const imageCache = useRef(new Map());
@@ -197,1000 +179,1182 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
     }
   };
 
-  // Fonction pour générer le HTML de la signature
-  const generateSignatureHTML = async (facebookImageUrl = null) => {
-    const primaryColor = signatureData.primaryColor || "#171717";
+  // plus de gestion d'ordre dynamique des contacts ici
 
-    try {
-      // Utiliser directement les URLs des images (plus simple et efficace)
-      const photoSrc = signatureData.photo;
-      const logoSrc = signatureData.logo;
+  // Fonction pour générer le HTML du layout horizontal
+  // const generateHorizontalHTML = (
+  //   signatureData,
+  //   primaryColor,
+  //   facebookImageUrl = null,
+  //   photoSrc,
+  //   logoSrc
+  // ) => {
+  //   // Ensure facebookImageUrl is properly handled
+  //   const facebookImgUrl = facebookImageUrl || "";
+  //   const imageSize = signatureData.imageSize || 70;
+  //   const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
+  //   const separatorHorizontalWidth =
+  //     signatureData.separators?.horizontal?.width || 1;
+  //   const spacings = signatureData.spacings || {};
+  //   const logoSize = signatureData.logoSize || 60;
+  //   return `
+  //   <!DOCTYPE html>
+  //   <html>
+  //   <head>
+  //     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  //     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  //     <title>Signature Email</title>
+  //   </head>
+  //   <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
+  //     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px !important;">
+  //       <tr>
+  //         <!-- Photo de profil à gauche -->
+  //         ${
+  //           photoSrc
+  //             ? `
+  //           <td style="width: ${signatureData.columnWidths?.photo || 25}%; padding-right: ${spacings.photoBottom || 16}px; vertical-align: top;">
+  //             <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center/cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;"></div>
+  //           </td>
+  //         `
+  //             : ""
+  //         }
+          
+  //         <!-- Informations empilées verticalement à droite -->
+  //         <td style="width: ${signatureData.columnWidths?.content || 75}%; vertical-align: top;">
+  //           <!-- Nom et prénom -->
+  //           <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 16}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || "bold"}; font-style: ${signatureData.typography?.fullName?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || "none"}; color: ${signatureData.typography?.fullName?.color || primaryColor}; line-height: 1.2; margin-bottom: 2px; font-family: ${signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif"};">
+  //             ${signatureData.fullName || ""}
+  //           </div>
+            
+  //           <!-- Profession -->
+  //           ${
+  //             signatureData.position
+  //               ? `
+  //             <div style="font-size: ${signatureData.typography?.position?.fontSize || 14}px; font-weight: ${signatureData.typography?.position?.fontWeight || "normal"}; font-style: ${signatureData.typography?.position?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.position?.textDecoration || "none"}; color: ${signatureData.typography?.position?.color || "rgb(102,102,102)"}; margin-bottom: 4px; font-family: ${signatureData.typography?.position?.fontFamily || "Arial, sans-serif"};">
+  //               ${signatureData.position}
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           <!-- Contacts -->
+  //           ${
+  //             signatureData.phone
+  //               ? `
+  //             <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.phone?.fontSize || 12}px; font-weight: ${signatureData.typography?.phone?.fontWeight || "normal"}; font-style: ${signatureData.typography?.phone?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.phone?.textDecoration || "none"}; color: ${signatureData.typography?.phone?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.phone?.fontFamily || "Arial, sans-serif"};">
+  //               <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+  //               ${signatureData.phone}
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           ${
+  //             signatureData.mobile
+  //               ? `
+  //             <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.mobile?.fontSize || 12}px; font-weight: ${signatureData.typography?.mobile?.fontWeight || "normal"}; font-style: ${signatureData.typography?.mobile?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.mobile?.textDecoration || "none"}; color: ${signatureData.typography?.mobile?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.mobile?.fontFamily || "Arial, sans-serif"};">
+  //               <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+  //               ${signatureData.mobile}
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           ${
+  //             signatureData.email
+  //               ? `
+  //             <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.email?.fontSize || 12}px; font-weight: ${signatureData.typography?.email?.fontWeight || "normal"}; font-style: ${signatureData.typography?.email?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.email?.textDecoration || "none"}; color: ${signatureData.typography?.email?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.email?.fontFamily || "Arial, sans-serif"};">
+  //               <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+  //               <a href="mailto:${signatureData.email}" style="color: ${primaryColor}; text-decoration: none;">${signatureData.email}</a>
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           ${
+  //             signatureData.website
+  //               ? `
+  //             <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.website?.fontSize || 12}px; font-weight: ${signatureData.typography?.website?.fontWeight || "normal"}; font-style: ${signatureData.typography?.website?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.website?.textDecoration || "none"}; color: ${signatureData.typography?.website?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.website?.fontFamily || "Arial, sans-serif"};">
+  //               <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
+  //               <a href="${signatureData.website.startsWith("http") ? signatureData.website : "https://" + signatureData.website}" target="_blank" style="color: ${primaryColor}; text-decoration: none;">${signatureData.website.replace(/^https?:\/\//, "")}</a>
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           ${
+  //             signatureData.address
+  //               ? `
+  //             <div style="display: flex; align-items: flex-start; font-size: ${signatureData.typography?.address?.fontSize || 12}px; font-weight: ${signatureData.typography?.address?.fontWeight || "normal"}; font-style: ${signatureData.typography?.address?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.address?.textDecoration || "none"}; color: ${signatureData.typography?.address?.color || "rgb(102,102,102)"}; margin-bottom: 4px; font-family: ${signatureData.typography?.address?.fontFamily || "Arial, sans-serif"};">
+  //               <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
+  //               ${signatureData.address.replace(/\n/g, "<br>")}
+  //             </div>
+  //           `
+  //               : ""
+  //           }
+            
+  //           <!-- Logo/Nom entreprise -->
+  //           ${signatureData.companyName || logoSrc ? "" : ""}
+  //         </td>
+  //       </tr>
+        
+  //       <!-- Séparateur horizontal -->
+  //       ${
+  //         signatureData.separators?.horizontal?.enabled
+  //           ? `
+  //       <tr>
+  //         <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
+  //           <hr style="border: none; border-top: ${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || "#e0e0e0"}; border-radius: ${signatureData.separators?.horizontal?.radius || 0}px; margin: 0; width: 100%;" />
+  //         </td>
+  //       </tr>
+  //       `
+  //           : ""
+  //       }
+        
+  //       <!-- Logo entreprise après le séparateur -->
+  //       ${
+  //         logoSrc
+  //           ? `
+  //       <tr>
+  //         <td colspan="2" style="text-align: left;">
+  //           <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
+  //         </td>
+  //       </tr>
+  //       `
+  //           : ""
+  //       }
+        
+  //       <!-- Logos sociaux -->
+  //       ${
+  //         signatureData.socialLinks?.linkedin ||
+  //         signatureData.socialLinks?.facebook ||
+  //         signatureData.socialLinks?.twitter ||
+  //         signatureData.socialLinks?.instagram
+  //           ? `
+  //       <tr>
+  //         <td colspan="2" style="padding: ${spacings.separatorBottom || 15}px 0 0 0; text-align: left;">
+  //           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+  //             <tr>
+  //               ${
+  //                 signatureData.socialLinks?.linkedin
+  //                   ? `
+  //               <td style="padding-right: 8px;">
+  //                 <a href="${signatureData.socialLinks.linkedin}" target="_blank" rel="noopener noreferrer">
+  //                   ${
+  //                     signatureData.socialBackground?.enabled
+  //                       ? `
+  //                   <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
+  //                     <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   </div>
+  //                   `
+  //                       : `
+  //                   <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   `
+  //                   }
+  //                 </a>
+  //               </td>
+  //               `
+  //                   : ""
+  //               }
+  //               ${
+  //                 signatureData.socialLinks?.facebook
+  //                   ? `
+  //               <td style="padding-right: 8px;">
+  //                 <a href="${signatureData.socialLinks.facebook}" target="_blank" rel="noopener noreferrer">
+  //                   ${
+  //                     signatureData.socialBackground?.enabled
+  //                       ? `
+  //                   <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
+  //                     ${
+  //                       facebookImgUrl
+  //                         ? `
+  //                     <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                     `
+  //                         : `
+  //                     <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                     `
+  //                     }
+  //                   </div>
+  //                   `
+  //                       : `
+  //                   ${
+  //                     facebookImgUrl
+  //                       ? `
+  //                   <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   `
+  //                       : `
+  //                   <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   `
+  //                   }
+  //                   `
+  //                   }
+  //                 </a>
+  //               </td>
+  //               `
+  //                   : ""
+  //               }
+  //               ${
+  //                 signatureData.socialLinks?.twitter
+  //                   ? `
+  //               <td style="padding-right: 8px;">
+  //                 <a href="${signatureData.socialLinks.twitter}" target="_blank" rel="noopener noreferrer">
+  //                   ${
+  //                     signatureData.socialBackground?.enabled
+  //                       ? `
+  //                   <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
+  //                     <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png" alt="X (Twitter)" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   </div>
+  //                   `
+  //                       : `
+  //                   <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png" alt="X (Twitter)" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   `
+  //                   }
+  //                 </a>
+  //               </td>
+  //               `
+  //                   : ""
+  //               }
+  //               ${
+  //                 signatureData.socialLinks?.instagram
+  //                   ? `
+  //               <td>
+  //                 <a href="${signatureData.socialLinks.instagram}" target="_blank" rel="noopener noreferrer">
+  //                   ${
+  //                     signatureData.socialBackground?.enabled
+  //                       ? `
+  //                   <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
+  //                     <img src="https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   </div>
+  //                   `
+  //                       : `
+  //                   <img src="https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
+  //                   `
+  //                   }
+  //                 </a>
+  //               </td>
+  //               `
+  //                   : ""
+  //               }
+  //             </tr>
+  //           </table>
+  //         </td>
+  //       </tr>
+  //       `
+  //           : ""
+  //       }
+  //     </table>
+  //   </body>
+  //   </html>
+  // `;
+  // };
 
-      // Générer le HTML selon l'orientation sélectionnée
-      const orientation = signatureData.orientation || "vertical";
-      let htmlSignature;
+//   const generateHorizontalHTML = (
+//   signatureData,
+//   primaryColor,
+//   facebookImageUrl = null,
+//   photoSrc,
+//   logoSrc
+// ) => {
+//   const facebookImgUrl = facebookImageUrl || "";
+//   const imageSize = signatureData.imageSize || 70;
+//   const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
+//   const separatorHorizontalWidth =
+//     signatureData.separators?.horizontal?.width || 1;
+//   const separatorHorizontalColor =
+//     signatureData.separators?.horizontal?.color || "#e0e0e0";
+//   const spacings = signatureData.spacings || {};
+//   const logoSize = signatureData.logoSize || 60;
 
-      // Génération HTML basée sur l'orientation uniquement
-      if (orientation === "horizontal") {
-        htmlSignature = generateHorizontalHTML(
-          signatureData,
-          primaryColor,
-          facebookImageUrl,
-          photoSrc,
-          logoSrc
-        );
-      } else {
-        htmlSignature = generateVerticalHTML(
-          signatureData,
-          primaryColor,
-          facebookImageUrl,
-          photoSrc,
-          logoSrc
-        );
-      }
+//   const mainFontFamily =
+//     signatureData.typography?.baseFontFamily || "Arial, sans-serif";
 
-      return htmlSignature;
-    } catch (error) {
-      console.error("❌ Erreur lors de la génération HTML:", error);
-      throw error;
-    }
+//   // Petit helper pour une ligne "icône + texte" compatible email
+//   const renderIconRow = (iconUrl, alt, text, style = "") => {
+//     if (!text) return "";
+//     return `
+//       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin:0; padding:0;">
+//         <tr>
+//           <td style="padding:0; padding-right:8px; vertical-align:middle;">
+//             <img src="${iconUrl}" alt="${alt}" width="12" height="12" style="display:block; border:0;" />
+//           </td>
+//           <td style="padding:0; vertical-align:middle; font-size:12px; color:#666666; font-family:${mainFontFamily}; ${style}">
+//             ${text}
+//           </td>
+//         </tr>
+//       </table>
+//     `;
+//   };
+
+//   // Typo helpers
+//   const fullNameStyle = `
+//     font-size:${signatureData.typography?.fullName?.fontSize || 16}px;
+//     font-weight:${signatureData.typography?.fullName?.fontWeight || "bold"};
+//     font-style:${signatureData.typography?.fullName?.fontStyle || "normal"};
+//     text-decoration:${signatureData.typography?.fullName?.textDecoration || "none"};
+//     color:${signatureData.typography?.fullName?.color || primaryColor};
+//     line-height:1.2;
+//     font-family:${signatureData.typography?.fullName?.fontFamily || mainFontFamily};
+//   `;
+
+//   const positionStyle = `
+//     font-size:${signatureData.typography?.position?.fontSize || 14}px;
+//     font-weight:${signatureData.typography?.position?.fontWeight || "normal"};
+//     font-style:${signatureData.typography?.position?.fontStyle || "normal"};
+//     text-decoration:${signatureData.typography?.position?.textDecoration || "none"};
+//     color:${signatureData.typography?.position?.color || "rgb(102,102,102)"};
+//     font-family:${signatureData.typography?.position?.fontFamily || mainFontFamily};
+//   `;
+
+//   const contactBaseStyle = (key) => `
+//     font-size:${signatureData.typography?.[key]?.fontSize || 12}px;
+//     font-weight:${signatureData.typography?.[key]?.fontWeight || "normal"};
+//     font-style:${signatureData.typography?.[key]?.fontStyle || "normal"};
+//     text-decoration:${signatureData.typography?.[key]?.textDecoration || "none"};
+//     color:${signatureData.typography?.[key]?.color || "rgb(102,102,102)"};
+//     font-family:${signatureData.typography?.[key]?.fontFamily || mainFontFamily};
+//   `;
+
+//   return `
+// <table cellpadding="0" cellspacing="0" border="0" width="500" style="border-collapse:collapse; max-width:500px;">
+//   <tr>
+//     ${
+//       photoSrc
+//         ? `
+//     <!-- Colonne photo -->
+//     <td style="width:${signatureData.columnWidths?.photo || 25}%; padding-right:${spacings.photoRight || 16}px; vertical-align:top;">
+//       <img src="${photoSrc}"
+//            alt="${signatureData.fullName || "Photo"}"
+//            width="${imageSize}"
+//            height="${imageSize}"
+//            style="display:block; border-radius:${borderRadius}; border:0;" />
+//     </td>
+//     `
+//         : ""
+//     }
+
+//     <!-- Colonne contenu -->
+//     <td style="width:${signatureData.columnWidths?.content || 75}%; vertical-align:top;">
+
+//       <!-- Nom -->
+//       ${
+//         signatureData.fullName
+//           ? `
+//       <div style="${fullNameStyle} margin:0; padding:0; margin-bottom:2px;">
+//         ${signatureData.fullName}
+//       </div>
+//       `
+//           : ""
+//       }
+
+//       <!-- Poste -->
+//       ${
+//         signatureData.position
+//           ? `
+//       <div style="${positionStyle} margin:0; padding:0; margin-bottom:4px;">
+//         ${signatureData.position}
+//       </div>
+//       `
+//           : ""
+//       }
+
+//       <!-- Coordonnées -->
+//       <div style="margin:0; padding:0;">
+
+//         ${
+//           signatureData.phone
+//             ? renderIconRow(
+//                 "https://cdn-icons-png.flaticon.com/512/126/126509.png",
+//                 "Téléphone",
+//                 signatureData.phone,
+//                 contactBaseStyle("phone")
+//               )
+//             : ""
+//         }
+
+//         ${
+//           signatureData.mobile
+//             ? renderIconRow(
+//                 "https://cdn-icons-png.flaticon.com/512/597/597177.png",
+//                 "Mobile",
+//                 signatureData.mobile,
+//                 contactBaseStyle("mobile")
+//               )
+//             : ""
+//         }
+
+//         ${
+//           signatureData.email
+//             ? renderIconRow(
+//                 "https://cdn-icons-png.flaticon.com/512/561/561127.png",
+//                 "Email",
+//                 `<a href="mailto:${signatureData.email}" style="color:inherit; text-decoration:none;">${signatureData.email}</a>`,
+//                 contactBaseStyle("email")
+//               )
+//             : ""
+//         }
+
+//         ${
+//           signatureData.website
+//             ? renderIconRow(
+//                 "https://cdn-icons-png.flaticon.com/512/535/535193.png",
+//                 "Site web",
+//                 `<a href="${signatureData.website}" style="color:${primaryColor}; text-decoration:none;" target="_blank" rel="noopener noreferrer">${signatureData.website}</a>`,
+//                 contactBaseStyle("website")
+//               )
+//             : ""
+//         }
+
+//         ${
+//           signatureData.address
+//             ? renderIconRow(
+//                 "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+//                 "Adresse",
+//                 signatureData.address,
+//                 contactBaseStyle("address")
+//               )
+//             : ""
+//         }
+
+//       </div>
+
+//       <!-- Séparateur horizontal -->
+//       ${
+//         signatureData.separators?.horizontal?.enabled !== false
+//           ? `
+//       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse; margin-top:${spacings.separatorTop || 8}px; margin-bottom:${spacings.separatorBottom || 8}px;">
+//         <tr>
+//           <td style="border-top:${separatorHorizontalWidth}px solid ${separatorHorizontalColor}; font-size:0; line-height:0;">
+//             &nbsp;
+//           </td>
+//         </tr>
+//       </table>
+//       `
+//           : ""
+//       }
+
+//       <!-- Logo + réseaux sociaux -->
+//       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+//         <tr>
+//           ${
+//             logoSrc
+//               ? `
+//           <td style="padding:0; padding-right:${spacings.logoRight || 12}px; vertical-align:middle;">
+//             <img src="${logoSrc}" alt="Logo" width="${logoSize}" style="display:block; border:0; height:auto;" />
+//           </td>
+//           `
+//               : ""
+//           }
+
+//           ${
+//             signatureData.socialLinks
+//               ? `
+//           <td style="padding:0; vertical-align:middle;">
+//             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+//               <tr>
+//                 ${
+//                   signatureData.socialLinks.facebook
+//                     ? `
+//                 <td style="padding:0; padding-right:8px;">
+//                   <a href="${signatureData.socialLinks.facebook}" target="_blank" rel="noopener noreferrer">
+//                     ${
+//                       signatureData.socialBackground?.enabled
+//                         ? `
+//                     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+//                       <tr>
+//                         <td style="background-color:${
+//                           signatureData.socialBackground?.color || "#f3f4f6"
+//                         }; border-radius:${
+//                             signatureData.socialBackground?.shape === "round"
+//                               ? "50%"
+//                               : "4px"
+//                           }; padding:6px;">
+//                           <img src="${
+//                             facebookImgUrl ||
+//                             `https://img.icons8.com/color/${
+//                               signatureData.socialSize || 24
+//                             }/facebook.png`
+//                           }"
+//                                alt="Facebook"
+//                                width="${
+//                                  signatureData.socialSize || 24
+//                                }"
+//                                height="${
+//                                  signatureData.socialSize || 24
+//                                }"
+//                                style="display:block; border:0;" />
+//                         </td>
+//                       </tr>
+//                     </table>
+//                     `
+//                         : `
+//                     <img src="${
+//                       facebookImgUrl ||
+//                       `https://img.icons8.com/color/${
+//                         signatureData.socialSize || 24
+//                       }/facebook.png`
+//                     }"
+//                          alt="Facebook"
+//                          width="${signatureData.socialSize || 24}"
+//                          height="${signatureData.socialSize || 24}"
+//                          style="display:block; border:0;" />
+//                     `
+//                     }
+//                   </a>
+//                 </td>
+//                 `
+//                     : ""
+//                 }
+
+//                 ${
+//                   signatureData.socialLinks.twitter
+//                     ? `
+//                 <td style="padding:0; padding-right:8px;">
+//                   <a href="${signatureData.socialLinks.twitter}" target="_blank" rel="noopener noreferrer">
+//                     ${
+//                       signatureData.socialBackground?.enabled
+//                         ? `
+//                     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+//                       <tr>
+//                         <td style="background-color:${
+//                           signatureData.socialBackground?.color || "#f3f4f6"
+//                         }; border-radius:${
+//                             signatureData.socialBackground?.shape === "round"
+//                               ? "50%"
+//                               : "4px"
+//                           }; padding:6px;">
+//                           <img src="https://img.icons8.com/color/${
+//                             signatureData.socialSize || 24
+//                           }/x.png"
+//                                alt="X (Twitter)"
+//                                width="${
+//                                  signatureData.socialSize || 24
+//                                }"
+//                                height="${
+//                                  signatureData.socialSize || 24
+//                                }"
+//                                style="display:block; border:0;" />
+//                         </td>
+//                       </tr>
+//                     </table>
+//                     `
+//                         : `
+//                     <img src="https://img.icons8.com/color/${
+//                       signatureData.socialSize || 24
+//                     }/x.png"
+//                          alt="X (Twitter)"
+//                          width="${signatureData.socialSize || 24}"
+//                          height="${signatureData.socialSize || 24}"
+//                          style="display:block; border:0;" />
+//                     `
+//                     }
+//                   </a>
+//                 </td>
+//                 `
+//                     : ""
+//                 }
+
+//                 ${
+//                   signatureData.socialLinks.instagram
+//                     ? `
+//                 <td style="padding:0;">
+//                   <a href="${signatureData.socialLinks.instagram}" target="_blank" rel="noopener noreferrer">
+//                     ${
+//                       signatureData.socialBackground?.enabled
+//                         ? `
+//                     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+//                       <tr>
+//                         <td style="background-color:${
+//                           signatureData.socialBackground?.color || "#f3f4f6"
+//                         }; border-radius:${
+//                             signatureData.socialBackground?.shape === "round"
+//                               ? "50%"
+//                               : "4px"
+//                           }; padding:6px;">
+//                           <img src="https://img.icons8.com/fluency/${
+//                             signatureData.socialSize || 24
+//                           }/instagram-new.png"
+//                                alt="Instagram"
+//                                width="${
+//                                  signatureData.socialSize || 24
+//                                }"
+//                                height="${
+//                                  signatureData.socialSize || 24
+//                                }"
+//                                style="display:block; border:0;" />
+//                         </td>
+//                       </tr>
+//                     </table>
+//                     `
+//                         : `
+//                     <img src="https://img.icons8.com/fluency/${
+//                       signatureData.socialSize || 24
+//                     }/instagram-new.png"
+//                          alt="Instagram"
+//                          width="${signatureData.socialSize || 24}"
+//                          height="${signatureData.socialSize || 24}"
+//                          style="display:block; border:0;" />
+//                     `
+//                     }
+//                   </a>
+//                 </td>
+//                 `
+//                     : ""
+//                 }
+//               </tr>
+//             </table>
+//           </td>
+//           `
+//               : ""
+//           }
+//         </tr>
+//       </table>
+
+//     </td>
+//   </tr>
+// </table>
+//   `;
+// };
+
+// const generateHorizontalHTML = (
+//   signatureData,
+//   primaryColor,
+//   photoSrc,
+//   logoSrc
+// ) => {
+//   const imageSize = signatureData.imageSize || 70;
+//   const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
+//   const mainFontFamily =
+//     signatureData.typography?.baseFontFamily || "Arial, sans-serif";
+//   const layoutWidth = signatureData.layoutWidth || 600;
+
+//   const fullName = signatureData.fullName || "";
+//   const position = signatureData.position || "";
+
+//   const phone = signatureData.phone || "";
+//   const mobile = signatureData.mobile || "";
+//   const email = signatureData.email || "";
+//   const website = signatureData.website || "";
+//   const address = signatureData.address || "";
+
+//   const separatorColor =
+//     signatureData.separators?.horizontal?.color || "#ff2d54";
+//   const separatorWidth =
+//     signatureData.separators?.horizontal?.width || 1;
+//   const verticalSeparatorColor =
+//     signatureData.separators?.vertical?.color || primaryColor || "#604520";
+
+//   // Icônes - tu peux les rendre configurables via signatureData.icons.*
+//   const icons = {
+//     phone:
+//       signatureData.icons?.phone ||
+//       "https://ton-cdn.com/icons/smartphone.png",
+//     mobile:
+//       signatureData.icons?.mobile ||
+//       "https://ton-cdn.com/icons/phone.png",
+//     email:
+//       signatureData.icons?.email ||
+//       "https://ton-cdn.com/icons/mail.png",
+//     website:
+//       signatureData.icons?.website ||
+//       "https://ton-cdn.com/icons/globe.png",
+//     address:
+//       signatureData.icons?.address ||
+//       "https://ton-cdn.com/icons/map-pin.png",
+//   };
+
+//   const sanitizeTelHref = (num) =>
+//     num ? num.replace(/\s+/g, "") : "";
+
+//   const phoneHref = sanitizeTelHref(phone);
+//   const mobileHref = sanitizeTelHref(mobile);
+
+//   const renderContactRow = (iconUrl, alt, contentHtml) => {
+//     if (!contentHtml) return "";
+//     return `
+//       <tr>
+//         <td colspan="2" style="padding-bottom:8px">
+//           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
+//             <tbody>
+//               <tr>
+//                 <td style="padding-right:8px;vertical-align:middle">
+//                   <img src="${iconUrl}"
+//                        alt="${alt}"
+//                        width="16"
+//                        height="16"
+//                        style="width:16px;height:16px;display:block;border:0;">
+//                 </td>
+//                 <td style="font-size:12px;color:rgb(102,102,102);vertical-align:middle;font-family:${mainFontFamily}">
+//                   ${contentHtml}
+//                 </td>
+//               </tr>
+//             </tbody>
+//           </table>
+//         </td>
+//       </tr>
+//     `;
+//   };
+
+//   const phoneHtml =
+//     phone && phoneHref
+//       ? `<a href="tel:${phoneHref}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${phone}</a>`
+//       : "";
+
+//   const mobileHtml =
+//     mobile && mobileHref
+//       ? `<a href="tel:${mobileHref}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${mobile}</a>`
+//       : "";
+
+//   const emailHtml = email
+//     ? `<a href="mailto:${email}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${email}</a>`
+//     : "";
+
+//   const websiteHtml = website
+//     ? `<a href="${website}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${website.replace(
+//         /^https?:\/\//,
+//         ""
+//       )}</a>`
+//     : "";
+
+//   const addressHtml = address || "";
+
+//   // Bloc photo + nom + poste
+//   const leftColumn = `
+//     <td style="vertical-align:top;padding-right:8px">
+//       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
+//         <tbody>
+
+//           ${
+//             photoSrc
+//               ? `
+//           <tr>
+//             <td style="padding-bottom:8px">
+//               <table cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;border-collapse:collapse;">
+//                 <tbody>
+//                   <tr>
+//                     <td width="${imageSize}" height="${imageSize}" style="width:${imageSize}px;height:${imageSize}px;overflow:hidden;border-radius:${borderRadius};">
+//                       <img src="${photoSrc}"
+//                            alt="${fullName || "Photo de profil"}"
+//                            width="${imageSize}"
+//                            height="${imageSize}"
+//                            style="width:${imageSize}px;height:${imageSize}px;min-width:${imageSize}px;min-height:${imageSize}px;display:block;border:0;margin:0;padding:0;border-radius:${borderRadius};">
+//                     </td>
+//                   </tr>
+//                 </tbody>
+//               </table>
+//             </td>
+//           </tr>
+//           `
+//               : ""
+//           }
+
+//           ${
+//             fullName
+//               ? `
+//           <tr>
+//             <td colspan="2" style="padding-bottom:8px">
+//               <div style="font-size:16px;color:rgb(23,23,23);line-height:1.2;font-family:${mainFontFamily}">
+//                 ${fullName}
+//               </div>
+//             </td>
+//           </tr>
+//           `
+//               : ""
+//           }
+
+//           ${
+//             position
+//               ? `
+//           <tr>
+//             <td colspan="2" style="padding-bottom:8px">
+//               <div style="font-size:14px;color:rgb(102,102,102);font-family:${mainFontFamily}">
+//                 ${position}
+//               </div>
+//             </td>
+//           </tr>
+//           `
+//               : ""
+//           }
+
+//         </tbody>
+//       </table>
+//     </td>
+//   `;
+
+//   // Séparateur vertical
+//   const verticalSeparator = `
+//     <td style="width:8px">&nbsp;</td>
+//     <td style="width:1px;background-color:${verticalSeparatorColor};border-radius:0px;padding:0px;font-size:1px;line-height:1px;vertical-align:top;height:100%;min-height:200px">&nbsp;</td>
+//     <td style="width:8px">&nbsp;</td>
+//   `;
+
+//   // Colonne droite : coordonnées
+//   const rightColumn = `
+//     <td style="vertical-align:top;padding-left:8px">
+//       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
+//         <tbody>
+//           ${renderContactRow(icons.phone, "Téléphone", phoneHtml)}
+//           ${renderContactRow(icons.mobile, "Mobile", mobileHtml)}
+//           ${renderContactRow(icons.email, "Email", emailHtml)}
+//           ${renderContactRow(icons.website, "Site web", websiteHtml)}
+
+//           ${
+//             addressHtml
+//               ? `
+//           <tr>
+//             <td colspan="2" style="padding-bottom:8px">
+//               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
+//                 <tbody>
+//                   <tr>
+//                     <td style="padding-right:8px;vertical-align:top">
+//                       <img src="${icons.address}"
+//                            alt="Adresse"
+//                            width="16"
+//                            height="16"
+//                            style="width:16px;height:16px;display:block;margin-top:1px;border:0;">
+//                     </td>
+//                     <td style="font-size:12px;color:rgb(102,102,102);vertical-align:top;font-family:${mainFontFamily}">
+//                       ${addressHtml}
+//                     </td>
+//                   </tr>
+//                 </tbody>
+//               </table>
+//             </td>
+//           </tr>
+//           `
+//               : ""
+//           }
+
+//         </tbody>
+//       </table>
+//     </td>
+//   `;
+
+//   // Séparateur horizontal + logo
+//   const bottomSeparatorAndLogo = `
+//     <tr>
+//       <td colspan="5" style="padding-top:8px;padding-bottom:8px">
+//         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%">
+//           <tbody>
+//             <tr>
+//               <td style="border-top:${separatorWidth}px solid ${separatorColor};line-height:1px;font-size:1px">&nbsp;</td>
+//             </tr>
+//           </tbody>
+//         </table>
+//       </td>
+//     </tr>
+
+//     ${
+//       logoSrc
+//         ? `
+//     <tr>
+//       <td colspan="5" style="padding:8px 0px 0px">
+//         <img src="${logoSrc}"
+//              alt="${signatureData.companyName || "Logo entreprise"}"
+//              style="width:${signatureData.logoSize || 60}px;height:auto;max-height:${signatureData.logoSize || 60}px;display:block;margin:0;padding:0;font-size:0;line-height:0;border:0;">
+//       </td>
+//     </tr>
+//     `
+//         : ""
+//     }
+//   `;
+
+//   // Table principale (fragment uniquement, pas de <html>, <body>, etc.)
+//   return `
+// <table cellpadding="0" cellspacing="0" border="0" width="${layoutWidth}" style="border-collapse:collapse;max-width:${layoutWidth}px;font-family:${mainFontFamily}">
+//   <tbody>
+//     <tr>
+//       ${leftColumn}
+//       ${verticalSeparator}
+//       ${rightColumn}
+//     </tr>
+//     ${bottomSeparatorAndLogo}
+//   </tbody>
+// </table>
+//   `.trim();
+// };
+
+const generateHorizontalHTML = (
+  signatureData,
+  primaryColor,
+  photoSrc,
+  logoSrc
+) => {
+  const imageSize = signatureData.imageSize || 70;
+  const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
+  const mainFontFamily =
+    signatureData.typography?.baseFontFamily || "Arial, sans-serif";
+  const layoutWidth = signatureData.layoutWidth || 600;
+
+  const fullName = signatureData.fullName || "";
+  const position = signatureData.position || "";
+
+  const phone = signatureData.phone || "";
+  const mobile = signatureData.mobile || "";
+  const email = signatureData.email || "";
+  const website = signatureData.website || "";
+  const address = signatureData.address || "";
+
+  const separatorColor =
+    signatureData.separators?.horizontal?.color || "#ff2d54";
+  const separatorWidth =
+    signatureData.separators?.horizontal?.width || 1;
+  const verticalSeparatorColor =
+    signatureData.separators?.vertical?.color || primaryColor || "#604520";
+
+  // Couleur de texte par défaut (configurable si tu veux plus tard)
+  const baseTextColor = signatureData.colors?.text || "#444444";
+  const nameColor = signatureData.colors?.name || "#171717";
+  const roleColor = signatureData.colors?.role || baseTextColor;
+
+  // Icônes
+  const icons = {
+    phone:
+      signatureData.icons?.phone ||
+      "https://ton-cdn.com/icons/smartphone.png",
+    mobile:
+      signatureData.icons?.mobile ||
+      "https://ton-cdn.com/icons/phone.png",
+    email:
+      signatureData.icons?.email ||
+      "https://ton-cdn.com/icons/mail.png",
+    website:
+      signatureData.icons?.website ||
+      "https://ton-cdn.com/icons/globe.png",
+    address:
+      signatureData.icons?.address ||
+      "https://ton-cdn.com/icons/map-pin.png",
   };
 
-  // Fonction pour générer le HTML du layout vertical
-  const generateVerticalHTML = (
-    signatureData,
-    primaryColor,
-    facebookImageUrl = null,
-    photoSrc,
-    logoSrc
-  ) => {
-    // Ensure facebookImageUrl is properly handled
-    const facebookImgUrl = facebookImageUrl || "";
-    const imageSize = signatureData.imageSize || 80;
-    const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
-    const separatorVerticalWidth =
-      signatureData.separators?.vertical?.width ||
-      signatureData.separatorVerticalWidth ||
-      1;
-    const separatorHorizontalWidth =
-      signatureData.separatorHorizontalWidth || 1;
-    const logoSize = signatureData.logoSize || 60;
-    const spacings = signatureData.spacings || {};
-    return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Signature Email</title>
-    </head>
-    <body style="margin: 0; padding: 0; font-family: ${signatureData.fontFamily || "Arial, sans-serif"};">
-      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: ${signatureData.fontFamily || "Arial, sans-serif"};">
-        <tbody>
-          <tr>
-            <!-- Colonne de gauche : Informations personnelles -->
-            <td style="padding-right: 15px; vertical-align: top;">
-              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
-                <tbody>
-                  ${
-                    photoSrc
-                      ? `
-                 <tr>
-                  <td style="padding-bottom: ${spacings.photoBottom || 12}px; text-align: left;">
-                    <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center / cover no-repeat; display: inline-block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover !important;"></div>
-                  </td>
-                </tr>
-                  `
-                      : ""
-                  }
-                  
+  const sanitizeTelHref = (num) =>
+    num ? num.replace(/\s+/g, "") : "";
 
-                  <tr>
-                    <td style="padding-bottom: ${spacings.nameBottom || 8}px; text-align: left;">
-                      <div style="font-size: ${signatureData.typography?.fullName?.fontSize || signatureData.fontSize?.name || 16}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || "bold"}; font-style: ${signatureData.typography?.fullName?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || "none"}; color: ${signatureData.typography?.fullName?.color || primaryColor}; line-height: 1.2; font-family: ${signatureData.typography?.fullName?.fontFamily || signatureData.fontFamily || "Arial, sans-serif"};">
-                        ${signatureData.fullName || ""}
-                      </div>
-                    </td>
-                  </tr>
-                  ${
-                    signatureData.position
-                      ? `
-                    <tr>
-                      <td style="padding-bottom: ${spacings.positionBottom || 8}px; text-align: left;">
-                        <div style="font-size: ${signatureData.typography?.position?.fontSize || signatureData.fontSize?.position || 14}px; font-weight: ${signatureData.typography?.position?.fontWeight || "normal"}; font-style: ${signatureData.typography?.position?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.position?.textDecoration || "none"}; color: ${signatureData.typography?.position?.color || "rgb(102,102,102)"}; font-family: ${signatureData.typography?.position?.fontFamily || signatureData.fontFamily || "Arial, sans-serif"};">
-                          ${signatureData.position}
-                        </div>
-                      </td>
-                    </tr>
-                  `
-                      : ""
-                  }
-                  ${
-                    signatureData.companyName
-                      ? `
-                    <tr>
-                      <td style="padding-bottom: ${spacings.companyBottom || 12}px; text-align: left;">
-                        <div style="font-size: 14px; font-weight: bold; color: ${primaryColor}; font-family: ${signatureData.fontFamily || "Arial, sans-serif"};">
-                          ${signatureData.companyName}
-                        </div>
-                      </td>
-                    </tr>
-                  `
-                      : ""
-                  }
-                </tbody>
-              </table>
-            </td>
-            
-            <!-- Séparateur vertical - Gmail compatible -->
+  const phoneHref = sanitizeTelHref(phone);
+  const mobileHref = sanitizeTelHref(mobile);
+
+  const renderContactRow = (iconUrl, alt, contentHtml) => {
+    if (!contentHtml) return "";
+    return `
+      <tr>
+        <td colspan="2" style="padding-bottom:8px">
+          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
+            <tbody>
+              <tr>
+                <td style="padding-right:8px;vertical-align:middle">
+                  <img src="${iconUrl}"
+                       alt="${alt}"
+                       width="16"
+                       height="16"
+                       style="width:16px;height:16px;display:block;border:0;">
+                </td>
+                <td style="font-size:12px;color:${baseTextColor};vertical-align:middle;font-family:${mainFontFamily}">
+                  ${contentHtml}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    `;
+  };
+
+  const linkColor = baseTextColor;
+
+  const phoneHtml =
+    phone && phoneHref
+      ? `<a href="tel:${phoneHref}" style="color:${linkColor};text-decoration:none;" target="_blank">${phone}</a>`
+      : "";
+
+  const mobileHtml =
+    mobile && mobileHref
+      ? `<a href="tel:${mobileHref}" style="color:${linkColor};text-decoration:none;" target="_blank">${mobile}</a>`
+      : "";
+
+  const emailHtml = email
+    ? `<a href="mailto:${email}" style="color:${linkColor};text-decoration:none;" target="_blank">${email}</a>`
+    : "";
+
+  const websiteHtml = website
+    ? `<a href="${website}" style="color:${linkColor};text-decoration:none;" target="_blank">${website.replace(
+        /^https?:\/\//,
+        ""
+      )}</a>`
+    : "";
+
+  const addressHtml = address || "";
+
+  // Bloc photo + nom + poste
+  const leftColumn = `
+    <td style="vertical-align:top;padding-right:8px">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
+        <tbody>
+
           ${
-            signatureData.separators?.vertical?.enabled
+            photoSrc
               ? `
-          <td style="width: ${signatureData.separators?.vertical?.width || signatureData.separatorVerticalWidth || 1}px; background-color: ${signatureData.separators?.vertical?.color || "#e0e0e0"}; border-radius: ${signatureData.separators?.vertical?.radius || 0}px; padding: 0; vertical-align: top; height: 100%; min-height: 200px;">
-            &nbsp;
-          </td>
-          `
-              : ""
-          }
-            
-            <!-- Colonne de droite : Informations de contact -->
-            <td style="padding-left: 15px; vertical-align: top;">
-              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: 100%;">
+          <tr>
+            <td style="padding-bottom:8px">
+              <table cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;border-collapse:collapse;">
                 <tbody>
-                  ${
-                    signatureData.phone
-                      ? `
-                    <tr>
-                      <td style="padding-bottom: ${signatureData.mobile ? spacings.phoneToMobile || 4 : spacings.contactBottom || 6}px;">
-                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
-                          <tbody>
-                            <tr>
-                              <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
-                                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
-                              </td>
-                              <td style="font-size: ${signatureData.typography?.phone?.fontSize || 12}px; font-weight: ${signatureData.typography?.phone?.fontWeight || "normal"}; font-style: ${signatureData.typography?.phone?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.phone?.textDecoration || "none"}; color: ${signatureData.typography?.phone?.color || "rgb(102,102,102)"}; vertical-align: middle; font-family: ${signatureData.typography?.phone?.fontFamily || "Arial, sans-serif"};">
-                                <a href="tel:${signatureData.phone}" style="color: ${signatureData.typography?.phone?.color || "rgb(102,102,102)"}; text-decoration: none; font-family: inherit;">${signatureData.phone}</a>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                  `
-                      : ""
-                  }
-                  ${
-                    signatureData.mobile
-                      ? `
-                    <tr>
-                      <td style="padding-bottom: ${signatureData.email ? spacings.mobileToEmail || 4 : spacings.contactBottom || 6}px;">
-                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
-                          <tbody>
-                            <tr>
-                              <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
-                                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
-                              </td>
-                              <td style="font-size: ${signatureData.typography?.mobile?.fontSize || 12}px; font-weight: ${signatureData.typography?.mobile?.fontWeight || "normal"}; font-style: ${signatureData.typography?.mobile?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.mobile?.textDecoration || "none"}; color: ${signatureData.typography?.mobile?.color || "rgb(102,102,102)"}; vertical-align: middle; font-family: ${signatureData.typography?.mobile?.fontFamily || "Arial, sans-serif"};">
-                                <a href="tel:${signatureData.mobile}" style="color: ${signatureData.typography?.mobile?.color || "rgb(102,102,102)"}; text-decoration: none; font-family: inherit;">${signatureData.mobile}</a>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                  `
-                      : ""
-                  }
-                  ${
-                    signatureData.email
-                      ? `
-                    <tr>
-                      <td style="padding-bottom: ${signatureData.website ? spacings.emailToWebsite || 4 : spacings.contactBottom || 6}px;">
-                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
-                          <tbody>
-                            <tr>
-                              <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
-                                <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
-                              </td>
-                              <td style="font-size: ${signatureData.typography?.email?.fontSize || 12}px; font-weight: ${signatureData.typography?.email?.fontWeight || "normal"}; font-style: ${signatureData.typography?.email?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.email?.textDecoration || "none"}; color: ${signatureData.typography?.email?.color || "rgb(102,102,102)"}; vertical-align: middle; font-family: ${signatureData.typography?.email?.fontFamily || "Arial, sans-serif"};">
-                                <a href="mailto:${signatureData.email}" style="color: ${primaryColor}; text-decoration: none; font-family: inherit;">${signatureData.email}</a>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                  `
-                      : ""
-                  }
-                  ${
-                    signatureData.website
-                      ? `
-                    <tr>
-                      <td style="padding-bottom: ${signatureData.address ? spacings.websiteToAddress || 4 : spacings.contactBottom || 6}px;">
-                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
-                          <tbody>
-                            <tr>
-                              <td style="padding-right: 8px; vertical-align: middle; width: 12px;">
-                                <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block;" />
-                              </td>
-                              <td style="font-size: ${signatureData.typography?.website?.fontSize || 12}px; font-weight: ${signatureData.typography?.website?.fontWeight || "normal"}; font-style: ${signatureData.typography?.website?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.website?.textDecoration || "none"}; color: ${signatureData.typography?.website?.color || "rgb(102,102,102)"}; vertical-align: middle; font-family: ${signatureData.typography?.website?.fontFamily || "Arial, sans-serif"};">
-                                <a href="${signatureData.website && signatureData.website.startsWith("http") ? signatureData.website : "https://" + (signatureData.website || "")}" style="color: ${primaryColor}; text-decoration: none; font-family: inherit;">${signatureData.website ? signatureData.website.replace(/^https?:\/\//, "") : ""}</a>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                  `
-                      : ""
-                  }
-                  ${
-                    signatureData.address
-                      ? `
-                    <tr>
-                      <td style="padding-bottom: 12px;">
-                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
-                          <tbody>
-                            <tr>
-                              <td style="padding-right: 8px; vertical-align: top; width: 12px;">
-                                <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px !important; height: 12px !important; display: block; margin-top: 1px;" />
-                              </td>
-                              <td style="font-size: ${signatureData.typography?.address?.fontSize || 12}px; font-weight: ${signatureData.typography?.address?.fontWeight || "normal"}; font-style: ${signatureData.typography?.address?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.address?.textDecoration || "none"}; color: ${signatureData.typography?.address?.color || "rgb(102,102,102)"}; vertical-align: top; font-family: ${signatureData.typography?.address?.fontFamily || "Arial, sans-serif"}; line-height: 1.4;">
-                                ${signatureData.address.replace(/\n/g, "<br>")}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                  `
-                      : ""
-                  }
-                  
-                  <!-- Séparateur horizontal après tous les contacts -->
-                  ${
-                    signatureData.separators?.horizontal?.enabled
-                      ? `
                   <tr>
-                    <td style="padding-top: ${spacings.separatorTop || 12}px; padding-bottom: ${spacings.separatorBottom || 12}px;">
-                      <hr style="border: none; border-top: ${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || "#e0e0e0"}; border-radius: ${signatureData.separators?.horizontal?.radius || 0}px; margin: 0; width: 100%;" />
+                    <td width="${imageSize}" height="${imageSize}" style="width:${imageSize}px;height:${imageSize}px;overflow:hidden;border-radius:${borderRadius};">
+                      <img src="${photoSrc}"
+                           alt="${fullName || "Photo de profil"}"
+                           width="${imageSize}"
+                           height="${imageSize}"
+                           style="width:${imageSize}px;height:${imageSize}px;min-width:${imageSize}px;min-height:${imageSize}px;display:block;border:0;margin:0;padding:0;border-radius:${borderRadius};">
                     </td>
                   </tr>
-                  `
-                      : ""
-                  }
-                  
-                  <!-- Logo entreprise après le séparateur -->
-                  ${
-                    logoSrc
-                      ? `
-                    <tr>
-                      <td style="padding-top: ${spacings.separatorBottom || 12}px; text-align: left;">
-                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
-                          <tbody>
-                            <tr>
-                              <td style="text-align: left;">
-                                <img src="${logoSrc}" alt="Logo entreprise" style="max-width: ${logoSize}px; height: auto; display: block;" />
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                  `
-                      : ""
-                  }
                 </tbody>
               </table>
             </td>
           </tr>
+          `
+              : ""
+          }
+
+          ${
+            fullName
+              ? `
+          <tr>
+            <td colspan="2" style="padding-bottom:8px">
+              <div style="font-size:16px;color:${nameColor};line-height:1.2;font-family:${mainFontFamily}">
+                ${fullName}
+              </div>
+            </td>
+          </tr>
+          `
+              : ""
+          }
+
+          ${
+            position
+              ? `
+          <tr>
+            <td colspan="2" style="padding-bottom:8px">
+              <div style="font-size:14px;color:${roleColor};font-family:${mainFontFamily}">
+                ${position}
+              </div>
+            </td>
+          </tr>
+          `
+              : ""
+          }
+
         </tbody>
       </table>
-    </body>
-    </html>
+    </td>
   `;
-  };
 
-  // Fonction pour générer le HTML du layout horizontal
-  const generateHorizontalHTML = (
-    signatureData,
-    primaryColor,
-    facebookImageUrl = null,
-    photoSrc,
-    logoSrc
-  ) => {
-    // Ensure facebookImageUrl is properly handled
-    const facebookImgUrl = facebookImageUrl || "";
-    const imageSize = signatureData.imageSize || 80;
-    const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
-    const separatorHorizontalWidth =
-      signatureData.separators?.horizontal?.width || 1;
-    const spacings = signatureData.spacings || {};
-    const logoSize = signatureData.logoSize || 60;
-    return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Signature Email</title>
-    </head>
-    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
-      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px !important;">
-        <tr>
-          <!-- Photo de profil à gauche -->
+  // Séparateur vertical
+  const verticalSeparator = `
+    <td style="width:8px">&nbsp;</td>
+    <td style="width:1px;background-color:${verticalSeparatorColor};border-radius:0px;padding:0px;font-size:1px;line-height:1px;vertical-align:top;height:100%;min-height:200px">
+      &nbsp;
+    </td>
+    <td style="width:8px">&nbsp;</td>
+  `;
+
+  // Colonne droite : coordonnées
+  const rightColumn = `
+    <td style="vertical-align:top;padding-left:8px">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
+        <tbody>
+          ${renderContactRow(icons.phone, "Téléphone", phoneHtml)}
+          ${renderContactRow(icons.mobile, "Mobile", mobileHtml)}
+          ${renderContactRow(icons.email, "Email", emailHtml)}
+          ${renderContactRow(icons.website, "Site web", websiteHtml)}
+
           ${
-            photoSrc
+            addressHtml
               ? `
-            <td style="width: ${signatureData.columnWidths?.photo || 25}%; padding-right: ${spacings.photoBottom || 16}px; vertical-align: top;">
-              <div style="width: ${imageSize}px; height: ${imageSize}px; border-radius: ${borderRadius}; background: url('${photoSrc}') center center/cover no-repeat; display: block; overflow: hidden; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;"></div>
+          <tr>
+            <td colspan="2" style="padding-bottom:8px">
+              <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
+                <tbody>
+                  <tr>
+                    <td style="padding-right:8px;vertical-align:top">
+                      <img src="${icons.address}"
+                           alt="Adresse"
+                           width="16"
+                           height="16"
+                           style="width:16px;height:16px;display:block;margin-top:1px;border:0;">
+                    </td>
+                    <td style="font-size:12px;color:${baseTextColor};vertical-align:top;font-family:${mainFontFamily}">
+                      ${addressHtml}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </td>
+          </tr>
           `
               : ""
           }
-          
-          <!-- Informations empilées verticalement à droite -->
-          <td style="width: ${signatureData.columnWidths?.content || 75}%; vertical-align: top;">
-            <!-- Nom et prénom -->
-            <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 16}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || "bold"}; font-style: ${signatureData.typography?.fullName?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || "none"}; color: ${signatureData.typography?.fullName?.color || primaryColor}; line-height: 1.2; margin-bottom: 2px; font-family: ${signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif"};">
-              ${signatureData.fullName || ""}
-            </div>
-            
-            <!-- Profession -->
-            ${
-              signatureData.position
-                ? `
-              <div style="font-size: ${signatureData.typography?.position?.fontSize || 14}px; font-weight: ${signatureData.typography?.position?.fontWeight || "normal"}; font-style: ${signatureData.typography?.position?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.position?.textDecoration || "none"}; color: ${signatureData.typography?.position?.color || "rgb(102,102,102)"}; margin-bottom: 4px; font-family: ${signatureData.typography?.position?.fontFamily || "Arial, sans-serif"};">
-                ${signatureData.position}
-              </div>
-            `
-                : ""
-            }
-            
-            <!-- Contacts -->
-            ${
-              signatureData.phone
-                ? `
-              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.phone?.fontSize || 12}px; font-weight: ${signatureData.typography?.phone?.fontWeight || "normal"}; font-style: ${signatureData.typography?.phone?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.phone?.textDecoration || "none"}; color: ${signatureData.typography?.phone?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.phone?.fontFamily || "Arial, sans-serif"};">
-                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Téléphone" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                ${signatureData.phone}
-              </div>
-            `
-                : ""
-            }
-            
-            ${
-              signatureData.mobile
-                ? `
-              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.mobile?.fontSize || 12}px; font-weight: ${signatureData.typography?.mobile?.fontWeight || "normal"}; font-style: ${signatureData.typography?.mobile?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.mobile?.textDecoration || "none"}; color: ${signatureData.typography?.mobile?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.mobile?.fontFamily || "Arial, sans-serif"};">
-                <img src="https://cdn-icons-png.flaticon.com/512/126/126509.png" alt="Mobile" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                ${signatureData.mobile}
-              </div>
-            `
-                : ""
-            }
-            
-            ${
-              signatureData.email
-                ? `
-              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.email?.fontSize || 12}px; font-weight: ${signatureData.typography?.email?.fontWeight || "normal"}; font-style: ${signatureData.typography?.email?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.email?.textDecoration || "none"}; color: ${signatureData.typography?.email?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.email?.fontFamily || "Arial, sans-serif"};">
-                <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" alt="Email" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                <a href="mailto:${signatureData.email}" style="color: ${primaryColor}; text-decoration: none;">${signatureData.email}</a>
-              </div>
-            `
-                : ""
-            }
-            
-            ${
-              signatureData.website
-                ? `
-              <div style="display: flex; align-items: center; font-size: ${signatureData.typography?.website?.fontSize || 12}px; font-weight: ${signatureData.typography?.website?.fontWeight || "normal"}; font-style: ${signatureData.typography?.website?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.website?.textDecoration || "none"}; color: ${signatureData.typography?.website?.color || "rgb(102,102,102)"}; margin-bottom: 1px; font-family: ${signatureData.typography?.website?.fontFamily || "Arial, sans-serif"};">
-                <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Site web" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px;" />
-                <a href="${signatureData.website.startsWith("http") ? signatureData.website : "https://" + signatureData.website}" target="_blank" style="color: ${primaryColor}; text-decoration: none;">${signatureData.website.replace(/^https?:\/\//, "")}</a>
-              </div>
-            `
-                : ""
-            }
-            
-            ${
-              signatureData.address
-                ? `
-              <div style="display: flex; align-items: flex-start; font-size: ${signatureData.typography?.address?.fontSize || 12}px; font-weight: ${signatureData.typography?.address?.fontWeight || "normal"}; font-style: ${signatureData.typography?.address?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.address?.textDecoration || "none"}; color: ${signatureData.typography?.address?.color || "rgb(102,102,102)"}; margin-bottom: 4px; font-family: ${signatureData.typography?.address?.fontFamily || "Arial, sans-serif"};">
-                <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="Adresse" width="12" height="12" style="width: 12px; height: 12px; margin-right: 8px; margin-top: 1px;" />
-                ${signatureData.address.replace(/\n/g, "<br>")}
-              </div>
-            `
-                : ""
-            }
-            
-            <!-- Logo/Nom entreprise -->
-            ${signatureData.companyName || logoSrc ? "" : ""}
-          </td>
-        </tr>
-        
-        <!-- Séparateur horizontal -->
-        ${
-          signatureData.separators?.horizontal?.enabled
-            ? `
-        <tr>
-          <td colspan="2" style="padding: ${spacings.separatorTop || 12}px 0 ${spacings.separatorBottom || 12}px 0;">
-            <hr style="border: none; border-top: ${signatureData.separators?.horizontal?.width || 1}px solid ${signatureData.separators?.horizontal?.color || "#e0e0e0"}; border-radius: ${signatureData.separators?.horizontal?.radius || 0}px; margin: 0; width: 100%;" />
-          </td>
-        </tr>
-        `
-            : ""
-        }
-        
-        <!-- Logo entreprise après le séparateur -->
-        ${
-          logoSrc
-            ? `
-        <tr>
-          <td colspan="2" style="text-align: left;">
-            <img src="${logoSrc}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain;" />
-          </td>
-        </tr>
-        `
-            : ""
-        }
-        
-        <!-- Logos sociaux -->
-        ${
-          signatureData.socialLinks?.linkedin ||
-          signatureData.socialLinks?.facebook ||
-          signatureData.socialLinks?.twitter ||
-          signatureData.socialLinks?.instagram
-            ? `
-        <tr>
-          <td colspan="2" style="padding: ${spacings.separatorBottom || 15}px 0 0 0; text-align: left;">
-            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
-              <tr>
-                ${
-                  signatureData.socialLinks?.linkedin
-                    ? `
-                <td style="padding-right: 8px;">
-                  <a href="${signatureData.socialLinks.linkedin}" target="_blank" rel="noopener noreferrer">
-                    ${
-                      signatureData.socialBackground?.enabled
-                        ? `
-                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
-                      <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    </div>
-                    `
-                        : `
-                    <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/linkedin.png" alt="LinkedIn" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    `
-                    }
-                  </a>
-                </td>
-                `
-                    : ""
-                }
-                ${
-                  signatureData.socialLinks?.facebook
-                    ? `
-                <td style="padding-right: 8px;">
-                  <a href="${signatureData.socialLinks.facebook}" target="_blank" rel="noopener noreferrer">
-                    ${
-                      signatureData.socialBackground?.enabled
-                        ? `
-                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
-                      ${
-                        facebookImgUrl
-                          ? `
-                      <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                      `
-                          : `
-                      <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                      `
-                      }
-                    </div>
-                    `
-                        : `
-                    ${
-                      facebookImgUrl
-                        ? `
-                    <img src="${facebookImgUrl}" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    `
-                        : `
-                    <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/facebook.png" alt="Facebook" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    `
-                    }
-                    `
-                    }
-                  </a>
-                </td>
-                `
-                    : ""
-                }
-                ${
-                  signatureData.socialLinks?.twitter
-                    ? `
-                <td style="padding-right: 8px;">
-                  <a href="${signatureData.socialLinks.twitter}" target="_blank" rel="noopener noreferrer">
-                    ${
-                      signatureData.socialBackground?.enabled
-                        ? `
-                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
-                      <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png" alt="X (Twitter)" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    </div>
-                    `
-                        : `
-                    <img src="https://img.icons8.com/color/${signatureData.socialSize || 24}/x.png" alt="X (Twitter)" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    `
-                    }
-                  </a>
-                </td>
-                `
-                    : ""
-                }
-                ${
-                  signatureData.socialLinks?.instagram
-                    ? `
-                <td>
-                  <a href="${signatureData.socialLinks.instagram}" target="_blank" rel="noopener noreferrer">
-                    ${
-                      signatureData.socialBackground?.enabled
-                        ? `
-                    <div style="display: inline-block; background-color: ${signatureData.socialBackground?.color || "#f3f4f6"}; border-radius: ${signatureData.socialBackground?.shape === "round" ? "50%" : "4px"}; padding: 6px;">
-                      <img src="https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    </div>
-                    `
-                        : `
-                    <img src="https://img.icons8.com/fluency/${signatureData.socialSize || 24}/instagram-new.png" alt="Instagram" width="${signatureData.socialSize || 24}" height="${signatureData.socialSize || 24}" style="display: block;" />
-                    `
-                    }
-                  </a>
-                </td>
-                `
-                    : ""
-                }
-              </tr>
-            </table>
-          </td>
-        </tr>
-        `
-            : ""
-        }
+
+        </tbody>
       </table>
-    </body>
-    </html>
+    </td>
   `;
-  };
 
-  // Générateur HTML pour le template Obama
-  const generateObamaHTML = (
-    signatureData,
-    primaryColor,
-    photoSrc,
-    logoSrc
-  ) => {
-    return `
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 450px; font-family: Arial, sans-serif; background-color: #ffffff;">
-  <tbody>
+  // Séparateur horizontal + logo
+  const bottomSeparatorAndLogo = `
     <tr>
-      <!-- Photo de profil à gauche -->
-      <td style="width: 100px; padding-right: 20px; vertical-align: top; padding-bottom: 10px;">
-        ${
-          photoSrc
-            ? `
-        <div style="width: 90px; height: 90px; border-radius: 50%; background: url('${photoSrc}') center center/cover no-repeat; display: block; border: 3px solid #f0f0f0;"></div>
-        `
-            : ""
-        }
-      </td>
-      
-      <!-- Informations à droite -->
-      <td style="vertical-align: top; padding-bottom: 10px;">
-        <!-- Nom complet -->
-        <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 22}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || "bold"}; font-style: ${signatureData.typography?.fullName?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || "none"}; color: ${signatureData.typography?.fullName?.color || "#2563eb"}; line-height: 1.2; margin-bottom: 5px; font-family: ${signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif"};">
-          ${signatureData.fullName || ""}
-        </div>
-        
-        <!-- Titre/Position -->
-        ${
-          signatureData.position || signatureData.company
-            ? `
-        <div style="font-size: ${signatureData.typography?.position?.fontSize || 14}px; font-weight: ${signatureData.typography?.position?.fontWeight || "normal"}; font-style: ${signatureData.typography?.position?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.position?.textDecoration || "none"}; color: ${signatureData.typography?.position?.color || "#666666"}; line-height: 1.3; margin-bottom: 15px; font-family: ${signatureData.typography?.position?.fontFamily || "Arial, sans-serif"};">
-          ${signatureData.position || ""}${signatureData.position && signatureData.company ? " | " : ""}${signatureData.company || ""}
-        </div>
-        `
-            : ""
-        }
-        
-        <!-- Informations de contact -->
-        <div style="font-size: 13px; color: #666666; line-height: 1.6;">
-          ${
-            signatureData.email
-              ? `
-          <div style="margin-bottom: 3px; display: flex; align-items: center;">
-            <span style="color: #2563eb; margin-right: 8px; font-size: 14px;">✉</span>
-            <a href="mailto:${signatureData.email}" style="color: #666666; text-decoration: none;">${signatureData.email}</a>
-          </div>
-          `
-              : ""
-          }
-          
-          ${
-            signatureData.phone
-              ? `
-          <div style="margin-bottom: 3px; display: flex; align-items: center;">
-            <span style="color: #2563eb; margin-right: 8px; font-size: 14px;">📞</span>
-            <span style="color: #666666;">${signatureData.phone}</span>
-          </div>
-          `
-              : ""
-          }
-          
-          ${
-            signatureData.website
-              ? `
-          <div style="margin-bottom: 3px; display: flex; align-items: center;">
-            <span style="color: #2563eb; margin-right: 8px; font-size: 14px;">🌐</span>
-            <a href="${signatureData.website}" style="color: #666666; text-decoration: none;">${signatureData.website}</a>
-          </div>
-          `
-              : ""
-          }
-          
-          ${
-            signatureData.address
-              ? `
-          <div style="margin-top: 8px; display: flex; align-items: flex-start;">
-            <span style="color: #2563eb; margin-right: 8px; font-size: 14px; margin-top: 2px;">📍</span>
-            <span style="color: #666666;">${signatureData.address}</span>
-          </div>
-          `
-              : ""
-          }
-        </div>
+      <td colspan="5" style="padding-top:8px;padding-bottom:8px">
+        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%">
+          <tbody>
+            <tr>
+              <td style="border-top:${separatorWidth}px solid ${separatorColor};line-height:1px;font-size:1px">
+                &nbsp;
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </td>
     </tr>
-  </tbody>
-</table>
-  `;
-  };
 
-  // Générateur HTML pour le template Rangan
-  const generateRanganHTML = (
-    signatureData,
-    primaryColor,
-    photoSrc,
-    logoSrc
-  ) => {
-    return `
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 500px; font-family: Arial, sans-serif; background-color: #ffffff;">
-  <tbody>
+    ${
+      logoSrc
+        ? `
     <tr>
-      <!-- Photo de profil à gauche -->
-      <td style="width: 110px; padding-right: 25px; vertical-align: top; padding-bottom: 15px;">
-        ${
-          photoSrc
-            ? `
-        <div style="width: 100px; height: 100px; border-radius: 50%; background: url('${photoSrc}') center center/cover no-repeat; display: block; border: 4px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
-        `
-            : ""
-        }
-      </td>
-      
-      <!-- Informations à droite -->
-      <td style="vertical-align: top; padding-bottom: 15px;">
-        <!-- Nom complet -->
-        <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 24}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || "bold"}; font-style: ${signatureData.typography?.fullName?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || "none"}; color: ${signatureData.typography?.fullName?.color || "#1a1a1a"}; line-height: 1.2; margin-bottom: 4px; font-family: ${signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif"};">
-          ${signatureData.fullName || ""}
-        </div>
-        
-        <!-- Titre/Position -->
-        <div style="font-size: ${signatureData.typography?.position?.fontSize || 16}px; font-weight: ${signatureData.typography?.position?.fontWeight || "normal"}; font-style: ${signatureData.typography?.position?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.position?.textDecoration || "none"}; color: ${signatureData.typography?.position?.color || "#666666"}; line-height: 1.3; margin-bottom: 12px; font-family: ${signatureData.typography?.position?.fontFamily || "Arial, sans-serif"};">
-          ${signatureData.position || ""}${signatureData.position && signatureData.company ? "<br>" : ""}${signatureData.company || ""}
-        </div>
-        
-        <!-- Informations de contact avec icônes colorées -->
-        <div style="font-size: 14px; line-height: 1.8; margin-bottom: 15px;">
-          ${
-            signatureData.phone
-              ? `
-          <div style="margin-bottom: 4px; display: flex; align-items: center;">
-            <div style="width: 16px; height: 16px; border-radius: 50%; background-color: #ff6b35; margin-right: 10px; display: flex; align-items: center; justify-content: center; font-size: 10px;">📞</div>
-            <span style="color: #333;">${signatureData.phone}</span>
-          </div>
-          `
-              : ""
-          }
-          
-          ${
-            signatureData.email
-              ? `
-          <div style="margin-bottom: 4px; display: flex; align-items: center;">
-            <div style="width: 16px; height: 16px; border-radius: 50%; background-color: #4285f4; margin-right: 10px; display: flex; align-items: center; justify-content: center; font-size: 10px;">✉</div>
-            <a href="mailto:${signatureData.email}" style="color: #333; text-decoration: none;">${signatureData.email}</a>
-          </div>
-          `
-              : ""
-          }
-          
-          ${
-            signatureData.website
-              ? `
-          <div style="margin-bottom: 4px; display: flex; align-items: center;">
-            <div style="width: 16px; height: 16px; border-radius: 50%; background-color: #34a853; margin-right: 10px; display: flex; align-items: center; justify-content: center; font-size: 10px;">🌐</div>
-            <a href="${signatureData.website}" style="color: #333; text-decoration: none;">${signatureData.website}</a>
-          </div>
-          `
-              : ""
-          }
-        </div>
-        
-        <!-- Icônes sociales colorées -->
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #0077b5; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <span style="color: white; font-size: 14px; font-weight: bold;">in</span>
-          </div>
-          <div style="width: 28px; height: 28px; border-radius: 50%; background-color: #1da1f2; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <span style="color: white; font-size: 12px;">🐦</span>
-          </div>
-          <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <span style="color: white; font-size: 12px;">📷</span>
-          </div>
-        </div>
+      <td colspan="5" style="padding:8px 0px 0px">
+        <img src="${logoSrc}"
+             alt="${signatureData.companyName || "Logo entreprise"}"
+             style="width:${signatureData.logoSize || 60}px;height:auto;max-height:${signatureData.logoSize || 60}px;display:block;margin:0;padding:0;font-size:0;line-height:0;border:0;">
       </td>
     </tr>
-  </tbody>
-</table>
-  `;
-  };
-
-  // Générateur HTML pour le template Shah
-  const generateShahHTML = (signatureData, primaryColor, photoSrc, logoSrc) => {
-    return `
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 480px; font-family: Arial, sans-serif; background-color: #ffffff;">
-  <tbody>
-    <tr>
-      <!-- Informations à gauche -->
-      <td style="vertical-align: top; padding-right: 25px; padding-bottom: 15px; width: 300px;">
-        <!-- Nom complet -->
-        <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 26}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || "bold"}; font-style: ${signatureData.typography?.fullName?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || "none"}; color: ${signatureData.typography?.fullName?.color || "#1a1a1a"}; line-height: 1.1; margin-bottom: 6px; font-family: ${signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif"};">
-          ${signatureData.fullName || ""}
-        </div>
-        
-        <!-- Titre/Position -->
-        <div style="font-size: ${signatureData.typography?.position?.fontSize || 15}px; font-weight: ${signatureData.typography?.position?.fontWeight || "normal"}; font-style: ${signatureData.typography?.position?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.position?.textDecoration || "none"}; color: ${signatureData.typography?.position?.color || "#666666"}; line-height: 1.4; margin-bottom: 18px; font-family: ${signatureData.typography?.position?.fontFamily || "Arial, sans-serif"};">
-          ${signatureData.position || ""}${signatureData.position && signatureData.company ? " at " : ""}${signatureData.company || ""}
-        </div>
-        
-        <!-- Informations de contact -->
-        <div style="font-size: 14px; line-height: 1.7; margin-bottom: 20px;">
-          ${
-            signatureData.email
-              ? `
-          <div style="margin-bottom: 5px; display: flex; align-items: center;">
-            <span style="color: #666666; margin-right: 8px; font-size: 13px;">📧</span>
-            <a href="mailto:${signatureData.email}" style="color: #333; text-decoration: none;">${signatureData.email}</a>
-          </div>
-          `
-              : ""
-          }
-          
-          ${
-            signatureData.phone
-              ? `
-          <div style="margin-bottom: 5px; display: flex; align-items: center;">
-            <span style="color: #666666; margin-right: 8px; font-size: 13px;">📱</span>
-            <span style="color: #333;">${signatureData.phone}</span>
-          </div>
-          `
-              : ""
-          }
-          
-          ${
-            signatureData.website
-              ? `
-          <div style="margin-bottom: 5px; display: flex; align-items: center;">
-            <span style="color: #666666; margin-right: 8px; font-size: 13px;">🌍</span>
-            <a href="${signatureData.website}" style="color: #333; text-decoration: none;">${signatureData.website}</a>
-          </div>
-          `
-              : ""
-          }
-        </div>
-        
-        <!-- Icônes sociales bleues alignées -->
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <div style="width: 32px; height: 32px; border-radius: 6px; background-color: #0077b5; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <span style="color: white; font-size: 16px; font-weight: bold;">in</span>
-          </div>
-          <div style="width: 32px; height: 32px; border-radius: 6px; background-color: #0077b5; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <span style="color: white; font-size: 14px;">🐦</span>
-          </div>
-          <div style="width: 32px; height: 32px; border-radius: 6px; background-color: #0077b5; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <span style="color: white; font-size: 16px; font-weight: bold;">f</span>
-          </div>
-          <div style="width: 32px; height: 32px; border-radius: 6px; background-color: #0077b5; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <span style="color: white; font-size: 14px;">📷</span>
-          </div>
-        </div>
-      </td>
-      
-      <!-- Photo de profil carrée à droite -->
-      <td style="width: 130px; vertical-align: top; padding-bottom: 15px; text-align: center;">
-        ${
-          photoSrc
-            ? `
-        <div style="width: 120px; height: 120px; border-radius: 8px; background: url('${photoSrc}') center center/cover no-repeat; display: inline-block; border: 2px solid #f0f0f0; box-shadow: 0 2px 6px rgba(0,0,0,0.08);"></div>
-        `
-            : ""
-        }
-      </td>
-    </tr>
-  </tbody>
-</table>
-  `;
-  };
-
-  // Générateur HTML pour le template personnalisé
-  const generateCustomHTML = (
-    signatureData,
-    primaryColor,
-    photoSrc,
-    logoSrc
-  ) => {
-    const layout = signatureData.customLayout || {
-      grid: { rows: 2, cols: 2 },
-      cells: [
-        {
-          id: "cell-0-0",
-          row: 0,
-          col: 0,
-          elements: [{ type: "photo", content: photoSrc, alignment: "center" }],
-        },
-        {
-          id: "cell-0-1",
-          row: 0,
-          col: 1,
-          elements: [
-            {
-              type: "text",
-              content: `${signatureData.fullName || ""}`,
-              alignment: "left",
-              styles: {
-                fontSize: "18px",
-                fontWeight: "bold",
-                color: primaryColor,
-              },
-            },
-            {
-              type: "text",
-              content: signatureData.position || "",
-              alignment: "left",
-              styles: { fontSize: "14px", color: "#666", marginTop: "4px" },
-            },
-          ],
-        },
-        {
-          id: "cell-1-0",
-          row: 1,
-          col: 0,
-          elements: [{ type: "logo", content: logoSrc, alignment: "center" }],
-        },
-        {
-          id: "cell-1-1",
-          row: 1,
-          col: 1,
-          elements: [
-            {
-              type: "text",
-              content: signatureData.contact || "",
-              alignment: "left",
-              styles: { fontSize: "12px", color: "#666" },
-            },
-          ],
-        },
-      ],
-    };
-
-    const { grid, cells } = layout;
-
-    // Fonction pour générer le HTML d'un élément
-    const generateElementHTML = (element) => {
-      const { type, content, alignment, styles = {} } = element;
-
-      if (!content) return "";
-
-      const alignStyle =
-        alignment === "center"
-          ? "text-align: center;"
-          : alignment === "right"
-            ? "text-align: right;"
-            : "text-align: left;";
-
-      const styleString = Object.entries(styles)
-        .map(([key, value]) => {
-          const cssKey = key.replace(/([A-Z])/g, "-$1").toLowerCase();
-          return `${cssKey}: ${value};`;
-        })
-        .join(" ");
-
-      switch (type) {
-        case "photo":
-          return `
-          <div style="${alignStyle}">
-            <div style="width: 80px; height: 80px; border-radius: 50%; background: url('${content}') center center/cover no-repeat; display: inline-block; border: 2px solid #f0f0f0; ${styleString}"></div>
-          </div>
-        `;
-
-        case "logo":
-          return `
-          <div style="${alignStyle}">
-            <img src="${content}" alt="Logo" style="height: 40px; object-fit: contain; ${styleString}" />
-          </div>
-        `;
-
-        case "text":
-        case "custom":
-          return `<div style="${alignStyle} ${styleString}">${content}</div>`;
-
-        default:
-          return "";
-      }
-    };
-
-    // Fonction pour générer le HTML d'une cellule
-    const generateCellHTML = (cell) => {
-      const elementsHTML = cell.elements
-        .map(generateElementHTML)
-        .filter((html) => html)
-        .join("");
-      const { borders = {} } = cell;
-
-      // Construire les styles de bordure pour le HTML
-      const borderStyles = [
-        borders.top ? "border-top: 2px solid #e5e7eb" : "",
-        borders.right ? "border-right: 2px solid #e5e7eb" : "",
-        borders.bottom ? "border-bottom: 2px solid #e5e7eb" : "",
-        borders.left ? "border-left: 2px solid #e5e7eb" : "",
-      ]
-        .filter(Boolean)
-        .join("; ");
-
-      return `
-      <td style="padding: 10px; vertical-align: top; ${borderStyles}">
-        ${elementsHTML}
-      </td>
-    `;
-    };
-
-    // Générer la structure de la grille
-    const rows = [];
-    for (let row = 0; row < grid.rows; row++) {
-      const rowCells = cells
-        .filter((cell) => cell.row === row)
-        .sort((a, b) => a.col - b.col);
-      const rowHTML = `
-      <tr>
-        ${rowCells.map(generateCellHTML).join("")}
-      </tr>
-    `;
-      rows.push(rowHTML);
+    `
+        : ""
     }
+  `;
 
-    return `
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; max-width: 600px; font-family: Arial, sans-serif; background-color: #ffffff;">
+  // Table principale : carte blanche, couleurs inchangées quel que soit le thème
+  return `
+<table cellpadding="0" cellspacing="0" border="0"
+       width="${layoutWidth}" bgcolor="#ffffff"
+       style="border-collapse:collapse;max-width:${layoutWidth}px;font-family:${mainFontFamily};background-color:#ffffff;border:1px solid #e0e0e0;">
   <tbody>
-    ${rows.join("")}
+    <tr>
+      ${leftColumn}
+      ${verticalSeparator}
+      ${rightColumn}
+    </tr>
+    ${bottomSeparatorAndLogo}
   </tbody>
 </table>
-  `;
-  };
+  `.trim();
+};
+
+
+
+
 
   // Fonction pour copier la signature dans le presse-papier
   const handleCopySignature = async () => {
     setIsCopying(true);
 
     try {
-      // Générer le HTML directement avec les données actuelles
+      // Générer le HTML optimisé pour Gmail (même générateur que la preview)
       const html = generateSignatureHTMLFromHook();
-      console.log("📋 HTML généré pour copie:", html.substring(0, 200));
       
       // Copier dans le presse-papiers
       await navigator.clipboard.write([
@@ -1209,7 +1373,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
       console.error("❌ Erreur copie signature:", error);
       // Fallback pour les navigateurs qui ne supportent pas ClipboardItem
       try {
-        const html = generateHTML();
+        const html = generateSignatureHTMLFromHook();
         await navigator.clipboard.writeText(html);
         toast.success("Signature copiée (texte brut)");
         setIsCopied(true);
@@ -1336,7 +1500,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
         </div>
 
         <div className="border-t pt-4 mt-4 flex justify-start">
-          {/* Signature avec rendu conditionnel selon le template */}
+          {/* Signature dynamique selon l'orientation */}
           {(() => {
             const templateProps = {
               signatureData,
@@ -1348,10 +1512,11 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
               logoSrc: signatureData.logo,
             };
 
-            if (signatureData.orientation === "horizontal") {
-              return <HorizontalSignature {...templateProps} />;
-            } else {
+            // Afficher le bon composant selon l'orientation
+            if (signatureData.orientation === "vertical") {
               return <VerticalSignature {...templateProps} />;
+            } else {
+              return <HorizontalSignature {...templateProps} />;
             }
           })()}
         </div>
@@ -1617,6 +1782,7 @@ export default function NewSignaturePage() {
     loadingSignature,
   } = useSignatureData();
 
+  const [orientationChosen, setOrientationChosen] = React.useState(false);
 
   // Afficher un indicateur de chargement pendant le chargement des données d'édition
   if (isEditMode && loadingSignature) {
@@ -1630,27 +1796,34 @@ export default function NewSignaturePage() {
     );
   }
 
-  // Fonction pour changer de template
-  const handleTemplateChange = (templateId) => {
-    updateSignatureData("template", templateId);
-    // Maintenir la compatibilité avec l'ancien système layout
-    if (templateId === "horizontal" || templateId === "vertical") {
-      updateSignatureData("layout", templateId);
-    }
-  };
-
-  // Fonction pour mettre à jour le layout personnalisé
-  const handleCustomLayoutChange = (newLayout) => {
-    updateSignatureData("customLayout", newLayout);
-  };
+  // Si on est en mode création (pas édition) et qu'aucune orientation n'a été choisie
+  if (!isEditMode && !orientationChosen) {
+    return (
+      <OrientationSelector
+        onSelect={(orientation) => {
+          updateSignatureData("orientation", orientation);
+          setOrientationChosen(true);
+        }}
+      />
+    );
+  }
 
   return (
-    <div className="p-12 h-[calc(100vh-64px)] flex items-center justify-center">
-      <EmailPreview
-        signatureData={signatureData}
-        editingSignatureId={editingSignatureId}
-        isEditMode={isEditMode}
-      />
+    <div className="flex gap-0 w-full">
+      <div className="flex-1 p-12 h-[calc(100vh-64px)] flex items-center justify-center">
+        <EmailPreview
+          signatureData={signatureData}
+          editingSignatureId={editingSignatureId}
+          isEditMode={isEditMode}
+        />
+      </div>
+      {!isEditMode && orientationChosen && (
+        <SignatureSidebar
+          signatureData={signatureData}
+          updateSignatureData={updateSignatureData}
+          editingSignatureId={editingSignatureId}
+        />
+      )}
     </div>
   );
 }
