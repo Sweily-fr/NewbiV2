@@ -1,5 +1,6 @@
 "use client";
 
+import Head from "next/head";
 import { TrialAlert } from "@/src/components/trial-alert";
 import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
 import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
@@ -184,165 +185,172 @@ function DashboardContent() {
   // Utiliser les vraies données financières
 
   return (
-    <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
-      <div className="flex items-center justify-between w-full mb-4 md:mb-6">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-semibold">
-            Bonjour {session?.user?.name},
-          </h1>
-          {process.env.NODE_ENV === "development" && cacheInfo?.lastUpdate && (
-            <p className="text-xs text-gray-500 mt-1">
-              Données mises à jour : {cacheInfo.lastUpdate.toLocaleTimeString()}
-              {cacheInfo.isFromCache && " (cache)"}
-            </p>
-          )}
+    <>
+      <Head>
+        <meta name="robots" content="noindex,nofollow,noarchive" />
+      </Head>
+      <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
+        <div className="flex items-center justify-between w-full mb-4 md:mb-6">
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-semibold">
+              Bonjour {session?.user?.name},
+            </h1>
+            {process.env.NODE_ENV === "development" &&
+              cacheInfo?.lastUpdate && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Données mises à jour :{" "}
+                  {cacheInfo.lastUpdate.toLocaleTimeString()}
+                  {cacheInfo.isFromCache && " (cache)"}
+                </p>
+              )}
+          </div>
+          {/* <BankingConnectButton /> */}
         </div>
-        {/* <BankingConnectButton /> */}
-      </div>
-      <div className="flex flex-col gap-3 w-full">
-        <Comp333
-          className="w-full h-11 flex items-center text-sm md:text-sm placeholder:text-sm md:placeholder:text-sm"
-          placeholder="Rechercher des transactions ou lancer une action"
-        />
-        {/* Conteneur avec scroll horizontal sur mobile, flex-wrap sur tablette et desktop */}
-        <div className="overflow-x-auto lg:overflow-x-visible w-full scrollbar-hide">
-          <div className="flex gap-2 lg:gap-3 lg:flex-wrap w-max lg:w-full">
-            <Button
-              className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
-              variant="outline"
-              size="sm"
-              asChild
-            >
-              <a
-                href="/dashboard/outils/gestion-depenses"
-                className="flex items-center gap-1 lg:gap-2 justify-center"
+        <div className="flex flex-col gap-3 w-full">
+          <Comp333
+            className="w-full h-11 flex items-center text-sm md:text-sm placeholder:text-sm md:placeholder:text-sm"
+            placeholder="Rechercher des transactions ou lancer une action"
+          />
+          {/* Conteneur avec scroll horizontal sur mobile, flex-wrap sur tablette et desktop */}
+          <div className="overflow-x-auto lg:overflow-x-visible w-full scrollbar-hide">
+            <div className="flex gap-2 lg:gap-3 lg:flex-wrap w-max lg:w-full">
+              <Button
+                className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
+                variant="outline"
+                size="sm"
+                asChild
               >
-                <CloudUpload className="w-4 h-4" />
-                <span className="text-xs lg:text-xs">
-                  Créer une transaction
-                </span>
-              </a>
-            </Button>
-            <Button
-              className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
-              variant="outline"
-              size="sm"
-              asChild
-            >
-              <a
-                href="/dashboard/outils/factures/new"
-                className="flex items-center gap-1 lg:gap-2 justify-center"
+                <a
+                  href="/dashboard/outils/gestion-depenses"
+                  className="flex items-center gap-1 lg:gap-2 justify-center"
+                >
+                  <CloudUpload className="w-4 h-4" />
+                  <span className="text-xs lg:text-xs">
+                    Créer une transaction
+                  </span>
+                </a>
+              </Button>
+              <Button
+                className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
+                variant="outline"
+                size="sm"
+                asChild
               >
-                <FileCheck2 className="w-4 h-4" />
-                <span className="text-xs lg:text-xs">Créer une facture</span>
-              </a>
-            </Button>
-            <Button
-              className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
-              variant="outline"
-              size="sm"
-              asChild
-            >
-              <a
-                href="/dashboard/outils/gestion-depenses"
-                className="flex items-center gap-1 lg:gap-2 justify-center"
+                <a
+                  href="/dashboard/outils/factures/new"
+                  className="flex items-center gap-1 lg:gap-2 justify-center"
+                >
+                  <FileCheck2 className="w-4 h-4" />
+                  <span className="text-xs lg:text-xs">Créer une facture</span>
+                </a>
+              </Button>
+              <Button
+                className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
+                variant="outline"
+                size="sm"
+                asChild
               >
-                <Download className="w-4 h-4" />
-                <span className="text-xs lg:text-xs">Importer des reçus</span>
-              </a>
-            </Button>
-            <Button
-              className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
-              variant="outline"
-              size="sm"
-              asChild
-            >
-              <a
-                href="/dashboard/outils/devis/new"
-                className="flex items-center gap-1 lg:gap-2 justify-center"
+                <a
+                  href="/dashboard/outils/gestion-depenses"
+                  className="flex items-center gap-1 lg:gap-2 justify-center"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="text-xs lg:text-xs">Importer des reçus</span>
+                </a>
+              </Button>
+              <Button
+                className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
+                variant="outline"
+                size="sm"
+                asChild
               >
-                <FileClock className="w-4 h-4" />
-                <span className="text-xs lg:text-xs">Créer un devis</span>
-              </a>
-            </Button>
-            <Button
-              className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
-              variant="outline"
-              size="sm"
-              asChild
-            >
-              <a
-                href="/dashboard/outils/transferts-fichiers/new"
-                className="flex items-center gap-1 lg:gap-2 justify-center"
+                <a
+                  href="/dashboard/outils/devis/new"
+                  className="flex items-center gap-1 lg:gap-2 justify-center"
+                >
+                  <FileClock className="w-4 h-4" />
+                  <span className="text-xs lg:text-xs">Créer un devis</span>
+                </a>
+              </Button>
+              <Button
+                className="cursor-pointer normal whitespace-nowrap lg:flex-1 lg:min-w-0"
+                variant="outline"
+                size="sm"
+                asChild
               >
-                <Send className="w-4 h-4" />
-                <span className="text-xs lg:text-xs">
-                  Transférer un fichier
-                </span>
-              </a>
-            </Button>
+                <a
+                  href="/dashboard/outils/transferts-fichiers/new"
+                  className="flex items-center gap-1 lg:gap-2 justify-center"
+                >
+                  <Send className="w-4 h-4" />
+                  <span className="text-xs lg:text-xs">
+                    Transférer un fichier
+                  </span>
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full mt-4">
+          <BankBalanceCard
+            className="shadow-xs w-full md:w-1/2"
+            expenses={paidExpenses}
+            invoices={paidInvoices}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            isLoading={isLoading}
+          />
+          <UnifiedTransactions
+            limit={5}
+            className="shadow-xs w-full md:w-1/2"
+            expenses={paidExpenses}
+            invoices={paidInvoices}
+            isLoading={isLoading}
+          />
+        </div>
+        {/* Graphique de trésorerie - Pleine largeur */}
+        <div className="w-full">
+          <TreasuryChart
+            expenses={paidExpenses}
+            invoices={paidInvoices}
+            className="shadow-xs"
+            initialBalance={0}
+          />
+        </div>
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
+          <ChartAreaInteractive
+            title="Entrées"
+            description={formatCurrency(totalIncome)}
+            height="200px"
+            className="shadow-xs w-full md:w-1/2"
+            config={incomeChartConfig}
+            data={incomeChartData}
+            hideMobileCurve={true}
+          />
+          <ChartAreaInteractive
+            title="Sorties"
+            description={formatCurrency(totalExpenses)}
+            height="200px"
+            className="shadow-xs w-full md:w-1/2"
+            config={expenseChartConfig}
+            data={expenseChartData}
+            hideMobileCurve={true}
+          />
+        </div>
+
+        {/* Graphiques de répartition par catégorie */}
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
+          <IncomeCategoryChart
+            invoices={paidInvoices}
+            className="shadow-xs w-full md:w-1/2"
+          />
+          <ExpenseCategoryChart
+            expenses={paidExpenses}
+            className="shadow-xs w-full md:w-1/2"
+          />
+        </div>
       </div>
-      <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full mt-4">
-        <BankBalanceCard
-          className="shadow-xs w-full md:w-1/2"
-          expenses={paidExpenses}
-          invoices={paidInvoices}
-          totalIncome={totalIncome}
-          totalExpenses={totalExpenses}
-          isLoading={isLoading}
-        />
-        <UnifiedTransactions
-          limit={5}
-          className="shadow-xs w-full md:w-1/2"
-          expenses={paidExpenses}
-          invoices={paidInvoices}
-          isLoading={isLoading}
-        />
-      </div>
-      {/* Graphique de trésorerie - Pleine largeur */}
-      <div className="w-full">
-        <TreasuryChart
-          expenses={paidExpenses}
-          invoices={paidInvoices}
-          className="shadow-xs"
-          initialBalance={0}
-        />
-      </div>
-      <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
-        <ChartAreaInteractive
-          title="Entrées"
-          description={formatCurrency(totalIncome)}
-          height="200px"
-          className="shadow-xs w-full md:w-1/2"
-          config={incomeChartConfig}
-          data={incomeChartData}
-          hideMobileCurve={true}
-        />
-        <ChartAreaInteractive
-          title="Sorties"
-          description={formatCurrency(totalExpenses)}
-          height="200px"
-          className="shadow-xs w-full md:w-1/2"
-          config={expenseChartConfig}
-          data={expenseChartData}
-          hideMobileCurve={true}
-        />
-      </div>
-      
-      {/* Graphiques de répartition par catégorie */}
-      <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
-        <IncomeCategoryChart
-          invoices={paidInvoices}
-          className="shadow-xs w-full md:w-1/2"
-        />
-        <ExpenseCategoryChart
-          expenses={paidExpenses}
-          className="shadow-xs w-full md:w-1/2"
-        />
-      </div>
-    </div>
+    </>
   );
 }
 

@@ -2,4 +2,14 @@
 User-agent: *
 Allow: /
 
+# Pages privées - Ne pas indexer
+Disallow: /dashboard/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /accept-invitation/
+Disallow: /transfer/
+Disallow: /reactivate-account
+Disallow: /test-emails/
+Disallow: /debug-organization/
+
 Sitemap: https://newbi.fr/sitemap.xml

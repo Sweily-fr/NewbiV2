@@ -21,13 +21,13 @@ export default function sitemap() {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/produits/signature-mail`,
+      url: `${baseUrl}/produits/signatures`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/produits/transfert`,
+      url: `${baseUrl}/produits/transfers`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
@@ -57,16 +57,10 @@ export default function sitemap() {
       priority: 0.3,
     },
     {
-      url: `${baseUrl}/cookies`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.3,
-    },
-    {
       url: `${baseUrl}/faq`,
       lastModified: new Date(),
       changeFrequency: "weekly",
-      priority: 0.5,
+      priority: 0.6,
     },
   ];
 }

@@ -68,18 +68,18 @@ const signInWithProvider = async (provider) => {
   // Vider tous les caches avant la connexion OAuth
   try {
     console.log("🧹 Nettoyage des caches avant connexion OAuth...");
-    
+
     // Vider le cache utilisateur
     localStorage.removeItem("user-cache");
-    
+
     // Vider tous les caches d'abonnement (on ne connaît pas l'ID à l'avance)
-    Object.keys(localStorage).forEach(key => {
+    Object.keys(localStorage).forEach((key) => {
       if (key.startsWith("subscription-")) {
         localStorage.removeItem(key);
         console.log(`🗑️ Cache supprimé: ${key}`);
       }
     });
-    
+
     console.log("✅ Caches nettoyés avec succès");
   } catch (error) {
     console.warn("⚠️ Erreur lors du nettoyage des caches:", error);
@@ -109,49 +109,145 @@ const signInWithProvider = async (provider) => {
 };
 
 export default function LoginPage() {
-  const seoData = useAuthSEO("login");
+  const seoData = {
+    ...useAuthSEO("login"),
+    robots: "noindex,nofollow",
+  };
 
   return (
     <>
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
       <main>
-      {/* Desktop Layout */}
-      <div className="hidden md:flex h-screen">
-        <div className="w-1/2 flex items-center justify-center p-8">
-          <div className="mx-auto sm:max-w-md w-full">
-            <h3 className="text-3xl font-semibold text-foreground dark:text-foreground">
+        {/* Desktop Layout */}
+        <div className="hidden md:flex h-screen">
+          <div className="w-1/2 flex items-center justify-center p-8">
+            <div className="mx-auto sm:max-w-md w-full">
+              <h3 className="text-3xl font-semibold text-foreground dark:text-foreground">
+                Connectez-vous
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
+                Vous n'avez pas de compte ?{" "}
+                <Link
+                  href="/auth/signup"
+                  className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
+                >
+                  Inscription
+                </Link>
+              </p>
+              <div className="mt-8 flex flex-row items-center flex-wrap gap-4 max-sm:flex-col">
+                <Button
+                  variant="outline"
+                  className="flex-1 items-center justify-center cursor-pointer"
+                  onClick={() => signInWithProvider("github")}
+                >
+                  <GitHubIcon className="size-5" aria-hidden={true} />
+                  <span className="text-sm font-medium">
+                    Connexion avec GitHub
+                  </span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 items-center justify-center cursor-pointer"
+                  onClick={() => signInWithProvider("google")}
+                >
+                  <GoogleIcon className="size-4" aria-hidden={true} />
+                  <span className="text-sm font-medium">
+                    Connexion avec Google
+                  </span>
+                </Button>
+              </div>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    ou
+                  </span>
+                </div>
+              </div>
+
+              <LoginForm />
+              <p className="mt-6 text-sm text-muted-foreground dark:text-muted-foreground">
+                Mot de passe oublié?{" "}
+                <Link
+                  href="/auth/forget-password"
+                  className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
+                >
+                  Réinitialiser mot de passe
+                </Link>
+              </p>
+            </div>
+          </div>
+          <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
+            <div
+              className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
+              style={{ backgroundImage: "url('/BackgroundAuth.svg')" }}
+            >
+              <div className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto">
+                <div className="text-lg min-h-[27px] flex items-center justify-between">
+                  <div className="flex-1">
+                    <Typewriter
+                      text={[
+                        "Créez votre compte en quelques secondes.",
+                        "Rejoignez notre communauté.",
+                        "Commencez votre aventure dès maintenant.",
+                      ]}
+                      speed={30}
+                      deleteSpeed={30}
+                      delay={2000}
+                      loop={true}
+                      className="font-medium text-left text-[#1C1C1C] text-[15px]"
+                    />
+                  </div>
+                  <CircleArrowUp className="ml-4 text-[#1C1C1C] flex-shrink-0" />
+                </div>
+              </div>
+              <img
+                src="/ni.svg"
+                alt="Newbi Logo"
+                className="absolute bottom-2 right-3 w-5 h-auto filter brightness-0 invert"
+                style={{ opacity: 0.9 }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="md:hidden min-h-screen bg-background flex items-center justify-center pb-8">
+          <div className="w-full max-w-sm px-6">
+            <img src="/ni2.png" alt="Newbi Logo" className="mb-2" width={30} />
+            <h3 className="text-xl font-medium text-foreground mb-2">
               Connectez-vous
             </h3>
-            <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-6">
               Vous n'avez pas de compte ?{" "}
               <Link
                 href="/auth/signup"
-                className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
+                className="font-medium text-primary hover:text-primary/90 underline"
               >
                 Inscription
               </Link>
             </p>
-            <div className="mt-8 flex flex-row items-center flex-wrap gap-4 max-sm:flex-col">
+
+            <div className="flex flex-col gap-3 mb-6">
               <Button
                 variant="outline"
-                className="flex-1 items-center justify-center cursor-pointer"
+                className="w-full items-center justify-center"
                 onClick={() => signInWithProvider("github")}
               >
-                <GitHubIcon className="size-5" aria-hidden={true} />
-                <span className="text-sm font-medium">
-                  Connexion avec GitHub
-                </span>
+                <GitHubIcon className="size-4 mr-2" aria-hidden={true} />
+                <span className="text-sm font-medium">GitHub</span>
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 items-center justify-center cursor-pointer"
+                className="w-full items-center justify-center cursor-pointer"
                 onClick={() => signInWithProvider("google")}
               >
-                <GoogleIcon className="size-4" aria-hidden={true} />
-                <span className="text-sm font-medium">
-                  Connexion avec Google
-                </span>
+                <GoogleIcon className="size-4 mr-2" aria-hidden={true} />
+                <span className="text-sm font-medium">Google</span>
               </Button>
             </div>
 
@@ -160,119 +256,21 @@ export default function LoginPage() {
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  ou
-                </span>
+                <span className="bg-white px-2 text-muted-foreground">ou</span>
               </div>
             </div>
 
             <LoginForm />
-            <p className="mt-6 text-sm text-muted-foreground dark:text-muted-foreground">
-              Mot de passe oublié?{" "}
+            <p className="mt-4 text-sm text-muted-foreground text-center">
               <Link
                 href="/auth/forget-password"
-                className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
+                className="font-medium text-primary hover:text-primary/90"
               >
-                Réinitialiser mot de passe
+                Mot de passe oublié ?
               </Link>
             </p>
           </div>
         </div>
-        <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
-          <div
-            className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
-            style={{ backgroundImage: "url('/BackgroundAuth.svg')" }}
-          >
-            <div className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto">
-              <div className="text-lg min-h-[27px] flex items-center justify-between">
-                <div className="flex-1">
-                  <Typewriter
-                    text={[
-                      "Créez votre compte en quelques secondes.",
-                      "Rejoignez notre communauté.",
-                      "Commencez votre aventure dès maintenant.",
-                    ]}
-                    speed={30}
-                    deleteSpeed={30}
-                    delay={2000}
-                    loop={true}
-                    className="font-medium text-left text-[#1C1C1C] text-[15px]"
-                  />
-                </div>
-                <CircleArrowUp className="ml-4 text-[#1C1C1C] flex-shrink-0" />
-              </div>
-            </div>
-            <img
-              src="/ni.svg"
-              alt="Newbi Logo"
-              className="absolute bottom-2 right-3 w-5 h-auto filter brightness-0 invert"
-              style={{ opacity: 0.9 }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden min-h-screen bg-background flex items-center justify-center pb-8">
-        <div className="w-full max-w-sm px-6">
-          <img
-            src="/ni2.png"
-            alt="Newbi Logo"
-            className="mb-2"
-            width={30}
-          />
-          <h3 className="text-xl font-medium text-foreground mb-2">
-            Connectez-vous
-          </h3>
-          <p className="text-sm text-muted-foreground mb-6">
-            Vous n'avez pas de compte ?{" "}
-            <Link
-              href="/auth/signup"
-              className="font-medium text-primary hover:text-primary/90 underline"
-            >
-              Inscription
-            </Link>
-          </p>
-
-          <div className="flex flex-col gap-3 mb-6">
-            <Button
-              variant="outline"
-              className="w-full items-center justify-center"
-              onClick={() => signInWithProvider("github")}
-            >
-              <GitHubIcon className="size-4 mr-2" aria-hidden={true} />
-              <span className="text-sm font-medium">GitHub</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full items-center justify-center cursor-pointer"
-              onClick={() => signInWithProvider("google")}
-            >
-              <GoogleIcon className="size-4 mr-2" aria-hidden={true} />
-              <span className="text-sm font-medium">Google</span>
-            </Button>
-          </div>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-muted-foreground">ou</span>
-            </div>
-          </div>
-
-          <LoginForm />
-          <p className="mt-4 text-sm text-muted-foreground text-center">
-            <Link
-              href="/auth/forget-password"
-              className="font-medium text-primary hover:text-primary/90"
-            >
-              Mot de passe oublié ?
-            </Link>
-          </p>
-        </div>
-      </div>
       </main>
     </>
   );
