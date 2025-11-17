@@ -92,6 +92,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // const { isDirty } = formState; // DISABLED - Auto-save removed
 
   const [saving, setSaving] = useState(false);
+  const [isFormInitialized, setIsFormInitialized] = useState(false); // Indique si le formulaire est complètement chargé
 
   // Watch all form data for auto-save
   const formData = watch();
@@ -113,6 +114,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   
   // Re-valider quand le client change (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -224,10 +228,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
-  }, [watchedClient]);
+  }, [watchedClient, isFormInitialized]);
 
   // Re-valider quand le préfixe change (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -267,10 +274,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [watchedPrefix]);
+  }, [watchedPrefix, isFormInitialized]);
 
   // Re-valider quand le numéro de devis change (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms
     const timeoutId = setTimeout(async () => {
       const number = watchedNumber || "";
@@ -329,10 +339,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [watchedNumber, checkQuoteNumber, quoteId]);
+  }, [watchedNumber, checkQuoteNumber, quoteId, isFormInitialized]);
 
   // Re-valider quand les informations entreprise changent
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     setValidationErrors((prevErrors) => {
       if (prevErrors.companyInfo) {
         if (formData.companyInfo?.name && formData.companyInfo?.email) {
@@ -343,10 +356,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       }
       return prevErrors;
     });
-  }, [formData.companyInfo]);
+  }, [formData.companyInfo, isFormInitialized]);
 
   // Re-valider quand la date d'émission change (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -388,10 +404,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [watchedIssueDate]);
+  }, [watchedIssueDate, isFormInitialized]);
 
   // Re-valider quand la date de validité change (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -422,10 +441,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [watchedValidUntil, watchedIssueDate]);
+  }, [watchedValidUntil, watchedIssueDate, isFormInitialized]);
 
   // Re-valider quand les articles changent (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms - la validation se déclenche 500ms après avoir arrêté de taper
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -500,7 +522,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
-  }, [watchedItems, formData.isReverseCharge]);
+  }, [watchedItems, formData.isReverseCharge, isFormInitialized]);
 
   // Re-valider quand la remise change (avec debounce)
   useEffect(() => {
@@ -540,10 +562,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [watchedDiscount, watchedDiscountType]);
+  }, [watchedDiscount, watchedDiscountType, isFormInitialized]);
 
   // Re-valider quand la livraison change (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -613,10 +638,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [watchedShipping]);
+  }, [watchedShipping, isFormInitialized]);
 
   // Re-valider quand les champs personnalisés changent (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -670,7 +698,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [watchedCustomFields]);
+  }, [watchedCustomFields, isFormInitialized]);
 
   // Initialize form data when quote loads
   useEffect(() => {
@@ -678,6 +706,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       const quoteData = transformQuoteToFormData(existingQuote);
 
       reset(quoteData);
+      
+      // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
+      setTimeout(() => {
+        setIsFormInitialized(true);
+      }, 100);
     }
   }, [existingQuote, mode, reset, getValues]);
 
@@ -767,6 +800,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
             // Charger la position du client depuis l'organisation
             setValue("clientPositionRight", organization.quoteClientPositionRight || false);
+            
+            // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
+            setTimeout(() => {
+              setIsFormInitialized(true);
+            }, 100);
           }
         } catch (error) {
           // Error silently ignored

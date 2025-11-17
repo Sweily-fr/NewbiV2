@@ -103,6 +103,7 @@ export function useInvoiceEditor({
   const [saving, setSaving] = useState(false);
   const [editingFields, setEditingFields] = useState(new Set());
   const [touchedFields, setTouchedFields] = useState(new Set()); // Champs qui ont été touchés (onBlur)
+  const [isFormInitialized, setIsFormInitialized] = useState(false); // Indique si le formulaire est complètement chargé
 
   // Watch all form data for auto-save
   const formData = watch();
@@ -179,6 +180,9 @@ export function useInvoiceEditor({
   
   // Re-valider quand le client change (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -229,10 +233,13 @@ export function useInvoiceEditor({
     
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
-  }, [watchedClient]);
+  }, [watchedClient, isFormInitialized]);
 
   // Re-valider quand les informations de l'entreprise changent
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     setValidationErrors((prevErrors) => {
       const companyInfo = formData.companyInfo;
       
@@ -263,10 +270,13 @@ export function useInvoiceEditor({
       
       return prevErrors;
     });
-  }, [formData.companyInfo]);
+  }, [formData.companyInfo, isFormInitialized]);
 
   // Re-valider quand la date d'émission change
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     setValidationErrors((prevErrors) => {
       if (!formData.issueDate) {
         return {
@@ -287,10 +297,13 @@ export function useInvoiceEditor({
       
       return prevErrors;
     });
-  }, [formData.issueDate]);
+  }, [formData.issueDate, isFormInitialized]);
 
   // Re-valider quand la date d'échéance change
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     setValidationErrors((prevErrors) => {
       // Si pas de date d'échéance, pas d'erreur (champ optionnel)
       if (!formData.dueDate) {
@@ -327,10 +340,13 @@ export function useInvoiceEditor({
       
       return prevErrors;
     });
-  }, [formData.issueDate, formData.dueDate]);
+  }, [formData.issueDate, formData.dueDate, isFormInitialized]);
 
   // Re-valider quand le préfixe change (format uniquement, optionnel)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     setValidationErrors((prevErrors) => {
       const prefix = formData.prefix || "";
 
@@ -365,10 +381,13 @@ export function useInvoiceEditor({
 
       return prevErrors;
     });
-  }, [formData.prefix]);
+  }, [formData.prefix, isFormInitialized]);
 
   // Re-valider quand la référence devis change (format uniquement, optionnel)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     setValidationErrors((prevErrors) => {
       const ref = formData.purchaseOrderNumber || "";
 
@@ -403,10 +422,13 @@ export function useInvoiceEditor({
       
       return prevErrors;
     });
-  }, [formData.purchaseOrderNumber]);
+  }, [formData.purchaseOrderNumber, isFormInitialized]);
 
   // Re-valider quand les champs personnalisés changent (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -463,10 +485,13 @@ export function useInvoiceEditor({
     
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
-  }, [watchedCustomFields]);
+  }, [watchedCustomFields, isFormInitialized]);
 
   // Re-valider quand les articles changent (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms - la validation se déclenche 500ms après avoir arrêté de taper
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -574,10 +599,13 @@ export function useInvoiceEditor({
 
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
-  }, [itemsDataString, editingFields, touchedFields, formData.isReverseCharge, watchedItems]);
+  }, [itemsDataString, editingFields, touchedFields, formData.isReverseCharge, watchedItems, isFormInitialized]);
 
   // Re-valider quand la remise change
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     setValidationErrors((prevErrors) => {
       // Valider la remise en pourcentage
       if (watchedDiscountType === "PERCENTAGE") {
@@ -610,10 +638,13 @@ export function useInvoiceEditor({
       return prevErrors;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedDiscount, watchedDiscountType]);
+  }, [watchedDiscount, watchedDiscountType, isFormInitialized]);
 
   // Re-valider quand la livraison change (avec debounce)
   useEffect(() => {
+    // Ne pas valider si le formulaire n'est pas encore initialisé
+    if (!isFormInitialized) return;
+    
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -688,7 +719,7 @@ export function useInvoiceEditor({
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shippingData]);
+  }, [shippingData, isFormInitialized]);
 
   // Initialize form data when invoice loads
   useEffect(() => {
@@ -698,6 +729,10 @@ export function useInvoiceEditor({
       reset(invoiceData);
 
       // Les données sont maintenant chargées dans le formulaire
+      // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
+      setTimeout(() => {
+        setIsFormInitialized(true);
+      }, 100);
     }
   }, [existingInvoice, mode, reset, getValues]);
 
@@ -777,6 +812,11 @@ export function useInvoiceEditor({
       );
       setValue("showBankDetails", organization.showBankDetails || false);
       setValue("clientPositionRight", organization.invoiceClientPositionRight || false);
+      
+      // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
+      setTimeout(() => {
+        setIsFormInitialized(true);
+      }, 100);
 
       // Ajouter les coordonnées bancaires dans companyInfo
       setValue("companyInfo.bankName", organization.bankName || "");
