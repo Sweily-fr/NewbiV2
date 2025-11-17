@@ -19,6 +19,7 @@ const getDemoQuoteData = (formData, organization) => {
   const termsAndConditions = formData?.termsAndConditions || "";
   const showBankDetails = formData?.showBankDetails !== undefined ? formData?.showBankDetails : false;
   const primaryColor = formData?.primaryColor || "#5b4fff";
+  const clientPositionRight = formData?.clientPositionRight || false;
 
   return {
     quoteNumber: "DEMO-2024-001",
@@ -106,6 +107,8 @@ const getDemoQuoteData = (formData, organization) => {
       showBankDetails: showBankDetails,
       primaryColor: primaryColor,
     },
+    // Position du client dans le PDF
+    clientPositionRight: clientPositionRight,
   };
 };
 
@@ -157,6 +160,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
             termsAndConditions: org?.quoteTermsAndConditions || org?.documentTermsAndConditions || "",
             showBankDetails: org?.showBankDetails || false,
             primaryColor: org?.documentHeaderBgColor || "#5b4fff",
+            clientPositionRight: org?.quoteClientPositionRight || false,
           };
           
           console.log("📝 Valeurs initiales du formulaire (devis):", formValues);
@@ -190,6 +194,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
       termsAndConditions: "",
       showBankDetails: false,
       primaryColor: "#5b4fff",
+      clientPositionRight: false,
     },
   });
 
@@ -234,6 +239,9 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         
         // Couleur du document
         documentHeaderBgColor: formValues.primaryColor,
+        
+        // Position du client dans le PDF (devis)
+        quoteClientPositionRight: formValues.clientPositionRight || false,
         
         // Coordonnées bancaires
         bankIban: formValues.bankDetails?.iban || "",

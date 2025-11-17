@@ -80,6 +80,9 @@ export const authClient = createAuthClient({
             invoiceFooterNotes: { type: "string" },
             invoiceTermsAndConditions: { type: "string" },
             showBankDetails: { type: "boolean" },
+            // Client position in PDF
+            invoiceClientPositionRight: { type: "boolean" },
+            quoteClientPositionRight: { type: "boolean" },
             // Trial system fields (ISO date strings)
             trialStartDate: { type: "string" },
             trialEndDate: { type: "string" },

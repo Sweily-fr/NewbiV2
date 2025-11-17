@@ -807,78 +807,12 @@ export default function ClientSelector({
                         </div>
                       </div>
                       
-                      {/* Sélecteur de position du client dans le PDF */}
-                      <div className="p-4 border rounded-lg bg-muted/20">
-                      <div className="mb-3">
-                        <Label className="text-sm font-medium">
-                          Position des informations client dans le PDF
-                        </Label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Choisissez où afficher les informations du client
+                      {/* Mention pour la position du client dans le PDF */}
+                      <div className="p-3 border rounded-lg bg-muted/10">
+                        <p className="text-xs text-muted-foreground">
+                          💡 La position des informations client dans le PDF peut être modifiée dans les paramètres du devis (icône ⚙️ en haut à droite).
                         </p>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {/* Option Centre */}
-                        <button
-                          type="button"
-                          onClick={() => onClientPositionChange?.(false)}
-                          disabled={disabled}
-                          className={`
-                            relative flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all
-                            ${!clientPositionRight 
-                              ? 'border-primary bg-primary/5 shadow-sm' 
-                              : 'border-border bg-background hover:border-primary/50'
-                            }
-                            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                          `}
-                        >
-                          <AlignLeft className={`h-5 w-5 ${!clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <div className="text-center">
-                            <div className={`text-sm font-medium ${!clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
-                              Au centre
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-0.5">
-                              Position standard
-                            </div>
-                          </div>
-                          {!clientPositionRight && (
-                            <div className="absolute top-2 right-2">
-                              <CheckIcon className="h-4 w-4 text-primary" />
-                            </div>
-                          )}
-                        </button>
-
-                        {/* Option Droite */}
-                        <button
-                          type="button"
-                          onClick={() => onClientPositionChange?.(true)}
-                          disabled={disabled}
-                          className={`
-                            relative flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all
-                            ${clientPositionRight 
-                              ? 'border-primary bg-primary/5 shadow-sm' 
-                              : 'border-border bg-background hover:border-primary/50'
-                            }
-                            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                          `}
-                        >
-                          <AlignRight className={`h-5 w-5 ${clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <div className="text-center">
-                            <div className={`text-sm font-medium ${clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
-                              À droite
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-0.5">
-                              Aligné à droite
-                            </div>
-                          </div>
-                          {clientPositionRight && (
-                            <div className="absolute top-2 right-2">
-                              <CheckIcon className="h-4 w-4 text-primary" />
-                            </div>
-                          )}
-                        </button>
-                      </div>
-                    </div>
                     </div>
                   )}
                 </div>

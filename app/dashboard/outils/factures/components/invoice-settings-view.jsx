@@ -2,7 +2,7 @@
 
 import { useFormContext } from "react-hook-form";
 import React, { useEffect, useState, useRef } from "react";
-import { Tag, Settings } from "lucide-react";
+import { Tag, Settings, AlignLeft, AlignRight, Check } from "lucide-react";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -141,6 +141,7 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
         footerNotes: data.footerNotes,
         termsAndConditions: data.termsAndConditions,
         showBankDetails: data.showBankDetails,
+        clientPositionRight: data.clientPositionRight,
       };
     }
   }, []);
@@ -156,7 +157,8 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
       data.headerNotes !== initialValuesRef.current.headerNotes ||
       data.footerNotes !== initialValuesRef.current.footerNotes ||
       data.termsAndConditions !== initialValuesRef.current.termsAndConditions ||
-      data.showBankDetails !== initialValuesRef.current.showBankDetails;
+      data.showBankDetails !== initialValuesRef.current.showBankDetails ||
+      data.clientPositionRight !== initialValuesRef.current.clientPositionRight;
 
     setHasUnsavedChanges(hasChanges);
   }, [data]);
@@ -179,6 +181,7 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
       setValue("footerNotes", initialValuesRef.current.footerNotes || "");
       setValue("termsAndConditions", initialValuesRef.current.termsAndConditions || "");
       setValue("showBankDetails", initialValuesRef.current.showBankDetails || false);
+      setValue("clientPositionRight", initialValuesRef.current.clientPositionRight || false);
     }
     setShowConfirmDialog(false);
     onCancel();
@@ -194,6 +197,7 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
       footerNotes: data.footerNotes,
       termsAndConditions: data.termsAndConditions,
       showBankDetails: data.showBankDetails,
+      clientPositionRight: data.clientPositionRight,
     };
     setHasUnsavedChanges(false);
     onSave();
@@ -441,6 +445,82 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                     });
                   }}
                 />
+              </div>
+            </CardContent>
+          </Card>
+          <Separator />
+
+          {/* Position du client */}
+          <Card className="shadow-none border-none bg-transparent">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+                Position du client dans le PDF
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              <p className="text-sm text-muted-foreground">
+                Choisissez où afficher les informations du client dans vos factures
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Option Centre */}
+                <button
+                  type="button"
+                  onClick={() => setValue("clientPositionRight", false, { shouldDirty: true })}
+                  disabled={!canEdit}
+                  className={`
+                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
+                    ${!data.clientPositionRight 
+                      ? 'border-primary bg-primary/5 shadow-sm' 
+                      : 'border-border bg-background hover:border-primary/50'
+                    }
+                    ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                  `}
+                >
+                  <AlignLeft className={`h-6 w-6 ${!data.clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <div className="text-center">
+                    <div className={`text-sm font-medium ${!data.clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
+                      Au centre
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      Position standard
+                    </div>
+                  </div>
+                  {!data.clientPositionRight && (
+                    <div className="absolute top-2 right-2">
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
+                </button>
+
+                {/* Option Droite */}
+                <button
+                  type="button"
+                  onClick={() => setValue("clientPositionRight", true, { shouldDirty: true })}
+                  disabled={!canEdit}
+                  className={`
+                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
+                    ${data.clientPositionRight 
+                      ? 'border-primary bg-primary/5 shadow-sm' 
+                      : 'border-border bg-background hover:border-primary/50'
+                    }
+                    ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                  `}
+                >
+                  <AlignRight className={`h-6 w-6 ${data.clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <div className="text-center">
+                    <div className={`text-sm font-medium ${data.clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
+                      À droite
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      Aligné à droite
+                    </div>
+                  </div>
+                  {data.clientPositionRight && (
+                    <div className="absolute top-2 right-2">
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
+                </button>
               </div>
             </CardContent>
           </Card>

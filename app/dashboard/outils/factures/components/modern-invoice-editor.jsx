@@ -104,6 +104,8 @@ export default function ModernInvoiceEditor({
     enabled: mode !== "create" && !loading,
   });
 
+  const [closeSettingsHandler, setCloseSettingsHandler] = useState(null);
+
   // Afficher un message si la facture n'existe pas (après changement d'organisation)
   if (mode !== "create" && !loading && !loadedInvoice && invoiceError) {
     return (
@@ -127,8 +129,6 @@ export default function ModernInvoiceEditor({
   const handleSettingsClick = () => {
     setShowSettings(!showSettings);
   };
-
-  const [closeSettingsHandler, setCloseSettingsHandler] = useState(null);
 
   const handleCloseSettings = () => {
     // Si un handler personnalisé existe (avec vérification des changements), l'utiliser

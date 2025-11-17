@@ -412,23 +412,51 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 required: false, // On ne veut plus de message d'erreur
               })}
             />
-            <div className="relative">
-              <Input
-                value={(() => {
-                  if (!data.issueDate) return "";
-                  try {
-                    const date = new Date(data.issueDate);
-                    if (isNaN(date.getTime())) return "";
-                    return format(date, "PPP", { locale: fr });
-                  } catch (error) {
-                    return "";
-                  }
-                })()}
-                disabled={true}
-                placeholder="Date automatique"
-              />
-              <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={!canEdit}
+                  className={cn(
+                    "w-full justify-start font-normal text-left",
+                    !data.issueDate && "text-muted-foreground",
+                    errors?.issueDate && "border-red-500"
+                  )}
+                  type="button"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {data.issueDate ? (
+                    (() => {
+                      try {
+                        const date = new Date(data.issueDate);
+                        if (isNaN(date.getTime()))
+                          return <span>Date invalide</span>;
+                        return format(date, "PPP", { locale: fr });
+                      } catch (error) {
+                        return <span>Date invalide</span>;
+                      }
+                    })()
+                  ) : (
+                    <span>Choisir une date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={data.issueDate ? new Date(data.issueDate) : undefined}
+                  onSelect={(date) => {
+                    const dateStr = format(date, "yyyy-MM-dd");
+                    setValue("issueDate", dateStr, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                  initialFocus
+                  locale={fr}
+                />
+              </PopoverContent>
+            </Popover>
             {errors?.issueDate && (
               <p className="text-xs text-red-500">
                 {errors.issueDate.message}

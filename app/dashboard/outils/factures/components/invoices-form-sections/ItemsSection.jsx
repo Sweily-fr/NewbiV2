@@ -513,6 +513,7 @@ export default function ItemsSection({
                                       <SelectItem value="m³">Mètre cube</SelectItem>
                                       <SelectItem value="litre">Litre</SelectItem>
                                       <SelectItem value="forfait">Forfait</SelectItem>
+                                      <SelectItem value="ensemble">Ensemble</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 )}

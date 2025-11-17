@@ -114,7 +114,8 @@ export default function InvoiceMobileFullscreen({
       if (onRefetch) onRefetch();
       onClose();
     } catch (error) {
-      toast.error("Erreur lors de la création de la facture");
+      // L'erreur est gérée par errorLink dans apolloClient.js
+      console.error('Erreur lors du changement de statut:', error);
     }
   };
 

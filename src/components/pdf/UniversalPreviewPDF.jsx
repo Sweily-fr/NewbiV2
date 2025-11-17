@@ -869,82 +869,93 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
 
         {/* TABLEAU DES ARTICLES */}
         <div className="mb-6">
-          <table className="w-full border-collapse text-xs border-b border-[#CCCCCC]">
-            <thead>
-              <tr
-                style={{
-                  backgroundColor: data.appearance?.headerBgColor || "#000000",
-                }}
-              >
-                <th
-                  className="py-2 px-2 text-left text-[10px] font-medium"
-                  style={{
-                    color: data.appearance?.headerTextColor || "#FFFFFF",
-                    width: "46%",
-                  }}
-                >
-                  Description
-                </th>
-                <th
-                  className="py-1 px-2 text-right text-[10px] font-medium"
-                  style={{
-                    color: data.appearance?.headerTextColor || "#FFFFFF",
-                    width: "12%",
-                  }}
-                >
-                  Qté
-                </th>
-                <th
-                  className="py-1 px-2 text-right text-[10px] font-medium"
-                  style={{
-                    color: data.appearance?.headerTextColor || "#FFFFFF",
-                    width: "15%",
-                  }}
-                >
-                  Prix unitaire
-                </th>
-                <th
-                  className="py-1 px-2 text-right text-[10px] font-medium"
-                  style={{
-                    color: data.appearance?.headerTextColor || "#FFFFFF",
-                    width: "10%",
-                  }}
-                >
-                  TVA (%)
-                </th>
-                <th
-                  className="py-1 px-2 text-right text-[10px] font-medium"
-                  style={{
-                    color: data.appearance?.headerTextColor || "#FFFFFF",
-                    width: "17%",
-                  }}
-                >
-                  Total HT
-                </th>
-              </tr>
-            </thead>
+          {(() => {
+            // Vérifier si au moins un article a un avancement différent de 0% ou 100%
+            const showProgressColumn = data.items && data.items.some(item => {
+              const progress = item.progressPercentage || 100;
+              return progress > 0 && progress < 100;
+            });
+
+            return (
+              <table className="w-full border-collapse text-xs border-b border-[#CCCCCC]">
+                <thead>
+                  <tr
+                    style={{
+                      backgroundColor: data.appearance?.headerBgColor || "#000000",
+                    }}
+                  >
+                    <th
+                      className="py-2 px-2 text-left text-[10px] font-medium"
+                      style={{
+                        color: data.appearance?.headerTextColor || "#FFFFFF",
+                        width: showProgressColumn ? "40%" : "43%",
+                      }}
+                    >
+                      Description
+                    </th>
+                    <th
+                      className="py-1 px-2 text-right text-[10px] font-medium"
+                      style={{
+                        color: data.appearance?.headerTextColor || "#FFFFFF",
+                        width: showProgressColumn ? "10%" : "11%",
+                      }}
+                    >
+                      Qté
+                    </th>
+                    <th
+                      className="py-1 px-2 text-right text-[10px] font-medium"
+                      style={{
+                        color: data.appearance?.headerTextColor || "#FFFFFF",
+                        width: showProgressColumn ? "13%" : "15%",
+                      }}
+                    >
+                      Prix unitaire
+                    </th>
+                    {showProgressColumn && (
+                      <th
+                        className="py-1 px-2 text-center text-[10px] font-medium"
+                        style={{
+                          color: data.appearance?.headerTextColor || "#FFFFFF",
+                          width: "7%",
+                        }}
+                      >
+                        %
+                      </th>
+                    )}
+                    <th
+                      className="py-1 px-2 text-right text-[10px] font-medium"
+                      style={{
+                        color: data.appearance?.headerTextColor || "#FFFFFF",
+                        width: showProgressColumn ? "10%" : "11%",
+                      }}
+                    >
+                      TVA (%)
+                    </th>
+                    <th
+                      className="py-1 px-2 text-right text-[10px] font-medium"
+                      style={{
+                        color: data.appearance?.headerTextColor || "#FFFFFF",
+                        width: showProgressColumn ? "20%" : "20%",
+                      }}
+                    >
+                      Total HT
+                    </th>
+                  </tr>
+                </thead>
             <tbody className="text-[10px]">
               {data.items && data.items.length > 0 ? (
                 data.items.map((item, index) => (
                   <tr key={index} className="border-b border-[#CCCCCC]">
                     <td
-                      className="py-3 px-2 dark:text-[#0A0A0A]"
-                      style={{ width: "46%" }}
+                      className="pt-3 pb-3 px-2 dark:text-[#0A0A0A] align-top"
+                      style={{ width: showProgressColumn ? "40%" : "43%", maxWidth: "300px", wordWrap: "break-word", overflowWrap: "break-word" }}
                     >
-                      <div className="font-normal dark:text-[#0A0A0A]">
+                      <div className="font-normal dark:text-[#0A0A0A] whitespace-pre-line break-words">
                         {item.description || ""}
                       </div>
                       {item.details && (
-                        <div className="text-xs text-gray-600 mt-1 dark:text-[#0A0A0A]">
+                        <div className="text-xs text-gray-600 mt-1 dark:text-[#0A0A0A] whitespace-pre-line break-words">
                           {item.details}
-                        </div>
-                      )}
-                      {item.progressPercentage && item.progressPercentage < 100 && (
-                        <div 
-                          className="text-[9px] mt-0.5"
-                          style={{ color: data.appearance?.headerBgColor || "#5b50FF" }}
-                        >
-                          Avancement: {parseFloat(item.progressPercentage).toFixed(0)}%
                         </div>
                       )}
                       {item.discount > 0 && (
@@ -957,26 +968,42 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                       )}
                     </td>
                     <td
-                      className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                      style={{ width: "12%", whiteSpace: "nowrap" }}
+                      className="pt-3 pb-3 px-2 text-right dark:text-[#0A0A0A] align-top"
+                      style={{ width: showProgressColumn ? "10%" : "11%", whiteSpace: "nowrap" }}
                     >
                       {item.quantity}{item.unit ? ` ${item.unit}` : ""}
                     </td>
                     <td
-                      className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                      style={{ width: "15%" }}
+                      className="pt-3 pb-3 px-2 text-right dark:text-[#0A0A0A] align-top"
+                      style={{ width: showProgressColumn ? "13%" : "15%" }}
                     >
                       {formatCurrency(item.unitPrice)}
                     </td>
+                    {showProgressColumn && (
+                      <td
+                        className="pt-3 pb-3 px-2 text-center dark:text-[#0A0A0A] align-top"
+                        style={{ width: "7%" }}
+                      >
+                        {item.progressPercentage && item.progressPercentage > 0 && item.progressPercentage < 100 ? (
+                          <span
+                            style={{ color: data.appearance?.headerBgColor || "#5b50FF" }}
+                          >
+                            {parseFloat(item.progressPercentage).toFixed(0)}%
+                          </span>
+                        ) : (
+                          <span>100%</span>
+                        )}
+                      </td>
+                    )}
                     <td
-                      className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                      style={{ width: "10%" }}
+                      className="pt-3 pb-3 px-2 text-right dark:text-[#0A0A0A] align-top"
+                      style={{ width: showProgressColumn ? "10%" : "11%" }}
                     >
                       {item.vatRate} %
                     </td>
                     <td
-                      className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                      style={{ width: "17%" }}
+                      className="pt-3 pb-3 px-2 text-right dark:text-[#0A0A0A] align-top"
+                      style={{ width: "20%" }}
                     >
                       {item.discount > 0 ? (
                         <div className="flex flex-col items-end">
@@ -1027,29 +1054,37 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                 <tr className="border-b border-[#CCCCCC]">
                   <td
                     className="py-3 px-2 text-center dark:text-[#0A0A0A]"
-                    style={{ width: "46%" }}
+                    style={{ width: showProgressColumn ? "40%" : "43%", maxWidth: "300px" }}
                   >
                     --
                   </td>
                   <td
                     className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                    style={{ width: "12%" }}
+                    style={{ width: showProgressColumn ? "10%" : "11%" }}
                   ></td>
                   <td
                     className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                    style={{ width: "15%" }}
+                    style={{ width: showProgressColumn ? "13%" : "15%" }}
                   >
                     --
                   </td>
+                  {showProgressColumn && (
+                    <td
+                      className="py-3 px-2 text-center dark:text-[#0A0A0A]"
+                      style={{ width: "7%" }}
+                    >
+                      100%
+                    </td>
+                  )}
                   <td
                     className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                    style={{ width: "10%", fontSize: "10px" }}
+                    style={{ width: showProgressColumn ? "10%" : "11%", fontSize: "10px" }}
                   >
                     20 %
                   </td>
                   <td
                     className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                    style={{ width: "17%", fontSize: "10px" }}
+                    style={{ width: "20%", fontSize: "10px" }}
                   >
                     0,00 €
                   </td>
@@ -1074,7 +1109,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                   <tr className="border-b border-[#CCCCCC]">
                     <td
                       className="py-3 px-2 dark:text-[#0A0A0A]"
-                      style={{ width: "46%" }}
+                      style={{ width: showProgressColumn ? "40%" : "43%", maxWidth: "300px" }}
                     >
                       <div className="font-normal dark:text-[#0A0A0A]">
                         Frais de livraison
@@ -1082,13 +1117,13 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                     </td>
                     <td
                       className="py-3 px-2 text-center dark:text-[#0A0A0A]"
-                      style={{ width: "12%" }}
+                      style={{ width: showProgressColumn ? "10%" : "11%" }}
                     >
                       {isCreditNote ? -1 : 1}
                     </td>
                     <td
                       className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                      style={{ width: "15%" }}
+                      style={{ width: showProgressColumn ? "13%" : "15%" }}
                     >
                       {formatCurrency(
                         isCreditNote
@@ -1096,15 +1131,23 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                           : shippingData.shippingAmountHT
                       )}
                     </td>
+                    {showProgressColumn && (
+                      <td
+                        className="py-3 px-2 text-center dark:text-[#0A0A0A]"
+                        style={{ width: "7%" }}
+                      >
+                        100%
+                      </td>
+                    )}
                     <td
                       className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                      style={{ width: "10%" }}
+                      style={{ width: showProgressColumn ? "10%" : "11%" }}
                     >
                       {shippingData.shippingVatRate || 20} %
                     </td>
                     <td
                       className="py-3 px-2 text-right dark:text-[#0A0A0A]"
-                      style={{ width: "17%" }}
+                      style={{ width: "20%" }}
                     >
                       {formatCurrency(
                         isCreditNote
@@ -1117,6 +1160,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
               })()}
             </tbody>
           </table>
+            );
+          })()}
         </div>
 
         {/* TOTAUX */}

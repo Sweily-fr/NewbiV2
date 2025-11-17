@@ -141,9 +141,12 @@ export default function InvoiceSidebar({
   const handleCreateInvoice = async () => {
     try {
       await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
+      toast.success("Facture créée avec succès");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors de la création de la facture");
+      // L'erreur est gérée par errorLink dans apolloClient.js
+      // qui affiche automatiquement le message du backend
+      console.error('Erreur lors du changement de statut:', error);
     }
   };
 

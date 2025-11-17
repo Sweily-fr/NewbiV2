@@ -821,6 +821,17 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Client position in PDF
+        invoiceClientPositionRight: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        quoteClientPositionRight: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
         // Trial system fields (ISO date strings)
         trialStartDate: {
           type: "string",

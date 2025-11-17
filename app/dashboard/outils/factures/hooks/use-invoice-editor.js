@@ -776,6 +776,7 @@ export function useInvoiceEditor({
           ""
       );
       setValue("showBankDetails", organization.showBankDetails || false);
+      setValue("clientPositionRight", organization.invoiceClientPositionRight || false);
 
       // Ajouter les coordonnées bancaires dans companyInfo
       setValue("companyInfo.bankName", organization.bankName || "");
@@ -793,6 +794,17 @@ export function useInvoiceEditor({
       setValue("userBankDetails", userBankDetails);
     }
   }, [mode, organization, setValue]);
+
+  // Charger clientPositionRight depuis l'organisation pour toutes les factures (création et édition)
+  useEffect(() => {
+    if (organization && organization.invoiceClientPositionRight !== undefined) {
+      const currentValue = getValues("clientPositionRight");
+      // Ne mettre à jour que si la valeur n'est pas déjà définie
+      if (currentValue === undefined || currentValue === null) {
+        setValue("clientPositionRight", organization.invoiceClientPositionRight || false);
+      }
+    }
+  }, [organization, setValue, getValues]);
 
   // Auto-save handler - DISABLED
   // const handleAutoSave = useCallback(async () => {
@@ -1358,7 +1370,9 @@ export function useInvoiceEditor({
         return true;
       } else {
         await updateInvoice(invoiceId, input);
-        toast.success("Facture validée");
+        // Message différent selon si on passe de Draft à Pending ou si on met à jour une facture Pending
+        const wasDraft = existingInvoice?.status === "DRAFT";
+        toast.success(wasDraft ? "Facture créée avec succès" : "Facture mise à jour avec succès");
         router.push(`/dashboard/outils/factures/${invoiceId}`);
         return true;
       }
@@ -1422,6 +1436,7 @@ export function useInvoiceEditor({
         invoiceFooterNotes: currentFormData.footerNotes || "",
         invoiceTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
+        invoiceClientPositionRight: currentFormData.clientPositionRight || false,
       };
 
       await updateOrganization(activeOrganization.id, organizationData);
@@ -1580,7 +1595,7 @@ function getInitialFormData(mode, initialData, session, organization) {
       headerTextColor: "#ffffff",
       headerBgColor: "#5b50FF",
     },
-    clientPositionRight: false, // Position du client dans le PDF (false = centre, true = droite)
+    clientPositionRight: organization?.invoiceClientPositionRight || false, // Position du client dans le PDF (false = centre, true = droite)
   };
 
   // Utiliser les paramètres par défaut de l'organisation si disponibles
