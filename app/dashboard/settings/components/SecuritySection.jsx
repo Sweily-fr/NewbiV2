@@ -27,14 +27,11 @@ import {
   CheckCircle,
   XCircle,
   Settings,
-  CreditCard,
-  ExternalLink,
   AlertCircle,
   Landmark,
   Trash2,
   QrCode,
 } from "lucide-react";
-import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   Enable2FADialog,
@@ -67,65 +64,12 @@ export default function SecuritySection({ session }) {
     google: false,
   });
 
-  // Hook Stripe Connect avec GraphQL
-  const {
-    isConnected: stripeConnected,
-    canReceivePayments,
-    accountStatus,
-    isLoading: isStripeLoading,
-    error: stripeError,
-    stripeAccount,
-    connectStripe,
-    disconnectStripe,
-    openStripeDashboard,
-    refetchStatus,
-    clearError,
-  } = useStripeConnect(session?.user?.id);
-
-  // Bridge integration removed - to be replaced with new banking API
-
   const handleOAuthConnect = (provider) => {
     // Ici vous implémenteriez la logique de connexion OAuth
     setOauthConnections((prev) => ({
       ...prev,
       [provider]: !prev[provider],
     }));
-  };
-
-  // Gérer les erreurs Stripe
-  useEffect(() => {
-    if (stripeError) {
-      console.error("Erreur Stripe:", stripeError);
-      // Ici vous pourriez afficher une notification d'erreur
-    }
-  }, [stripeError]);
-
-  // Gérer les paramètres de retour de Stripe
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const stripeSuccess = urlParams.get("stripe_success");
-    const stripeRefresh = urlParams.get("stripe_refresh");
-
-    if (stripeSuccess === "true") {
-      // Rafraîchir les données Stripe pour mettre à jour le statut
-      refetchStatus();
-      // Nettoyer l'URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      // Ici vous pourriez afficher une notification de succès
-    } else if (stripeRefresh === "true") {
-      // L'utilisateur a rafraîchi ou annulé le processus
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [refetchStatus]);
-
-  const handleStripeConnect = async () => {
-    if (session?.user?.email) {
-      await connectStripe(session.user.email);
-    }
-  };
-
-  const handleStripeDisconnect = async () => {
-    await disconnectStripe();
   };
 
   // Fonction pour supprimer l'utilisateur Bridge
@@ -321,122 +265,6 @@ export default function SecuritySection({ session }) {
                 >
                   <Shield className="h-4 w-4 mr-2" />
                   Activer le 2FA
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Stripe Connect */}
-      <div className="grid grid-cols-1 gap-6">
-        <Card className="border-0 shadow-sm backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg font-medium">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <CreditCard className="h-5 w-5 text-blue-600" />
-              </div>
-              Stripe Connect
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-normal text-gray-900 dark:text-gray-100">
-                      Stripe Connect
-                    </p>
-                    {stripeConnected && (
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-xs text-green-600 font-normal">
-                          {canReceivePayments
-                            ? "Actif"
-                            : "Configuration requise"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {stripeConnected
-                      ? canReceivePayments
-                        ? "Recevez des paiements pour vos transferts de fichiers"
-                        : "Finalisation de la configuration requise"
-                      : "Connectez votre compte pour recevoir des paiements"}
-                  </p>
-                  {stripeAccount && (
-                    <div className="mt-1">
-                      {accountStatus !== "active" && (
-                        <p className="text-xs text-amber-600">
-                          Statut:{" "}
-                          {accountStatus === "pending"
-                            ? "En attente de vérification"
-                            : "Action requise"}
-                        </p>
-                      )}
-                      {stripeAccount && !stripeAccount.isOnboarded && (
-                        <p className="text-xs text-amber-600 mt-1">
-                          ⚠️ Configuration incomplète - Certaines actions sont
-                          requises pour activer votre compte
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {stripeConnected && (
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-xs font-normal text-green-600">
-                      Actif
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              {stripeConnected ? (
-                <>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      if (stripeAccount && !stripeAccount.isOnboarded) {
-                        if (
-                          confirm(
-                            "Votre compte Stripe nécessite une configuration supplémentaire. Continuer vers le tableau de bord Stripe pour compléter la configuration ?"
-                          )
-                        ) {
-                          openStripeDashboard();
-                        }
-                      } else {
-                        openStripeDashboard();
-                      }
-                    }}
-                    className="flex-1"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Tableau de bord
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleStripeDisconnect}
-                    disabled={isStripeLoading}
-                    // className="border-red-400 text-red-600"
-                  >
-                    {isStripeLoading ? "..." : "Déconnecter"}
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={handleStripeConnect}
-                  disabled={isStripeLoading || !session?.user?.id}
-                  size="sm"
-                  className="bg-[#635BFF] hover:bg-[#5A54E5] text-white flex-1 disabled:opacity-50"
-                >
-                  {isStripeLoading ? "Connexion..." : "Connecter Stripe"}
                 </Button>
               )}
             </div>

@@ -10,50 +10,64 @@ import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 export const metadata = {
   title: {
     default: "Newbi - Solution complète pour freelances et petites entreprises",
-    template: "%s | Newbi"
+    template: "%s | Newbi",
   },
-  description: "Newbi simplifie la gestion de votre activité : devis, factures, signatures électroniques, transferts de fichiers et gestion de projets. Tout-en-un pour freelances et petites entreprises.",
-  keywords: ["freelance", "facturation", "devis", "signature électronique", "gestion projet", "transfert fichiers", "petite entreprise", "auto-entrepreneur"],
+  description:
+    "Newbi simplifie la gestion de votre activité : devis, factures, signatures électroniques, transferts de fichiers et gestion de projets. Tout-en-un pour freelances et petites entreprises.",
+  keywords: [
+    "freelance",
+    "facturation",
+    "devis",
+    "signature électronique",
+    "gestion projet",
+    "transfert fichiers",
+    "petite entreprise",
+    "auto-entrepreneur",
+  ],
   authors: [{ name: "Newbi" }],
   creator: "Newbi",
   publisher: "Newbi",
   viewport: {
-    width: 'device-width',
+    width: "device-width",
     initialScale: 1,
     maximumScale: 1,
     userScalable: false,
-    viewportFit: 'cover',
+    viewportFit: "cover",
   },
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'https://newbi.fr'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr"
+  ),
   alternates: {
-    canonical: '/',
+    canonical: "/",
   },
   openGraph: {
     title: "Newbi - Solution complète pour freelances et petites entreprises",
-    description: "Simplifiez votre activité avec Newbi : devis, factures, signatures électroniques, transferts de fichiers et gestion de projets.",
-    url: '/',
-    siteName: 'Newbi',
-    locale: 'fr_FR',
-    type: 'website',
+    description:
+      "Simplifiez votre activité avec Newbi : devis, factures, signatures électroniques, transferts de fichiers et gestion de projets.",
+    url: "/",
+    siteName: "Newbi",
+    locale: "fr_FR",
+    type: "website",
     images: [
       {
-        url: '/images/op-newbi.png',
+        url: "/images/op-newbi.png",
         width: 1200,
         height: 630,
-        alt: 'Newbi - Solution complète pour freelances',
-      }
+        alt: "Newbi - Solution complète pour freelances",
+      },
     ],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: "summary_large_image",
     title: "Newbi - Solution complète pour freelances et petites entreprises",
-    description: "Simplifiez votre activité avec Newbi : devis, factures, signatures électroniques, transferts de fichiers et gestion de projets.",
-    images: ['/images/op-newbi.png'],
+    description:
+      "Simplifiez votre activité avec Newbi : devis, factures, signatures électroniques, transferts de fichiers et gestion de projets.",
+    images: ["/images/op-newbi.png"],
   },
   robots: {
     index: true,
@@ -61,21 +75,21 @@ export const metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
-  },
-  icons: {
-    icon: "/newbi.svg",
-    shortcut: "/newbi.svg",
-    apple: "/newbi.svg",
   },
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning translate="no">
+    <html
+      lang="en"
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+      translate="no"
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{

@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { InputLoader } from "@/src/components/ui/input";
 import PricingModal from "@/src/components/pricing-modal";
+import { StripeConnectSuccessModal } from "@/src/components/stripe-connect-success-modal";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
@@ -201,6 +202,7 @@ function OutilsContent() {
         <SectionCards activeFilter={activeTab} />
       </div>
       <PricingModal isOpen={isPricingModalOpen} onClose={handleCloseModal} />
+      <StripeConnectSuccessModal />
     </div>
   );
 }

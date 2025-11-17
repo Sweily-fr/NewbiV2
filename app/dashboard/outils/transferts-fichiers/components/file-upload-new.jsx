@@ -34,6 +34,7 @@ import {
 import { Switch } from "@/src/components/ui/switch";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Separator } from "@/src/components/ui/separator";
+import { Callout } from "@/src/components/ui/callout";
 import {
   IconClock,
   IconShield,
@@ -555,11 +556,11 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
                 className="bg-background flex items-center justify-between gap-2 rounded-lg border p-2 pe-3"
               >
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="flex aspect-square size-10 shrink-0 items-center justify-center rounded border">
+                  <div className="flex aspect-square size-10 bg-gray-100 shrink-0 items-center justify-center rounded border">
                     {getFileIcon(fileItem.file)}
                   </div>
                   <div className="flex min-w-0 flex-col gap-0.5">
-                    <p className="truncate text-[13px] font-medium">
+                    <p className="truncate text-[13px] font-normal">
                       {fileItem.file.name}
                     </p>
                     <p className="text-muted-foreground text-xs">
@@ -586,7 +587,6 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
             {selectedFiles.length > 1 && !isUploading && (
               <div>
                 <Button
-                  size="sm"
                   className="font-normal cursor-pointer"
                   variant="destructive"
                   onClick={clearFiles}
@@ -670,6 +670,7 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
                   handleOptionChange("requirePayment", checked);
                 }}
                 disabled={!user}
+                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
               />
             </div>
 
@@ -731,11 +732,11 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
                   </div>
                 </div> */}
                 {stripeConnected && !canReceivePayments && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-xs text-amber-700 font-medium">
-                      ⚠️ Configuration Stripe incomplète
-                    </p>
-                    <p className="text-xs text-amber-600 mt-1">
+                  <Callout type="info" noMargin>
+                    <h4 className="text-sm font-medium mb-2">
+                      Configuration Stripe incomplète
+                    </h4>
+                    <p className="text-xs mb-3">
                       Finalisez votre configuration Stripe pour recevoir des
                       paiements.
                     </p>
@@ -743,11 +744,11 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowStripeOnboarding(true)}
-                      className="mt-2 text-xs h-7 bg-amber-100 hover:bg-amber-200 border-amber-300"
+                      className="text-xs h-7"
                     >
                       Finaliser la configuration
                     </Button>
-                  </div>
+                  </Callout>
                 )}
                 <p className="text-xs text-muted-foreground">
                   Le paiement sera traité via Stripe. Une commission de 2.9% +

@@ -16,6 +16,19 @@ import { DeactivateAccountModal } from "../../../app/dashboard/account/component
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import Link from "next/link";
 import { Callout } from "@/src/components/ui/callout";
+import { useStripeConnect } from "@/src/hooks/useStripeConnect";
+import { CreditCard, ExternalLink } from "lucide-react";
+import { Badge } from "@/src/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 
 export default function UserInfoSection({ onTabChange }) {
   const { data: session, isPending, error, refetch } = useSession();
@@ -29,6 +42,53 @@ export default function UserInfoSection({ onTabChange }) {
   const [isChangePhoneModalOpen, setIsChangePhoneModalOpen] = useState(false);
   const [isDeactivateAccountModalOpen, setIsDeactivateAccountModalOpen] =
     useState(false);
+  const [isStripeConfigAlertOpen, setIsStripeConfigAlertOpen] = useState(false);
+
+  // Hook Stripe Connect
+  const {
+    isConnected: stripeConnected,
+    canReceivePayments,
+    accountStatus,
+    isLoading: isStripeLoading,
+    error: stripeError,
+    stripeAccount,
+    connectStripe,
+    disconnectStripe,
+    openStripeDashboard,
+    refetchStatus,
+    clearError,
+  } = useStripeConnect(session?.user?.id);
+
+  // Gérer les erreurs Stripe
+  useEffect(() => {
+    if (stripeError) {
+      console.error("Erreur Stripe:", stripeError);
+    }
+  }, [stripeError]);
+
+  // Gérer les paramètres de retour de Stripe
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stripeSuccess = urlParams.get("stripe_success");
+    const stripeRefresh = urlParams.get("stripe_refresh");
+
+    if (stripeSuccess === "true") {
+      refetchStatus();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (stripeRefresh === "true") {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [refetchStatus]);
+
+  const handleStripeConnect = async () => {
+    if (session?.user?.email) {
+      await connectStripe(session.user.email);
+    }
+  };
+
+  const handleStripeDisconnect = async () => {
+    await disconnectStripe();
+  };
 
   const {
     register,
@@ -203,6 +263,84 @@ export default function UserInfoSection({ onTabChange }) {
               Modifier le mot de passe
             </Button>
           </div>
+
+          {/* Stripe Connect */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="#5A50FF"
+                  class="bi bi-stripe"
+                  viewBox="0 0 16 16"
+                >
+                  <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.226 5.385c-.584 0-.937.164-.937.593 0 .468.607.674 1.36.93 1.228.415 2.844.963 2.851 2.993C11.5 11.868 9.924 13 7.63 13a7.7 7.7 0 0 1-3.009-.626V9.758c.926.506 2.095.88 3.01.88.617 0 1.058-.165 1.058-.671 0-.518-.658-.755-1.453-1.041C6.026 8.49 4.5 7.94 4.5 6.11 4.5 4.165 5.988 3 8.226 3a7.3 7.3 0 0 1 2.734.505v2.583c-.838-.45-1.896-.703-2.734-.703" />
+                </svg>
+                <h4 className="text-sm font-normal">Stripe Connect</h4>
+                {stripeConnected && (
+                  <Badge
+                    variant="default"
+                    className="bg-[#5A50FF]/10 text-[#5A50FF]/80 border-[#5A50FF]/30 text-xs font-normal"
+                  >
+                    Actif
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-gray-400">
+                {stripeConnected
+                  ? canReceivePayments
+                    ? "Recevez des paiements pour vos transferts de fichiers"
+                    : "Finalisation de la configuration requise"
+                  : "Connectez votre compte pour recevoir des paiements"}
+              </p>
+              {stripeAccount && !stripeAccount.isOnboarded && (
+                <p className="text-xs text-[#5A50FF] mt-1">
+                  *Configuration incomplète - Certaines actions sont requises
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 ml-4 flex-shrink-0">
+              {stripeConnected ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (stripeAccount && !stripeAccount.isOnboarded) {
+                        setIsStripeConfigAlertOpen(true);
+                      } else {
+                        openStripeDashboard();
+                      }
+                    }}
+                    className="font-normal"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Tableau de bord
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStripeDisconnect}
+                    disabled={isStripeLoading}
+                    className="font-normal"
+                  >
+                    {isStripeLoading ? "..." : "Déconnecter"}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleStripeConnect}
+                  disabled={isStripeLoading || !session?.user?.id}
+                  size="sm"
+                  className="bg-[#635BFF] hover:bg-[#5A54E5] text-white font-normal disabled:opacity-50"
+                >
+                  {isStripeLoading ? "Connexion..." : "Connecter Stripe"}
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Section Désactivation du compte */}
@@ -221,9 +359,9 @@ export default function UserInfoSection({ onTabChange }) {
                 Abonnement actif détecté
               </h4>
               <p className="text-xs mb-3">
-                Vous avez un abonnement premium actif. Avant de désactiver
-                votre compte, vous devez d'abord annuler votre abonnement
-                pour éviter des frais futurs.
+                Vous avez un abonnement premium actif. Avant de désactiver votre
+                compte, vous devez d'abord annuler votre abonnement pour éviter
+                des frais futurs.
               </p>
               <Button
                 variant="outline"
@@ -283,6 +421,31 @@ export default function UserInfoSection({ onTabChange }) {
         onClose={() => setIsDeactivateAccountModalOpen(false)}
         userEmail={session?.user?.email}
       />
+
+      {/* Modal de confirmation Stripe */}
+      <AlertDialog open={isStripeConfigAlertOpen} onOpenChange={setIsStripeConfigAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Configuration Stripe incomplète</AlertDialogTitle>
+            <AlertDialogDescription>
+              Votre compte Stripe nécessite une configuration supplémentaire. 
+              Continuer vers le tableau de bord Stripe pour compléter la configuration ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                openStripeDashboard();
+                setIsStripeConfigAlertOpen(false);
+              }}
+              className="bg-[#5A50FF] hover:bg-[#5A50FF]/90"
+            >
+              Continuer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

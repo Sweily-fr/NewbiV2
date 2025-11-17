@@ -156,7 +156,7 @@ export const useStripeConnect = (userId) => {
       // Si le compte n'est pas encore configuré, générer un lien d'onboarding
       if (!isOnboarded || !canReceivePayments) {
         try {
-          const returnUrl = `${window.location.origin}/dashboard/outils/transferts-fichiers/new?stripe_success=true`;
+          const returnUrl = `${window.location.origin}/dashboard/outils?stripe_connect_success=true`;
           const { data: linkData } = await generateOnboardingLink({
             variables: {
               accountId,

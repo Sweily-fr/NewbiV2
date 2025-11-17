@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -32,19 +32,24 @@ function TransfertsContent() {
   const [activeTab, setActiveTab] = useState("upload"); // "upload" ou "list"
 
   // Vérifier si on revient d'une création de transfert
-  const urlParams = new URLSearchParams(window.location.search);
-  const shareLink = urlParams.get("shareLink");
-  const accessKey = urlParams.get("accessKey");
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareLink = urlParams.get("shareLink");
+    const accessKey = urlParams.get("accessKey");
 
-  if (shareLink && accessKey) {
-    const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
-    setTransferLink(fullLink);
-    setShowSuccessDialog(true);
+    if (shareLink && accessKey) {
+      const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
+      setTransferLink(fullLink);
+      setShowSuccessDialog(true);
 
-    // Nettoyer l'URL
-    const newUrl = window.location.pathname;
-    window.history.replaceState({}, document.title, newUrl);
-  }
+      // Changer vers l'onglet "Mes transferts"
+      setActiveTab("list");
+
+      // Nettoyer l'URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, []);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(transferLink);
@@ -242,7 +247,7 @@ function TransfertsContent() {
             <Button
               variant="outline"
               onClick={copyToClipboard}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto font-normal"
             >
               <IconCopy className="w-4 h-4 mr-2" />
               Copier le lien
@@ -250,12 +255,12 @@ function TransfertsContent() {
             <Button
               variant="outline"
               onClick={openInNewTab}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto font-normal bg-[#5a50ff] hover:bg-[#5a50ff]/90 hover:text-white text-white"
             >
               <IconExternalLink className="w-4 h-4 mr-2" />
               Ouvrir le lien
             </Button>
-            <AlertDialogAction className="w-full sm:w-auto">
+            <AlertDialogAction className="w-full sm:w-auto font-normal">
               Fermer
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -271,7 +276,7 @@ function TransfertsPageContent() {
 
 export default function TransfertsPage() {
   return (
-    <RoleRouteGuard 
+    <RoleRouteGuard
       roles={["owner", "admin", "member", "viewer"]}
       fallbackUrl="/dashboard"
       toastMessage="Vous n'avez pas accès aux transferts de fichiers. Cette fonctionnalité est réservée aux membres de l'équipe."
