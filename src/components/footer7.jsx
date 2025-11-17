@@ -4,7 +4,7 @@ import { useSession } from "@/src/lib/auth-client";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { Button } from "@/src/components/ui/button";
 import { getAssetUrl } from "@/src/lib/image-utils";
-import { useCookieConsent } from "@/src/hooks/useCookieConsent";
+// import { useCookieConsent } from "@/src/hooks/useCookieConsent";
 
 const defaultSections = [
   {
@@ -63,7 +63,7 @@ const Footer7 = ({
   legalLinks = defaultLegalLinks,
 }) => {
   const { data: session } = useSession();
-  const { openCookieSettings } = useCookieConsent();
+  // const { openCookieSettings } = useCookieConsent();
 
   // Helper function to get the appropriate link based on authentication
   const getToolLink = (toolPath) => {
@@ -240,14 +240,14 @@ const Footer7 = ({
                       CGV
                     </a>
                   </li>
-                  <li>
+                  {/* <li>
                     <button
                       className="font-regular text-gray-950 hover:text-gray-700 cursor-pointer"
                       onClick={openCookieSettings}
                     >
                       Cookies
                     </button>
-                  </li>
+                  </li> */}
                 </ul>
               </div>
             </div>

@@ -5,6 +5,19 @@ import { Button } from "@/src/components/ui/button";
 import Footer7 from "@/src/components/footer7";
 import CookiePreferencesModal from "@/src/components/cookies/CookiePreferencesModal";
 
+// Métadonnées pour rendre la page non-indexable
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+};
+
 export default function CookiesPage() {
   const { openCookieSettings } = useCookieConsent();
   const [showModal, setShowModal] = useState(false);
