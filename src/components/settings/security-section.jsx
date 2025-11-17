@@ -47,9 +47,6 @@ import {
   EyeOff,
   LogOut,
   Smartphone,
-  CreditCard,
-  CheckCircle,
-  ExternalLink,
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { useActiveOrganization } from "@/src/lib/organization-client";
@@ -61,8 +58,6 @@ import {
   updateUser,
 } from "@/src/lib/auth-client";
 import { useEffect } from "react";
-import { useStripeConnect } from "@/src/hooks/useStripeConnect";
-import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
 import { useUser } from "@/src/lib/auth/hooks";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { Callout } from "@/src/components/ui/callout";
@@ -94,17 +89,6 @@ export function SecuritySection({
 
   const { data: session, refetch: refetchSession } = useSession();
   const { session: user } = useUser();
-
-  // États pour Stripe Connect
-  const [showStripeOnboarding, setShowStripeOnboarding] = useState(false);
-  const {
-    isConnected: stripeConnected,
-    canReceivePayments,
-    isLoading: stripeLoading,
-    stripeAccount,
-    checkAndUpdateAccountStatus,
-    refetchStatus,
-  } = useStripeConnect(user?.user?.id);
 
   const [organizationForm, setOrganizationForm] = useState({});
   const [securitySettings, setSecuritySettings] = useState({
@@ -316,38 +300,6 @@ export function SecuritySection({
     // Pour l'instant, retourner une valeur par défaut
     return "Localisation inconnue";
   };
-
-  // Vérifier automatiquement le statut Stripe après redirection
-  useEffect(() => {
-    const checkStripeStatus = async () => {
-      // Vérifier si on revient de Stripe
-      const urlParams = new URLSearchParams(window.location.search);
-      const stripeSuccess = urlParams.get("stripe_success");
-      const openSettings = urlParams.get("open_settings");
-
-      if (stripeSuccess === "true" && stripeConnected) {
-        console.log(
-          "🔄 Vérification automatique du statut Stripe après redirection..."
-        );
-
-        // Attendre un peu pour que Stripe ait le temps de mettre à jour
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        // Vérifier le statut
-        await checkAndUpdateAccountStatus();
-
-        // Ouvrir le modal de sécurité si demandé
-        if (openSettings === "securite") {
-          // Le modal sera ouvert par le composant parent
-        }
-
-        // Nettoyer l'URL
-        window.history.replaceState({}, "", window.location.pathname);
-      }
-    };
-
-    checkStripeStatus();
-  }, [stripeConnected, checkAndUpdateAccountStatus]);
 
   // Charger les sessions au montage du composant
   useEffect(() => {
@@ -655,73 +607,6 @@ export function SecuritySection({
                   </DialogContent>
                 </Dialog>
               </p>
-            </div>
-          </div>
-        </div>
-
-        {/* <Separator className="mt-8" /> */}
-
-        {/* Section Stripe Connect */}
-        <div className="space-y-6 mt-8">
-          {/* Titre section Stripe Connect */}
-          <div>
-            <h3 className="text-sm font-medium mb-2">
-              Paiements Stripe Connect
-            </h3>
-            <Separator />
-          </div>
-
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h4 className="text-sm font-normal mb-1">Connexion Stripe</h4>
-              <p className="text-xs text-gray-400">
-                {stripeConnected
-                  ? canReceivePayments
-                    ? "✓ Prêt à recevoir des paiements"
-                    : "⚠️ Configuration requise - Finalisez votre profil Stripe"
-                  : "Connectez Stripe Connect pour recevoir des paiements sécurisés"}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 ml-4">
-              {stripeConnected ? (
-                <div className="flex items-center gap-2">
-                  {/* <div className="flex items-center gap-1">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-xs text-green-600">Connecté</span>
-                  </div> */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowStripeOnboarding(true)}
-                    disabled={!canManageOrgSettings}
-                    className="text-xs h-7 border-[#5b4fff]/20 text-[#5b4fff] hover:bg-[#5b4fff]/5 cursor-pointer"
-                    title={
-                      !canManageOrgSettings
-                        ? "Seuls les owners et admins peuvent gérer Stripe"
-                        : ""
-                    }
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    {canReceivePayments ? "Tableau de bord" : "Finaliser"}
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowStripeOnboarding(true)}
-                  disabled={stripeLoading || !canManageOrgSettings}
-                  className="text-xs cursor-pointer h-7 bg-[#5b4fff] border-[#5b4fff]/20 text-[#fff] hover:text-[#fff] hover:bg-[#5b4fff]/90"
-                  title={
-                    !canManageOrgSettings
-                      ? "Seuls les owners et admins peuvent connecter Stripe"
-                      : ""
-                  }
-                >
-                  <CreditCard className="h-3 w-3 mr-1" />
-                  {stripeLoading ? "Chargement..." : "Connecter Stripe"}
-                </Button>
-              )}
             </div>
           </div>
         </div>
@@ -1056,18 +941,6 @@ export function SecuritySection({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Modal Stripe Connect Onboarding */}
-      <StripeConnectOnboarding
-        isOpen={showStripeOnboarding}
-        onClose={() => setShowStripeOnboarding(false)}
-        userId={user?.user?.id}
-        userEmail={user?.user?.email}
-        onSuccess={() => {
-          setShowStripeOnboarding(false);
-          // Optionnel: afficher une notification de succès
-        }}
-      />
     </div>
   );
 }

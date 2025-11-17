@@ -171,7 +171,9 @@ export function SettingsModal({
     try {
       // Vérifier les permissions avant de sauvegarder
       if (!canManageOrgSettings) {
-        toast.error("Vous n'avez pas la permission de modifier les paramètres de l'organisation");
+        toast.error(
+          "Vous n'avez pas la permission de modifier les paramètres de l'organisation"
+        );
         return;
       }
 
@@ -571,9 +573,15 @@ export function SettingsModal({
                   ].includes(activeTab) && (
                     <Button
                       type="submit"
-                      disabled={formIsSubmitting || !isDirty || !canManageOrgSettings}
+                      disabled={
+                        formIsSubmitting || !isDirty || !canManageOrgSettings
+                      }
                       className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white"
-                      title={!canManageOrgSettings ? "Seuls les owners et admins peuvent modifier les paramètres" : ""}
+                      title={
+                        !canManageOrgSettings
+                          ? "Seuls les owners et admins peuvent modifier les paramètres"
+                          : ""
+                      }
                     >
                       {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}
                     </Button>
