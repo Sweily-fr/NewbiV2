@@ -30,6 +30,7 @@ export const INVOICE_FRAGMENT = gql`
     discountAmount
     stripeInvoiceId
     showBankDetails
+    clientPositionRight
     isReverseCharge
     createdAt
     updatedAt
