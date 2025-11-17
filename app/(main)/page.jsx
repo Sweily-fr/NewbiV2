@@ -21,8 +21,8 @@ export default function Home() {
         <HeroSection />
         <FeatureGrid />
         <BusinessAgility />
-        <Freelance />
-        <TestimonialsSection />
+        {/* <Freelance /> */}
+        {/* <TestimonialsSection /> */}
         <PricingSection />
         <FAQ />
       </div>

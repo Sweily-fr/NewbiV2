@@ -34,7 +34,7 @@ export default function FacturesPage() {
         <HeroSection />
         <SectionAvantages />
         <BusinessAgility />
-        <TestimonialsSection />
+        {/* <TestimonialsSection /> */}
         <FAQ />
         {/* <section className="min-h-screen py-20 flex flex-col justify-between">
           <div className="mx-auto max-w-6xl px-6 lg:px-12">
