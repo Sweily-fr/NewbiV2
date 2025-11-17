@@ -764,6 +764,9 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               iban: organization.bankIban || "",
               bic: organization.bankBic || "",
             });
+
+            // Charger la position du client depuis l'organisation
+            setValue("clientPositionRight", organization.quoteClientPositionRight || false);
           }
         } catch (error) {
           // Error silently ignored
@@ -1414,6 +1417,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         quoteFooterNotes: currentFormData.footerNotes || "",
         quoteTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
+        quoteClientPositionRight: currentFormData.clientPositionRight || false,
       };
 
       await updateOrganization(activeOrganization.id, organizationData);

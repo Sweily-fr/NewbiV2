@@ -232,8 +232,9 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
         const isBoardNotFound = message?.includes("Board not found") || message?.includes("board not found");
         
         if (!skipErrorToast && !isBoardNotFound) {
-          // Afficher les autres erreurs GraphQL avec message utilisateur
-          toast.error(userMessage, {
+          // Afficher le message original du backend au lieu du message générique
+          // Cela permet d'avoir des messages d'erreur précis comme "La date d'émission ne peut pas être antérieure..."
+          toast.error(message || userMessage, {
             duration: 4000,
           });
         } else if (isBoardNotFound) {

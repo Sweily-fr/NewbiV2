@@ -19,6 +19,7 @@ const getDemoInvoiceData = (formData, organization) => {
   const termsAndConditions = formData?.termsAndConditions || "";
   const showBankDetails = formData?.showBankDetails !== undefined ? formData?.showBankDetails : false;
   const primaryColor = formData?.primaryColor || "#5b4fff";
+  const clientPositionRight = formData?.clientPositionRight || false;
 
   return {
     invoiceNumber: "DEMO-2024-001",
@@ -104,6 +105,8 @@ const getDemoInvoiceData = (formData, organization) => {
       showBankDetails: showBankDetails,
       primaryColor: primaryColor,
     },
+    // Position du client dans le PDF
+    clientPositionRight: clientPositionRight,
   };
 };
 
@@ -155,6 +158,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
             termsAndConditions: org?.invoiceTermsAndConditions || org?.documentTermsAndConditions || "",
             showBankDetails: org?.showBankDetails || false,
             primaryColor: org?.documentHeaderBgColor || "#5b4fff",
+            clientPositionRight: org?.invoiceClientPositionRight || false,
           };
           
           console.log("📝 Valeurs initiales du formulaire:", formValues);
@@ -187,6 +191,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
       footerNotes: "",
       termsAndConditions: "",
       showBankDetails: false,
+      clientPositionRight: false,
       primaryColor: "#5b4fff",
     },
   });
@@ -232,6 +237,9 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         
         // Couleur du document
         documentHeaderBgColor: formValues.primaryColor,
+        
+        // Position du client dans le PDF (factures)
+        invoiceClientPositionRight: formValues.clientPositionRight || false,
         
         // Coordonnées bancaires
         bankIban: formValues.bankDetails?.iban || "",

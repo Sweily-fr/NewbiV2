@@ -430,6 +430,7 @@ export default function ItemsSection({
                                 <option value="m³">Mètre cube</option>
                                 <option value="litre">Litre</option>
                                 <option value="forfait">Forfait</option>
+                                <option value="ensemble">Ensemble</option>
                               </SelectNative>
                             )}
                           />

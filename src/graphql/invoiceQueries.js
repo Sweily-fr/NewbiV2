@@ -92,7 +92,7 @@ export const INVOICE_FRAGMENT = gql`
       discountType
       details
       vatExemptionText
-      # progressPercentage
+      progressPercentage
     }
     customFields {
       key
@@ -157,7 +157,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
       unit
       discount
       discountType
-      # progressPercentage
+      progressPercentage
     }
     client {
       id
@@ -659,7 +659,6 @@ export const useLastInvoicePrefix = () => {
 export const useCreateInvoice = () => {
   const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
-  const { handleMutationError } = useErrorHandler();
 
   const [createInvoiceMutation, { loading }] = useMutation(CREATE_INVOICE, {
     onCompleted: () => {
@@ -669,9 +668,7 @@ export const useCreateInvoice = () => {
         include: [GET_INVOICES, GET_INVOICE_STATS],
       });
     },
-    onError: (error) => {
-      handleMutationError(error, 'create', 'invoice');
-    },
+    // onError désactivé - les erreurs sont gérées dans les composants appelants
   });
 
   const createInvoice = async (input) => {
@@ -683,8 +680,15 @@ export const useCreateInvoice = () => {
       const result = await createInvoiceMutation({
         variables: { workspaceId, input },
       });
-      return result.data.createInvoice;
+      
+      // Vérifier si la mutation a retourné des erreurs
+      if (result.errors && result.errors.length > 0) {
+        throw new Error(result.errors[0].message);
+      }
+      
+      return result?.data?.createInvoice;
     } catch (error) {
+      // Re-lancer l'erreur pour qu'elle soit capturée par le composant
       throw error;
     }
   };
@@ -696,7 +700,6 @@ export const useCreateInvoice = () => {
 export const useUpdateInvoice = () => {
   const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
-  const { handleMutationError } = useErrorHandler();
 
   const [updateInvoiceMutation, { loading }] = useMutation(UPDATE_INVOICE, {
     onCompleted: (data) => {
@@ -708,9 +711,7 @@ export const useUpdateInvoice = () => {
         data: { invoice: data.updateInvoice },
       });
     },
-    onError: (error) => {
-      handleMutationError(error, 'update', 'invoice');
-    },
+    // onError désactivé - les erreurs sont gérées dans les composants appelants
   });
 
   const updateInvoice = async (id, input) => {
@@ -735,7 +736,7 @@ export const useUpdateInvoice = () => {
         throw new Error("La mise à jour de la facture a échoué - aucune donnée retournée");
       }
       
-      return result.data.updateInvoice;
+      return result?.data?.updateInvoice;
     } catch (error) {
       throw error;
     }
@@ -829,8 +830,8 @@ export const useMarkInvoiceAsPaid = () => {
       });
     },
     onError: (error) => {
+      // Toast désactivé ici - géré dans les composants appelants
       console.error("Erreur lors du marquage comme payée:", error);
-      toast.error(error.message || "Erreur lors du marquage comme payée");
     },
   });
 
@@ -843,8 +844,15 @@ export const useMarkInvoiceAsPaid = () => {
       const result = await markAsPaidMutation({
         variables: { id, workspaceId, paymentDate },
       });
-      return result.data.markInvoiceAsPaid;
+      
+      // Vérifier si la mutation a retourné des erreurs
+      if (result.errors && result.errors.length > 0) {
+        throw new Error(result.errors[0].message);
+      }
+      
+      return result?.data?.markInvoiceAsPaid;
     } catch (error) {
+      // Re-lancer l'erreur pour qu'elle soit capturée par le composant
       throw error;
     }
   };
@@ -874,8 +882,8 @@ export const useChangeInvoiceStatus = () => {
         });
       },
       onError: (error) => {
+        // Toast désactivé ici - géré dans les composants appelants
         console.error("Erreur lors du changement de statut:", error);
-        toast.error(error.message || "Erreur lors du changement de statut");
       },
     }
   );
@@ -889,8 +897,15 @@ export const useChangeInvoiceStatus = () => {
       const result = await changeStatusMutation({
         variables: { id, workspaceId, status },
       });
-      return result.data.changeInvoiceStatus;
+      
+      // Vérifier si la mutation a retourné des erreurs
+      if (result.errors && result.errors.length > 0) {
+        throw new Error(result.errors[0].message);
+      }
+      
+      return result?.data?.changeInvoiceStatus;
     } catch (error) {
+      // Re-lancer l'erreur pour qu'elle soit capturée par le composant
       throw error;
     }
   };
@@ -963,7 +978,7 @@ export const useCreateLinkedInvoice = () => {
         }
       }
 
-      return result.data.createLinkedInvoice;
+      return result?.data?.createLinkedInvoice;
     } catch (error) {
       console.error("Erreur dans la mutation GraphQL:", error);
 
@@ -1025,7 +1040,7 @@ export const useDeleteLinkedInvoice = () => {
       const result = await deleteLinkedInvoiceMutation({
         variables: { id: invoiceId },
       });
-      return result.data.deleteLinkedInvoice;
+      return result?.data?.deleteLinkedInvoice;
     } catch (error) {
       throw error;
     }
