@@ -16,6 +16,9 @@ import { useCustomSocialIcons } from "../hooks/useCustomSocialIcons";
 import { useImageUpload } from "../hooks/useImageUpload";
 import "@/src/styles/signature-text-selection.css";
 import HorizontalSignature from "../components/preview/HorizontalSignature";
+import VerticalSignature from "../components/preview/VerticalSignature";
+import OrientationSelector from "../components/OrientationSelector";
+import { SignatureSidebar } from "@/src/components/signature-sidebar";
 
 // Aperçu de l'email avec édition inline
 const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
@@ -177,45 +180,6 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   };
 
   // plus de gestion d'ordre dynamique des contacts ici
-
-  // Fonction pour générer le HTML de la signature
-  const generateSignatureHTML = async (facebookImageUrl = null) => {
-    const primaryColor = signatureData.primaryColor || "#171717";
-
-    try {
-      // Utiliser directement les URLs des images (plus simple et efficace)
-      const photoSrc = signatureData.photo;
-      const logoSrc = signatureData.logo;
-
-      // Générer le HTML selon l'orientation sélectionnée
-      const orientation = signatureData.orientation || "vertical";
-      let htmlSignature;
-
-      // Génération HTML basée sur l'orientation uniquement
-      if (orientation === "horizontal") {
-        htmlSignature = generateHorizontalHTML(
-          signatureData,
-          primaryColor,
-          facebookImageUrl,
-          photoSrc,
-          logoSrc
-        );
-      } else {
-        htmlSignature = generateVerticalHTML(
-          signatureData,
-          primaryColor,
-          facebookImageUrl,
-          photoSrc,
-          logoSrc
-        );
-      }
-
-      return htmlSignature;
-    } catch (error) {
-      console.error("❌ Erreur lors de la génération HTML:", error);
-      throw error;
-    }
-  };
 
   // Fonction pour générer le HTML du layout horizontal
   // const generateHorizontalHTML = (
@@ -1409,7 +1373,7 @@ const generateHorizontalHTML = (
       console.error("❌ Erreur copie signature:", error);
       // Fallback pour les navigateurs qui ne supportent pas ClipboardItem
       try {
-        const html = generateSignatureHTML(signatureData);
+        const html = generateSignatureHTMLFromHook();
         await navigator.clipboard.writeText(html);
         toast.success("Signature copiée (texte brut)");
         setIsCopied(true);
@@ -1536,7 +1500,7 @@ const generateHorizontalHTML = (
         </div>
 
         <div className="border-t pt-4 mt-4 flex justify-start">
-          {/* Signature horizontale statique */}
+          {/* Signature dynamique selon l'orientation */}
           {(() => {
             const templateProps = {
               signatureData,
@@ -1548,7 +1512,12 @@ const generateHorizontalHTML = (
               logoSrc: signatureData.logo,
             };
 
-            return <HorizontalSignature {...templateProps} />;
+            // Afficher le bon composant selon l'orientation
+            if (signatureData.orientation === "vertical") {
+              return <VerticalSignature {...templateProps} />;
+            } else {
+              return <HorizontalSignature {...templateProps} />;
+            }
           })()}
         </div>
       </div>
@@ -1813,6 +1782,7 @@ export default function NewSignaturePage() {
     loadingSignature,
   } = useSignatureData();
 
+  const [orientationChosen, setOrientationChosen] = React.useState(false);
 
   // Afficher un indicateur de chargement pendant le chargement des données d'édition
   if (isEditMode && loadingSignature) {
@@ -1826,13 +1796,34 @@ export default function NewSignaturePage() {
     );
   }
 
-  return (
-    <div className="p-12 h-[calc(100vh-64px)] flex items-center justify-center">
-      <EmailPreview
-        signatureData={signatureData}
-        editingSignatureId={editingSignatureId}
-        isEditMode={isEditMode}
+  // Si on est en mode création (pas édition) et qu'aucune orientation n'a été choisie
+  if (!isEditMode && !orientationChosen) {
+    return (
+      <OrientationSelector
+        onSelect={(orientation) => {
+          updateSignatureData("orientation", orientation);
+          setOrientationChosen(true);
+        }}
       />
+    );
+  }
+
+  return (
+    <div className="flex gap-0 w-full">
+      <div className="flex-1 p-12 h-[calc(100vh-64px)] flex items-center justify-center">
+        <EmailPreview
+          signatureData={signatureData}
+          editingSignatureId={editingSignatureId}
+          isEditMode={isEditMode}
+        />
+      </div>
+      {!isEditMode && orientationChosen && (
+        <SignatureSidebar
+          signatureData={signatureData}
+          updateSignatureData={updateSignatureData}
+          editingSignatureId={editingSignatureId}
+        />
+      )}
     </div>
   );
 }

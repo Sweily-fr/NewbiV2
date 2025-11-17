@@ -81,6 +81,7 @@ const PersonalInfo = ({
               }),
               paddingBottom: `${getSpacing(signatureData, spacings.positionBottom, 8)}px`,
               whiteSpace: "nowrap",
+              textAlign: nameAlignment,
             }}
           >
             <InlineEdit
@@ -117,6 +118,7 @@ const PersonalInfo = ({
                 color: primaryColor,
               }),
               paddingBottom: `${spacings.companyBottom ?? 12}px`,
+              textAlign: nameAlignment,
             }}
           >
             <InlineEdit

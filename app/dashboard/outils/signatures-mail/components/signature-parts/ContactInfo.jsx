@@ -36,6 +36,7 @@ const ContactInfo = ({
     website: true,
     address: true,
   },
+  centered = false, // Mode centré pour signature verticale
 }) => {
   // Icônes hébergées sur Cloudflare (compatibles Gmail)
   const smartphoneIcon = "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png"; // Téléphone fixe
@@ -53,13 +54,17 @@ const ContactInfo = ({
           colSpan="2"
           style={{
             paddingBottom: `${spacing ?? 8}px`,
+            textAlign: centered ? "center" : "left",
           }}
         >
           <table
             cellPadding="0"
             cellSpacing="0"
             border="0"
-            style={{ borderCollapse: "collapse" }}
+            style={{ 
+              borderCollapse: "collapse",
+              margin: centered ? "0 auto" : "0",
+            }}
           >
             <tbody>
               <tr>

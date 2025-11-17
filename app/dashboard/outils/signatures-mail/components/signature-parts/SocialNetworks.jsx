@@ -17,6 +17,7 @@ const SocialNetworks = ({
   spacing = 15,
   iconSpacing = 8,
   colSpan = 2,
+  centered = false, // Mode centré pour signature verticale
 }) => {
   // Liste des réseaux sociaux disponibles
   const availableSocialNetworks = [
@@ -117,14 +118,17 @@ const SocialNetworks = ({
         colSpan={colSpan}
         style={{
           paddingTop: `${spacing}px`,
-          textAlign: "left",
+          textAlign: centered ? "center" : "left",
         }}
       >
         <table
           cellPadding="0"
           cellSpacing="0"
           border="0"
-          style={{ borderCollapse: "collapse" }}
+          style={{ 
+            borderCollapse: "collapse",
+            margin: centered ? "0 auto" : "0",
+          }}
         >
           <tbody>
             <tr>

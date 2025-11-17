@@ -45,6 +45,7 @@ const GET_EMAIL_SIGNATURE = gql`
       nameSpacing
       nameAlignment
       layout
+      orientation
       columnWidths {
         photo
         content
