@@ -29,7 +29,8 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
         email: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
         website: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
         address: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
-        separator: { top: globalSpacing, right: 0, bottom: globalSpacing, left: 0 },
+        separatorHorizontal: { top: globalSpacing, right: 0, bottom: globalSpacing, left: 0 },
+        separatorVertical: { top: 0, right: 4, bottom: 0, left: 4 },
         logo: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
         social: { top: globalSpacing, right: 0, bottom: 0, left: 0 },
       };

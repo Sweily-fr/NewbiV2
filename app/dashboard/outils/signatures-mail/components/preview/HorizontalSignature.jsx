@@ -100,6 +100,7 @@ const HorizontalSignature = ({
 
             {/* Séparateur vertical */}
             <VerticalSeparator
+              signatureData={signatureData}
               enabled={signatureData.separatorVerticalEnabled}
               color={signatureData.colors?.separatorVertical || "#e0e0e0"}
               leftSpacing={getSpacing(signatureData, spacings.global, 12)}

@@ -23,7 +23,8 @@ export default function DetailedPaddingSection({ signatureData, updateSignatureD
     { key: "email", label: "Email", icon: "✉️" },
     { key: "website", label: "Site web", icon: "🌐" },
     { key: "address", label: "Adresse", icon: "📍" },
-    { key: "separator", label: "Séparateur", icon: "➖" },
+    { key: "separatorHorizontal", label: "Séparateur horizontal", icon: "➖" },
+    { key: "separatorVertical", label: "Séparateur vertical", icon: "⬜" },
     { key: "logo", label: "Logo entreprise", icon: "🏷️" },
     { key: "social", label: "Réseaux sociaux", icon: "🔗" },
   ];
@@ -63,7 +64,8 @@ export default function DetailedPaddingSection({ signatureData, updateSignatureD
       email: { top: 0, right: 0, bottom: 4, left: 0 },
       website: { top: 0, right: 0, bottom: 4, left: 0 },
       address: { top: 0, right: 0, bottom: 0, left: 0 },
-      separator: { top: 12, right: 0, bottom: 12, left: 0 },
+      separatorHorizontal: { top: 12, right: 0, bottom: 12, left: 0 },
+      separatorVertical: { top: 0, right: 4, bottom: 0, left: 4 },
       logo: { top: 0, right: 0, bottom: 12, left: 0 },
       social: { top: 0, right: 0, bottom: 0, left: 0 },
     };
@@ -92,8 +94,10 @@ export default function DetailedPaddingSection({ signatureData, updateSignatureD
         return signatureData.website;
       case "address":
         return signatureData.address;
-      case "separator":
+      case "separatorHorizontal":
         return signatureData.separatorHorizontalEnabled;
+      case "separatorVertical":
+        return signatureData.separatorVerticalEnabled;
       case "logo":
         return signatureData.logo;
       case "social":
