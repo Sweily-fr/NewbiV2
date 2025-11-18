@@ -51,23 +51,25 @@ export default function DetailedPaddingSection({ signatureData, updateSignatureD
     }));
   };
 
-  // Récupérer le padding d'un élément avec les valeurs par défaut
+  // Récupérer le padding d'un élément avec les valeurs par défaut basées sur globalSpacing
   const getPadding = (elementKey) => {
-    // Valeurs par défaut pour chaque élément
+    const globalSpacing = signatureData.spacings?.global || 8;
+    
+    // Valeurs par défaut pour chaque élément basées sur globalSpacing
     const defaults = {
-      photo: { top: 0, right: 0, bottom: 12, left: 0 },
-      name: { top: 0, right: 0, bottom: 8, left: 0 },
-      position: { top: 0, right: 0, bottom: 8, left: 0 },
-      company: { top: 0, right: 0, bottom: 12, left: 0 },
-      phone: { top: 0, right: 0, bottom: 4, left: 0 },
-      mobile: { top: 0, right: 0, bottom: 4, left: 0 },
-      email: { top: 0, right: 0, bottom: 4, left: 0 },
-      website: { top: 0, right: 0, bottom: 4, left: 0 },
-      address: { top: 0, right: 0, bottom: 0, left: 0 },
-      separatorHorizontal: { top: 12, right: 0, bottom: 12, left: 0 },
+      photo: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
+      name: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
+      position: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
+      company: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
+      phone: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
+      mobile: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
+      email: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
+      website: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
+      address: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
+      separatorHorizontal: { top: globalSpacing, right: 0, bottom: globalSpacing, left: 0 },
       separatorVertical: { top: 0, right: 4, bottom: 0, left: 4 },
-      logo: { top: 0, right: 0, bottom: 12, left: 0 },
-      social: { top: 0, right: 0, bottom: 0, left: 0 },
+      logo: { top: globalSpacing, right: 0, bottom: 0, left: 0 },
+      social: { top: globalSpacing, right: 0, bottom: 0, left: 0 },
     };
 
     return signatureData.paddings?.[elementKey] || defaults[elementKey] || { top: 0, right: 0, bottom: 0, left: 0 };

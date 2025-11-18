@@ -10,8 +10,8 @@ import DetailedPaddingSection from "./DetailedPaddingSection";
 export default function SpacingSection({ signatureData, updateSignatureData }) {
   // Gérer l'activation/désactivation du mode détaillé
   const handleDetailedSpacingToggle = (checked) => {
-    // Si on active le mode détaillé, toujours réinitialiser avec les valeurs actuelles de spacings
     if (checked) {
+      // Toujours réinitialiser les paddings avec la valeur actuelle de globalSpacing
       const globalSpacing = signatureData.spacings?.global || 8;
       
       const defaultPaddings = {
@@ -26,7 +26,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
         address: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
         separatorHorizontal: { top: globalSpacing, right: 0, bottom: globalSpacing, left: 0 },
         separatorVertical: { top: 0, right: 4, bottom: 0, left: 4 },
-        logo: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
+        logo: { top: globalSpacing, right: 0, bottom: 0, left: 0 },
         social: { top: globalSpacing, right: 0, bottom: 0, left: 0 },
       };
       
@@ -37,8 +37,8 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
         updateSignatureData("detailedSpacing", true);
       }, 0);
     } else {
-      // Si on désactive ou si les paddings existent déjà, juste toggle
-      updateSignatureData("detailedSpacing", checked);
+      // Désactiver le mode détaillé
+      updateSignatureData("detailedSpacing", false);
     }
   };
 

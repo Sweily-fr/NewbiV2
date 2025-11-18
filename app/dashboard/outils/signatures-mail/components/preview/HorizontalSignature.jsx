@@ -14,6 +14,7 @@ import HorizontalSeparator from "../signature-parts/HorizontalSeparator";
 import CompanyLogo from "../signature-parts/CompanyLogo";
 import SocialNetworks from "../signature-parts/SocialNetworks";
 import { getSpacing } from "../../utils/spacing-helper";
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
 import "@/src/styles/signature-text-selection.css";
 import "./signature-preview.css";
 
@@ -64,7 +65,13 @@ const HorizontalSignature = ({
                   {/* Photo de profil */}
                   {signatureData.photo && signatureData.photoVisible !== false && (
                     <tr>
-                      <td style={{ paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, 12)}px` }}>
+                      <td
+                        style={{
+                          ...(signatureData.detailedSpacing
+                            ? getIndividualPaddingStyles(signatureData, "photo", { bottom: spacings.global || 8 })
+                            : { paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, spacings.global || 8)}px` }),
+                        }}
+                      >
                         <ProfileImage
                           photoSrc={signatureData.photo}
                           size={signatureData.imageSize || 70}
@@ -168,8 +175,8 @@ const HorizontalSignature = ({
             enabled={signatureData.separatorHorizontalEnabled}
             color={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
             width={signatureData.separatorHorizontalWidth || 1}
-            topSpacing={getSpacing(signatureData, spacings.separatorTop, 8)}
-            bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, 8)}
+            topSpacing={getSpacing(signatureData, spacings.separatorTop, spacings.global || 8)}
+            bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, spacings.global || 8)}
             radius={0}
             colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
             signatureData={signatureData}

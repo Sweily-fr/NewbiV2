@@ -13,6 +13,7 @@ import HorizontalSeparator from "../signature-parts/HorizontalSeparator";
 import CompanyLogo from "../signature-parts/CompanyLogo";
 import SocialNetworks from "../signature-parts/SocialNetworks";
 import { getSpacing } from "../../utils/spacing-helper";
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
 import "@/src/styles/signature-text-selection.css";
 import "./signature-preview.css";
 
@@ -46,7 +47,9 @@ const VerticalSignature = ({
           <tr>
             <td
               style={{
-                paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, 16)}px`,
+                ...(signatureData.detailedSpacing
+                  ? getIndividualPaddingStyles(signatureData, "photo", { bottom: spacings.global || 8 })
+                  : { paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, spacings.global || 8)}px` }),
                 textAlign: "center",
                 display: "block",
               }}
@@ -89,8 +92,8 @@ const VerticalSignature = ({
           enabled={signatureData.separatorHorizontalEnabled}
           color={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
           width={signatureData.separatorHorizontalWidth || 1}
-          topSpacing={getSpacing(signatureData, spacings.separatorTop, 12)}
-          bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, 12)}
+          topSpacing={getSpacing(signatureData, spacings.separatorTop, spacings.global || 8)}
+          bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, spacings.global || 8)}
           radius={0}
           colSpan={1}
           signatureData={signatureData}

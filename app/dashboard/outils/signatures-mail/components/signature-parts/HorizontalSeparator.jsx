@@ -24,7 +24,7 @@ const HorizontalSeparator = ({
         style={{
           // Padding détaillé ou espacement par défaut
           ...(signatureData.detailedSpacing
-            ? getIndividualPaddingStyles(signatureData, "separator", { top: topSpacing, bottom: bottomSpacing })
+            ? getIndividualPaddingStyles(signatureData, "separatorHorizontal", { top: topSpacing, bottom: bottomSpacing })
             : {
                 paddingTop: `${topSpacing}px`,
                 paddingBottom: `${bottomSpacing}px`,

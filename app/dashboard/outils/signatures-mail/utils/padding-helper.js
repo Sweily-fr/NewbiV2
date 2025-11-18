@@ -42,32 +42,31 @@ export function getPaddingStyleObject(signatureData, elementKey, defaultPadding 
 
 /**
  * Génère les styles individuels de padding (pour les cas où on ne peut pas utiliser la propriété padding)
+ * Ne retourne que les propriétés non-nulles pour éviter padding: 0px 0px 8px
  * @param {Object} signatureData - Données de la signature
  * @param {string} elementKey - Clé de l'élément
  * @param {Object} defaultPadding - Padding par défaut
- * @returns {Object} Objet avec paddingTop, paddingRight, paddingBottom, paddingLeft
+ * @returns {Object} Objet avec paddingTop, paddingRight, paddingBottom, paddingLeft (uniquement les non-nuls)
  */
 export function getIndividualPaddingStyles(signatureData, elementKey, defaultPadding = {}) {
-  if (!signatureData.detailedSpacing) {
-    const { top = 0, right = 0, bottom = 0, left = 0 } = defaultPadding;
-    return {
-      paddingTop: `${top}px`,
-      paddingRight: `${right}px`,
-      paddingBottom: `${bottom}px`,
-      paddingLeft: `${left}px`,
-    };
-  }
+  let top, right, bottom, left;
 
-  // En mode détaillé, utiliser les paddings définis, sinon utiliser defaultPadding comme fallback
-  const padding = signatureData.paddings?.[elementKey] || defaultPadding;
-  const { top = 0, right = 0, bottom = 0, left = 0 } = padding;
+  if (!signatureData.detailedSpacing) {
+    ({ top = 0, right = 0, bottom = 0, left = 0 } = defaultPadding);
+  } else {
+    // En mode détaillé, utiliser les paddings définis, sinon utiliser defaultPadding comme fallback
+    const padding = signatureData.paddings?.[elementKey] || defaultPadding;
+    ({ top = 0, right = 0, bottom = 0, left = 0 } = padding);
+  }
   
-  return {
-    paddingTop: `${top}px`,
-    paddingRight: `${right}px`,
-    paddingBottom: `${bottom}px`,
-    paddingLeft: `${left}px`,
-  };
+  // Ne retourner que les propriétés non-nulles
+  const styles = {};
+  if (top !== 0) styles.paddingTop = `${top}px`;
+  if (right !== 0) styles.paddingRight = `${right}px`;
+  if (bottom !== 0) styles.paddingBottom = `${bottom}px`;
+  if (left !== 0) styles.paddingLeft = `${left}px`;
+  
+  return styles;
 }
 
 /**
