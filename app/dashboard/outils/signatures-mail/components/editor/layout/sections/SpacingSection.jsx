@@ -10,14 +10,9 @@ import DetailedPaddingSection from "./DetailedPaddingSection";
 export default function SpacingSection({ signatureData, updateSignatureData }) {
   // Gérer l'activation/désactivation du mode détaillé
   const handleDetailedSpacingToggle = (checked) => {
-    console.log("🔍 DEBUG - Toggle mode avancé:", checked);
-    console.log("🔍 DEBUG - signatureData.spacings.global:", signatureData.spacings?.global);
-    
     // Si on active le mode détaillé, toujours réinitialiser avec les valeurs actuelles de spacings
     if (checked) {
-      console.log("🔍 DEBUG - signatureData.spacings:", signatureData.spacings);
       const globalSpacing = signatureData.spacings?.global || 8;
-      console.log("🔍 DEBUG - globalSpacing utilisé:", globalSpacing);
       
       const defaultPaddings = {
         photo: { top: 0, right: 0, bottom: globalSpacing, left: 0 },

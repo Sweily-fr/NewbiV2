@@ -19,6 +19,28 @@ export function generateSignatureHTML(signatureData) {
     return result;
   };
 
+  // Fonction helper pour obtenir les paddings détaillés
+  const getPadding = (elementKey, defaultPadding = {}) => {
+    if (signatureData.detailedSpacing && signatureData.paddings?.[elementKey]) {
+      const padding = signatureData.paddings[elementKey];
+      return {
+        top: padding.top || 0,
+        right: padding.right || 0,
+        bottom: padding.bottom || 0,
+        left: padding.left || 0,
+      };
+    }
+    return defaultPadding;
+  };
+
+  // Fonction helper pour générer le style de padding (simplifié pour padding-bottom principalement)
+  const getPaddingBottom = (elementKey, defaultBottom = 8) => {
+    if (signatureData.detailedSpacing && signatureData.paddings?.[elementKey]) {
+      return signatureData.paddings[elementKey].bottom || 0;
+    }
+    return defaultBottom;
+  };
+
   // Fonction helper pour obtenir les valeurs de typographie
   const getTypography = (field, property, fallback) => {
     // Priorité absolue à la nouvelle structure détaillée
@@ -229,10 +251,10 @@ export function generateSignatureHTML(signatureData) {
   // Calculer le colspan dynamique basé sur le séparateur vertical
   const colSpan = signatureData.separatorVerticalEnabled ? 5 : 2;
   
-  // Générer le séparateur vertical si activé (largeur fixe 1px comme dans la preview)
+  // Générer le séparateur vertical si activé
   const verticalSeparatorHTML = signatureData.separatorVerticalEnabled ? `
 <td style="width: ${getSpacing(signatureData.spacings?.global, 12)}px;">&nbsp;</td>
-<td style="width: 1px; background-color: ${signatureData.colors?.separatorVertical || "#e0e0e0"}; border-radius: 0px; padding: 0px; font-size: 1px; line-height: 1px; vertical-align: top; height: 100%; min-height: 200px;">&nbsp;</td>
+<td style="width: ${signatureData.separatorVerticalWidth || 1}px; background-color: ${signatureData.colors?.separatorVertical || "#e0e0e0"}; border-radius: 0px; padding: 0px; font-size: 1px; line-height: 1px; vertical-align: top; height: 100%; min-height: 200px;">&nbsp;</td>
 <td style="width: ${getSpacing(signatureData.spacings?.global, 12)}px;">&nbsp;</td>` : '';
 
   // Si orientation verticale, générer la structure verticale
@@ -251,7 +273,7 @@ ${profileImageHTML}
 </tr>` : ""}
 <!-- Nom complet (centré) -->
 <tr>
-<td style="text-align: center; padding-bottom: ${getSpacing(undefined, 8)}px;">
+<td style="text-align: center; padding-bottom: ${getPaddingBottom("name", 8)}px;">
 <div style="font-family: ${getTypography("fullName", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("fullName", "fontSize", 16)}px; font-weight: bold; color: ${signatureData.primaryColor || "#171717"}; line-height: 1.2;">
 ${signatureData.fullName || ""}
 </div>

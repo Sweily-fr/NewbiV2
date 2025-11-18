@@ -46,7 +46,9 @@ const HorizontalSignature = ({
             <td
               style={{
                 verticalAlign: "top",
-                paddingRight: `${getSpacing(signatureData, spacings.global, 12)}px`,
+                ...(signatureData.separatorVerticalEnabled && {
+                  paddingRight: `${getSpacing(signatureData, spacings.global, 12)}px`,
+                }),
               }}
             >
               <table
@@ -103,6 +105,7 @@ const HorizontalSignature = ({
               signatureData={signatureData}
               enabled={signatureData.separatorVerticalEnabled}
               color={signatureData.colors?.separatorVertical || "#e0e0e0"}
+              width={signatureData.separatorVerticalWidth || 1}
               leftSpacing={getSpacing(signatureData, spacings.global, 12)}
               rightSpacing={getSpacing(signatureData, spacings.global, 12)}
               minHeight="200px"
@@ -112,7 +115,9 @@ const HorizontalSignature = ({
             <td
               style={{
                 verticalAlign: signatureData.contactAlignment || "top",
-                paddingLeft: `${getSpacing(signatureData, spacings.global, 12)}px`,
+                ...(signatureData.separatorVerticalEnabled && {
+                  paddingLeft: `${getSpacing(signatureData, spacings.global, 12)}px`,
+                }),
               }}
             >
               <table
