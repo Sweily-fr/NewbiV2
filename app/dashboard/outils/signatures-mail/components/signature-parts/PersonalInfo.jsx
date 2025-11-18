@@ -9,6 +9,7 @@ import React from "react";
 import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { getTypographyStyles } from "../../utils/typography-styles";
 import { getSpacing } from "../../utils/spacing-helper";
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
 
 const PersonalInfo = ({
   fullName,
@@ -32,8 +33,10 @@ const PersonalInfo = ({
           colSpan="2"
           style={{
             textAlign: nameAlignment,
-            // Espacement sous le nom : utiliser l'espacement global
-            paddingBottom: `${getSpacing(signatureData, undefined, 8)}px`,
+            // Padding détaillé ou espacement par défaut
+            ...(signatureData.detailedSpacing
+              ? getIndividualPaddingStyles(signatureData, "name", { bottom: spacings.nameBottom || spacings.global || 8 })
+              : { paddingBottom: `${getSpacing(signatureData, spacings.nameBottom, spacings.global || 8)}px` }),
           }}
         >
           <div
@@ -77,9 +80,12 @@ const PersonalInfo = ({
               ...getTypographyStyles(typography.position, {
                 fontFamily: fontFamily,
                 fontSize: fontSize.position || 14,
-                color: colors.position || "#666666",
+                textAlign: nameAlignment,
               }),
-              paddingBottom: `${getSpacing(signatureData, spacings.positionBottom, 8)}px`,
+              // Padding détaillé ou espacement par défaut
+              ...(signatureData.detailedSpacing
+                ? getIndividualPaddingStyles(signatureData, "position", { bottom: spacings.positionBottom || spacings.global })
+                : { paddingBottom: `${getSpacing(signatureData, spacings.positionBottom, spacings.global)}px` }),
               whiteSpace: "nowrap",
               textAlign: nameAlignment,
             }}
@@ -117,7 +123,10 @@ const PersonalInfo = ({
                 fontWeight: "bold",
                 color: primaryColor,
               }),
-              paddingBottom: `${spacings.companyBottom ?? 12}px`,
+              // Padding détaillé ou espacement par défaut
+              ...(signatureData.detailedSpacing
+                ? getIndividualPaddingStyles(signatureData, "company", { bottom: spacings.companyBottom || spacings.global || 8 })
+                : { paddingBottom: `${spacings.companyBottom || spacings.global || 8}px` }),
               textAlign: nameAlignment,
             }}
           >

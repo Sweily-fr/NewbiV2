@@ -3,7 +3,9 @@
  * Affiche le logo avec taille personnalisable
  */
 
-const CompanyLogo = ({ logoSrc, size = 60, spacing = 8, alignment = "left" }) => {
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
+
+const CompanyLogo = ({ logoSrc, size = 60, spacing = 8, alignment = "left", signatureData = {} }) => {
   if (!logoSrc) return null;
 
   return (
@@ -11,7 +13,10 @@ const CompanyLogo = ({ logoSrc, size = 60, spacing = 8, alignment = "left" }) =>
       <td
         colSpan="2"
         style={{
-          paddingTop: `${spacing}px`,
+          // Padding détaillé ou espacement par défaut
+          ...(signatureData.detailedSpacing
+            ? getIndividualPaddingStyles(signatureData, "logo", { top: spacing })
+            : { paddingTop: `${spacing}px` }),
           textAlign: alignment,
         }}
       >

@@ -7,6 +7,7 @@
 
 import React from "react";
 import { CLOUDFLARE_URLS } from "../../utils/cloudflareUrls";
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
 
 const SocialNetworks = ({
   socialNetworks = {},
@@ -18,6 +19,7 @@ const SocialNetworks = ({
   iconSpacing = 8,
   colSpan = 2,
   centered = false, // Mode centré pour signature verticale
+  signatureData = {}, // Ajout pour le padding détaillé
 }) => {
   // Liste des réseaux sociaux disponibles
   const availableSocialNetworks = [
@@ -117,7 +119,10 @@ const SocialNetworks = ({
       <td
         colSpan={colSpan}
         style={{
-          paddingTop: `${spacing}px`,
+          // Padding détaillé ou espacement par défaut
+          ...(signatureData.detailedSpacing
+            ? getIndividualPaddingStyles(signatureData, "social", { top: spacing })
+            : { paddingTop: `${spacing}px` }),
           textAlign: centered ? "center" : "left",
         }}
       >

@@ -73,6 +73,7 @@ const HorizontalSignature = ({
                           isEditable={true}
                           spacing={0}
                           wrapInTd={false}
+                          signatureData={signatureData}
                         />
                       </td>
                     </tr>
@@ -90,6 +91,7 @@ const HorizontalSignature = ({
                     colors={signatureData.colors || {}}
                     primaryColor={signatureData.primaryColor || "#171717"}
                     spacings={spacings}
+                    signatureData={signatureData}
                     nameAlignment={signatureData.nameAlignment || "left"}
                   />
                 </tbody>
@@ -164,30 +166,18 @@ const HorizontalSignature = ({
             bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, 8)}
             radius={0}
             colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
+            signatureData={signatureData}
           />
 
           {/* Logo entreprise (en bas, sur toute la largeur) */}
           {logoSrc && signatureData.logoVisible !== false && (
-            <tr>
-              <td
-                colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
-                style={{
-                  paddingTop: `${getSpacing(signatureData, spacings.logoBottom, 12)}px`,
-                  textAlign: "left",
-                }}
-              >
-                <img
-                  src={logoSrc}
-                  alt="Logo entreprise"
-                  style={{
-                    width: `${signatureData.logoSize || 60}px`,
-                    height: "auto",
-                    maxHeight: `${signatureData.logoSize || 60}px`,
-                    objectFit: "contain",
-                  }}
-                />
-              </td>
-            </tr>
+            <CompanyLogo
+              logoSrc={logoSrc}
+              size={signatureData.logoSize || 60}
+              spacing={getSpacing(signatureData, spacings.logoBottom, 12)}
+              alignment="left"
+              signatureData={signatureData}
+            />
           )}
 
           {/* Réseaux sociaux (en bas, sur toute la largeur) */}
@@ -200,6 +190,7 @@ const HorizontalSignature = ({
             spacing={getSpacing(signatureData, spacings.logoToSocial, 15)}
             iconSpacing={8}
             colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
+            signatureData={signatureData}
           />
         </tbody>
       </table>

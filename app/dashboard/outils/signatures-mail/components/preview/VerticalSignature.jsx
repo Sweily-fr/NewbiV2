@@ -62,6 +62,7 @@ const VerticalSignature = ({
                   isEditable={true}
                   spacing={0}
                   wrapInTd={false}
+                  signatureData={signatureData}
                 />
               </div>
             </td>
@@ -92,6 +93,7 @@ const VerticalSignature = ({
           bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, 12)}
           radius={0}
           colSpan={1}
+          signatureData={signatureData}
         />
 
         {/* Informations de contact (centrées) */}
@@ -127,27 +129,13 @@ const VerticalSignature = ({
 
         {/* Logo entreprise (centré) */}
         {logoSrc && signatureData.logoVisible !== false && (
-          <tr>
-            <td
-              style={{
-                paddingTop: `${getSpacing(signatureData, spacings.logoBottom, 16)}px`,
-                textAlign: "center",
-              }}
-            >
-              <img
-                src={logoSrc}
-                alt="Logo entreprise"
-                style={{
-                  width: `${signatureData.logoSize || 80}px`,
-                  height: "auto",
-                  maxHeight: `${signatureData.logoSize || 80}px`,
-                  objectFit: "contain",
-                  display: "block",
-                  margin: "0 auto",
-                }}
-              />
-            </td>
-          </tr>
+          <CompanyLogo
+            logoSrc={logoSrc}
+            size={signatureData.logoSize || 80}
+            spacing={getSpacing(signatureData, spacings.logoBottom, 16)}
+            alignment="center"
+            signatureData={signatureData}
+          />
         )}
 
         {/* Réseaux sociaux (centrés) */}
@@ -161,6 +149,7 @@ const VerticalSignature = ({
           iconSpacing={12}
           colSpan={1}
           centered={true}
+          signatureData={signatureData}
         />
       </tbody>
     </table>
