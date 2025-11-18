@@ -474,40 +474,6 @@ export const seoData = {
     }
   },
 
-  // Page Système de Parrainage
-  referral: {
-    title: "Programme de Parrainage Newbi - Gagnez 50€ par Filleul",
-    description: "Parrainez vos contacts et gagnez 50€ pour chaque abonnement annuel souscrit. Programme de parrainage simple et rémunérateur pour entrepreneurs.",
-    keywords: "parrainage newbi, gagner argent, recommandation, 50 euros, filleul, programme parrainage, commission",
-    canonical: `${baseUrl}/parrainage`,
-    openGraph: {
-      title: "Programme de Parrainage Newbi - 50€ par Filleul",
-      description: "Parrainez et gagnez 50€ pour chaque abonnement annuel souscrit par vos filleuls.",
-      image: `/images/op-newbi.png`,
-      type: "website",
-      locale: "fr_FR",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "Programme de Parrainage Newbi - 50€ par Filleul",
-      description: "Parrainez et gagnez 50€ pour chaque abonnement annuel souscrit.",
-      image: `/images/op-newbi.png`,
-    },
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": "Programme de Parrainage Newbi",
-      "description": "Programme de parrainage rémunérateur - 50€ par filleul",
-      "url": `${baseUrl}/parrainage`,
-      "offers": {
-        "@type": "Offer",
-        "description": "50€ de commission par filleul",
-        "price": "50",
-        "priceCurrency": "EUR"
-      }
-    }
-  },
-
   // Page FAQ
   faq: {
     title: "FAQ - Questions Fréquentes sur Newbi",

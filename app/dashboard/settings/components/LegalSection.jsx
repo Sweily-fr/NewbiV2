@@ -237,18 +237,18 @@ export default function LegalSection({ register, errors, watch, setValue }) {
             )}
           </div>
 
-          {/* SIRET et RCS */}
+          {/* SIREN/SIRET et RCS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <RequiredLabel
                 htmlFor="legal.siret"
                 isRequired={requiredFields.siret}
               >
-                Numéro SIRET
+                SIREN/SIRET
               </RequiredLabel>
               <Input
                 id="legal.siret"
-                placeholder="12345678901234"
+                placeholder="123456789 ou 12345678901234"
                 value={watch("legal.siret")}
                 onChange={(e) =>
                   handleInputChange("legal.siret", e.target.value)

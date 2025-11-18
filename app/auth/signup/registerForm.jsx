@@ -28,8 +28,16 @@ const RegisterFormContent = () => {
   // Récupérer les paramètres d'invitation
   const invitationId = searchParams.get("invitation");
   const invitationEmail = searchParams.get("email");
+  
+  // Récupérer le code partenaire
+  const partnerCode = searchParams.get("partner");
 
   const onSubmit = async (formData) => {
+    // Ajouter le code partenaire si présent
+    if (partnerCode) {
+      formData.referralCode = partnerCode;
+    }
+    
     // Selon la doc Better Auth, l'erreur est retournée directement dans { data, error }
     const { data, error } = await signUp.email(formData, {
       onSuccess: async (ctx) => {

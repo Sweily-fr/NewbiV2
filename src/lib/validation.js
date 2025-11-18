@@ -131,8 +131,8 @@ export const VALIDATION_PATTERNS = {
 
   // Informations légales - Synchronisé avec le backend (validators.js)
   siret: {
-    pattern: /^\d{14}$/,
-    message: "Le SIRET doit contenir exactement 14 chiffres",
+    pattern: /^\d{9}$|^\d{14}$/,
+    message: "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres",
   },
 
   vatNumber: {

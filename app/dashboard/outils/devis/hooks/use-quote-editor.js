@@ -173,14 +173,14 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           
           // Validations spécifiques aux entreprises
           if (client.type === "COMPANY") {
-            // Validation du SIRET
+            // Validation du SIREN/SIRET
             if (!client.siret || client.siret.trim() === "") {
-              clientErrors.push("numéro de SIRET manquant (obligatoire pour les entreprises)");
+              clientErrors.push("numéro de SIREN/SIRET manquant (obligatoire pour les entreprises)");
             } else {
-              // Vérifier le format du SIRET (14 chiffres)
-              const siretRegex = /^\d{14}$/;
+              // Vérifier le format du SIREN (9 chiffres) ou SIRET (14 chiffres)
+              const siretRegex = /^\d{9}$|^\d{14}$/;
               if (!siretRegex.test(client.siret.trim())) {
-                clientErrors.push("numéro de SIRET invalide (14 chiffres attendus)");
+                clientErrors.push("numéro de SIREN/SIRET invalide (9 ou 14 chiffres attendus)");
               }
             }
             

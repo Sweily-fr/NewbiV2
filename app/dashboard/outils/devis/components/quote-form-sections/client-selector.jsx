@@ -322,13 +322,13 @@ export default function ClientSelector({
 
     // Validations spécifiques aux entreprises
     if (newClientForm.type === "COMPANY") {
-      // Validation du SIRET
+      // Validation du SIREN/SIRET
       if (!newClientForm.siret || newClientForm.siret.trim() === "") {
-        errors.siret = "Le numéro de SIRET est obligatoire pour les entreprises";
+        errors.siret = "Le numéro de SIREN/SIRET est obligatoire pour les entreprises";
       } else {
-        const siretRegex = /^\d{14}$/;
+        const siretRegex = /^\d{9}$|^\d{14}$/;
         if (!siretRegex.test(newClientForm.siret.trim())) {
-          errors.siret = "Le SIRET doit contenir exactement 14 chiffres";
+          errors.siret = "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
         }
       }
       
@@ -425,11 +425,11 @@ export default function ClientSelector({
       hasErrors = true;
     }
 
-    // Validation du SIRET pour les entreprises
+    // Validation du SIREN/SIRET pour les entreprises
     if (newClientForm.type === "COMPANY" && newClientForm.siret) {
-      const siretRegex = /^\d{14}$/;
+      const siretRegex = /^\d{9}$|^\d{14}$/;
       if (!siretRegex.test(newClientForm.siret)) {
-        toast.error("Le SIRET doit contenir exactement 14 chiffres");
+        toast.error("Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres");
         hasErrors = true;
       }
     }
@@ -1143,24 +1143,28 @@ export default function ClientSelector({
                           htmlFor="client-siret"
                           className="text-sm font-normal"
                         >
-                          SIRET
+                          SIREN/SIRET
                         </Label>
                         <div className="relative">
                           <Input
                             id="client-siret"
-                            value={newClientForm.siret}
+                            value={newClientForm.siret || ""}
                             onChange={(e) =>
                               setNewClientForm((prev) => ({
                                 ...prev,
                                 siret: e.target.value,
                               }))
                             }
-                            placeholder="12345678901234"
-                            className="h-10 rounded-lg text-sm w-full"
+                            placeholder="123456789 ou 12345678901234"
+                            disabled={disabled}
+                            className={cn(
+                              "h-10 rounded-lg",
+                              formErrors.siret && "border-red-500"
+                            )}
                           />
                         </div>
                         <p className="text-xs text-gray-500">
-                          Numéro SIRET de l'entreprise (14 chiffres)
+                          Numéro SIREN (9 chiffres) ou SIRET (14 chiffres)
                         </p>
                       </div>
                       <div className="space-y-2">

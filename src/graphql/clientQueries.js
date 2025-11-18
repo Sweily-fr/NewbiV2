@@ -11,6 +11,33 @@ import { useWorkspace } from "../hooks/useWorkspace";
 
 // ==================== FRAGMENTS ====================
 
+export const CLIENT_NOTE_FRAGMENT = gql`
+  fragment ClientNoteFragment on ClientNote {
+    id
+    content
+    userId
+    userName
+    userImage
+    createdAt
+    updatedAt
+  }
+`;
+
+export const CLIENT_ACTIVITY_FRAGMENT = gql`
+  fragment ClientActivityFragment on ClientActivity {
+    id
+    type
+    description
+    field
+    oldValue
+    newValue
+    userId
+    userName
+    userImage
+    createdAt
+  }
+`;
+
 export const CLIENT_FRAGMENT = gql`
   fragment ClientFragment on Client {
     id
@@ -35,7 +62,18 @@ export const CLIENT_FRAGMENT = gql`
       postalCode
       country
     }
+    notes {
+      ...ClientNoteFragment
+    }
+    activity {
+      ...ClientActivityFragment
+    }
+    createdBy
+    createdAt
+    updatedAt
   }
+  ${CLIENT_NOTE_FRAGMENT}
+  ${CLIENT_ACTIVITY_FRAGMENT}
 `;
 
 export const CLIENT_SUMMARY_FRAGMENT = gql`
@@ -116,6 +154,33 @@ export const DELETE_CLIENT = gql`
   mutation DeleteClient($workspaceId: String!, $id: ID!) {
     deleteClient(workspaceId: $workspaceId, id: $id)
   }
+`;
+
+export const ADD_CLIENT_NOTE = gql`
+  mutation AddClientNote($workspaceId: String!, $clientId: ID!, $input: ClientNoteInput!) {
+    addClientNote(workspaceId: $workspaceId, clientId: $clientId, input: $input) {
+      ...ClientFragment
+    }
+  }
+  ${CLIENT_FRAGMENT}
+`;
+
+export const UPDATE_CLIENT_NOTE = gql`
+  mutation UpdateClientNote($workspaceId: String!, $clientId: ID!, $noteId: ID!, $content: String!) {
+    updateClientNote(workspaceId: $workspaceId, clientId: $clientId, noteId: $noteId, content: $content) {
+      ...ClientFragment
+    }
+  }
+  ${CLIENT_FRAGMENT}
+`;
+
+export const DELETE_CLIENT_NOTE = gql`
+  mutation DeleteClientNote($workspaceId: String!, $clientId: ID!, $noteId: ID!) {
+    deleteClientNote(workspaceId: $workspaceId, clientId: $clientId, noteId: $noteId) {
+      ...ClientFragment
+    }
+  }
+  ${CLIENT_FRAGMENT}
 `;
 
 // ==================== SEARCH QUERIES ====================
@@ -493,6 +558,93 @@ export const useDeleteClient = (providedWorkspaceId) => {
   };
 
   return { deleteClient, loading };
+};
+
+// Hook pour ajouter une note à un client
+export const useAddClientNote = (providedWorkspaceId) => {
+  const { workspaceId: contextWorkspaceId } = useWorkspace();
+  const workspaceId = providedWorkspaceId || contextWorkspaceId;
+
+  const [addNoteMutation, { loading }] = useMutation(ADD_CLIENT_NOTE, {
+    onCompleted: () => {
+      toast.success("Note ajoutée avec succès");
+    },
+    onError: (error) => {
+      console.error("Erreur lors de l'ajout de la note:", error);
+      toast.error(error.message || "Erreur lors de l'ajout de la note");
+    },
+  });
+
+  const addNote = async (clientId, content) => {
+    try {
+      const result = await addNoteMutation({
+        variables: { workspaceId, clientId, input: { content } },
+      });
+      return result.data.addClientNote;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return { addNote, loading };
+};
+
+// Hook pour mettre à jour une note client
+export const useUpdateClientNote = (providedWorkspaceId) => {
+  const { workspaceId: contextWorkspaceId } = useWorkspace();
+  const workspaceId = providedWorkspaceId || contextWorkspaceId;
+
+  const [updateNoteMutation, { loading }] = useMutation(UPDATE_CLIENT_NOTE, {
+    onCompleted: () => {
+      toast.success("Note modifiée avec succès");
+    },
+    onError: (error) => {
+      console.error("Erreur lors de la modification de la note:", error);
+      toast.error(error.message || "Erreur lors de la modification de la note");
+    },
+  });
+
+  const updateNote = async (clientId, noteId, content) => {
+    try {
+      const result = await updateNoteMutation({
+        variables: { workspaceId, clientId, noteId, content },
+      });
+      return result.data.updateClientNote;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return { updateNote, loading };
+};
+
+// Hook pour supprimer une note client
+export const useDeleteClientNote = (providedWorkspaceId) => {
+  const { workspaceId: contextWorkspaceId } = useWorkspace();
+  const workspaceId = providedWorkspaceId || contextWorkspaceId;
+
+  const [deleteNoteMutation, { loading }] = useMutation(DELETE_CLIENT_NOTE, {
+    onCompleted: () => {
+      toast.success("Note supprimée avec succès");
+    },
+    onError: (error) => {
+      console.error("Erreur lors de la suppression de la note:", error);
+      toast.error(error.message || "Erreur lors de la suppression de la note");
+    },
+  });
+
+  const deleteNote = async (clientId, noteId) => {
+    try {
+      const result = await deleteNoteMutation({
+        variables: { workspaceId, clientId, noteId },
+      });
+      return result.data.deleteClientNote;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return { deleteNote, loading };
 };
 
 // ==================== CONSTANTES ====================
