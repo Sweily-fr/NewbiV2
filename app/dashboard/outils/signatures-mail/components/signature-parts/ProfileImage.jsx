@@ -7,6 +7,7 @@
 
 import React from "react";
 import { ImageDropZone } from "@/src/components/ui/image-drop-zone";
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
 
 const ProfileImage = ({
   photoSrc,
@@ -16,6 +17,7 @@ const ProfileImage = ({
   isEditable = true,
   spacing = 0,
   wrapInTd = true, // Option pour wrapper dans un <td> ou non
+  signatureData = {}, // Ajout pour le padding détaillé
 }) => {
   const borderRadius = shape === "square" ? "8px" : "50%";
 
@@ -91,8 +93,13 @@ const ProfileImage = ({
   return (
     <td
       style={{
-        paddingBottom: `${spacing}px`,
-        paddingRight: `${spacing}px`,
+        // Padding détaillé ou espacement par défaut
+        ...(signatureData.detailedSpacing
+          ? getIndividualPaddingStyles(signatureData, "photo", { bottom: spacing, right: spacing })
+          : {
+              paddingBottom: `${spacing}px`,
+              paddingRight: `${spacing}px`,
+            }),
         verticalAlign: "top",
       }}
     >

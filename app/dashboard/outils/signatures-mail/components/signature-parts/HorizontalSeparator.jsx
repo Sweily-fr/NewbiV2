@@ -3,6 +3,8 @@
  * Affiche un séparateur horizontal avec espacements personnalisables
  */
 
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
+
 const HorizontalSeparator = ({
   enabled = false,
   color = "#e0e0e0",
@@ -11,6 +13,7 @@ const HorizontalSeparator = ({
   bottomSpacing = 12,
   radius = 0,
   colSpan = 2,
+  signatureData = {}, // Ajout pour le padding détaillé
 }) => {
   if (!enabled) return null;
 
@@ -19,8 +22,13 @@ const HorizontalSeparator = ({
       <td
         colSpan={colSpan}
         style={{
-          paddingTop: `${topSpacing}px`,
-          paddingBottom: `${bottomSpacing}px`,
+          // Padding détaillé ou espacement par défaut
+          ...(signatureData.detailedSpacing
+            ? getIndividualPaddingStyles(signatureData, "separatorHorizontal", { top: topSpacing, bottom: bottomSpacing })
+            : {
+                paddingTop: `${topSpacing}px`,
+                paddingBottom: `${bottomSpacing}px`,
+              }),
         }}
       >
         <hr

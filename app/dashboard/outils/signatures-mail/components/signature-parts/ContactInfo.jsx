@@ -9,6 +9,7 @@ import React from "react";
 import { InlineEdit } from "@/src/components/ui/inline-edit";
 import { getTypographyStyles } from "../../utils/typography-styles";
 import { getSpacing } from "../../utils/spacing-helper";
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
 
 // Constante pour l'espacement entre icône et texte
 const ICON_TEXT_SPACING = 8;
@@ -53,7 +54,10 @@ const ContactInfo = ({
         <td
           colSpan="2"
           style={{
-            paddingBottom: `${spacing ?? 8}px`,
+            // Padding détaillé ou espacement par défaut
+            ...(signatureData.detailedSpacing
+              ? getIndividualPaddingStyles(signatureData, field, { bottom: spacing ?? 6 })
+              : { paddingBottom: `${spacing ?? 6}px` }),
             textAlign: centered ? "center" : "left",
           }}
         >

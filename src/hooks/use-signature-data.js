@@ -307,6 +307,21 @@ function SignatureProviderContent({ children }) {
         verticalSeparatorLeft: 22, // Espacement gauche du séparateur vertical
         verticalSeparatorRight: 22, // Espacement droite du séparateur vertical
       },
+      // Padding détaillé pour chaque élément (top, right, bottom, left)
+      paddings: {
+        photo: { top: 0, right: 0, bottom: 12, left: 0 },
+        name: { top: 0, right: 0, bottom: 8, left: 0 },
+        position: { top: 0, right: 0, bottom: 8, left: 0 },
+        company: { top: 0, right: 0, bottom: 12, left: 0 },
+        phone: { top: 0, right: 0, bottom: 4, left: 0 },
+        mobile: { top: 0, right: 0, bottom: 4, left: 0 },
+        email: { top: 0, right: 0, bottom: 4, left: 0 },
+        website: { top: 0, right: 0, bottom: 4, left: 0 },
+        address: { top: 0, right: 0, bottom: 0, left: 0 },
+        separator: { top: 12, right: 0, bottom: 12, left: 0 },
+        logo: { top: 0, right: 0, bottom: 12, left: 0 },
+        social: { top: 0, right: 0, bottom: 0, left: 0 },
+      },
       // Typographie détaillée pour chaque champ
       typography: {
         fullName: {
@@ -419,6 +434,10 @@ function SignatureProviderContent({ children }) {
           ...defaultSignatureData.spacings,
           ...(fetchedSignature.spacings || {}),
         },
+        paddings: {
+          ...defaultSignatureData.paddings,
+          ...(fetchedSignature.paddings || {}),
+        },
         separators: {
           ...defaultSignatureData.separators,
           ...(fetchedSignature.separators || {}),
@@ -530,6 +549,10 @@ function SignatureProviderContent({ children }) {
             spacings: {
               ...defaultSignatureData.spacings,
               ...(parsedData.spacings || {}),
+            },
+            paddings: {
+              ...defaultSignatureData.paddings,
+              ...(parsedData.paddings || {}),
             },
             verticalSeparator: {
               ...defaultSignatureData.verticalSeparator,
@@ -646,6 +669,10 @@ function SignatureProviderContent({ children }) {
               ...defaultSignatureData.spacings,
               ...(parsedDraft.spacings || {}),
             },
+            paddings: {
+              ...defaultSignatureData.paddings,
+              ...(parsedDraft.paddings || {}),
+            },
             columnWidths: {
               ...defaultSignatureData.columnWidths,
               ...(parsedDraft.columnWidths || {}),
@@ -720,6 +747,7 @@ function SignatureProviderContent({ children }) {
       // Handle nested object updates for spacings, colors, etc.
       if (
         key === "spacings" ||
+        key === "paddings" ||
         key === "colors" ||
         key === "columnWidths" ||
         key === "fontSize" ||
@@ -790,6 +818,10 @@ function SignatureProviderContent({ children }) {
       spacings: {
         ...defaultSignatureData.spacings,
         ...(editData.spacings || {}),
+      },
+      paddings: {
+        ...defaultSignatureData.paddings,
+        ...(editData.paddings || {}),
       },
       verticalSeparator: {
         ...defaultSignatureData.verticalSeparator,

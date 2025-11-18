@@ -14,6 +14,7 @@ import HorizontalSeparator from "../signature-parts/HorizontalSeparator";
 import CompanyLogo from "../signature-parts/CompanyLogo";
 import SocialNetworks from "../signature-parts/SocialNetworks";
 import { getSpacing } from "../../utils/spacing-helper";
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
 import "@/src/styles/signature-text-selection.css";
 import "./signature-preview.css";
 
@@ -46,7 +47,9 @@ const HorizontalSignature = ({
             <td
               style={{
                 verticalAlign: "top",
-                paddingRight: `${getSpacing(signatureData, spacings.global, 12)}px`,
+                ...(signatureData.separatorVerticalEnabled && {
+                  paddingRight: `${getSpacing(signatureData, spacings.global, 12)}px`,
+                }),
               }}
             >
               <table
@@ -62,7 +65,13 @@ const HorizontalSignature = ({
                   {/* Photo de profil */}
                   {signatureData.photo && signatureData.photoVisible !== false && (
                     <tr>
-                      <td style={{ paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, 12)}px` }}>
+                      <td
+                        style={{
+                          ...(signatureData.detailedSpacing
+                            ? getIndividualPaddingStyles(signatureData, "photo", { bottom: spacings.global || 8 })
+                            : { paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, spacings.global || 8)}px` }),
+                        }}
+                      >
                         <ProfileImage
                           photoSrc={signatureData.photo}
                           size={signatureData.imageSize || 70}
@@ -73,6 +82,7 @@ const HorizontalSignature = ({
                           isEditable={true}
                           spacing={0}
                           wrapInTd={false}
+                          signatureData={signatureData}
                         />
                       </td>
                     </tr>
@@ -90,6 +100,7 @@ const HorizontalSignature = ({
                     colors={signatureData.colors || {}}
                     primaryColor={signatureData.primaryColor || "#171717"}
                     spacings={spacings}
+                    signatureData={signatureData}
                     nameAlignment={signatureData.nameAlignment || "left"}
                   />
                 </tbody>
@@ -98,8 +109,10 @@ const HorizontalSignature = ({
 
             {/* Séparateur vertical */}
             <VerticalSeparator
+              signatureData={signatureData}
               enabled={signatureData.separatorVerticalEnabled}
               color={signatureData.colors?.separatorVertical || "#e0e0e0"}
+              width={signatureData.separatorVerticalWidth || 1}
               leftSpacing={getSpacing(signatureData, spacings.global, 12)}
               rightSpacing={getSpacing(signatureData, spacings.global, 12)}
               minHeight="200px"
@@ -109,7 +122,9 @@ const HorizontalSignature = ({
             <td
               style={{
                 verticalAlign: signatureData.contactAlignment || "top",
-                paddingLeft: `${getSpacing(signatureData, spacings.global, 12)}px`,
+                ...(signatureData.separatorVerticalEnabled && {
+                  paddingLeft: `${getSpacing(signatureData, spacings.global, 12)}px`,
+                }),
               }}
             >
               <table
@@ -160,34 +175,22 @@ const HorizontalSignature = ({
             enabled={signatureData.separatorHorizontalEnabled}
             color={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
             width={signatureData.separatorHorizontalWidth || 1}
-            topSpacing={getSpacing(signatureData, spacings.separatorTop, 8)}
-            bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, 8)}
+            topSpacing={getSpacing(signatureData, spacings.separatorTop, spacings.global || 8)}
+            bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, spacings.global || 8)}
             radius={0}
             colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
+            signatureData={signatureData}
           />
 
           {/* Logo entreprise (en bas, sur toute la largeur) */}
           {logoSrc && signatureData.logoVisible !== false && (
-            <tr>
-              <td
-                colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
-                style={{
-                  paddingTop: `${getSpacing(signatureData, spacings.logoBottom, 12)}px`,
-                  textAlign: "left",
-                }}
-              >
-                <img
-                  src={logoSrc}
-                  alt="Logo entreprise"
-                  style={{
-                    width: `${signatureData.logoSize || 60}px`,
-                    height: "auto",
-                    maxHeight: `${signatureData.logoSize || 60}px`,
-                    objectFit: "contain",
-                  }}
-                />
-              </td>
-            </tr>
+            <CompanyLogo
+              logoSrc={logoSrc}
+              size={signatureData.logoSize || 60}
+              spacing={getSpacing(signatureData, spacings.logoBottom, 12)}
+              alignment="left"
+              signatureData={signatureData}
+            />
           )}
 
           {/* Réseaux sociaux (en bas, sur toute la largeur) */}
@@ -200,6 +203,7 @@ const HorizontalSignature = ({
             spacing={getSpacing(signatureData, spacings.logoToSocial, 15)}
             iconSpacing={8}
             colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
+            signatureData={signatureData}
           />
         </tbody>
       </table>

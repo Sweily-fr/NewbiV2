@@ -13,6 +13,7 @@ import HorizontalSeparator from "../signature-parts/HorizontalSeparator";
 import CompanyLogo from "../signature-parts/CompanyLogo";
 import SocialNetworks from "../signature-parts/SocialNetworks";
 import { getSpacing } from "../../utils/spacing-helper";
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
 import "@/src/styles/signature-text-selection.css";
 import "./signature-preview.css";
 
@@ -46,7 +47,9 @@ const VerticalSignature = ({
           <tr>
             <td
               style={{
-                paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, 16)}px`,
+                ...(signatureData.detailedSpacing
+                  ? getIndividualPaddingStyles(signatureData, "photo", { bottom: spacings.global || 8 })
+                  : { paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, spacings.global || 8)}px` }),
                 textAlign: "center",
                 display: "block",
               }}
@@ -62,6 +65,7 @@ const VerticalSignature = ({
                   isEditable={true}
                   spacing={0}
                   wrapInTd={false}
+                  signatureData={signatureData}
                 />
               </div>
             </td>
@@ -88,10 +92,11 @@ const VerticalSignature = ({
           enabled={signatureData.separatorHorizontalEnabled}
           color={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
           width={signatureData.separatorHorizontalWidth || 1}
-          topSpacing={getSpacing(signatureData, spacings.separatorTop, 12)}
-          bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, 12)}
+          topSpacing={getSpacing(signatureData, spacings.separatorTop, spacings.global || 8)}
+          bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, spacings.global || 8)}
           radius={0}
           colSpan={1}
+          signatureData={signatureData}
         />
 
         {/* Informations de contact (centrées) */}
@@ -127,27 +132,13 @@ const VerticalSignature = ({
 
         {/* Logo entreprise (centré) */}
         {logoSrc && signatureData.logoVisible !== false && (
-          <tr>
-            <td
-              style={{
-                paddingTop: `${getSpacing(signatureData, spacings.logoBottom, 16)}px`,
-                textAlign: "center",
-              }}
-            >
-              <img
-                src={logoSrc}
-                alt="Logo entreprise"
-                style={{
-                  width: `${signatureData.logoSize || 80}px`,
-                  height: "auto",
-                  maxHeight: `${signatureData.logoSize || 80}px`,
-                  objectFit: "contain",
-                  display: "block",
-                  margin: "0 auto",
-                }}
-              />
-            </td>
-          </tr>
+          <CompanyLogo
+            logoSrc={logoSrc}
+            size={signatureData.logoSize || 80}
+            spacing={getSpacing(signatureData, spacings.logoBottom, 16)}
+            alignment="center"
+            signatureData={signatureData}
+          />
         )}
 
         {/* Réseaux sociaux (centrés) */}
@@ -161,6 +152,7 @@ const VerticalSignature = ({
           iconSpacing={12}
           colSpan={1}
           centered={true}
+          signatureData={signatureData}
         />
       </tbody>
     </table>

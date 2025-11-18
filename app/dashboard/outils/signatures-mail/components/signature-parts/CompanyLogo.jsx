@@ -3,29 +3,38 @@
  * Affiche le logo avec taille personnalisable
  */
 
-const CompanyLogo = ({ logoSrc, size = 60, spacing = 8, alignment = "left" }) => {
+import { getIndividualPaddingStyles } from "../../utils/padding-helper";
+
+const CompanyLogo = ({ logoSrc, size = 60, spacing = 8, alignment = "left", signatureData = {} }) => {
   if (!logoSrc) return null;
+
+  const imageStyle = {
+    maxWidth: `${size}px`,
+    height: "auto",
+    maxHeight: `${size}px`,
+    objectFit: "contain",
+    display: "block",
+    margin:
+      alignment === "center"
+        ? "0 auto"
+        : alignment === "right"
+        ? "0 0 0 auto"
+        : "0",
+  };
 
   return (
     <tr>
       <td
         colSpan="2"
         style={{
-          paddingTop: `${spacing}px`,
+          // Padding détaillé ou espacement par défaut
+          ...(signatureData.detailedSpacing
+            ? getIndividualPaddingStyles(signatureData, "logo", { top: spacing })
+            : { paddingTop: `${spacing}px` }),
           textAlign: alignment,
         }}
       >
-        <img
-          src={logoSrc}
-          alt="Logo entreprise"
-          style={{
-            maxWidth: `${size}px`,
-            height: "auto",
-            maxHeight: `${size}px`,
-            objectFit: "contain",
-            display: "block",
-          }}
-        />
+        <img src={logoSrc} alt="Logo entreprise" style={imageStyle} />
       </td>
     </tr>
   );
