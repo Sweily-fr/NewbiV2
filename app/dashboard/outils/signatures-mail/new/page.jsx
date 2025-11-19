@@ -1809,15 +1809,15 @@ export default function NewSignaturePage() {
   }
 
   return (
-    <div className="flex gap-0 w-full">
-      <div className="flex-1 p-12 h-[calc(100vh-64px)] flex items-center justify-center">
+    <div className="flex gap-0 w-full h-full">
+      <div className="flex-1 p-6 flex items-center justify-center overflow-y-auto">
         <EmailPreview
           signatureData={signatureData}
           editingSignatureId={editingSignatureId}
           isEditMode={isEditMode}
         />
       </div>
-      {!isEditMode && orientationChosen && (
+      {orientationChosen && (
         <SignatureSidebar
           signatureData={signatureData}
           updateSignatureData={updateSignatureData}
