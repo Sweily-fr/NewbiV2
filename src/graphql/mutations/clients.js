@@ -25,6 +25,29 @@ export const CREATE_CLIENT = gql`
       }
       siret
       vatNumber
+      notes {
+        id
+        content
+        userId
+        userName
+        userImage
+        createdAt
+        updatedAt
+      }
+      activity {
+        id
+        type
+        description
+        field
+        oldValue
+        newValue
+        userId
+        userName
+        userImage
+        createdAt
+      }
+      createdAt
+      updatedAt
     }
   }
 `;
@@ -54,6 +77,29 @@ export const UPDATE_CLIENT = gql`
       }
       siret
       vatNumber
+      notes {
+        id
+        content
+        userId
+        userName
+        userImage
+        createdAt
+        updatedAt
+      }
+      activity {
+        id
+        type
+        description
+        field
+        oldValue
+        newValue
+        userId
+        userName
+        userImage
+        createdAt
+      }
+      createdAt
+      updatedAt
     }
   }
 `;

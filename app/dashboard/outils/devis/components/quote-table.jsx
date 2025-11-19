@@ -95,12 +95,14 @@ import {
 import { useQuoteTable } from "../hooks/use-quote-table";
 import QuoteRowActions from "./quote-row-actions";
 import QuoteFilters from "./quote-filters";
+import QuoteSidebar from "./quote-sidebar";
 
-export default function QuoteTable({ handleNewQuote }) {
+export default function QuoteTable({ handleNewQuote, quoteIdToOpen }) {
   const { quotes, loading, error, refetch } = useQuotes();
   const { canCreate, canExport } = usePermissions();
   const [canCreateQuote, setCanCreateQuote] = useState(false);
   const [canExportQuote, setCanExportQuote] = useState(false);
+  const [quoteToOpen, setQuoteToOpen] = useState(null);
 
   const {
     table,
@@ -130,6 +132,16 @@ export default function QuoteTable({ handleNewQuote }) {
     };
     checkPermissions();
   }, [canCreate, canExport]);
+
+  // Ouvrir automatiquement la sidebar si un ID est fourni
+  useEffect(() => {
+    if (quoteIdToOpen && quotes && quotes.length > 0) {
+      const quote = quotes.find(q => q.id === quoteIdToOpen);
+      if (quote) {
+        setQuoteToOpen(quote);
+      }
+    }
+  }, [quoteIdToOpen, quotes]);
 
   if (error) {
     return (
@@ -544,6 +556,16 @@ export default function QuoteTable({ handleNewQuote }) {
           </Pagination>
         </div>
       </div>
+
+      {/* Sidebar pour ouverture automatique */}
+      {quoteToOpen && (
+        <QuoteSidebar
+          quote={quoteToOpen}
+          isOpen={!!quoteToOpen}
+          onClose={() => setQuoteToOpen(null)}
+          onRefetch={refetch}
+        />
+      )}
     </div>
   );
 }

@@ -92,67 +92,205 @@ const UniversalPDFDownloader = ({
       
       // Créer une image pour obtenir les vraies dimensions
       const img = new Image();
-      const imgDimensions = await new Promise((resolve, reject) => {
-        img.onload = () => {
-          console.log('Image chargée:', img.width, 'x', img.height);
-          resolve({ width: img.width, height: img.height });
-        };
-        img.onerror = () => {
-          // Si erreur, utiliser dimensions par défaut
-          console.warn('Erreur chargement image, utilisation dimensions par défaut');
-          resolve({ width: 794 * 2, height: 1123 * 2 }); // A4 ratio avec scale 2
-        };
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
         img.src = dataUrl;
-        // Timeout de sécurité
-        setTimeout(() => resolve({ width: 794 * 2, height: 1123 * 2 }), 2000);
       });
-      
+
+      console.log('Dimensions image:', img.width, 'x', img.height);
+
       // Créer le PDF
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
+        compress: true,
       });
 
-      console.log('PDF créé, calcul des dimensions...');
-      
-      // Calculer les dimensions pour respecter le ratio
-      const pdfWidth = 210; // Largeur A4 en mm
-      const pdfHeight = 297; // Hauteur A4 en mm
-      const imgRatio = imgDimensions.height / imgDimensions.width;
-      
-      // Calculer la hauteur de l'image pour qu'elle tienne dans la largeur A4
-      const imgWidth = pdfWidth;
-      const imgHeight = pdfWidth * imgRatio;
-      
-      console.log('Dimensions finales:', imgWidth, 'x', imgHeight, 'mm');
-      console.log('Ratio image:', imgRatio);
-      
-      // Si l'image est plus haute qu'une page, on doit la découper
-      if (imgHeight > pdfHeight) {
-        console.log('Document multi-pages détecté');
-        let heightLeft = imgHeight;
-        let position = 0;
+      // Dimensions A4 en mm
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+
+      // Calculer les dimensions de l'image dans le PDF
+      const imgWidthMM = pdfWidth;
+      const imgHeightMM = (img.height * pdfWidth) / img.width;
+
+      console.log('Dimensions image dans PDF:', imgWidthMM, 'x', imgHeightMM, 'mm');
+
+      // ===== DÉCOUPAGE INTELLIGENT =====
+      if (imgHeightMM > pdfHeight) {
+        console.log('⚠️ Document multi-pages avec découpage intelligent');
         
-        // Ajouter la première page
-        pdf.addImage(dataUrl, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-        heightLeft -= pdfHeight;
+        // Récupérer les positions des lignes de tableau à ne pas couper
+        const protectedElements = componentRef.current.querySelectorAll(
+          'tr[data-no-break], .no-break, .invoice-line'
+        );
         
-        // Ajouter des pages supplémentaires seulement si nécessaire
-        // On ajoute une marge de tolérance de 5mm pour éviter les pages vides
-        while (heightLeft > 5) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(dataUrl, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-          heightLeft -= pdfHeight;
+        const rowPositions = [];
+        const containerRect = componentRef.current.getBoundingClientRect();
+        
+        protectedElements.forEach(row => {
+          const rect = row.getBoundingClientRect();
+          rowPositions.push({
+            top: (rect.top - containerRect.top) * 2, // *2 pour le scale
+            bottom: (rect.bottom - containerRect.top) * 2,
+            height: rect.height * 2,
+          });
+        });
+
+        console.log(`🔍 ${rowPositions.length} éléments protégés détectés`);
+        rowPositions.forEach((row, i) => {
+          console.log(`  Élément ${i + 1}: top=${(row.top / 2).toFixed(0)}px, bottom=${(row.bottom / 2).toFixed(0)}px, height=${(row.height / 2).toFixed(0)}px`);
+        });
+
+        // Créer un canvas pour découper l'image
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const canvasWidth = img.width;
+        const pixelsPerMM = img.width / pdfWidth;
+        const pageHeightPixels = pdfHeight * pixelsPerMM;
+        
+        console.log('📐 Calculs:', {
+          pixelsPerMM: pixelsPerMM.toFixed(2),
+          pageHeightPixels: pageHeightPixels.toFixed(0) + 'px',
+          pageHeightMM: pdfHeight + 'mm'
+        });
+        
+        canvas.width = canvasWidth;
+        canvas.height = pageHeightPixels;
+
+        let currentY = 0;
+        let pageNumber = 0;
+        const pages = []; // Stocker les pages pour ajouter la numérotation après
+
+        // Première passe : générer toutes les pages
+        while (currentY < img.height) {
+          // ⚠️ CORRECTION : Ne pas retirer de marge de la hauteur disponible
+          // On veut utiliser TOUTE la hauteur de la page A4
+          let targetY = currentY + pageHeightPixels;
+          
+          // S'assurer de ne pas dépasser l'image
+          if (targetY > img.height) {
+            targetY = img.height;
+          }
+
+          console.log(`\n📄 Page ${pageNumber + 1}:`);
+          console.log(`  Position actuelle: ${currentY.toFixed(0)}px`);
+          console.log(`  Cible initiale: ${targetY.toFixed(0)}px`);
+          console.log(`  Hauteur page: ${(targetY - currentY).toFixed(0)}px (${((targetY - currentY) / pixelsPerMM).toFixed(1)}mm)`);
+
+          // Trouver les éléments dans cette plage
+          const elementsInRange = rowPositions.filter(row => 
+            (row.top >= currentY && row.top < targetY) || // Commence dans la plage
+            (row.bottom > currentY && row.bottom <= targetY) || // Finit dans la plage
+            (row.top < currentY && row.bottom > targetY) // Chevauche la plage
+          );
+
+          console.log(`  ${elementsInRange.length} éléments dans cette plage`);
+
+          // Trouver le dernier élément qui serait coupé
+          let needsAdjustment = false;
+          for (const row of elementsInRange) {
+            // Si l'élément commence avant targetY mais finit après
+            if (row.top < targetY && row.bottom > targetY) {
+              // Cet élément serait coupé, on ajuste targetY avant lui
+              targetY = row.top;
+              needsAdjustment = true;
+              console.log(`  ✂️ Élément coupé détecté ! Ajustement à ${targetY.toFixed(0)}px`);
+              console.log(`     (Élément: top=${row.top.toFixed(0)}px, bottom=${row.bottom.toFixed(0)}px)`);
+              break;
+            }
+          }
+
+          if (!needsAdjustment) {
+            console.log(`  ✅ Aucune coupure détectée, on utilise toute la page`);
+          }
+
+          const sliceHeight = targetY - currentY;
+          console.log(`  Hauteur finale: ${sliceHeight.toFixed(0)}px (${(sliceHeight / pixelsPerMM).toFixed(1)}mm)`);
+
+          // Remplir le canvas avec du blanc
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Dessiner la portion de l'image
+          ctx.drawImage(
+            img,
+            0, currentY,              // Position source
+            canvasWidth, sliceHeight, // Dimensions source
+            0, 0,                     // Position destination
+            canvasWidth, sliceHeight  // Dimensions destination
+          );
+
+          // Convertir le canvas en image
+          const pageImageData = canvas.toDataURL('image/jpeg', 0.95);
+          
+          // Stocker les données de la page avec sa hauteur réelle
+          pages.push({
+            imageData: pageImageData,
+            heightMM: sliceHeight / pixelsPerMM
+          });
+
+          console.log(`  ✅ Page ${pageNumber + 1} générée`);
+
+          currentY = targetY;
+          pageNumber++;
+
+          // Sécurité pour éviter boucle infinie
+          if (pageNumber > 50) {
+            console.error('⚠️ Trop de pages, arrêt');
+            break;
+          }
         }
+
+        // Deuxième passe : ajouter les pages au PDF avec numérotation
+        const totalPages = pages.length;
+        console.log(`\n📄 Total de ${totalPages} page(s) à ajouter au PDF`);
+
+        pages.forEach((page, index) => {
+          if (index > 0) {
+            pdf.addPage();
+          }
+
+          // Ajouter l'image de la page avec sa hauteur réelle
+          pdf.addImage(
+            page.imageData,
+            'JPEG',
+            0,
+            0,
+            pdfWidth,
+            page.heightMM,
+            undefined,
+            'FAST'
+          );
+
+          // Ajouter la numérotation en bas de page à droite
+          pdf.setFontSize(9);
+          pdf.setTextColor(150, 150, 150); // Gris
+          const pageText = `${index + 1}/${totalPages}`;
+          const textWidth = pdf.getTextWidth(pageText);
+          pdf.text(pageText, pdfWidth - textWidth - 10, pdfHeight - 5); // À droite, 10mm de marge, 5mm du bas
+
+          console.log(`✅ Page ${index + 1}/${totalPages} ajoutée au PDF (hauteur: ${page.heightMM.toFixed(1)}mm)`);
+        });
       } else {
-        // L'image tient sur une seule page
-        console.log('Document sur une seule page');
-        pdf.addImage(dataUrl, 'JPEG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
+        // Document sur une seule page
+        console.log('✅ Document sur une seule page');
+        pdf.addImage(
+          dataUrl,
+          'JPEG',
+          0,
+          0,
+          imgWidthMM,
+          imgHeightMM,
+          undefined,
+          'FAST'
+        );
       }
-      
-      console.log('Image ajoutée au PDF');
+
+      console.log('Image(s) ajoutée(s) au PDF');
 
       // Déterminer le nom du fichier
       const documentType = type === 'invoice' ? 'facture' : type === 'quote' ? 'devis' : 'avoir';
@@ -186,11 +324,10 @@ const UniversalPDFDownloader = ({
         left: '-9999px',
         top: '0',
         width: '794px',
-        height: '1123px', // Hauteur A4 en pixels (297mm)
         backgroundColor: '#ffffff',
         zIndex: -1,
       }}>
-        <div ref={componentRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <div ref={componentRef} style={{ position: 'relative', width: '100%' }}>
           <UniversalPreviewPDF data={data} type={type} isMobile={false} forPDF={true} />
         </div>
       </div>

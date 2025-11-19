@@ -39,12 +39,17 @@ import { toast } from "@/src/components/ui/sonner";
 import { useCreateClient, useUpdateClient } from "@/src/hooks/useClients";
 import { useAddClientToLists } from "@/src/hooks/useClientLists";
 import { useAddClientNote } from "@/src/graphql/clientQueries";
+import { useQuery } from "@apollo/client";
+import { GET_CLIENT } from "@/src/graphql/queries/clients";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 // Import API Gouv utilities
 import { searchCompanies, convertCompanyToClient } from "@/src/utils/api-gouv";
 
 export default function ClientsModal({ client, onSave, open, onOpenChange, defaultListId = null, workspaceId = null }) {
   const [isMobile, setIsMobile] = useState(false);
+  const { workspaceId: contextWorkspaceId } = useWorkspace();
+  const finalWorkspaceId = workspaceId || contextWorkspaceId;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -60,9 +65,20 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
   const { createClient, loading: createLoading } = useCreateClient();
   const { updateClient, loading: updateLoading } = useUpdateClient();
   const { addToLists } = useAddClientToLists();
-  const { addNote: addNoteToClient } = useAddClientNote(workspaceId);
+  const { addNote: addNoteToClient } = useAddClientNote(finalWorkspaceId);
   const isEditing = !!client;
-  const loading = createLoading || updateLoading;
+  
+  // Charger le client complet avec activity et notes quand on est en mode édition
+  const { data: fullClientData, loading: loadingFullClient } = useQuery(GET_CLIENT, {
+    variables: { workspaceId: finalWorkspaceId, id: client?.id },
+    skip: !client?.id || !open, // Ne charger que si on a un client et que le modal est ouvert
+    fetchPolicy: 'network-only', // Toujours récupérer les dernières données
+  });
+
+  // Utiliser le client complet si disponible, sinon utiliser le client passé en prop
+  const fullClient = fullClientData?.client || client;
+  
+  const loading = createLoading || updateLoading || loadingFullClient;
 
   const {
     register,
@@ -105,10 +121,10 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
   const [pendingNotes, setPendingNotes] = useState([]);
   const clientType = watch("type");
 
-  // Mettre à jour currentClient quand client change
+  // Mettre à jour currentClient quand fullClient change
   useEffect(() => {
-    setCurrentClient(client);
-  }, [client]);
+    setCurrentClient(fullClient);
+  }, [fullClient]);
 
   // Gestion des notes en attente (pour la création de client)
   const addPendingNote = (content) => {
@@ -168,32 +184,32 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
 
   // Mettre à jour le formulaire quand le client change
   useEffect(() => {
-    if (client) {
+    if (fullClient) {
       reset({
-        type: client.type || "INDIVIDUAL",
-        name: client.name || "",
-        firstName: client.firstName || "",
-        lastName: client.lastName || "",
-        email: client.email || "",
+        type: fullClient.type || "INDIVIDUAL",
+        name: fullClient.name || "",
+        firstName: fullClient.firstName || "",
+        lastName: fullClient.lastName || "",
+        email: fullClient.email || "",
         address: {
-          street: client.address?.street || "",
-          city: client.address?.city || "",
-          postalCode: client.address?.postalCode || "",
-          country: client.address?.country || "",
+          street: fullClient.address?.street || "",
+          city: fullClient.address?.city || "",
+          postalCode: fullClient.address?.postalCode || "",
+          country: fullClient.address?.country || "",
         },
         shippingAddress: {
-          fullName: client.shippingAddress?.fullName || "",
-          street: client.shippingAddress?.street || "",
-          city: client.shippingAddress?.city || "",
-          postalCode: client.shippingAddress?.postalCode || "",
-          country: client.shippingAddress?.country || "",
+          fullName: fullClient.shippingAddress?.fullName || "",
+          street: fullClient.shippingAddress?.street || "",
+          city: fullClient.shippingAddress?.city || "",
+          postalCode: fullClient.shippingAddress?.postalCode || "",
+          country: fullClient.shippingAddress?.country || "",
         },
-        siret: client.siret || "",
-        vatNumber: client.vatNumber || "",
+        siret: fullClient.siret || "",
+        vatNumber: fullClient.vatNumber || "",
       });
-      setHasDifferentShipping(client.hasDifferentShippingAddress || false);
-    } else {
-      // Réinitialiser pour un nouveau client
+      setHasDifferentShipping(fullClient.hasDifferentShippingAddress || false);
+    } else if (open) {
+      // Réinitialiser pour un nouveau client seulement si le modal est ouvert
       reset({
         type: "INDIVIDUAL",
         name: "",
@@ -218,7 +234,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
       });
       setHasDifferentShipping(false);
     }
-  }, [client, reset]);
+  }, [fullClient, open, reset]);
 
   // Debounce company search query
   useEffect(() => {

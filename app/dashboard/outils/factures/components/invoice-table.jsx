@@ -98,12 +98,14 @@ import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceExportButton from "./invoice-export-button";
 import InvoiceFilters from "./invoice-filters";
+import InvoiceSidebar from "./invoice-sidebar";
 
-export default function InvoiceTable({ handleNewInvoice }) {
+export default function InvoiceTable({ handleNewInvoice, invoiceIdToOpen }) {
   const router = useRouter();
   const { invoices, loading, error, refetch } = useInvoices();
   const { canCreate } = usePermissions();
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
+  const [invoiceToOpen, setInvoiceToOpen] = useState(null);
 
   const {
     table,
@@ -131,6 +133,16 @@ export default function InvoiceTable({ handleNewInvoice }) {
     };
     checkPermission();
   }, [canCreate]);
+
+  // Ouvrir automatiquement la sidebar si un ID est fourni
+  useEffect(() => {
+    if (invoiceIdToOpen && invoices && invoices.length > 0) {
+      const invoice = invoices.find(inv => inv.id === invoiceIdToOpen);
+      if (invoice) {
+        setInvoiceToOpen(invoice);
+      }
+    }
+  }, [invoiceIdToOpen, invoices]);
 
   if (loading) {
     return <InvoiceTableSkeleton />;
@@ -567,6 +579,16 @@ export default function InvoiceTable({ handleNewInvoice }) {
           </Pagination>
         </div>
       </div>
+
+      {/* Sidebar pour ouverture automatique */}
+      {invoiceToOpen && (
+        <InvoiceSidebar
+          invoice={invoiceToOpen}
+          isOpen={!!invoiceToOpen}
+          onClose={() => setInvoiceToOpen(null)}
+          onRefetch={refetch}
+        />
+      )}
     </div>
   );
 }

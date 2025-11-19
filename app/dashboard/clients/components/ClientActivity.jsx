@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import * as React from "react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Send, Edit2, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Send, Edit2, Trash2, ChevronDown, ChevronUp, FileText, ExternalLink } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
@@ -119,7 +119,9 @@ const ClientActivity = ({
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "";
+    if (!dateString) {
+      return "";
+    }
     const date = new Date(dateString);
     
     // Vérifier si la date est valide
@@ -144,7 +146,9 @@ const ClientActivity = ({
       created: "✨",
       updated: "📝",
       invoice_created: "📄",
+      invoice_status_changed: "📄",
       quote_created: "📋",
+      quote_status_changed: "📋",
       note_added: "💬",
       note_updated: "✏️",
       note_deleted: "🗑️",
@@ -153,7 +157,7 @@ const ClientActivity = ({
     let text = activity.description || "a effectué une action";
     let icon = icons[activity.type] || "📝";
 
-    return { icon, text };
+    return { icon, text, metadata: activity.metadata };
   };
 
   const notes = useMemo(() => {
@@ -166,14 +170,14 @@ const ClientActivity = ({
       userImage: session?.user?.image,
     }));
     return [...clientNotes, ...pending].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
     );
   }, [client?.notes, pendingNotes, session]);
 
   const activities = useMemo(() => {
     return [...(client?.activity || [])]
       .filter((a) => a.type !== "note_added")
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   }, [client?.activity]);
 
   const allActivity = useMemo(() => {
@@ -188,7 +192,7 @@ const ClientActivity = ({
         // Vérifier que les dates sont valides
         if (isNaN(dateA.getTime())) return 1;
         if (isNaN(dateB.getTime())) return -1;
-        return dateB - dateA; // Inverser pour avoir du plus récent au plus ancien
+        return dateA - dateB; // Du plus ancien au plus récent
       });
   }, [notes, activities]);
 
@@ -221,7 +225,7 @@ const ClientActivity = ({
                     Voir moins
                   </button>
                 )}
-                {(showAllActivities ? allActivity : allActivity.slice(0, 3)).map(
+                {(showAllActivities ? allActivity : allActivity.slice(-3)).map(
                   (item, index) => {
                     const display =
                       item.type === "activity" ? getActivityDisplay(item) : null;
@@ -280,16 +284,15 @@ const ClientActivity = ({
                                 ) : (
                                   <>
                                     <div className="flex items-center justify-between gap-2">
+                                      <span className="text-xs font-medium">
+                                        {item.userName}
+                                      </span>
                                       <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium">
-                                          {item.userName}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">
                                           {formatDate(item.createdAt)}
                                         </span>
-                                      </div>
-                                      {item.userId === session?.user?.id && (
-                                        <div className="flex gap-1">
+                                        {item.userId === session?.user?.id && (
+                                          <div className="flex gap-1">
                                           <Button
                                             size="sm"
                                             variant="ghost"
@@ -347,8 +350,9 @@ const ClientActivity = ({
                                               </div>
                                             </AlertDialogContent>
                                           </AlertDialog>
-                                        </div>
-                                      )}
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                     <p className="text-sm whitespace-pre-wrap">
                                       {item.content}
@@ -379,6 +383,43 @@ const ClientActivity = ({
                                       {formatDate(item.createdAt)}
                                     </span>
                                   </div>
+                                  {display.metadata && (display.metadata.documentType === 'invoice' || display.metadata.documentType === 'quote') && (
+                                    <div className="mt-2 p-2 bg-muted/50 rounded-md border border-border max-w-md">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                          <div className="flex flex-col">
+                                            <span className="text-xs font-medium">
+                                              {display.metadata.documentType === 'invoice' ? 'Facture' : 'Devis'} {display.metadata.documentNumber}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">
+                                              {display.metadata.status === 'DRAFT' && 'Brouillon'}
+                                              {display.metadata.status === 'PENDING' && (display.metadata.documentType === 'invoice' ? 'En attente' : 'En attente')}
+                                              {display.metadata.status === 'COMPLETED' && (display.metadata.documentType === 'invoice' ? 'Payée' : 'Accepté')}
+                                              {display.metadata.status === 'CANCELED' && (display.metadata.documentType === 'invoice' ? 'Annulée' : 'Refusé')}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-7 px-2 text-xs hover:bg-transparent flex-shrink-0"
+                                          style={{ color: '#5b50FF' }}
+                                          onClick={() => {
+                                            const docType = display.metadata.documentType;
+                                            const docId = display.metadata.documentId;
+                                            const path = docType === 'invoice' 
+                                              ? `/dashboard/outils/factures?id=${docId}` 
+                                              : `/dashboard/outils/devis?id=${docId}`;
+                                            window.location.href = path;
+                                          }}
+                                        >
+                                          <ExternalLink className="h-3 w-3 mr-1" />
+                                          {display.metadata.documentType === 'invoice' ? 'Voir la facture' : 'Voir le devis'}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </>
                               ) : null}
                             </div>
@@ -549,7 +590,7 @@ const ClientActivity = ({
                     Voir moins
                   </button>
                 )}
-                {(showAllActivities ? activities : activities.slice(0, 3)).map(
+                {(showAllActivities ? activities : activities.slice(-3)).map(
                   (activity, index) => {
                     const display = getActivityDisplay(activity);
                     return (
