@@ -187,7 +187,7 @@ const HorizontalSignature = ({
             <CompanyLogo
               logoSrc={logoSrc}
               size={signatureData.logoSize || 60}
-              spacing={getSpacing(signatureData, spacings.logoBottom, 12)}
+              spacing={getSpacing(signatureData, spacings.logoBottom, spacings.global || 8)}
               alignment="left"
               signatureData={signatureData}
             />

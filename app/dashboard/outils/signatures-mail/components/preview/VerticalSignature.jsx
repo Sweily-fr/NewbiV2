@@ -135,7 +135,7 @@ const VerticalSignature = ({
           <CompanyLogo
             logoSrc={logoSrc}
             size={signatureData.logoSize || 80}
-            spacing={getSpacing(signatureData, spacings.logoBottom, 16)}
+            spacing={getSpacing(signatureData, spacings.logoBottom, spacings.global || 8)}
             alignment="center"
             signatureData={signatureData}
           />

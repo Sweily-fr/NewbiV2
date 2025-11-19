@@ -403,7 +403,7 @@ ${signatureData.address}
 ${logoHTML && signatureData.logoVisible !== false ? `
 <!-- Logo entreprise (centré) -->
 <tr>
-<td style="padding-top: ${getSpacing(signatureData.spacings?.logoBottom, 16)}px; text-align: center;">
+<td style="padding-top: ${getSpacing(signatureData.spacings?.logoBottom, signatureData.spacings?.global || 8)}px; text-align: center;">
 <div style="margin: 0 auto; width: fit-content;">
 ${logoHTML}
 </div>
@@ -581,7 +581,7 @@ ${signatureData.separatorHorizontalEnabled ? `
 ${logoHTML && signatureData.logoVisible !== false ? `
 <!-- Logo entreprise -->
 <tr>
-<td colspan="${colSpan}" style="padding-top: ${getSpacing(signatureData.spacings?.logoBottom, 12)}px; padding-bottom: 0; padding-left: 0; padding-right: 0; margin: 0; text-align: left;">
+<td colspan="${colSpan}" style="padding-top: ${getSpacing(signatureData.spacings?.logoBottom, signatureData.spacings?.global || 8)}px; padding-bottom: 0; padding-left: 0; padding-right: 0; margin: 0; text-align: left;">
 ${logoHTML}
 </td>
 </tr>` : ""}
