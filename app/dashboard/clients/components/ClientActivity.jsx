@@ -231,17 +231,17 @@ const ClientActivity = ({
                     const display =
                       item.type === "activity" ? getActivityDisplay(item) : null;
                     return (
-                      <div key={`${item.type}-${item.id || index}`} className="flex gap-3">
+                      <div key={`${item.type}-${item.id || index}`} className="flex gap-3 w-full">
                         {item.type === "note" ? (
-                          <div className="bg-background rounded-lg p-3 flex-1 border border-border">
-                            <div className="flex gap-3">
+                          <div className="bg-background rounded-lg p-3 flex-1 border border-border min-w-0">
+                            <div className="flex gap-3 w-full">
                               <UserAvatar
                                 src={item.userImage}
                                 name={item.userName}
                                 size="sm"
                                 className="flex-shrink-0"
                               />
-                              <div className="flex-1 space-y-2">
+                              <div className="flex-1 space-y-2 min-w-0 overflow-hidden">
                                 {editingNoteId === item.id ? (
                                   <>
                                     <div className="flex items-center gap-2">
@@ -357,7 +357,7 @@ const ClientActivity = ({
                                         )}
                                       </div>
                                     </div>
-                                    <p className="text-sm whitespace-pre-wrap">
+                                    <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">
                                       {item.content}
                                     </p>
                                   </>
