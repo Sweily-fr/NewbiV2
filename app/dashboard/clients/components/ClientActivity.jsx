@@ -284,14 +284,16 @@ const ClientActivity = ({
                                   </>
                                 ) : (
                                   <>
-                                    <div className="flex items-center justify-between gap-2">
-                                      <span className="text-xs font-medium">
-                                        {item.userName}
-                                      </span>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex flex-col gap-1">
+                                        <span className="text-xs font-medium">
+                                          {item.userName}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
                                           {formatDate(item.createdAt)}
                                         </span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
                                         {item.userId === session?.user?.id && (
                                           <div className="flex gap-1">
                                           <Button
@@ -636,7 +638,7 @@ const ClientActivity = ({
         </div>
 
         {/* Tabs juste au-dessus du textarea */}
-        <TabsList className="grid w-full grid-cols-3 bg-transparent rounded-none h-auto px-3 pt-3 pb-0 border-t border-border">
+        <TabsList className="grid w-full grid-cols-3 bg-transparent rounded-none h-auto px-6 pt-3 pb-0 border-t border-border">
           <TabsTrigger
             value="all"
             className="text-xs rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary data-[state=active]:bg-transparent cursor-pointer"
