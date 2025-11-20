@@ -9,7 +9,17 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
-import { Settings, XIcon, Mail, Users, Bell, CheckCircle } from "lucide-react";
+import { Badge } from "@/src/components/ui/badge";
+import {
+  Settings,
+  XIcon,
+  Mail,
+  Users,
+  Bell,
+  CheckCircle,
+  CheckCheck,
+  XCircle,
+} from "lucide-react";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
@@ -20,6 +30,14 @@ export function NotificationsSection() {
   const [loading, setLoading] = useState(true);
   const [loadingSent, setLoadingSent] = useState(true);
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
+  const [readNotifications, setReadNotifications] = useState(() => {
+    // Charger les notifications lues depuis le localStorage
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("readNotifications");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
 
   const { listInvitations, cancelInvitation } = useOrganizationInvitations();
 
@@ -93,6 +111,19 @@ export function NotificationsSection() {
     );
   }, [invitations, dismissedNotifications]);
 
+  // Compter les invitations non lues
+  const unreadInvitationsCount = useMemo(() => {
+    return pendingInvitations.filter(
+      (inv) => !readNotifications.includes(inv.id)
+    ).length;
+  }, [pendingInvitations, readNotifications]);
+
+  // Compter les invitations envoyées non lues
+  const unreadSentInvitationsCount = useMemo(() => {
+    return sentInvitations.filter((inv) => !readNotifications.includes(inv.id))
+      .length;
+  }, [sentInvitations, readNotifications]);
+
   // Filtrer les invitations envoyées en attente
   const pendingSentInvitations = useMemo(() => {
     return sentInvitations?.filter((inv) => inv.status === "pending") || [];
@@ -103,6 +134,39 @@ export function NotificationsSection() {
     e.stopPropagation();
     setDismissedNotifications([...dismissedNotifications, invitationId]);
   };
+
+  // Marquer une notification comme lue
+  const markAsRead = useCallback((invitationId) => {
+    setReadNotifications((prev) => {
+      if (prev.includes(invitationId)) return prev;
+      const updated = [...prev, invitationId];
+      // Sauvegarder dans le localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("readNotifications", JSON.stringify(updated));
+      }
+      return updated;
+    });
+  }, []);
+
+  // Marquer toutes les notifications comme lues
+  const markAllAsRead = useCallback(() => {
+    const allIds = [
+      ...pendingInvitations.map((inv) => inv.id),
+      ...sentInvitations.map((inv) => inv.id),
+    ];
+    setReadNotifications(allIds);
+    // Sauvegarder dans le localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem("readNotifications", JSON.stringify(allIds));
+    }
+    toast.success("Toutes les notifications ont été marquées comme lues");
+  }, [pendingInvitations, sentInvitations]);
+
+  // Vérifier si une notification est lue
+  const isRead = useCallback(
+    (invitationId) => readNotifications.includes(invitationId),
+    [readNotifications]
+  );
 
   const refetchInvitations = async () => {
     try {
@@ -195,70 +259,95 @@ export function NotificationsSection() {
     }
   };
 
-  // Fonction helper pour obtenir le statut (sans couleurs vives)
+  // Fonction helper pour obtenir le statut avec tags visuels
   const getStatusDisplay = useCallback((status) => {
     switch (status) {
       case "accepted":
         return {
           label: "Acceptée",
           showDot: false,
+          badge: <CheckCheck className="w-3 h-3 mr-1 text-green-700" />,
         };
       case "rejected":
         return {
           label: "Refusée",
           showDot: false,
+          badge: <XCircle className="w-3 h-3 mr-1 text-red-700" />,
         };
       case "pending":
       default:
         return {
           label: "En attente",
           showDot: true, // Point bleu pour les invitations en attente
+          badge: <Bell className="w-3 h-3 mr-1 text-blue-700" />,
         };
     }
   }, []);
 
   return (
     <div className="space-y-6">
-      {/* Titre */}
-      <div>
-        <h2 className="text-lg font-medium mb-1">Notifications</h2>
-        <Separator className="hidden md:block" />
+      {/* Titre avec bouton "Tout marquer comme lu" */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <h2 className="text-lg font-medium mb-1">Notifications</h2>
+          <Separator className="hidden md:block" />
+        </div>
+        {(unreadInvitationsCount > 0 || unreadSentInvitationsCount > 0) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={markAllAsRead}
+            className="cursor-pointer text-xs"
+          >
+            <CheckCheck className="w-4 h-4 mr-2" />
+            Tout marquer comme lu
+          </Button>
+        )}
       </div>
 
       {/* Tabs pour les différents types de notifications */}
       <Tabs defaultValue="invitations" className="w-full">
         <TabsList className="grid w-full grid-cols-3 h-auto">
-          <TabsTrigger value="invitations" className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm">
+          <TabsTrigger
+            value="invitations"
+            className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm"
+          >
             <div className="flex items-center gap-1 relative">
               <Mail className="w-4 h-4" />
               <span className="hidden sm:inline">Invitations</span>
               {/* Point violet sur mobile, badge sur desktop */}
-              {pendingInvitations.length > 0 && (
+              {unreadInvitationsCount > 0 && (
                 <>
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#5b4fff] rounded-full sm:hidden"></span>
                   <span className="hidden sm:inline bg-[#5b4fff]/70 text-white text-xs rounded-md px-1.5 py-0.5 ml-1">
-                    {pendingInvitations.length}
+                    {unreadInvitationsCount}
                   </span>
                 </>
               )}
             </div>
           </TabsTrigger>
-          <TabsTrigger value="activity" className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm">
+          <TabsTrigger
+            value="activity"
+            className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm"
+          >
             <div className="flex items-center gap-1 relative">
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Activité</span>
               {/* Point violet sur mobile, badge sur desktop */}
-              {pendingSentInvitations.length > 0 && (
+              {unreadSentInvitationsCount > 0 && (
                 <>
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#5b4fff] rounded-full sm:hidden"></span>
                   <span className="hidden sm:inline bg-[#5b4eff] text-white text-xs rounded-md px-1.5 py-0.5 ml-1">
-                    {pendingSentInvitations.length}
+                    {unreadSentInvitationsCount}
                   </span>
                 </>
               )}
             </div>
           </TabsTrigger>
-          <TabsTrigger value="system" className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm">
+          <TabsTrigger
+            value="system"
+            className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm"
+          >
             <div className="flex items-center gap-1">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Système</span>
@@ -299,8 +388,10 @@ export function NotificationsSection() {
                         <div className="size-10 rounded-full bg-[#5b4fff]/10 flex items-center justify-center text-sm font-medium text-[#5b4fff]">
                           {initial}
                         </div>
-                        {/* Point bleu pour les invitations en attente */}
-                        <div className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-[#5b4eff] border-2 border-background"></div>
+                        {/* Point bleu pour les invitations non lues */}
+                        {!isRead(invitation.id) && (
+                          <div className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-[#5b4eff] border-2 border-background"></div>
+                        )}
                       </div>
 
                       {/* Contenu */}
@@ -384,8 +475,8 @@ export function NotificationsSection() {
                         <div className="size-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground">
                           {initial}
                         </div>
-                        {/* Point bleu pour les invitations en attente */}
-                        {statusDisplay.showDot && (
+                        {/* Point bleu pour les invitations non lues */}
+                        {!isRead(invitation.id) && (
                           <div className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-[#5b4eff] border-2 border-background"></div>
                         )}
                       </div>
@@ -402,9 +493,12 @@ export function NotificationsSection() {
                             </span>
                           </p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Rôle: {invitation.role}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs text-muted-foreground">
+                            Rôle: {invitation.role}
+                          </p>
+                          {statusDisplay.badge}
+                        </div>
                       </div>
 
                       {invitation.status === "pending" && (
