@@ -1817,8 +1817,9 @@ export default function NewSignaturePage() {
           isEditMode={isEditMode}
         />
       </div>
-      {orientationChosen && (
+      {(orientationChosen || isEditMode) && (
         <SignatureSidebar
+          key={editingSignatureId || "new-signature"}
           signatureData={signatureData}
           updateSignatureData={updateSignatureData}
           editingSignatureId={editingSignatureId}
