@@ -979,10 +979,12 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
               </DialogHeader>
             </div>
 
-              <TabsList className="flex-shrink-0 grid w-full grid-cols-2 rounded-none border-b py-2">
-                <TabsTrigger value="form" className="py-2.5">Formulaire</TabsTrigger>
-                <TabsTrigger value="activity" className="py-2.5">Activité</TabsTrigger>
-              </TabsList>
+              <div className="px-6">
+                <TabsList className="flex-shrink-0 grid w-full grid-cols-2 rounded-none border-b py-1.5">
+                  <TabsTrigger value="form" className="py-2 text-sm">Formulaire</TabsTrigger>
+                  <TabsTrigger value="activity" className="py-2 text-sm">Activité</TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="form" className="flex-1 overflow-hidden m-0">
                 <form
