@@ -938,7 +938,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                     disabled={loading || Object.keys(errors).length > 0 || Object.keys(customErrors).length > 0} 
                     className="flex-1"
                   >
-                    Modifier
+                    {loading ? "Enregistrement..." : client ? "Modifier" : "Créer un contact"}
                   </Button>
                 </div>
               </form>
@@ -979,9 +979,9 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
               </DialogHeader>
             </div>
 
-              <TabsList className="flex-shrink-0 grid w-full grid-cols-2 rounded-none border-b">
-                <TabsTrigger value="form">Formulaire</TabsTrigger>
-                <TabsTrigger value="activity">Activité</TabsTrigger>
+              <TabsList className="flex-shrink-0 grid w-full grid-cols-2 rounded-none border-b py-2">
+                <TabsTrigger value="form" className="py-2.5">Formulaire</TabsTrigger>
+                <TabsTrigger value="activity" className="py-2.5">Activité</TabsTrigger>
               </TabsList>
 
               <TabsContent value="form" className="flex-1 overflow-hidden m-0">
@@ -991,11 +991,468 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                 >
                   <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                     <div className="space-y-4">
-                      {/* Le contenu du formulaire est identique aux autres modes */}
-                      {/* Il est déjà présent dans le mode desktop (lignes 396-858) et création (lignes 926-1387) */}
-                      {/* Pour éviter une 3ème duplication, on devrait extraire dans un composant */}
-                      {/* Mais pour l'instant, le formulaire sera vide en mode mobile édition */}
-                      {/* L'utilisateur peut basculer sur l'onglet Activité */}
+                      {/* Type de client */}
+                      <div className="space-y-2">
+                        <Label className="font-normal">Type de client *</Label>
+                        <Controller
+                          name="type"
+                          control={control}
+                          render={({ field }) => (
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Sélectionnez le type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="INDIVIDUAL">Particulier</SelectItem>
+                                <SelectItem value="COMPANY">Entreprise</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+
+                      {/* Recherche d'entreprises via API Gouv Data */}
+                      {clientType === "COMPANY" && !showCompanySearch && (
+                        <div className="space-y-3 p-4 border rounded-lg bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border-[#5a50ff]/20 dark:border-[#5a50ff]/30">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20">
+                              <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff]" />
+                            </div>
+                            <span className="font-medium text-sm text-[#5a50ff] dark:text-[#5a50ff]">
+                              Rechercher une entreprise
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Importez automatiquement les informations depuis la base
+                            officielle
+                          </p>
+                          <Button
+                            type="button"
+                            onClick={() => setShowCompanySearch(true)}
+                            className="w-full h-9 text-sm bg-[#5a50ff] hover:bg-[#5a50ff]/90 text-white dark:bg-[#5a50ff] dark:hover:bg-[#5a50ff]/90 dark:text-white"
+                          >
+                            <Search className="h-4 w-4 mr-2" />
+                            Rechercher
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Interface de recherche d'entreprises */}
+                      {clientType === "COMPANY" && showCompanySearch && (
+                        <div className="space-y-4 p-4 border rounded-lg bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border-[#5a50ff]/20 dark:border-[#5a50ff]/30">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20">
+                                <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff]" />
+                              </div>
+                              <Label className="font-medium text-[#5a50ff] dark:text-[#5a50ff]">
+                                Rechercher une entreprise
+                              </Label>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShowCompanySearch(false);
+                                setCompanyQuery("");
+                                setCompanies([]);
+                              }}
+                              className="h-8 w-8 p-0 hover:bg-[#5a50ff]/10 dark:hover:bg-[#5a50ff]/20 text-[#5a50ff] dark:text-[#5a50ff] text-lg font-medium"
+                            >
+                              ×
+                            </Button>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="relative">
+                              <Input
+                                value={companyQuery}
+                                onChange={(e) => setCompanyQuery(e.target.value)}
+                                placeholder="Nom d'entreprise, SIRET, SIREN..."
+                                className="h-9 text-sm pl-10"
+                              />
+                              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Recherchez une entreprise française via la base de données
+                              officielle
+                            </p>
+                          </div>
+
+                          {/* Résultats de recherche */}
+                          {loadingCompanies && (
+                            <div className="flex items-center justify-center p-6">
+                              <LoaderCircle className="h-5 w-5 animate-spin mr-2" />
+                              <span className="text-sm">Recherche en cours...</span>
+                            </div>
+                          )}
+
+                          {companies.length > 0 && (
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                              {companies.map((company) => (
+                                <div
+                                  key={company.id}
+                                  className="p-3 border rounded-lg bg-white dark:bg-gray-800 hover:border-[#5a50ff] dark:hover:border-[#5a50ff] hover:shadow-sm cursor-pointer transition-all border-gray-200 dark:border-gray-700"
+                                  onClick={() => handleCompanySelect(company)}
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff] flex-shrink-0" />
+                                        <h4 className="font-medium text-sm truncate text-gray-900 dark:text-gray-100">
+                                          {company.name}
+                                        </h4>
+                                        {company.status === "A" && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-xs bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20 text-[#5a50ff] dark:text-[#5a50ff] border-[#5a50ff]/20 dark:border-[#5a50ff]/30"
+                                          >
+                                            Active
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground">
+                                          <strong>SIRET:</strong> {company.siret}
+                                        </p>
+                                        {company.address && (
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            <strong>Adresse:</strong> {company.address},{" "}
+                                            {company.postalCode} {company.city}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <ExternalLink className="h-4 w-4 text-[#5a50ff]/50 dark:text-[#5a50ff]/60 flex-shrink-0 ml-2" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {companyQuery &&
+                            !loadingCompanies &&
+                            companies.length === 0 && (
+                              <div className="text-center p-6 text-muted-foreground">
+                                <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">
+                                  Aucune entreprise trouvée pour "{companyQuery}"
+                                </p>
+                                <p className="text-xs mt-1">
+                                  Essayez avec un nom d'entreprise ou un SIRET
+                                </p>
+                              </div>
+                            )}
+
+                          <div className="pt-2 border-t border-[#5a50ff]/10 dark:border-[#5a50ff]/20">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setShowCompanySearch(false);
+                                setCompanyQuery("");
+                                setCompanies([]);
+                              }}
+                              className="w-full h-9 text-sm border-[#5a50ff]/20 dark:border-[#5a50ff]/30 text-[#5a50ff] dark:text-[#5a50ff] hover:bg-[#5a50ff]/5 dark:hover:bg-[#5a50ff]/10"
+                            >
+                              Saisir manuellement
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Nom/Raison sociale */}
+                      {/* Raison sociale uniquement pour les entreprises */}
+                      {clientType === "COMPANY" && !showCompanySearch && (
+                        <div className="space-y-2">
+                          <Label className="font-normal">Raison sociale *</Label>
+                          <Input
+                            placeholder="Nom de l'entreprise"
+                            className={cn(errors.name && "border-red-500 focus:border-red-500")}
+                            {...register("name", getValidationRules("companyName", true))}
+                          />
+                          {errors.name && (
+                            <p className="text-sm text-red-500">
+                              {errors.name.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Prénom et Nom pour particuliers, Contact et Email pour entreprises */}
+                      {clientType === "INDIVIDUAL" ? (
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Prénom */}
+                          <div className="space-y-2">
+                            <Label>Prénom *</Label>
+                            <Input
+                              placeholder="Prénom"
+                              className={cn(errors.firstName && "border-red-500 focus:border-red-500")}
+                              {...register("firstName", {
+                                required: "Le prénom est requis",
+                                pattern: {
+                                  value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                                  message: "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                                },
+                              })}
+                            />
+                            {errors.firstName && (
+                              <p className="text-sm text-red-500">
+                                {errors.firstName.message}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Nom de famille */}
+                          <div className="space-y-2">
+                            <Label className="font-normal">Nom *</Label>
+                            <Input
+                              placeholder="Nom"
+                              className={cn(errors.lastName && "border-red-500 focus:border-red-500")}
+                              {...register("lastName", {
+                                required: "Le nom est requis",
+                                pattern: {
+                                  value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                                  message: "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                                },
+                              })}
+                            />
+                            {errors.lastName && (
+                              <p className="text-sm text-red-500">
+                                {errors.lastName.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Contact pour entreprises */}
+                          <div className="space-y-2">
+                            <Label className="font-normal">Contact</Label>
+                            <Input
+                              placeholder="Nom du contact"
+                              className={cn(errors.firstName && "border-red-500 focus:border-red-500")}
+                              {...register("firstName", {
+                                pattern: {
+                                  value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                                  message: "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                                },
+                              })}
+                            />
+                            {errors.firstName && (
+                              <p className="text-sm text-red-500">
+                                {errors.firstName.message}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Email (pour tous les types) */}
+                          <div className="space-y-2">
+                            <Label className="font-normal">Email *</Label>
+                            <InputEmail
+                              placeholder="contact@entreprise.com"
+                              className={cn(errors.email && "border-red-500 focus:border-red-500")}
+                              {...register("email", getValidationRules("email", true))}
+                            />
+                            {errors.email && (
+                              <p className="text-sm text-red-500">
+                                {errors.email.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Email pour particuliers (ligne séparée) */}
+                      {clientType === "INDIVIDUAL" && (
+                        <div className="space-y-2">
+                          <Label className="font-normal">Email *</Label>
+                          <InputEmail
+                            placeholder="client@exemple.com"
+                            className={cn(errors.email && "border-red-500 focus:border-red-500")}
+                            {...register("email", getValidationRules("email", true))}
+                          />
+                          {errors.email && (
+                            <p className="text-sm text-red-500">
+                              {errors.email.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Adresse de facturation */}
+                      <div className="space-y-3 py-2">
+                        <div className="space-y-2">
+                          <Label className="font-normal">Adresse de facturation</Label>
+                          <Textarea
+                            placeholder="123 Rue de la Paix"
+                            className={cn(errors.address?.street && "border-red-500 focus:border-red-500")}
+                            {...register("address.street", getValidationRules("street", true))}
+                            rows={2}
+                          />
+                          {errors.address?.street && (
+                            <p className="text-sm text-red-500 mt-1">
+                              {errors.address.street.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="font-normal">Ville</Label>
+                            <Input
+                              placeholder="Paris"
+                              className={cn(errors.address?.city && "border-red-500 focus:border-red-500")}
+                              {...register("address.city", getValidationRules("city", true))}
+                            />
+                            {errors.address?.city && (
+                              <p className="text-sm text-red-500">
+                                {errors.address.city.message}
+                              </p>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="font-normal">Code postal</Label>
+                            <Input
+                              placeholder="75001"
+                              className={cn(errors.address?.postalCode && "border-red-500 focus:border-red-500")}
+                              {...register("address.postalCode", getValidationRules("postalCode", true))}
+                            />
+                            {errors.address?.postalCode && (
+                              <p className="text-sm text-red-500">
+                                {errors.address.postalCode.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="font-normal">Pays</Label>
+                          <Input
+                            placeholder="France"
+                            className={cn(errors.address?.country && "border-red-500 focus:border-red-500")}
+                            {...register("address.country", getValidationRules("country", true))}
+                          />
+                          {errors.address?.country && (
+                            <p className="text-sm text-red-500">
+                              {errors.address.country.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Adresse de livraison différente */}
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="differentShipping"
+                          checked={hasDifferentShipping}
+                          onCheckedChange={setHasDifferentShipping}
+                        />
+                        <Label htmlFor="differentShipping" className="font-normal">
+                          Adresse de livraison différente
+                        </Label>
+                      </div>
+
+                      {/* Adresse de livraison */}
+                      {hasDifferentShipping && (
+                        <div className="space-y-3 border-l-2 border-gray-200 pl-4">
+                          <div className="space-y-2">
+                            <Label className="font-normal">Adresse</Label>
+                            <Textarea
+                              placeholder="123 Rue de la Livraison"
+                              className={cn(errors.shippingAddress?.street && "border-red-500 focus:border-red-500")}
+                              {...register("shippingAddress.street", getValidationRules("street", hasDifferentShipping))}
+                              rows={2}
+                            />
+                            {errors.shippingAddress?.street && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.shippingAddress.street.message}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label className="font-normal">Ville</Label>
+                              <Input
+                                placeholder="Paris"
+                                className={cn(errors.shippingAddress?.city && "border-red-500 focus:border-red-500")}
+                                {...register("shippingAddress.city", getValidationRules("city", hasDifferentShipping))}
+                              />
+                              {errors.shippingAddress?.city && (
+                                <p className="text-sm text-red-500">
+                                  {errors.shippingAddress.city.message}
+                                </p>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="font-normal">Code postal</Label>
+                              <Input
+                                placeholder="75001"
+                                className={cn(errors.shippingAddress?.postalCode && "border-red-500 focus:border-red-500")}
+                                {...register("shippingAddress.postalCode", getValidationRules("postalCode", hasDifferentShipping))}
+                              />
+                              {errors.shippingAddress?.postalCode && (
+                                <p className="text-sm text-red-500">
+                                  {errors.shippingAddress.postalCode.message}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="font-normal">Pays</Label>
+                            <Input
+                              placeholder="France"
+                              className={cn(errors.shippingAddress?.country && "border-red-500 focus:border-red-500")}
+                              {...register("shippingAddress.country", getValidationRules("country", hasDifferentShipping))}
+                            />
+                            {errors.shippingAddress?.country && (
+                              <p className="text-sm text-red-500">
+                                {errors.shippingAddress.country.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Informations entreprise (pour les entreprises) */}
+                      {clientType === "COMPANY" && (
+                        <div className="space-y-3 border-t pt-4">
+                          <Label className="text-base font-normal">
+                            Informations entreprise
+                          </Label>
+
+                          <div className="space-y-2">
+                            <Label className="font-normal">SIREN/SIRET *</Label>
+                            <Input
+                              placeholder="123456789 ou 12345678901234"
+                              className={cn(errors.siret && "border-red-500 focus:border-red-500")}
+                              {...register("siret", getValidationRules("siret", true))}
+                            />
+                            {errors.siret && (
+                              <p className="text-sm text-red-500">
+                                {errors.siret.message}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="font-normal">Numéro de TVA</Label>
+                            <Input
+                              placeholder="FR12345678901"
+                              className={cn(errors.vatNumber && "border-red-500 focus:border-red-500")}
+                              {...register("vatNumber", getValidationRules("vatNumber"))}
+                            />
+                            {errors.vatNumber && (
+                              <p className="text-sm text-red-500">
+                                {errors.vatNumber.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1019,7 +1476,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                       disabled={loading || Object.keys(errors).length > 0 || Object.keys(customErrors).length > 0} 
                       className="flex-1"
                     >
-                      {loading ? "Enregistrement..." : client ? "Modifier" : "Créer"}
+                      {loading ? "Enregistrement..." : client ? "Modifier" : "Créer un contact"}
                     </Button>
                   </div>
                 </form>
