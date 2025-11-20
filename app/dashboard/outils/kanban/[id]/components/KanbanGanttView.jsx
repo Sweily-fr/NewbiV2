@@ -533,7 +533,7 @@ export function KanbanGanttView({
 
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-12rem)] bg-background">
+    <div className="flex flex-col h-[calc(100vh-10rem)] md:h-[calc(100vh-10rem)] bg-background">
       {/* Header avec contrôles - Plus compact */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-4 py-2 gap-2 sm:gap-0 bg-background/95 backdrop-blur-sm sticky top-0 z-20">
         <div className="flex items-center gap-3">
