@@ -375,7 +375,7 @@ function getInitialFormData(
   }
 
   return {
-    prefix: "AV-",
+    prefix: "AV",
     number: nextNumber,
     creditType: CREDIT_TYPE.CORRECTION,
     reason: "",
@@ -416,7 +416,7 @@ function transformInvoiceToCreditNoteFormData(
   nextNumber = ""
 ) {
   return {
-    prefix: "AV-",
+    prefix: "AV",
     number: nextNumber,
     creditType: CREDIT_TYPE.CORRECTION,
     reason: "",
@@ -459,7 +459,7 @@ function transformInvoiceToCreditNoteFormData(
 
 function transformCreditNoteToFormData(creditNote) {
   return {
-    prefix: creditNote.prefix || "AV-",
+    prefix: creditNote.prefix || "AV",
     number: creditNote.number || "",
     creditType: creditNote.creditType || CREDIT_TYPE.CORRECTION,
     reason: creditNote.reason || "",
