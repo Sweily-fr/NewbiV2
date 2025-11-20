@@ -760,7 +760,23 @@ export default function KanbanBoardPage({ params }) {
         </div>
       )}
 
-      {/* Board Content */}
+      {/* Gantt sans padding */}
+      {isGantt && (
+        <div className="w-full">
+          <KanbanGanttView
+            columns={localColumns}
+            getTasksByColumn={getLocalTasksByColumn}
+            filterTasks={filterTasks}
+            onEditTask={openEditTaskModal}
+            onAddTask={openAddTaskModal}
+            members={board?.members || []}
+            updateTask={updateTask}
+            workspaceId={workspaceId}
+          />
+        </div>
+      )}
+
+      {/* Board Content avec padding pour liste et board */}
       <div className="w-full px-4 sm:px-6 mt-4">
         {isList && (
           <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
@@ -781,19 +797,6 @@ export default function KanbanBoardPage({ params }) {
               workspaceId={workspaceId}
             />
           </DragDropContext>
-        )}
-
-        {isGantt && (
-          <KanbanGanttView
-            columns={localColumns}
-            getTasksByColumn={getLocalTasksByColumn}
-            filterTasks={filterTasks}
-            onEditTask={openEditTaskModal}
-            onAddTask={openAddTaskModal}
-            members={board?.members || []}
-            updateTask={updateTask}
-            workspaceId={workspaceId}
-          />
         )}
 
         {isBoard && (

@@ -242,9 +242,12 @@ export function KanbanGanttView({
 
     const dayWidth = viewMode === "week" ? 120 : viewMode === "month" ? 40 : 30;
     
+    // Ajouter une marge à gauche et à droite pour toutes les barres
+    const horizontalMargin = 12;
+    
     return {
-      left: `${startOffset * dayWidth}px`,
-      width: `${visibleDuration * dayWidth - 8}px`,
+      left: `${startOffset * dayWidth + horizontalMargin}px`,
+      width: `${visibleDuration * dayWidth - (horizontalMargin * 2)}px`,
       visible: true
     };
   };
@@ -474,6 +477,21 @@ export function KanbanGanttView({
     };
 
     const handleClick = (e) => {
+      // Ne pas créer de tâche si on vient de redimensionner
+      if (justResizedRef.current) {
+        return;
+      }
+      
+      // Ne pas créer de tâche si on clique sur une barre de tâche existante
+      // Vérifier si l'élément cliqué ou un de ses parents est une barre de tâche
+      let element = e.target;
+      while (element && element !== timeline) {
+        if (element.classList && (element.classList.contains('cursor-pointer') || element.hasAttribute('data-task-bar'))) {
+          return; // On a cliqué sur une tâche, ne rien faire
+        }
+        element = element.parentElement;
+      }
+      
       // Calculer la date en fonction de la position du clic
       const rect = timeline.getBoundingClientRect();
       const clickX = e.clientX - rect.left + timeline.scrollLeft;
@@ -517,7 +535,7 @@ export function KanbanGanttView({
   return (
     <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-12rem)] bg-background">
       {/* Header avec contrôles - Plus compact */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-6 py-2 gap-2 sm:gap-0 bg-background/95 backdrop-blur-sm sticky top-0 z-20">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-4 py-2 gap-2 sm:gap-0 bg-background/95 backdrop-blur-sm sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
             <Button
@@ -552,7 +570,7 @@ export function KanbanGanttView({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mr-2">
           <Select value={viewMode} onValueChange={setViewMode}>
             <SelectTrigger className="w-28 h-7 text-xs">
               <SelectValue />
@@ -567,7 +585,7 @@ export function KanbanGanttView({
       </div>
 
       {/* Gantt Chart - Pleine hauteur */}
-      <div className="flex-1 overflow-hidden border border-border rounded-lg">
+      <div className="flex-1 overflow-hidden border-t border-border">
         {/* Headers fixes */}
         <div className="flex border-b border-border">
           {/* Header gauche - hauteur étendue pour couvrir l'espace vide */}
@@ -776,9 +794,12 @@ export function KanbanGanttView({
 
                 {/* Barres de tâches par-dessus */}
                 <div className="relative pointer-events-none">
-                  {allTasksWithDates.map((task) => {
+                  {allTasks.map((task) => {
                     const barStyle = getTaskBarStyle(task);
-                    if (!barStyle || !barStyle.visible) return null;
+                    if (!barStyle || !barStyle.visible) {
+                      // Retourner un div vide pour maintenir l'alignement
+                      return <div key={task.id} className="relative h-[45px]" />;
+                    }
 
                     return (
                       <div
@@ -789,6 +810,7 @@ export function KanbanGanttView({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
+                              data-task-bar="true"
                               className={cn(
                                 "absolute top-1/2 -translate-y-1/2 h-9 rounded-md cursor-pointer transition-all hover:shadow-md group border pointer-events-auto relative",
                                 resizingTask && resizingTask.taskId === task.id && "shadow-lg ring-2 ring-primary/50"
@@ -800,10 +822,10 @@ export function KanbanGanttView({
                                 borderColor: `${task.column.color}60`,
                               }}
                               onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
                                 // Ne pas ouvrir la modal si on vient de redimensionner
                                 if (justResizedRef.current) {
-                                  e.stopPropagation();
-                                  e.preventDefault();
                                   return;
                                 }
                                 onEditTask(task);
@@ -876,21 +898,53 @@ export function KanbanGanttView({
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-xs">
                               <div className="space-y-2">
-                                <div className="font-semibold text-sm text-white">{task.title}</div>
-                                <div className="text-xs text-white/70 flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {formatDateRange(task)}
+                                <div className="font-normal text-sm">{task.title}</div>
+                                <div className="flex items-center gap-3">
+                                  {task.assignedMembers && task.assignedMembers.length > 0 && (
+                                    <div className="flex items-center gap-1">
+                                      {task.assignedMembers.map((memberId) => {
+                                        const memberInfo = membersInfo.find(m => m.id === memberId);
+                                        return (
+                                          <UserAvatar
+                                            key={memberId}
+                                            src={memberInfo?.image}
+                                            name={memberInfo?.name || memberId}
+                                            size="sm"
+                                            className="border border-background"
+                                          />
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  <div className="text-xs opacity-70 flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {formatDateRange(task)}
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs border-white/30 text-white"
+                                  <div 
+                                    className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1"
+                                    style={{
+                                      backgroundColor: `${task.column.color || "#94a3b8"}20`,
+                                      borderColor: `${task.column.color || "#94a3b8"}20`,
+                                      color: task.column.color || "#94a3b8"
+                                    }}
                                   >
-                                    {task.column.title}
-                                  </Badge>
+                                    <div
+                                      className="w-2 h-2 rounded-full flex-shrink-0"
+                                      style={{ backgroundColor: task.column.color || "#94a3b8" }}
+                                    />
+                                    <span>{task.column.title}</span>
+                                  </div>
                                   {task.priority && task.priority.toLowerCase() !== 'none' && (
-                                    <Badge variant="outline" className="text-xs border-white/30 text-white">
-                                      {getPriorityLabel(task.priority)}
+                                    <Badge variant="outline" className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground">
+                                      <Flag className={cn(
+                                        "h-4 w-4",
+                                        task.priority.toLowerCase() === 'high' ? 'text-red-500 fill-red-500' :
+                                        task.priority.toLowerCase() === 'medium' ? 'text-yellow-500 fill-yellow-500' :
+                                        'text-green-500 fill-green-500'
+                                      )} />
+                                      <span className="text-muted-foreground">{getPriorityLabel(task.priority)}</span>
                                     </Badge>
                                   )}
                                 </div>
