@@ -577,8 +577,8 @@ export function TabSignature({ existingSignatureId = null }) {
           </ScrollArea>
         </div>
 
-        {/* Contenu scrollable */}
-        <div className="flex-1 overflow-y-auto px-5 max-h-[calc(100vh-9.5rem)]">
+        {/* Contenu scrollable - prend l'espace restant automatiquement */}
+        <div className="flex-1 overflow-y-auto px-5 min-h-0">
           <TabsContent value="tab-1" className="w-full mt-0">
             <div className="w-full space-y-6 mt-4">
               <LayoutContent />
@@ -590,29 +590,29 @@ export function TabSignature({ existingSignatureId = null }) {
             </div>
           </TabsContent>
         </div>
-      </Tabs>
 
-      {/* Footer fixe avec les boutons */}
-      <div className="flex-shrink-0 py-4 mx-4 border-t">
-        <div className="flex justify-between">
-          <Button
-            variant="outline"
-            className="cursor-pointer"
-            onClick={handleCancelClick}
-          >
-            Annuler
-          </Button>
-          <Button
-            className="cursor-pointer flex items-center font-normal gap-2"
-            onClick={handleOpenModal}
-            disabled={isLoading}
-          >
-            {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
-            <Save className="w-4 h-4" />
-            {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}
-          </Button>
+        {/* Footer fixe en bas - en dehors du contenu scrollable */}
+        <div className="flex-shrink-0 py-3 px-5 border-t">
+          <div className="flex gap-3 w-full">
+            <Button
+              variant="outline"
+              className="cursor-pointer flex-1"
+              onClick={handleCancelClick}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="cursor-pointer flex-1 flex items-center justify-center font-normal gap-2"
+              onClick={handleOpenModal}
+              disabled={isLoading}
+            >
+              {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
+              <Save className="w-4 h-4" />
+              {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}
+            </Button>
+          </div>
         </div>
-      </div>
+      </Tabs>
       {/* Modal de sauvegarde */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-background/80 dark:bg-background/60 backdrop-blur-sm flex items-center justify-center z-50">

@@ -39,7 +39,7 @@ export function SignatureSidebar({
     <Sidebar
       side="right"
       collapsible="none"
-      className="w-80 h-full"
+      className="w-80 h-screen"
       {...props}
     >
       <SidebarContent className="p-0 h-full overflow-hidden">
