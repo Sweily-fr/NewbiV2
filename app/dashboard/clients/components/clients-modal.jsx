@@ -965,7 +965,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
           </div>
         ) : (
           // Mode mobile : Onglets (création et édition)
-          <Tabs defaultValue="form" className="flex flex-col h-full">
+          <Tabs defaultValue="form" className="flex flex-col h-full gap-0">
             <div className="flex-shrink-0 p-6 pb-4 border-b">
               <DialogHeader>
                 <DialogTitle className="text-left">
@@ -979,12 +979,10 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
               </DialogHeader>
             </div>
 
-              <div className="px-6">
-                <TabsList className="flex-shrink-0 grid w-full grid-cols-2 rounded-none border-b py-1.5">
-                  <TabsTrigger value="form" className="py-2 text-sm">Formulaire</TabsTrigger>
-                  <TabsTrigger value="activity" className="py-2 text-sm">Activité</TabsTrigger>
-                </TabsList>
-              </div>
+              <TabsList className="flex-shrink-0 grid w-full grid-cols-2 rounded-none border-b py-1.5 px-4">
+                <TabsTrigger value="form" className="py-2 text-sm">Formulaire</TabsTrigger>
+                <TabsTrigger value="activity" className="py-2 text-sm">Activité</TabsTrigger>
+              </TabsList>
 
               <TabsContent value="form" className="flex-1 overflow-hidden m-0">
                 <form
