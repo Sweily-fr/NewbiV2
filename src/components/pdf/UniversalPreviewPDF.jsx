@@ -461,15 +461,17 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
           }),
         }}
         data-pdf-document="true"
+        data-pdf-root
       >
       {/* CONTENU PRINCIPAL */}
       <div 
         className={isMobile ? "px-6 pt-4 pb-4 relative flex-grow" : "px-14 pt-10 pb-4 relative flex-grow"}
         data-pdf-content="true"
+        data-pdf-section="body"
         style={forPDF ? { paddingBottom: '16px' } : {}}
       >
         {/* HEADER */}
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex justify-between items-start mb-6" data-pdf-section="header" data-no-break data-critical>
           {/* Logo à gauche */}
           <div className="flex-shrink-0">
             {companyLogo && (
@@ -582,9 +584,9 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
         </div>
 
         {/* INFORMATIONS ENTREPRISE ET CLIENT */}
-        <div className="grid grid-cols-3 mb-6">
+        <div className="grid grid-cols-3 mb-6" data-pdf-section="info" data-no-break data-critical>
           {/* Informations entreprise */}
-          <div>
+          <div data-no-break>
             <div
               className="font-medium mb-2 dark:text-[#0A0A0A]"
               style={{ fontSize: "10px" }}
@@ -638,10 +640,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
             </div>
           </div>
 
-          {/* Informations client - Position dynamique selon clientPositionRight */}
-          {/* Si clientPositionRight est false (par défaut), le client est au centre (colonne 2) */}
-          {/* Si clientPositionRight est true, on ajoute une div vide au centre et le client va à droite (colonne 3) */}
-          {!data.clientPositionRight && (data.client?.name ||
+          {/* Informations client - Toujours au centre (colonne 2) */}
+          {(data.client?.name ||
             data.client?.firstName ||
             data.client?.lastName ||
             data.client?.address ||
@@ -687,59 +687,8 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
               </div>
             </div>
           )}
-          
-          {/* Div vide pour pousser le client à droite si clientPositionRight est true */}
-          {data.clientPositionRight && <div></div>}
-          
-          {/* Informations client à droite si clientPositionRight est true */}
-          {data.clientPositionRight && (data.client?.name ||
-            data.client?.firstName ||
-            data.client?.lastName ||
-            data.client?.address ||
-            data.client?.email ||
-            data.client?.phone ||
-            data.client?.siret ||
-            data.client?.vatNumber) && (
-            <div className="text-right">
-              <div
-                className="font-medium mb-2 dark:text-[#0A0A0A]"
-                style={{ fontSize: "10px" }}
-              >
-                {data.client?.name ||
-                  `${data.client?.firstName || ""} ${data.client?.lastName || ""}`.trim() ||
-                  "Client"}
-              </div>
-              <div className="font-normal" style={{ fontSize: "10px" }}>
-                {data.client?.address && (
-                  <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                    {formatAddress(data.client.address) || ""}
-                  </div>
-                )}
-                {data.client?.email && (
-                  <div className="dark:text-[#0A0A0A]">
-                    {data.client.email}
-                  </div>
-                )}
-                {data.client?.phone && (
-                  <div className="dark:text-[#0A0A0A]">
-                    {data.client.phone}
-                  </div>
-                )}
-                {data.client?.siret && (
-                  <div className="dark:text-[#0A0A0A]">
-                    SIRET: {data.client.siret}
-                  </div>
-                )}
-                {data.client?.vatNumber && (
-                  <div className="dark:text-[#0A0A0A]">
-                    N° TVA: {data.client.vatNumber}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
-          {/* Adresse de livraison - Priorité aux informations de livraison du formulaire si facturée */}
+          {/* Adresse de livraison - Toujours à droite (colonne 3) si elle existe */}
           {(() => {
             // Pour les avoirs, utiliser les données shipping de la facture originale
             // Pour les factures/devis, utiliser les données shipping seulement si billShipping est activé
@@ -818,7 +767,11 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
 
         {/* NOTES D'EN-TÊTE - masquées pour les avoirs */}
         {data.headerNotes && !isCreditNote && (
-          <div className="mb-4" style={{ fontSize: "10px" }}>
+          <div 
+            className="mb-4" 
+            style={{ fontSize: "10px" }}
+            data-pdf-section="header-notes"
+          >
             <div className="whitespace-pre-line dark:text-[#0A0A0A]">
               {data.headerNotes}
             </div>
@@ -854,7 +807,10 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
           }, 0);
 
           return (
-            <div className="mb-3">
+            <div 
+              className="mb-3"
+              data-pdf-section="market-amount"
+            >
               <div className="flex items-center gap-3">
                 <span className="font-normal text-[10px] dark:text-[#0A0A0A]">
                   Montant du marché :
@@ -868,7 +824,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
         })()}
 
         {/* TABLEAU DES ARTICLES */}
-        <div className="mb-6">
+        <div className="mb-6" data-pdf-section="items">
           {(() => {
             // Vérifier si au moins un article a un avancement différent de 0% ou 100%
             const showProgressColumn = data.items && data.items.some(item => {
@@ -878,7 +834,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
 
             return (
               <table className="w-full border-collapse text-xs border-b border-[#CCCCCC]">
-                <thead>
+                <thead data-pdf-table-header data-repeat-on-page data-no-break>
                   <tr
                     style={{
                       backgroundColor: data.appearance?.headerBgColor || "#000000",
@@ -942,10 +898,19 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                     </th>
                   </tr>
                 </thead>
-            <tbody className="text-[10px]">
+            <tbody className="text-[10px]" data-pdf-items-body>
               {data.items && data.items.length > 0 ? (
                 data.items.map((item, index) => (
-                  <tr key={index} className="border-b border-[#CCCCCC]">
+                  <tr 
+                    key={index} 
+                    className={`border-b border-[#CCCCCC] no-break ${index === data.items.length - 1 ? 'border-b-2' : ''}`} 
+                    data-no-break="true" 
+                    data-pdf-item 
+                    data-item-index={index} 
+                    data-item-type="product" 
+                    data-is-last-item={index === data.items.length - 1}
+                    style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                  >
                     <td
                       className="pt-3 pb-3 px-2 dark:text-[#0A0A0A] align-top"
                       style={{ width: showProgressColumn ? "40%" : "43%", maxWidth: "300px", wordWrap: "break-word", overflowWrap: "break-word" }}
@@ -1106,7 +1071,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                 }
 
                 return (
-                  <tr className="border-b border-[#CCCCCC]">
+                  <tr className="border-b border-[#CCCCCC] no-break" data-no-break="true" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                     <td
                       className="py-3 px-2 dark:text-[#0A0A0A]"
                       style={{ width: showProgressColumn ? "40%" : "43%", maxWidth: "300px" }}
@@ -1165,7 +1130,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
         </div>
 
         {/* TOTAUX */}
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-end mb-6" data-pdf-section="totals" data-no-break data-critical data-keep-with-footer>
           <div className="w-72 space-y-1 text-xs">
             {/* 1. Total HT - Affiché seulement s'il y a des remises sur articles ou des remises globales */}
             {(subtotalAfterItemDiscounts < subtotal || discount > 0) && (
@@ -1472,7 +1437,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                   className="flex justify-between py-1 px-3 text-[10px]"
                 >
                   <span className="dark:text-[#0A0A0A] font-medium">
-                    {field.name}
+                    {field.key || field.label || field.name || 'Champ personnalisé'}
                   </span>
                   <span className="dark:text-[#0A0A0A] font-normal">
                     {field.value}
@@ -1498,7 +1463,11 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
               (item.vatRate === 0 || item.vatRate === "0") &&
               item.vatExemptionText
           ) && (
-            <div className="mb-4 text-[10px] pt-4">
+            <div 
+              className="mb-4 text-[10px] pt-4"
+              data-pdf-section="vat-exemption"
+              data-no-break={data.items.filter(item => (item.vatRate === 0 || item.vatRate === "0") && item.vatExemptionText).length <= 2}
+            >
               <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
                 {data.items
                   .filter(
@@ -1517,7 +1486,11 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
 
         {/* CONDITIONS GÉNÉRALES - masquées pour les avoirs */}
         {data.termsAndConditions && !isCreditNote && (
-          <div className="mb-4 text-[10px] pt-4">
+          <div 
+            className="mb-4 text-[10px] pt-4"
+            data-pdf-section="terms"
+            data-no-break={data.termsAndConditions && data.termsAndConditions.length < 300}
+          >
             <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
               {data.termsAndConditions}
             </div>
@@ -1529,10 +1502,14 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
       <div 
         className={isMobile ? "pt-4 pb-4 px-6 w-full" : "pt-8 pb-8 px-14 w-full"}
         style={{
+          background: `linear-gradient(${applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)}, ${applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)}), white`,
           backgroundColor: applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1),
           ...(forPDF ? { marginTop: 'auto' } : {})
         }}
-        data-pdf-footer="true"
+        data-pdf-section="footer"
+        data-repeat-on-page
+        data-no-break
+        data-position="bottom"
       >
         {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un devis NI un avoir */}
         {data.showBankDetails === true &&
@@ -1573,7 +1550,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
 
         {/* NOTES ET CONDITIONS - masquées pour les avoirs */}
         {data.footerNotes && !isCreditNote && (
-          <div className="mt-6 py-4 text-[10px]">
+          <div className="mt-6 py-4 text-[10px]" data-pdf-section="footer-notes" data-no-break={data.footerNotes && data.footerNotes.length < 200}>
             <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
               {data.footerNotes}
             </div>

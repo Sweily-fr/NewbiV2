@@ -306,7 +306,7 @@ export default function ClientSelector({
             {
               field: "siret",
               label: "siret",
-              message: "Le SIRET est invalide (14 chiffres requis)",
+              message: "Le SIREN/SIRET est invalide (9 ou 14 chiffres requis)",
             },
           ]
         : []),
@@ -380,15 +380,15 @@ export default function ClientSelector({
       }
     }
 
-    // Validation du SIRET (si entreprise)
+    // Validation du SIREN/SIRET (si entreprise)
     if (newClientForm.type === "COMPANY") {
       if (newClientForm.siret) {
-        const siretRegex = /^\d{14}$/;
+        const siretRegex = /^\d{9}$|^\d{14}$/;
         if (!siretRegex.test(newClientForm.siret)) {
-          errors.siret = "Le SIRET doit contenir 14 chiffres";
+          errors.siret = "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
         }
       } else if (newClientForm.siret === "") {
-        errors.siret = "Le SIRET est obligatoire pour une entreprise";
+        errors.siret = "Le SIREN/SIRET est obligatoire pour une entreprise";
       }
     }
 
@@ -1227,24 +1227,28 @@ export default function ClientSelector({
                           htmlFor="client-siret"
                           className="text-sm font-normal"
                         >
-                          SIRET
+                          SIREN/SIRET
                         </Label>
                         <div className="relative">
                           <Input
                             id="client-siret"
-                            value={newClientForm.siret}
+                            value={newClientForm.siret || ""}
                             onChange={(e) =>
                               setNewClientForm((prev) => ({
                                 ...prev,
                                 siret: e.target.value,
                               }))
                             }
-                            placeholder="12345678901234"
-                            className="h-10 rounded-lg text-sm w-full"
+                            placeholder="123456789 ou 12345678901234"
+                            disabled={disabled}
+                            className={cn(
+                              "h-10 rounded-lg",
+                              formErrors.siret && "border-red-500"
+                            )}
                           />
                         </div>
                         <p className="text-xs text-gray-500">
-                          Numéro SIRET de l'entreprise (14 chiffres)
+                          Numéro SIREN (9 chiffres) ou SIRET (14 chiffres)
                         </p>
                       </div>
                       <div className="space-y-2">

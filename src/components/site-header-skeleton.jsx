@@ -25,9 +25,6 @@ export function SiteHeaderSkeleton() {
         {/* Theme toggle skeleton */}
         <Skeleton className="h-9 w-9 bg-gray-200 rounded-md" />
         
-        {/* Referral button skeleton */}
-        <Skeleton className="h-9 w-24 bg-gray-200 rounded-md" />
-        
         {/* User menu skeleton */}
         <Skeleton className="h-8 w-8 bg-gray-200 rounded-full" />
       </div>

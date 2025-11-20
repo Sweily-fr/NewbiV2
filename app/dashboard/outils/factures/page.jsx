@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { PermissionButton } from "@/src/components/rbac";
@@ -8,13 +8,24 @@ import { Plus, Settings } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
 import { InvoiceSettingsModal } from "./components/invoice-settings-modal";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 
 function InvoicesContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [invoiceIdToOpen, setInvoiceIdToOpen] = useState(null);
+
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id) {
+      setInvoiceIdToOpen(id);
+      // Nettoyer l'URL après avoir récupéré l'ID
+      router.replace('/dashboard/outils/factures', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const handleNewInvoice = () => {
     router.push("/dashboard/outils/factures/new");
@@ -45,7 +56,7 @@ function InvoicesContent() {
 
         {/* Table */}
         <Suspense fallback={<InvoiceTableSkeleton />}>
-          <InvoiceTable handleNewInvoice={handleNewInvoice} />
+          <InvoiceTable handleNewInvoice={handleNewInvoice} invoiceIdToOpen={invoiceIdToOpen} />
         </Suspense>
       </div>
 
@@ -73,7 +84,7 @@ function InvoicesContent() {
 
         {/* Table */}
         <Suspense fallback={<InvoiceTableSkeleton />}>
-          <InvoiceTable />
+          <InvoiceTable invoiceIdToOpen={invoiceIdToOpen} />
         </Suspense>
 
         {/* Bouton flottant mobile avec protection RBAC */}

@@ -181,6 +181,9 @@ async function searchCompaniesFallback(query, limit = 10) {
 export function convertCompanyToClient(company) {
   const address = parseAddress(company.address, company.postalCode, company.city);
   
+  // Utiliser le SIRET s'il existe, sinon utiliser le SIREN, sinon l'id
+  const siret = company.siret || company.siren || company.id || '';
+  
   return {
     type: 'COMPANY',
     name: company.name,
@@ -188,7 +191,7 @@ export function convertCompanyToClient(company) {
     lastName: '',
     email: '', // À remplir manuellement
     phone: '', // À remplir manuellement
-    siret: company.siret,
+    siret: siret,
     vatNumber: company.vatNumber || '',
     address: address,
     shippingAddress: address, // Par défaut, même adresse
@@ -196,7 +199,7 @@ export function convertCompanyToClient(company) {
     notes: `Entreprise trouvée via API Gouv Data\nActivité: ${company.activityLabel || 'Non renseignée'}\nEffectifs: ${company.employees || 'Non renseigné'}`,
     // Données supplémentaires pour référence
     _apiGouv: {
-      siren: company.id,
+      siren: company.siren || company.id,
       activityCode: company.activityCode,
       status: company.status,
       creationDate: company.creationDate

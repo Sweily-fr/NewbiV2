@@ -1,19 +1,30 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Plus, Settings } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
 import { QuoteSettingsModal } from "./components/quote-settings-modal";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 
 function QuotesContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [quoteIdToOpen, setQuoteIdToOpen] = useState(null);
+
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id) {
+      setQuoteIdToOpen(id);
+      // Nettoyer l'URL après avoir récupéré l'ID
+      router.replace('/dashboard/outils/devis', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const handleNewQuote = () => {
     router.push("/dashboard/outils/devis/new");
@@ -44,7 +55,7 @@ function QuotesContent() {
 
         {/* Table */}
         <Suspense fallback={<QuoteTableSkeleton />}>
-          <QuoteTable handleNewQuote={handleNewQuote} />
+          <QuoteTable handleNewQuote={handleNewQuote} quoteIdToOpen={quoteIdToOpen} />
         </Suspense>
       </div>
 
@@ -72,7 +83,7 @@ function QuotesContent() {
 
         {/* Table */}
         <Suspense fallback={<QuoteTableSkeleton />}>
-          <QuoteTable />
+          <QuoteTable quoteIdToOpen={quoteIdToOpen} />
         </Suspense>
 
         {/* Bouton flottant mobile */}

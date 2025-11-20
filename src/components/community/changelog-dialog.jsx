@@ -47,20 +47,6 @@ export function ChangelogDialog({ open, onOpenChange }) {
       ],
     },
     {
-      version: "Version 1.8.0",
-      date: "1 Octobre 2025",
-      title: "Système de Parrainage",
-      description:
-        "Implémentation complète du système de parrainage avec bonus financier.",
-      items: [
-        "Système de parrainage avec bonus 50€",
-        "Intégration Stripe Connect",
-        "Webhooks de paiement automatiques",
-        "Génération de liens de parrainage",
-        "Email de remerciement au parrain",
-      ],
-    },
-    {
       version: "Version 1.7.0",
       date: "15 Septembre 2025",
       title: "Migration Architecture MongoDB",
