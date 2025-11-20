@@ -169,7 +169,7 @@ export const auth = betterAuth({
               console.log(
                 `✅ [SESSION CREATE BEFORE] Organisation owner trouvée: ${ownerMember.organizationId}`
               );
-              
+
               // ✅ Retourner la session AVEC activeOrganizationId
               return {
                 data: {
@@ -192,7 +192,7 @@ export const auth = betterAuth({
               console.log(
                 `✅ [SESSION CREATE BEFORE] Organisation trouvée (fallback): ${anyMember.organizationId} (role: ${anyMember.role})`
               );
-              
+
               // ✅ Retourner la session AVEC activeOrganizationId
               return {
                 data: {
@@ -203,15 +203,13 @@ export const auth = betterAuth({
             }
 
             // Aucune organisation trouvée
-            console.warn("⚠️ [SESSION CREATE BEFORE] Aucune organisation trouvée");
+            console.warn(
+              "⚠️ [SESSION CREATE BEFORE] Aucune organisation trouvée"
+            );
             return { data: session };
-            
           } catch (error) {
             // ⚠️ Ne pas bloquer la connexion si erreur
-            console.error(
-              "❌ [SESSION CREATE BEFORE] Erreur:",
-              error
-            );
+            console.error("❌ [SESSION CREATE BEFORE] Erreur:", error);
             console.warn(
               "⚠️ [SESSION CREATE BEFORE] Connexion continue malgré l'erreur"
             );
@@ -274,66 +272,84 @@ export const auth = betterAuth({
     // ✅ PRIORITÉ 2 : Connexion automatique après vérification d'email
     autoSignInAfterVerification: true,
     expiresIn: 3600, // 1 heure pour vérifier l'email
-    
+
     // ✅ Callback après vérification réussie
     // S'exécute APRÈS que autoSignInAfterVerification ait créé la session
     async afterEmailVerification(user, request) {
       console.log(`✅ [EMAIL VERIFICATION] Email vérifié pour ${user.email}`);
-      
+
       try {
         const { mongoDb } = await import("./mongodb.js");
         const { ObjectId } = await import("mongodb");
-        
+
         // 1. Vérifier que l'utilisateur a une organisation
         const member = await mongoDb.collection("member").findOne({
           userId: new ObjectId(user.id),
           role: "owner", // Priorité à l'organisation owner
         });
-        
+
         if (!member) {
-          console.warn(`⚠️ [EMAIL VERIFICATION] Aucune organisation owner pour ${user.email}`);
-          
+          console.warn(
+            `⚠️ [EMAIL VERIFICATION] Aucune organisation owner pour ${user.email}`
+          );
+
           // Fallback : chercher n'importe quelle organisation
           const anyMember = await mongoDb.collection("member").findOne({
             userId: new ObjectId(user.id),
           });
-          
+
           if (!anyMember) {
-            console.error(`❌ [EMAIL VERIFICATION] Aucune organisation trouvée pour ${user.email}`);
+            console.error(
+              `❌ [EMAIL VERIFICATION] Aucune organisation trouvée pour ${user.email}`
+            );
             return;
           }
-          
-          console.log(`✅ [EMAIL VERIFICATION] Organisation trouvée (fallback): ${anyMember.organizationId}`);
+
+          console.log(
+            `✅ [EMAIL VERIFICATION] Organisation trouvée (fallback): ${anyMember.organizationId}`
+          );
         } else {
-          console.log(`✅ [EMAIL VERIFICATION] Organisation owner trouvée: ${member.organizationId}`);
+          console.log(
+            `✅ [EMAIL VERIFICATION] Organisation owner trouvée: ${member.organizationId}`
+          );
         }
-        
+
         // 2. S'assurer que la session a l'organisation active définie
         // Note : Le hook session.create.after devrait déjà l'avoir fait
         // Mais on vérifie au cas où
-        const sessions = await mongoDb.collection("session")
+        const sessions = await mongoDb
+          .collection("session")
           .find({ userId: new ObjectId(user.id) })
           .sort({ createdAt: -1 })
           .limit(1)
           .toArray();
-        
+
         if (sessions.length > 0) {
           const session = sessions[0];
           if (!session.activeOrganizationId) {
-            console.warn(`⚠️ [EMAIL VERIFICATION] Session sans organisation active, correction...`);
-            
+            console.warn(
+              `⚠️ [EMAIL VERIFICATION] Session sans organisation active, correction...`
+            );
+
             const orgToSet = member || anyMember;
             await mongoDb.collection("session").updateOne(
               { _id: session._id },
-              { $set: { activeOrganizationId: orgToSet.organizationId.toString() } }
+              {
+                $set: {
+                  activeOrganizationId: orgToSet.organizationId.toString(),
+                },
+              }
             );
-            
-            console.log(`✅ [EMAIL VERIFICATION] Organisation active définie: ${orgToSet.organizationId}`);
+
+            console.log(
+              `✅ [EMAIL VERIFICATION] Organisation active définie: ${orgToSet.organizationId}`
+            );
           } else {
-            console.log(`✅ [EMAIL VERIFICATION] Organisation active déjà définie: ${session.activeOrganizationId}`);
+            console.log(
+              `✅ [EMAIL VERIFICATION] Organisation active déjà définie: ${session.activeOrganizationId}`
+            );
           }
         }
-        
       } catch (error) {
         console.error("❌ [EMAIL VERIFICATION] Erreur:", error);
       }
