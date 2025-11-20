@@ -19,26 +19,22 @@ export function generateSignatureHTML(signatureData) {
     return result;
   };
 
-  // Fonction helper pour obtenir les paddings détaillés
-  const getPadding = (elementKey, defaultPadding = {}) => {
+  // Fonction helper pour générer le style de padding complet (top, right, bottom, left)
+  const getPaddingStyle = (elementKey, defaultPadding = {}) => {
     if (signatureData.detailedSpacing && signatureData.paddings?.[elementKey]) {
       const padding = signatureData.paddings[elementKey];
-      return {
-        top: padding.top || 0,
-        right: padding.right || 0,
-        bottom: padding.bottom || 0,
-        left: padding.left || 0,
-      };
+      const top = padding.top ?? defaultPadding.top ?? 0;
+      const right = padding.right ?? defaultPadding.right ?? 0;
+      const bottom = padding.bottom ?? defaultPadding.bottom ?? 0;
+      const left = padding.left ?? defaultPadding.left ?? 0;
+      return `${top}px ${right}px ${bottom}px ${left}px`;
     }
-    return defaultPadding;
-  };
-
-  // Fonction helper pour générer le style de padding (simplifié pour padding-bottom principalement)
-  const getPaddingBottom = (elementKey, defaultBottom = 8) => {
-    if (signatureData.detailedSpacing && signatureData.paddings?.[elementKey]) {
-      return signatureData.paddings[elementKey].bottom || 0;
-    }
-    return defaultBottom;
+    // Mode simple : utiliser defaultPadding
+    const top = defaultPadding.top ?? 0;
+    const right = defaultPadding.right ?? 0;
+    const bottom = defaultPadding.bottom ?? 0;
+    const left = defaultPadding.left ?? 0;
+    return `${top}px ${right}px ${bottom}px ${left}px`;
   };
 
   // Fonction helper pour obtenir les valeurs de typographie
@@ -265,7 +261,7 @@ export function generateSignatureHTML(signatureData) {
 ${signatureData.photo && signatureData.photoVisible !== false ? `
 <!-- Photo de profil (centrée) -->
 <tr>
-<td style="padding-bottom: ${getSpacing(signatureData.spacings?.photoBottom, 16)}px; text-align: center;">
+<td style="padding: ${getPaddingStyle('photo', { bottom: getSpacing(signatureData.spacings?.photoBottom, 16) })}; text-align: center;">
 <div style="margin: 0 auto; width: fit-content;">
 ${profileImageHTML}
 </div>
@@ -273,7 +269,7 @@ ${profileImageHTML}
 </tr>` : ""}
 <!-- Nom complet (centré) -->
 <tr>
-<td style="text-align: center; padding-bottom: ${getPaddingBottom("name", 8)}px;">
+<td style="text-align: center; padding: ${getPaddingStyle('name', { bottom: 8 })};">
 <div style="font-family: ${getTypography("fullName", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("fullName", "fontSize", 16)}px; font-weight: bold; color: ${signatureData.primaryColor || "#171717"}; line-height: 1.2;">
 ${signatureData.fullName || ""}
 </div>
@@ -282,14 +278,14 @@ ${signatureData.fullName || ""}
 ${signatureData.position ? `
 <!-- Poste (centré) -->
 <tr>
-<td style="font-family: ${getTypography("position", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("position", "fontSize", 14)}px; color: ${getTypography("position", "color", "#666666")}; padding-bottom: ${getSpacing(signatureData.spacings?.positionBottom, 8)}px; white-space: nowrap; text-align: center;">
+<td style="font-family: ${getTypography("position", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("position", "fontSize", 14)}px; color: ${getTypography("position", "color", "#666666")}; padding: ${getPaddingStyle('position', { bottom: getSpacing(signatureData.spacings?.positionBottom, 8) })}; white-space: nowrap; text-align: center;">
 ${signatureData.position}
 </td>
 </tr>` : ""}
 ${signatureData.companyName ? `
 <!-- Entreprise (centré) -->
 <tr>
-<td style="font-family: ${getTypography("company", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("company", "fontSize", 14)}px; font-weight: bold; color: ${signatureData.primaryColor || "#171717"}; padding-bottom: ${getSpacing(undefined, 12)}px; text-align: center;">
+<td style="font-family: ${getTypography("company", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("company", "fontSize", 14)}px; font-weight: bold; color: ${signatureData.primaryColor || "#171717"}; padding: ${getPaddingStyle('company', { bottom: 12 })}; text-align: center;">
 ${signatureData.companyName}
 </td>
 </tr>` : ""}
@@ -313,7 +309,7 @@ ${signatureData.separatorHorizontalEnabled ? `
 <tbody>
 ${signatureData.phone && (signatureData.showPhoneIcon ?? true) ? `
 <tr>
-<td style="padding-bottom: ${getSpacing(signatureData.spacings?.phoneToMobile, 8)}px; text-align: center;">
+<td style="padding: ${getPaddingStyle('phone', { bottom: getSpacing(signatureData.spacings?.phoneToMobile, 8) })}; text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
 <tr>
@@ -330,7 +326,7 @@ ${signatureData.phone}
 </tr>` : ""}
 ${signatureData.mobile && (signatureData.showMobileIcon ?? true) ? `
 <tr>
-<td style="padding-bottom: ${getSpacing(signatureData.spacings?.mobileToEmail, 8)}px; text-align: center;">
+<td style="padding: ${getPaddingStyle('mobile', { bottom: getSpacing(signatureData.spacings?.mobileToEmail, 8) })}; text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
 <tr>
@@ -347,7 +343,7 @@ ${signatureData.mobile}
 </tr>` : ""}
 ${signatureData.email && (signatureData.showEmailIcon ?? true) ? `
 <tr>
-<td style="padding-bottom: ${getSpacing(signatureData.spacings?.emailToWebsite, 8)}px; text-align: center;">
+<td style="padding: ${getPaddingStyle('email', { bottom: getSpacing(signatureData.spacings?.emailToWebsite, 8) })}; text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
 <tr>
@@ -355,7 +351,7 @@ ${signatureData.email && (signatureData.showEmailIcon ?? true) ? `
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/mail.png" alt="Email" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
 </td>
 <td style="font-size: ${getTypography("email", "fontSize", 12)}px; color: ${getTypography("email", "color", "rgb(102,102,102)")}; font-family: ${getTypography("email", "fontFamily", "Arial, sans-serif")}; vertical-align: middle;">
-${signatureData.email}
+<a href="mailto:${signatureData.email}" style="color: ${getTypography("email", "color", "rgb(102,102,102)")}; text-decoration: none;">${signatureData.email}</a>
 </td>
 </tr>
 </tbody>
@@ -364,7 +360,7 @@ ${signatureData.email}
 </tr>` : ""}
 ${signatureData.website && (signatureData.showWebsiteIcon ?? true) ? `
 <tr>
-<td style="padding-bottom: ${getSpacing(signatureData.spacings?.websiteToAddress, 8)}px; text-align: center;">
+<td style="padding: ${getPaddingStyle('website', { bottom: getSpacing(signatureData.spacings?.websiteToAddress, 8) })}; text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
 <tr>
@@ -372,7 +368,7 @@ ${signatureData.website && (signatureData.showWebsiteIcon ?? true) ? `
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/globe.png" alt="Site web" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
 </td>
 <td style="font-size: ${getTypography("website", "fontSize", 12)}px; color: ${getTypography("website", "color", "rgb(102,102,102)")}; font-family: ${getTypography("website", "fontFamily", "Arial, sans-serif")}; vertical-align: middle;">
-${signatureData.website}
+<a href="${signatureData.website}" style="color: ${getTypography("website", "color", "rgb(102,102,102)")}; text-decoration: none;">${signatureData.website}</a>
 </td>
 </tr>
 </tbody>
@@ -381,7 +377,7 @@ ${signatureData.website}
 </tr>` : ""}
 ${signatureData.address && (signatureData.showAddressIcon ?? true) ? `
 <tr>
-<td style="padding-bottom: ${getSpacing(signatureData.spacings?.contactBottom, 8)}px; text-align: center;">
+<td style="padding: ${getPaddingStyle('address', { bottom: getSpacing(signatureData.spacings?.contactBottom, 8) })}; text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
 <tr>
@@ -433,13 +429,13 @@ ${socialIconsHTML}
 <tbody>
 ${signatureData.photo && signatureData.photoVisible !== false ? `
 <tr>
-<td style="padding-bottom: ${getSpacing(signatureData.spacings?.photoBottom, 12)}px;">
+<td style="padding: ${getPaddingStyle('photo', { bottom: getSpacing(signatureData.spacings?.photoBottom, 12) })};">
 ${profileImageHTML}
 </td>
 </tr>` : ""}
 <!-- Nom complet -->
 <tr>
-<td colspan="2" style="text-align: ${signatureData.nameAlignment || "left"}; padding-bottom: ${getSpacing(undefined, 8)}px;">
+<td colspan="2" style="text-align: ${signatureData.nameAlignment || "left"}; padding: ${getPaddingStyle('name', { bottom: 8 })};">
 <div style="font-size: ${getTypography("fullName", "fontSize", 16)}px; font-weight: ${getTypography("fullName", "fontWeight", "bold")}; color: ${getTypography("fullName", "color", signatureData.primaryColor || "#171717")}; line-height: 1.2; font-family: ${getTypography("fullName", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("fullName", "fontStyle", "normal")}; text-decoration: ${getTypography("fullName", "textDecoration", "none")};">
 ${signatureData.fullName || `${signatureData.firstName || ""} ${signatureData.lastName || ""}`.trim()}
 </div>
@@ -448,7 +444,7 @@ ${signatureData.fullName || `${signatureData.firstName || ""} ${signatureData.la
 ${signatureData.position ? `
 <!-- Poste -->
 <tr>
-<td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.positionBottom, 8)}px; text-align: ${signatureData.nameAlignment || "left"};">
+<td colspan="2" style="padding: ${getPaddingStyle('position', { bottom: getSpacing(signatureData.spacings?.positionBottom, 8) })}; text-align: ${signatureData.nameAlignment || "left"};">
 <div style="font-size: ${getTypography("position", "fontSize", 14)}px; color: ${getTypography("position", "color", "rgb(102,102,102)")}; font-family: ${getTypography("position", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("position", "fontWeight", "normal")}; font-style: ${getTypography("position", "fontStyle", "normal")}; text-decoration: ${getTypography("position", "textDecoration", "none")}; white-space: nowrap;">
 ${signatureData.position}
 </div>
@@ -457,7 +453,7 @@ ${signatureData.position}
 ${signatureData.companyName ? `
 <!-- Nom d'entreprise -->
 <tr>
-<td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.companyBottom, 12)}px;">
+<td colspan="2" style="padding: ${getPaddingStyle('company', { bottom: getSpacing(signatureData.spacings?.companyBottom, 12) })};">
 <div style="font-size: ${getTypography("company", "fontSize", 14)}px; font-weight: ${getTypography("company", "fontWeight", "bold")}; color: ${getTypography("company", "color", signatureData.primaryColor || "#171717")}; font-family: ${getTypography("company", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("company", "fontStyle", "normal")}; text-decoration: ${getTypography("company", "textDecoration", "none")};">
 ${signatureData.companyName}
 </div>
@@ -474,7 +470,7 @@ ${verticalSeparatorHTML}
 ${signatureData.phone && (signatureData.showPhoneIcon ?? true) ? `
 <!-- Téléphone -->
 <tr>
-<td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.phoneToMobile, 8)}px;">
+<td colspan="2" style="padding: ${getPaddingStyle('phone', { bottom: getSpacing(signatureData.spacings?.phoneToMobile, 8) })};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
@@ -492,7 +488,7 @@ ${signatureData.phone && (signatureData.showPhoneIcon ?? true) ? `
 ${signatureData.mobile && (signatureData.showMobileIcon ?? true) ? `
 <!-- Mobile -->
 <tr>
-<td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.mobileToEmail, 8)}px;">
+<td colspan="2" style="padding: ${getPaddingStyle('mobile', { bottom: getSpacing(signatureData.spacings?.mobileToEmail, 8) })};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
@@ -510,7 +506,7 @@ ${signatureData.mobile && (signatureData.showMobileIcon ?? true) ? `
 ${signatureData.email && (signatureData.showEmailIcon ?? true) ? `
 <!-- Email -->
 <tr>
-<td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.emailToWebsite, 8)}px;">
+<td colspan="2" style="padding: ${getPaddingStyle('email', { bottom: getSpacing(signatureData.spacings?.emailToWebsite, 8) })};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
@@ -528,7 +524,7 @@ ${signatureData.email && (signatureData.showEmailIcon ?? true) ? `
 ${signatureData.website && (signatureData.showWebsiteIcon ?? true) ? `
 <!-- Site web -->
 <tr>
-<td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.websiteToAddress, 8)}px;">
+<td colspan="2" style="padding: ${getPaddingStyle('website', { bottom: getSpacing(signatureData.spacings?.websiteToAddress, 8) })};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
@@ -546,7 +542,7 @@ ${signatureData.website && (signatureData.showWebsiteIcon ?? true) ? `
 ${signatureData.address && (signatureData.showAddressIcon ?? true) ? `
 <!-- Adresse -->
 <tr>
-<td colspan="2" style="padding-bottom: ${getSpacing(signatureData.spacings?.contactBottom, 8)}px;">
+<td colspan="2" style="padding: ${getPaddingStyle('address', { bottom: getSpacing(signatureData.spacings?.contactBottom, 8) })};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>

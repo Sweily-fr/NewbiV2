@@ -353,19 +353,105 @@ export function TabSignature({ existingSignatureId = null }) {
       separatorHorizontalWidth: signatureData.separatorHorizontalWidth || 1,
       // Espacements
       spacings: {
-        global: signatureData.spacings?.global || 12,
-        photoBottom: signatureData.spacings?.photoBottom || 12,
-        logoBottom: signatureData.spacings?.logoBottom || 12,
-        nameBottom: signatureData.spacings?.nameBottom || 8,
-        positionBottom: signatureData.spacings?.positionBottom || 8,
-        companyBottom: signatureData.spacings?.companyBottom || 12,
-        contactBottom: signatureData.spacings?.contactBottom || 12,
-        phoneToMobile: signatureData.spacings?.phoneToMobile || 8,
-        mobileToEmail: signatureData.spacings?.mobileToEmail || 8,
-        emailToWebsite: signatureData.spacings?.emailToWebsite || 8,
-        websiteToAddress: signatureData.spacings?.websiteToAddress || 8,
-        separatorTop: signatureData.spacings?.separatorTop || 12,
-        separatorBottom: signatureData.spacings?.separatorBottom || 12,
+        global: signatureData.spacings?.global ?? 8,
+        photoBottom: signatureData.spacings?.photoBottom ?? 12,
+        logoBottom: signatureData.spacings?.logoBottom ?? 12,
+        nameBottom: signatureData.spacings?.nameBottom ?? 8,
+        positionBottom: signatureData.spacings?.positionBottom ?? 8,
+        companyBottom: signatureData.spacings?.companyBottom ?? 12,
+        contactBottom: signatureData.spacings?.contactBottom ?? 6,
+        phoneToMobile: signatureData.spacings?.phoneToMobile ?? 4,
+        mobileToEmail: signatureData.spacings?.mobileToEmail ?? 4,
+        emailToWebsite: signatureData.spacings?.emailToWebsite ?? 4,
+        websiteToAddress: signatureData.spacings?.websiteToAddress ?? 4,
+        separatorTop: signatureData.spacings?.separatorTop ?? 12,
+        separatorBottom: signatureData.spacings?.separatorBottom ?? 12,
+        logoToSocial: signatureData.spacings?.logoToSocial ?? 12,
+        verticalSeparatorLeft: signatureData.spacings?.verticalSeparatorLeft ?? 22,
+        verticalSeparatorRight: signatureData.spacings?.verticalSeparatorRight ?? 22,
+      },
+      // Mode espacement détaillé
+      detailedSpacing: signatureData.detailedSpacing ?? false,
+      // Paddings détaillés pour chaque élément
+      paddings: {
+        photo: {
+          top: signatureData.paddings?.photo?.top ?? 0,
+          right: signatureData.paddings?.photo?.right ?? 0,
+          bottom: signatureData.paddings?.photo?.bottom ?? (signatureData.spacings?.global ?? 8),
+          left: signatureData.paddings?.photo?.left ?? 0,
+        },
+        name: {
+          top: signatureData.paddings?.name?.top ?? 0,
+          right: signatureData.paddings?.name?.right ?? 0,
+          bottom: signatureData.paddings?.name?.bottom ?? (signatureData.spacings?.global ?? 8),
+          left: signatureData.paddings?.name?.left ?? 0,
+        },
+        position: {
+          top: signatureData.paddings?.position?.top ?? 0,
+          right: signatureData.paddings?.position?.right ?? 0,
+          bottom: signatureData.paddings?.position?.bottom ?? (signatureData.spacings?.global ?? 8),
+          left: signatureData.paddings?.position?.left ?? 0,
+        },
+        company: {
+          top: signatureData.paddings?.company?.top ?? 0,
+          right: signatureData.paddings?.company?.right ?? 0,
+          bottom: signatureData.paddings?.company?.bottom ?? (signatureData.spacings?.global ?? 8),
+          left: signatureData.paddings?.company?.left ?? 0,
+        },
+        phone: {
+          top: signatureData.paddings?.phone?.top ?? 0,
+          right: signatureData.paddings?.phone?.right ?? 0,
+          bottom: signatureData.paddings?.phone?.bottom ?? (signatureData.spacings?.global ?? 8),
+          left: signatureData.paddings?.phone?.left ?? 0,
+        },
+        mobile: {
+          top: signatureData.paddings?.mobile?.top ?? 0,
+          right: signatureData.paddings?.mobile?.right ?? 0,
+          bottom: signatureData.paddings?.mobile?.bottom ?? (signatureData.spacings?.global ?? 8),
+          left: signatureData.paddings?.mobile?.left ?? 0,
+        },
+        email: {
+          top: signatureData.paddings?.email?.top ?? 0,
+          right: signatureData.paddings?.email?.right ?? 0,
+          bottom: signatureData.paddings?.email?.bottom ?? (signatureData.spacings?.global ?? 8),
+          left: signatureData.paddings?.email?.left ?? 0,
+        },
+        website: {
+          top: signatureData.paddings?.website?.top ?? 0,
+          right: signatureData.paddings?.website?.right ?? 0,
+          bottom: signatureData.paddings?.website?.bottom ?? (signatureData.spacings?.global ?? 8),
+          left: signatureData.paddings?.website?.left ?? 0,
+        },
+        address: {
+          top: signatureData.paddings?.address?.top ?? 0,
+          right: signatureData.paddings?.address?.right ?? 0,
+          bottom: signatureData.paddings?.address?.bottom ?? (signatureData.spacings?.global ?? 8),
+          left: signatureData.paddings?.address?.left ?? 0,
+        },
+        separatorHorizontal: {
+          top: signatureData.paddings?.separatorHorizontal?.top ?? (signatureData.spacings?.global ?? 8),
+          right: signatureData.paddings?.separatorHorizontal?.right ?? 0,
+          bottom: signatureData.paddings?.separatorHorizontal?.bottom ?? (signatureData.spacings?.global ?? 8),
+          left: signatureData.paddings?.separatorHorizontal?.left ?? 0,
+        },
+        separatorVertical: {
+          top: signatureData.paddings?.separatorVertical?.top ?? 0,
+          right: signatureData.paddings?.separatorVertical?.right ?? 4,
+          bottom: signatureData.paddings?.separatorVertical?.bottom ?? 0,
+          left: signatureData.paddings?.separatorVertical?.left ?? 4,
+        },
+        logo: {
+          top: signatureData.paddings?.logo?.top ?? (signatureData.spacings?.global ?? 8),
+          right: signatureData.paddings?.logo?.right ?? 0,
+          bottom: signatureData.paddings?.logo?.bottom ?? 0,
+          left: signatureData.paddings?.logo?.left ?? 0,
+        },
+        social: {
+          top: signatureData.paddings?.social?.top ?? (signatureData.spacings?.global ?? 8),
+          right: signatureData.paddings?.social?.right ?? 0,
+          bottom: signatureData.paddings?.social?.bottom ?? 0,
+          left: signatureData.paddings?.social?.left ?? 0,
+        },
       },
       // Réseaux sociaux (seulement ceux qui ont une URL et sont supportés par le backend)
       socialNetworks: (() => {
@@ -512,6 +598,11 @@ export function TabSignature({ existingSignatureId = null }) {
     const finalData = cleanGraphQLData(rawData);
 
     // Données prêtes pour l'envoi
+    console.log("📤 Données à envoyer:", {
+      detailedSpacing: finalData.detailedSpacing,
+      paddings: finalData.paddings,
+      spacings: finalData.spacings,
+    });
 
     try {
       if (existingSignatureId) {
@@ -559,9 +650,15 @@ export function TabSignature({ existingSignatureId = null }) {
   const handleCloseCancelModal = () => {
     setShowCancelConfirmation(false);
   };
+
+  const [activeTab, setActiveTab] = useState("tab-1");
+
+  // Debug: vérifier si le composant se rend plusieurs fois
+  console.log("🔍 TabSignature rendu - existingSignatureId:", existingSignatureId);
+
   return (
-    <div className="flex flex-col h-full">
-      <Tabs defaultValue="tab-1" className="flex flex-col h-full">
+    <>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full overflow-hidden">
         {/* Header fixe avec les onglets */}
         <div className="flex-shrink-0 p-5 pb-0">
           <ScrollArea className="w-full">
@@ -577,42 +674,43 @@ export function TabSignature({ existingSignatureId = null }) {
           </ScrollArea>
         </div>
 
-        {/* Contenu scrollable */}
-        <div className="flex-1 overflow-y-auto px-5 max-h-[calc(100vh-9.5rem)]">
-          <TabsContent value="tab-1" className="w-full mt-0">
+        {/* Contenu scrollable - prend l'espace restant automatiquement */}
+        <div className="flex-1 overflow-y-auto px-5 min-h-0">
+          {activeTab === "tab-1" && (
             <div className="w-full space-y-6 mt-4">
               <LayoutContent />
             </div>
-          </TabsContent>
-          <TabsContent value="tab-2" className="w-full mt-0">
+          )}
+          {activeTab === "tab-2" && (
             <div className="w-full space-y-6 mt-4">
               <TypographyContent />
             </div>
-          </TabsContent>
+          )}
+        </div>
+
+        {/* Footer fixe en bas - en dehors du contenu scrollable */}
+        <div className="flex-shrink-0 py-3 px-5 border-t">
+          <div className="flex gap-3 w-full">
+            <Button
+              variant="outline"
+              className="cursor-pointer flex-1"
+              onClick={handleCancelClick}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="cursor-pointer flex-1 flex items-center justify-center font-normal gap-2"
+              onClick={handleOpenModal}
+              disabled={isLoading}
+            >
+              {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
+              <Save className="w-4 h-4" />
+              {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}
+            </Button>
+          </div>
         </div>
       </Tabs>
-
-      {/* Footer fixe avec les boutons */}
-      <div className="flex-shrink-0 py-4 mx-4 border-t">
-        <div className="flex justify-between">
-          <Button
-            variant="outline"
-            className="cursor-pointer"
-            onClick={handleCancelClick}
-          >
-            Annuler
-          </Button>
-          <Button
-            className="cursor-pointer flex items-center font-normal gap-2"
-            onClick={handleOpenModal}
-            disabled={isLoading}
-          >
-            {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
-            <Save className="w-4 h-4" />
-            {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}
-          </Button>
-        </div>
-      </div>
+      
       {/* Modal de sauvegarde */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-background/80 dark:bg-background/60 backdrop-blur-sm flex items-center justify-center z-50">
@@ -679,6 +777,6 @@ export function TabSignature({ existingSignatureId = null }) {
         title="Annuler la création de signature ?"
         message="Êtes-vous sûr de vouloir annuler ? Toutes les modifications non sauvegardées seront perdues et vous serez redirigé vers la liste des signatures."
       />
-    </div>
+    </>
   );
 }

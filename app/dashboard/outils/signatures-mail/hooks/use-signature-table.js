@@ -119,6 +119,86 @@ const GET_EMAIL_SIGNATURE = gql`
         verticalSeparatorRight
       }
       detailedSpacing
+      paddings {
+        photo {
+          top
+          right
+          bottom
+          left
+        }
+        name {
+          top
+          right
+          bottom
+          left
+        }
+        position {
+          top
+          right
+          bottom
+          left
+        }
+        company {
+          top
+          right
+          bottom
+          left
+        }
+        phone {
+          top
+          right
+          bottom
+          left
+        }
+        mobile {
+          top
+          right
+          bottom
+          left
+        }
+        email {
+          top
+          right
+          bottom
+          left
+        }
+        website {
+          top
+          right
+          bottom
+          left
+        }
+        address {
+          top
+          right
+          bottom
+          left
+        }
+        separatorHorizontal {
+          top
+          right
+          bottom
+          left
+        }
+        separatorVertical {
+          top
+          right
+          bottom
+          left
+        }
+        logo {
+          top
+          right
+          bottom
+          left
+        }
+        social {
+          top
+          right
+          bottom
+          left
+        }
+      }
 
       # Réseaux sociaux
       socialNetworks {

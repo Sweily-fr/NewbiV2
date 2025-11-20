@@ -3,15 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppSidebar } from "@/src/components/app-sidebar";
-import { SignatureSidebar } from "@/src/components/signature-sidebar";
 import { CommunitySidebar } from "@/src/components/community-sidebar";
 import { SiteHeader } from "@/src/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/src/components/ui/sidebar";
 import { SearchCommand } from "@/src/components/search-command";
-import {
-  SignatureProvider,
-  useSignatureData,
-} from "@/src/hooks/use-signature-data";
+import { SignatureProvider } from "@/src/hooks/use-signature-data";
 import { TrialBanner } from "@/src/components/trial-banner";
 import { PricingModal } from "@/src/components/pricing-modal";
 import OnboardingModal from "@/src/components/onboarding-modal";
@@ -105,14 +101,6 @@ function DashboardContent({ children }) {
   // Désactiver complètement le banner - remplacé par le compteur dans le header
   const showTrialBanner = false;
 
-  // Utiliser les données de signature si on est sur la page de signature
-  let signatureContextData = null;
-  try {
-    signatureContextData = useSignatureData();
-  } catch {
-    // Pas de contexte disponible, c'est normal si on n'est pas sur la page de signature
-  }
-
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <AppSidebar
@@ -147,13 +135,6 @@ function DashboardContent({ children }) {
           </div>
         </div>
       </SidebarInset>
-      {isSignaturePage && signatureContextData && signatureContextData.isEditMode && (
-        <SignatureSidebar
-          signatureData={signatureContextData.signatureData}
-          updateSignatureData={signatureContextData.updateSignatureData}
-          editingSignatureId={signatureContextData.editingSignatureId}
-        />
-      )}
       <SearchCommand />
 
       {/* Modal de pricing pour upgrade - DÉSACTIVÉ car géré dans chaque page */}

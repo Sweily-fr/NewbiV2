@@ -79,6 +79,86 @@ const GET_EMAIL_SIGNATURE = gql`
         verticalSeparatorRight
       }
       detailedSpacing
+      paddings {
+        photo {
+          top
+          right
+          bottom
+          left
+        }
+        name {
+          top
+          right
+          bottom
+          left
+        }
+        position {
+          top
+          right
+          bottom
+          left
+        }
+        company {
+          top
+          right
+          bottom
+          left
+        }
+        phone {
+          top
+          right
+          bottom
+          left
+        }
+        mobile {
+          top
+          right
+          bottom
+          left
+        }
+        email {
+          top
+          right
+          bottom
+          left
+        }
+        website {
+          top
+          right
+          bottom
+          left
+        }
+        address {
+          top
+          right
+          bottom
+          left
+        }
+        separatorHorizontal {
+          top
+          right
+          bottom
+          left
+        }
+        separatorVertical {
+          top
+          right
+          bottom
+          left
+        }
+        logo {
+          top
+          right
+          bottom
+          left
+        }
+        social {
+          top
+          right
+          bottom
+          left
+        }
+      }
       socialNetworks {
         facebook
         instagram
@@ -279,7 +359,7 @@ function SignatureProviderContent({ children }) {
         },
       },
       // Épaisseur des séparateurs (en pixels) - DEPRECATED, utiliser separators
-      separatorVerticalWidth: 4, // Épaisseur du séparateur vertical (entre colonnes) - DEPRECATED
+      separatorVerticalWidth: 1, // Épaisseur du séparateur vertical (entre colonnes) - DEPRECATED
       separatorHorizontalWidth: 1, // Épaisseur du séparateur horizontal (sous l'adresse)
       // Taille du logo entreprise (en pixels)
       logoSize: 60, // Taille par défaut du logo
@@ -435,8 +515,58 @@ function SignatureProviderContent({ children }) {
           ...(fetchedSignature.spacings || {}),
         },
         paddings: {
-          ...defaultSignatureData.paddings,
-          ...(fetchedSignature.paddings || {}),
+          photo: {
+            ...defaultSignatureData.paddings.photo,
+            ...(fetchedSignature.paddings?.photo || {}),
+          },
+          name: {
+            ...defaultSignatureData.paddings.name,
+            ...(fetchedSignature.paddings?.name || {}),
+          },
+          position: {
+            ...defaultSignatureData.paddings.position,
+            ...(fetchedSignature.paddings?.position || {}),
+          },
+          company: {
+            ...defaultSignatureData.paddings.company,
+            ...(fetchedSignature.paddings?.company || {}),
+          },
+          phone: {
+            ...defaultSignatureData.paddings.phone,
+            ...(fetchedSignature.paddings?.phone || {}),
+          },
+          mobile: {
+            ...defaultSignatureData.paddings.mobile,
+            ...(fetchedSignature.paddings?.mobile || {}),
+          },
+          email: {
+            ...defaultSignatureData.paddings.email,
+            ...(fetchedSignature.paddings?.email || {}),
+          },
+          website: {
+            ...defaultSignatureData.paddings.website,
+            ...(fetchedSignature.paddings?.website || {}),
+          },
+          address: {
+            ...defaultSignatureData.paddings.address,
+            ...(fetchedSignature.paddings?.address || {}),
+          },
+          separatorHorizontal: {
+            ...defaultSignatureData.paddings.separatorHorizontal,
+            ...(fetchedSignature.paddings?.separatorHorizontal || {}),
+          },
+          separatorVertical: {
+            ...defaultSignatureData.paddings.separatorVertical,
+            ...(fetchedSignature.paddings?.separatorVertical || {}),
+          },
+          logo: {
+            ...defaultSignatureData.paddings.logo,
+            ...(fetchedSignature.paddings?.logo || {}),
+          },
+          social: {
+            ...defaultSignatureData.paddings.social,
+            ...(fetchedSignature.paddings?.social || {}),
+          },
         },
         separators: {
           ...defaultSignatureData.separators,
@@ -551,8 +681,58 @@ function SignatureProviderContent({ children }) {
               ...(parsedData.spacings || {}),
             },
             paddings: {
-              ...defaultSignatureData.paddings,
-              ...(parsedData.paddings || {}),
+              photo: {
+                ...defaultSignatureData.paddings.photo,
+                ...(parsedData.paddings?.photo || {}),
+              },
+              name: {
+                ...defaultSignatureData.paddings.name,
+                ...(parsedData.paddings?.name || {}),
+              },
+              position: {
+                ...defaultSignatureData.paddings.position,
+                ...(parsedData.paddings?.position || {}),
+              },
+              company: {
+                ...defaultSignatureData.paddings.company,
+                ...(parsedData.paddings?.company || {}),
+              },
+              phone: {
+                ...defaultSignatureData.paddings.phone,
+                ...(parsedData.paddings?.phone || {}),
+              },
+              mobile: {
+                ...defaultSignatureData.paddings.mobile,
+                ...(parsedData.paddings?.mobile || {}),
+              },
+              email: {
+                ...defaultSignatureData.paddings.email,
+                ...(parsedData.paddings?.email || {}),
+              },
+              website: {
+                ...defaultSignatureData.paddings.website,
+                ...(parsedData.paddings?.website || {}),
+              },
+              address: {
+                ...defaultSignatureData.paddings.address,
+                ...(parsedData.paddings?.address || {}),
+              },
+              separatorHorizontal: {
+                ...defaultSignatureData.paddings.separatorHorizontal,
+                ...(parsedData.paddings?.separatorHorizontal || {}),
+              },
+              separatorVertical: {
+                ...defaultSignatureData.paddings.separatorVertical,
+                ...(parsedData.paddings?.separatorVertical || {}),
+              },
+              logo: {
+                ...defaultSignatureData.paddings.logo,
+                ...(parsedData.paddings?.logo || {}),
+              },
+              social: {
+                ...defaultSignatureData.paddings.social,
+                ...(parsedData.paddings?.social || {}),
+              },
             },
             verticalSeparator: {
               ...defaultSignatureData.verticalSeparator,
