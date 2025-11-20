@@ -34,6 +34,13 @@ export const CLIENT_ACTIVITY_FRAGMENT = gql`
     userId
     userName
     userImage
+    metadata {
+      documentType
+      documentId
+      documentNumber
+      status
+      originalInvoiceNumber
+    }
     createdAt
   }
 `;

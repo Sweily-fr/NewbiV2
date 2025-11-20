@@ -149,6 +149,7 @@ const ClientActivity = ({
       invoice_status_changed: "📄",
       quote_created: "📋",
       quote_status_changed: "📋",
+      credit_note_created: "📄",
       note_added: "💬",
       note_updated: "✏️",
       note_deleted: "🗑️",
@@ -383,40 +384,52 @@ const ClientActivity = ({
                                       {formatDate(item.createdAt)}
                                     </span>
                                   </div>
-                                  {display.metadata && (display.metadata.documentType === 'invoice' || display.metadata.documentType === 'quote') && (
+                                  {display.metadata && (display.metadata.documentType === 'invoice' || display.metadata.documentType === 'quote' || display.metadata.documentType === 'creditNote') && (
                                     <div className="mt-2 p-2 bg-muted/50 rounded-md border border-border max-w-md">
                                       <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
                                           <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                           <div className="flex flex-col">
                                             <span className="text-xs font-medium">
-                                              {display.metadata.documentType === 'invoice' ? 'Facture' : 'Devis'} {display.metadata.documentNumber}
+                                              {display.metadata.documentType === 'invoice' && `Facture ${display.metadata.documentNumber}`}
+                                              {display.metadata.documentType === 'quote' && `Devis ${display.metadata.documentNumber}`}
+                                              {display.metadata.documentType === 'creditNote' && `Avoir ${display.metadata.documentNumber}`}
                                             </span>
                                             <span className="text-xs text-muted-foreground">
-                                              {display.metadata.status === 'DRAFT' && 'Brouillon'}
-                                              {display.metadata.status === 'PENDING' && (display.metadata.documentType === 'invoice' ? 'En attente' : 'En attente')}
-                                              {display.metadata.status === 'COMPLETED' && (display.metadata.documentType === 'invoice' ? 'Payée' : 'Accepté')}
-                                              {display.metadata.status === 'CANCELED' && (display.metadata.documentType === 'invoice' ? 'Annulée' : 'Refusé')}
+                                              {display.metadata.documentType === 'creditNote' && display.metadata.originalInvoiceNumber && (
+                                                `En référence à la facture ${display.metadata.originalInvoiceNumber}`
+                                              )}
+                                              {display.metadata.documentType !== 'creditNote' && (
+                                                <>
+                                                  {display.metadata.status === 'DRAFT' && 'Brouillon'}
+                                                  {display.metadata.status === 'PENDING' && (display.metadata.documentType === 'invoice' ? 'En attente' : 'En attente')}
+                                                  {display.metadata.status === 'COMPLETED' && (display.metadata.documentType === 'invoice' ? 'Payée' : 'Accepté')}
+                                                  {display.metadata.status === 'CANCELED' && (display.metadata.documentType === 'invoice' ? 'Annulée' : 'Refusé')}
+                                                </>
+                                              )}
                                             </span>
                                           </div>
                                         </div>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className="h-7 px-2 text-xs hover:bg-transparent flex-shrink-0"
-                                          style={{ color: '#5b50FF' }}
-                                          onClick={() => {
-                                            const docType = display.metadata.documentType;
-                                            const docId = display.metadata.documentId;
-                                            const path = docType === 'invoice' 
-                                              ? `/dashboard/outils/factures?id=${docId}` 
-                                              : `/dashboard/outils/devis?id=${docId}`;
-                                            window.location.href = path;
-                                          }}
-                                        >
-                                          <ExternalLink className="h-3 w-3 mr-1" />
-                                          {display.metadata.documentType === 'invoice' ? 'Voir la facture' : 'Voir le devis'}
-                                        </Button>
+                                        {/* Bouton "Voir" uniquement pour les factures et devis, pas pour les avoirs */}
+                                        {display.metadata.documentType !== 'creditNote' && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 px-2 text-xs hover:bg-transparent flex-shrink-0"
+                                            style={{ color: '#5b50FF' }}
+                                            onClick={() => {
+                                              const docType = display.metadata.documentType;
+                                              const docId = display.metadata.documentId;
+                                              const path = docType === 'invoice' 
+                                                ? `/dashboard/outils/factures?id=${docId}` 
+                                                : `/dashboard/outils/devis?id=${docId}`;
+                                              window.location.href = path;
+                                            }}
+                                          >
+                                            <ExternalLink className="h-3 w-3 mr-1" />
+                                            {display.metadata.documentType === 'invoice' ? 'Voir la facture' : 'Voir le devis'}
+                                          </Button>
+                                        )}
                                       </div>
                                     </div>
                                   )}
