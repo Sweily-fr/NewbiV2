@@ -359,7 +359,7 @@ function SignatureProviderContent({ children }) {
         },
       },
       // Épaisseur des séparateurs (en pixels) - DEPRECATED, utiliser separators
-      separatorVerticalWidth: 4, // Épaisseur du séparateur vertical (entre colonnes) - DEPRECATED
+      separatorVerticalWidth: 1, // Épaisseur du séparateur vertical (entre colonnes) - DEPRECATED
       separatorHorizontalWidth: 1, // Épaisseur du séparateur horizontal (sous l'adresse)
       // Taille du logo entreprise (en pixels)
       logoSize: 60, // Taille par défaut du logo
