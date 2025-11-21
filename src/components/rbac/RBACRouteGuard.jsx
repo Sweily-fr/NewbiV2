@@ -188,9 +188,9 @@ export function RoleRouteGuard({
         <div className="flex items-center justify-center h-screen">
           <div className="text-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            <p className="text-sm text-muted-foreground">
+            {/* <p className="text-sm text-muted-foreground">
               Vérification du rôle...
-            </p>
+            </p> */}
           </div>
         </div>
       )

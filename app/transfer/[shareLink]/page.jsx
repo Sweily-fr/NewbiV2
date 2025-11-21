@@ -228,9 +228,10 @@ export default function TransferPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        // Plusieurs fichiers : utiliser l'endpoint ZIP existant avec vérification
+        // Plusieurs fichiers : utiliser la route API Next.js pour créer un ZIP
+        const fileIds = authData.downloads.map((d) => d.fileId).join(",");
         const response = await fetch(
-          `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}`
+          `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}&transferId=${transfer?.fileTransfer?.id}&fileIds=${fileIds}`
         );
 
         if (!response.ok) {
@@ -253,7 +254,7 @@ export default function TransferPage() {
       for (const downloadInfo of authData.downloads) {
         if (downloadInfo.downloadEventId) {
           await fetch(
-            `${apiUrl}/api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
+            `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
             {
               method: "POST",
               headers: {
@@ -374,7 +375,7 @@ export default function TransferPage() {
         )}
         <div className="mx-auto w-full max-w-xl lg:max-w-xl flex flex-col max-h-[90vh] lg:max-h-[85vh]">
           <div className="mb-8">
-            <h1 className="text-xl font-medium mb-2">
+            <h1 className="text-2xl font-medium mb-2">
               Téléchargez les fichiers partagés avec vous
             </h1>
             <p className="text-sm text-gray-600">
@@ -391,7 +392,7 @@ export default function TransferPage() {
                   className="bg-[#5b4fff]/20 border-[#5b4fff]/70"
                   variant={isExpired ? "destructive" : "default"}
                 >
-                  <span className="text-[#5b4fff]/90">
+                  <span className="text-[#5b4fff]/90 font-normal">
                     {isExpired ? "Expiré" : "Actif"}
                   </span>
                 </Badge>
@@ -449,7 +450,7 @@ export default function TransferPage() {
                       </p>
                     </div>
                     <Button
-                      className="cursor-pointer bg-[#5b4fff]/80 hover:bg-[#5b4fff]/90"
+                      className="cursor-pointer bg-[#5b4fff] hover:bg-[#5b4fff]/90"
                       onClick={() =>
                         initiatePayment(transfer?.fileTransfer?.id)
                       }
@@ -483,7 +484,7 @@ export default function TransferPage() {
                           transfer?.fileTransfer?.paymentAmount > 0)) &&
                         !transfer?.fileTransfer?.isPaid)
                     }
-                    className="font-normal cursor-pointer bg-[#5b4fff]/80 border-[#5b4fff]/80 hover:bg-[#5b4fff]/90 disabled:opacity-50 disabled:cursor-not-allowed w-full lg:w-auto"
+                    className="font-normal cursor-pointer bg-[#5b4fff] border-[#5b4fff]/80 hover:bg-[#5b4fff]/90 disabled:opacity-50 disabled:cursor-not-allowed w-full lg:w-auto"
                   >
                     {isDownloading ? "Téléchargement..." : "Tout télécharger"}
                     <Download size={16} />
@@ -618,9 +619,9 @@ export default function TransferPage() {
                     "Partagez facilement avec vos collaborateurs.",
                     "Accédez à vos documents où que vous soyez.",
                   ]}
-                  speed={30}
-                  deleteSpeed={30}
-                  delay={2000}
+                  speed={20}
+                  deleteSpeed={15}
+                  delay={800}
                   loop={true}
                   className="font-medium text-left text-[#1C1C1C] text-[15px]"
                 />

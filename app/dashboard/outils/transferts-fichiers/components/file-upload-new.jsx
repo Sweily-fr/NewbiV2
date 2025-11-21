@@ -21,6 +21,10 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
+import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/src/components/ui/button-group";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import CircularProgress from "@/src/components/ui/circular-progress";
@@ -40,6 +44,7 @@ import {
   IconShield,
   IconSend,
   IconCreditCard,
+  IconPlus,
 } from "@tabler/icons-react";
 
 // Format bytes utility function
@@ -444,7 +449,7 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
     >
       {/* Upload Section */}
       <div
-        className={`flex flex-col gap-2 ${selectedFiles.length > 0 ? "lg:sticky lg:top-6 lg:self-start lg:max-h-screen lg:overflow-y-auto" : ""}`}
+        className={`flex flex-col gap-2 ${selectedFiles.length > 0 ? "lg:sticky lg:top-6 lg:self-start" : ""}`}
       >
         {/* Drop area ou Progress */}
         {isUploading ? (
@@ -549,49 +554,52 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
 
         {/* File list */}
         {selectedFiles.length > 0 && (
-          <div className="space-y-2">
-            {selectedFiles.map((fileItem) => (
-              <div
-                key={fileItem.id}
-                className="bg-background flex items-center justify-between gap-2 rounded-lg border p-2 pe-3"
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="flex aspect-square size-10 bg-gray-100 shrink-0 items-center justify-center rounded border">
-                    {getFileIcon(fileItem.file)}
+          <div className="relative flex flex-col">
+            {/* Liste des fichiers avec scroll - Max 3 fichiers visibles */}
+            <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+              {selectedFiles.map((fileItem) => (
+                <div
+                  key={fileItem.id}
+                  className="bg-background flex items-center justify-between gap-2 rounded-lg border p-2 pe-3"
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="flex aspect-square size-10 bg-gray-100 shrink-0 items-center justify-center rounded border">
+                      {getFileIcon(fileItem.file)}
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <p className="truncate text-[13px] font-normal">
+                        {fileItem.file.name}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {formatFileSize(fileItem.file.size)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    <p className="truncate text-[13px] font-normal">
-                      {fileItem.file.name}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {formatFileSize(fileItem.file.size)}
-                    </p>
-                  </div>
+
+                  {!isUploading && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-muted-foreground/80 hover:text-foreground -me-2 size-8 hover:bg-transparent"
+                      onClick={() => removeFile(fileItem.id)}
+                      aria-label="Remove file"
+                    >
+                      <XIcon className="size-4" aria-hidden="true" />
+                    </Button>
+                  )}
                 </div>
+              ))}
+            </div>
 
-                {!isUploading && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="text-muted-foreground/80 hover:text-foreground -me-2 size-8 hover:bg-transparent"
-                    onClick={() => removeFile(fileItem.id)}
-                    aria-label="Remove file"
-                  >
-                    <XIcon className="size-4" aria-hidden="true" />
-                  </Button>
-                )}
-              </div>
-            ))}
-
-            {/* Remove all files button */}
+            {/* Remove all files button - Fixé en bas */}
             {selectedFiles.length > 1 && !isUploading && (
-              <div>
+              <div className="sticky bottom-0 mt-3 pt-3 pb-4 bg-background border-t">
                 <Button
-                  className="font-normal cursor-pointer"
-                  variant="destructive"
+                  className="font-normal cursor-pointer w-full bg-red-500 hover:bg-red-600"
+                  // variant="destructive"
                   onClick={clearFiles}
                 >
-                  Supprimer tous les fichiers
+                  Supprimer tous les fichiers ({selectedFiles.length})
                 </Button>
               </div>
             )}
@@ -827,23 +835,31 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
 
           {/* Create Transfer Button - Bottom Right */}
           <div className="flex justify-end pt-4">
-            <Button
-              onClick={handleCreateTransfer}
-              disabled={isUploading}
-              className="flex items-center gap-2 font-normal cursor-pointer"
-            >
-              {isUploading ? (
-                <>
-                  <LoaderCircle className="size-4 animate-spin" />
-                  Création en cours...
-                </>
-              ) : (
-                <>
-                  <IconSend className="size-4" />
-                  Créer le transfert
-                </>
-              )}
-            </Button>
+            <ButtonGroup>
+              <Button
+                onClick={handleCreateTransfer}
+                disabled={isUploading}
+                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                {isUploading ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin" />
+                    Création en cours...
+                  </>
+                ) : (
+                  <>Transferer</>
+                )}
+              </Button>
+              <ButtonGroupSeparator />
+              <Button
+                onClick={handleCreateTransfer}
+                disabled={isUploading}
+                size="icon"
+                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                <IconSend size={16} aria-hidden="true" />
+              </Button>
+            </ButtonGroup>
           </div>
         </div>
       )}
@@ -864,7 +880,7 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
       <SettingsModal
         open={settingsModalOpen}
         onOpenChange={setSettingsModalOpen}
-        initialTab="securite"
+        initialTab="user-info"
       />
     </div>
   );
