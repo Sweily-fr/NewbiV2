@@ -69,8 +69,8 @@ export async function subscriptionMiddleware(request) {
     const createdAt = new Date(user.createdAt);
     const daysSinceCreation = (now - createdAt) / (1000 * 60 * 60 * 24);
 
-    // Vérifier si l'utilisateur est en période d'essai (14 jours)
-    const isInTrial = daysSinceCreation <= 14;
+    // Vérifier si l'utilisateur est en période d'essai (180 jours - 6 mois)
+    const isInTrial = daysSinceCreation <= 180;
 
     if (isInTrial) {
       // L'utilisateur est encore en période d'essai, autoriser l'accès

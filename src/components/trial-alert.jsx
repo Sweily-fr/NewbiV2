@@ -29,10 +29,10 @@ export function TrialAlert() {
     const createdAt = new Date(session.user.createdAt);
     const now = new Date();
     const daysSinceCreation = (now - createdAt) / (1000 * 60 * 60 * 24);
-    const trialDaysRemaining = Math.max(0, Math.ceil(14 - daysSinceCreation));
+    const trialDaysRemaining = Math.max(0, Math.ceil(180 - daysSinceCreation));
     
-    const isInTrial = daysSinceCreation <= 14 && !isActive();
-    const isTrialExpired = daysSinceCreation > 14 && !isActive();
+    const isInTrial = daysSinceCreation <= 180 && !isActive();
+    const isTrialExpired = daysSinceCreation > 180 && !isActive();
     
     return { isInTrial, isTrialExpired, trialDaysRemaining };
   };

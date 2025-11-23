@@ -88,9 +88,9 @@ export const auth = betterAuth({
               user.name || `Espace ${user.email.split("@")[0]}'s`;
             const organizationSlug = `org-${user.id.slice(-8)}`;
 
-            // Calculer les dates de trial (14 jours)
+            // Calculer les dates de trial (180 jours - 6 mois)
             const now = new Date();
-            const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+            const trialEnd = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
 
             // Créer l'organisation
             const orgResult = await mongoDb

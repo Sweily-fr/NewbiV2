@@ -38,10 +38,10 @@ export default function BillingSection() {
     const createdAt = new Date(session.user.createdAt);
     const now = new Date();
     const daysSinceCreation = (now - createdAt) / (1000 * 60 * 60 * 24);
-    const trialDaysRemaining = Math.max(0, Math.ceil(14 - daysSinceCreation));
+    const trialDaysRemaining = Math.max(0, Math.ceil(180 - daysSinceCreation));
 
-    const isInTrial = daysSinceCreation <= 14 && !isActive();
-    const isTrialExpired = daysSinceCreation > 14 && !isActive();
+    const isInTrial = daysSinceCreation <= 180 && !isActive();
+    const isTrialExpired = daysSinceCreation > 180 && !isActive();
 
     return { isInTrial, isTrialExpired, trialDaysRemaining };
   };
@@ -179,7 +179,7 @@ export default function BillingSection() {
                     Période d'essai gratuit
                   </h3>
                   <p className="text-sm text-blue-700">
-                    {trialDaysRemaining} jour(s) restant(s) sur 14
+                    {trialDaysRemaining} jour(s) restant(s) sur 180
                   </p>
                 </div>
                 <div className="text-right">
@@ -261,7 +261,7 @@ export default function BillingSection() {
               </div>
               {(isInTrial || hasActiveSubscription) && (
                 <div className="text-sm text-muted-foreground">
-                  {isInTrial ? "pendant 14 jours" : "par mois"}
+                  {isInTrial ? "pendant 6 mois" : "par mois"}
                 </div>
               )}
             </div>
