@@ -1,5 +1,6 @@
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/src/components/theme-provider";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
@@ -119,8 +120,12 @@ export default function RootLayout({ children }) {
             `,
           }}
         />
+      </head>
+      <body className="font-sans antialiased">
         {/* TikTok Pixel Code */}
-        <script
+        <Script
+          id="tiktok-pixel"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               !function (w, d, t) {
@@ -134,8 +139,6 @@ export default function RootLayout({ children }) {
             `,
           }}
         />
-      </head>
-      <body className="font-sans antialiased">
         <ApolloWrapper>
           <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
             {children}
