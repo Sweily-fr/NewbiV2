@@ -3,47 +3,53 @@ import { MinusIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 
 export const QuantityInput = React.forwardRef(
-  ({ value, onChange, onBlur, disabled = false, min = 1, max, name, ...props }, ref) => {
-    const [displayValue, setDisplayValue] = useState('1');
+  ({ value, onChange, onBlur, disabled = false, min = 0.5, max, name, step = 0.5, ...props }, ref) => {
+    const [displayValue, setDisplayValue] = useState('0.5');
 
     useEffect(() => {
       if (value !== undefined && value !== null && value !== '') {
         setDisplayValue(String(value));
       } else {
-        setDisplayValue('1');
+        setDisplayValue('0.5');
       }
     }, [value]);
 
-    const currentValue = displayValue !== '' ? parseInt(displayValue) || 1 : 1;
+    const currentValue = displayValue !== '' ? parseFloat(displayValue) || 0.5 : 0.5;
 
     const handleDecrement = () => {
-      const current = parseInt(displayValue) || 1;
-      const newValue = Math.max(1, current - 1);
-      setDisplayValue(newValue.toString());
+      const current = parseFloat(displayValue) || 0.5;
+      const newValue = Math.max(0.5, current - step);
+      // Arrondir à 2 décimales pour éviter les problèmes de précision
+      const roundedValue = Math.round(newValue * 100) / 100;
+      setDisplayValue(roundedValue.toString());
       if (onChange) {
-        onChange({ target: { name, value: newValue.toString() } });
+        onChange({ target: { name, value: roundedValue.toString() } });
       }
     };
 
     const handleIncrement = () => {
-      const current = parseInt(displayValue) || 1;
-      const newValue = max ? Math.min(max, current + 1) : current + 1;
-      setDisplayValue(newValue.toString());
+      const current = parseFloat(displayValue) || 0.5;
+      const newValue = max ? Math.min(max, current + step) : current + step;
+      // Arrondir à 2 décimales pour éviter les problèmes de précision
+      const roundedValue = Math.round(newValue * 100) / 100;
+      setDisplayValue(roundedValue.toString());
       if (onChange) {
-        onChange({ target: { name, value: newValue.toString() } });
+        onChange({ target: { name, value: roundedValue.toString() } });
       }
     };
 
     const handleInputChange = (e) => {
       const inputValue = e.target.value;
-      // Accepter uniquement les chiffres entiers >= 1
-      if (inputValue === '' || /^\d+$/.test(inputValue)) {
-        const numValue = inputValue === '' ? 1 : parseInt(inputValue);
-        // Minimum 1
-        if (numValue >= 1 || inputValue === '') {
-          setDisplayValue(inputValue === '' ? '1' : inputValue);
-          if (onChange) {
-            onChange({ target: { name, value: inputValue === '' ? '1' : inputValue } });
+      // Accepter les nombres décimaux avec point ou virgule
+      if (inputValue === '' || /^\d*[.,]?\d*$/.test(inputValue)) {
+        // Remplacer la virgule par un point pour la cohérence
+        const normalizedValue = inputValue.replace(',', '.');
+        const numValue = normalizedValue === '' ? 0.5 : parseFloat(normalizedValue);
+        // Minimum 0.5
+        if (numValue >= 0.5 || inputValue === '' || normalizedValue.endsWith('.')) {
+          setDisplayValue(normalizedValue === '' ? '0.5' : normalizedValue);
+          if (onChange && normalizedValue !== '' && !normalizedValue.endsWith('.')) {
+            onChange({ target: { name, value: normalizedValue === '' ? '0.5' : normalizedValue } });
           }
         }
       }
