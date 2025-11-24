@@ -156,7 +156,7 @@ const HeroHeader = ({ className }) => {
         {/* Desktop navbar */}
         <div
           className={cn(
-            "hidden lg:block mx-auto mt-16 bg-[#fff] rounded-2xl shadow-xs max-w-4xl px-2 transition-all duration-300 lg:px-3",
+            "hidden lg:block mx-auto mt-17 bg-[#fff] rounded-2xl shadow-xs max-w-4xl px-2 transition-all duration-300 lg:px-3",
             isScrolled &&
               "mt-2 bg-background/50 backdrop-blur-lg border max-w-3xl"
           )}
