@@ -640,7 +640,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
             </div>
           </div>
 
-          {/* Informations client - Toujours au centre (colonne 2) */}
+          {/* Informations client - Position conditionnelle selon clientPositionRight */}
           {(data.client?.name ||
             data.client?.firstName ||
             data.client?.lastName ||
@@ -649,7 +649,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
             data.client?.phone ||
             data.client?.siret ||
             data.client?.vatNumber) && (
-            <div>
+            <div className={data.clientPositionRight ? "col-start-3" : ""}>
               <div
                 className="font-medium mb-2 dark:text-[#0A0A0A]"
                 style={{ fontSize: "10px" }}
