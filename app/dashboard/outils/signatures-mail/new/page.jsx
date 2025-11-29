@@ -1184,7 +1184,7 @@ const generateHorizontalHTML = (
 
   // Bloc photo + nom + poste
   const leftColumn = `
-    <td style="vertical-align:top;padding-right:8px">
+    <td style="padding-right:8px">
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
         <tbody>
 
