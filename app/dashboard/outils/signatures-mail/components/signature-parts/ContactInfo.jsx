@@ -120,6 +120,8 @@ const ContactInfo = ({
                       fontFamily:
                         typography[field]?.fontFamily || fontFamily,
                       fontWeight: typography[field]?.fontWeight || "normal",
+                      fontStyle: typography[field]?.fontStyle || "normal",
+                      textDecoration: typography[field]?.textDecoration || "none",
                       ...(field === "address" && { whiteSpace: "pre-wrap" }),
                     }}
                   />

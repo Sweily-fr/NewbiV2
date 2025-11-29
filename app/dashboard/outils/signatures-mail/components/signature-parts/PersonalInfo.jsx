@@ -65,6 +65,8 @@ const PersonalInfo = ({
                 color: typography.fullName?.color || primaryColor,
                 fontFamily: typography.fullName?.fontFamily || fontFamily,
                 fontWeight: typography.fullName?.fontWeight || "normal",
+                fontStyle: typography.fullName?.fontStyle || "normal",
+                textDecoration: typography.fullName?.textDecoration || "none",
               }}
             />
           </div>
@@ -105,6 +107,8 @@ const PersonalInfo = ({
                 fontSize: `${typography.position?.fontSize || fontSize.position || 14}px`,
                 fontFamily: typography.position?.fontFamily || fontFamily,
                 fontWeight: typography.position?.fontWeight || "normal",
+                fontStyle: typography.position?.fontStyle || "normal",
+                textDecoration: typography.position?.textDecoration || "none",
               }}
             />
           </td>
@@ -141,6 +145,8 @@ const PersonalInfo = ({
                 fontSize: `${typography.company?.fontSize || fontSize.company || 14}px`,
                 fontFamily: typography.company?.fontFamily || fontFamily,
                 fontWeight: typography.company?.fontWeight || "bold",
+                fontStyle: typography.company?.fontStyle || "normal",
+                textDecoration: typography.company?.textDecoration || "none",
               }}
             />
           </td>
