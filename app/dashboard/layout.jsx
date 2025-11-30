@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppSidebar } from "@/src/components/app-sidebar";
 import { CommunitySidebar } from "@/src/components/community-sidebar";
@@ -161,7 +161,9 @@ function DashboardContent({ children }) {
       <SubscriptionSuccessModal />
 
       {/* Gestionnaire d'activation d'organisation après création */}
-      <OrgActivationHandler />
+      <Suspense fallback={null}>
+        <OrgActivationHandler />
+      </Suspense>
 
       {/* Modal de paramètres avec notifications */}
       <SettingsModal
