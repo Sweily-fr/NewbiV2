@@ -17,7 +17,7 @@ export default function Home() {
     <>
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
-      <div className="bg-[#FDFDFD] overflow-x-hidden">
+      <div className="bg-[#FDFDFD]">
         <HeroSection />
         <FeatureGrid />
         <BusinessAgility />

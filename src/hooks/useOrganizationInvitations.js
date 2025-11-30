@@ -16,7 +16,7 @@ export const useOrganizationInvitations = () => {
   // Better Auth gère déjà la persistance de l'organisation active dans la session
   // Ce useEffect causait un bug : il réinitialisait toujours à la première organisation
   // après chaque rechargement de page
-  
+
   // useEffect(() => {
   //   const setActiveOrg = async () => {
   //     if (
@@ -67,6 +67,37 @@ export const useOrganizationInvitations = () => {
 
         if (!userOrg) {
           throw new Error("Aucune organisation trouvée pour cet utilisateur");
+        }
+
+        // ✅ NOUVEAU : Vérifier les limites d'utilisateurs selon le plan
+        if (role !== "accountant") {
+          try {
+            const response = await fetch("/api/billing/check-user-limit", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ organizationId: userOrg.id }),
+            });
+
+            const result = await response.json();
+
+            if (!result.canAdd) {
+              toast.error(
+                result.reason ||
+                  `Limite d'utilisateurs atteinte pour votre plan. Passez à un plan supérieur pour inviter plus de collaborateurs.`
+              );
+              return { success: false, error: result.reason };
+            }
+
+            console.log(
+              `✅ Limite vérifiée: ${result.currentCount}/${result.limit} utilisateurs`
+            );
+          } catch (limitError) {
+            console.error(
+              "⚠️ Erreur vérification limite (non-bloquant):",
+              limitError
+            );
+            // Continuer quand même si la vérification échoue
+          }
         }
 
         // Validation spéciale pour les comptables
@@ -329,6 +360,7 @@ export const useOrganizationInvitations = () => {
         }
 
         // Utiliser getFullOrganization pour récupérer membres et invitations
+        console.log(`🔍 getAllCollaborators - Demande pour orgId: ${orgId}`);
         const { data: fullOrg, error } = await organization.getFullOrganization(
           {
             organizationId: orgId,
@@ -337,15 +369,20 @@ export const useOrganizationInvitations = () => {
         );
 
         if (error) {
+          console.error(`❌ Erreur getFullOrganization:`, error);
           return { success: false, error };
         }
+
+        console.log(
+          `📋 Organisation récupérée: ${fullOrg?.name} (ID: ${fullOrg?.id})`
+        );
 
         // Récupérer TOUS les membres (y compris les owners)
         const allMembers = fullOrg?.members || [];
         const invitations = fullOrg?.invitations || [];
 
         console.log(
-          "📊 getAllCollaborators - Membres:",
+          `📊 getAllCollaborators pour "${fullOrg?.name}" - Membres:`,
           allMembers.length
         );
         console.log(
@@ -361,10 +398,13 @@ export const useOrganizationInvitations = () => {
             user: m.user ? "présent" : "absent",
           }))
         );
-        
+
         // Log détaillé de la structure du premier membre
         if (allMembers.length > 0) {
-          console.log("🔍 Structure complète du premier membre:", JSON.stringify(allMembers[0], null, 2));
+          console.log(
+            "🔍 Structure complète du premier membre:",
+            JSON.stringify(allMembers[0], null, 2)
+          );
         }
         console.log(
           "📋 Détails invitations:",

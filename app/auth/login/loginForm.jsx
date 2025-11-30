@@ -16,17 +16,21 @@ import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
 const ensureActiveOrganization = async () => {
   try {
     console.log("🔍 [ENSURE ORG] Vérification de l'organisation active...");
-    
+
     // Vérifier s'il y a déjà une organisation active
     const { data: activeOrg } = await authClient.organization.getActive();
 
     if (activeOrg) {
-      console.log(`✅ [ENSURE ORG] Organisation active déjà définie: ${activeOrg.id}`);
+      console.log(
+        `✅ [ENSURE ORG] Organisation active déjà définie: ${activeOrg.id}`
+      );
       return;
     }
 
-    console.log("⚠️ [ENSURE ORG] Aucune organisation active, tentative de définition...");
-    
+    console.log(
+      "⚠️ [ENSURE ORG] Aucune organisation active, tentative de définition..."
+    );
+
     // Récupérer les organisations de l'utilisateur
     const { data: organizations, error: orgsError } =
       await authClient.organization.list();
@@ -39,7 +43,9 @@ const ensureActiveOrganization = async () => {
       return;
     }
 
-    console.log(`📊 [ENSURE ORG] ${organizations?.length || 0} organisation(s) trouvée(s)`);
+    console.log(
+      `📊 [ENSURE ORG] ${organizations?.length || 0} organisation(s) trouvée(s)`
+    );
 
     // Si pas d'organisation active et qu'il y a des organisations disponibles
     if (organizations && organizations.length > 0) {
@@ -47,43 +53,53 @@ const ensureActiveOrganization = async () => {
       // 1. Organisation où l'utilisateur est owner
       // 2. Organisation où l'utilisateur est admin
       // 3. Première organisation
-      
+
       let selectedOrg = null;
-      
+
       // Récupérer les détails de chaque organisation pour connaître le rôle
       for (const org of organizations) {
         try {
-          const { data: fullOrg } = await authClient.organization.getFullOrganization({
-            organizationId: org.id,
-          });
-          
+          const { data: fullOrg } =
+            await authClient.organization.getFullOrganization({
+              organizationId: org.id,
+            });
+
           if (fullOrg) {
             // Trouver le membre correspondant à l'utilisateur actuel
             const { data: session } = await authClient.getSession();
             const currentUserMember = fullOrg.members?.find(
-              m => m.userId === session?.user?.id
+              (m) => m.userId === session?.user?.id
             );
-            
+
             if (currentUserMember?.role === "owner") {
               selectedOrg = org;
-              console.log(`✅ [ENSURE ORG] Organisation owner trouvée: ${org.id}`);
+              console.log(
+                `✅ [ENSURE ORG] Organisation owner trouvée: ${org.id}`
+              );
               break; // Priorité maximale, on arrête la recherche
             } else if (currentUserMember?.role === "admin" && !selectedOrg) {
               selectedOrg = org;
-              console.log(`✅ [ENSURE ORG] Organisation admin trouvée: ${org.id}`);
+              console.log(
+                `✅ [ENSURE ORG] Organisation admin trouvée: ${org.id}`
+              );
             }
           }
         } catch (error) {
-          console.warn(`⚠️ [ENSURE ORG] Erreur récupération org ${org.id}:`, error);
+          console.warn(
+            `⚠️ [ENSURE ORG] Erreur récupération org ${org.id}:`,
+            error
+          );
         }
       }
-      
+
       // Si aucune organisation owner/admin trouvée, prendre la première
       if (!selectedOrg) {
         selectedOrg = organizations[0];
-        console.log(`✅ [ENSURE ORG] Première organisation sélectionnée: ${selectedOrg.id}`);
+        console.log(
+          `✅ [ENSURE ORG] Première organisation sélectionnée: ${selectedOrg.id}`
+        );
       }
-      
+
       const { error: setActiveError } = await authClient.organization.setActive(
         {
           organizationId: selectedOrg.id,
@@ -96,10 +112,14 @@ const ensureActiveOrganization = async () => {
           setActiveError
         );
       } else {
-        console.log(`✅ [ENSURE ORG] Organisation active définie avec succès: ${selectedOrg.id}`);
+        console.log(
+          `✅ [ENSURE ORG] Organisation active définie avec succès: ${selectedOrg.id}`
+        );
       }
     } else {
-      console.log("⚠️ [ENSURE ORG] Aucune organisation trouvée, création d'une nouvelle...");
+      console.log(
+        "⚠️ [ENSURE ORG] Aucune organisation trouvée, création d'une nouvelle..."
+      );
       try {
         // Récupérer l'utilisateur actuel depuis la session
         const { data: session } = await authClient.getSession();
@@ -192,7 +212,9 @@ const LoginForm = () => {
         // Vérifier si l'utilisateur doit passer par la 2FA
         if (ctx.data.twoFactorRedirect) {
           console.log("🔒 [LOGIN] Redirection 2FA détectée");
-          console.log("🔒 [LOGIN] Better Auth va rediriger vers /auth/verify-2fa");
+          console.log(
+            "🔒 [LOGIN] Better Auth va rediriger vers /auth/verify-2fa"
+          );
           // ✅ Better Auth gère automatiquement la redirection via onTwoFactorRedirect
           // Pas besoin d'envoyer d'OTP ici car :
           // - Pour TOTP (authenticator app) : pas besoin d'OTP, l'utilisateur utilise son app
@@ -255,7 +277,10 @@ const LoginForm = () => {
           // Continuer la connexion même en cas d'erreur
         }
 
-        toast.success("Connexion réussie");
+        // Ne pas afficher la notification si l'utilisateur n'a pas terminé l'onboarding
+        if (ctx.data.user?.hasSeenOnboarding) {
+          toast.success("Connexion réussie");
+        }
 
         // Définir l'organisation active après la connexion
         await ensureActiveOrganization();
@@ -370,9 +395,21 @@ const LoginForm = () => {
         if (callbackUrl) {
           router.push(callbackUrl);
         } else {
-          // Vérifier si l'utilisateur a un plan Pro et sa page de démarrage préférée
+          // Vérifier si l'utilisateur a complété l'onboarding
           try {
             const { data: session } = await authClient.getSession();
+            const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
+
+            // Si l'utilisateur n'a pas vu l'onboarding, le rediriger
+            if (!hasSeenOnboarding) {
+              console.log(
+                "🎯 [LOGIN] Première connexion, redirection vers onboarding"
+              );
+              router.push("/onboarding");
+              return;
+            }
+
+            // Sinon, continuer avec la logique normale
             const organizationId = session?.session?.activeOrganizationId;
             const userRedirectPage = session?.user?.redirect_after_login;
 
@@ -553,7 +590,10 @@ const LoginForm = () => {
         return false;
       }
 
-      toast.success("Connexion réussie");
+      // Ne pas afficher la notification si l'utilisateur n'a pas terminé l'onboarding
+      if (data?.user?.hasSeenOnboarding) {
+        toast.success("Connexion réussie");
+      }
 
       // Définir l'organisation active après la vérification 2FA
       await ensureActiveOrganization();
@@ -592,9 +632,21 @@ const LoginForm = () => {
       if (callbackUrl) {
         router.push(callbackUrl);
       } else {
-        // Vérifier si l'utilisateur a un plan Pro et sa page de démarrage préférée
+        // Vérifier si l'utilisateur a complété l'onboarding
         try {
           const { data: session } = await authClient.getSession();
+          const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
+
+          // Si l'utilisateur n'a pas vu l'onboarding, le rediriger
+          if (!hasSeenOnboarding) {
+            console.log(
+              "🎯 [2FA] Première connexion, redirection vers onboarding"
+            );
+            router.push("/onboarding");
+            return;
+          }
+
+          // Sinon, continuer avec la logique normale
           const organizationId = session?.session?.activeOrganizationId;
           const userRedirectPage = session?.user?.redirect_after_login;
 

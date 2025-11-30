@@ -23,6 +23,7 @@ import { useSessionValidator } from "@/src/hooks/useSessionValidator";
 import { authClient } from "@/src/lib/auth-client";
 import { SubscriptionSuccessModal } from "@/src/components/subscription-success-modal";
 import { SettingsModal } from "@/src/components/settings-modal";
+import { OrgActivationHandler } from "@/src/components/org-activation-handler";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -159,6 +160,9 @@ function DashboardContent({ children }) {
       {/* Modal de succès d'abonnement */}
       <SubscriptionSuccessModal />
 
+      {/* Gestionnaire d'activation d'organisation après création */}
+      <OrgActivationHandler />
+
       {/* Modal de paramètres avec notifications */}
       <SettingsModal
         open={settingsModalOpen}
@@ -170,7 +174,11 @@ function DashboardContent({ children }) {
       {process.env.NODE_ENV === "development" && (
         <button
           onClick={() => {
-            window.history.pushState({}, "", "/dashboard?subscription_success=true&payment_success=true");
+            window.history.pushState(
+              {},
+              "",
+              "/dashboard?subscription_success=true&payment_success=true"
+            );
             window.location.reload();
           }}
           className="fixed bottom-4 right-4 z-50 bg-[#5b4fff] hover:bg-[#5b4fff]/90 text-white px-4 py-2 rounded-lg shadow-lg text-xs font-medium"

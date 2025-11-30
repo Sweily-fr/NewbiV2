@@ -154,13 +154,60 @@ export const stripePlugin = stripe({
     },
     plans: [
       {
-        name: "pro",
-        priceId: process.env.STRIPE_PRICE_ID_MONTH,
-        annualDiscountPriceId: process.env.STRIPE_PRICE_ID_YEARS,
+        name: "freelance",
+        priceId: process.env.STRIPE_FREELANCE_MONTHLY_PRICE_ID,
+        annualDiscountPriceId: process.env.STRIPE_FREELANCE_YEARLY_PRICE_ID,
         limits: {
-          projects: 100,
-          storage: 100,
-          invoices: 1000,
+          users: 1, // 1 seul utilisateur (pas de collaborateurs)
+          workspaces: 1, // 1 workspace inclus
+          projects: 50,
+          storage: 50,
+          invoices: 500,
+        },
+        metadata: {
+          displayName: "Pack Freelance",
+          monthlyPrice: 14.59,
+          annualPrice: 13.13, // -10% de réduction (14.59 * 12 * 0.90 / 12)
+          workspaceAddonPrice: 11.99,
+          description: "Pour les indépendants et freelances",
+        },
+      },
+      {
+        name: "pme",
+        priceId: process.env.STRIPE_PME_MONTHLY_PRICE_ID,
+        annualDiscountPriceId: process.env.STRIPE_PME_YEARLY_PRICE_ID,
+        limits: {
+          users: 10, // Jusqu'à 10 utilisateurs inclus
+          workspaces: 1, // 1 workspace inclus
+          projects: 200,
+          storage: 200,
+          invoices: 2000,
+        },
+        metadata: {
+          displayName: "Pack PME",
+          monthlyPrice: 48.99,
+          annualPrice: 44.09, // -10% de réduction (48.99 * 12 * 0.90 / 12)
+          workspaceAddonPrice: 11.99,
+          description: "Pour les petites et moyennes entreprises",
+        },
+      },
+      {
+        name: "entreprise",
+        priceId: process.env.STRIPE_ENTREPRISE_MONTHLY_PRICE_ID,
+        annualDiscountPriceId: process.env.STRIPE_ENTREPRISE_YEARLY_PRICE_ID,
+        limits: {
+          users: 25, // Jusqu'à 25 utilisateurs inclus
+          workspaces: 1, // 1 workspace inclus
+          projects: 500,
+          storage: 500,
+          invoices: 5000,
+        },
+        metadata: {
+          displayName: "Pack Entreprise",
+          monthlyPrice: 94.99,
+          annualPrice: 85.49, // -10% de réduction (94.99 * 12 * 0.90 / 12)
+          workspaceAddonPrice: 11.99,
+          description: "Pour les grandes équipes",
         },
       },
     ],
@@ -313,7 +360,8 @@ export const stripePlugin = stripe({
               });
 
               // Définir comme organisation active
-              await mongoDb
+              // ✅ FIX : Mettre à jour toutes les sessions de l'utilisateur
+              const updateResult = await mongoDb
                 .collection("session")
                 .updateMany(
                   { userId: userId },
@@ -322,6 +370,9 @@ export const stripePlugin = stripe({
 
               console.log(
                 `✅ [STRIPE WEBHOOK] Organisation créée: ${referenceId}`
+              );
+              console.log(
+                `✅ [STRIPE WEBHOOK] ${updateResult.modifiedCount} session(s) mise(s) à jour avec activeOrganizationId`
               );
 
               // ⚠️ IMPORTANT : Créer l'abonnement AVANT d'envoyer les invitations
@@ -339,8 +390,15 @@ export const stripePlugin = stripe({
                   });
 
                 if (!existingSub) {
+                  // Récupérer le nom du plan depuis les métadonnées
+                  const planName =
+                    subscription.metadata?.planName ||
+                    session.metadata?.planName ||
+                    "freelance";
+                  console.log(`📋 [STRIPE WEBHOOK] Plan détecté: ${planName}`);
+
                   const subscriptionData = {
-                    plan: "pro",
+                    plan: planName,
                     referenceId: referenceId,
                     stripeCustomerId: subscription.customer,
                     status: subscription.status,
@@ -419,9 +477,22 @@ export const stripePlugin = stripe({
                           // Envoyer les invitations en parallèle (plus rapide)
                           const { ObjectId } = await import("mongodb");
                           const invitationPromises = invitedEmailsList
-                            .filter((email) => email && email.trim())
-                            .map(async (email) => {
+                            .filter(
+                              (member) =>
+                                member && (member.email || member).trim()
+                            )
+                            .map(async (member) => {
                               try {
+                                // ✅ FIX : Supporter les objets {email, role} et les strings
+                                const memberEmail =
+                                  typeof member === "string"
+                                    ? member
+                                    : member.email;
+                                const memberRole =
+                                  typeof member === "string"
+                                    ? "member"
+                                    : member.role || "member";
+
                                 const expiresAt = new Date(
                                   Date.now() + 7 * 24 * 60 * 60 * 1000
                                 );
@@ -431,8 +502,8 @@ export const stripePlugin = stripe({
                                   .collection("invitation")
                                   .insertOne({
                                     organizationId: new ObjectId(referenceId), // ✅ Convertir en ObjectId
-                                    email: email.trim(),
-                                    role: "member",
+                                    email: memberEmail.trim(),
+                                    role: memberRole, // ✅ Utiliser le rôle du membre
                                     inviterId: new ObjectId(userId), // ✅ Convertir en ObjectId
                                     status: "pending",
                                     expiresAt: expiresAt,
@@ -447,8 +518,8 @@ export const stripePlugin = stripe({
 
                                 await sendOrganizationInvitationEmail({
                                   id: invitationId,
-                                  email: email.trim(),
-                                  role: "member",
+                                  email: memberEmail.trim(),
+                                  role: memberRole, // ✅ Utiliser le rôle du membre
                                   organization: {
                                     id: referenceId,
                                     name: org.name,
@@ -560,8 +631,12 @@ export const stripePlugin = stripe({
               // Récupérer les infos du price
               const priceData = subscription.items?.data?.[0]?.price;
 
+              // Récupérer le nom du plan depuis les métadonnées
+              const planName = subscription.metadata?.planName || "freelance";
+              console.log(`📋 [STRIPE WEBHOOK] Plan détecté: ${planName}`);
+
               const subscriptionData = {
-                plan: "pro", // ✅ Nom correct du champ Better Auth (pas "planName")
+                plan: planName, // ✅ Nom correct du champ Better Auth (pas "planName")
                 referenceId: referenceId,
                 stripeCustomerId: subscription.customer,
                 status: subscription.status,
@@ -591,6 +666,75 @@ export const stripePlugin = stripe({
               await mongoDb
                 .collection("subscription")
                 .insertOne(subscriptionData);
+
+              // Envoyer l'email de bienvenue
+              try {
+                const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+                const customer = await stripe.customers.retrieve(
+                  subscription.customer
+                );
+
+                const { sendSubscriptionCreatedEmail } = await import(
+                  "./auth-utils.js"
+                );
+
+                // Déterminer les fonctionnalités selon le plan
+                const planFeatures = {
+                  freelance: [
+                    "1 utilisateur inclus",
+                    "Facturation complète",
+                    "Gestion client et fournisseurs",
+                    "OCR des reçus",
+                    "Catalogue produits",
+                    "Rapports financiers",
+                  ],
+                  pme: [
+                    "10 utilisateurs inclus",
+                    "Toutes les fonctionnalités Freelance",
+                    "Connexion comptes bancaires",
+                    "Gestion de trésorerie",
+                    "Transfert de fichiers sécurisé",
+                    "Rapports avancés",
+                  ],
+                  entreprise: [
+                    "25 utilisateurs inclus",
+                    "Toutes les fonctionnalités PME",
+                    "Support prioritaire",
+                    "Sièges additionnels (7,49€/mois)",
+                    "Gestion multi-organisations",
+                    "API access",
+                  ],
+                };
+
+                // Déterminer le prix et l'intervalle
+                const isAnnual = priceData?.recurring?.interval === "year";
+                const priceMap = {
+                  freelance: { monthly: "14,59€/mois", annual: "13,13€/mois" },
+                  pme: { monthly: "48,99€/mois", annual: "44,09€/mois" },
+                  entreprise: { monthly: "94,99€/mois", annual: "85,49€/mois" },
+                };
+
+                await sendSubscriptionCreatedEmail({
+                  to: customer.email,
+                  customerName: customer.name || customer.email,
+                  plan: planName.toUpperCase(),
+                  price: isAnnual
+                    ? priceMap[planName]?.annual
+                    : priceMap[planName]?.monthly,
+                  billingInterval: isAnnual ? "Annuelle" : "Mensuelle",
+                  features: planFeatures[planName] || [],
+                });
+
+                console.log(
+                  `✅ [STRIPE WEBHOOK] Email de bienvenue envoyé à ${customer.email}`
+                );
+              } catch (emailError) {
+                console.error(
+                  `⚠️ [STRIPE WEBHOOK] Erreur envoi email bienvenue:`,
+                  emailError
+                );
+                // Ne pas bloquer la création d'abonnement si l'email échoue
+              }
             }
 
             console.log(
@@ -612,23 +756,35 @@ export const stripePlugin = stripe({
             // Import MongoDB directement
             const { mongoDb } = await import("./mongodb.js");
 
-            await mongoDb.collection("subscription").updateOne(
-              { stripeSubscriptionId: updatedSub.id },
-              {
-                $set: {
-                  status: updatedSub.status,
-                  currentPeriodStart: new Date(
-                    updatedSub.current_period_start * 1000
-                  ),
-                  currentPeriodEnd: new Date(
-                    updatedSub.current_period_end * 1000
-                  ),
-                  updatedAt: new Date(),
-                },
-              }
-            );
+            // ✅ NOUVEAU : Récupérer le plan depuis les métadonnées
+            const newPlan = updatedSub.metadata?.planName;
+
+            const updateData = {
+              status: updatedSub.status,
+              currentPeriodStart: new Date(
+                updatedSub.current_period_start * 1000
+              ),
+              currentPeriodEnd: new Date(updatedSub.current_period_end * 1000),
+              updatedAt: new Date(),
+            };
+
+            // ✅ NOUVEAU : Mettre à jour le plan si présent dans les métadonnées
+            if (newPlan) {
+              updateData.plan = newPlan;
+              console.log(
+                `📋 [STRIPE WEBHOOK] Changement de plan détecté: ${newPlan}`
+              );
+            }
+
+            await mongoDb
+              .collection("subscription")
+              .updateOne(
+                { stripeSubscriptionId: updatedSub.id },
+                { $set: updateData }
+              );
+
             console.log(
-              `✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès`
+              `✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès${newPlan ? ` (plan: ${newPlan})` : ""}`
             );
           } catch (error) {
             console.error(
@@ -636,6 +792,69 @@ export const stripePlugin = stripe({
               error
             );
             console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
+          }
+          break;
+
+        case "invoice.payment_failed":
+          const failedInvoice = event.data.object;
+
+          try {
+            // Import MongoDB directement
+            const { mongoDb } = await import("./mongodb.js");
+
+            // Mettre à jour le statut de l'abonnement
+            const updateResult = await mongoDb
+              .collection("subscription")
+              .updateOne(
+                { stripeSubscriptionId: failedInvoice.subscription },
+                {
+                  $set: {
+                    status: "past_due",
+                    paymentFailedAt: new Date(),
+                    updatedAt: new Date(),
+                  },
+                }
+              );
+
+            if (updateResult.modifiedCount > 0) {
+              console.log(
+                `⚠️ [STRIPE WEBHOOK] Paiement échoué pour l'abonnement: ${failedInvoice.subscription}`
+              );
+
+              // Récupérer les infos du client pour l'email
+              try {
+                const customer = await stripe.customers.retrieve(
+                  failedInvoice.customer
+                );
+
+                const amount = `${(failedInvoice.amount_due / 100).toFixed(2)}€`;
+                const invoiceUrl = failedInvoice.hosted_invoice_url;
+
+                // Envoyer l'email de relance
+                const { sendPaymentFailedEmail } = await import(
+                  "./auth-utils.js"
+                );
+
+                await sendPaymentFailedEmail({
+                  to: customer.email,
+                  customerName: customer.name || customer.email,
+                  amount,
+                  invoiceUrl,
+                });
+
+                console.log(
+                  `✅ [STRIPE WEBHOOK] Email de paiement échoué envoyé à ${customer.email}`
+                );
+              } catch (emailError) {
+                console.error(
+                  `❌ [STRIPE WEBHOOK] Erreur envoi email paiement échoué:`,
+                  emailError
+                );
+                // Ne pas bloquer le webhook si l'email échoue
+              }
+            }
+          } catch (error) {
+            console.error(`❌ [STRIPE WEBHOOK] Erreur paiement échoué:`, error);
           }
           break;
 
@@ -652,12 +871,103 @@ export const stripePlugin = stripe({
               },
             });
             console.log(`✅ [STRIPE WEBHOOK] Abonnement annulé avec succès`);
+
+            // Envoyer l'email de confirmation d'annulation
+            try {
+              const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+              const customer = await stripe.customers.retrieve(
+                deletedSub.customer
+              );
+
+              const { sendSubscriptionCancelledEmail } = await import(
+                "./auth-utils.js"
+              );
+
+              const planName = deletedSub.metadata?.planName || "FREELANCE";
+              const endDate = new Date(
+                deletedSub.current_period_end * 1000
+              ).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              });
+
+              await sendSubscriptionCancelledEmail({
+                to: customer.email,
+                customerName: customer.name || customer.email,
+                plan: planName.toUpperCase(),
+                endDate: endDate,
+              });
+
+              console.log(
+                `✅ [STRIPE WEBHOOK] Email d'annulation envoyé à ${customer.email}`
+              );
+            } catch (emailError) {
+              console.error(
+                `⚠️ [STRIPE WEBHOOK] Erreur envoi email annulation:`,
+                emailError
+              );
+              // Ne pas bloquer l'annulation si l'email échoue
+            }
           } catch (error) {
             console.error(
               `❌ [STRIPE WEBHOOK] Erreur annulation abonnement:`,
               error
             );
             console.error(`❌ [STRIPE WEBHOOK] Stack:`, error.stack);
+          }
+          break;
+
+        case "invoice.upcoming":
+          // Facture à venir (7 jours avant le renouvellement)
+          const upcomingInvoice = event.data.object;
+          console.log(
+            `📅 [STRIPE WEBHOOK] Facture à venir pour ${upcomingInvoice.customer}`
+          );
+
+          try {
+            const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+            const customer = await stripe.customers.retrieve(
+              upcomingInvoice.customer
+            );
+
+            // Récupérer l'abonnement
+            const subscription = await stripe.subscriptions.retrieve(
+              upcomingInvoice.subscription
+            );
+
+            const { sendRenewalReminderEmail } = await import(
+              "./auth-utils.js"
+            );
+
+            const planName = subscription.metadata?.planName || "FREELANCE";
+            const renewalDate = new Date(
+              subscription.current_period_end * 1000
+            ).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            });
+
+            // Formater le montant
+            const amount = `${(upcomingInvoice.amount_due / 100).toFixed(2)}€`;
+
+            await sendRenewalReminderEmail({
+              to: customer.email,
+              customerName: customer.name || customer.email,
+              plan: planName.toUpperCase(),
+              renewalDate: renewalDate,
+              amount: amount,
+            });
+
+            console.log(
+              `✅ [STRIPE WEBHOOK] Email de rappel renouvellement envoyé à ${customer.email}`
+            );
+          } catch (emailError) {
+            console.error(
+              `⚠️ [STRIPE WEBHOOK] Erreur envoi email rappel:`,
+              emailError
+            );
           }
           break;
 

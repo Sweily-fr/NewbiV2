@@ -133,7 +133,7 @@ const HeroHeader = ({ className }) => {
     <header className={className}>
       <nav
         data-state={menuState && "active"}
-        className="fixed z-20 w-full group"
+        className="fixed z-[100] w-full group"
       >
         {/* Mobile navbar */}
         <div className="lg:hidden bg-white border-b border-gray-200">
