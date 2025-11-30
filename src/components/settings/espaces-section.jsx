@@ -57,6 +57,7 @@ import {
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { Callout } from "@/src/components/ui/callout";
 import { Separator } from "@/src/components/ui/separator";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 export default function EspacesSection({ canManageOrgSettings = true }) {
   const [organizations, setOrganizations] = useState([]);
@@ -69,6 +70,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState(null);
+  const [orgMemberCounts, setOrgMemberCounts] = useState({});
 
   // Utiliser le hook pour les invitations
   const { getAllCollaborators, removeMember, cancelInvitation } =
@@ -77,13 +79,100 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   // Récupérer les organisations
   const { data: organizationsList } = authClient.useListOrganizations();
 
-  // Charger les organisations
+  // Charger les organisations et compter les membres
   useEffect(() => {
     if (organizationsList) {
       setOrganizations(organizationsList);
+
+      // Récupérer le nombre de membres pour chaque organisation
+      const fetchMemberCounts = async () => {
+        const counts = {};
+        for (const org of organizationsList) {
+          try {
+            console.log(
+              `🔍 Comptage pour l'organisation: ${org.name} (${org.id})`
+            );
+
+            // Appel API direct pour éviter le bug de Better Auth
+            const response = await fetch(
+              `/api/organizations/${org.id}/members`
+            );
+            const result = await response.json();
+
+            if (result.success) {
+              console.log(
+                `📊 Données reçues pour ${org.name}:`,
+                result.data.length,
+                "items"
+              );
+              // Même logique que dans le modal : filtrer et dédupliquer
+              const emailMap = new Map();
+
+              result.data.forEach((item) => {
+                let formattedItem;
+
+                if (item.type === "member") {
+                  formattedItem = {
+                    email: item.user?.email || item.email,
+                    role: item.role,
+                    status: "active",
+                    type: "member",
+                    priority: 1,
+                    createdAt: item.createdAt || new Date(),
+                  };
+                } else {
+                  if (item.status === "canceled") {
+                    return;
+                  }
+
+                  formattedItem = {
+                    email: item.email,
+                    role: item.role,
+                    status: item.status || "pending",
+                    type: "invitation",
+                    priority: item.status === "accepted" ? 2 : 3,
+                    createdAt: item.createdAt || new Date(),
+                  };
+                }
+
+                const email = formattedItem.email;
+                if (email) {
+                  const existing = emailMap.get(email);
+
+                  if (
+                    !existing ||
+                    formattedItem.priority < existing.priority ||
+                    (formattedItem.priority === existing.priority &&
+                      new Date(formattedItem.createdAt) >
+                        new Date(existing.createdAt))
+                  ) {
+                    emailMap.set(email, formattedItem);
+                  }
+                }
+              });
+
+              const deduplicatedMembers = Array.from(emailMap.values());
+              // Exclure les owners comme dans le modal
+              const membersWithoutOwner = deduplicatedMembers.filter(
+                (m) => m.role !== "owner"
+              );
+              console.log(
+                `✅ ${org.name}: ${membersWithoutOwner.length} membres (sans owner)`
+              );
+              counts[org.id] = membersWithoutOwner.length;
+            }
+          } catch (error) {
+            console.error(`Erreur pour l'org ${org.id}:`, error);
+            counts[org.id] = 0;
+          }
+        }
+        setOrgMemberCounts(counts);
+      };
+
+      fetchMemberCounts();
       setLoading(false);
     }
-  }, [organizationsList]);
+  }, [organizationsList, refreshTrigger]);
 
   // Récupérer les membres d'une organisation spécifique
   useEffect(() => {
@@ -95,7 +184,12 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     const fetchMembers = async () => {
       try {
         setMembersLoading(true);
-        const result = await getAllCollaborators(selectedOrg.id);
+
+        // Appel API direct pour éviter le bug de Better Auth
+        const response = await fetch(
+          `/api/organizations/${selectedOrg.id}/members`
+        );
+        const result = await response.json();
 
         if (result.success) {
           // Format and deduplicate data
@@ -292,11 +386,34 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
-                  Chargement...
-                </TableCell>
-              </TableRow>
+              // Skeleton pour 3 lignes
+              <>
+                {[1, 2, 3].map((i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <div className="flex items-center gap-3 pt-3 pb-3">
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-[200px]" />
+                          <Skeleton className="h-3 w-[150px]" />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-4 w-4 rounded" />
+                        <Skeleton className="h-4 w-[80px]" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-[60px] rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-4" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </>
             ) : organizations.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8">
@@ -327,8 +444,8 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">
-                        {org.memberCount || 0} membre
-                        {(org.memberCount || 0) > 1 ? "s" : ""}
+                        {orgMemberCounts[org.id] || 0} membre
+                        {(orgMemberCounts[org.id] || 0) > 1 ? "s" : ""}
                       </span>
                     </div>
                   </TableCell>
@@ -349,9 +466,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
 
       {/* Modal des membres de l'organisation */}
       <Dialog open={!!selectedOrg} onOpenChange={() => setSelectedOrg(null)}>
-        <DialogContent
-          className="flex flex-col w-[95vw] max-w-[95vw] md:!max-w-[45vw] md:!w-[45vw] max-h-[85vh] p-0 gap-0"
-        >
+        <DialogContent className="flex flex-col w-[95vw] max-w-[95vw] md:!max-w-[45vw] md:!w-[45vw] max-h-[85vh] p-0 gap-0">
           {/* Header fixe */}
           <div className="px-4 md:px-6 py-4 md:py-5 border-b bg-white dark:bg-[#0A0A0A]">
             <div className="flex items-center gap-2.5">
@@ -406,7 +521,9 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[200px]">Nom</TableHead>
-                    <TableHead className="text-right min-w-[150px]">Rôle</TableHead>
+                    <TableHead className="text-right min-w-[150px]">
+                      Rôle
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -1,0 +1,143 @@
+"use client";
+
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+
+const countries = ["France", "Belgique", "Suisse", "Luxembourg", "Canada"];
+
+export default function CompanyStep({
+  formData,
+  updateFormData,
+  onNext,
+  onBack,
+  onSkip,
+}) {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onNext();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-medium text-foreground">
+          Informations de votre entreprise
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Nécessaire pour créer des factures et devis
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="companyName">Nom de l'entreprise</Label>
+          <Input
+            id="companyName"
+            type="text"
+            placeholder="Nom de votre entreprise"
+            value={formData.companyName || ""}
+            onChange={(e) => updateFormData({ companyName: e.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="companyEmail">Email professionnel</Label>
+          <Input
+            id="companyEmail"
+            type="email"
+            placeholder="contact@entreprise.com"
+            value={formData.companyEmail || ""}
+            onChange={(e) => updateFormData({ companyEmail: e.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="siret">SIRET (optionnel)</Label>
+          <Input
+            id="siret"
+            type="text"
+            placeholder="123 456 789 00012"
+            value={formData.siret || ""}
+            onChange={(e) => updateFormData({ siret: e.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="addressStreet">Adresse (optionnel)</Label>
+          <Input
+            id="addressStreet"
+            type="text"
+            placeholder="Rue"
+            value={formData.addressStreet || ""}
+            onChange={(e) => updateFormData({ addressStreet: e.target.value })}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="addressZipCode">Code postal</Label>
+            <Input
+              id="addressZipCode"
+              type="text"
+              placeholder="75001"
+              value={formData.addressZipCode || ""}
+              onChange={(e) =>
+                updateFormData({ addressZipCode: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="addressCity">Ville</Label>
+            <Input
+              id="addressCity"
+              type="text"
+              placeholder="Paris"
+              value={formData.addressCity || ""}
+              onChange={(e) => updateFormData({ addressCity: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="addressCountry">Pays</Label>
+          <Select
+            value={formData.addressCountry || "France"}
+            onValueChange={(value) => updateFormData({ addressCountry: value })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {countries.map((country) => (
+                <SelectItem key={country} value={country}>
+                  {country}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center justify-between pt-4">
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" onClick={onBack}>
+              Retour
+            </Button>
+            <Button type="button" variant="ghost" onClick={onSkip}>
+              Passer
+            </Button>
+          </div>
+          <Button type="submit">Continuer</Button>
+        </div>
+      </form>
+    </div>
+  );
+}

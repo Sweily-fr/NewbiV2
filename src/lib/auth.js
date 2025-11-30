@@ -128,6 +128,20 @@ export const auth = betterAuth({
             console.log(
               `✅ [USER CREATE] Membre owner créé pour ${user.email}`
             );
+
+            // ✅ S'assurer que hasSeenOnboarding est défini à false
+            await mongoDb.collection("user").updateOne(
+              { _id: new ObjectId(user.id) },
+              {
+                $set: {
+                  hasSeenOnboarding: false,
+                },
+              }
+            );
+
+            console.log(
+              `✅ [USER CREATE] hasSeenOnboarding initialisé à false pour ${user.email}`
+            );
           } catch (error) {
             // ⚠️ IMPORTANT : Ne pas bloquer l'inscription si erreur
             console.error(

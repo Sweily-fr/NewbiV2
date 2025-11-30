@@ -80,6 +80,14 @@ export const metadata = {
       "max-snippet": -1,
     },
   },
+  icons: {
+    icon: [
+      { url: "/newbi.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: "/newbi.svg",
+    shortcut: "/newbi.svg",
+  },
 };
 
 export default function RootLayout({ children }) {

@@ -62,7 +62,7 @@ export default function Component() {
   if (!isVisible || timeLeft.isExpired) return null;
 
   return (
-    <div className="dark bg-muted text-foreground px-4 py-3">
+    <div className="dark bg-muted text-foreground px-1 py-3">
       <div className="flex gap-2 md:items-center">
         <div className="flex grow gap-3 md:items-center">
           <div

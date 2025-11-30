@@ -55,6 +55,11 @@ export function CompanyInfoGuard({ children }) {
       return;
     }
 
+    // Ne pas vérifier si le modal de paramètres est déjà ouvert
+    if (isSettingsModalOpen) {
+      return;
+    }
+
     const isComplete = isCompanyInfoComplete(organization);
 
     if (!isComplete) {
@@ -78,10 +83,12 @@ export function CompanyInfoGuard({ children }) {
     } else {
       setShowDialog(false);
     }
-  }, [organization, isLoading]);
+  }, [organization, isLoading, isSettingsModalOpen]);
 
   const handleGoToSettings = () => {
-    const hasGeneralMissing = fieldsInfo.generalFields.some(f => !f.completed);
+    const hasGeneralMissing = fieldsInfo.generalFields.some(
+      (f) => !f.completed
+    );
     const tab = hasGeneralMissing ? "generale" : "informations-legales";
     setSettingsInitialTab(tab);
     setShowDialog(false);
@@ -263,7 +270,19 @@ export function CompanyInfoGuard({ children }) {
         {/* Modal de paramètres */}
         <SettingsModal
           open={isSettingsModalOpen}
-          onOpenChange={setIsSettingsModalOpen}
+          onOpenChange={(open) => {
+            setIsSettingsModalOpen(open);
+            // Quand le modal se ferme, revérifier les informations
+            if (!open) {
+              // Petit délai pour laisser le temps à l'organisation de se mettre à jour
+              setTimeout(() => {
+                const isComplete = isCompanyInfoComplete(organization);
+                if (!isComplete) {
+                  setShowDialog(true);
+                }
+              }, 500);
+            }
+          }}
           initialTab={settingsInitialTab}
         />
 

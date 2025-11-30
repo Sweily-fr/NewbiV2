@@ -93,6 +93,161 @@ export async function sendEmail({
   }
 }
 
+// Fonction pour envoyer un email de paiement échoué
+export async function sendPaymentFailedEmail({
+  to,
+  customerName,
+  amount,
+  invoiceUrl,
+}) {
+  const updatePaymentUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000"}/dashboard/settings?tab=subscription`;
+
+  await sendEmail({
+    to,
+    subject: "⚠️ Échec du paiement de votre abonnement Newbi",
+    html: emailTemplates.paymentFailed({
+      customerName,
+      amount,
+      invoiceUrl,
+      updatePaymentUrl,
+    }),
+  });
+}
+
+// Fonction pour envoyer un email de changement d'abonnement
+export async function sendSubscriptionChangedEmail({
+  to,
+  customerName,
+  oldPlan,
+  newPlan,
+  newPrice,
+  isUpgrade,
+  effectiveDate,
+}) {
+  await sendEmail({
+    to,
+    subject: isUpgrade
+      ? "🎉 Votre abonnement Newbi a été amélioré !"
+      : "✅ Votre abonnement Newbi a été modifié",
+    html: emailTemplates.subscriptionChanged({
+      customerName,
+      oldPlan,
+      newPlan,
+      newPrice,
+      isUpgrade,
+      effectiveDate,
+    }),
+  });
+}
+
+// Fonction pour envoyer un email de nouvel abonnement
+export async function sendSubscriptionCreatedEmail({
+  to,
+  customerName,
+  plan,
+  price,
+  billingInterval,
+  features,
+}) {
+  await sendEmail({
+    to,
+    subject: "Bienvenue sur Newbi - Votre abonnement est activé",
+    html: emailTemplates.subscriptionCreated({
+      customerName,
+      plan,
+      price,
+      billingInterval,
+      features,
+    }),
+  });
+}
+
+// Fonction pour envoyer un email d'annulation d'abonnement
+export async function sendSubscriptionCancelledEmail({
+  to,
+  customerName,
+  plan,
+  endDate,
+}) {
+  await sendEmail({
+    to,
+    subject: "Annulation d'abonnement confirmée - Newbi",
+    html: emailTemplates.subscriptionCancelled({
+      customerName,
+      plan,
+      endDate,
+    }),
+  });
+}
+
+// Fonction pour envoyer un email d'alerte limite de sièges
+export async function sendSeatLimitWarningEmail({
+  to,
+  customerName,
+  plan,
+  currentMembers,
+  includedSeats,
+  availableSeats,
+}) {
+  await sendEmail({
+    to,
+    subject: "Limite de sièges bientôt atteinte - Newbi",
+    html: emailTemplates.seatLimitWarning({
+      customerName,
+      plan,
+      currentMembers,
+      includedSeats,
+      availableSeats,
+    }),
+  });
+}
+
+// Fonction pour envoyer un email d'ajout de siège additionnel
+export async function sendAdditionalSeatAddedEmail({
+  to,
+  customerName,
+  plan,
+  currentMembers,
+  includedSeats,
+  additionalSeats,
+  monthlyCost,
+}) {
+  await sendEmail({
+    to,
+    subject: "Siège additionnel ajouté à votre abonnement - Newbi",
+    html: emailTemplates.additionalSeatAdded({
+      customerName,
+      plan,
+      currentMembers,
+      includedSeats,
+      additionalSeats,
+      monthlyCost,
+    }),
+  });
+}
+
+// Fonction pour envoyer un email de rappel de renouvellement
+export async function sendRenewalReminderEmail({
+  to,
+  customerName,
+  plan,
+  price,
+  renewalDate,
+  amount,
+}) {
+  await sendEmail({
+    to,
+    subject: "Renouvellement de votre abonnement dans 7 jours - Newbi",
+    html: emailTemplates.renewalReminder({
+      customerName,
+      plan,
+      price,
+      renewalDate,
+      amount,
+    }),
+  });
+}
+
 // Fonction pour envoyer un email d'invitation d'organisation
 export async function sendOrganizationInvitationEmail(data) {
   // Construire le lien d'invitation avec les informations de base

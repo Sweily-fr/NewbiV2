@@ -549,7 +549,7 @@ export function SettingsModal({
                   className="flex-1 overflow-y-auto"
                   style={{
                     height: "calc(88vh - 80px)",
-                    maxHeight: "calc(88vh - 80px)",
+                    maxHeight: "calc(88vh - 58px)",
                     overflowY: "scroll",
                   }}
                 >

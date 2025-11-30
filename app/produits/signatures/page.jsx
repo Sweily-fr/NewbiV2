@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import HeroHeader from "@/src/components/blocks/hero-header";
 import Footer7 from "@/src/components/footer7";
@@ -8,9 +7,8 @@ import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
 import TestimonialsSection from "./section/testimonial";
 import BusinessAgility from "@/app/(main)/section/business-agility";
-import SEOHead from "@/src/components/seo/seo-head";
-import { JsonLd } from "@/src/components/seo/seo-metadata";
-import { useProductSEO } from "@/src/hooks/use-seo";
+import { generateNextMetadata } from "@/src/utils/seo-data";
+
 // Configuration de Poppins uniquement pour les landing pages
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
@@ -19,23 +17,22 @@ const poppins = Poppins({
   display: "swap",
 });
 
-export default function SignaturesPage() {
-  const seoData = useProductSEO("Signatures");
+// Export des metadata pour le SEO
+export const metadata = generateNextMetadata("signatures");
 
+export default function SignaturesPage() {
   return (
     <>
-      <SEOHead {...seoData} />
-      <JsonLd jsonLd={seoData.jsonLd} />
       <div className={`${poppins.variable} font-poppins`}>
         <HeroHeader />
         <main>
-        {/* Hero Section */}
-        <HeroSection />
-        <SectionAvantages />
-        <BusinessAgility />
-        {/* <TestimonialsSection /> */}
-        <FAQ />
-        {/* <section className="min-h-screen py-20 flex flex-col justify-between">
+          {/* Hero Section */}
+          <HeroSection />
+          <SectionAvantages />
+          <BusinessAgility />
+          {/* <TestimonialsSection /> */}
+          <FAQ />
+          {/* <section className="min-h-screen py-20 flex flex-col justify-between">
           <div className="mx-auto max-w-6xl px-6 lg:px-12">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-8">
@@ -169,7 +166,7 @@ export default function SignaturesPage() {
             </div>
           </div>
         </section> */}
-        {/* <section>
+          {/* <section>
           <AnimatedGroup
             variants={{
               container: {
