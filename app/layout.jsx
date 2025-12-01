@@ -83,11 +83,11 @@ export const metadata = {
   },
   icons: {
     icon: [
-      { url: "/newbi.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
     ],
-    apple: "/newbi.svg",
-    shortcut: "/newbi.svg",
+    apple: "/icon.png",
+    shortcut: "/icon.png",
   },
 };
 
