@@ -137,7 +137,7 @@ export default function OnboardingPage() {
           {/* Logo en haut à gauche */}
           <div className="absolute top-4 left-4">
             <img
-              src={getAssetUrl("NewbiLetter.png")}
+              src={getAssetUrl("newbiLetter.png")}
               alt="Newbi"
               className="h-9 w-auto"
             />
