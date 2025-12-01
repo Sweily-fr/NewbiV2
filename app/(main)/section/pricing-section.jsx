@@ -152,6 +152,15 @@ export default function PricingSection() {
     },
   ];
 
+  // Features principales à afficher dans les cartes mobiles
+  const mainFeatures = [
+    "Facturation & Devis",
+    "OCR des reçus",
+    "Connexion bancaire",
+    "Gestion de trésorerie",
+    "CRM client",
+  ];
+
   return (
     <div id="pricing" className="w-full py-20 lg:py-40 overflow-visible">
       <div className="container mx-auto overflow-visible">
@@ -190,7 +199,157 @@ export default function PricingSection() {
               <span className="ml-2 text-xs text-[#5b50fe]">-10%</span>
             </button>
           </div>
-          <div className="w-full pt-10">
+
+          {/* VERSION MOBILE - Cartes empilées */}
+          <div className="w-full pt-10 lg:hidden flex flex-col gap-6 px-4">
+            {/* Carte Freelance */}
+            <div className="border rounded-lg p-6 bg-background shadow-sm">
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-2xl font-semibold">Freelance</h3>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Parfait pour les indépendants et freelances qui démarrent
+                    leur activité
+                  </p>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold">
+                    {isAnnual
+                      ? pricing.freelance.annual
+                      : pricing.freelance.monthly}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    TTC / mois
+                  </span>
+                </div>
+
+                {isAnnual && (
+                  <p className="text-xs text-muted-foreground">
+                    {pricing.freelance.annualTotal} facturé annuellement
+                  </p>
+                )}
+
+                <div className="flex flex-col gap-2 py-4 border-t border-b">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    1 utilisateur
+                  </p>
+                  {mainFeatures.map((feature, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Button asChild variant="outline" className="gap-4 w-full">
+                  <Link href="/auth/signup">
+                    Essayer 14 jours gratuits <MoveRight className="w-4 h-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Carte TPE */}
+            <div className="border-2 border-primary rounded-lg p-6 bg-background shadow-md relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <Badge className="bg-primary text-primary-foreground">
+                  Populaire
+                </Badge>
+              </div>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-2xl font-semibold">TPE</h3>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Idéal pour les petites et moyennes entreprises en croissance
+                  </p>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold">
+                    {isAnnual ? pricing.pme.annual : pricing.pme.monthly}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    TTC / mois
+                  </span>
+                </div>
+
+                {isAnnual && (
+                  <p className="text-xs text-muted-foreground">
+                    {pricing.pme.annualTotal} facturé annuellement
+                  </p>
+                )}
+
+                <div className="flex flex-col gap-2 py-4 border-t border-b">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    10 utilisateurs
+                  </p>
+                  {mainFeatures.map((feature, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Button asChild className="gap-4 w-full">
+                  <Link href="/auth/signup">
+                    Essayer 14 jours gratuits <MoveRight className="w-4 h-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Carte Entreprise */}
+            <div className="border rounded-lg p-6 bg-background shadow-sm">
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-2xl font-semibold">Entreprise</h3>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Pour les grandes structures avec des besoins avancés
+                  </p>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold">
+                    {isAnnual
+                      ? pricing.entreprise.annual
+                      : pricing.entreprise.monthly}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    TTC / mois
+                  </span>
+                </div>
+
+                {isAnnual && (
+                  <p className="text-xs text-muted-foreground">
+                    {pricing.entreprise.annualTotal} facturé annuellement
+                  </p>
+                )}
+
+                <div className="flex flex-col gap-2 py-4 border-t border-b">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    25 utilisateurs
+                  </p>
+                  {mainFeatures.map((feature, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Button asChild variant="outline" className="gap-4 w-full">
+                  <Link href="/auth/signup">
+                    Essayer 14 jours gratuits <MoveRight className="w-4 h-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* VERSION DESKTOP - Tableau avec sticky header */}
+          <div className="w-full pt-10 hidden lg:block">
             {/* Masque invisible pour cacher le contenu qui scroll */}
             <div className="sticky top-0 h-20 z-50 bg-[#FDFDFD] dark:bg-background"></div>
 
