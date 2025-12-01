@@ -5,6 +5,7 @@ import BusinessAgility from "./section/business-agility";
 import TestimonialsSection from "./section/testimonial";
 import Freelance from "./section/freelance";
 import PricingSection from "./section/pricing-section";
+import FeaturedOn from "./section/featured-on";
 import FAQ from "./section/faq";
 import SEOHead from "@/src/components/seo/seo-head";
 import { JsonLd } from "@/src/components/seo/seo-metadata";
@@ -24,6 +25,7 @@ export default function Home() {
         {/* <Freelance /> */}
         {/* <TestimonialsSection /> */}
         <PricingSection />
+        <FeaturedOn />
         <FAQ />
       </div>
     </>

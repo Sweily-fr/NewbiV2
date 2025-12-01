@@ -153,7 +153,7 @@ export default function PricingSection() {
   ];
 
   return (
-    <div className="w-full py-20 lg:py-40 overflow-visible">
+    <div id="pricing" className="w-full py-20 lg:py-40 overflow-visible">
       <div className="container mx-auto overflow-visible">
         <div className="flex text-center justify-center items-center gap-4 flex-col">
           {/* <Badge>Pricing</Badge> */}
