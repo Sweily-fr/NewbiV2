@@ -238,7 +238,7 @@ export default function TransferTable({
                   Téléchargé
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 text-amber-600 text-xs font-medium dark:bg-amber-900/20 dark:text-amber-400">
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#5a50ff]/10 text-[#5a50ff]/600 text-xs font-medium dark:bg-[#5a50ff]/20 dark:text-[#5a50ff]/400">
                   <Clock className="w-3 h-3" />
                   En attente
                 </span>
@@ -271,7 +271,7 @@ export default function TransferTable({
             <div>
               <p
                 className={cn(
-                  "text-sm font-medium",
+                  "text-xs font-normal",
                   isExpired
                     ? "text-red-600 dark:text-red-400"
                     : "text-foreground"

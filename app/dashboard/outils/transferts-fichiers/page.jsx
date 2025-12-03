@@ -190,7 +190,7 @@ function TransfertsContent() {
                   className={cn(
                     "px-3 py-1.5 text-sm rounded-lg transition-colors cursor-pointer",
                     activeFilter === filter.id
-                      ? "bg-foreground text-background"
+                      ? "bg-[#5a50ff] text-background"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
@@ -225,39 +225,6 @@ function TransfertsContent() {
               </div>
             </div>
           </div>
-
-          {/* Recent Files Cards */}
-          {recentTransfers.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {recentTransfers.map((file) => (
-                <button
-                  key={file.id}
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      `${window.location.origin}/transfer/${file.shareLink}?key=${file.accessKey}`
-                    );
-                    toast.success("Lien copié dans le presse-papiers");
-                  }}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-muted-foreground/30 transition-colors text-left cursor-pointer group"
-                >
-                  <div className="flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-background">
-                    {getFileIcon(file.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {file.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {file.size} · {file.type || "fichier"}
-                    </p>
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <IconCopy className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
 
           {/* Transfer Table */}
           <TransferTable
