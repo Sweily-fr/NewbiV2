@@ -113,8 +113,11 @@ export default function PDFGeneratorPage() {
       const imgWidthMM = pdfWidth;
       const imgHeightMM = (img.height * pdfWidth) / img.width;
 
+      // Vérifier si le contenu tient sur une seule page (avec une petite marge de tolérance)
+      const fitsOnOnePage = imgHeightMM <= pdfHeight + 1; // +1mm de tolérance
+
       // Multi-pages avec découpage intelligent
-      if (imgHeightMM > pdfHeight) {
+      if (!fitsOnOnePage) {
         console.log('📄 Document multi-pages détecté');
 
         // Détecter le footer pour le repositionner sur la dernière page
