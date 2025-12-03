@@ -124,7 +124,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={'/produits/factures'}
+                      href={"/produits/factures"}
                     >
                       Facturation
                     </a>
@@ -132,7 +132,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={'/produits/devis'}
+                      href={"/produits/devis"}
                     >
                       Devis
                     </a>
@@ -140,7 +140,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={'/produits/transfers'}
+                      href={"/produits/transfers"}
                     >
                       Transferts fichiers
                     </a>
@@ -148,7 +148,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={'/produits/kanban'}
+                      href={"/produits/kanban"}
                     >
                       Tableau Kanban
                     </a>
@@ -156,7 +156,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={'/produits/signatures'}
+                      href={"/produits/signatures"}
                     >
                       Signatures de mail
                     </a>
@@ -168,6 +168,16 @@ const Footer7 = ({
                   Ressources
                 </h3>
                 <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="https://docs.newbi.fr/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Documentation
+                    </a>
+                  </li>
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"

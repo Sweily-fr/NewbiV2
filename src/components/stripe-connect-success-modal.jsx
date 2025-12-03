@@ -26,15 +26,22 @@ function StripeConnectSuccessModalContent() {
 
   useEffect(() => {
     // Vérifier le paramètre URL pour le succès Stripe Connect
-    const stripeConnectSuccess = searchParams.get("stripe_connect_success") === "true";
+    const stripeConnectSuccess =
+      searchParams.get("stripe_connect_success") === "true";
 
     if (stripeConnectSuccess) {
       setIsOpen(true);
+
+      // Déclencher immédiatement un rafraîchissement du statut
+      window.dispatchEvent(new CustomEvent("stripeConfigComplete"));
     }
   }, [searchParams]);
 
   const handleClose = () => {
     setIsOpen(false);
+
+    // Déclencher un événement pour rafraîchir le statut Stripe
+    window.dispatchEvent(new CustomEvent("stripeConfigComplete"));
 
     // Nettoyer l'URL après fermeture
     const cleanUrl = window.location.pathname;
@@ -105,7 +112,8 @@ function StripeConnectSuccessModalContent() {
                 Votre compte Stripe est configuré !
               </h2>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed px-4">
-                Vous pouvez maintenant recevoir des paiements pour vos transferts de fichiers en toute sécurité.
+                Vous pouvez maintenant recevoir des paiements pour vos
+                transferts de fichiers en toute sécurité.
               </p>
             </div>
 
@@ -117,10 +125,7 @@ function StripeConnectSuccessModalContent() {
                     <Tooltip key={member.id}>
                       <TooltipTrigger asChild>
                         <Avatar className="h-8 w-8 ring-2 ring-background cursor-pointer">
-                          <AvatarImage
-                            src={member.image}
-                            alt={member.name}
-                          />
+                          <AvatarImage src={member.image} alt={member.name} />
                           <AvatarFallback className="text-xs bg-[#5b4fff] text-white">
                             {member.name[0].toUpperCase()}
                           </AvatarFallback>

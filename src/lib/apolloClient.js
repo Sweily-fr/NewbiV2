@@ -1,8 +1,8 @@
 import { ApolloClient, InMemoryCache, from, split } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
-import { WebSocketLink } from '@apollo/client/link/ws';
-import { getMainDefinition } from '@apollo/client/utilities';
+import { WebSocketLink } from "@apollo/client/link/ws";
+import { getMainDefinition } from "@apollo/client/utilities";
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
 import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "@/src/lib/auth-client";
@@ -35,80 +35,88 @@ const uploadLink = createUploadLink({
 let wsClient = null;
 
 // Configuration WebSocket Link pour les subscriptions
-const wsLink = typeof window !== "undefined" ? new WebSocketLink({
-  uri: process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000/graphql",
-  options: {
-    reconnect: true,
-    lazy: true, // Connexion lazy pour permettre la reconnexion avec nouveau token
-    connectionParams: async () => {
-      // Récupérer le JWT pour l'authentification WebSocket
-      let jwtToken = null;
-      let retries = 0;
-      const maxRetries = 3;
-      
-      // Retry logic pour attendre que la session soit disponible
-      while (retries < maxRetries) {
-        try {
-          const session = await authClient.getSession({
-            fetchOptions: {
-              onSuccess: (ctx) => {
-                const jwt = ctx.response.headers.get("set-auth-jwt");
-                if (jwt && !isTokenExpired(jwt)) {
-                  jwtToken = jwt;
+const wsLink =
+  typeof window !== "undefined"
+    ? new WebSocketLink({
+        uri: process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000/graphql",
+        options: {
+          reconnect: true,
+          lazy: true, // Connexion lazy pour permettre la reconnexion avec nouveau token
+          connectionParams: async () => {
+            // Récupérer le JWT pour l'authentification WebSocket
+            let jwtToken = null;
+            let retries = 0;
+            const maxRetries = 3;
+
+            // Retry logic pour attendre que la session soit disponible
+            while (retries < maxRetries) {
+              try {
+                const session = await authClient.getSession({
+                  fetchOptions: {
+                    onSuccess: (ctx) => {
+                      const jwt = ctx.response.headers.get("set-auth-jwt");
+                      if (jwt && !isTokenExpired(jwt)) {
+                        jwtToken = jwt;
+                      }
+                    },
+                  },
+                });
+
+                // Si on a une session, on peut continuer
+                if (session?.session) {
+                  if (jwtToken) {
+                    console.log("✅ [WebSocket] JWT récupéré pour connexion");
+                  } else {
+                    console.log(
+                      "ℹ️ [WebSocket] Session disponible sans JWT, utilisation des cookies"
+                    );
+                  }
+                  break;
                 }
-              },
-            },
-          });
-          
-          // Si on a une session, on peut continuer
-          if (session?.session) {
-            if (jwtToken) {
-              console.log("✅ [WebSocket] JWT récupéré pour connexion");
-            } else {
-              console.log("ℹ️ [WebSocket] Session disponible sans JWT, utilisation des cookies");
+
+                // Si pas de session, attendre un peu avant de réessayer
+                if (retries < maxRetries - 1) {
+                  await new Promise((resolve) => setTimeout(resolve, 500));
+                  retries++;
+                } else {
+                  break;
+                }
+              } catch {
+                console.warn(
+                  "⚠️ [WebSocket] Erreur récupération session, retry:",
+                  retries + 1
+                );
+                if (retries < maxRetries - 1) {
+                  await new Promise((resolve) => setTimeout(resolve, 500));
+                  retries++;
+                } else {
+                  break;
+                }
+              }
             }
-            break;
-          }
-          
-          // Si pas de session, attendre un peu avant de réessayer
-          if (retries < maxRetries - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            retries++;
-          } else {
-            break;
-          }
-        } catch {
-          console.warn("⚠️ [WebSocket] Erreur récupération session, retry:", retries + 1);
-          if (retries < maxRetries - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            retries++;
-          } else {
-            break;
-          }
-        }
-      }
-      
-      return {
-        authorization: jwtToken ? `Bearer ${jwtToken}` : "",
-      };
-    },
-    // Reconnexion automatique avec nouveau token quand le token expire
-    onError: (error) => {
-      console.error("❌ [WebSocket] Erreur:", error);
-    },
-  },
-}) : null;
+
+            return {
+              authorization: jwtToken ? `Bearer ${jwtToken}` : "",
+            };
+          },
+          // Reconnexion automatique avec nouveau token quand le token expire
+          onError: (error) => {
+            console.error("❌ [WebSocket] Erreur:", error);
+          },
+        },
+      })
+    : null;
 
 // Stocker le client WebSocket pour pouvoir le fermer/rouvrir
 if (wsLink && typeof window !== "undefined") {
   wsClient = wsLink.subscriptionClient;
-  
+
   // Fonction pour reconnecter le WebSocket avec un nouveau token (avec debouncing)
   let reconnectTimeout = null;
   const reconnectWebSocket = () => {
     if (wsClient && reconnectTimeout === null) {
       console.log("🔄 [WebSocket] Reconnexion programmée...");
-      
+
       // Debouncing : attendre 500ms avant de reconnecter
       reconnectTimeout = setTimeout(() => {
         console.log("🔄 [WebSocket] Reconnexion avec nouveau token");
@@ -118,11 +126,11 @@ if (wsLink && typeof window !== "undefined") {
       }, 500);
     }
   };
-  
+
   // Écouter UNIQUEMENT les changements de session (connexion/déconnexion)
   if (typeof window !== "undefined") {
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'better-auth.session_token') {
+    window.addEventListener("storage", (e) => {
+      if (e.key === "better-auth.session_token") {
         console.log("🔄 [WebSocket] Session changée, reconnexion...");
         reconnectWebSocket();
       }
@@ -135,13 +143,13 @@ const authLink = setContext(async (_, { headers }) => {
     let jwtToken = null;
 
     // 1. Vérifier d'abord le JWT stocké dans localStorage
-    const storedToken = localStorage.getItem('bearer_token');
+    const storedToken = localStorage.getItem("bearer_token");
     if (storedToken && !isTokenExpired(storedToken)) {
       console.log("✅ [Apollo] JWT valide trouvé dans localStorage");
       jwtToken = storedToken;
     } else if (storedToken) {
       console.log("⚠️ [Apollo] JWT expiré dans localStorage, suppression");
-      localStorage.removeItem('bearer_token');
+      localStorage.removeItem("bearer_token");
     }
 
     // 2. Si pas de JWT valide, récupérer un nouveau via getSession
@@ -154,7 +162,7 @@ const authLink = setContext(async (_, { headers }) => {
             if (jwt && !isTokenExpired(jwt)) {
               jwtToken = jwt;
               // ✅ CORRECTION: Stocker le JWT dans localStorage
-              localStorage.setItem('bearer_token', jwt);
+              localStorage.setItem("bearer_token", jwt);
               console.log("✅ [Apollo] Nouveau JWT récupéré et stocké");
             } else if (jwt) {
               console.warn("⚠️ [Apollo] JWT reçu mais déjà expiré");
@@ -168,21 +176,38 @@ const authLink = setContext(async (_, { headers }) => {
 
       // Si on a une session mais pas de JWT, utiliser les cookies
       if (session?.session && !jwtToken) {
-        console.log("ℹ️ [Apollo] Session active, utilisation des cookies httpOnly");
+        console.log(
+          "ℹ️ [Apollo] Session active, utilisation des cookies httpOnly"
+        );
       } else if (!session?.session && !jwtToken) {
         console.error("❌ [Apollo] Pas de session ni de JWT disponible");
       }
     }
 
-    // 3. Ajouter le JWT au header si disponible
+    // 3. Récupérer l'organization ID et le rôle depuis localStorage (définis par le frontend)
+    const organizationId = localStorage.getItem("active_organization_id");
+    const userRole = localStorage.getItem("user_role");
+
+    // 4. Construire les headers avec JWT + organization + role
+    const requestHeaders = {
+      ...headers,
+    };
+
     if (jwtToken) {
-      return {
-        headers: {
-          ...headers,
-          authorization: `Bearer ${jwtToken}`,
-        },
-      };
+      requestHeaders.authorization = `Bearer ${jwtToken}`;
     }
+
+    if (organizationId) {
+      requestHeaders["x-organization-id"] = organizationId;
+    }
+
+    if (userRole) {
+      requestHeaders["x-user-role"] = userRole;
+    }
+
+    return {
+      headers: requestHeaders,
+    };
   } catch (error) {
     console.error("❌ [Apollo] Erreur récupération JWT:", error.message);
   }
@@ -209,7 +234,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
       if (isCriticalError(errorWithCode)) {
         // Ne pas afficher de toast si c'est une erreur au chargement initial
         const isInitialLoad = operation.getContext().isInitialLoad;
-        
+
         if (!isInitialLoad) {
           toast.error(userMessage, {
             duration: 5000,
@@ -222,15 +247,20 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
           }, 2000);
         } else {
           // Log silencieux pour le chargement initial
-          console.warn("⚠️ [Apollo] Erreur auth au chargement initial:", message);
+          console.warn(
+            "⚠️ [Apollo] Erreur auth au chargement initial:",
+            message
+          );
         }
       } else {
         // Ne pas afficher de toast si skipErrorToast est activé (redirection en cours)
         const skipErrorToast = operation.getContext().skipErrorToast;
-        
+
         // Ne pas afficher de toast pour les erreurs "Board not found" (changement d'organisation)
-        const isBoardNotFound = message?.includes("Board not found") || message?.includes("board not found");
-        
+        const isBoardNotFound =
+          message?.includes("Board not found") ||
+          message?.includes("board not found");
+
         if (!skipErrorToast && !isBoardNotFound) {
           // Afficher le message original du backend au lieu du message générique
           // Cela permet d'avoir des messages d'erreur précis comme "La date d'émission ne peut pas être antérieure..."
@@ -239,10 +269,16 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
           });
         } else if (isBoardNotFound) {
           // Log silencieux pour les boards introuvables (changement d'organisation)
-          console.warn("⚠️ [Apollo] Board introuvable (changement d'organisation):", message);
+          console.warn(
+            "⚠️ [Apollo] Board introuvable (changement d'organisation):",
+            message
+          );
         } else {
           // Log silencieux pour les redirections
-          console.warn("⚠️ [Apollo] Erreur silencieuse (redirection en cours):", message);
+          console.warn(
+            "⚠️ [Apollo] Erreur silencieuse (redirection en cours):",
+            message
+          );
         }
       }
     });
@@ -307,19 +343,20 @@ let apolloClientInstance = null;
 // Fonction pour créer le client Apollo
 const createApolloClient = () => {
   // Créer le link split pour diriger les subscriptions vers WebSocket
-  const splitLink = typeof window !== "undefined" && wsLink
-    ? split(
-        ({ query }) => {
-          const definition = getMainDefinition(query);
-          return (
-            definition.kind === 'OperationDefinition' &&
-            definition.operation === 'subscription'
-          );
-        },
-        wsLink, // WebSocket pour les subscriptions
-        from([authLink, errorLink, uploadLink]) // HTTP pour queries et mutations
-      )
-    : from([authLink, errorLink, uploadLink]); // Fallback pour SSR
+  const splitLink =
+    typeof window !== "undefined" && wsLink
+      ? split(
+          ({ query }) => {
+            const definition = getMainDefinition(query);
+            return (
+              definition.kind === "OperationDefinition" &&
+              definition.operation === "subscription"
+            );
+          },
+          wsLink, // WebSocket pour les subscriptions
+          from([authLink, errorLink, uploadLink]) // HTTP pour queries et mutations
+        )
+      : from([authLink, errorLink, uploadLink]); // Fallback pour SSR
 
   return new ApolloClient({
     link: splitLink,

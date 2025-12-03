@@ -12,8 +12,8 @@ export default function PricingSection() {
   // Prix mensuels et annuels
   const pricing = {
     freelance: {
-      monthly: "14,59€",
-      annual: "13,13€",
+      monthly: "17,99€",
+      annual: "16,19€",
       annualTotal: "157,56€",
     },
     pme: {

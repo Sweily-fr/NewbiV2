@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -12,43 +12,25 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
-  ArrowUpDown,
-  ChevronFirstIcon,
-  ChevronLastIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   MoreHorizontal,
-  Download,
-  Eye,
   Trash2,
   Copy,
-  ExternalLink,
   FileText,
-  User as IconUser,
+  FileSpreadsheet,
+  FileImage,
+  File,
+  Download,
+  Clock,
 } from "lucide-react";
-import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-} from "@/src/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
 import {
   Table,
   TableBody,
@@ -71,14 +53,96 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { useFileTransfer } from "../hooks/useFileTransfer";
+import { useUser } from "@/src/lib/auth/hooks";
 
-export default function TransferTable({ transfers, onRefresh, loading }) {
-  const [globalFilter, setGlobalFilter] = useState("");
-  const { deleteTransfer, copyShareLink, formatFileSize } = useFileTransfer();
+// Fonction pour obtenir l'extension du fichier
+function getFileExtension(filename) {
+  if (!filename) return "";
+  return filename.split(".").pop()?.toLowerCase() || "";
+}
 
-  const data = useMemo(() => transfers || [], [transfers]);
+// Fonction pour obtenir l'icône selon le type de fichier
+function getFileIcon(filename) {
+  const ext = getFileExtension(filename);
+  if (["doc", "docx", "txt", "rtf"].includes(ext)) {
+    return <FileText className="w-4 h-4 text-muted-foreground" />;
+  }
+  if (["xls", "xlsx", "csv"].includes(ext)) {
+    return <FileSpreadsheet className="w-4 h-4 text-muted-foreground" />;
+  }
+  if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext)) {
+    return <FileImage className="w-4 h-4 text-muted-foreground" />;
+  }
+  if (["pdf"].includes(ext)) {
+    return <FileText className="w-4 h-4 text-muted-foreground" />;
+  }
+  return <File className="w-4 h-4 text-muted-foreground" />;
+}
 
-  // Define columns
+// Fonction pour filtrer par type de fichier
+function filterByType(transfers, filter) {
+  if (filter === "all") return transfers;
+
+  return transfers.filter((transfer) => {
+    const files = transfer.files || [];
+    return files.some((file) => {
+      const ext = getFileExtension(file.originalName || file.fileName || "");
+      switch (filter) {
+        case "documents":
+          return ["doc", "docx", "txt", "rtf"].includes(ext);
+        case "spreadsheets":
+          return ["xls", "xlsx", "csv"].includes(ext);
+        case "pdfs":
+          return ["pdf"].includes(ext);
+        case "images":
+          return ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(
+            ext
+          );
+        default:
+          return true;
+      }
+    });
+  });
+}
+
+export default function TransferTable({
+  transfers,
+  onRefresh,
+  loading,
+  searchQuery = "",
+  activeFilter = "all",
+  onSelectionChange,
+  deleteButtonRef,
+}) {
+  const { deleteTransfer, formatFileSize } = useFileTransfer();
+  const { session } = useUser();
+
+  // Filtrer les données
+  const filteredData = useMemo(() => {
+    let result = transfers || [];
+
+    // Filtrer par type
+    result = filterByType(result, activeFilter);
+
+    // Filtrer par recherche
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((transfer) => {
+        const files = transfer.files || [];
+        return files.some((file) =>
+          (file.originalName || file.fileName || "")
+            .toLowerCase()
+            .includes(query)
+        );
+      });
+    }
+
+    return result;
+  }, [transfers, activeFilter, searchQuery]);
+
+  const data = useMemo(() => filteredData, [filteredData]);
+
+  // Define columns - Design épuré inspiré de l'image
   const columns = useMemo(
     () => [
       {
@@ -93,6 +157,7 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
               table.toggleAllPageRowsSelected(!!value)
             }
             aria-label="Sélectionner tout"
+            className="border-muted-foreground/30"
           />
         ),
         cell: ({ row }) => (
@@ -100,149 +165,182 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Sélectionner la ligne"
+            className="border-muted-foreground/30"
           />
         ),
-        size: 28,
+        size: 40,
         enableSorting: false,
         enableHiding: false,
       },
       {
         accessorKey: "files",
-        header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Fichiers
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </div>
+        header: () => (
+          <span className="text-sm text-muted-foreground font-normal">
+            Nom du fichier
+          </span>
         ),
         cell: ({ row }) => {
           const transfer = row.original;
-          const totalSize = transfer.files.reduce(
-            (acc, file) => acc + (file.size || 0),
-            0
-          );
+          const firstFile = transfer.files?.[0];
+          const fileName =
+            firstFile?.originalName || firstFile?.fileName || "Fichier";
+          const totalSize =
+            transfer.files?.reduce((acc, file) => acc + (file.size || 0), 0) ||
+            0;
+          const ext = getFileExtension(fileName);
+          const fileCount = transfer.files?.length || 0;
+
           return (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <FileText size={16} className="text-muted-foreground" />
-                <span className="font-normal">
-                  {transfer.files.length} fichier
-                  {transfer.files.length > 1 ? "s" : ""}
-                </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-background">
+                {getFileIcon(fileName)}
               </div>
-              <div className="text-xs text-muted-foreground">
-                {formatFileSize(totalSize)}
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate max-w-[200px]">
+                  {fileName}
+                  {fileCount > 1 && (
+                    <span className="text-muted-foreground ml-1">
+                      (+{fileCount - 1})
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatFileSize(totalSize)} · {ext || "fichier"}
+                </p>
               </div>
             </div>
           );
         },
-        size: 200,
+        size: 300,
       },
       {
         accessorKey: "status",
-        header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
+        header: () => (
+          <span className="text-sm text-muted-foreground font-normal">
             Statut
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </div>
+          </span>
         ),
         cell: ({ row }) => {
           const transfer = row.original;
+          const isDownloaded = transfer.downloadCount > 0;
+          const isExpired = transfer.status === "expired";
+
           return (
-            <Badge
-              className={cn(
-                "font-normal",
-                transfer.status === "active"
-                  ? "bg-green-100 text-green-800 hover:bg-green-100"
-                  : transfer.status === "expired"
-                    ? "bg-red-100 text-red-800 hover:bg-red-100"
-                    : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+            <div className="flex items-center gap-2">
+              {isExpired ? (
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-50 text-red-600 text-xs font-medium dark:bg-red-900/20 dark:text-red-400">
+                  <Clock className="w-3 h-3" />
+                  Expiré
+                </span>
+              ) : isDownloaded ? (
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-50 text-green-600 text-xs font-medium dark:bg-green-900/20 dark:text-green-400">
+                  <Download className="w-3 h-3" />
+                  Téléchargé
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 text-amber-600 text-xs font-medium dark:bg-amber-900/20 dark:text-amber-400">
+                  <Clock className="w-3 h-3" />
+                  En attente
+                </span>
               )}
-            >
-              {transfer.status === "active"
-                ? "Actif"
-                : transfer.status === "expired"
-                  ? "Expiré"
-                  : "Inactif"}
-            </Badge>
+            </div>
           );
         },
-        size: 100,
+        size: 120,
       },
       {
         accessorKey: "expiryDate",
-        header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
+        header: () => (
+          <span className="text-sm text-muted-foreground font-normal">
             Expiration
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </div>
+          </span>
         ),
         cell: ({ row }) => {
           const transfer = row.original;
-          if (!transfer.expiryDate) return "-";
+          if (!transfer.expiryDate)
+            return <span className="text-muted-foreground">-</span>;
+
           const expirationDate = new Date(transfer.expiryDate);
-          const isExpired = expirationDate < new Date();
+          const now = new Date();
+          const isExpired = expirationDate < now;
+          const daysLeft = Math.ceil(
+            (expirationDate - now) / (1000 * 60 * 60 * 24)
+          );
+
           return (
-            <div className={cn(isExpired && "text-destructive font-normal")}>
-              <div className="font-normal">
-                {format(expirationDate, "dd/MM/yyyy", { locale: fr })}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {format(expirationDate, "HH:mm", { locale: fr })}
-              </div>
-              {isExpired && <div className="text-xs text-red-600">Expiré</div>}
+            <div>
+              <p
+                className={cn(
+                  "text-sm font-medium",
+                  isExpired
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-foreground"
+                )}
+              >
+                {format(expirationDate, "dd MMM yyyy", { locale: fr })}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {isExpired
+                  ? "Expiré"
+                  : daysLeft === 0
+                    ? "Expire aujourd'hui"
+                    : daysLeft === 1
+                      ? "Expire demain"
+                      : `Dans ${daysLeft} jours`}
+              </p>
             </div>
           );
         },
-        size: 120,
+        size: 130,
       },
       {
-        accessorKey: "createdAt",
-        header: ({ column }) => (
-          <div
-            className="flex items-center cursor-pointer font-normal"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Créé le
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </div>
+        accessorKey: "uploadedBy",
+        header: () => (
+          <span className="text-sm text-muted-foreground font-normal">
+            Créé par
+          </span>
         ),
         cell: ({ row }) => {
-          const transfer = row.original;
+          const userName =
+            session?.user?.name || session?.user?.email?.split("@")[0] || "Moi";
+          const userEmail = session?.user?.email || "";
+
           return (
-            <div className="font-normal">
-              {format(new Date(transfer.createdAt), "dd/MM/yyyy", {
-                locale: fr,
-              })}
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground flex-shrink-0">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-normal text-foreground truncate">
+                  {userName}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {userEmail}
+                </p>
+              </div>
             </div>
           );
         },
-        size: 120,
+        size: 180,
       },
       {
         id: "actions",
-        header: () => <div className="text-right font-normal">Actions</div>,
+        header: () => null,
         cell: ({ row }) => {
           const transfer = row.original;
           return (
             <div className="flex justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
+                  <Button
+                    variant="ghost"
+                    className="h-8 w-8 p-0 hover:bg-muted"
+                  >
                     <span className="sr-only">Ouvrir le menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem
                     onClick={() => {
                       navigator.clipboard.writeText(
@@ -250,25 +348,15 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
                       );
                       toast.success("Lien copié dans le presse-papiers");
                     }}
+                    className="cursor-pointer"
                   >
                     <Copy className="mr-2 h-4 w-4" />
                     Copier le lien
                   </DropdownMenuItem>
-                  {/* <DropdownMenuItem
-                    onClick={() => {
-                      window.open(
-                        `/transfer/${transfer.shareLink}?key=${transfer.accessKey}`,
-                        "_blank"
-                      );
-                    }}
-                  >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Ouvrir
-                  </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => handleDeleteTransfer(transfer.id)}
-                    className="text-destructive"
+                    className="text-destructive cursor-pointer"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Supprimer
@@ -278,11 +366,11 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
             </div>
           );
         },
-        size: 60,
+        size: 50,
         enableHiding: false,
       },
     ],
-    []
+    [session, formatFileSize]
   );
 
   // Create table instance
@@ -293,13 +381,9 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
-    state: {
-      globalFilter,
-    },
     initialState: {
       pagination: {
-        pageSize: 8,
+        pageSize: 10,
       },
     },
   });
@@ -311,6 +395,16 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [transferToDelete, setTransferToDelete] = useState(null);
 
+  // Notifier le parent du changement de sélection
+  useEffect(() => {
+    onSelectionChange?.({
+      count: selectedRows.length,
+      isDeleting,
+      onDelete: handleDeleteSelected,
+      onResetSelection: () => table.resetRowSelection(),
+    });
+  }, [selectedRows.length, isDeleting]);
+
   const viewTransfer = (shareLink) => {
     window.open(`/dashboard/outils/transferts-fichiers/${shareLink}`, "_blank");
   };
@@ -321,7 +415,7 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
 
   const confirmDeleteTransfer = async () => {
     if (!transferToDelete) return;
-    
+
     setIsDeleting(true);
     try {
       await deleteTransfer(transferToDelete);
@@ -360,51 +454,19 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
     }
   };
 
-  // ...
-
   return (
     <div className="space-y-4">
-      {/* Actions en haut */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          {selectedRows.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={isDeleting}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Supprimer ({selectedRows.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                    transfert(s) ? Cette action est irréversible.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteSelected}
-                    className="bg-destructive text-white hover:bg-destructive/90"
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
-      </div>
-
       {/* AlertDialog pour suppression individuelle */}
-      <AlertDialog open={!!transferToDelete} onOpenChange={() => setTransferToDelete(null)}>
+      <AlertDialog
+        open={!!transferToDelete}
+        onOpenChange={() => setTransferToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce transfert ? Cette action est irréversible.
+              Êtes-vous sûr de vouloir supprimer ce transfert ? Cette action est
+              irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -420,73 +482,20 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Table - Desktop */}
-      <div className="hidden md:block rounded-md border">
+      {/* Table épurée */}
+      <div className="w-full">
         <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    style={{ width: header.getSize() }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={table.getAllColumns().length}
-                  className="h-24 text-center"
-                >
-                  Aucun transfert trouvé.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Table - Mobile style (Notion-like) */}
-      <div className="md:hidden overflow-x-auto">
-        <Table className="w-max">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="border-b border-gray-100 dark:border-gray-400"
+                className="border-b border-border hover:bg-transparent"
               >
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     style={{ width: header.getSize() }}
-                    className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                    className="h-10 px-3"
                   >
                     {header.isPlaceholder
                       ? null
@@ -505,10 +514,10 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900"
+                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3 px-4 text-sm">
+                    <TableCell key={cell.id} className="py-3 px-3">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -521,9 +530,9 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
               <TableRow>
                 <TableCell
                   colSpan={table.getAllColumns().length}
-                  className="h-24 text-center"
+                  className="h-32 text-center text-muted-foreground"
                 >
-                  Aucun transfert trouvé.
+                  {loading ? "Chargement..." : "Aucun transfert trouvé."}
                 </TableCell>
               </TableRow>
             )}
@@ -531,95 +540,41 @@ export default function TransferTable({ transfers, onRefresh, loading }) {
         </Table>
       </div>
 
-      {/* Pagination - Desktop only */}
-      <div className="hidden md:flex items-center justify-between">
-        <div className="flex-1 text-sm font-normal text-muted-foreground hidden sm:block">
-          {table.getFilteredSelectedRowModel().rows.length} sur{" "}
-          {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
+      {/* Pagination simple avec numéros */}
+      {table.getPageCount() > 1 && (
+        <div className="flex items-center justify-center gap-1 pt-4">
+          {Array.from({ length: Math.min(table.getPageCount(), 5) }, (_, i) => {
+            const pageIndex = table.getState().pagination.pageIndex;
+            const totalPages = table.getPageCount();
+
+            // Calculer les pages à afficher
+            let startPage = Math.max(0, pageIndex - 2);
+            let endPage = Math.min(totalPages - 1, startPage + 4);
+
+            if (endPage - startPage < 4) {
+              startPage = Math.max(0, endPage - 4);
+            }
+
+            const pageNum = startPage + i;
+            if (pageNum > endPage) return null;
+
+            return (
+              <button
+                key={pageNum}
+                onClick={() => table.setPageIndex(pageNum)}
+                className={cn(
+                  "w-8 h-8 text-sm rounded-lg transition-colors cursor-pointer",
+                  pageIndex === pageNum
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {pageNum + 1}
+              </button>
+            );
+          })}
         </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
-          <div className="flex items-center gap-2">
-            <p className="whitespace-nowrap text-sm font-normal hidden sm:block">
-              Lignes par page
-            </p>
-            <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => {
-                table.setPageSize(Number(value));
-              }}
-            >
-              <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue
-                  placeholder={table.getState().pagination.pageSize}
-                />
-              </SelectTrigger>
-              <SelectContent side="top">
-                {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center whitespace-nowrap text-sm font-normal">
-            Page {table.getState().pagination.pageIndex + 1} sur{" "}
-            {table.getPageCount()}
-          </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => table.setPageIndex(0)}
-                  disabled={!table.getCanPreviousPage()}
-                  aria-label="Go to first page"
-                >
-                  <ChevronFirstIcon size={16} aria-hidden="true" />
-                </Button>
-              </PaginationItem>
-              <PaginationItem>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  aria-label="Go to previous page"
-                >
-                  <ChevronLeftIcon size={16} aria-hidden="true" />
-                </Button>
-              </PaginationItem>
-              <PaginationItem>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  aria-label="Go to next page"
-                >
-                  <ChevronRightIcon size={16} aria-hidden="true" />
-                </Button>
-              </PaginationItem>
-              <PaginationItem>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => table.lastPage()}
-                  disabled={!table.getCanNextPage()}
-                  aria-label="Go to last page"
-                >
-                  <ChevronLastIcon size={16} aria-hidden="true" />
-                </Button>
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

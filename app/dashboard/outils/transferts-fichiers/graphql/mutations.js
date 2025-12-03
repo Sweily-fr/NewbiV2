@@ -163,7 +163,10 @@ export const UPLOAD_FILE_CHUNK_TO_R2 = gql`
 
 // Étape 2 : Créer le transfert avec les IDs de fichiers
 export const CREATE_FILE_TRANSFER_WITH_IDS = gql`
-  mutation CreateFileTransferWithIds($fileIds: [String!]!, $input: FileTransferInput) {
+  mutation CreateFileTransferWithIds(
+    $fileIds: [String!]!
+    $input: FileTransferInput
+  ) {
     createFileTransferWithIds(fileIds: $fileIds, input: $input) {
       fileTransfer {
         id
@@ -191,7 +194,10 @@ export const CREATE_FILE_TRANSFER_WITH_IDS = gql`
 `;
 
 export const CREATE_FILE_TRANSFER_WITH_IDS_R2 = gql`
-  mutation CreateFileTransferWithIdsR2($fileIds: [String!]!, $input: FileTransferInput) {
+  mutation CreateFileTransferWithIdsR2(
+    $fileIds: [String!]!
+    $input: FileTransferInput
+  ) {
     createFileTransferWithIdsR2(fileIds: $fileIds, input: $input) {
       fileTransfer {
         id
@@ -347,6 +353,9 @@ export const GET_TRANSFER_BY_LINK = gql`
         status
         downloadCount
         recipientEmail
+        # Nouvelles options
+        passwordProtected
+        allowPreview
       }
     }
   }
