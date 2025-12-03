@@ -1,4 +1,4 @@
-import { gql, useMutation, useQuery } from '@apollo/client';
+import { gql, useMutation, useQuery } from "@apollo/client";
 
 // Query pour récupérer les paramètres de relance
 export const GET_INVOICE_REMINDER_SETTINGS = gql`
@@ -26,7 +26,9 @@ export const GET_INVOICE_REMINDER_SETTINGS = gql`
 
 // Mutation pour mettre à jour les paramètres
 export const UPDATE_INVOICE_REMINDER_SETTINGS = gql`
-  mutation UpdateInvoiceReminderSettings($input: InvoiceReminderSettingsInput!) {
+  mutation UpdateInvoiceReminderSettings(
+    $input: InvoiceReminderSettingsInput!
+  ) {
     updateInvoiceReminderSettings(input: $input) {
       id
       workspaceId
@@ -51,7 +53,7 @@ export const UPDATE_INVOICE_REMINDER_SETTINGS = gql`
 // Hook pour récupérer les paramètres
 export function useInvoiceReminderSettings() {
   return useQuery(GET_INVOICE_REMINDER_SETTINGS, {
-    fetchPolicy: 'cache-and-network',
+    fetchPolicy: "cache-and-network",
   });
 }
 
