@@ -18,7 +18,12 @@ import {
   VideoIcon,
   XIcon,
   LoaderCircle,
+  CloudUpload,
+  Trash2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import { FileUploadItem } from "./file-upload-item";
 
 import { Button } from "@/src/components/ui/button";
 import {
@@ -40,11 +45,19 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { Separator } from "@/src/components/ui/separator";
 import { Callout } from "@/src/components/ui/callout";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import {
   IconClock,
   IconShield,
-  IconSend,
   IconCreditCard,
   IconPlus,
+  IconBell,
+  IconLock,
+  IconEye,
 } from "@tabler/icons-react";
 
 // Format bytes utility function
@@ -134,12 +147,19 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
     paymentCurrency: "EUR",
     recipientEmail: "",
     message: "",
+    // Nouvelles options
+    notifyOnDownload: false,
+    notifyBeforeExpiry: false,
+    passwordProtected: false,
+    password: "",
+    allowPreview: true,
   });
 
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState([]);
   const [showStripeOnboarding, setShowStripeOnboarding] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const fileInputRef = useRef(null);
 
   // Gérer le timer d'upload et calculer le temps restant
@@ -444,13 +464,9 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
   };
 
   return (
-    <div
-      className={`${selectedFiles.length > 0 ? "grid grid-cols-1 lg:grid-cols-2 gap-8" : "flex flex-col"}`}
-    >
-      {/* Upload Section */}
-      <div
-        className={`flex flex-col gap-2 ${selectedFiles.length > 0 ? "lg:sticky lg:top-6 lg:self-start" : ""}`}
-      >
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 h-[75vh]">
+      {/* Upload Section - Fixe */}
+      <div className="flex flex-col gap-2 h-full overflow-hidden">
         {/* Drop area ou Progress */}
         {isUploading ? (
           <div className="border-input flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 animate-in fade-in duration-300">
@@ -552,68 +568,124 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
           </div>
         )}
 
+        {/* Security Info - Seulement quand pas de fichiers */}
+        {selectedFiles.length === 0 && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+                <span>Chiffrement SSL</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                <span>Suppression auto.</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                  />
+                </svg>
+                <span>Lien sécurisé</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* File list */}
         {selectedFiles.length > 0 && (
-          <div className="relative flex flex-col">
-            {/* Liste des fichiers avec scroll - Max 3 fichiers visibles */}
-            <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            {/* Liste des fichiers avec scroll */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1 min-h-0">
               {selectedFiles.map((fileItem) => (
-                <div
+                <FileUploadItem
                   key={fileItem.id}
-                  className="bg-background flex items-center justify-between gap-2 rounded-lg border p-2 pe-3"
-                >
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="flex aspect-square size-10 bg-gray-100 shrink-0 items-center justify-center rounded border">
-                      {getFileIcon(fileItem.file)}
-                    </div>
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                      <p className="truncate text-[13px] font-normal">
-                        {fileItem.file.name}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {formatFileSize(fileItem.file.size)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {!isUploading && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="text-muted-foreground/80 hover:text-foreground -me-2 size-8 hover:bg-transparent"
-                      onClick={() => removeFile(fileItem.id)}
-                      aria-label="Remove file"
-                    >
-                      <XIcon className="size-4" aria-hidden="true" />
-                    </Button>
-                  )}
-                </div>
+                  file={fileItem.file}
+                  isUploading={isUploading}
+                  uploadProgress={uploadProgress}
+                  isCompleted={uploadProgress === 100}
+                  onRemove={() => removeFile(fileItem.id)}
+                />
               ))}
             </div>
 
-            {/* Remove all files button - Fixé en bas */}
+            {/* Remove all files button + Total size */}
             {selectedFiles.length > 1 && !isUploading && (
-              <div className="sticky bottom-0 mt-3 pt-3 pb-4 bg-background border-t">
-                <Button
-                  className="font-normal cursor-pointer w-full bg-red-500 hover:bg-red-600"
-                  // variant="destructive"
-                  onClick={clearFiles}
-                >
-                  Supprimer tous les fichiers ({selectedFiles.length})
-                </Button>
+              <div className="flex-shrink-0 mt-3 pt-3 bg-background border-t">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-4">
+                    <span>{selectedFiles.length} fichiers sélectionnés</span>
+                    <span>
+                      Total :{" "}
+                      {formatFileSize(
+                        selectedFiles.reduce((acc, f) => acc + f.file.size, 0)
+                      )}
+                    </span>
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                          onClick={clearFiles}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Supprimer tous les fichiers</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
             )}
           </div>
         )}
       </div>
+      {/* Options Panel */}
+      <div className="flex flex-col h-full overflow-hidden">
+        {/* Header fixe */}
+        <div className="flex items-center justify-between pb-4 flex-shrink-0">
+          <h3 className="text-lg font-medium">Options d'envoi</h3>
+        </div>
 
-      {/* Options Panel - Only show when files are selected */}
-      {selectedFiles.length > 0 && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Options d'envoi</h3>
-          </div>
-
+        {/* Options scrollables */}
+        <div className="flex-1 overflow-y-auto space-y-6 pr-2 min-h-0">
           {/* Expiration */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -768,11 +840,57 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
 
           <Separator />
 
-          {/* Security */}
-          {/* <div className="space-y-4">
+          {/* Notifications */}
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <IconShield className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-normal">Sécurité</Label>
+              <IconBell className="size-4 text-muted-foreground" />
+              <Label className="text-sm font-normal">Notifications</Label>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-sm font-normal">
+                  Notifier en cas de téléchargement
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Recevoir un email lorsqu'un fichier est téléchargé
+                </p>
+              </div>
+              <Switch
+                checked={transferOptions.notifyOnDownload}
+                onCheckedChange={(checked) =>
+                  handleOptionChange("notifyOnDownload", checked)
+                }
+                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-sm font-normal">
+                  Rappel avant expiration
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Recevoir un email 2 jours avant l'expiration
+                </p>
+              </div>
+              <Switch
+                checked={transferOptions.notifyBeforeExpiry}
+                onCheckedChange={(checked) =>
+                  handleOptionChange("notifyBeforeExpiry", checked)
+                }
+                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Protection */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <IconLock className="size-4 text-muted-foreground" />
+              <Label className="text-sm font-normal">Protection</Label>
             </div>
 
             <div className="flex items-center justify-between">
@@ -789,32 +907,60 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
                 onCheckedChange={(checked) =>
                   handleOptionChange("passwordProtected", checked)
                 }
+                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
               />
             </div>
 
             {transferOptions.passwordProtected && (
-              <Input
-                type="password"
-                placeholder="Mot de passe"
-                value={transferOptions.password}
-                onChange={(e) => handleOptionChange("password", e.target.value)}
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Entrez un mot de passe"
+                  value={transferOptions.password}
+                  onChange={(e) =>
+                    handleOptionChange("password", e.target.value)
+                  }
+                  className="h-9 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             )}
+          </div>
+
+          <Separator />
+
+          {/* Prévisualisation */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <IconEye className="size-4 text-muted-foreground" />
+              <Label className="text-sm font-normal">Prévisualisation</Label>
+            </div>
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label className="text-sm font-normal">
-                  Notification de téléchargement
+                  Autoriser la prévisualisation
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Recevoir un email lors du téléchargement
+                  Permettre de visualiser les fichiers avant téléchargement
                 </p>
               </div>
               <Switch
-                checked={transferOptions.notifyOnDownload}
+                checked={transferOptions.allowPreview}
                 onCheckedChange={(checked) =>
-                  handleOptionChange("notifyOnDownload", checked)
+                  handleOptionChange("allowPreview", checked)
                 }
+                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
               />
             </div>
           </div>
@@ -832,38 +978,37 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
               rows={3}
             />
           </div>
-
-          {/* Create Transfer Button - Bottom Right */}
-          <div className="flex justify-end pt-4">
-            <ButtonGroup>
-              <Button
-                onClick={handleCreateTransfer}
-                disabled={isUploading}
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                {isUploading ? (
-                  <>
-                    <LoaderCircle className="size-4 animate-spin" />
-                    Création en cours...
-                  </>
-                ) : (
-                  <>Transferer</>
-                )}
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                onClick={handleCreateTransfer}
-                disabled={isUploading}
-                size="icon"
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                <IconSend size={16} aria-hidden="true" />
-              </Button>
-            </ButtonGroup>
-          </div>
         </div>
-      )}
 
+        {/* Create Transfer Button - Fixe en bas */}
+        <div className="flex justify-end mt-2 pt-3 border-t bg-background flex-shrink-0">
+          <ButtonGroup>
+            <Button
+              onClick={handleCreateTransfer}
+              disabled={isUploading}
+              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+            >
+              {isUploading ? (
+                <>
+                  <LoaderCircle className="size-4 animate-spin" />
+                  Création en cours...
+                </>
+              ) : (
+                <>Transférer vos fichiers</>
+              )}
+            </Button>
+            <ButtonGroupSeparator />
+            <Button
+              onClick={handleCreateTransfer}
+              disabled={isUploading}
+              size="icon"
+              className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+            >
+              <CloudUpload size={16} aria-hidden="true" />
+            </Button>
+          </ButtonGroup>
+        </div>
+      </div>
       {/* Modal Stripe Connect Onboarding */}
       <StripeConnectOnboarding
         isOpen={showStripeOnboarding}
@@ -875,7 +1020,6 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
           // Optionnel: afficher une notification de succès
         }}
       />
-
       {/* Modal Settings pour configurer Stripe Connect */}
       <SettingsModal
         open={settingsModalOpen}

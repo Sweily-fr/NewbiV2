@@ -4,30 +4,24 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { GET_TRANSFER_BY_LINK } from "@/app/dashboard/outils/transferts-fichiers/graphql/mutations";
-import { Button } from "@/src/components/ui/button";
-import { Typewriter } from "@/src/components/ui/typewriter-text";
-import {
-  CircleArrowUp,
-  File,
-  Download,
-  Timer,
-  User as IconUser,
-} from "lucide-react";
 import { useStripePayment } from "@/src/hooks/useStripePayment";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { Badge } from "@/src/components/ui/badge";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { toast } from "@/src/components/ui/sonner";
-import { motion } from "framer-motion";
-import { Separator } from "@/src/components/ui/separator";
-import React from "react";
-import { AuroraBackground } from "./components/aura-background";
 import { Confetti } from "@/src/components/magicui/confetti";
+import { Button } from "@/src/components/ui/button";
+import {
+  Download,
+  Eye,
+  FileIcon,
+  Clock,
+  Files,
+  ArrowDown,
+  Euro,
+} from "lucide-react";
+import Image from "next/image";
+
+// Composants séparés
+import { PasswordModal, PreviewModal, PaymentModal } from "./components";
 
 export default function TransferPage() {
   const params = useParams();
@@ -37,27 +31,26 @@ export default function TransferPage() {
   const paymentStatus = searchParams.get("payment_status");
 
   const [isDownloading, setIsDownloading] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState("");
   const confettiRef = useRef(null);
+  const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Liste des images disponibles dans le dossier linkTransfert
-  const availableImages = [
-    "daniela-kokina-hOhlYhAiizc.png",
-    "lukasz-szmigiel-jFCViYFYcus.png",
-    "mark-basarab-1OtUkD_8svc.png",
-    "mourad-saadi-GyDktTa0Nmw.png",
+  // Images Unsplash sombres pour le fond
+  const backgroundImages = [
+    "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80", // Montagne nuit
+    "https://images.unsplash.com/photo-1507400492013-162706c8c05e?w=1920&q=80", // Forêt sombre
+    "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80", // Brume montagne
+    "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=1920&q=80", // Nuit étoilée
+    "https://images.unsplash.com/photo-1493514789931-586cb221d7a7?w=1920&q=80", // Aurore boréale
   ];
 
-  // Fonction pour sélectionner une image aléatoire
-  const getRandomBackgroundImage = () => {
-    const randomIndex = Math.floor(Math.random() * availableImages.length);
-    const selectedImage = availableImages[randomIndex];
-    return `/images/linkTransfert/${selectedImage}`;
-  };
-
-  // Sélectionner une image aléatoire au chargement
+  // Défilement automatique des images
   useEffect(() => {
-    setBackgroundImage(getRandomBackgroundImage());
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % backgroundImages.length);
+    }, 8000); // Change toutes les 8 secondes
+    return () => clearInterval(interval);
   }, []);
 
   // Hook pour gérer les paiements Stripe
@@ -277,25 +270,16 @@ export default function TransferPage() {
     }
   };
 
-  // Fonction pour formater la taille des fichiers
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  // Fonction pour ouvrir la prévisualisation
+  const openPreview = (file) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    const previewUrl = `${apiUrl}/api/files/preview/${transfer?.fileTransfer?.id}/${file.fileId || file.id || file._id}`;
+    setPreviewFile({ ...file, previewUrl });
   };
 
-  // Fonction pour formater la date
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  // Vérifier si le transfert nécessite un mot de passe et s'il n'est pas encore vérifié
+  const needsPasswordVerification =
+    transfer?.fileTransfer?.passwordProtected && !isPasswordVerified;
 
   if (!shareLink || !accessKey) {
     return (
@@ -363,278 +347,240 @@ export default function TransferPage() {
 
   const isExpired = new Date(transfer?.fileTransfer?.expiryDate) < new Date();
 
+  // Calculer si paiement requis
+  const isPaymentRequired =
+    (transfer?.fileTransfer?.isPaymentRequired === true ||
+      (transfer?.fileTransfer?.paymentAmount &&
+        transfer?.fileTransfer?.paymentAmount > 0)) &&
+    !transfer?.fileTransfer?.isPaid;
+
+  // Calculer la taille totale des fichiers
+  const totalSize = transfer?.fileTransfer?.files?.reduce(
+    (acc, file) => acc + (file.size || 0),
+    0
+  );
+
+  // Formater la taille
+  const formatSize = (bytes) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  };
+
+  // Formater la date d'expiration
+  const formatExpiryDate = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    return d.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  // Vérifier si un fichier peut être prévisualisé
+  const canPreview = (file) => {
+    if (!transfer?.fileTransfer?.allowPreview) return false;
+    const previewableTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "application/pdf",
+    ];
+    const ext = (file.originalName || "").split(".").pop()?.toLowerCase();
+    const previewableExts = ["jpg", "jpeg", "png", "gif", "webp", "pdf"];
+    return (
+      previewableTypes.includes(file.mimeType) || previewableExts.includes(ext)
+    );
+  };
+
   return (
-    <div className="flex flex-col lg:flex-row h-screen relative">
-      <div className="w-full lg:w-1/2 flex flex-col justify-center p-4 lg:p-2 relative pt-16 lg:pt-2 overflow-hidden">
-        {/* Confetti Canvas - limité à la partie gauche */}
-        {paymentStatus === "success" && (
-          <Confetti
-            ref={confettiRef}
-            className="absolute right-0 top-0 z-50 w-full h-full pointer-events-none"
-          />
-        )}
-        <div className="mx-auto w-full max-w-xl lg:max-w-xl flex flex-col max-h-[90vh] lg:max-h-[85vh]">
-          <div className="mb-8">
-            <h1 className="text-2xl font-medium mb-2">
-              Téléchargez les fichiers partagés avec vous
-            </h1>
-            <p className="text-sm text-gray-600">
-              Accédez aux fichiers qui ont été partagés avec vous de manière
-              sécurisée
-            </p>
+    <div className="flex min-h-screen">
+      {/* Modal de mot de passe */}
+      {needsPasswordVerification && (
+        <PasswordModal
+          transferId={transfer?.fileTransfer?.id}
+          onPasswordVerified={() => setIsPasswordVerified(true)}
+        />
+      )}
+
+      {/* Modal de prévisualisation */}
+      <PreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
+
+      {/* Modal de paiement */}
+      {isPaymentRequired && (
+        <PaymentModal
+          amount={transfer?.fileTransfer?.paymentAmount}
+          currency={transfer?.fileTransfer?.paymentCurrency}
+          onPay={() => initiatePayment(transfer?.fileTransfer?.id)}
+          isProcessing={isProcessing}
+        />
+      )}
+
+      {/* Confetti */}
+      {paymentStatus === "success" && (
+        <Confetti
+          ref={confettiRef}
+          className="fixed inset-0 z-50 pointer-events-none"
+        />
+      )}
+
+      {/* Panneau gauche - Images défilantes */}
+      <div className="hidden lg:block lg:w-1/2 relative m-2 rounded-[18px] overflow-hidden">
+        {/* Images de fond qui défilent */}
+        {backgroundImages.map((img, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ${
+              index === currentImageIndex ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <Image
+              src={img}
+              alt=""
+              fill
+              className="object-cover"
+              priority={index === 0}
+              unoptimized
+            />
           </div>
+        ))}
 
-          <Card className="mb-6 shadow-none border-none">
-            <CardHeader className="px-0">
-              <CardTitle className="flex items-center justify-between font-normal">
-                <span>Informations du transfert</span>
-                <Badge
-                  className="bg-[#5b4fff]/20 border-[#5b4fff]/70"
-                  variant={isExpired ? "destructive" : "default"}
-                >
-                  <span className="text-[#5b4fff]/90 font-normal">
-                    {isExpired ? "Expiré" : "Actif"}
-                  </span>
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-0">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex items-center space-x-2">
-                  <File size={16} className="text-gray-500" />
-                  <span className="text-xs text-gray-600">
-                    {transfer?.fileTransfer?.files?.length || 0} fichier(s)
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Timer size={16} className="text-gray-500" />
-                  <span className="text-xs text-gray-600">
-                    Expire le {formatDate(transfer?.fileTransfer?.expiryDate)}
-                  </span>
-                </div>
-                {transfer?.fileTransfer?.recipientEmail && (
-                  <div className="flex items-center space-x-2">
-                    <IconUser size={16} className="text-gray-500" />
-                    <span className="text-xs text-gray-600">
-                      Pour: {transfer?.fileTransfer?.recipientEmail}
-                    </span>
-                  </div>
-                )}
-                <div className="flex items-center space-x-2">
-                  <Download size={16} className="text-gray-500" />
-                  <span className="text-xs text-gray-600">
-                    {transfer?.fileTransfer?.downloadCount || 0}{" "}
-                    téléchargement(s)
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          {Boolean(
-            (transfer?.fileTransfer?.isPaymentRequired === true ||
-              (transfer?.fileTransfer?.paymentAmount &&
-                transfer?.fileTransfer?.paymentAmount > 0)) &&
-              !transfer?.fileTransfer?.isPaid
-          ) && (
-            <>
-              <Separator />
-              <Card className="mb-6 border-none shadow-none">
-                <CardContent className="p-0">
-                  <div className="flex item-center justify-between">
-                    <div className="flex flex-col">
-                      <h3 className="text-lg font-normal">Paiement requis</h3>
-                      <p className="mb-4 text-sm">
-                        Ce transfert nécessite un paiement de{" "}
-                        {transfer?.fileTransfer?.paymentAmount}{" "}
-                        {transfer?.fileTransfer?.paymentCurrency}
-                      </p>
-                    </div>
-                    <Button
-                      className="cursor-pointer bg-[#5b4fff] hover:bg-[#5b4fff]/90"
-                      onClick={() =>
-                        initiatePayment(transfer?.fileTransfer?.id)
-                      }
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? "Redirection..." : "Procéder au paiement"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-              <Separator />
-            </>
-          )}
-          {/* ici tu fais les mdifs */}
-          <Card className="shadow-none border-none flex-1 flex flex-col overflow-hidden">
-            <CardHeader className="p-0 flex-shrink-0">
-              <CardTitle className="flex flex-col lg:flex-row lg:items-center font-normal lg:justify-between gap-4">
-                <span className="flex items-center space-x-2">
-                  <span>
-                    Fichiers ({transfer?.fileTransfer?.files?.length || 0})
-                  </span>
-                  <div className="w-2 h-2 bg-[#5b4fff]/20 rounded-full"></div>
-                </span>
-                {transfer?.fileTransfer?.files?.length > 1 && !isExpired && (
-                  <Button
-                    onClick={downloadAllFiles}
-                    disabled={
-                      isDownloading ||
-                      ((transfer?.fileTransfer?.isPaymentRequired === true ||
-                        (transfer?.fileTransfer?.paymentAmount &&
-                          transfer?.fileTransfer?.paymentAmount > 0)) &&
-                        !transfer?.fileTransfer?.isPaid)
-                    }
-                    className="font-normal cursor-pointer bg-[#5b4fff] border-[#5b4fff]/80 hover:bg-[#5b4fff]/90 disabled:opacity-50 disabled:cursor-not-allowed w-full lg:w-auto"
-                  >
-                    {isDownloading ? "Téléchargement..." : "Tout télécharger"}
-                    <Download size={16} />
-                  </Button>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 overflow-y-auto">
-              {transfer?.fileTransfer?.files?.length > 0 ? (
-                <div className="space-y-3 pr-2">
-                  {transfer?.fileTransfer?.files.map((file, index) => {
-                    // Vérifier si paiement requis ET si l'utilisateur n'a pas encore payé
-                    const isPaymentRequired =
-                      (transfer?.fileTransfer?.isPaymentRequired === true ||
-                        (transfer?.fileTransfer?.paymentAmount &&
-                          transfer?.fileTransfer?.paymentAmount > 0)) &&
-                      !transfer?.fileTransfer?.isPaid;
+        {/* Overlay sombre */}
+        <div className="absolute inset-0 bg-black/40" />
 
-                    return (
-                      <div
-                        key={file.id || index}
-                        className={`flex items-center justify-between p-4 border rounded-xl transition-all duration-200 ${
-                          isPaymentRequired
-                            ? "border-gray-200 bg-gray-50/50"
-                            : "border-gray-200 hover:bg-[#5b4fff]/5 hover:border-[#5b4fff]/20"
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`p-2 rounded-lg ${
-                              isPaymentRequired
-                                ? "bg-gray-100"
-                                : "bg-[#5b4fff]/10"
-                            }`}
-                          >
-                            <File
-                              size={16}
-                              className={
-                                isPaymentRequired
-                                  ? "text-gray-400"
-                                  : "text-[#5b4fff]/70"
-                              }
-                            />
-                          </div>
-                          <div>
-                            <p
-                              className={`font-normal text-sm ${
-                                isPaymentRequired
-                                  ? "text-gray-400"
-                                  : "text-gray-900"
-                              }`}
-                            >
-                              {file.originalName}
-                            </p>
-                            <p
-                              className={`text-xs font-normal ${
-                                isPaymentRequired
-                                  ? "text-gray-400"
-                                  : "text-gray-500"
-                              }`}
-                            >
-                              {formatFileSize(file.size)} • {file.mimeType}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          onClick={() =>
-                            downloadFile(file.id, file.originalName)
-                          }
-                          disabled={
-                            isDownloading || isExpired || isPaymentRequired
-                          }
-                          size="sm"
-                          className={`${
-                            isPaymentRequired
-                              ? "cursor-not-allowed opacity-50"
-                              : "hover:bg-[#5b4fff]/10 hover:text-[#5b4fff]"
-                          }`}
-                        >
-                          {isPaymentRequired ? (
-                            <svg
-                              className="w-4 h-4 text-gray-400"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                              />
-                            </svg>
-                          ) : (
-                            <Download size={16} className="cursor-pointer" />
-                          )}
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-center text-gray-500 py-8">
-                  Aucun fichier disponible
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {isExpired && (
-            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-center">
-                Ce transfert a expiré et n'est plus disponible au
-                téléchargement.
-              </p>
-            </div>
-          )}
+        {/* Logo en haut à gauche */}
+        <div className="absolute top-6 left-6 z-10">
+          <Image
+            src="/Logo + texte_blanc.svg"
+            alt="Newbi"
+            width={100}
+            height={32}
+            priority
+          />
         </div>
       </div>
-      <div className="hidden lg:flex w-1/2 p-3 items-center min-h-screen justify-center">
-        <div
-          className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
-          style={{ backgroundImage: `url('${backgroundImage}')` }}
-        >
-          <div className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto">
-            <div className="text-lg min-h-[27px] flex items-center justify-between">
-              <div className="flex-1">
-                <Typewriter
-                  text={[
-                    "Téléchargez vos fichiers en toute sécurité.",
-                    "Partagez facilement avec vos collaborateurs.",
-                    "Accédez à vos documents où que vous soyez.",
-                  ]}
-                  speed={20}
-                  deleteSpeed={15}
-                  delay={800}
-                  loop={true}
-                  className="font-medium text-left text-[#1C1C1C] text-[15px]"
-                />
-              </div>
-              <CircleArrowUp className="ml-4 text-[#1C1C1C] flex-shrink-0" />
-            </div>
-          </div>
-          <img
-            src="/ni.svg"
-            alt="Newbi Logo"
-            className="absolute bottom-2 right-3 w-5 h-auto filter brightness-0 invert"
-            style={{ opacity: 0.9 }}
+
+      {/* Panneau droit - Card */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-5 py-5">
+        {/* Logo mobile */}
+        <div className="lg:hidden absolute top-6 left-6">
+          <Image
+            src="/newbiLetter.png"
+            alt="Newbi"
+            width={100}
+            height={32}
+            priority
           />
+        </div>
+
+        {/* Card principale */}
+        <div
+          className="w-full mx-auto rounded-2xl shadow-md bg-white"
+          style={{ maxWidth: 320 }}
+        >
+          {isExpired ? (
+            /* Message d'expiration */
+            <div className="px-5 py-8 text-center">
+              <div className="rounded-full w-44 h-44 mx-auto border-8 border-gray-300 flex items-center justify-center mb-6">
+                <Clock className="w-20 h-20 text-gray-300" />
+              </div>
+              <h1 className="text-2xl font-light text-gray-800">
+                Transfert expiré
+              </h1>
+              <p className="text-xs text-gray-500 mt-2">
+                Ce lien n'est plus disponible
+              </p>
+            </div>
+          ) : isPaymentRequired ? null : (
+            /* Contenu principal */
+            <>
+              {/* Header avec icône */}
+              <div className="w-full px-5 pt-8 pb-3">
+                {/* <div className="rounded-full w-24 h-24 mx-auto border-8 border-gray-300 flex items-center justify-center">
+                  <ArrowDown
+                    className="w-20 h-20 text-gray-300"
+                    strokeWidth={1}
+                  />
+                </div> */}
+              </div>
+
+              {/* Titre */}
+              <div className="w-full px-5 text-center pb-8 border-b border-gray-300">
+                <h1 className="text-2xl font-normal font-light text-gray-800">
+                  Vos fichiers sont prêts
+                </h1>
+                <p className="text-xs text-gray-500 mt-1">
+                  Expire le{" "}
+                  {formatExpiryDate(transfer?.fileTransfer?.expiryDate)}
+                </p>
+              </div>
+
+              {/* Liste des fichiers */}
+              <ul className="max-h-60 overflow-y-auto">
+                {transfer?.fileTransfer?.files?.map((file, index) => (
+                  <li
+                    key={file.id || index}
+                    className="w-full px-5 py-3 border-b border-gray-300 last:border-b-0"
+                  >
+                    <div className="w-full flex items-center">
+                      <div className="flex-grow min-w-0">
+                        <h3 className="text-sm text-gray-800 truncate">
+                          {file.originalName}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {formatSize(file.size)}
+                          {file.mimeType &&
+                            !file.mimeType.includes("octet-stream") && (
+                              <> • {file.mimeType?.split("/")[1]}</>
+                            )}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 ml-2">
+                        {canPreview(file) && (
+                          <button
+                            onClick={() => openPreview(file)}
+                            className="p-2 text-gray-400 hover:text-[#5a50ff] transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() =>
+                            downloadFile(
+                              file.id || file.fileId,
+                              file.originalName
+                            )
+                          }
+                          className="p-2 text-[#5a50ff] hover:text-[#5a50ff]/70 transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Bouton télécharger */}
+              <div className="w-full px-5 py-5 text-center">
+                <Button
+                  onClick={downloadAllFiles}
+                  disabled={isDownloading}
+                  className="bg-[#5a50ff] hover:bg-[#5a50ff]/90 text-white px-10"
+                >
+                  {isDownloading
+                    ? "Téléchargement..."
+                    : transfer?.fileTransfer?.files?.length > 1
+                      ? "Tout télécharger"
+                      : "Télécharger"}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

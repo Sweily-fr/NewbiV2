@@ -17,18 +17,11 @@ import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import Link from "next/link";
 import { Callout } from "@/src/components/ui/callout";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { usePermissions } from "@/src/hooks/usePermissions";
+import { StripeConnectOnboardingModal } from "@/src/components/stripe-connect-onboarding-modal";
 import { CreditCard, ExternalLink } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/src/components/ui/alert-dialog";
 
 export default function UserInfoSection({ onTabChange }) {
   const { data: session, isPending, error, refetch } = useSession();
@@ -42,9 +35,18 @@ export default function UserInfoSection({ onTabChange }) {
   const [isChangePhoneModalOpen, setIsChangePhoneModalOpen] = useState(false);
   const [isDeactivateAccountModalOpen, setIsDeactivateAccountModalOpen] =
     useState(false);
-  const [isStripeConfigAlertOpen, setIsStripeConfigAlertOpen] = useState(false);
+  const [isStripeOnboardingModalOpen, setIsStripeOnboardingModalOpen] =
+    useState(false);
+  const [stripeOnboardingStep, setStripeOnboardingStep] = useState(1);
 
-  // Hook Stripe Connect
+  // Récupérer l'organisation active et les permissions
+  const { activeOrganization } = useWorkspace();
+  const { isOwner, isAdmin } = usePermissions();
+
+  // Vérifier si l'utilisateur peut gérer Stripe Connect
+  const canManageStripeConnect = isOwner() || isAdmin();
+
+  // Hook Stripe Connect - utiliser l'ID de l'organisation au lieu de l'ID utilisateur
   const {
     isConnected: stripeConnected,
     canReceivePayments,
@@ -57,7 +59,7 @@ export default function UserInfoSection({ onTabChange }) {
     openStripeDashboard,
     refetchStatus,
     clearError,
-  } = useStripeConnect(session?.user?.id);
+  } = useStripeConnect(activeOrganization?.id);
 
   // Gérer les erreurs Stripe
   useEffect(() => {
@@ -66,17 +68,59 @@ export default function UserInfoSection({ onTabChange }) {
     }
   }, [stripeError]);
 
-  // Gérer les paramètres de retour de Stripe
+  // Écouter l'événement de configuration Stripe complète
+  useEffect(() => {
+    const handleStripeConfigComplete = async () => {
+      console.log(
+        "🔄 Configuration Stripe complète - Rafraîchissement du statut"
+      );
+      await refetchStatus();
+
+      // Attendre un peu et vérifier à nouveau (parfois Stripe met du temps à mettre à jour)
+      setTimeout(async () => {
+        console.log("🔄 Deuxième vérification du statut Stripe");
+        await refetchStatus();
+      }, 2000);
+    };
+
+    window.addEventListener("stripeConfigComplete", handleStripeConfigComplete);
+
+    return () => {
+      window.removeEventListener(
+        "stripeConfigComplete",
+        handleStripeConfigComplete
+      );
+    };
+  }, [refetchStatus]);
+
+  // Logger le statut Stripe pour déboguer
+  useEffect(() => {
+    if (stripeAccount) {
+      console.log("📊 Statut Stripe actuel:", {
+        accountId: stripeAccount.accountId,
+        isOnboarded: stripeAccount.isOnboarded,
+        chargesEnabled: stripeAccount.chargesEnabled,
+        canReceivePayments,
+      });
+    }
+  }, [stripeAccount, canReceivePayments]);
+
+  // Gérer les paramètres de retour de Stripe (sauf stripe_step1_complete qui est géré globalement)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const stripeSuccess = urlParams.get("stripe_success");
     const stripeRefresh = urlParams.get("stripe_refresh");
+    const stripeConnectSuccess = urlParams.get("stripe_connect_success");
 
     if (stripeSuccess === "true") {
       refetchStatus();
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (stripeRefresh === "true") {
       window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (stripeConnectSuccess === "true") {
+      // Configuration complète : le modal de succès s'affichera automatiquement
+      refetchStatus();
+      // Ne pas nettoyer l'URL ici, le modal le fera après fermeture
     }
   }, [refetchStatus]);
 
@@ -291,50 +335,96 @@ export default function UserInfoSection({ onTabChange }) {
               <p className="text-xs text-gray-400">
                 {stripeConnected
                   ? canReceivePayments
-                    ? "Recevez des paiements pour vos transferts de fichiers"
-                    : "Finalisation de la configuration requise"
-                  : "Connectez votre compte pour recevoir des paiements"}
+                    ? "Votre organisation peut recevoir des paiements"
+                    : "Configuration en cours - Vérification d'identité requise"
+                  : "Connectez Stripe pour recevoir des paiements (réservé aux owners et admins)"}
               </p>
               {stripeAccount && !stripeAccount.isOnboarded && (
-                <p className="text-xs text-[#5A50FF] mt-1">
-                  *Configuration incomplète - Certaines actions sont requises
+                <p className="text-xs text-amber-600 mt-1 font-medium">
+                  ⚠️ Action requise : Finalisez votre configuration Stripe pour
+                  recevoir des paiements
+                </p>
+              )}
+              {!canManageStripeConnect && (
+                <p className="text-xs text-amber-600 mt-1">
+                  ⚠️ Seuls les propriétaires et administrateurs peuvent gérer
+                  Stripe Connect
                 </p>
               )}
             </div>
             <div className="flex gap-2 ml-4 flex-shrink-0">
               {stripeConnected ? (
                 <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (stripeAccount && !stripeAccount.isOnboarded) {
-                        setIsStripeConfigAlertOpen(true);
-                      } else {
-                        openStripeDashboard();
+                  {/* Si configuration incomplète, afficher un bouton pour finaliser */}
+                  {stripeAccount && !stripeAccount.isOnboarded ? (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => {
+                        setStripeOnboardingStep(2);
+                        setIsStripeOnboardingModalOpen(true);
+                      }}
+                      disabled={!canManageStripeConnect}
+                      className="bg-[#635BFF] hover:bg-[#5A54E5] text-white font-normal"
+                      title={
+                        !canManageStripeConnect
+                          ? "Réservé aux owners et admins"
+                          : "Finalisez votre configuration Stripe"
                       }
-                    }}
-                    className="font-normal"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Tableau de bord
-                  </Button>
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Finaliser la configuration
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={openStripeDashboard}
+                      disabled={!canManageStripeConnect}
+                      className="font-normal"
+                      title={
+                        !canManageStripeConnect
+                          ? "Réservé aux owners et admins"
+                          : ""
+                      }
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Tableau de bord
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleStripeDisconnect}
-                    disabled={isStripeLoading}
+                    disabled={isStripeLoading || !canManageStripeConnect}
                     className="font-normal"
+                    title={
+                      !canManageStripeConnect
+                        ? "Réservé aux owners et admins"
+                        : ""
+                    }
                   >
                     {isStripeLoading ? "..." : "Déconnecter"}
                   </Button>
                 </>
               ) : (
                 <Button
-                  onClick={handleStripeConnect}
-                  disabled={isStripeLoading || !session?.user?.id}
+                  onClick={() => {
+                    setStripeOnboardingStep(1);
+                    setIsStripeOnboardingModalOpen(true);
+                  }}
+                  disabled={
+                    isStripeLoading ||
+                    !activeOrganization?.id ||
+                    !canManageStripeConnect
+                  }
                   size="sm"
                   className="bg-[#635BFF] hover:bg-[#5A54E5] text-white font-normal disabled:opacity-50"
+                  title={
+                    !canManageStripeConnect
+                      ? "Réservé aux owners et admins"
+                      : ""
+                  }
                 >
                   {isStripeLoading ? "Connexion..." : "Connecter Stripe"}
                 </Button>
@@ -422,30 +512,22 @@ export default function UserInfoSection({ onTabChange }) {
         userEmail={session?.user?.email}
       />
 
-      {/* Modal de confirmation Stripe */}
-      <AlertDialog open={isStripeConfigAlertOpen} onOpenChange={setIsStripeConfigAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Configuration Stripe incomplète</AlertDialogTitle>
-            <AlertDialogDescription>
-              Votre compte Stripe nécessite une configuration supplémentaire. 
-              Continuer vers le tableau de bord Stripe pour compléter la configuration ?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                openStripeDashboard();
-                setIsStripeConfigAlertOpen(false);
-              }}
-              className="bg-[#5A50FF] hover:bg-[#5A50FF]/90"
-            >
-              Continuer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Modal d'onboarding Stripe à 2 étapes */}
+      <StripeConnectOnboardingModal
+        isOpen={isStripeOnboardingModalOpen}
+        onClose={() => setIsStripeOnboardingModalOpen(false)}
+        currentStep={stripeOnboardingStep}
+        onStartConfiguration={async () => {
+          // Étape 1 : Configuration initiale
+          if (session?.user?.email) {
+            await connectStripe(session.user.email);
+          }
+        }}
+        onVerifyIdentity={async () => {
+          // Étape 2 : Vérification d'identité
+          await openStripeDashboard();
+        }}
+      />
     </div>
   );
 }

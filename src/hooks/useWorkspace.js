@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { authClient } from "@/src/lib/auth-client";
+import { useUser } from "@/src/lib/auth/hooks";
 
 /**
  * Hook pour obtenir les informations du workspace actuel
  * Utilise directement les hooks Better Auth pour les organisations
  * Better Auth gère automatiquement la persistance de l'organisation active dans la session
+ * Stocke automatiquement organizationId et userRole dans localStorage pour Apollo Client
  * @returns {Object} - { workspaceId, organization, organizations, loading }
  */
 export const useWorkspace = () => {
@@ -14,12 +16,71 @@ export const useWorkspace = () => {
   const { data: activeOrganization, isPending: activeLoading } =
     authClient.useActiveOrganization();
 
-  const loading = orgsLoading || activeLoading;
+  // Récupérer la session pour obtenir l'utilisateur
+  const { session } = useUser();
+
+  // État pour l'organisation complète avec les membres
+  const [fullOrganization, setFullOrganization] = useState(null);
+  const [loadingFull, setLoadingFull] = useState(false);
+
+  const loading = orgsLoading || activeLoading || loadingFull;
+
+  // Charger l'organisation complète si elle n'a pas de membres
+  useEffect(() => {
+    if (activeOrganization?.id && !activeOrganization.members) {
+      setLoadingFull(true);
+      authClient.organization
+        .getFullOrganization({
+          organizationId: activeOrganization.id,
+        })
+        .then(({ data }) => {
+          setFullOrganization(data);
+          setLoadingFull(false);
+        })
+        .catch((error) => {
+          console.error("Error loading full organization:", error);
+          setLoadingFull(false);
+        });
+    } else if (activeOrganization?.members) {
+      setFullOrganization(activeOrganization);
+    }
+  }, [activeOrganization?.id]);
+
+  // Utiliser l'organisation complète si disponible, sinon l'organisation active
+  const orgWithMembers = fullOrganization || activeOrganization;
+
+  // Stocker l'organizationId et le userRole dans localStorage pour Apollo Client
+  useEffect(() => {
+    if (activeOrganization?.id) {
+      localStorage.setItem("active_organization_id", activeOrganization.id);
+      console.log(
+        "✅ [useWorkspace] Organization ID stocké:",
+        activeOrganization.id
+      );
+    } else {
+      localStorage.removeItem("active_organization_id");
+    }
+
+    // Récupérer le rôle directement depuis l'organisation avec membres
+    if (orgWithMembers && session?.user) {
+      const member = orgWithMembers.members?.find(
+        (m) => m.userId === session.user.id
+      );
+      const userRole = member?.role?.toLowerCase() || null;
+
+      if (userRole) {
+        localStorage.setItem("user_role", userRole);
+        console.log("✅ [useWorkspace] User role stocké:", userRole);
+      } else {
+        localStorage.removeItem("user_role");
+      }
+    }
+  }, [activeOrganization?.id, orgWithMembers, session?.user]);
 
   return {
     workspaceId: activeOrganization?.id || null,
-    organization: activeOrganization,
-    activeOrganization: activeOrganization,
+    organization: orgWithMembers,
+    activeOrganization: orgWithMembers,
     organizations: organizations || [],
     loading,
   };

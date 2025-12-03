@@ -22,7 +22,9 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
 
   // Mutations GraphQL
   const [startMultipartUploadMutation] = useMutation(START_MULTIPART_UPLOAD);
-  const [completeMultipartUploadMutation] = useMutation(COMPLETE_MULTIPART_UPLOAD);
+  const [completeMultipartUploadMutation] = useMutation(
+    COMPLETE_MULTIPART_UPLOAD
+  );
   const [createFileTransferWithIdsR2Mutation] = useMutation(
     CREATE_FILE_TRANSFER_WITH_IDS_R2
   );
@@ -79,7 +81,12 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
   /**
    * Upload un fichier en multipart natif S3/R2
    */
-  const uploadFileInMultipartNative = async (fileData, transferId, fileIndex = 0, totalFiles = 1) => {
+  const uploadFileInMultipartNative = async (
+    fileData,
+    transferId,
+    fileIndex = 0,
+    totalFiles = 1
+  ) => {
     const { file, id: fileId } = fileData;
     const parts = createFileParts(file);
     const totalParts = parts.length;
@@ -91,20 +98,23 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
 
       // Étape 1 : Démarrer le multipart et obtenir les URLs presigned
       console.log(`📦 Démarrage multipart upload...`);
-      const { data: startData, errors: startErrors } = await startMultipartUploadMutation({
-        variables: {
-          transferId: transferId,
-          fileId: fileId,
-          fileName: file.name,
-          fileSize: file.size,
-          mimeType: file.type || "application/octet-stream",
-          totalParts: totalParts,
-        },
-      });
+      const { data: startData, errors: startErrors } =
+        await startMultipartUploadMutation({
+          variables: {
+            transferId: transferId,
+            fileId: fileId,
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type || "application/octet-stream",
+            totalParts: totalParts,
+          },
+        });
 
       if (startErrors) {
         console.error("❌ Erreurs GraphQL lors du démarrage:", startErrors);
-        throw new Error(`Erreurs GraphQL: ${startErrors.map(e => e.message).join(", ")}`);
+        throw new Error(
+          `Erreurs GraphQL: ${startErrors.map((e) => e.message).join(", ")}`
+        );
       }
 
       if (!startData?.startMultipartUpload) {
@@ -123,19 +133,24 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       const uploadPart = async (part, index) => {
         const partNumber = index + 1;
         const urlInfo = presignedUrls.find((u) => u.partNumber === partNumber);
-        
+
         if (!urlInfo) {
           throw new Error(`URL manquante pour part ${partNumber}`);
         }
 
         // Upload DIRECT vers R2
-        const result = await uploadPartDirectToR2(part, urlInfo.uploadUrl, partNumber);
+        const result = await uploadPartDirectToR2(
+          part,
+          urlInfo.uploadUrl,
+          partNumber
+        );
 
         uploadedCount++;
-        
+
         // Calculer la progression globale en tenant compte de tous les fichiers
         const fileProgress = (uploadedCount / totalParts) * 100;
-        const globalProgress = ((fileIndex + (fileProgress / 100)) / totalFiles) * 100;
+        const globalProgress =
+          ((fileIndex + fileProgress / 100) / totalFiles) * 100;
         setUploadProgress(globalProgress);
 
         return result;
@@ -156,23 +171,31 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         );
       }
 
-      console.log(`✅ Toutes les parts uploadées: ${uploadedParts.length}/${totalParts}`);
+      console.log(
+        `✅ Toutes les parts uploadées: ${uploadedParts.length}/${totalParts}`
+      );
 
       // Étape 3 : Finaliser le multipart upload
       console.log(`🔧 Finalisation du multipart upload...`);
-      const { data: completeData, errors: completeErrors } = await completeMultipartUploadMutation({
-        variables: {
-          uploadId: uploadId,
-          key: key,
-          parts: uploadedParts,
-          transferId: transferId,
-          fileId: fileId,
-        },
-      });
+      const { data: completeData, errors: completeErrors } =
+        await completeMultipartUploadMutation({
+          variables: {
+            uploadId: uploadId,
+            key: key,
+            parts: uploadedParts,
+            transferId: transferId,
+            fileId: fileId,
+          },
+        });
 
       if (completeErrors) {
-        console.error("❌ Erreurs GraphQL lors de la finalisation:", completeErrors);
-        throw new Error(`Erreurs GraphQL: ${completeErrors.map(e => e.message).join(", ")}`);
+        console.error(
+          "❌ Erreurs GraphQL lors de la finalisation:",
+          completeErrors
+        );
+        throw new Error(
+          `Erreurs GraphQL: ${completeErrors.map((e) => e.message).join(", ")}`
+        );
       }
 
       if (!completeData?.completeMultipartUpload?.success) {
@@ -180,8 +203,12 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         throw new Error("Échec de la finalisation du multipart upload");
       }
 
-      console.log(`✅ Multipart Upload complété: ${completeData.completeMultipartUpload.key}`);
-      console.log(`📊 Taille finale: ${(completeData.completeMultipartUpload.size / 1024 / 1024).toFixed(2)} MB`);
+      console.log(
+        `✅ Multipart Upload complété: ${completeData.completeMultipartUpload.key}`
+      );
+      console.log(
+        `📊 Taille finale: ${(completeData.completeMultipartUpload.size / 1024 / 1024).toFixed(2)} MB`
+      );
 
       return fileId;
     } catch (error) {
@@ -201,7 +228,12 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       const fileData = files[i];
 
       try {
-        const fileId = await uploadFileInMultipartNative(fileData, transferId, i, totalFiles);
+        const fileId = await uploadFileInMultipartNative(
+          fileData,
+          transferId,
+          i,
+          totalFiles
+        );
         uploadedFileIds.push(fileId);
       } catch (error) {
         console.error(`❌ Erreur upload fichier ${fileData.file.name}:`, error);
@@ -240,7 +272,10 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         const transferId = uuidv4();
 
         // Upload tous les fichiers en multipart natif vers R2
-        const uploadedFileIds = await uploadMultipleFilesToR2(validFiles, transferId);
+        const uploadedFileIds = await uploadMultipleFilesToR2(
+          validFiles,
+          transferId
+        );
 
         // Préparer les options du transfert
         const inputData = {
@@ -252,6 +287,11 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
           paymentCurrency: transferOptions.paymentCurrency || "EUR",
           recipientEmail: transferOptions.recipientEmail || null,
           message: transferOptions.message || "",
+          // Nouvelles options
+          notifyOnDownload: Boolean(transferOptions.notifyOnDownload),
+          passwordProtected: Boolean(transferOptions.passwordProtected),
+          password: transferOptions.password || null,
+          allowPreview: transferOptions.allowPreview !== false,
         };
 
         // Créer le transfert avec les IDs des fichiers

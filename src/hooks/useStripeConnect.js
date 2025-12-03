@@ -4,22 +4,23 @@ import {
   MY_STRIPE_CONNECT_ACCOUNT,
   CREATE_STRIPE_CONNECT_ACCOUNT,
   GENERATE_STRIPE_ONBOARDING_LINK,
+  GENERATE_STRIPE_DASHBOARD_LINK,
   CHECK_STRIPE_CONNECT_ACCOUNT_STATUS,
   DISCONNECT_STRIPE_ACCOUNT,
 } from "@/src/graphql/mutations/stripe";
 
-export const useStripeConnect = (userId) => {
+export const useStripeConnect = (organizationId) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const apolloClient = useApolloClient();
 
-  // Query pour récupérer le compte Stripe de l'utilisateur
+  // Query pour récupérer le compte Stripe de l'organisation
   const {
     data: stripeStatusData,
     loading: statusLoading,
     refetch: refetchStatus,
   } = useQuery(MY_STRIPE_CONNECT_ACCOUNT, {
-    skip: !userId,
+    skip: !organizationId,
     errorPolicy: "all",
     fetchPolicy: "network-only",
     notifyOnNetworkStatusChange: true,
@@ -28,8 +29,8 @@ export const useStripeConnect = (userId) => {
   // Note: Le cache est maintenant vidé globalement lors de la déconnexion dans nav-user.jsx
 
   // Debug pour identifier les problèmes de cache
-  console.log('🔍 useStripeConnect Debug:', {
-    userId,
+  console.log("🔍 useStripeConnect Debug:", {
+    organizationId,
     hasData: !!stripeStatusData,
     accountId: stripeStatusData?.myStripeConnectAccount?.accountId,
     loading: statusLoading,
@@ -39,6 +40,7 @@ export const useStripeConnect = (userId) => {
   // Mutations
   const [createStripeAccount] = useMutation(CREATE_STRIPE_CONNECT_ACCOUNT);
   const [generateOnboardingLink] = useMutation(GENERATE_STRIPE_ONBOARDING_LINK);
+  const [generateDashboardLink] = useMutation(GENERATE_STRIPE_DASHBOARD_LINK);
   const [checkAccountStatus] = useMutation(CHECK_STRIPE_CONNECT_ACCOUNT_STATUS);
   const [disconnectAccount] = useMutation(DISCONNECT_STRIPE_ACCOUNT);
 
@@ -71,9 +73,9 @@ export const useStripeConnect = (userId) => {
           console.log("ℹ️ Compte existant:", accountId);
         }
 
-        // 2. Générer le lien d'onboarding
-        const returnUrl = `${window.location.origin}/dashboard?stripe_success=true&open_settings=securite`;
-        console.log("🔗 Génération du lien d'onboarding...");
+        // 2. Générer le lien d'onboarding (Étape 1 : informations de base)
+        const returnUrl = `${window.location.origin}/dashboard?stripe_step1_complete=true`;
+        console.log("🔗 Génération du lien d'onboarding (Étape 1)...");
         console.log("📍 Return URL:", returnUrl);
 
         const { data: linkData } = await generateOnboardingLink({
@@ -108,7 +110,12 @@ export const useStripeConnect = (userId) => {
         setIsLoading(false);
       }
     },
-    [userId, stripeStatusData, createStripeAccount, generateOnboardingLink]
+    [
+      organizationId,
+      stripeStatusData,
+      createStripeAccount,
+      generateOnboardingLink,
+    ]
   );
 
   // Fonction pour déconnecter Stripe
@@ -156,6 +163,7 @@ export const useStripeConnect = (userId) => {
       // Si le compte n'est pas encore configuré, générer un lien d'onboarding
       if (!isOnboarded || !canReceivePayments) {
         try {
+          // Retourner vers le dashboard avec le paramètre pour le modal de succès
           const returnUrl = `${window.location.origin}/dashboard/outils?stripe_connect_success=true`;
           const { data: linkData } = await generateOnboardingLink({
             variables: {
@@ -174,19 +182,34 @@ export const useStripeConnect = (userId) => {
             err
           );
         }
-      }
+      } else {
+        // Compte configuré : générer un login link pour accéder au dashboard
+        try {
+          const { data: dashboardData } = await generateDashboardLink({
+            variables: { accountId },
+          });
 
-      // Sinon, ouvrir le dashboard normal
-      window.open(
-        `https://dashboard.stripe.com/connect/accounts/${accountId}`,
-        "_blank"
-      );
+          if (dashboardData.generateStripeDashboardLink.success) {
+            window.open(
+              dashboardData.generateStripeDashboardLink.url,
+              "_blank"
+            );
+            return;
+          }
+        } catch (err) {
+          console.error(
+            "Erreur lors de la génération du lien de dashboard:",
+            err
+          );
+        }
+      }
     }
   }, [
     stripeStatusData,
     isOnboarded,
     canReceivePayments,
     generateOnboardingLink,
+    generateDashboardLink,
   ]);
 
   // Fonction pour vérifier et synchroniser le statut du compte
@@ -203,7 +226,7 @@ export const useStripeConnect = (userId) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ accountId, userId }),
+        body: JSON.stringify({ accountId, organizationId }),
       });
 
       const data = await response.json();
@@ -220,7 +243,7 @@ export const useStripeConnect = (userId) => {
     } finally {
       setIsLoading(false);
     }
-  }, [stripeStatusData, userId, refetchStatus]);
+  }, [stripeStatusData, organizationId, refetchStatus]);
 
   return {
     // États

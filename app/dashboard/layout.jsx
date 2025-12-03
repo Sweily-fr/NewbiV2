@@ -24,6 +24,7 @@ import { authClient } from "@/src/lib/auth-client";
 import { SubscriptionSuccessModal } from "@/src/components/subscription-success-modal";
 import { SettingsModal } from "@/src/components/settings-modal";
 import { OrgActivationHandler } from "@/src/components/org-activation-handler";
+import { StripeConnectUrlHandler } from "@/src/components/stripe-connect-url-handler";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -163,6 +164,11 @@ function DashboardContent({ children }) {
       {/* Gestionnaire d'activation d'organisation après création */}
       <Suspense fallback={null}>
         <OrgActivationHandler />
+      </Suspense>
+
+      {/* Gestionnaire d'URL pour Stripe Connect */}
+      <Suspense fallback={null}>
+        <StripeConnectUrlHandler />
       </Suspense>
 
       {/* Modal de paramètres avec notifications */}

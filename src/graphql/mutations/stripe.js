@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 // Créer un compte Stripe Connect
 export const CREATE_STRIPE_CONNECT_ACCOUNT = gql`
@@ -13,7 +13,10 @@ export const CREATE_STRIPE_CONNECT_ACCOUNT = gql`
 
 // Générer un lien d'onboarding Stripe
 export const GENERATE_STRIPE_ONBOARDING_LINK = gql`
-  mutation GenerateStripeOnboardingLink($accountId: String!, $returnUrl: String!) {
+  mutation GenerateStripeOnboardingLink(
+    $accountId: String!
+    $returnUrl: String!
+  ) {
     generateStripeOnboardingLink(accountId: $accountId, returnUrl: $returnUrl) {
       success
       message
@@ -60,6 +63,17 @@ export const MY_STRIPE_CONNECT_ACCOUNT = gql`
       payoutsEnabled
       createdAt
       updatedAt
+    }
+  }
+`;
+
+// Générer un lien de connexion au tableau de bord Stripe
+export const GENERATE_STRIPE_DASHBOARD_LINK = gql`
+  mutation GenerateStripeDashboardLink($accountId: String!) {
+    generateStripeDashboardLink(accountId: $accountId) {
+      success
+      message
+      url
     }
   }
 `;
