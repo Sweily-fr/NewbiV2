@@ -93,6 +93,7 @@ import {
   INVOICE_STATUS_LABELS,
   INVOICE_STATUS_COLORS,
 } from "@/src/graphql/invoiceQueries";
+import { useInvoiceReminderSettings } from "@/src/graphql/invoiceReminderQueries";
 import { useInvoiceTable } from "../hooks/use-invoice-table";
 import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -100,12 +101,19 @@ import InvoiceExportButton from "./invoice-export-button";
 import InvoiceFilters from "./invoice-filters";
 import InvoiceSidebar from "./invoice-sidebar";
 
-export default function InvoiceTable({ handleNewInvoice, invoiceIdToOpen }) {
+export default function InvoiceTable({ handleNewInvoice, invoiceIdToOpen, onOpenReminderSettings }) {
   const router = useRouter();
   const { invoices, loading, error, refetch } = useInvoices();
   const { canCreate } = usePermissions();
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
   const [invoiceToOpen, setInvoiceToOpen] = useState(null);
+  
+  // Récupérer les paramètres de relance automatique
+  const { data: reminderSettingsData } = useInvoiceReminderSettings();
+  const reminderEnabled = reminderSettingsData?.getInvoiceReminderSettings?.enabled || false;
+  const excludedClientIds = reminderSettingsData?.getInvoiceReminderSettings?.excludedClientIds || [];
+  
+  console.log("📋 [InvoiceTable] excludedClientIds:", excludedClientIds);
 
   const {
     table,
@@ -123,6 +131,9 @@ export default function InvoiceTable({ handleNewInvoice, invoiceIdToOpen }) {
   } = useInvoiceTable({
     data: invoices || [],
     onRefetch: refetch,
+    reminderEnabled,
+    onOpenReminderSettings,
+    excludedClientIds,
   });
 
   // Vérifier les permissions de création

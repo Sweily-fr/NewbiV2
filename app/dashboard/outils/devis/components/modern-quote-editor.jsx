@@ -30,6 +30,7 @@ import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { ValidationCallout } from "@/app/dashboard/outils/factures/components/validation-callout";
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
+import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -41,6 +42,8 @@ export default function ModernQuoteEditor({
   const [showEditClient, setShowEditClient] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [debouncedFormData, setDebouncedFormData] = useState(null);
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
+  const [createdQuoteData, setCreatedQuoteData] = useState(null);
 
   const {
     form,
@@ -123,6 +126,43 @@ export default function ModernQuoteEditor({
   const handleClientUpdated = (updatedClient) => {
     setFormData((prev) => ({ ...prev, client: updatedClient }));
     // Notification déjà affichée par le modal
+  };
+
+  // Fonction helper pour formater les dates
+  const formatDate = (dateValue) => {
+    if (!dateValue) return null;
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("fr-FR");
+  };
+
+  // Handler personnalisé pour afficher la modal d'envoi après création
+  const handleSubmitWithEmail = async () => {
+    const result = await onSubmit();
+    
+    if (result?.success && result?.quote) {
+      // Stocker les données du devis créé
+      setCreatedQuoteData({
+        id: result.quote.id,
+        number: `${result.quote.prefix || "D"}-${result.quote.number}`,
+        clientName: result.quote.client?.name,
+        clientEmail: result.quote.client?.email,
+        totalAmount: new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(result.quote.finalTotalTTC || 0),
+        companyName: result.quote.companyInfo?.name,
+        issueDate: formatDate(result.quote.issueDate),
+        redirectUrl: result.redirectUrl,
+      });
+      // Afficher la modal d'envoi
+      setShowSendEmailModal(true);
+    }
+  };
+
+  // Handler pour fermer la modal et rediriger
+  const handleEmailModalClose = () => {
+    setShowSendEmailModal(false);
+    if (createdQuoteData?.redirectUrl) {
+      router.push(createdQuoteData.redirectUrl);
+    }
   };
 
   return (
@@ -267,7 +307,7 @@ export default function ModernQuoteEditor({
                     loading={loading}
                     saving={saving}
                     onSave={onSave}
-                    onSubmit={onSubmit}
+                    onSubmit={handleSubmitWithEmail}
                     setFormData={setFormData}
                     canEdit={!isReadOnly}
                     nextQuoteNumber={nextQuoteNumber}
@@ -307,6 +347,24 @@ export default function ModernQuoteEditor({
           onOpenChange={setShowEditClient}
           client={formData.client}
           onSave={handleClientUpdated}
+        />
+      )}
+      
+      {/* Modal d'envoi par email */}
+      {createdQuoteData && (
+        <SendDocumentModal
+          open={showSendEmailModal}
+          onOpenChange={setShowSendEmailModal}
+          documentId={createdQuoteData.id}
+          documentType="quote"
+          documentNumber={createdQuoteData.number}
+          clientName={createdQuoteData.clientName}
+          clientEmail={createdQuoteData.clientEmail}
+          totalAmount={createdQuoteData.totalAmount}
+          companyName={createdQuoteData.companyName}
+          issueDate={createdQuoteData.issueDate}
+          onSent={handleEmailModalClose}
+          onClose={() => router.push(createdQuoteData.redirectUrl || "/dashboard/outils/devis")}
         />
       )}
     </div>

@@ -1404,17 +1404,28 @@ export function useInvoiceEditor({
       const input = transformFormDataToInput(dataToTransform, previousStatus);
 
       if (mode === "create") {
-        await createInvoice(input);
+        const result = await createInvoice(input);
         toast.success("Facture créée avec succès");
-        router.push("/dashboard/outils/factures");
-        return true;
+        // Retourner les données de la facture pour permettre l'envoi par email
+        return {
+          success: true,
+          invoice: result,
+          shouldRedirect: true,
+          redirectUrl: "/dashboard/outils/factures",
+        };
       } else {
-        await updateInvoice(invoiceId, input);
+        const result = await updateInvoice(invoiceId, input);
         // Message différent selon si on passe de Draft à Pending ou si on met à jour une facture Pending
         const wasDraft = existingInvoice?.status === "DRAFT";
         toast.success(wasDraft ? "Facture créée avec succès" : "Facture mise à jour avec succès");
-        router.push(`/dashboard/outils/factures/${invoiceId}`);
-        return true;
+        // Retourner les données de la facture pour permettre l'envoi par email
+        return {
+          success: true,
+          invoice: result,
+          shouldRedirect: true,
+          redirectUrl: `/dashboard/outils/factures/${invoiceId}`,
+          isNewInvoice: wasDraft,
+        };
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de la facture:', error);
@@ -1486,8 +1497,8 @@ export function useInvoiceEditor({
   }, [getValues]);
 
   // Fonction pour valider le numéro de facture en temps réel
-  const validateInvoiceNumber = useCallback(async (invoiceNumber) => {
-    console.log('[validateInvoiceNumber] Validation du numéro:', invoiceNumber);
+  const validateInvoiceNumber = useCallback(async (invoiceNumber, invoicePrefix) => {
+    console.log('[validateInvoiceNumber] Validation:', { prefix: invoicePrefix, number: invoiceNumber });
     
     if (!invoiceNumber || invoiceNumber.trim() === "") {
       // Si le numéro est vide, supprimer l'erreur
@@ -1502,10 +1513,18 @@ export function useInvoiceEditor({
       return;
     }
 
+    // Si pas de préfixe fourni, récupérer depuis le formulaire
+    const prefix = invoicePrefix || getValues('prefix');
+    
+    if (!prefix) {
+      console.log('[validateInvoiceNumber] ⚠️ Pas de préfixe, validation ignorée');
+      return;
+    }
+
     try {
-      const { exists } = await checkInvoiceNumber(invoiceNumber, invoiceId);
+      const { exists } = await checkInvoiceNumber(invoiceNumber, prefix, invoiceId);
       
-      console.log('[validateInvoiceNumber] Résultat:', { exists, invoiceNumber });
+      console.log('[validateInvoiceNumber] Résultat:', { exists, prefix, number: invoiceNumber });
       
       if (exists) {
         console.log('[validateInvoiceNumber] ❌ Numéro existe déjà, ajout de l\'erreur');
@@ -1513,7 +1532,7 @@ export function useInvoiceEditor({
           const newErrors = {
             ...prevErrors,
             invoiceNumber: {
-              message: `Le numéro de facture ${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
+              message: `Le numéro de facture ${prefix}-${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
               canEdit: true
             }
           };
@@ -1535,7 +1554,7 @@ export function useInvoiceEditor({
     } catch (error) {
       console.error("Erreur lors de la validation du numéro de facture:", error);
     }
-  }, [checkInvoiceNumber, invoiceId]);
+  }, [checkInvoiceNumber, invoiceId, getValues]);
 
   return {
     form,

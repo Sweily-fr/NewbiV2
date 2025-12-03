@@ -167,7 +167,7 @@ const dateFilterFn = (row, columnId, filterValue) => {
   return true;
 };
 
-export function useInvoiceTable({ data = [], onRefetch }) {
+export function useInvoiceTable({ data = [], onRefetch, reminderEnabled = false, onOpenReminderSettings, excludedClientIds = [] }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
@@ -506,14 +506,33 @@ export function useInvoiceTable({ data = [], onRefetch }) {
       {
         id: "actions",
         header: () => <div className="text-right font-normal">Actions</div>,
-        cell: ({ row }) => (
-          <InvoiceRowActions row={row} onRefetch={onRefetch} />
-        ),
-        size: 60,
+        cell: ({ row }) => {
+          const clientId = row.original.client?.id || row.original.client?._id;
+          // Comparer en string pour éviter les problèmes de type
+          const isClientExcluded = clientId && excludedClientIds.some(
+            excludedId => String(excludedId) === String(clientId)
+          );
+          
+          // Debug log
+          if (row.original.status === "PENDING") {
+            console.log(`🔍 Facture ${row.original.number}: clientId=${clientId}, isExcluded=${isClientExcluded}`);
+          }
+          
+          return (
+            <InvoiceRowActions 
+              row={row} 
+              onRefetch={onRefetch} 
+              showReminderIcon={reminderEnabled && row.original.status === "PENDING"}
+              isClientExcluded={isClientExcluded}
+              onOpenReminderSettings={onOpenReminderSettings}
+            />
+          );
+        },
+        size: 80,
         enableHiding: false,
       },
     ],
-    [onRefetch] // Inclure onRefetch dans les dépendances
+    [onRefetch, reminderEnabled, onOpenReminderSettings, excludedClientIds] // Inclure toutes les dépendances
   );
 
   // Create table instance with optimized settings

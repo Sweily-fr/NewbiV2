@@ -104,7 +104,7 @@ export const useQuoteNumber = () => {
     if (num <= lastNum) {
       return { 
         isValid: false, 
-        message: `Le numéro doit être supérieur à ${String(lastNum).padStart(6, '0')}` 
+        message: `Le numéro doit être supérieur à ${String(lastNum).padStart(4, '0')}` 
       };
     }
     
@@ -112,7 +112,7 @@ export const useQuoteNumber = () => {
     if (num > lastNum + 1) {
       return { 
         isValid: false, 
-        message: `Le numéro doit être ${String(lastNum + 1).padStart(6, '0')} pour maintenir la séquence` 
+        message: `Le numéro doit être ${String(lastNum + 1).padStart(4, '0')} pour maintenir la séquence` 
       };
     }
     
@@ -134,7 +134,7 @@ export const useQuoteNumber = () => {
     // Helper function to get the next number as a formatted string
     getFormattedNextNumber: () => {
       const nextNum = getNextQuoteNumber();
-      return String(nextNum).padStart(6, '0');
+      return String(nextNum).padStart(4, '0');
     }
   };
 };

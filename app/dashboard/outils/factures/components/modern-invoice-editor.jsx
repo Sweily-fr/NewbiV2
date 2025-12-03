@@ -30,6 +30,7 @@ import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 import { QuickEditCompanyModal } from "@/src/components/invoice/quick-edit-company-modal";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
+import { SendDocumentModal } from "./send-document-modal";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -43,6 +44,8 @@ export default function ModernInvoiceEditor({
   const [showEditCompany, setShowEditCompany] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [debouncedFormData, setDebouncedFormData] = useState(null);
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
+  const [createdInvoiceData, setCreatedInvoiceData] = useState(null);
 
   // Récupérer l'organisation au chargement
   useEffect(() => {
@@ -171,6 +174,45 @@ export default function ModernInvoiceEditor({
     toast.success("Informations de l'entreprise mises à jour");
   };
 
+  // Fonction helper pour formater les dates
+  const formatDate = (dateValue) => {
+    if (!dateValue) return null;
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("fr-FR");
+  };
+
+  // Handler personnalisé pour afficher la modal d'envoi après création
+  const handleSubmitWithEmail = async () => {
+    const result = await handleSubmit();
+    
+    if (result?.success && result?.invoice) {
+      // Stocker les données de la facture créée
+      // Utiliser les données du formulaire comme fallback pour les dates
+      setCreatedInvoiceData({
+        id: result.invoice.id,
+        number: `${result.invoice.prefix || "F"}-${result.invoice.number}`,
+        clientName: result.invoice.client?.name,
+        clientEmail: result.invoice.client?.email,
+        totalAmount: new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(result.invoice.finalTotalTTC || 0),
+        companyName: result.invoice.companyInfo?.name,
+        issueDate: formatDate(result.invoice.issueDate) || formatDate(formData.issueDate),
+        dueDate: formatDate(result.invoice.dueDate) || formatDate(formData.dueDate),
+        redirectUrl: result.redirectUrl,
+      });
+      // Afficher la modal d'envoi
+      setShowSendEmailModal(true);
+    }
+  };
+
+  // Handler pour fermer la modal et rediriger
+  const handleEmailModalClose = () => {
+    setShowSendEmailModal(false);
+    if (createdInvoiceData?.redirectUrl) {
+      router.push(createdInvoiceData.redirectUrl);
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full">
@@ -297,7 +339,7 @@ export default function ModernInvoiceEditor({
                   ) : (
                     <EnhancedInvoiceForm
                       onSave={handleSave}
-                      onSubmit={handleSubmit}
+                      onSubmit={handleSubmitWithEmail}
                       loading={loading}
                       saving={saving}
                       readOnly={readOnly}
@@ -353,6 +395,25 @@ export default function ModernInvoiceEditor({
         onOpenChange={setShowEditCompany}
         onCompanyUpdated={handleCompanyUpdated}
       />
+      
+      {/* Modal d'envoi par email */}
+      {createdInvoiceData && (
+        <SendDocumentModal
+          open={showSendEmailModal}
+          onOpenChange={setShowSendEmailModal}
+          documentId={createdInvoiceData.id}
+          documentType="invoice"
+          documentNumber={createdInvoiceData.number}
+          clientName={createdInvoiceData.clientName}
+          clientEmail={createdInvoiceData.clientEmail}
+          totalAmount={createdInvoiceData.totalAmount}
+          companyName={createdInvoiceData.companyName}
+          issueDate={createdInvoiceData.issueDate}
+          dueDate={createdInvoiceData.dueDate}
+          onSent={handleEmailModalClose}
+          onClose={() => router.push(createdInvoiceData.redirectUrl || "/dashboard/outils/factures")}
+        />
+      )}
     </div>
   );
 }

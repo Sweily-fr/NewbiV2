@@ -2,7 +2,6 @@
 
 import { useEffect, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import {
   useCreateCreditNote,
@@ -23,8 +22,6 @@ export function useCreditNoteEditor({
   initialData,
   organization,
 }) {
-  const router = useRouter();
-
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
 
@@ -49,7 +46,6 @@ export function useCreditNoteEditor({
   const {
     createCreditNote,
     loading: creating,
-    workspaceId: debugWorkspaceId,
   } = useCreateCreditNote();
   const { updateCreditNote, loading: updating } = useUpdateCreditNote();
 
@@ -86,7 +82,7 @@ export function useCreditNoteEditor({
   useEffect(() => {
     if (mode === "create" && originalInvoice) {
       const nextNumber = nextCreditNoteNumber
-        ? String(nextCreditNoteNumber).padStart(6, "0")
+        ? String(nextCreditNoteNumber).padStart(4, "0")
         : "";
       const creditNoteData = transformInvoiceToCreditNoteFormData(
         originalInvoice,
@@ -108,7 +104,7 @@ export function useCreditNoteEditor({
   // Update credit note number when numbering data becomes available
   useEffect(() => {
     if (mode === "create" && !numberLoading && nextCreditNoteNumber) {
-      const formattedNumber = String(nextCreditNoteNumber).padStart(6, "0");
+      const formattedNumber = String(nextCreditNoteNumber).padStart(4, "0");
       setValue("number", formattedNumber, { shouldDirty: false });
     }
   }, [mode, numberLoading, nextCreditNoteNumber, setValue]);
@@ -202,11 +198,14 @@ export function useCreditNoteEditor({
           toast.success("Avoir mis à jour avec succès");
         }
 
-        if (redirect && result) {
-          router.push(`/dashboard/outils/factures`);
-        }
-
-        return result;
+        // Retourner les données de l'avoir pour permettre l'envoi par email
+        return {
+          success: true,
+          creditNote: result,
+          shouldRedirect: redirect,
+          redirectUrl: "/dashboard/outils/factures",
+          isNewCreditNote: mode === "create",
+        };
       } catch (error) {
         toast.error("Erreur lors de la sauvegarde de l'avoir");
         throw error;
@@ -220,9 +219,6 @@ export function useCreditNoteEditor({
       updateCreditNote,
       creditNoteId,
       invoiceId,
-      router,
-      debugWorkspaceId,
-      session?.user,
     ]
   );
 

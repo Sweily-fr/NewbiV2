@@ -4,10 +4,11 @@ import { Suspense, useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, Bell } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
 import { InvoiceSettingsModal } from "./components/invoice-settings-modal";
+import { AutoReminderModal } from "./components/auto-reminder-modal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
@@ -16,6 +17,7 @@ function InvoicesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAutoReminderOpen, setIsAutoReminderOpen] = useState(false);
   const [invoiceIdToOpen, setInvoiceIdToOpen] = useState(null);
 
   useEffect(() => {
@@ -43,20 +45,35 @@ function InvoicesContent() {
               Gérez vos factures et suivez vos paiements
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsSettingsOpen(true)}
-            className="gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            Paramètres
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAutoReminderOpen(true)}
+              className="gap-2"
+            >
+              <Bell className="h-4 w-4" />
+              Relance auto.
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSettingsOpen(true)}
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Paramètres
+            </Button>
+          </div>
         </div>
 
         {/* Table */}
         <Suspense fallback={<InvoiceTableSkeleton />}>
-          <InvoiceTable handleNewInvoice={handleNewInvoice} invoiceIdToOpen={invoiceIdToOpen} />
+          <InvoiceTable 
+            handleNewInvoice={handleNewInvoice} 
+            invoiceIdToOpen={invoiceIdToOpen} 
+            onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
+          />
         </Suspense>
       </div>
 
@@ -71,20 +88,33 @@ function InvoicesContent() {
                 Gérez vos factures et suivez vos paiements
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsSettingsOpen(true)}
-              className="gap-2"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAutoReminderOpen(true)}
+                className="gap-2"
+              >
+                <Bell className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsSettingsOpen(true)}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Table */}
         <Suspense fallback={<InvoiceTableSkeleton />}>
-          <InvoiceTable invoiceIdToOpen={invoiceIdToOpen} />
+          <InvoiceTable 
+            invoiceIdToOpen={invoiceIdToOpen} 
+            onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
+          />
         </Suspense>
 
         {/* Bouton flottant mobile avec protection RBAC */}
@@ -105,6 +135,12 @@ function InvoicesContent() {
       <InvoiceSettingsModal
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
+      />
+
+      {/* Modal des relances automatiques */}
+      <AutoReminderModal
+        open={isAutoReminderOpen}
+        onOpenChange={setIsAutoReminderOpen}
       />
     </>
   );

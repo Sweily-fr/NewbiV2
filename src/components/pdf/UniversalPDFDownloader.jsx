@@ -122,9 +122,9 @@ const UniversalPDFDownloader = ({
       if (imgHeightMM > pdfHeight) {
         console.log('⚠️ Document multi-pages avec découpage intelligent');
         
-        // Récupérer les positions des lignes de tableau à ne pas couper
+        // Récupérer les positions des éléments à ne pas couper
         const protectedElements = componentRef.current.querySelectorAll(
-          'tr[data-no-break], .no-break, .invoice-line'
+          'tr[data-no-break], .no-break, .invoice-line, [data-no-break="true"], [data-pdf-item], [data-pdf-section="header"], [data-pdf-section="info"], [data-pdf-section="header-notes"], [data-pdf-section="totals"], [data-pdf-section="terms"], [data-pdf-section="vat-exemption"], [data-pdf-section="footer-notes"], [data-critical]'
         );
         
         const rowPositions = [];

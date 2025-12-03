@@ -253,6 +253,13 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                     },
                   })}
                   onChange={handlePrefixChange}
+                  onBlur={async (e) => {
+                    // Déclencher la validation du numéro quand le préfixe change
+                    const currentNumber = watch("number");
+                    if (currentNumber && validateInvoiceNumberExists) {
+                      await validateInvoiceNumberExists(currentNumber, e.target.value);
+                    }
+                  }}
                   placeholder="F-MMYYYY"
                   disabled={!canEdit}
                 />
@@ -310,7 +317,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 value={
                   data.number ||
                   (nextInvoiceNumber
-                    ? String(nextInvoiceNumber).padStart(6, "0")
+                    ? String(nextInvoiceNumber).padStart(4, "0")
                     : "")
                 }
                 onChange={(e) => {
@@ -320,7 +327,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 }}
                 placeholder={
                   nextInvoiceNumber
-                    ? String(nextInvoiceNumber).padStart(6, "0")
+                    ? String(nextInvoiceNumber).padStart(4, "0")
                     : "000001"
                 }
                 disabled={!canEdit || isLoadingInvoiceNumber}
@@ -333,17 +340,18 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                   // Format with leading zeros when leaving the field
                   let finalNumber;
                   if (e.target.value) {
-                    finalNumber = e.target.value.padStart(6, "0");
+                    finalNumber = e.target.value.padStart(4, "0");
                     setValue("number", finalNumber, { shouldValidate: true });
                   } else if (nextInvoiceNumber) {
                     // If field is empty, set to next invoice number
-                    finalNumber = String(nextInvoiceNumber).padStart(6, "0");
+                    finalNumber = String(nextInvoiceNumber).padStart(4, "0");
                     setValue("number", finalNumber, { shouldValidate: true });
                   }
                   
-                  // Vérifier si le numéro existe déjà (sans préfixe, juste le numéro)
+                  // Vérifier si le numéro existe déjà (avec le préfixe)
                   if (finalNumber && validateInvoiceNumberExists) {
-                    await validateInvoiceNumberExists(finalNumber);
+                    const currentPrefix = watch("prefix");
+                    await validateInvoiceNumberExists(finalNumber, currentPrefix);
                   }
                 }}
                 className={`${errors?.number ? "border-red-500" : ""}`}
@@ -355,7 +363,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 // <p className="text-xs text-muted-foreground">
                 //   {isLoadingInvoiceNumber
                 //     ? "Chargement du prochain numéro..."
-                //     : `Prochain numéro suggéré: ${nextInvoiceNumber ? String(nextInvoiceNumber).padStart(6, "0") : "000001"} (numérotation séquentielle)`}
+                //     : `Prochain numéro suggéré: ${nextInvoiceNumber ? String(nextInvoiceNumber).padStart(4, "0") : "000001"} (numérotation séquentielle)`}
                 // </p>
               )}
             </div>

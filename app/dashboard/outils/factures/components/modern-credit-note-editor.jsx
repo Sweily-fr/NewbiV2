@@ -19,6 +19,7 @@ import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedCreditNoteForm from "./enhanced-credit-note-form";
 import { toast } from "@/src/components/ui/sonner";
 import { getActiveOrganization } from "@/src/lib/organization-client";
+import { SendDocumentModal } from "./send-document-modal";
 
 export default function ModernCreditNoteEditor({
   mode = "create",
@@ -28,6 +29,8 @@ export default function ModernCreditNoteEditor({
 }) {
   const router = useRouter();
   const [organization, setOrganization] = useState(null);
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
+  const [createdCreditNoteData, setCreatedCreditNoteData] = useState(null);
 
   // Récupérer l'organisation au chargement
   useEffect(() => {
@@ -81,11 +84,57 @@ export default function ModernCreditNoteEditor({
     }
   };
 
+  // Fonction helper pour formater les dates
+  const formatDate = (dateValue) => {
+    if (!dateValue) return null;
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("fr-FR");
+  };
+
   const handleFinalize = async () => {
     try {
-      await finalize(true);
+      const result = await finalize(false); // Ne pas rediriger automatiquement
+      
+      if (result?.success && result?.creditNote) {
+        // Stocker les données de l'avoir créé
+        // Le montant doit être négatif pour un avoir - utiliser formData ou result
+        const amount = formData.finalTotalTTC || result.creditNote.finalTotalTTC || 0;
+        
+        // Formater le numéro de facture associée avec préfixe
+        const invoiceNum = originalInvoice 
+          ? `${originalInvoice.prefix || "F"}-${originalInvoice.number}`
+          : result.creditNote.originalInvoiceNumber;
+        
+        // Formater la date de l'avoir - utiliser formData en priorité
+        const creditNoteDate = formData.issueDate 
+          ? formatDate(formData.issueDate)
+          : formatDate(result.creditNote.issueDate);
+        
+        setCreatedCreditNoteData({
+          id: result.creditNote.id,
+          number: `${result.creditNote.prefix || "AV"}-${result.creditNote.number}`,
+          clientName: result.creditNote.client?.name,
+          clientEmail: result.creditNote.client?.email,
+          totalAmount: new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(amount),
+          companyName: result.creditNote.companyInfo?.name,
+          issueDate: creditNoteDate,
+          invoiceNumber: invoiceNum,
+          redirectUrl: result.redirectUrl,
+        });
+        // Afficher la modal d'envoi
+        setShowSendEmailModal(true);
+      }
     } catch (error) {
       // Error is already handled in the hook
+    }
+  };
+
+  // Handler pour fermer la modal et rediriger
+  const handleEmailModalClose = () => {
+    setShowSendEmailModal(false);
+    if (createdCreditNoteData?.redirectUrl) {
+      router.push(createdCreditNoteData.redirectUrl);
     }
   };
 
@@ -174,7 +223,7 @@ export default function ModernCreditNoteEditor({
                   mode={mode}
                   originalInvoice={originalInvoice}
                   organization={organization}
-                  onSubmit={createCreditNoteAction}
+                  onSubmit={handleFinalize}
                 />
               </FormProvider>
             </div>
@@ -188,6 +237,25 @@ export default function ModernCreditNoteEditor({
           </div>
         </div>
       </div>
+      
+      {/* Modal d'envoi par email */}
+      {createdCreditNoteData && (
+        <SendDocumentModal
+          open={showSendEmailModal}
+          onOpenChange={setShowSendEmailModal}
+          documentId={createdCreditNoteData.id}
+          documentType="creditNote"
+          documentNumber={createdCreditNoteData.number}
+          clientName={createdCreditNoteData.clientName}
+          clientEmail={createdCreditNoteData.clientEmail}
+          totalAmount={createdCreditNoteData.totalAmount}
+          companyName={createdCreditNoteData.companyName}
+          issueDate={createdCreditNoteData.issueDate}
+          invoiceNumber={createdCreditNoteData.invoiceNumber}
+          onSent={handleEmailModalClose}
+          onClose={() => router.push(createdCreditNoteData.redirectUrl || "/dashboard/outils/factures")}
+        />
+      )}
     </div>
   );
 }
