@@ -12,7 +12,17 @@ import {
   FileText,
   XCircle,
   Receipt,
+  CalendarSync,
+  Mail,
 } from "lucide-react";
+import { SendDocumentModal } from "./send-document-modal";
+import { ButtonGroup } from "@/src/components/ui/button-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,11 +44,42 @@ import { usePermissions } from "@/src/hooks/usePermissions";
 import InvoiceSidebar from "./invoice-sidebar";
 import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 
-export default function InvoiceRowActions({ row, onRefetch }) {
+// Fonction utilitaire pour formater les dates
+const formatDateForEmail = (dateValue) => {
+  if (!dateValue) return null;
+  
+  try {
+    let date;
+    // Si c'est un timestamp en millisecondes (nombre ou string de chiffres)
+    if (typeof dateValue === "number") {
+      date = new Date(dateValue);
+    } else if (typeof dateValue === "string") {
+      // Si c'est un timestamp en string
+      if (/^\d+$/.test(dateValue)) {
+        date = new Date(parseInt(dateValue, 10));
+      } else {
+        // Sinon c'est une date ISO ou autre format string
+        date = new Date(dateValue);
+      }
+    } else if (dateValue instanceof Date) {
+      date = dateValue;
+    } else {
+      return null;
+    }
+    
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("fr-FR");
+  } catch {
+    return null;
+  }
+};
+
+export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = false, isClientExcluded = false, onOpenReminderSettings }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const router = useRouter();
   const invoice = row.original;
   const { canCreate } = usePermissions();
@@ -147,18 +188,71 @@ export default function InvoiceRowActions({ row, onRefetch }) {
           className="hidden"
           aria-hidden="true"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 p-0"
-              disabled={isLoading}
-            >
-              <span className="sr-only">Ouvrir le menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
+        <ButtonGroup>
+          {/* Icône d'envoi par email */}
+          {invoice.status !== "DRAFT" && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 p-0 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSendEmailModal(true);
+                    }}
+                  >
+                    <Mail className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Envoyer par email</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {/* Icône de relance automatique */}
+          {showReminderIcon && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 p-0 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenReminderSettings?.();
+                    }}
+                  >
+                    <CalendarSync 
+                      className={`h-4 w-4 ${
+                        isClientExcluded 
+                          ? "opacity-30" 
+                          : ""
+                      }`} 
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isClientExcluded ? "Client exclu des relances" : "Relance automatique activée"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 p-0"
+                disabled={isLoading}
+              >
+                <span className="sr-only">Ouvrir le menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleView}>
               <Eye className="mr-2 h-4 w-4" />
@@ -237,7 +331,8 @@ export default function InvoiceRowActions({ row, onRefetch }) {
               </>
             )}
           </DropdownMenuContent>
-        </DropdownMenu>
+          </DropdownMenu>
+        </ButtonGroup>
       </div>
 
       {/* Sidebar pour desktop */}
@@ -255,6 +350,27 @@ export default function InvoiceRowActions({ row, onRefetch }) {
           isOpen={isMobileFullscreenOpen}
           onClose={() => setIsMobileFullscreenOpen(false)}
           onRefetch={onRefetch}
+        />
+      )}
+
+      {/* Modal d'envoi par email */}
+      {showSendEmailModal && (
+        <SendDocumentModal
+          open={showSendEmailModal}
+          onOpenChange={setShowSendEmailModal}
+          documentId={invoice.id}
+          documentType="invoice"
+          documentNumber={`${invoice.prefix || "F"}-${invoice.number}`}
+          clientName={invoice.client?.name}
+          clientEmail={invoice.client?.email}
+          totalAmount={new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(invoice.finalTotalTTC || invoice.totalTTC || 0)}
+          companyName={invoice.companyInfo?.name}
+          issueDate={formatDateForEmail(invoice.issueDate)}
+          dueDate={formatDateForEmail(invoice.dueDate)}
+          onSent={() => {
+            setShowSendEmailModal(false);
+            // La notification est déjà gérée par la modal
+          }}
         />
       )}
     </>

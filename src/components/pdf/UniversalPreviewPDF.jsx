@@ -445,6 +445,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
     >
       <div
         ref={documentRef}
+        data-pdf-content
         className={`w-full bg-white shadow-lg relative flex flex-col ${isMobile ? 'min-h-0' : (forPDF ? 'min-h-[1123px]' : 'min-h-screen')}`}
         style={{ 
           color: data.appearance?.textColor || "#000000",
@@ -772,9 +773,20 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
             style={{ fontSize: "10px" }}
             data-pdf-section="header-notes"
           >
-            <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-              {data.headerNotes}
-            </div>
+            {data.headerNotes.split('\n').map((line, index) => (
+              line.trim() ? (
+                <div 
+                  key={index} 
+                  className="dark:text-[#0A0A0A] whitespace-pre-wrap"
+                  data-no-break="true"
+                  style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                >
+                  {line}
+                </div>
+              ) : (
+                <div key={index} style={{ height: '0.5em' }} />
+              )
+            ))}
           </div>
         )}
 
@@ -1489,11 +1501,21 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
           <div 
             className="mb-4 text-[10px] pt-4"
             data-pdf-section="terms"
-            data-no-break={data.termsAndConditions && data.termsAndConditions.length < 300}
           >
-            <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
-              {data.termsAndConditions}
-            </div>
+            {data.termsAndConditions.split('\n').map((line, index) => (
+              line.trim() ? (
+                <div 
+                  key={index} 
+                  className="dark:text-[#0A0A0A] text-[10px] whitespace-pre-wrap"
+                  data-no-break="true"
+                  style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                >
+                  {line}
+                </div>
+              ) : (
+                <div key={index} style={{ height: '0.5em' }} />
+              )
+            ))}
           </div>
         )}
       </div>
@@ -1507,6 +1529,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
           ...(forPDF ? { marginTop: 'auto' } : {})
         }}
         data-pdf-section="footer"
+        data-footer-color={applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)}
         data-repeat-on-page
         data-no-break
         data-position="bottom"
@@ -1550,10 +1573,21 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
 
         {/* NOTES ET CONDITIONS - masquées pour les avoirs */}
         {data.footerNotes && !isCreditNote && (
-          <div className="mt-6 py-4 text-[10px]" data-pdf-section="footer-notes" data-no-break={data.footerNotes && data.footerNotes.length < 200}>
-            <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
-              {data.footerNotes}
-            </div>
+          <div className="mt-6 py-4 text-[10px]" data-pdf-section="footer-notes">
+            {data.footerNotes.split('\n').map((line, index) => (
+              line.trim() ? (
+                <div 
+                  key={index} 
+                  className="dark:text-[#0A0A0A] text-[10px] whitespace-pre-wrap"
+                  data-no-break="true"
+                  style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                >
+                  {line}
+                </div>
+              ) : (
+                <div key={index} style={{ height: '0.5em' }} />
+              )
+            ))}
           </div>
         )}
 

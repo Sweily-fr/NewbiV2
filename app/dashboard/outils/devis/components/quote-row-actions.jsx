@@ -12,7 +12,15 @@ import {
   FileText,
   XCircle,
   FileCheck,
+  Mail,
 } from "lucide-react";
+import { ButtonGroup } from "@/src/components/ui/button-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +28,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
+import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import {
   useChangeQuoteStatus,
   useDeleteQuote,
@@ -30,10 +39,41 @@ import { toast } from "@/src/components/ui/sonner";
 import QuoteSidebar from "./quote-sidebar";
 import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
 
+// Fonction utilitaire pour formater les dates
+const formatDateForEmail = (dateValue) => {
+  if (!dateValue) return null;
+  
+  try {
+    let date;
+    // Si c'est un timestamp en millisecondes (nombre ou string de chiffres)
+    if (typeof dateValue === "number") {
+      date = new Date(dateValue);
+    } else if (typeof dateValue === "string") {
+      // Si c'est un timestamp en string
+      if (/^\d+$/.test(dateValue)) {
+        date = new Date(parseInt(dateValue, 10));
+      } else {
+        // Sinon c'est une date ISO ou autre format string
+        date = new Date(dateValue);
+      }
+    } else if (dateValue instanceof Date) {
+      date = dateValue;
+    } else {
+      return null;
+    }
+    
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("fr-FR");
+  } catch {
+    return null;
+  }
+};
+
 export default function QuoteRowActions({ row, onRefetch }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const router = useRouter();
   const quote = row.original;
 
@@ -139,18 +179,42 @@ export default function QuoteRowActions({ row, onRefetch }) {
           className="hidden"
           aria-hidden="true"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 p-0"
-              disabled={isLoading}
-            >
-              <span className="sr-only">Ouvrir le menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
+        <ButtonGroup>
+          {/* Icône d'envoi par email */}
+          {quote.status !== "DRAFT" && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 p-0 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSendEmailModal(true);
+                    }}
+                  >
+                    <Mail className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Envoyer par email</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 p-0"
+                disabled={isLoading}
+              >
+                <span className="sr-only">Ouvrir le menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleView}>
               <Eye className="mr-2 h-4 w-4" />
@@ -207,7 +271,8 @@ export default function QuoteRowActions({ row, onRefetch }) {
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
-        </DropdownMenu>
+          </DropdownMenu>
+        </ButtonGroup>
       </div>
 
       {/* Sidebar pour desktop */}
@@ -226,6 +291,26 @@ export default function QuoteRowActions({ row, onRefetch }) {
           isOpen={isMobileFullscreenOpen}
           onClose={() => setIsMobileFullscreenOpen(false)}
           onRefetch={onRefetch}
+        />
+      )}
+
+      {/* Modal d'envoi par email */}
+      {showSendEmailModal && (
+        <SendDocumentModal
+          open={showSendEmailModal}
+          onOpenChange={setShowSendEmailModal}
+          documentId={quote.id}
+          documentType="quote"
+          documentNumber={`${quote.prefix || "D"}-${quote.number}`}
+          clientName={quote.client?.name}
+          clientEmail={quote.client?.email}
+          totalAmount={new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(quote.finalTotalTTC || quote.totalTTC || 0)}
+          companyName={quote.companyInfo?.name}
+          issueDate={formatDateForEmail(quote.issueDate)}
+          onSent={() => {
+            setShowSendEmailModal(false);
+            // La notification est déjà gérée par la modal
+          }}
         />
       )}
     </>

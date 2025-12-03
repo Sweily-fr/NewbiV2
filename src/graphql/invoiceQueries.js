@@ -384,6 +384,7 @@ export const CHECK_INVOICE_NUMBER = gql`
       invoices {
         id
         number
+        prefix
       }
     }
   }
@@ -1117,7 +1118,7 @@ export const useCheckInvoiceNumber = () => {
   const client = useApolloClient();
 
   const checkInvoiceNumber = useCallback(
-    async (invoiceNumber, excludeId = null) => {
+    async (invoiceNumber, invoicePrefix, excludeId = null) => {
       if (!invoiceNumber || !workspaceId) {
         return { exists: false, invoice: null };
       }
@@ -1129,18 +1130,19 @@ export const useCheckInvoiceNumber = () => {
           fetchPolicy: "network-only", // Toujours vérifier avec le serveur
         });
 
-        console.log('[checkInvoiceNumber] Toutes les factures:', data?.invoices?.invoices?.map(inv => inv.number));
-        console.log('[checkInvoiceNumber] Recherche du numéro:', invoiceNumber);
+        console.log('[checkInvoiceNumber] Toutes les factures:', data?.invoices?.invoices?.map(inv => `${inv.prefix}${inv.number}`));
+        console.log('[checkInvoiceNumber] Recherche:', { prefix: invoicePrefix, number: invoiceNumber });
         console.log('[checkInvoiceNumber] ExcludeId:', excludeId);
 
         if (data?.invoices?.invoices) {
-          // Chercher une facture avec le même numéro exact (en excluant l'ID actuel si fourni)
+          // Chercher une facture avec le même préfixe ET le même numéro (en excluant l'ID actuel si fourni)
           const existingInvoice = data.invoices.invoices.find(
             (invoice) => {
-              const matches = invoice.number === invoiceNumber;
+              const matchesNumber = invoice.number === invoiceNumber;
+              const matchesPrefix = invoice.prefix === invoicePrefix;
               const notExcluded = !excludeId || invoice.id !== excludeId;
-              console.log(`[checkInvoiceNumber] Comparaison: "${invoice.number}" === "${invoiceNumber}" ? ${matches}, notExcluded: ${notExcluded}`);
-              return matches && notExcluded;
+              console.log(`[checkInvoiceNumber] Comparaison: "${invoice.prefix}${invoice.number}" === "${invoicePrefix}${invoiceNumber}" ? prefix:${matchesPrefix}, number:${matchesNumber}, notExcluded: ${notExcluded}`);
+              return matchesNumber && matchesPrefix && notExcluded;
             }
           );
 
@@ -1154,7 +1156,7 @@ export const useCheckInvoiceNumber = () => {
 
         return { exists: false, invoice: null };
       } catch (error) {
-        console.error("Erreur lors de la vérification du numéro de facture:", error);
+        console.error("Erreur lors de la vérification du numéro:", error);
         return { exists: false, invoice: null };
       }
     },

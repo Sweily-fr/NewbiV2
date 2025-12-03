@@ -695,7 +695,7 @@ export const useCheckQuoteNumber = () => {
   const client = useApolloClient();
 
   const checkQuoteNumber = useCallback(
-    async (quoteNumber, excludeId = null) => {
+    async (quoteNumber, quotePrefix, excludeId = null) => {
       if (!quoteNumber || !workspaceId) {
         return { exists: false, quote: null };
       }
@@ -707,18 +707,19 @@ export const useCheckQuoteNumber = () => {
           fetchPolicy: "network-only", // Toujours vérifier avec le serveur
         });
 
-        console.log('[checkQuoteNumber] Tous les devis:', data?.quotes?.quotes?.map(q => q.number));
-        console.log('[checkQuoteNumber] Recherche du numéro:', quoteNumber);
+        console.log('[checkQuoteNumber] Tous les devis:', data?.quotes?.quotes?.map(q => `${q.prefix}${q.number}`));
+        console.log('[checkQuoteNumber] Recherche:', { prefix: quotePrefix, number: quoteNumber });
         console.log('[checkQuoteNumber] ExcludeId:', excludeId);
 
         if (data?.quotes?.quotes) {
-          // Chercher un devis avec le même numéro exact (en excluant l'ID actuel si fourni)
+          // Chercher un devis avec le même préfixe ET le même numéro (en excluant l'ID actuel si fourni)
           const existingQuote = data.quotes.quotes.find(
             (quote) => {
-              const matches = quote.number === quoteNumber;
+              const matchesNumber = quote.number === quoteNumber;
+              const matchesPrefix = quote.prefix === quotePrefix;
               const notExcluded = !excludeId || quote.id !== excludeId;
-              console.log(`[checkQuoteNumber] Comparaison: "${quote.number}" === "${quoteNumber}" ? ${matches}, notExcluded: ${notExcluded}`);
-              return matches && notExcluded;
+              console.log(`[checkQuoteNumber] Comparaison: "${quote.prefix}${quote.number}" === "${quotePrefix}${quoteNumber}" ? prefix:${matchesPrefix}, number:${matchesNumber}, notExcluded: ${notExcluded}`);
+              return matchesNumber && matchesPrefix && notExcluded;
             }
           );
 

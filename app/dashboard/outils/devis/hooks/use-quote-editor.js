@@ -311,14 +311,15 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       }
 
       try {
-        // Vérifier si le numéro existe déjà (sans tenir compte du prefix)
-        const { exists } = await checkQuoteNumber(number, quoteId);
+        // Vérifier si le numéro existe déjà (avec le préfixe)
+        const prefix = watch('prefix');
+        const { exists } = await checkQuoteNumber(number, prefix, quoteId);
 
         if (exists) {
           setValidationErrors((prevErrors) => ({
             ...prevErrors,
             quoteNumber: {
-              message: `Le numéro de devis "${number}" existe déjà`,
+              message: `Le numéro de devis "${prefix}-${number}" existe déjà`,
               canEdit: true,
             },
           }));
@@ -339,7 +340,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [watchedNumber, checkQuoteNumber, quoteId, isFormInitialized]);
+  }, [watchedNumber, watch, checkQuoteNumber, quoteId, isFormInitialized]);
 
   // Re-valider quand les informations entreprise changent
   useEffect(() => {
@@ -718,7 +719,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   useEffect(() => {
     if (mode === "create" && nextQuoteNumber && !numberLoading) {
       // Initialiser avec le prochain numéro séquentiel calculé
-      const formattedNumber = String(nextQuoteNumber).padStart(6, '0');
+      const formattedNumber = String(nextQuoteNumber).padStart(4, '0');
       setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
     }
   }, [mode, nextQuoteNumber, numberLoading, setValue]);
@@ -1400,10 +1401,19 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               ? "Devis mis à jour avec succès"
               : "Devis créé avec succès"
           );
-          router.push("/dashboard/outils/devis");
+          
+          // Retourner les données du devis pour permettre l'envoi par email
+          return {
+            success: true,
+            quote: result,
+            shouldRedirect: true,
+            redirectUrl: "/dashboard/outils/devis",
+            isNewQuote: !existingQuote?.id,
+          };
         }
       } catch (error) {
         handleError(error, 'quote');
+        return { success: false };
       } finally {
         setSaving(false);
       }
