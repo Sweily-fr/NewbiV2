@@ -24,6 +24,7 @@ import {
 } from "@/src/graphql/documentEmailQueries";
 import { useEmailSettings, useUpdateEmailSettings } from "@/src/graphql/emailQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { generatePDFFromElement } from "@/src/utils/generatePDF";
 
 const DOCUMENT_LABELS = {
   invoice: { singular: "facture", article: "la", title: "Envoyer la facture" },
@@ -106,6 +107,7 @@ export function SendDocumentModal({
   invoiceNumber, // Numéro de la facture associée (pour les avoirs)
   onSent,
   onClose, // Callback pour fermer l'éditeur de document
+  pdfRef, // Référence au composant PDF pour génération côté client
 }) {
   const [isSending, setIsSending] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -158,11 +160,28 @@ export function SendDocumentModal({
     
     setIsSending(true);
     try {
+      // Générer le PDF côté client si pdfRef est disponible
+      let pdfBase64 = null;
+      if (pdfRef?.current) {
+        try {
+          const pdfBuffer = await generatePDFFromElement(pdfRef.current);
+          // Convertir Uint8Array en base64
+          const binaryString = Array.from(pdfBuffer)
+            .map(byte => String.fromCharCode(byte))
+            .join('');
+          pdfBase64 = btoa(binaryString);
+        } catch (pdfError) {
+          console.warn("Erreur génération PDF côté client:", pdfError);
+          // Continuer sans PDF - le backend essaiera de le générer
+        }
+      }
+      
       const input = {
         documentId,
         emailSubject: data.emailSubject,
         emailBody: data.emailBody,
         recipientEmail: clientEmail,
+        pdfBase64,
       };
       
       let result;

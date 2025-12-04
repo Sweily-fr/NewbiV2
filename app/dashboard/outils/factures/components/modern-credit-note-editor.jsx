@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FormProvider } from "react-hook-form";
 import {
   ArrowLeft,
@@ -31,6 +31,7 @@ export default function ModernCreditNoteEditor({
   const [organization, setOrganization] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdCreditNoteData, setCreatedCreditNoteData] = useState(null);
+  const pdfRef = useRef(null);
 
   // Récupérer l'organisation au chargement
   useEffect(() => {
@@ -233,7 +234,9 @@ export default function ModernCreditNoteEditor({
         {/* Right Panel - PDF Preview */}
         <div className="hidden lg:flex bg-muted/30 border-l flex-col h-full overflow-hidden">
           <div className="flex-1 overflow-y-auto pl-4 pr-4 pt-6 pb-6 md:pl-18 md:pr-18 md:pt-22 md:pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a]">
-            <UniversalPreviewPDF data={{...formData, originalInvoice}} type="creditNote" />
+            <div ref={pdfRef}>
+              <UniversalPreviewPDF data={{...formData, originalInvoice}} type="creditNote" />
+            </div>
           </div>
         </div>
       </div>
@@ -254,6 +257,7 @@ export default function ModernCreditNoteEditor({
           invoiceNumber={createdCreditNoteData.invoiceNumber}
           onSent={handleEmailModalClose}
           onClose={() => router.push(createdCreditNoteData.redirectUrl || "/dashboard/outils/factures")}
+          pdfRef={pdfRef}
         />
       )}
     </div>

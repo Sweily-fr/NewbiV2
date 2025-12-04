@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FormProvider } from "react-hook-form";
 import {
   ArrowLeft,
@@ -46,6 +46,7 @@ export default function ModernInvoiceEditor({
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdInvoiceData, setCreatedInvoiceData] = useState(null);
+  const pdfRef = useRef(null);
 
   // Récupérer l'organisation au chargement
   useEffect(() => {
@@ -374,7 +375,9 @@ export default function ModernInvoiceEditor({
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : debouncedFormData ? (
-              <UniversalPreviewPDF data={debouncedFormData} type="invoice" />
+              <div ref={pdfRef}>
+                <UniversalPreviewPDF data={debouncedFormData} type="invoice" />
+              </div>
             ) : null}
           </div>
         </div>
@@ -412,6 +415,7 @@ export default function ModernInvoiceEditor({
           dueDate={createdInvoiceData.dueDate}
           onSent={handleEmailModalClose}
           onClose={() => router.push(createdInvoiceData.redirectUrl || "/dashboard/outils/factures")}
+          pdfRef={pdfRef}
         />
       )}
     </div>
