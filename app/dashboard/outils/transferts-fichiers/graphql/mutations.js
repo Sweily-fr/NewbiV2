@@ -9,7 +9,7 @@ export const UPLOAD_FILE_CHUNK = gql`
     $chunkIndex: Int!
     $totalChunks: Int!
     $fileName: String!
-    $fileSize: Int!
+    $fileSize: Float!
   ) {
     uploadFileChunk(
       chunk: $chunk
@@ -35,7 +35,7 @@ export const START_MULTIPART_UPLOAD = gql`
     $transferId: String!
     $fileId: String!
     $fileName: String!
-    $fileSize: Int!
+    $fileSize: Float!
     $mimeType: String
     $totalParts: Int!
   ) {
@@ -114,7 +114,7 @@ export const CONFIRM_CHUNK_UPLOADED = gql`
     $chunkIndex: Int!
     $totalChunks: Int!
     $fileName: String!
-    $fileSize: Int!
+    $fileSize: Float!
   ) {
     confirmChunkUploadedToR2(
       fileId: $fileId
@@ -140,7 +140,7 @@ export const UPLOAD_FILE_CHUNK_TO_R2 = gql`
     $chunkIndex: Int!
     $totalChunks: Int!
     $fileName: String!
-    $fileSize: Int!
+    $fileSize: Float!
   ) {
     uploadFileChunkToR2(
       chunk: $chunk

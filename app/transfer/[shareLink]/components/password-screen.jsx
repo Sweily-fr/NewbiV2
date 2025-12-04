@@ -19,7 +19,10 @@ export function PasswordModal({ transferId, onPasswordVerified }) {
 
     setIsVerifying(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const apiUrl = (
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+      ).replace(/\/$/, "");
+
       const response = await fetch(`${apiUrl}/api/transfers/verify-password`, {
         method: "POST",
         headers: {
@@ -37,7 +40,7 @@ export function PasswordModal({ transferId, onPasswordVerified }) {
         toast.success("Accès autorisé");
         onPasswordVerified();
       } else {
-        toast.error("Mot de passe incorrect");
+        toast.error(data.message || "Mot de passe incorrect");
       }
     } catch (error) {
       console.error("Erreur lors de la vérification du mot de passe:", error);
@@ -79,7 +82,6 @@ export function PasswordModal({ transferId, onPasswordVerified }) {
                 value={passwordInput}
                 onChange={(e) => {
                   setPasswordInput(e.target.value);
-                  setPasswordError("");
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {

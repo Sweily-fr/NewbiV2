@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { GET_TRANSFER_BY_LINK } from "@/app/dashboard/outils/transferts-fichiers/graphql/mutations";
 import { useStripePayment } from "@/src/hooks/useStripePayment";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { toast } from "@/src/components/ui/sonner";
-import { Confetti } from "@/src/components/magicui/confetti";
 import { Button } from "@/src/components/ui/button";
+import { Card } from "@/src/components/ui/card";
 import {
   Download,
   Eye,
@@ -17,11 +17,12 @@ import {
   Files,
   ArrowDown,
   Euro,
+  LoaderCircle,
 } from "lucide-react";
 import Image from "next/image";
 
 // Composants séparés
-import { PasswordModal, PreviewModal, PaymentModal } from "./components";
+import { PasswordModal, FilePreviewDrawer, PaymentModal } from "./components";
 
 export default function TransferPage() {
   const params = useParams();
@@ -31,27 +32,9 @@ export default function TransferPage() {
   const paymentStatus = searchParams.get("payment_status");
 
   const [isDownloading, setIsDownloading] = useState(false);
-  const confettiRef = useRef(null);
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  // Images Unsplash sombres pour le fond
-  const backgroundImages = [
-    "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80", // Montagne nuit
-    "https://images.unsplash.com/photo-1507400492013-162706c8c05e?w=1920&q=80", // Forêt sombre
-    "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80", // Brume montagne
-    "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=1920&q=80", // Nuit étoilée
-    "https://images.unsplash.com/photo-1493514789931-586cb221d7a7?w=1920&q=80", // Aurore boréale
-  ];
-
-  // Défilement automatique des images
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % backgroundImages.length);
-    }, 8000); // Change toutes les 8 secondes
-    return () => clearInterval(interval);
-  }, []);
+  const [previewFileIndex, setPreviewFileIndex] = useState(0);
 
   // Hook pour gérer les paiements Stripe
   const { initiatePayment, isProcessing } = useStripePayment();
@@ -271,15 +254,120 @@ export default function TransferPage() {
   };
 
   // Fonction pour ouvrir la prévisualisation
-  const openPreview = (file) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const openPreview = (file, index = 0) => {
+    const apiUrl = (
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+    ).replace(/\/$/, "");
     const previewUrl = `${apiUrl}/api/files/preview/${transfer?.fileTransfer?.id}/${file.fileId || file.id || file._id}`;
-    setPreviewFile({ ...file, previewUrl });
+    setPreviewFile({
+      ...file,
+      previewUrl,
+      transferId: transfer?.fileTransfer?.id,
+    });
+    setPreviewFileIndex(index);
+  };
+
+  // Fonction pour naviguer entre les fichiers dans le drawer
+  const handlePreviewNavigate = (newIndex) => {
+    const files = transfer?.fileTransfer?.files || [];
+    if (newIndex >= 0 && newIndex < files.length) {
+      openPreview(files[newIndex], newIndex);
+    }
+  };
+
+  // Fonction pour télécharger un fichier individuel
+  const downloadSingleFile = async (file) => {
+    try {
+      const apiUrl = (
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+      ).replace(/\/$/, "");
+      const transferId = file.transferId || transfer?.fileTransfer?.id;
+
+      // Autoriser le téléchargement
+      const authResponse = await fetch(
+        `${apiUrl}/api/transfers/${transferId}/authorize`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: `guest-${Date.now()}@newbi.fr`,
+          }),
+        }
+      );
+
+      if (!authResponse.ok) {
+        throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
+      }
+
+      const authData = await authResponse.json();
+
+      if (!authData.success) {
+        throw new Error(authData.error || "Autorisation refusée");
+      }
+
+      // Trouver le fichier dans les downloads autorisés
+      const fileId = file.fileId || file.id || file._id;
+
+      // Chercher par fileId, id, ou par nom de fichier
+      let downloadInfo = authData.downloads.find(
+        (d) => d.fileId === fileId || d.id === fileId || d._id === fileId
+      );
+
+      // Si pas trouvé par ID, chercher par nom de fichier
+      if (!downloadInfo) {
+        downloadInfo = authData.downloads.find(
+          (d) =>
+            d.fileName === file.originalName ||
+            d.originalName === file.originalName
+        );
+      }
+
+      // Si toujours pas trouvé et qu'il n'y a qu'un seul fichier, le prendre
+      if (!downloadInfo && authData.downloads.length === 1) {
+        downloadInfo = authData.downloads[0];
+      }
+
+      if (!downloadInfo) {
+        console.error("File not found. Looking for:", {
+          fileId,
+          fileName: file.originalName,
+        });
+        console.error("Available downloads:", authData.downloads);
+        throw new Error(
+          "Fichier non trouvé dans les téléchargements autorisés"
+        );
+      }
+
+      // Télécharger le fichier
+      const response = await fetch(downloadInfo.downloadUrl);
+
+      if (!response.ok) {
+        throw new Error("Erreur lors du téléchargement");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = downloadInfo.fileName || file.originalName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Fichier téléchargé !");
+      setPreviewFile(null);
+    } catch (error) {
+      console.error("Erreur lors du téléchargement:", error);
+      toast.error(error.message || "Erreur lors du téléchargement");
+    }
   };
 
   // Vérifier si le transfert nécessite un mot de passe et s'il n'est pas encore vérifié
   const needsPasswordVerification =
-    transfer?.fileTransfer?.passwordProtected && !isPasswordVerified;
+    !!transfer?.fileTransfer?.passwordProtected && !isPasswordVerified;
 
   if (!shareLink || !accessKey) {
     return (
@@ -348,11 +436,12 @@ export default function TransferPage() {
   const isExpired = new Date(transfer?.fileTransfer?.expiryDate) < new Date();
 
   // Calculer si paiement requis
-  const isPaymentRequired =
+  const isPaymentRequired = !!(
     (transfer?.fileTransfer?.isPaymentRequired === true ||
       (transfer?.fileTransfer?.paymentAmount &&
         transfer?.fileTransfer?.paymentAmount > 0)) &&
-    !transfer?.fileTransfer?.isPaid;
+    !transfer?.fileTransfer?.isPaid
+  );
 
   // Calculer la taille totale des fichiers
   const totalSize = transfer?.fileTransfer?.files?.reduce(
@@ -407,8 +496,15 @@ export default function TransferPage() {
         />
       )}
 
-      {/* Modal de prévisualisation */}
-      <PreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
+      {/* Drawer de prévisualisation */}
+      <FilePreviewDrawer
+        file={previewFile}
+        files={transfer?.fileTransfer?.files || []}
+        currentIndex={previewFileIndex}
+        onClose={() => setPreviewFile(null)}
+        onDownload={downloadSingleFile}
+        onNavigate={handlePreviewNavigate}
+      />
 
       {/* Modal de paiement */}
       {isPaymentRequired && (
@@ -420,54 +516,32 @@ export default function TransferPage() {
         />
       )}
 
-      {/* Confetti */}
-      {paymentStatus === "success" && (
-        <Confetti
-          ref={confettiRef}
-          className="fixed inset-0 z-50 pointer-events-none"
-        />
-      )}
-
-      {/* Panneau gauche - Images défilantes */}
-      <div className="hidden lg:block lg:w-1/2 relative m-2 rounded-[18px] overflow-hidden">
-        {/* Images de fond qui défilent */}
-        {backgroundImages.map((img, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentImageIndex ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <Image
-              src={img}
-              alt=""
-              fill
-              className="object-cover"
-              priority={index === 0}
-              unoptimized
-            />
-          </div>
-        ))}
-
-        {/* Overlay sombre */}
-        <div className="absolute inset-0 bg-black/40" />
-
+      {/* Panneau gauche - Fond gris avec image */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#F8F8F8] items-center justify-start relative">
         {/* Logo en haut à gauche */}
-        <div className="absolute top-6 left-6 z-10">
+        <div className="absolute top-2 left-2">
           <Image
-            src="/Logo + texte_blanc.svg"
+            src="/newbiLetter.png"
             alt="Newbi"
             width={100}
             height={32}
             priority
           />
         </div>
+        <Image
+          src="/fondTransfer.png"
+          alt="Newbi Transfer"
+          width={650}
+          height={650}
+          className="object-contain"
+          priority
+        />
       </div>
 
       {/* Panneau droit - Card */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-5 py-5">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-8 py-10">
         {/* Logo mobile */}
-        <div className="lg:hidden absolute top-6 left-6">
+        <div className="lg:hidden absolute top-8 left-6">
           <Image
             src="/newbiLetter.png"
             alt="Newbi"
@@ -478,8 +552,8 @@ export default function TransferPage() {
         </div>
 
         {/* Card principale */}
-        <div
-          className="w-full mx-auto rounded-2xl shadow-md bg-white"
+        <Card
+          className="w-full mx-auto rounded-3xl shadow-md p-0"
           style={{ maxWidth: 320 }}
         >
           {isExpired ? (
@@ -498,19 +572,48 @@ export default function TransferPage() {
           ) : isPaymentRequired ? null : (
             /* Contenu principal */
             <>
-              {/* Header avec icône */}
-              <div className="w-full px-5 pt-8 pb-3">
-                {/* <div className="rounded-full w-24 h-24 mx-auto border-8 border-gray-300 flex items-center justify-center">
-                  <ArrowDown
-                    className="w-20 h-20 text-gray-300"
-                    strokeWidth={1}
-                  />
-                </div> */}
-              </div>
+              {/* Preview de la première image */}
+              {transfer?.fileTransfer?.files?.[0] && (
+                <div className="mx-4 mt-4 h-32 bg-gray-100 rounded-lg overflow-hidden relative">
+                  {[
+                    "image/jpeg",
+                    "image/png",
+                    "image/gif",
+                    "image/webp",
+                  ].includes(transfer?.fileTransfer?.files?.[0]?.mimeType) ||
+                  ["jpg", "jpeg", "png", "gif", "webp"].includes(
+                    transfer?.fileTransfer?.files?.[0]?.originalName
+                      ?.split(".")
+                      .pop()
+                      ?.toLowerCase()
+                  ) ? (
+                    <img
+                      src={`${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${transfer?.fileTransfer?.files?.[0]?.fileId || transfer?.fileTransfer?.files?.[0]?.id}`}
+                      alt={transfer?.fileTransfer?.files?.[0]?.originalName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <FileIcon className="w-16 h-16 text-gray-300" />
+                    </div>
+                  )}
+                  {/* Bouton preview au centre */}
+                  <button
+                    onClick={() =>
+                      openPreview(transfer?.fileTransfer?.files?.[0], 0)
+                    }
+                    className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors group"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center">
+                      <Eye className="w-5 h-5 text-gray-700" />
+                    </div>
+                  </button>
+                </div>
+              )}
 
               {/* Titre */}
-              <div className="w-full px-5 text-center pb-8 border-b border-gray-300">
-                <h1 className="text-2xl font-normal font-light text-gray-800">
+              <div className="w-full px-5 text-center py-6">
+                <h1 className="text-xl font-medium text-gray-800">
                   Vos fichiers sont prêts
                 </h1>
                 <p className="text-xs text-gray-500 mt-1">
@@ -520,11 +623,11 @@ export default function TransferPage() {
               </div>
 
               {/* Liste des fichiers */}
-              <ul className="max-h-60 overflow-y-auto">
+              <ul className="max-h-40 overflow-y-auto">
                 {transfer?.fileTransfer?.files?.map((file, index) => (
                   <li
                     key={file.id || index}
-                    className="w-full px-5 py-3 border-b border-gray-300 last:border-b-0"
+                    className="w-full px-5 py-3 border-b border-gray-200 last:border-b-0"
                   >
                     <div className="w-full flex items-center">
                       <div className="flex-grow min-w-0">
@@ -542,8 +645,8 @@ export default function TransferPage() {
                       <div className="flex items-center gap-1 ml-2">
                         {canPreview(file) && (
                           <button
-                            onClick={() => openPreview(file)}
-                            className="p-2 text-gray-400 hover:text-[#5a50ff] transition-colors"
+                            onClick={() => openPreview(file, index)}
+                            className="p-2 text-gray-400 hover:text-[#5a50ff] transition-colors cursor-pointer"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -555,7 +658,7 @@ export default function TransferPage() {
                               file.originalName
                             )
                           }
-                          className="p-2 text-[#5a50ff] hover:text-[#5a50ff]/70 transition-colors"
+                          className="p-2 text-gray-400 hover:text-[#5a50ff] transition-colors cursor-pointer"
                         >
                           <Download className="w-4 h-4" />
                         </button>
@@ -570,18 +673,20 @@ export default function TransferPage() {
                 <Button
                   onClick={downloadAllFiles}
                   disabled={isDownloading}
-                  className="bg-[#5a50ff] hover:bg-[#5a50ff]/90 text-white px-10"
+                  className="text-white px-10 w-full rounded-xl"
                 >
-                  {isDownloading
-                    ? "Téléchargement..."
-                    : transfer?.fileTransfer?.files?.length > 1
-                      ? "Tout télécharger"
-                      : "Télécharger"}
+                  {isDownloading ? (
+                    <LoaderCircle className="w-5 h-5 animate-spin" />
+                  ) : transfer?.fileTransfer?.files?.length > 1 ? (
+                    "Tout télécharger"
+                  ) : (
+                    "Télécharger"
+                  )}
                 </Button>
               </div>
             </>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

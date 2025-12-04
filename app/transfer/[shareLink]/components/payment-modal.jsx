@@ -49,22 +49,22 @@ export function PaymentModal({ amount, currency, onPay, isProcessing }) {
           {/* Sécurité */}
           <div className="space-y-3 mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-50 rounded-full flex items-center justify-center flex-shrink-0">
-                <Shield className="w-4 h-4 text-green-600" />
+              <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center flex-shrink-0">
+                <Shield className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-800">
+                <p className="text-sm font-normal text-gray-800">
                   Paiement sécurisé
                 </p>
                 <p className="text-xs text-gray-500">Chiffrement SSL 256-bit</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
-                <Lock className="w-4 h-4 text-blue-600" />
+              <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center flex-shrink-0">
+                <Lock className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-800">
+                <p className="text-sm font-normal text-gray-800">
                   Stripe Connect
                 </p>
                 <p className="text-xs text-gray-500">
@@ -73,11 +73,11 @@ export function PaymentModal({ amount, currency, onPay, isProcessing }) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center flex-shrink-0">
-                <CheckCircle className="w-4 h-4 text-purple-600" />
+              <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-800">
+                <p className="text-sm font-normal text-gray-800">
                   Accès immédiat
                 </p>
                 <p className="text-xs text-gray-500">
@@ -91,7 +91,7 @@ export function PaymentModal({ amount, currency, onPay, isProcessing }) {
           <Button
             onClick={onPay}
             disabled={isProcessing}
-            className="w-full bg-[#5a50ff] hover:bg-[#5a50ff]/90 font-medium h-11"
+            className="w-full bg-[#5a50ff] hover:bg-[#5a50ff]/90 font-normal"
           >
             {isProcessing ? "Redirection..." : `Payer ${amount} ${currency}`}
           </Button>

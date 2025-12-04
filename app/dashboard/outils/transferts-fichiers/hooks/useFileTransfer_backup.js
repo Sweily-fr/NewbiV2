@@ -130,7 +130,7 @@ export const useFileTransfer = () => {
     // Préparer la mutation GraphQL
     const operations = {
       query: `
-        mutation UploadFileChunk($chunk: Upload!, $fileId: String!, $chunkIndex: Int!, $totalChunks: Int!, $fileName: String!, $fileSize: Int!) {
+        mutation UploadFileChunk($chunk: Upload!, $fileId: String!, $chunkIndex: Int!, $totalChunks: Int!, $fileName: String!, $fileSize: Float!) {
           uploadFileChunk(chunk: $chunk, fileId: $fileId, chunkIndex: $chunkIndex, totalChunks: $totalChunks, fileName: $fileName, fileSize: $fileSize) {
             chunkReceived
             fileCompleted

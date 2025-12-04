@@ -54,6 +54,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { useFileTransfer } from "../hooks/useFileTransfer";
 import { useUser } from "@/src/lib/auth/hooks";
+import { TransferDetailDrawer } from "./transfer-detail-drawer";
 
 // Fonction pour obtenir l'extension du fichier
 function getFileExtension(filename) {
@@ -272,9 +273,7 @@ export default function TransferTable({
               <p
                 className={cn(
                   "text-xs font-normal",
-                  isExpired
-                    ? "text-red-600 dark:text-red-400"
-                    : "text-foreground"
+                  isExpired ? "dark:text-white-400" : "text-foreground"
                 )}
               >
                 {format(expirationDate, "dd MMM yyyy", { locale: fr })}
@@ -358,8 +357,8 @@ export default function TransferTable({
                     onClick={() => handleDeleteTransfer(transfer.id)}
                     className="text-destructive cursor-pointer"
                   >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Supprimer
+                    <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                    <span className="text-red-500">Supprimer</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -394,6 +393,8 @@ export default function TransferTable({
     .rows.map((row) => row.original);
   const [isDeleting, setIsDeleting] = useState(false);
   const [transferToDelete, setTransferToDelete] = useState(null);
+  const [selectedTransfer, setSelectedTransfer] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Notifier le parent du changement de sélection
   useEffect(() => {
@@ -407,6 +408,12 @@ export default function TransferTable({
 
   const viewTransfer = (shareLink) => {
     window.open(`/dashboard/outils/transferts-fichiers/${shareLink}`, "_blank");
+  };
+
+  // Ouvrir le drawer de détail
+  const openTransferDetail = (transfer) => {
+    setSelectedTransfer(transfer);
+    setDrawerOpen(true);
   };
 
   const handleDeleteTransfer = async (transferId) => {
@@ -514,7 +521,18 @@ export default function TransferTable({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                  className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    // Ne pas ouvrir le drawer si on clique sur la checkbox ou le menu
+                    if (
+                      e.target.closest('[role="checkbox"]') ||
+                      e.target.closest("[data-radix-collection-item]") ||
+                      e.target.closest("button")
+                    ) {
+                      return;
+                    }
+                    openTransferDetail(row.original);
+                  }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-3 px-3">
@@ -575,6 +593,17 @@ export default function TransferTable({
           })}
         </div>
       )}
+
+      {/* Drawer de détail du transfert */}
+      <TransferDetailDrawer
+        transfer={selectedTransfer}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onDelete={(transfer) => {
+          setDrawerOpen(false);
+          handleDeleteTransfer(transfer.id);
+        }}
+      />
     </div>
   );
 }

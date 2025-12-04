@@ -105,7 +105,11 @@ const getFileIcon = (file) => {
   return <FileIcon className="size-4 opacity-60" />;
 };
 
-export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
+export default function FileUploadNew({
+  onTransferCreated,
+  refetchTransfers,
+  onUploadingChange,
+}) {
   const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
   const maxFiles = 10;
 
@@ -113,8 +117,8 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
   const [uploadTime, setUploadTime] = useState(0);
   const [estimatedTimeLeft, setEstimatedTimeLeft] = useState(0);
   const timerRef = useRef(null);
-  const lastProgressRef = useRef(0);
-  const lastTimeRef = useRef(0);
+  const uploadStartTimeRef = useRef(0); // Temps de début de l'upload
+  const speedHistoryRef = useRef([]); // Historique des vitesses pour moyenne mobile
 
   // Hooks
   const { session: user } = useUser();
@@ -136,6 +140,7 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
     addFiles,
     removeFile,
     createTransfer,
+    cancelTransfer,
   } = useFileTransferR2Multipart(refetchTransfers);
 
   // Options de transfert
@@ -162,12 +167,18 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
   const [showPassword, setShowPassword] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Gérer le timer d'upload et calculer le temps restant
+  // Notifier le parent quand isUploading change
+  useEffect(() => {
+    onUploadingChange?.(isUploading);
+  }, [isUploading, onUploadingChange]);
+
+  // Gérer le timer d'upload
   useEffect(() => {
     if (isUploading) {
       setUploadTime(0);
-      lastProgressRef.current = 0;
-      lastTimeRef.current = Date.now();
+      setEstimatedTimeLeft(0);
+      uploadStartTimeRef.current = Date.now();
+      speedHistoryRef.current = [];
 
       timerRef.current = setInterval(() => {
         setUploadTime((prev) => prev + 1);
@@ -178,6 +189,7 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
         timerRef.current = null;
       }
       setEstimatedTimeLeft(0);
+      speedHistoryRef.current = [];
     }
 
     return () => {
@@ -187,26 +199,42 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
     };
   }, [isUploading]);
 
-  // Calculer le temps restant estimé basé sur la progression
+  // Calculer le temps restant estimé avec moyenne mobile + calcul depuis le début
   useEffect(() => {
     if (isUploading && uploadProgress > 0 && uploadProgress < 100) {
-      const currentTime = Date.now();
-      const timeDiff = (currentTime - lastTimeRef.current) / 1000; // en secondes
-      const progressDiff = uploadProgress - lastProgressRef.current;
+      const elapsedTime = (Date.now() - uploadStartTimeRef.current) / 1000; // en secondes
 
-      if (progressDiff > 0 && timeDiff > 0) {
-        // Vitesse de progression (% par seconde)
-        const progressSpeed = progressDiff / timeDiff;
+      if (elapsedTime > 0) {
+        // Méthode 1: Vitesse moyenne depuis le début (stable)
+        const averageSpeed = uploadProgress / elapsedTime; // % par seconde
+
+        // Ajouter à l'historique pour moyenne mobile (garder les 10 dernières mesures)
+        speedHistoryRef.current.push(averageSpeed);
+        if (speedHistoryRef.current.length > 10) {
+          speedHistoryRef.current.shift();
+        }
+
+        // Méthode 2: Moyenne mobile exponentielle pour lisser les variations
+        // Combine la stabilité de la moyenne globale avec la réactivité aux changements
+        const weights = speedHistoryRef.current.map((_, i) => Math.pow(1.5, i)); // Poids exponentiels
+        const totalWeight = weights.reduce((a, b) => a + b, 0);
+        const weightedSpeed =
+          speedHistoryRef.current.reduce(
+            (sum, speed, i) => sum + speed * weights[i],
+            0
+          ) / totalWeight;
+
+        // Utiliser un mix: 70% moyenne globale + 30% moyenne mobile pour stabilité
+        const finalSpeed = averageSpeed * 0.7 + weightedSpeed * 0.3;
 
         // Temps restant estimé
         const remainingProgress = 100 - uploadProgress;
-        const estimatedSeconds = Math.ceil(remainingProgress / progressSpeed);
+        const estimatedSeconds = Math.ceil(remainingProgress / finalSpeed);
 
-        setEstimatedTimeLeft(estimatedSeconds);
+        // Limiter les valeurs aberrantes (max 24h, min 1s)
+        const clampedSeconds = Math.max(1, Math.min(estimatedSeconds, 86400));
 
-        // Mettre à jour les références
-        lastProgressRef.current = uploadProgress;
-        lastTimeRef.current = currentTime;
+        setEstimatedTimeLeft(clampedSeconds);
       }
     }
   }, [uploadProgress, isUploading]);
@@ -501,6 +529,16 @@ export default function FileUploadNew({ onTransferCreated, refetchTransfers }) {
                 </div>
               </div>
             )}
+            {/* Bouton d'annulation */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={cancelTransfer}
+              className="mt-4 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+            >
+              <XIcon className="w-4 h-4 mr-2" />
+              Annuler le transfert
+            </Button>
           </div>
         ) : (
           <div
