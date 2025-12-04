@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FormProvider } from "react-hook-form";
 import {
   ArrowLeft,
@@ -44,6 +44,7 @@ export default function ModernQuoteEditor({
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdQuoteData, setCreatedQuoteData] = useState(null);
+  const pdfRef = useRef(null);
 
   const {
     form,
@@ -334,7 +335,9 @@ export default function ModernQuoteEditor({
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : debouncedFormData ? (
-              <UniversalPreviewPDF data={debouncedFormData} type="quote" />
+              <div ref={pdfRef}>
+                <UniversalPreviewPDF data={debouncedFormData} type="quote" />
+              </div>
             ) : null}
           </div>
         </div>
@@ -365,6 +368,7 @@ export default function ModernQuoteEditor({
           issueDate={createdQuoteData.issueDate}
           onSent={handleEmailModalClose}
           onClose={() => router.push(createdQuoteData.redirectUrl || "/dashboard/outils/devis")}
+          pdfRef={pdfRef}
         />
       )}
     </div>
