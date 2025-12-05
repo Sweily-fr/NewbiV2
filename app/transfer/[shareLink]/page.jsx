@@ -523,9 +523,9 @@ export default function TransferPage() {
       </div>
 
       {/* Panneau droit - Card */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-8 py-10">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-6 lg:px-8 lg:py-10">
         {/* Logo mobile */}
-        <div className="lg:hidden absolute top-8 left-6">
+        <div className="lg:hidden absolute top-4 left-4">
           <Image
             src="/newbiLetter.png"
             alt="Newbi"
