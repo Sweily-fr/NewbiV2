@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { GET_TRANSFER_BY_LINK } from "@/app/dashboard/outils/transferts-fichiers/graphql/mutations";
@@ -18,11 +18,13 @@ import {
   ArrowDown,
   Euro,
   LoaderCircle,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 
 // Composants séparés
 import { PasswordModal, FilePreviewDrawer, PaymentModal } from "./components";
+import CircularProgress from "@/src/components/ui/circular-progress";
 
 export default function TransferPage() {
   const params = useParams();
@@ -32,9 +34,14 @@ export default function TransferPage() {
   const paymentStatus = searchParams.get("payment_status");
 
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadingFileId, setDownloadingFileId] = useState(null);
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [previewFileIndex, setPreviewFileIndex] = useState(0);
+
+  // Ref pour annuler le téléchargement
+  const downloadAbortRef = useRef(null);
 
   // Hook pour gérer les paiements Stripe
   const { initiatePayment, isProcessing } = useStripePayment();
@@ -71,10 +78,24 @@ export default function TransferPage() {
 
   const transfer = data?.getFileTransferByLink;
 
-  // Fonction pour télécharger un fichier
-  const downloadFile = async (fileId, fileName) => {
+  // Fonction pour annuler le téléchargement
+  const cancelDownload = () => {
+    if (downloadAbortRef.current) {
+      downloadAbortRef.current.abort();
+      downloadAbortRef.current = null;
+    }
+  };
+
+  // Fonction pour télécharger un fichier avec progression
+  const downloadFile = async (fileId, fileName, fileSize = 0) => {
+    // Créer un nouvel AbortController
+    downloadAbortRef.current = new AbortController();
+
     setIsDownloading(true);
+    setDownloadingFileId(fileId);
+    setDownloadProgress(0);
     const startTime = Date.now();
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -88,13 +109,13 @@ export default function TransferPage() {
           },
           body: JSON.stringify({
             fileId,
-            email: `guest-${Date.now()}@newbi.fr`, // Email unique pour traçabilité
+            email: `guest-${Date.now()}@newbi.fr`,
           }),
+          signal: downloadAbortRef.current.signal,
         }
       );
 
       if (!authResponse.ok) {
-        const errorText = await authResponse.text();
         throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
       }
 
@@ -108,43 +129,91 @@ export default function TransferPage() {
         throw new Error(authData.error || "Autorisation refusée");
       }
 
-      // Utiliser l'URL sécurisée fournie par le serveur
       const downloadInfo = authData.downloads.find((d) => d.fileId === fileId);
       if (!downloadInfo) {
         throw new Error("URL de téléchargement non trouvée");
       }
 
-      // Utiliser la route proxy du serveur pour un vrai téléchargement
-      const proxyUrl = `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`;
+      // Téléchargement avec streaming et progression
+      const response = await fetch(downloadInfo.downloadUrl, {
+        signal: downloadAbortRef.current.signal,
+      });
 
-      const a = document.createElement("a");
-      a.href = proxyUrl;
-      a.download = fileName;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      if (!response.ok) {
+        throw new Error("Erreur lors du téléchargement");
+      }
+
+      const contentLength = response.headers.get("content-length");
+      const totalSize = contentLength ? parseInt(contentLength, 10) : fileSize;
+
+      // Si on peut streamer avec progression
+      if (totalSize && response.body) {
+        const reader = response.body.getReader();
+        const chunks = [];
+        let receivedLength = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) break;
+
+          chunks.push(value);
+          receivedLength += value.length;
+
+          // Mettre à jour la progression
+          const progress = Math.round((receivedLength / totalSize) * 100);
+          setDownloadProgress(progress);
+        }
+
+        // Assembler les chunks en blob
+        const blob = new Blob(chunks);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        // Fallback: téléchargement direct via lien
+        const proxyUrl = `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`;
+        const a = document.createElement("a");
+        a.href = proxyUrl;
+        a.download = fileName;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
 
       // Marquer le téléchargement comme terminé
       if (downloadInfo.downloadEventId) {
-        await fetch(
+        fetch(
           `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ duration: Date.now() - startTime }),
           }
-        );
+        ).catch(() => {}); // Fire and forget
       }
 
       toast.success("Fichier téléchargé avec succès");
     } catch (error) {
+      // Si c'est une annulation, ne pas afficher d'erreur
+      if (error.name === "AbortError") {
+        toast.info("Téléchargement annulé");
+        return;
+      }
       console.error("Erreur lors du téléchargement:", error);
       toast.error(error.message || "Erreur lors du téléchargement du fichier");
     } finally {
       setIsDownloading(false);
+      setDownloadingFileId(null);
+      setDownloadProgress(0);
+      downloadAbortRef.current = null;
     }
   };
 
@@ -275,94 +344,12 @@ export default function TransferPage() {
     }
   };
 
-  // Fonction pour télécharger un fichier individuel
+  // Fonction pour télécharger un fichier individuel (depuis le drawer)
   const downloadSingleFile = async (file) => {
-    try {
-      const apiUrl = (
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-      ).replace(/\/$/, "");
-      const transferId = file.transferId || transfer?.fileTransfer?.id;
-
-      // Autoriser le téléchargement
-      const authResponse = await fetch(
-        `${apiUrl}/api/transfers/${transferId}/authorize`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: `guest-${Date.now()}@newbi.fr`,
-          }),
-        }
-      );
-
-      if (!authResponse.ok) {
-        throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
-      }
-
-      const authData = await authResponse.json();
-
-      if (!authData.success) {
-        throw new Error(authData.error || "Autorisation refusée");
-      }
-
-      // Trouver le fichier dans les downloads autorisés
-      const fileId = file.fileId || file.id || file._id;
-
-      // Chercher par fileId, id, ou par nom de fichier
-      let downloadInfo = authData.downloads.find(
-        (d) => d.fileId === fileId || d.id === fileId || d._id === fileId
-      );
-
-      // Si pas trouvé par ID, chercher par nom de fichier
-      if (!downloadInfo) {
-        downloadInfo = authData.downloads.find(
-          (d) =>
-            d.fileName === file.originalName ||
-            d.originalName === file.originalName
-        );
-      }
-
-      // Si toujours pas trouvé et qu'il n'y a qu'un seul fichier, le prendre
-      if (!downloadInfo && authData.downloads.length === 1) {
-        downloadInfo = authData.downloads[0];
-      }
-
-      if (!downloadInfo) {
-        console.error("File not found. Looking for:", {
-          fileId,
-          fileName: file.originalName,
-        });
-        console.error("Available downloads:", authData.downloads);
-        throw new Error(
-          "Fichier non trouvé dans les téléchargements autorisés"
-        );
-      }
-
-      // Télécharger le fichier
-      const response = await fetch(downloadInfo.downloadUrl);
-
-      if (!response.ok) {
-        throw new Error("Erreur lors du téléchargement");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = downloadInfo.fileName || file.originalName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast.success("Fichier téléchargé !");
-      setPreviewFile(null);
-    } catch (error) {
-      console.error("Erreur lors du téléchargement:", error);
-      toast.error(error.message || "Erreur lors du téléchargement");
-    }
+    const fileId = file.fileId || file.id || file._id;
+    // Utiliser la fonction principale avec progression
+    await downloadFile(fileId, file.originalName, file.size);
+    setPreviewFile(null);
   };
 
   // Vérifier si le transfert nécessite un mot de passe et s'il n'est pas encore vérifié
@@ -572,42 +559,70 @@ export default function TransferPage() {
           ) : isPaymentRequired ? null : (
             /* Contenu principal */
             <>
-              {/* Preview de la première image */}
+              {/* Preview de la première image OU Progress pendant téléchargement */}
               {transfer?.fileTransfer?.files?.[0] && (
                 <div className="mx-4 mt-4 h-32 bg-gray-100 rounded-lg overflow-hidden relative">
-                  {[
-                    "image/jpeg",
-                    "image/png",
-                    "image/gif",
-                    "image/webp",
-                  ].includes(transfer?.fileTransfer?.files?.[0]?.mimeType) ||
-                  ["jpg", "jpeg", "png", "gif", "webp"].includes(
-                    transfer?.fileTransfer?.files?.[0]?.originalName
-                      ?.split(".")
-                      .pop()
-                      ?.toLowerCase()
-                  ) ? (
-                    <img
-                      src={`${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${transfer?.fileTransfer?.files?.[0]?.fileId || transfer?.fileTransfer?.files?.[0]?.id}`}
-                      alt={transfer?.fileTransfer?.files?.[0]?.originalName}
-                      className="w-full h-full object-cover"
-                    />
+                  {isDownloading ? (
+                    /* Afficher la progression pendant le téléchargement */
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#5a50ff]/5 to-[#5a50ff]/10 relative">
+                      <CircularProgress
+                        value={downloadProgress}
+                        size={140}
+                        strokeWidth={8}
+                        showLabel
+                        labelClassName="text-lg font-bold"
+                        renderLabel={(progress) => `${Math.round(progress)}%`}
+                        className="stroke-[#5a50ff]/20"
+                        progressClassName="stroke-[#5a50ff]"
+                      />
+                      {/* Bouton annuler discret */}
+                      <button
+                        onClick={cancelDownload}
+                        className="absolute top-2 right-2 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-white/50 transition-colors"
+                        title="Annuler"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <FileIcon className="w-16 h-16 text-gray-300" />
-                    </div>
+                    <>
+                      {[
+                        "image/jpeg",
+                        "image/png",
+                        "image/gif",
+                        "image/webp",
+                      ].includes(
+                        transfer?.fileTransfer?.files?.[0]?.mimeType
+                      ) ||
+                      ["jpg", "jpeg", "png", "gif", "webp"].includes(
+                        transfer?.fileTransfer?.files?.[0]?.originalName
+                          ?.split(".")
+                          .pop()
+                          ?.toLowerCase()
+                      ) ? (
+                        <img
+                          src={`${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${transfer?.fileTransfer?.files?.[0]?.fileId || transfer?.fileTransfer?.files?.[0]?.id}`}
+                          alt={transfer?.fileTransfer?.files?.[0]?.originalName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <FileIcon className="w-16 h-16 text-gray-300" />
+                        </div>
+                      )}
+                      {/* Bouton preview au centre */}
+                      <button
+                        onClick={() =>
+                          openPreview(transfer?.fileTransfer?.files?.[0], 0)
+                        }
+                        className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors group"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center">
+                          <Eye className="w-5 h-5 text-gray-700" />
+                        </div>
+                      </button>
+                    </>
                   )}
-                  {/* Bouton preview au centre */}
-                  <button
-                    onClick={() =>
-                      openPreview(transfer?.fileTransfer?.files?.[0], 0)
-                    }
-                    className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors group"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center">
-                      <Eye className="w-5 h-5 text-gray-700" />
-                    </div>
-                  </button>
                 </div>
               )}
 
@@ -655,10 +670,16 @@ export default function TransferPage() {
                           onClick={() =>
                             downloadFile(
                               file.id || file.fileId,
-                              file.originalName
+                              file.originalName,
+                              file.size
                             )
                           }
-                          className="p-2 text-gray-400 hover:text-[#5a50ff] transition-colors cursor-pointer"
+                          disabled={isDownloading}
+                          className={`p-2 transition-colors cursor-pointer ${
+                            isDownloading
+                              ? "text-gray-300 cursor-not-allowed"
+                              : "text-gray-400 hover:text-[#5a50ff]"
+                          }`}
                         >
                           <Download className="w-4 h-4" />
                         </button>
