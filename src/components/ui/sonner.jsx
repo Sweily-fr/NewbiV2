@@ -210,7 +210,7 @@ const Toaster = ({ ...props }) => {
         toastOptions={{
           style: isMobile
             ? {
-                marginTop: "12px", // Remonté - moins d'espace
+                marginTop: "4px", // Remonté - moins d'espace
               }
             : {},
           className: isMobile ? "mobile-toast" : "",

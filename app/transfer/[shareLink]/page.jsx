@@ -216,11 +216,17 @@ export default function TransferPage() {
 
   // Fonction pour télécharger tous les fichiers
   const downloadAllFiles = async () => {
+    // Créer un nouvel AbortController
+    downloadAbortRef.current = new AbortController();
+
     setIsDownloading(true);
+    setDownloadingFileId("all");
+    setDownloadProgress(0);
     const startTime = Date.now();
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       // Demander l'autorisation de téléchargement pour tous les fichiers
       const authResponse = await fetch(
@@ -233,6 +239,7 @@ export default function TransferPage() {
           body: JSON.stringify({
             email: `guest-${Date.now()}@newbi.fr`, // Email unique pour traçabilité
           }),
+          signal: downloadAbortRef.current.signal,
         }
       );
 
@@ -251,51 +258,95 @@ export default function TransferPage() {
         throw new Error(authData.error || "Autorisation refusée");
       }
 
-      // Si un seul fichier, télécharger directement
-      if (authData.downloads.length === 1) {
-        const downloadInfo = authData.downloads[0];
-        const response = await fetch(downloadInfo.downloadUrl);
+      // Calculer la taille totale et récupérer les fichiers
+      const files = transfer?.fileTransfer?.files || [];
+      const totalSize = files.reduce((acc, f) => acc + (f.size || 0), 0);
 
-        if (!response.ok) {
-          throw new Error("Erreur lors du téléchargement");
+      // Sur mobile, ouvrir directement l'URL du ZIP (route serveur)
+      if (isMobile) {
+        if (authData.downloads.length === 1) {
+          window.open(authData.downloads[0].downloadUrl, "_blank");
+        } else {
+          const fileIds = authData.downloads.map((d) => d.fileId).join(",");
+          const zipUrl = `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}&transferId=${transfer?.fileTransfer?.id}&fileIds=${fileIds}`;
+          window.open(zipUrl, "_blank");
         }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = downloadInfo.fileName;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
       } else {
-        // Plusieurs fichiers : utiliser la route API Next.js pour créer un ZIP
-        const fileIds = authData.downloads.map((d) => d.fileId).join(",");
-        const response = await fetch(
-          `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}&transferId=${transfer?.fileTransfer?.id}&fileIds=${fileIds}`
-        );
+        // Desktop : télécharger les fichiers un par un avec progression globale
+        let totalDownloaded = 0;
 
-        if (!response.ok) {
-          throw new Error("Erreur lors du téléchargement");
+        for (let i = 0; i < authData.downloads.length; i++) {
+          const downloadInfo = authData.downloads[i];
+          const file = files.find(
+            (f) => (f.fileId || f.id) === downloadInfo.fileId
+          );
+          const fileSize = file?.size || 0;
+
+          const response = await fetch(downloadInfo.downloadUrl, {
+            signal: downloadAbortRef.current.signal,
+          });
+
+          if (!response.ok) {
+            console.error(`Erreur téléchargement ${downloadInfo.fileName}`);
+            continue;
+          }
+
+          const contentLength = response.headers.get("content-length");
+          const actualFileSize = contentLength
+            ? parseInt(contentLength, 10)
+            : fileSize;
+
+          if (actualFileSize && response.body) {
+            const reader = response.body.getReader();
+            const chunks = [];
+            let receivedLength = 0;
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+              receivedLength += value.length;
+
+              // Progression globale : (déjà téléchargé + en cours) / total
+              const globalProgress = Math.round(
+                ((totalDownloaded + receivedLength) / totalSize) * 100
+              );
+              setDownloadProgress(globalProgress);
+            }
+
+            totalDownloaded += actualFileSize;
+
+            const blob = new Blob(chunks);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = downloadInfo.fileName;
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          } else {
+            // Fallback direct
+            totalDownloaded += fileSize;
+            setDownloadProgress(
+              Math.round((totalDownloaded / totalSize) * 100)
+            );
+            window.open(downloadInfo.downloadUrl, "_blank");
+          }
+
+          // Petit délai entre les téléchargements pour éviter les blocages navigateur
+          if (i < authData.downloads.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
         }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `transfer-${shareLink}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
       }
 
       // Marquer les téléchargements comme terminés
       const duration = Date.now() - startTime;
       for (const downloadInfo of authData.downloads) {
         if (downloadInfo.downloadEventId) {
-          await fetch(
+          fetch(
             `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
             {
               method: "POST",
@@ -304,18 +355,26 @@ export default function TransferPage() {
               },
               body: JSON.stringify({ duration }),
             }
-          );
+          ).catch(() => {}); // Fire and forget
         }
       }
 
       toast.success("Fichiers téléchargés avec succès !");
     } catch (error) {
+      // Si c'est une annulation, ne pas afficher d'erreur
+      if (error.name === "AbortError") {
+        toast.info("Téléchargement annulé");
+        return;
+      }
       console.error("Erreur lors du téléchargement:", error);
       toast.error(
         error.message || "Erreur lors du téléchargement des fichiers"
       );
     } finally {
       setIsDownloading(false);
+      setDownloadingFileId(null);
+      setDownloadProgress(0);
+      downloadAbortRef.current = null;
     }
   };
 
@@ -558,28 +617,34 @@ export default function TransferPage() {
             <>
               {/* Preview de la première image OU Progress pendant téléchargement */}
               {transfer?.fileTransfer?.files?.[0] && (
-                <div className="mx-4 mt-4 h-32 bg-gray-100 rounded-lg overflow-hidden relative">
+                <div
+                  className={`mx-4 mt-4 ${isDownloading ? "h-auto" : "h-32"} bg-gray-100 rounded-xl overflow-hidden relative`}
+                >
                   {isDownloading ? (
                     /* Afficher la progression pendant le téléchargement */
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#5a50ff]/5 to-[#5a50ff]/10 relative">
+                    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white py-4">
                       <CircularProgress
                         value={downloadProgress}
-                        size={140}
-                        strokeWidth={8}
+                        size={120}
+                        strokeWidth={10}
                         showLabel
-                        labelClassName="text-lg font-bold"
+                        labelClassName="text-sm font-bold"
                         renderLabel={(progress) => `${Math.round(progress)}%`}
-                        className="stroke-[#5a50ff]/20"
+                        className="stroke-[#5a50ff]/25"
                         progressClassName="stroke-[#5a50ff]"
                       />
-                      {/* Bouton annuler discret */}
-                      <button
-                        onClick={cancelDownload}
-                        className="absolute top-2 right-2 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-white/50 transition-colors"
-                        title="Annuler"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-[10px] text-[#5a50ff]">
+                          Téléchargement...
+                        </p>
+                        <span className="text-[10px] text-gray-300">•</span>
+                        <button
+                          onClick={cancelDownload}
+                          className="text-[10px] text-red-500 hover:underline"
+                        >
+                          Annuler
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <>
