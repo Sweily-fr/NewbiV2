@@ -180,9 +180,15 @@ export default function TransferPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        // Mobile ou fallback: téléchargement direct via lien (évite "load failed")
-        // Ouvrir directement l'URL de téléchargement
-        window.open(downloadInfo.downloadUrl, "_blank");
+        // Mobile ou fallback: téléchargement via lien <a> (évite blocage popup)
+        const a = document.createElement("a");
+        a.href = downloadInfo.downloadUrl;
+        a.download = fileName;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       }
 
       // Marquer le téléchargement comme terminé
@@ -262,15 +268,35 @@ export default function TransferPage() {
       const files = transfer?.fileTransfer?.files || [];
       const totalSize = files.reduce((acc, f) => acc + (f.size || 0), 0);
 
-      // Sur mobile, ouvrir directement l'URL du ZIP (route serveur)
+      // Sur mobile, utiliser un lien <a> pour déclencher le téléchargement
       if (isMobile) {
+        let downloadUrl;
+        let fileName;
+
         if (authData.downloads.length === 1) {
-          window.open(authData.downloads[0].downloadUrl, "_blank");
+          downloadUrl = authData.downloads[0].downloadUrl;
+          fileName = authData.downloads[0].fileName;
         } else {
           const fileIds = authData.downloads.map((d) => d.fileId).join(",");
-          const zipUrl = `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}&transferId=${transfer?.fileTransfer?.id}&fileIds=${fileIds}`;
-          window.open(zipUrl, "_blank");
+          downloadUrl = `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}&transferId=${transfer?.fileTransfer?.id}&fileIds=${fileIds}`;
+          fileName = `transfer-${shareLink}.zip`;
         }
+
+        // Créer un lien et cliquer dessus (fonctionne mieux sur mobile que window.open)
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = fileName;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // Sur mobile, le téléchargement est géré par le navigateur
+        toast.info("Téléchargement lancé");
+        setIsDownloading(false);
+        setDownloadProgress(0);
+        return;
       } else {
         // Desktop : télécharger les fichiers un par un avec progression globale
         let totalDownloaded = 0;
