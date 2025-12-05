@@ -180,15 +180,8 @@ export default function TransferPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        // Mobile ou fallback: téléchargement via lien <a> (évite blocage popup)
-        const a = document.createElement("a");
-        a.href = downloadInfo.downloadUrl;
-        a.download = fileName;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Mobile ou fallback: rediriger vers l'URL de téléchargement
+        window.location.href = downloadInfo.downloadUrl;
       }
 
       // Marquer le téléchargement comme terminé
@@ -268,32 +261,22 @@ export default function TransferPage() {
       const files = transfer?.fileTransfer?.files || [];
       const totalSize = files.reduce((acc, f) => acc + (f.size || 0), 0);
 
-      // Sur mobile, utiliser un lien <a> pour déclencher le téléchargement
+      // Sur mobile, rediriger vers l'URL de téléchargement
       if (isMobile) {
         let downloadUrl;
-        let fileName;
 
         if (authData.downloads.length === 1) {
           downloadUrl = authData.downloads[0].downloadUrl;
-          fileName = authData.downloads[0].fileName;
         } else {
           const fileIds = authData.downloads.map((d) => d.fileId).join(",");
           downloadUrl = `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}&transferId=${transfer?.fileTransfer?.id}&fileIds=${fileIds}`;
-          fileName = `transfer-${shareLink}.zip`;
         }
 
-        // Créer un lien et cliquer dessus (fonctionne mieux sur mobile que window.open)
-        const a = document.createElement("a");
-        a.href = downloadUrl;
-        a.download = fileName;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Rediriger vers l'URL - le navigateur mobile va télécharger le fichier
+        window.location.href = downloadUrl;
 
         // Sur mobile, le téléchargement est géré par le navigateur
-        toast.info("Téléchargement lancé");
+        toast.info("Téléchargement en cours...");
         setIsDownloading(false);
         setDownloadProgress(0);
         return;
