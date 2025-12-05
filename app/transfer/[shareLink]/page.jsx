@@ -146,8 +146,11 @@ export default function TransferPage() {
       const contentLength = response.headers.get("content-length");
       const totalSize = contentLength ? parseInt(contentLength, 10) : fileSize;
 
-      // Si on peut streamer avec progression
-      if (totalSize && response.body) {
+      // Détecter si on est sur mobile
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      // Si on peut streamer avec progression (desktop uniquement pour éviter "load failed" sur mobile)
+      if (totalSize && response.body && !isMobile) {
         const reader = response.body.getReader();
         const chunks = [];
         let receivedLength = 0;
@@ -177,15 +180,9 @@ export default function TransferPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        // Fallback: téléchargement direct via lien
-        const proxyUrl = `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`;
-        const a = document.createElement("a");
-        a.href = proxyUrl;
-        a.download = fileName;
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Mobile ou fallback: téléchargement direct via lien (évite "load failed")
+        // Ouvrir directement l'URL de téléchargement
+        window.open(downloadInfo.downloadUrl, "_blank");
       }
 
       // Marquer le téléchargement comme terminé
