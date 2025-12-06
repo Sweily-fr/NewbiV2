@@ -1,56 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
-import { Landmark, LoaderCircle, CheckCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import { Input } from "@/src/components/ui/input";
+import { ScrollArea } from "@/src/components/ui/scroll-area";
+import {
+  Landmark,
+  LoaderCircle,
+  CheckCircle,
+  Search,
+  Building2,
+} from "lucide-react";
 import { useBankingConnection } from "@/src/hooks/useBankingConnection";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 export default function BankingConnectButton() {
   const { workspaceId } = useWorkspace();
-  const { isConnected, accountsCount, isLoading, bridgeUserExists, hasAccounts, refreshStatus } =
-    useBankingConnection(workspaceId);
+  const {
+    isConnected,
+    accountsCount,
+    hasAccounts,
+    isLoading,
+    isLoadingInstitutions,
+    institutions,
+    error,
+    connectBank,
+    fetchInstitutions,
+  } = useBankingConnection(workspaceId);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedInstitution, setSelectedInstitution] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  const handleConnect = async () => {
-    if (isConnected) return; // Ne pas permettre de reconnecter
+  // Charger les institutions quand le modal s'ouvre
+  useEffect(() => {
+    if (isModalOpen && institutions.length === 0) {
+      fetchInstitutions("FR");
+    }
+  }, [isModalOpen]);
 
-    try {
-      setIsConnecting(true);
-      const response = await fetch("/api/banking-connect/bridge/connect", {
-        headers: {
-          "x-workspace-id": workspaceId,
-        },
-      });
+  // Filtrer les institutions par recherche
+  const filteredInstitutions = institutions.filter((inst) =>
+    inst.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-      if (response.ok) {
-        const data = await response.json();
-        // Rediriger vers l'URL de connexion Bridge
-        window.location.href = data.connectUrl;
-      } else {
-        const error = await response.json();
-        console.error(
-          "Erreur génération URL:",
-          error.error || "Impossible de générer l'URL de connexion"
-        );
-      }
-    } catch (error) {
-      console.error("Erreur connexion:", error);
-    } finally {
-      setIsConnecting(false);
+  const handleOpenModal = () => {
+    if (!isConnected) {
+      setIsModalOpen(true);
     }
   };
 
-  // Si déjà connecté, afficher le statut approprié
+  const handleSelectInstitution = async (institution) => {
+    setSelectedInstitution(institution);
+    setIsConnecting(true);
+    await connectBank(institution.id);
+    setIsConnecting(false);
+  };
+
+  // Si déjà connecté, afficher le statut
   if (isConnected) {
-    let statusText = "Compte connecté";
-    
-    if (hasAccounts && accountsCount > 0) {
-      statusText = `Connecté (${accountsCount} compte${accountsCount > 1 ? "s" : ""})`;
-    } else if (bridgeUserExists && !hasAccounts) {
-      statusText = "Compte connecté";
-    }
-    
+    const statusText =
+      hasAccounts && accountsCount > 0
+        ? `Connecté (${accountsCount} compte${accountsCount > 1 ? "s" : ""})`
+        : "Compte connecté";
+
     return (
       <Button
         disabled
@@ -65,17 +86,97 @@ export default function BankingConnectButton() {
   }
 
   return (
-    <Button
-      onClick={handleConnect}
-      disabled={isLoading || isConnecting}
-      variant="default"
-      size="sm"
-    >
-      {(isLoading || isConnecting) && (
-        <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
-      )}
-      <Landmark className="h-4 w-4 mr-2" />
-      Connecter un compte bancaire
-    </Button>
+    <>
+      <Button
+        onClick={handleOpenModal}
+        disabled={isLoading}
+        variant="default"
+        size="sm"
+      >
+        {isLoading && <LoaderCircle className="h-4 w-4 animate-spin mr-2" />}
+        <Landmark className="h-4 w-4 mr-2" />
+        Connecter un compte bancaire
+      </Button>
+
+      {/* Modal de sélection de banque */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Connecter votre banque</DialogTitle>
+            <DialogDescription>
+              Sélectionnez votre banque pour synchroniser vos comptes
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Barre de recherche */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher une banque..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          {/* Liste des banques */}
+          <ScrollArea className="h-[300px] pr-4">
+            {isLoadingInstitutions ? (
+              <div className="flex items-center justify-center py-8">
+                <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">
+                  Chargement des banques...
+                </span>
+              </div>
+            ) : filteredInstitutions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchQuery
+                  ? "Aucune banque trouvée"
+                  : "Aucune banque disponible"}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredInstitutions.map((institution) => (
+                  <button
+                    key={institution.id}
+                    onClick={() => handleSelectInstitution(institution)}
+                    disabled={isConnecting}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {institution.logo ? (
+                      <img
+                        src={institution.logo}
+                        alt={institution.name}
+                        className="h-8 w-8 object-contain rounded"
+                      />
+                    ) : (
+                      <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-medium">{institution.name}</p>
+                      {institution.bic && (
+                        <p className="text-xs text-muted-foreground">
+                          {institution.bic}
+                        </p>
+                      )}
+                    </div>
+                    {isConnecting &&
+                      selectedInstitution?.id === institution.id && (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+
+          {error && (
+            <p className="text-sm text-destructive text-center">{error}</p>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

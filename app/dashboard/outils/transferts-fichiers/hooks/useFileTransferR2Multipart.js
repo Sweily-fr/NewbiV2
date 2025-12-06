@@ -323,6 +323,10 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
           passwordProtected: Boolean(transferOptions.passwordProtected),
           password: transferOptions.password || null,
           allowPreview: transferOptions.allowPreview !== false,
+          expiryReminderEnabled: Boolean(
+            transferOptions.notifyBeforeExpiry ||
+              transferOptions.expiryReminderEnabled
+          ),
         };
 
         // Créer le transfert avec les IDs des fichiers
