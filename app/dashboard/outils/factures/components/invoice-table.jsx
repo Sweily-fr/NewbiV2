@@ -27,6 +27,8 @@ import {
   PlusIcon,
   Search,
   TrashIcon,
+  Upload,
+  FileUp,
 } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
@@ -100,6 +102,14 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceExportButton from "./invoice-export-button";
 import InvoiceFilters from "./invoice-filters";
 import InvoiceSidebar from "./invoice-sidebar";
+import { ImportInvoiceModal } from "./import-invoice-modal";
+import { ImportedInvoiceSidebar } from "./imported-invoice-sidebar";
+import {
+  useImportedInvoices,
+  IMPORTED_INVOICE_STATUS_LABELS,
+  IMPORTED_INVOICE_STATUS_COLORS,
+} from "@/src/graphql/importedInvoiceQueries";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 export default function InvoiceTable({ handleNewInvoice, invoiceIdToOpen, onOpenReminderSettings }) {
   const router = useRouter();
@@ -108,12 +118,49 @@ export default function InvoiceTable({ handleNewInvoice, invoiceIdToOpen, onOpen
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
   const [invoiceToOpen, setInvoiceToOpen] = useState(null);
   
+  // États pour les factures importées
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedImportedInvoice, setSelectedImportedInvoice] = useState(null);
+  const { workspaceId } = useRequiredWorkspace();
+  
+  // Hook pour les factures importées
+  const { 
+    importedInvoices, 
+    loading: importedLoading, 
+    refetch: refetchImported 
+  } = useImportedInvoices(workspaceId);
+  
   // Récupérer les paramètres de relance automatique
   const { data: reminderSettingsData } = useInvoiceReminderSettings();
   const reminderEnabled = reminderSettingsData?.getInvoiceReminderSettings?.enabled || false;
   const excludedClientIds = reminderSettingsData?.getInvoiceReminderSettings?.excludedClientIds || [];
   
   console.log("📋 [InvoiceTable] excludedClientIds:", excludedClientIds);
+
+  // Combiner les factures normales et importées
+  const combinedInvoices = useMemo(() => {
+    const normalInvoices = (invoices || []).map(inv => ({
+      ...inv,
+      _type: 'normal',
+    }));
+    
+    const imported = (importedInvoices || []).map(inv => ({
+      ...inv,
+      _type: 'imported',
+      // Mapper les champs pour compatibilité avec le tableau
+      client: { name: inv.vendor?.name || 'Fournisseur inconnu' },
+      issueDate: inv.invoiceDate,
+      dueDate: null,
+      total: inv.totalTTC,
+    }));
+    
+    // Combiner et trier par date (plus récent en premier)
+    return [...normalInvoices, ...imported].sort((a, b) => {
+      const dateA = new Date(a.issueDate || a.createdAt || 0);
+      const dateB = new Date(b.issueDate || b.createdAt || 0);
+      return dateB - dateA;
+    });
+  }, [invoices, importedInvoices]);
 
   const {
     table,
@@ -129,8 +176,9 @@ export default function InvoiceTable({ handleNewInvoice, invoiceIdToOpen, onOpen
     handleDeleteSelected,
     isDeleting,
   } = useInvoiceTable({
-    data: invoices || [],
+    data: combinedInvoices,
     onRefetch: refetch,
+    onRefetchImported: refetchImported,
     reminderEnabled,
     onOpenReminderSettings,
     excludedClientIds,
@@ -216,61 +264,70 @@ export default function InvoiceTable({ handleNewInvoice, invoiceIdToOpen, onOpen
 
         {/* Add Invoice Button Group - Visible uniquement si permission */}
         {canCreateInvoice && (
-          <ButtonGroup>
-            <Button 
-              onClick={handleNewInvoice} 
-              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+          <div className="flex items-center gap-2">
+            {/* Bulk actions - à gauche de Importer */}
+            {selectedRows.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive" 
+                    disabled={isDeleting}
+                    data-mobile-delete-trigger-invoice
+                  >
+                    <TrashIcon className="mr-2 h-4 w-4" />
+                    Supprimer ({selectedRows.length})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                      facture(s) sélectionnée(s) ? Cette action ne peut pas être
+                      annulée.
+                      <br />
+                      <br />
+                      <strong>Note :</strong> Seules les factures en brouillon et les factures importées peuvent
+                      être supprimées.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteSelected}
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                    >
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => setIsImportModalOpen(true)}
+              className="gap-2"
             >
-              Nouvelle facture
+              <FileUp className="h-4 w-4" />
+              Importer
             </Button>
-            <ButtonGroupSeparator />
-            <Button 
-              onClick={handleNewInvoice} 
-              size="icon"
-              className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-            >
-              <PlusIcon size={16} aria-hidden="true" />
-            </Button>
-          </ButtonGroup>
-        )}
-
-        {/* Bulk actions */}
-        {selectedRows.length > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
+            <ButtonGroup>
               <Button 
-                variant="destructive" 
-                disabled={isDeleting}
-                data-mobile-delete-trigger-invoice
+                onClick={handleNewInvoice} 
+                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
               >
-                <TrashIcon className="mr-2 h-4 w-4" />
-                Supprimer ({selectedRows.length})
+                Nouvelle facture
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                  facture(s) sélectionnée(s) ? Cette action ne peut pas être
-                  annulée.
-                  <br />
-                  <br />
-                  <strong>Note :</strong> Seules les factures en brouillon peuvent
-                  être supprimées.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteSelected}
-                  className="bg-destructive text-white hover:bg-destructive/90"
-                >
-                  Supprimer
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+              <ButtonGroupSeparator />
+              <Button 
+                onClick={handleNewInvoice} 
+                size="icon"
+                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                <PlusIcon size={16} aria-hidden="true" />
+            </Button>
+            </ButtonGroup>
+          </div>
         )}
       </div>
 
@@ -314,10 +371,16 @@ export default function InvoiceTable({ handleNewInvoice, invoiceIdToOpen, onOpen
                     ) {
                       return;
                     }
-                    // Déclencher l'ouverture de la sidebar via le bouton d'actions
-                    const actionsButton = e.currentTarget.querySelector('[data-view-invoice]');
-                    if (actionsButton) {
-                      actionsButton.click();
+                    const invoice = row.original;
+                    // Ouvrir la sidebar appropriée selon le type
+                    if (invoice._type === 'imported') {
+                      setSelectedImportedInvoice(invoice);
+                    } else {
+                      // Déclencher l'ouverture de la sidebar via le bouton d'actions
+                      const actionsButton = e.currentTarget.querySelector('[data-view-invoice]');
+                      if (actionsButton) {
+                        actionsButton.click();
+                      }
                     }
                   }}
                 >
@@ -600,6 +663,27 @@ export default function InvoiceTable({ handleNewInvoice, invoiceIdToOpen, onOpen
           onRefetch={refetch}
         />
       )}
+
+      {/* Modal d'import de factures */}
+      <ImportInvoiceModal
+        open={isImportModalOpen}
+        onOpenChange={setIsImportModalOpen}
+        onImportSuccess={() => {
+          refetchImported();
+          refetch();
+        }}
+      />
+
+      {/* Sidebar pour les factures importées */}
+      <ImportedInvoiceSidebar
+        invoice={selectedImportedInvoice}
+        open={!!selectedImportedInvoice}
+        onOpenChange={(open) => !open && setSelectedImportedInvoice(null)}
+        onUpdate={() => {
+          refetchImported();
+          setSelectedImportedInvoice(null);
+        }}
+      />
     </div>
   );
 }

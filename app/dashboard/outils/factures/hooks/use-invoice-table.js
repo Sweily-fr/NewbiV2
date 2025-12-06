@@ -18,6 +18,11 @@ import {
   INVOICE_STATUS_COLORS,
   useDeleteInvoice,
 } from "@/src/graphql/invoiceQueries";
+import {
+  IMPORTED_INVOICE_STATUS_LABELS,
+  IMPORTED_INVOICE_STATUS_COLORS,
+  useDeleteImportedInvoice,
+} from "@/src/graphql/importedInvoiceQueries";
 import InvoiceRowActions from "../components/invoice-row-actions";
 import { toast } from "@/src/components/ui/sonner";
 
@@ -167,7 +172,7 @@ const dateFilterFn = (row, columnId, filterValue) => {
   return true;
 };
 
-export function useInvoiceTable({ data = [], onRefetch, reminderEnabled = false, onOpenReminderSettings, excludedClientIds = [] }) {
+export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, reminderEnabled = false, onOpenReminderSettings, excludedClientIds = [] }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
@@ -175,6 +180,7 @@ export function useInvoiceTable({ data = [], onRefetch, reminderEnabled = false,
 
   // Hook pour la suppression de factures
   const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
+  const { deleteImportedInvoice, loading: isDeletingImported } = useDeleteImportedInvoice();
 
   // Define columns
   const columns = useMemo(
@@ -249,29 +255,27 @@ export function useInvoiceTable({ data = [], onRefetch, reminderEnabled = false,
         cell: ({ row }) => {
           const client = row.original.client;
           const invoice = row.original;
-          const clientName = client?.name || "Non défini";
+          const isImported = invoice._type === 'imported';
+          const clientName = client?.name || (isImported ? "Fournisseur inconnu" : "Non défini");
           return (
-            <div>
+            <div className="min-h-[40px] flex flex-col justify-center">
               <div 
                 className="font-normal max-w-[100px] md:max-w-none truncate" 
                 title={clientName}
               >
                 {client?.name || (
                   <span className="text-muted-foreground italic">
-                    Non défini
+                    {isImported ? "Fournisseur inconnu" : "Non défini"}
                   </span>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
-                {invoice.number || (
-                  <span className="italic">Brouillon</span>
-                )}
-              </div>
-              {/* {client?.email && (
-                <div className="text-sm text-muted-foreground">
-                  {client.email}
+              {!isImported && (
+                <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
+                  {invoice.number || (
+                    <span className="italic">Brouillon</span>
+                  )}
                 </div>
-              )} */}
+              )}
             </div>
           );
         },
@@ -351,11 +355,14 @@ export function useInvoiceTable({ data = [], onRefetch, reminderEnabled = false,
           label: "Échéance",
         },
         cell: ({ row }) => {
+          // Ne pas afficher d'échéance pour les factures importées
+          if (row.original._type === 'imported') {
+            return <span className="text-muted-foreground">-</span>;
+          }
+          
           const dateFromGetter = row.getValue("dueDate");
           const dateFromOriginal = row.original.dueDate;
           const date = dateFromGetter || dateFromOriginal;
-
-  
 
           if (!date) {
             return "-";
@@ -423,8 +430,15 @@ export function useInvoiceTable({ data = [], onRefetch, reminderEnabled = false,
         },
         cell: ({ row }) => {
           const status = row.getValue("status");
-          const label = INVOICE_STATUS_LABELS[status] || status;
-          const colorClass = INVOICE_STATUS_COLORS[status] || "";
+          const isImported = row.original._type === 'imported';
+          
+          // Utiliser les labels/couleurs appropriés selon le type
+          const label = isImported 
+            ? (IMPORTED_INVOICE_STATUS_LABELS[status] || status)
+            : (INVOICE_STATUS_LABELS[status] || status);
+          const colorClass = isImported
+            ? (IMPORTED_INVOICE_STATUS_COLORS[status] || "")
+            : (INVOICE_STATUS_COLORS[status] || "");
 
           return (
             <Badge className={cn("font-normal", colorClass)}>{label}</Badge>
@@ -450,6 +464,20 @@ export function useInvoiceTable({ data = [], onRefetch, reminderEnabled = false,
         },
         cell: ({ row }) => {
           const invoice = row.original;
+          
+          // Pour les factures importées, utiliser totalTTC directement
+          if (invoice._type === 'imported') {
+            const amount = invoice.totalTTC || invoice.total || 0;
+            return (
+              <div className="font-normal">
+                {new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: invoice.currency || "EUR",
+                }).format(amount)}
+              </div>
+            );
+          }
+          
           const escompteValue = parseFloat(invoice.escompte) || 0;
           
           // Utiliser finalTotalTTC comme base (après remise mais avant escompte)
@@ -585,28 +613,39 @@ export function useInvoiceTable({ data = [], onRefetch, reminderEnabled = false,
 
   // Handle bulk delete - optimized with batching
   const handleDeleteSelected = async () => {
+    // Séparer les factures normales (brouillons) et les factures importées
     const draftInvoices = selectedRows.filter(
-      (invoice) => invoice.status === "DRAFT"
+      (invoice) => invoice._type !== 'imported' && invoice.status === "DRAFT"
+    );
+    const importedInvoices = selectedRows.filter(
+      (invoice) => invoice._type === 'imported'
+    );
+    
+    // Factures normales non-brouillon ignorées
+    const ignoredNormalInvoices = selectedRows.filter(
+      (invoice) => invoice._type !== 'imported' && invoice.status !== "DRAFT"
     );
 
-    if (draftInvoices.length === 0) {
-      toast.error("Seules les factures en brouillon peuvent être supprimées");
+    if (draftInvoices.length === 0 && importedInvoices.length === 0) {
+      toast.error("Seules les factures en brouillon ou importées peuvent être supprimées");
       return;
     }
 
-    if (draftInvoices.length < selectedRows.length) {
+    if (ignoredNormalInvoices.length > 0) {
       toast.warning(
-        `${selectedRows.length - draftInvoices.length} facture(s) ignorée(s) (non brouillon)`
+        `${ignoredNormalInvoices.length} facture(s) ignorée(s) (non brouillon)`
       );
     }
 
-    // Process in chunks to avoid overwhelming the browser
+    let deletedCount = 0;
+
+    // Supprimer les factures normales (brouillons)
     const BATCH_SIZE = 5;
     for (let i = 0; i < draftInvoices.length; i += BATCH_SIZE) {
       const batch = draftInvoices.slice(i, i + BATCH_SIZE);
       try {
-        // Les notifications individuelles sont désactivées dans le hook GraphQL
         await Promise.all(batch.map((invoice) => deleteInvoice(invoice.id)));
+        deletedCount += batch.length;
       } catch (_) {
         toast.error(
           `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`
@@ -614,13 +653,34 @@ export function useInvoiceTable({ data = [], onRefetch, reminderEnabled = false,
       }
     }
 
+    // Supprimer les factures importées
+    for (let i = 0; i < importedInvoices.length; i += BATCH_SIZE) {
+      const batch = importedInvoices.slice(i, i + BATCH_SIZE);
+      try {
+        await Promise.all(batch.map((invoice) => 
+          deleteImportedInvoice({ variables: { id: invoice.id } })
+        ));
+        deletedCount += batch.length;
+      } catch (_) {
+        toast.error(
+          `Erreur lors de la suppression des factures importées`
+        );
+      }
+    }
+
     // Une seule notification à la fin
-    toast.success(`${draftInvoices.length} facture(s) supprimée(s)`);
+    if (deletedCount > 0) {
+      toast.success(`${deletedCount} facture(s) supprimée(s)`);
+    }
     table.resetRowSelection();
 
     // Actualiser la liste des factures
     if (onRefetch) {
       onRefetch();
+    }
+    // Actualiser aussi les factures importées si nécessaire
+    if (importedInvoices.length > 0 && onRefetchImported) {
+      onRefetchImported();
     }
   };
 
@@ -636,6 +696,6 @@ export function useInvoiceTable({ data = [], onRefetch, reminderEnabled = false,
     setDateFilter,
     selectedRows,
     handleDeleteSelected,
-    isDeleting,
+    isDeleting: isDeleting || isDeletingImported,
   };
 }

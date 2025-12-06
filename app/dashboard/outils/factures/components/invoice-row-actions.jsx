@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
 import { useRouter } from "next/navigation";
 import {
   Eye,
@@ -103,13 +104,18 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
     checkPermission();
   }, [canCreate]);
 
-  // Récupération de la facture complète avec tous ses détails
+  // Ne pas récupérer les détails pour les factures importées
+  const isImportedInvoice = invoice._type === 'imported';
+
+  // Récupération de la facture complète avec tous ses détails (seulement pour les factures normales)
   const { invoice: fullInvoice, loading: loadingFullInvoice } = useInvoice(
-    invoice.id
+    isImportedInvoice ? null : invoice.id
   );
 
-  // Récupération des avoirs pour cette facture
-  const { creditNotes, loading: loadingCreditNotes } = useCreditNotesByInvoice(invoice.id);
+  // Récupération des avoirs pour cette facture (seulement pour les factures normales)
+  const { creditNotes, loading: loadingCreditNotes } = useCreditNotesByInvoice(
+    isImportedInvoice ? null : invoice.id
+  );
 
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
@@ -177,6 +183,17 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
   const creditNoteLimitReached = hasReachedCreditNoteLimit(currentInvoice, creditNotes);
 
   const isLoading = markingAsPaid || changingStatus || isDeleting;
+
+  // Afficher un badge Import pour les factures importées
+  if (isImportedInvoice) {
+    return (
+      <div className="flex items-center justify-end gap-1" data-actions-cell>
+        <Badge variant="outline" className="text-xs">
+          Import
+        </Badge>
+      </div>
+    );
+  }
 
   return (
     <>
