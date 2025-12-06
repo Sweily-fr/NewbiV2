@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 /**
  * API Route pour générer un PDF de facture
  * Utilise Puppeteer pour exécuter le code de génération PDF du frontend
+ * Compatible avec Vercel serverless via @sparticuz/chromium
  */
 export async function POST(request) {
   let browser = null;
@@ -20,15 +22,26 @@ export async function POST(request) {
 
     console.log(`📄 [PDF API] Génération PDF pour facture ${invoiceId}`);
 
-    // Lancer Puppeteer
+    // Configuration pour Vercel serverless
+    const isVercel = process.env.VERCEL === '1';
+    
+    // Lancer Puppeteer avec chromium compatible serverless
     browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
+      args: isVercel ? chromium.args : [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
       ],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: isVercel 
+        ? await chromium.executablePath()
+        : process.platform === 'darwin'
+          ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+          : process.platform === 'win32'
+            ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+            : '/usr/bin/google-chrome',
+      headless: true,
     });
 
     const page = await browser.newPage();
