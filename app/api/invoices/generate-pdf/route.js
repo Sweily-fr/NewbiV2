@@ -47,7 +47,10 @@ export async function POST(request) {
     const page = await browser.newPage();
 
     // Naviguer vers la page de génération PDF
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Sur Vercel, utiliser VERCEL_URL ou NEXT_PUBLIC_APP_URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL 
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+      || 'http://localhost:3000';
     const generatorUrl = `${baseUrl}/pdf-generator/invoice/${invoiceId}`;
 
     console.log(`🌐 [PDF API] Navigation vers: ${generatorUrl}`);
