@@ -3,22 +3,23 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast as sonnerToast } from "sonner";
 import { Button } from "@/src/components/ui/button";
-import {
-  XIcon,
-  CircleCheck,
-  AlertCircleIcon,
-  InfoIcon,
-} from "lucide-react";
+import { XIcon, CircleCheck, AlertCircleIcon, InfoIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // Composant de notification de succès
-const SuccessToast = ({ message }) => (
-  <div className="max-w-[400px] rounded-md px-4 py-3 shadow-lg" style={{ backgroundColor: '#202020' }}>
-    <div className="flex gap-2">
-      <p className="grow text-sm" style={{ color: '#ffffff' }}>
+const SuccessToast = ({ message, isMobile }) => (
+  <div
+    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-md px-4 py-3"}`}
+    style={{ backgroundColor: "#202020" }}
+  >
+    <div className="flex gap-2 items-center">
+      <p
+        className={`grow ${isMobile ? "text-sm" : "text-sm"}`}
+        style={{ color: "#ffffff" }}
+      >
         <CircleCheck
           className="me-3 -mt-0.5 inline-flex text-emerald-500"
-          size={16}
+          size={isMobile ? 18 : 16}
           aria-hidden="true"
         />
         {message}
@@ -33,7 +34,7 @@ const SuccessToast = ({ message }) => (
           size={16}
           className="opacity-60 transition-opacity group-hover:opacity-100"
           aria-hidden="true"
-          style={{ color: '#ffffff' }}
+          style={{ color: "#ffffff" }}
         />
       </Button>
     </div>
@@ -41,13 +42,19 @@ const SuccessToast = ({ message }) => (
 );
 
 // Composant de notification d'erreur
-const ErrorToast = ({ message }) => (
-  <div className="max-w-[400px] rounded-md px-4 py-3 shadow-lg" style={{ backgroundColor: '#202020' }}>
-    <div className="flex gap-2">
-      <p className="grow text-sm" style={{ color: '#ffffff' }}>
+const ErrorToast = ({ message, isMobile }) => (
+  <div
+    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-md px-4 py-3"}`}
+    style={{ backgroundColor: "#202020" }}
+  >
+    <div className="flex gap-2 items-center">
+      <p
+        className={`grow ${isMobile ? "text-sm" : "text-sm"}`}
+        style={{ color: "#ffffff" }}
+      >
         <AlertCircleIcon
           className="me-3 -mt-0.5 inline-flex text-red-500"
-          size={16}
+          size={isMobile ? 18 : 16}
           aria-hidden="true"
         />
         {message}
@@ -62,7 +69,7 @@ const ErrorToast = ({ message }) => (
           size={16}
           className="opacity-60 transition-opacity group-hover:opacity-100"
           aria-hidden="true"
-          style={{ color: '#ffffff' }}
+          style={{ color: "#ffffff" }}
         />
       </Button>
     </div>
@@ -70,13 +77,19 @@ const ErrorToast = ({ message }) => (
 );
 
 // Composant de notification d'information
-const InfoToast = ({ message }) => (
-  <div className="max-w-[400px] rounded-md px-4 py-3 shadow-lg" style={{ backgroundColor: '#202020' }}>
-    <div className="flex gap-2">
-      <p className="grow text-sm" style={{ color: '#ffffff' }}>
+const InfoToast = ({ message, isMobile }) => (
+  <div
+    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-md px-4 py-3"}`}
+    style={{ backgroundColor: "#202020" }}
+  >
+    <div className="flex gap-2 items-center">
+      <p
+        className={`grow ${isMobile ? "text-sm" : "text-sm"}`}
+        style={{ color: "#ffffff" }}
+      >
         <InfoIcon
           className="me-3 -mt-0.5 inline-flex text-blue-500"
-          size={16}
+          size={isMobile ? 18 : 16}
           aria-hidden="true"
         />
         {message}
@@ -91,22 +104,35 @@ const InfoToast = ({ message }) => (
           size={16}
           className="opacity-60 transition-opacity group-hover:opacity-100"
           aria-hidden="true"
-          style={{ color: '#ffffff' }}
+          style={{ color: "#ffffff" }}
         />
       </Button>
     </div>
   </div>
 );
 
+// Détection mobile pour les toasts
+const checkIsMobile = () =>
+  typeof window !== "undefined" && window.innerWidth < 768;
+
 // Fonctions de toast personnalisées
 const toast = {
   success: (message) =>
-    sonnerToast.custom(() => <SuccessToast message={message} />),
+    sonnerToast.custom(() => (
+      <SuccessToast message={message} isMobile={checkIsMobile()} />
+    )),
   error: (message) =>
-    sonnerToast.custom(() => <ErrorToast message={message} />),
-  info: (message) => sonnerToast.custom(() => <InfoToast message={message} />),
+    sonnerToast.custom(() => (
+      <ErrorToast message={message} isMobile={checkIsMobile()} />
+    )),
+  info: (message) =>
+    sonnerToast.custom(() => (
+      <InfoToast message={message} isMobile={checkIsMobile()} />
+    )),
   warning: (message) =>
-    sonnerToast.custom(() => <InfoToast message={message} />), // Utilise InfoToast pour les warnings
+    sonnerToast.custom(() => (
+      <InfoToast message={message} isMobile={checkIsMobile()} />
+    )), // Utilise InfoToast pour les warnings
   // Conserver les méthodes originales de sonner si nécessaire
   dismiss: sonnerToast.dismiss,
   promise: sonnerToast.promise,
@@ -184,7 +210,7 @@ const Toaster = ({ ...props }) => {
         toastOptions={{
           style: isMobile
             ? {
-                marginTop: "30px", // Espace pour éviter la barre de statut
+                marginTop: "4px", // Remonté - moins d'espace
               }
             : {},
           className: isMobile ? "mobile-toast" : "",

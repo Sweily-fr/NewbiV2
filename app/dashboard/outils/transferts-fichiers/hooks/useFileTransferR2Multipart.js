@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useMutation } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -19,6 +19,10 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [transferResult, setTransferResult] = useState(null);
+  const [isCancelled, setIsCancelled] = useState(false);
+
+  // Ref pour l'AbortController (permet d'annuler les fetch en cours)
+  const abortControllerRef = useRef(null);
 
   // Mutations GraphQL
   const [startMultipartUploadMutation] = useMutation(START_MULTIPART_UPLOAD);
@@ -48,7 +52,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
   /**
    * Upload une part directement vers R2 via presigned URL
    */
-  const uploadPartDirectToR2 = async (part, uploadUrl, partNumber) => {
+  const uploadPartDirectToR2 = async (part, uploadUrl, partNumber, signal) => {
     try {
       const response = await fetch(uploadUrl, {
         method: "PUT",
@@ -56,6 +60,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         headers: {
           "Content-Type": "application/octet-stream",
         },
+        signal, // Permet d'annuler le fetch
       });
 
       if (!response.ok) {
@@ -131,6 +136,11 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       let uploadedCount = 0;
 
       const uploadPart = async (part, index) => {
+        // Vérifier si annulé avant chaque upload
+        if (abortControllerRef.current?.signal.aborted) {
+          throw new Error("Upload annulé");
+        }
+
         const partNumber = index + 1;
         const urlInfo = presignedUrls.find((u) => u.partNumber === partNumber);
 
@@ -138,11 +148,12 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
           throw new Error(`URL manquante pour part ${partNumber}`);
         }
 
-        // Upload DIRECT vers R2
+        // Upload DIRECT vers R2 avec signal d'annulation
         const result = await uploadPartDirectToR2(
           part,
           urlInfo.uploadUrl,
-          partNumber
+          partNumber,
+          abortControllerRef.current?.signal
         );
 
         uploadedCount++;
@@ -158,6 +169,11 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
 
       // Upload par batch parallèle
       for (let i = 0; i < parts.length; i += MAX_CONCURRENT_UPLOADS) {
+        // Vérifier si annulé avant chaque batch
+        if (abortControllerRef.current?.signal.aborted) {
+          throw new Error("Upload annulé");
+        }
+
         const batch = parts.slice(i, i + MAX_CONCURRENT_UPLOADS);
         const batchPromises = batch.map((part, batchIndex) =>
           uploadPart(part, i + batchIndex)
@@ -212,6 +228,14 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
 
       return fileId;
     } catch (error) {
+      // Si c'est une annulation, propager l'erreur sans message d'erreur
+      if (
+        error.name === "AbortError" ||
+        error.message === "Upload annulé" ||
+        error.message?.includes("aborted")
+      ) {
+        throw new Error("Upload annulé");
+      }
       console.error(`❌ Erreur Multipart Upload pour ${file.name}:`, error);
       throw new Error(`Échec Multipart Upload: ${error.message}`);
     }
@@ -236,6 +260,10 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         );
         uploadedFileIds.push(fileId);
       } catch (error) {
+        // Si c'est une annulation, propager silencieusement
+        if (error.message === "Upload annulé") {
+          throw error;
+        }
         console.error(`❌ Erreur upload fichier ${fileData.file.name}:`, error);
         throw error;
       }
@@ -255,6 +283,9 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       }
 
       try {
+        // Créer un nouveau AbortController pour ce transfert
+        abortControllerRef.current = new AbortController();
+        setIsCancelled(false);
         setIsUploading(true);
         setUploadProgress(0);
         setTransferResult(null);
@@ -341,6 +372,14 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
           );
         }
       } catch (error) {
+        // Vérifier si c'est une annulation
+        if (error.name === "AbortError" || error.message === "Upload annulé") {
+          console.log("🚫 Upload annulé par l'utilisateur");
+          setIsCancelled(true);
+          toast.info("Transfert annulé");
+          return null;
+        }
+
         console.error("❌ Erreur lors de l'upload R2:", error);
 
         const errorResult = {
@@ -355,6 +394,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       } finally {
         setIsUploading(false);
         setUploadProgress(0);
+        abortControllerRef.current = null;
       }
     },
     [
@@ -396,18 +436,30 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
     setTransferResult(null);
   }, []);
 
+  /**
+   * Annuler le transfert en cours
+   */
+  const cancelTransfer = useCallback(() => {
+    if (abortControllerRef.current) {
+      console.log("🚫 Annulation du transfert...");
+      abortControllerRef.current.abort();
+    }
+  }, []);
+
   return {
     // État
     selectedFiles,
     isUploading,
     uploadProgress,
     transferResult,
+    isCancelled,
 
     // Actions
     addFiles,
     removeFile,
     clearFiles,
     createTransfer: createTransferR2,
+    cancelTransfer,
 
     // Métadonnées
     storageType: "r2-multipart-native",

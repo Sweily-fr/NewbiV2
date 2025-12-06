@@ -20,7 +20,17 @@ import {
   FolderPlus,
   X,
   Trash2,
+  CheckCircle,
+  Link2,
+  ExternalLink,
 } from "lucide-react";
+import { QrCode } from "@ark-ui/react/qr-code";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +65,7 @@ function TransfertsContent() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [selectionState, setSelectionState] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -271,24 +282,28 @@ function TransfertsContent() {
       {showUploadModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          onClick={() => setShowUploadModal(false)}
+          onClick={() => !isUploading && setShowUploadModal(false)}
         >
           {/* Overlay */}
-          <div className="fixed inset-0 bg-black/50" />
+          <div
+            className={`fixed inset-0 bg-black/50 ${isUploading ? "cursor-not-allowed" : ""}`}
+          />
 
           {/* Modal Content */}
           <div
             className="relative z-50 max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto bg-background rounded-xl border border-border p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setShowUploadModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
-              aria-label="Fermer"
-            >
-              <X className="w-5 h-5 text-muted-foreground" />
-            </button>
+            {/* Close Button - Caché pendant l'upload */}
+            {!isUploading && (
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                aria-label="Fermer"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            )}
 
             {/* Header */}
             <div className="mb-6 pr-10">
@@ -296,8 +311,9 @@ function TransfertsContent() {
                 Nouveau transfert
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Partagez des fichiers volumineux jusqu'à 5GB avec vos clients ou
-                collaborateurs
+                {isUploading
+                  ? "Transfert en cours... Ne fermez pas cette fenêtre."
+                  : "Partagez des fichiers volumineux jusqu'à 5GB avec vos clients ou collaborateurs"}
               </p>
             </div>
 
@@ -305,57 +321,70 @@ function TransfertsContent() {
             <FileUploadNew
               onTransferCreated={handleTransferCreated}
               refetchTransfers={refetchTransfers}
+              onUploadingChange={setIsUploading}
             />
           </div>
         </div>
       )}
 
       {/* Dialog de succès après création */}
-      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Transfert créé avec succès !</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-4">
-                <div>
-                  Votre transfert de fichiers a été créé. Vous pouvez maintenant
-                  partager le lien avec vos destinataires.
-                </div>
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="max-w-xs p-6 gap-0">
+          <div className="flex flex-col items-center space-y-6">
+            {/* Header */}
+            <div className="text-center space-y-2">
+              <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Transfert créé
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
+                Scannez pour accéder aux fichiers
+              </DialogDescription>
+            </div>
 
-                <div className="bg-muted p-3 rounded-lg border">
-                  <div className="text-xs text-muted-foreground mb-2">
-                    Lien de partage :
-                  </div>
-                  <div className="text-xs font-mono break-all p-2 rounded border bg-background">
-                    {transferLink}
-                  </div>
-                </div>
+            {/* QR Code */}
+            <QrCode.Root value={transferLink} encoding={{ ecc: "M" }}>
+              <QrCode.Frame className="w-48 h-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-lg">
+                <QrCode.Pattern className="fill-gray-900 dark:fill-white" />
+              </QrCode.Frame>
+            </QrCode.Root>
+
+            {/* Lien */}
+            <div className="text-center space-y-2">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                <span className="font-mono text-xs break-all">
+                  {transferLink.replace(/^https?:\/\//, "")}
+                </span>
               </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={copyToClipboard}
-              className="w-full sm:w-auto font-normal"
-            >
-              <IconCopy className="w-4 h-4 mr-2" />
-              Copier le lien
-            </Button>
-            <Button
-              variant="outline"
-              onClick={openInNewTab}
-              className="w-full sm:w-auto font-normal bg-[#5a50ff] hover:bg-[#5a50ff]/90 hover:text-white text-white"
-            >
-              <IconExternalLink className="w-4 h-4 mr-2" />
-              Ouvrir le lien
-            </Button>
-            <AlertDialogAction className="w-full sm:w-auto font-normal">
-              Fermer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Pointez votre caméra sur le QR code
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 w-full">
+              <Button
+                variant="outline"
+                onClick={copyToClipboard}
+                className="flex-1 font-normal h-9 text-sm"
+              >
+                <Link2 className="w-4 h-4 mr-1.5" />
+                Copier
+              </Button>
+              <Button
+                onClick={() => {
+                  openInNewTab();
+                  setShowSuccessDialog(false);
+                }}
+                className="flex-1 font-normal h-9 text-sm bg-[#5a50ff] hover:bg-[#5a50ff]/90"
+              >
+                <ExternalLink className="w-4 h-4 mr-1.5" />
+                Ouvrir
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
